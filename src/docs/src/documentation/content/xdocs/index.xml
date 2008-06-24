@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!--
+  Copyright 2002-2004 The Apache Software Foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V2.0//EN" 
+"http://forrest.apache.org/dtd/document-v20.dtd">
+
+<document>
+  
+  <header>
+    <title>Welcome to Hama project</title>
+  </header>
+  
+  <body>
+    <section>
+    <title>Recent News</title>
+    <ul>
+      <li>20 May 2008 - Hama accepted to Apache Incubator Project.
+      <br />&nbsp;&nbsp;
+      The Incubator PMC have voted to accept Hama to be a apache incubator project. 
+      </li>
+      <li>23 June 2008 - An <a href="http://wiki.apache.org/hama/ScaLAPACK">meeting</a>
+       with Professor Choi J. which a member of 
+       <a href="http://www.netlib.org/scalapack/">ScaLAPACK</a> team.</li>
+    </ul>
+    </section>
+    <section>
+      <title> Introduction </title>
+    <p>
+    <strong>Hama</strong> is a parallel matrix computational package, 
+    which provides an library of matrix operations for the large-scale 
+    processing development environment and Map/Reduce framework for 
+    the large-scale Numerical Analysis and Data Mining, which need the 
+    intensive computation power of matrix inversion, e.g. linear regression, 
+    PCA, SVM and etc.
+    It will be also useful for many scientific applications, e.g. physics 
+    computations, linear algebra, computational fluid dynamics, statistics, 
+    graphic rendering and many more. 
+    </p>
+    </section>
+    <section>
+      <title>Parallelism in Map/Reduce</title>
+      <p>
+        <img src="./images/MapReduce.png" alt="Map/Reduce Diagram" />
+      </p>
+    </section>
+  </body>
+</document>

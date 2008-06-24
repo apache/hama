@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+  Copyright 2002-2004 The Apache Software Foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V2.0//EN" 
+"http://forrest.apache.org/dtd/document-v20.dtd">
+
+<document>
+  
+  <header>
+    <title>Environments</title>
+  </header>
+  
+  <body>
+    <section>
+    <title>Code Style</title>
+    <p>
+    The following sections show how to set up the code style for Hama in Eclipse. 
+    It is strongly preferred that patches use this style before they are supplied.
+    <br /><br />
+    <a href="hama-eclipse-formatter.xml">Download hama-eclipse-formatter.xml</a>.
+    <br /><br />
+    After this, select Window > Preferences, and open up the configuration for 
+    Java > Code Style > Code Formatter. Click on the button labeled Import... 
+    and select the file you downloaded. Give the style a name, and click OK.
+    </p>
+    </section>
+    <section>
+    <title>Subversion Access</title>
+    <p>
+    This project's Apache Subversion repository can be checked out through SVN with the 
+    following instruction set: <br /><br /> 
+    svn co https://svn.apache.org/repos/asf/incubator/hama hama<br /><br />
+    (Warning: This is a generic Subversion checkout command which will pull all modules, 
+    tags and/or branches of the project. Please refer to project home page for specific 
+    SVN instructions, or use "Browse Repository" link; in most cases, you will want to 
+    add '/trunk' to the HTTPS URL above to check out only trunk (main development line)). 
+    <br /><br />
+    <strong>NOTE</strong>: UNIX file and directory names are case sensitive. 
+    </p>
+    </section>
+  </body>
+  
+</document>

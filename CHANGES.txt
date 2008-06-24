@@ -1,0 +1,24 @@
+Hama Change Log
+
+Trunk (unreleased changes)
+
+    HAMA-2: The intial donation of Hama from the google project (edwardyoon)
+
+----
+Google Code Trunk 
+
+  Improvements
+    Issue-23: add FindBugs Ant task to build script (Minslovely)
+    Issue-17: Logigng full stack (Minslovely)
+    Issue-4: Remove Groovy inteface to sandbox (Edward J. Yoon)
+    Issue-3: Code Formatter (Edward J. Yoon) 
+	
+  New Features
+    Issue-22: Hama project web-site	(Edward J. Yoon)
+    Issue-21: Add feature vector (Edward J. Yoon)
+    Issue-13: Add setDimension() method to reduce function (Edward J. Yoon) 
+    Issue-7: Meta-column to store the matrix-info (Chanwit via Edward J. Yoon)
+  
+First Code Base:
+   
+    Issue-1: Hama Initial Code (Edward J. Yoon)
