@@ -31,6 +31,5 @@
 
   <tab label="Home" dir="" />  
   <tab label="Wiki" href="http://wiki.apache.org/hama" />
-  <tab label="Incubation Status" href="http://incubator.apache.org/projects/hama.html" />
   
 </tabs>

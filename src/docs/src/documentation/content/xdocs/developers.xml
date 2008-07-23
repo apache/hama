@@ -21,10 +21,24 @@
 <document>
   
   <header>
-    <title>Environments</title>
+    <title>Developers</title>
   </header>
   
   <body>
+    <section>
+    <title>Contribution</title>
+    <p>
+    We are always looking for contributions. See the 
+    <a href="http://wiki.apache.org/hama">Wiki</a> for details on contributing.
+    </p>
+    </section>  
+    <section>
+    <title>Source Code</title>
+    <p>
+    The source files are now stored using Subversion : <br/><br/>
+    svn checkout https://svn.apache.org/repos/asf/incubator/hama/trunk hama-trunk
+    </p>
+    </section>
     <section>
     <title>Code Style</title>
     <p>
@@ -39,19 +53,12 @@
     </p>
     </section>
     <section>
-    <title>Subversion Access</title>
+    <title>Issues</title>
     <p>
-    This project's Apache Subversion repository can be checked out through SVN with the 
-    following instruction set: <br /><br /> 
-    svn co https://svn.apache.org/repos/asf/incubator/hama/trunk hama<br /><br />
-    (Warning: This is a generic Subversion checkout command which will pull all modules, 
-    tags and/or branches of the project. Please refer to project home page for specific 
-    SVN instructions, or use "Browse Repository" link; in most cases, you will want to 
-    add '/trunk' to the HTTPS URL above to check out only trunk (main development line)). 
-    <br /><br />
-    <strong>NOTE</strong>: UNIX file and directory names are case sensitive. 
+    All bugs, improvements, patches, etc. should be logged in 
+    <a href="./issue_tracking.html">JIRA</a>
     </p>
-    </section>
+    </section>    
   </body>
   
 </document>
