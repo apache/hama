@@ -33,6 +33,7 @@ See http://forrest.apache.org/docs/linking.html for more info.
 
   <docs label="Home"> 
     <overview  label="Overview"           href="index.html" />
+    <whoweare	label="Who we are?"         href="who_we_are.html" />
     <!-- 
     not yet ready things.
     

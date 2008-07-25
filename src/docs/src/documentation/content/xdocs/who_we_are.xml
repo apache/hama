@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<!--
+  Copyright 2002-2004 The Apache Software Foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V2.0//EN" 
+"http://forrest.apache.org/dtd/document-v20.dtd">
+
+<document>
+  
+  <header>
+    <title>Who we are</title>
+  </header>
+  
+  <body>
+	<section>
+	<title>Active Committers</title>
+	
+	<p>Hama's active committers are:</p>
+	
+	<table>
+	  <tr>
+	    <th>username</th>
+	    <th>name</th>
+	    <th>organization</th>
+	    <th>roles</th>
+	    <th>timezone</th>
+	  </tr>
+	  <tr>
+	    <td>edwardyoon</td>
+	    <td><a href="http://blog.udanax.org/">Edward J. Yoon</a></td>
+	    <td>NHN</td>
+	    <td></td>
+	    <td>+9</td>
+	  </tr>
+	  <tr>
+	    <td>chanwit</td>
+	    <td><a href="http://chanwit.blogspot.com/">Chanwit Kaewkasi</a></td>
+	    <td>The University of Manchester</td>
+	    <td>Groovy</td>
+	    <td>+1</td>
+	  </tr>
+	</table>
+	</section>
+
+	<section>
+	<title>Inactive Committers</title>
+	
+	<p>Hama's inactive committers (They have not committed anything for three months) are:</p>
+	
+	<table>
+	  <tr>
+	    <th>username</th>
+	    <th>name</th>
+	    <th>organization</th>
+	    <th>roles</th>
+	    <th>timezone</th>
+	  </tr>
+	  <tr>
+	    <td>yonghoha</td>
+	    <td>Ha Yongho</td>
+	    <td>TmaxSoft</td>
+	    <td></td>
+	    <td>+9</td>
+	  </tr>
+	  <tr>
+	    <td>bluesvm</td>
+	    <td>Suh ChangHee</td>
+	    <td>NHN</td>
+	    <td></td>
+	    <td>+9</td>
+	  </tr>
+	  <tr>
+	    <td>hongtebari</td>
+	    <td>Hong Taehui</td>
+	    <td>KRIBB</td>
+	    <td></td>
+	    <td>+9</td>
+	  </tr>
+	  <tr>
+	    <td>yoonjoosun</td>
+	    <td>Yoon JooSun</td>
+	    <td>NHN</td>
+	    <td></td>
+	    <td>+9</td>
+	  </tr>
+	  
+	</table>
+	</section>
+	
+	<section>
+	<title>Mentors</title>
+	<p>Mentors while in incubation include:</p>
+	<ul>
+	  <li>Ian Holsman</li>
+	  <li>Brett Porter</li>
+	  <li>Jeff Eastman</li>
+	</ul>
+	</section>
+
+	<section>
+	<title>Contributors</title>
+	<p>Contributors are:</p>
+	<ul>
+	  <li>Su-kyung Kim, a contributor of Hama logos artwork.</li>
+	</ul>
+	</section>
+
+  </body>
+</document>

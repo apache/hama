@@ -2,6 +2,7 @@ Hama Change Log
 
 Trunk (unreleased changes)
 
+    HAMA-6: Add a 'who we are' page (edwardyoon)
     HAMA-7: Add some information for a new comer (edwardyoon)
     HAMA-1: Create the Hama web site (edwardyoon via Ian Holsman)
     HAMA-2: The intial donation of Hama from the google project (edwardyoon)
