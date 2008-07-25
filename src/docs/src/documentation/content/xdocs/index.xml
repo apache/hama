@@ -26,30 +26,34 @@
   
   <body>
     <section>
+      <title> Introduction </title>
+    <p>
+    <img src="./images/hama_logo.png" alt="Hama Logo" />
+    <strong>Hama</strong> (means a hippopotamus in Korean) is a parallel matrix
+    computational package,
+    which provides an library of matrix operations for the large-scale
+    processing development environment and Map/Reduce framework for
+    the large-scale Numerical Analysis and Data Mining, which need the
+    intensive computation power of matrix inversion, e.g. linear regression,
+    PCA, SVM and etc.
+    It will be also useful for many scientific applications, e.g. physics
+    computations, linear algebra, computational fluid dynamics, statistics,
+    graphic rendering and many more.
+    </p>
+    </section>
+    <section>
     <title>Recent News</title>
     <ul>
       <li>20 May 2008 - Hama accepted to Apache Incubator Project.
       <br />&nbsp;&nbsp;
-      The Incubator PMC have voted to accept Hama to be a apache incubator project. 
+      The Incubator PMC have voted to accept Hama to be
+      a apache incubator project.
       </li>
-      <li>23 June 2008 - A <a href="http://wiki.apache.org/hama/ScaLAPACK">meeting</a>
-       with Professor Choi J., a member of 
+      <li>23 June 2008 - A
+       <a href="http://wiki.apache.org/hama/ScaLAPACK">meeting</a>
+       with Professor Choi J., a member of
        <a href="http://www.netlib.org/scalapack/">ScaLAPACK</a> team.</li>
     </ul>
-    </section>
-    <section>
-      <title> Introduction </title>
-    <p>
-    <strong>Hama</strong> is a parallel matrix computational package, 
-    which provides an library of matrix operations for the large-scale 
-    processing development environment and Map/Reduce framework for 
-    the large-scale Numerical Analysis and Data Mining, which need the 
-    intensive computation power of matrix inversion, e.g. linear regression, 
-    PCA, SVM and etc.
-    It will be also useful for many scientific applications, e.g. physics 
-    computations, linear algebra, computational fluid dynamics, statistics, 
-    graphic rendering and many more. 
-    </p>
     </section>
     <section>
       <title>Parallelism in Map/Reduce</title>
