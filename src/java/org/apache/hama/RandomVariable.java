@@ -56,7 +56,7 @@ public class RandomVariable {
    * @return random name
    */
   protected static Text randMatrixName() {
-    String rName = HamaConstants.RANDOM;
+    String rName = Constants.RANDOM;
     for (int i = 1; i <= 5; i++) {
       char ch = (char) ((Math.random() * 26) + 97);
       rName += ch;

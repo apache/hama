@@ -21,28 +21,7 @@ package org.apache.hama;
 
 import org.apache.hadoop.io.Text;
 
-public class TestFeatureVector extends HamaTestCase {
-  public void testAddition() {
-    matrixA = new Matrix(conf, A);
-    matrixA.set(0, 0, 2);
-    matrixA.set(0, 1, 5);
-
-    matrixB = new Matrix(conf, B);
-    matrixB.set(0, 0, 4);
-    matrixB.set(0, 1, 1);
-
-    FeatureVector v1 = new FeatureVector(matrixA.getRowResult(0));
-    FeatureVector v2 = new FeatureVector(matrixB.getRowResult(0));
-
-    FeatureVector v3 = v1.addition(v2);
-    assertTrue(v3.getValueAt(0) == 6.0);
-    assertTrue(v3.getValueAt(1) == 6.0);
-
-    LOG.info(v3.getValueAt(0));
-    LOG.info(v3.getValueAt(1));
-    matrixA.clear();
-    matrixB.clear();
-  }
+public class TestVector extends HamaTestCase {
 
   /**
    * Test cosine similarity
@@ -68,8 +47,8 @@ public class TestFeatureVector extends HamaTestCase {
     LOG.info("get test : " + m1.get(0, 0));
     LOG.info("get test : " + m1.get(0, 1));
 
-    FeatureVector v1 = new FeatureVector(m1.getRowResult(0));
-    FeatureVector v2 = new FeatureVector(m1.getRowResult(1));
+    Vector v1 = new Vector(m1.getRowResult(0));
+    Vector v2 = new Vector(m1.getRowResult(1));
 
     double cos = v1.getCosine(v2);
     assertEquals(cos, result);

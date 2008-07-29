@@ -27,17 +27,15 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.io.RowResult;
-import org.apache.hadoop.hbase.mapred.TableMap;
-import org.apache.hadoop.hbase.mapred.TableReduce;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.FeatureVector;
+import org.apache.hama.Vector;
 import org.apache.hama.HamaTestCase;
 import org.apache.hama.Matrix;
+import org.apache.hama.io.VectorDatum;
 import org.apache.log4j.Logger;
 
 /**
@@ -45,8 +43,6 @@ import org.apache.log4j.Logger;
  */
 public class TestMatrixMapReduce extends HamaTestCase {
   static final Logger LOG = Logger.getLogger(TestMatrixMapReduce.class);
-  protected Matrix a;
-  protected Matrix b;
 
   /** constructor */
   public TestMatrixMapReduce() {
@@ -54,39 +50,35 @@ public class TestMatrixMapReduce extends HamaTestCase {
   }
 
   public static class AdditionMap extends
-      TableMap<ImmutableBytesWritable, RowResult> {
-    protected Matrix matrix_b;
+      MatrixMap<ImmutableBytesWritable, VectorDatum> {
+    protected Matrix B;
     public static final String MATRIX_B = "hama.addition.substraction.matrix.b";
 
     public void configure(JobConf job) {
-      matrix_b = new Matrix(new HBaseConfiguration(), new Text("MatrixB"));
+      B = new Matrix(new HBaseConfiguration(), new Text("MatrixB"));
     }
 
     @Override
-    public void map(ImmutableBytesWritable key, RowResult value,
-        OutputCollector<ImmutableBytesWritable, RowResult> output,
+    public void map(ImmutableBytesWritable key, VectorDatum value,
+        OutputCollector<ImmutableBytesWritable, VectorDatum> output,
         Reporter reporter) throws IOException {
 
-      FeatureVector v1 = new FeatureVector(matrix_b.getRowResult(key.get()));
-      FeatureVector v2 = new FeatureVector(value);
-      FeatureVector v3 = v1.addition(v2);
-      output.collect(key, v3.getRowResult(key.get()));
-
-      LOG.info("xxx" + v3.getValueAt(0));
-      LOG.info("xxx" + v3.getValueAt(1));
+      Vector v1 = new Vector(B.getRowResult(key.get()));
+      Vector v2 = value.getVector();
+      output.collect(key, v1.addition(key.get(), v2));
     }
   }
 
   public static class AdditionReduce extends
-      TableReduce<ImmutableBytesWritable, RowResult> {
+      MatrixReduce<ImmutableBytesWritable, VectorDatum> {
 
     @Override
-    public void reduce(ImmutableBytesWritable key, Iterator<RowResult> values,
+    public void reduce(ImmutableBytesWritable key, Iterator<VectorDatum> values,
         OutputCollector<ImmutableBytesWritable, BatchUpdate> output,
         Reporter reporter) throws IOException {
 
       BatchUpdate b = new BatchUpdate(key.get());
-      RowResult r = values.next();
+      VectorDatum r = values.next();
       for (Map.Entry<byte[], Cell> f : r.entrySet()) {
         b.put(f.getKey(), f.getValue().getValue());
       }
@@ -96,16 +88,14 @@ public class TestMatrixMapReduce extends HamaTestCase {
   }
 
   public void testMatrixMapReduce() throws IOException {
-    a = new Matrix(conf, new Text("MatrixA"));
+    Matrix a = new Matrix(conf, new Text("MatrixA"));
     a.set(0, 0, 1);
     a.set(0, 1, 0);
-    b = new Matrix(conf, new Text("MatrixB"));
+    Matrix b = new Matrix(conf, new Text("MatrixB"));
     b.set(0, 0, 1);
     b.set(0, 1, 1);
-
     a.close();
     b.close();
-
     miniMRJob();
   }
 
@@ -116,9 +106,9 @@ public class TestMatrixMapReduce extends HamaTestCase {
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    TableMap.initJob("MatrixA", "column:", AdditionMap.class,
-        ImmutableBytesWritable.class, RowResult.class, jobConf);
-    TableReduce.initJob("xanadu", AdditionReduce.class, jobConf);
+    MatrixMap.initJob("MatrixA", "column:", AdditionMap.class,
+        ImmutableBytesWritable.class, VectorDatum.class, jobConf);
+    MatrixReduce.initJob("xanadu", AdditionReduce.class, jobConf);
 
     jobConf.setNumMapTasks(1);
     jobConf.setNumReduceTasks(1);

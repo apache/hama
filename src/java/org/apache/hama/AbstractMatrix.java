@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
 /**
  * Methods of the matrix classes
  */
-public abstract class AbstractMatrix implements MatrixInterface {
+public abstract class AbstractMatrix extends AbstractBase implements MatrixInterface {
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
   /** Hbase Configuration */
@@ -77,7 +77,7 @@ public abstract class AbstractMatrix implements MatrixInterface {
    */
   protected void create() {
     try {
-      tableDesc.addFamily(new HColumnDescriptor(HamaConstants.METADATA
+      tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA
           .toString()));
       LOG.info("Initializaing.");
       admin.createTable(tableDesc);
@@ -90,7 +90,7 @@ public abstract class AbstractMatrix implements MatrixInterface {
   public int getRowDimension() {
     Cell rows = null;
     try {
-      rows = table.get(HamaConstants.METADATA, HamaConstants.METADATA_ROWS);
+      rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
     } catch (IOException e) {
       LOG.error(e, e);
     }
@@ -102,8 +102,8 @@ public abstract class AbstractMatrix implements MatrixInterface {
   public int getColumnDimension() {
     Cell columns = null;
     try {
-      columns = table.get(HamaConstants.METADATA,
-          HamaConstants.METADATA_COLUMNS);
+      columns = table.get(Constants.METADATA,
+          Constants.METADATA_COLUMNS);
     } catch (IOException e) {
       LOG.error(e, e);
     }
@@ -113,7 +113,7 @@ public abstract class AbstractMatrix implements MatrixInterface {
   /** {@inheritDoc} */
   public double get(int i, int j) {
     Text row = new Text(String.valueOf(i));
-    Text column = new Text(HamaConstants.COLUMN + String.valueOf(j));
+    Text column = new Text(Constants.COLUMN + String.valueOf(j));
     Cell c;
     double result = -1;
     try {
@@ -157,7 +157,7 @@ public abstract class AbstractMatrix implements MatrixInterface {
   /** {@inheritDoc} */
   public void set(int i, int j, double d) {
     BatchUpdate b = new BatchUpdate(new Text(String.valueOf(i)));
-    b.put(new Text(HamaConstants.COLUMN + String.valueOf(j)), doubleToBytes(d));
+    b.put(new Text(Constants.COLUMN + String.valueOf(j)), doubleToBytes(d));
     try {
       table.commit(b);
     } catch (IOException e) {
@@ -187,9 +187,9 @@ public abstract class AbstractMatrix implements MatrixInterface {
 
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) {
-    BatchUpdate b = new BatchUpdate(HamaConstants.METADATA);
-    b.put(HamaConstants.METADATA_ROWS, Bytes.toBytes(rows));
-    b.put(HamaConstants.METADATA_COLUMNS, Bytes.toBytes(columns));
+    BatchUpdate b = new BatchUpdate(Constants.METADATA);
+    b.put(Constants.METADATA_ROWS, Bytes.toBytes(rows));
+    b.put(Constants.METADATA_COLUMNS, Bytes.toBytes(columns));
 
     try {
       table.commit(b);
@@ -211,8 +211,8 @@ public abstract class AbstractMatrix implements MatrixInterface {
   public double getDeterminant() {
     try {
       return bytesToDouble(table.get(
-          new Text(String.valueOf(HamaConstants.DETERMINANT)),
-          new Text(HamaConstants.COLUMN)).getValue());
+          new Text(String.valueOf(Constants.DETERMINANT)),
+          new Text(Constants.COLUMN)).getValue());
     } catch (IOException e) {
       LOG.error(e, e);
       return -1;
@@ -244,17 +244,5 @@ public abstract class AbstractMatrix implements MatrixInterface {
     } catch (IOException e) {
       LOG.error(e, e);
     }
-  }
-
-  /**
-   * Return the integer column index
-   * 
-   * @param b key
-   * @return integer
-   */
-  public int getColumnIndex(byte[] b) {
-    String cKey = new String(b);
-    return Integer.parseInt(cKey
-        .substring(cKey.indexOf(":") + 1, cKey.length()));
   }
 }

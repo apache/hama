@@ -55,7 +55,7 @@ public class Matrix extends AbstractMatrix {
 
       if (!admin.tableExists(matrixName)) {
         tableDesc = new HTableDescriptor(matrixName.toString());
-        tableDesc.addFamily(new HColumnDescriptor(HamaConstants.COLUMN
+        tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN
             .toString()));
         create();
       }
@@ -82,7 +82,7 @@ public class Matrix extends AbstractMatrix {
 
       if (!admin.tableExists(matrixName)) {
         tableDesc = new HTableDescriptor(matrixName.toString());
-        tableDesc.addFamily(new HColumnDescriptor(HamaConstants.COLUMN
+        tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN
             .toString()));
         create();
       }
@@ -154,12 +154,12 @@ public class Matrix extends AbstractMatrix {
 
   /** {@inheritDoc} */
   public Matrix addition(Matrix b) {
-    return additionSubtraction(b, HamaConstants.PLUS);
+    return additionSubtraction(b, Constants.PLUS);
   }
 
   /** {@inheritDoc} */
   public Matrix subtraction(Matrix b) {
-    return additionSubtraction(b, HamaConstants.PLUS);
+    return additionSubtraction(b, Constants.PLUS);
   }
 
   /**

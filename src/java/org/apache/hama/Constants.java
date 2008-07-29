@@ -24,7 +24,7 @@ import org.apache.hadoop.io.Text;
 /**
  * Some constants used in the hama
  */
-public class HamaConstants {
+public class Constants {
   /** Meta-columnfamily to store the matrix-info */
   public final static Text METADATA = new Text("metadata:");
   /** The number of the matrix rows */
