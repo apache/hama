@@ -29,16 +29,14 @@ import org.apache.log4j.Logger;
 public class HamaTestCase extends HBaseClusterTestCase {
   static final Logger LOG = Logger.getLogger(HamaTestCase.class);
   protected Matrix matrixA;
+  protected Matrix matrixB;
   protected Text A = new Text("matrixA");
+  protected Text B = new Text("matrixB");
   protected int SIZE = 5;
   
   /** constructor */
   public HamaTestCase() {
     super();
-
-    // TODO: We should remove this "hadoop.log.dir" path to build.xml
-    System.setProperty("hadoop.log.dir", 
-        conf.get("hadoop.log.dir", "./build/test/logs"));
 
     // Initializing the hbase configuration
     conf.set("mapred.output.dir", conf.get("hadoop.tmp.dir"));

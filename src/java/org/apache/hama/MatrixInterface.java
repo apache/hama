@@ -19,6 +19,7 @@
  */
 package org.apache.hama;
 
+import org.apache.hadoop.hbase.io.RowResult;
 
 /**
  * Basic matrix interface. It holds <code>double</code>s in a rectangular 2D
@@ -42,7 +43,7 @@ public interface MatrixInterface {
    * @param row the row index of the matrix
    * @return the feature vector of row
    */
-  public FeatureVector getRowVector(int row);
+  public RowResult getRowResult(byte[] row);
 
   /**
    * Sets the double value of (i, j)
@@ -163,8 +164,7 @@ public interface MatrixInterface {
    * 
    * @return the decomposed result
    */
-  public TriangularMatrix decompose(Decomposition technique);
-
+  // public TriangularMatrix decompose(Decomposition technique);
   /**
    * Clear object
    */

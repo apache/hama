@@ -24,7 +24,7 @@ import org.apache.hadoop.io.Text;
 /**
  * Some constants used in the hama
  */
-public class Constants {
+public class HamaConstants {
   /** Meta-columnfamily to store the matrix-info */
   public final static Text METADATA = new Text("metadata:");
   /** The number of the matrix rows */
@@ -56,7 +56,7 @@ public class Constants {
   public final static Text DETERMINANT = new Text("determinant");
 
   /** Temporary random matices name-head */
-  public final static String RANDOM = "random";
+  public final static String RANDOM = "rand";
   /** Temporary result matices name-head */
   public final static String RESULT = "result";
 }

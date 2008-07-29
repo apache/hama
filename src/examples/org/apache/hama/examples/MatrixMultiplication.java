@@ -26,6 +26,7 @@ import org.apache.hama.Matrix;
 public class MatrixMultiplication {
 
   public static void main(String[] args) {
+    /*
     if (args.length < 3) {
       System.out.println("multiplication <map_num> <row_m> <column_n>");
       System.exit(-1);
@@ -55,6 +56,7 @@ public class MatrixMultiplication {
     a.clear();
     b.clear();
     c.clear();
+    */
   }
 
   public static String executeTime(long start, long end) {

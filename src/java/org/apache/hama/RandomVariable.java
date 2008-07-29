@@ -19,6 +19,8 @@
  */
 package org.apache.hama;
 
+import org.apache.hadoop.io.Text;
+
 /**
  * The RandomVaraibale Class provides static methods for generating random
  * numbers.
@@ -46,6 +48,21 @@ public class RandomVariable {
     double x = rand();
     int i = i0 + (int) Math.floor((i1 - i0 + 1) * x);
     return i;
+  }
+
+  /**
+   * Generate a random name.
+   * 
+   * @return random name
+   */
+  protected static Text randMatrixName() {
+    String rName = HamaConstants.RANDOM;
+    for (int i = 1; i <= 5; i++) {
+      char ch = (char) ((Math.random() * 26) + 97);
+      rName += ch;
+    }
+
+    return new Text(rName);
   }
 
   /**

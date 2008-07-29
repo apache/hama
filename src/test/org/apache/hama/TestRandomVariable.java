@@ -25,7 +25,7 @@ import junit.framework.TestCase;
  * Random variable generation test
  */
 public class TestRandomVariable extends TestCase {
-  final static int TEST_COUNT = 50;
+  final static int COUNT = 50;
 
   /**
    * Random object test
@@ -33,7 +33,7 @@ public class TestRandomVariable extends TestCase {
    * @throws Exception
    */
   public void testRand() throws Exception {
-    for (int i = 0; i < TEST_COUNT; i++) {
+    for (int i = 0; i < COUNT; i++) {
       double result = RandomVariable.rand();
       assertTrue(result >= 0.0d && result <= 1.0);
     }
@@ -48,7 +48,7 @@ public class TestRandomVariable extends TestCase {
     final int min = 122;
     final int max = 561;
 
-    for (int i = 0; i < TEST_COUNT; i++) {
+    for (int i = 0; i < COUNT; i++) {
       int result = RandomVariable.randInt(min, max);
       assertTrue(result >= min && result <= max);
     }
@@ -63,7 +63,7 @@ public class TestRandomVariable extends TestCase {
     final double min = 1.0d;
     final double max = 3.0d;
 
-    for (int i = 0; i < TEST_COUNT; i++) {
+    for (int i = 0; i < COUNT; i++) {
       double result = RandomVariable.uniform(min, max);
       assertTrue(result >= min && result <= max);
     }

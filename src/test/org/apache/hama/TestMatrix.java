@@ -32,6 +32,7 @@ public class TestMatrix extends HamaTestCase {
   public void testRandomMatrix() {
     Matrix rand = Matrix.random(conf, SIZE, SIZE);
     assertTrue(rand.getRowDimension() == SIZE);
+    rand.close();
   }
 
   /**
@@ -59,21 +60,6 @@ public class TestMatrix extends HamaTestCase {
   }
 
   /**
-   * Constant matrix test
-   */
-  public void testConstantMatrix() {
-    constantMatrixCreate();
-    
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        assertTrue(0.5 == matrixA.get(i, j));
-      }
-    }
-    
-    matrixClose();
-  }
-
-  /**
    * Object clear
    */
   public void matrixClose() {
@@ -95,20 +81,4 @@ public class TestMatrix extends HamaTestCase {
       return false;
     }
   }
-
-  /**
-   * Matrix create
-   * 
-   * @return <code>true</code> if the matrix space was initialized.
-   */
-  public boolean constantMatrixCreate() {
-    matrixA = new Matrix(conf, SIZE, SIZE, 0.5);
-    try {
-      return matrixA.admin.tableExists(A);
-    } catch (MasterNotRunningException e) {
-      e.printStackTrace();
-      return false;
-    }
-  }
-  
 }

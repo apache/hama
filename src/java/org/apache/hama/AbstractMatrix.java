@@ -20,9 +20,6 @@
 package org.apache.hama;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -33,15 +30,15 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
-import org.apache.hama.mapred.MatrixMapReduce;
 import org.apache.log4j.Logger;
 
 /**
  * Methods of the matrix classes
  */
-public abstract class AbstractMatrix extends MatrixMapReduce implements
-    MatrixInterface {
+public abstract class AbstractMatrix implements MatrixInterface {
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
   /** Hbase Configuration */
@@ -80,7 +77,8 @@ public abstract class AbstractMatrix extends MatrixMapReduce implements
    */
   protected void create() {
     try {
-      tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA.toString()));
+      tableDesc.addFamily(new HColumnDescriptor(HamaConstants.METADATA
+          .toString()));
       LOG.info("Initializaing.");
       admin.createTable(tableDesc);
     } catch (IOException e) {
@@ -92,35 +90,36 @@ public abstract class AbstractMatrix extends MatrixMapReduce implements
   public int getRowDimension() {
     Cell rows = null;
     try {
-      rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
+      rows = table.get(HamaConstants.METADATA, HamaConstants.METADATA_ROWS);
     } catch (IOException e) {
       LOG.error(e, e);
     }
 
-    return bytesToInt(rows.getValue());
+    return Bytes.toInt(rows.getValue());
   }
 
   /** {@inheritDoc} */
   public int getColumnDimension() {
     Cell columns = null;
     try {
-      columns = table.get(Constants.METADATA, Constants.METADATA_COLUMNS);
+      columns = table.get(HamaConstants.METADATA,
+          HamaConstants.METADATA_COLUMNS);
     } catch (IOException e) {
       LOG.error(e, e);
     }
-    return bytesToInt(columns.getValue());
+    return Bytes.toInt(columns.getValue());
   }
 
   /** {@inheritDoc} */
   public double get(int i, int j) {
     Text row = new Text(String.valueOf(i));
-    Text column = new Text(Constants.COLUMN + String.valueOf(j));
+    Text column = new Text(HamaConstants.COLUMN + String.valueOf(j));
     Cell c;
     double result = -1;
     try {
       c = table.get(row, column);
       if (c != null) {
-        result = toDouble(c.getValue());
+        result = bytesToDouble(c.getValue());
       }
     } catch (IOException e) {
       LOG.error(e, e);
@@ -128,25 +127,37 @@ public abstract class AbstractMatrix extends MatrixMapReduce implements
     return result;
   }
 
-  /** {@inheritDoc} */
-  public FeatureVector getRowVector(int row) {
-    try {
-      SortedMap<Integer, Double> result = new TreeMap<Integer, Double>();
-      for (Map.Entry<Text, Cell> f : table
-          .getRow(new Text(String.valueOf(row))).entrySet()) {
-        result.put(getIndex(f.getKey()), toDouble(f.getValue().getValue()));
-      }
-      return new FeatureVector(result);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return null;
-    }
+  public double bytesToDouble(byte[] b) {
+    return Double.parseDouble(Bytes.toString(b));
+  }
+
+  public byte[] doubleToBytes(Double d) {
+    return Bytes.toBytes(d.toString());
   }
 
   /** {@inheritDoc} */
+  public RowResult getRowResult(byte[] row) {
+    try {
+      return table.getRow(row);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  public RowResult getRowResult(int row) {
+    try {
+      return table.getRow(String.valueOf(row).getBytes());
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+  
+  /** {@inheritDoc} */
   public void set(int i, int j, double d) {
     BatchUpdate b = new BatchUpdate(new Text(String.valueOf(i)));
-    b.put(new Text(Constants.COLUMN + String.valueOf(j)), toBytes(d));
+    b.put(new Text(HamaConstants.COLUMN + String.valueOf(j)), doubleToBytes(d));
     try {
       table.commit(b);
     } catch (IOException e) {
@@ -176,9 +187,9 @@ public abstract class AbstractMatrix extends MatrixMapReduce implements
 
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) {
-    BatchUpdate b = new BatchUpdate(Constants.METADATA);
-    b.put(Constants.METADATA_ROWS, intToBytes(rows));
-    b.put(Constants.METADATA_COLUMNS, intToBytes(columns));
+    BatchUpdate b = new BatchUpdate(HamaConstants.METADATA);
+    b.put(HamaConstants.METADATA_ROWS, Bytes.toBytes(rows));
+    b.put(HamaConstants.METADATA_COLUMNS, Bytes.toBytes(columns));
 
     try {
       table.commit(b);
@@ -199,9 +210,9 @@ public abstract class AbstractMatrix extends MatrixMapReduce implements
    */
   public double getDeterminant() {
     try {
-      return toDouble(table.get(
-          new Text(String.valueOf(Constants.DETERMINANT)),
-          new Text(Constants.COLUMN)).getValue());
+      return bytesToDouble(table.get(
+          new Text(String.valueOf(HamaConstants.DETERMINANT)),
+          new Text(HamaConstants.COLUMN)).getValue());
     } catch (IOException e) {
       LOG.error(e, e);
       return -1;
@@ -233,5 +244,17 @@ public abstract class AbstractMatrix extends MatrixMapReduce implements
     } catch (IOException e) {
       LOG.error(e, e);
     }
+  }
+
+  /**
+   * Return the integer column index
+   * 
+   * @param b key
+   * @return integer
+   */
+  public int getColumnIndex(byte[] b) {
+    String cKey = new String(b);
+    return Integer.parseInt(cKey
+        .substring(cKey.indexOf(":") + 1, cKey.length()));
   }
 }
