@@ -20,21 +20,15 @@
 package org.apache.hama.mapred;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
 
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.io.BatchUpdate;
-import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.Vector;
 import org.apache.hama.HamaTestCase;
 import org.apache.hama.Matrix;
+import org.apache.hama.algebra.AdditionMap;
+import org.apache.hama.algebra.AdditionReduce;
 import org.apache.hama.io.VectorDatum;
 import org.apache.log4j.Logger;
 
@@ -49,53 +43,16 @@ public class TestMatrixMapReduce extends HamaTestCase {
     super();
   }
 
-  public static class AdditionMap extends
-      MatrixMap<ImmutableBytesWritable, VectorDatum> {
-    protected Matrix B;
-    public static final String MATRIX_B = "hama.addition.substraction.matrix.b";
-
-    public void configure(JobConf job) {
-      B = new Matrix(new HBaseConfiguration(), new Text("MatrixB"));
-    }
-
-    @Override
-    public void map(ImmutableBytesWritable key, VectorDatum value,
-        OutputCollector<ImmutableBytesWritable, VectorDatum> output,
-        Reporter reporter) throws IOException {
-
-      Vector v1 = new Vector(B.getRowResult(key.get()));
-      Vector v2 = value.getVector();
-      output.collect(key, v1.addition(key.get(), v2));
-    }
-  }
-
-  public static class AdditionReduce extends
-      MatrixReduce<ImmutableBytesWritable, VectorDatum> {
-
-    @Override
-    public void reduce(ImmutableBytesWritable key, Iterator<VectorDatum> values,
-        OutputCollector<ImmutableBytesWritable, BatchUpdate> output,
-        Reporter reporter) throws IOException {
-
-      BatchUpdate b = new BatchUpdate(key.get());
-      VectorDatum r = values.next();
-      for (Map.Entry<byte[], Cell> f : r.entrySet()) {
-        b.put(f.getKey(), f.getValue().getValue());
-      }
-
-      output.collect(key, b);
-    }
-  }
-
   public void testMatrixMapReduce() throws IOException {
-    Matrix a = new Matrix(conf, new Text("MatrixA"));
-    a.set(0, 0, 1);
-    a.set(0, 1, 0);
-    Matrix b = new Matrix(conf, new Text("MatrixB"));
-    b.set(0, 0, 1);
-    b.set(0, 1, 1);
-    a.close();
-    b.close();
+    matrixA = new Matrix(conf, new Text("MatrixA"));
+    matrixA.set(0, 0, 1);
+    matrixA.set(0, 1, 0);
+    
+
+    matrixA = new Matrix(conf, new Text("MatrixB"));
+    matrixA.set(0, 0, 1);
+    matrixA.set(0, 1, 1);
+    
     miniMRJob();
   }
 
@@ -106,7 +63,7 @@ public class TestMatrixMapReduce extends HamaTestCase {
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    MatrixMap.initJob("MatrixA", "column:", AdditionMap.class,
+    MatrixMap.initJob("MatrixA", "MatrixB", AdditionMap.class,
         ImmutableBytesWritable.class, VectorDatum.class, jobConf);
     MatrixReduce.initJob("xanadu", AdditionReduce.class, jobConf);
 

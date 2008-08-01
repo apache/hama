@@ -19,7 +19,18 @@
  */
 package org.apache.hama;
 
-import org.apache.hadoop.hbase.MasterNotRunningException;
+import java.io.IOException;
+
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hama.algebra.AdditionMap;
+import org.apache.hama.algebra.AdditionReduce;
+import org.apache.hama.io.VectorDatum;
+import org.apache.hama.mapred.MatrixMap;
+import org.apache.hama.mapred.MatrixReduce;
+import org.apache.hama.mapred.TestMatrixMapReduce;
 
 /**
  * Matrix test
@@ -33,52 +44,5 @@ public class TestMatrix extends HamaTestCase {
     Matrix rand = Matrix.random(conf, SIZE, SIZE);
     assertTrue(rand.getRowDimension() == SIZE);
     rand.close();
-  }
-
-  /**
-   * Matrix Test
-   */
-  public void testMatrix() {
-    assertTrue(matrixCreate());
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        matrixA.set(i, j, i + j);
-      }
-    }
-    matrixA.setDimension(SIZE, SIZE);
-
-    assertTrue(matrixA.getRowDimension() == SIZE);
-    assertTrue(matrixA.getColumnDimension() == SIZE);
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        assertTrue((i + j) == matrixA.get(i, j));
-      }
-    }
-    matrixClose();
-  }
-
-  /**
-   * Object clear
-   */
-  public void matrixClose() {
-    matrixA.clear();
-    matrixA.close();
-  }
-
-  /**
-   * Matrix create
-   * 
-   * @return <code>true</code> if the matrix space was initialized.
-   */
-  public boolean matrixCreate() {
-    matrixA = new Matrix(conf, A);
-    try {
-      return matrixA.admin.tableExists(A);
-    } catch (MasterNotRunningException e) {
-      e.printStackTrace();
-      return false;
-    }
   }
 }

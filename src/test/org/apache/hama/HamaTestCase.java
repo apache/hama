@@ -20,7 +20,6 @@
 package org.apache.hama;
 
 import org.apache.hadoop.hbase.HBaseClusterTestCase;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 /**
@@ -30,8 +29,6 @@ public class HamaTestCase extends HBaseClusterTestCase {
   static final Logger LOG = Logger.getLogger(HamaTestCase.class);
   protected Matrix matrixA;
   protected Matrix matrixB;
-  protected Text A = new Text("matrixA");
-  protected Text B = new Text("matrixB");
   protected int SIZE = 5;
   
   /** constructor */
