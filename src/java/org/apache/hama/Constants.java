@@ -40,7 +40,7 @@ public class Constants {
   public final static String MINUS = "-";
 
   /** Default columnfamily name */
-  public final static Text COLUMN = new Text("column:");
+  public final static String COLUMN = "column:";
   /** The numerator version of the fraction matrix */
   public final static Text NUMERATOR = new Text("numerator:");
   /** The denominator version of the fration matrix */

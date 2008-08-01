@@ -13,46 +13,46 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
 
 public class MatrixInputFormat extends MatrixInputFormatBase implements
-JobConfigurable {
-private final Log LOG = LogFactory.getLog(MatrixInputFormat.class);
+    JobConfigurable {
+  private final Log LOG = LogFactory.getLog(MatrixInputFormat.class);
 
-/**
-* space delimited list of columns
-*
-* @see org.apache.hadoop.hbase.regionserver.HAbstractScanner for column name
-*      wildcards
-*/
-public static final String COLUMN_LIST = "hbase.mapred.tablecolumns";
+  /**
+   * space delimited list of columns
+   * 
+   * @see org.apache.hadoop.hbase.regionserver.HAbstractScanner for column name
+   *      wildcards
+   */
+  public static final String COLUMN_LIST = "hbase.mapred.tablecolumns";
 
-/** {@inheritDoc} */
-public void configure(JobConf job) {
-Path[] tableNames = FileInputFormat.getInputPaths(job);
-String colArg = job.get(COLUMN_LIST);
-String[] colNames = colArg.split(" ");
-byte [][] m_cols = new byte[colNames.length][];
-for (int i = 0; i < m_cols.length; i++) {
-  m_cols[i] = Bytes.toBytes(colNames[i]);
-}
-setInputColums(m_cols);
-try {
-  setHTable(new HTable(new HBaseConfiguration(job), tableNames[0].getName()));
-} catch (Exception e) {
-  LOG.error(e);
-}
-}
+  /** {@inheritDoc} */
+  public void configure(JobConf job) {
+    Path[] tableNames = FileInputFormat.getInputPaths(job);
+    String colArg = job.get(COLUMN_LIST);
+    String[] colNames = colArg.split(" ");
+    byte[][] m_cols = new byte[colNames.length][];
+    for (int i = 0; i < m_cols.length; i++) {
+      m_cols[i] = Bytes.toBytes(colNames[i]);
+    }
+    setInputColums(m_cols);
+    try {
+      setHTable(new HTable(new HBaseConfiguration(job), tableNames[0].getName()));
+    } catch (Exception e) {
+      LOG.error(e);
+    }
+  }
 
-/** {@inheritDoc} */
-public void validateInput(JobConf job) throws IOException {
-// expecting exactly one path
-Path [] tableNames = FileInputFormat.getInputPaths(job);
-if (tableNames == null || tableNames.length > 1) {
-  throw new IOException("expecting one table name");
-}
+  /** {@inheritDoc} */
+  public void validateInput(JobConf job) throws IOException {
+    // expecting exactly one path
+    Path[] tableNames = FileInputFormat.getInputPaths(job);
+    if (tableNames == null || tableNames.length > 1) {
+      throw new IOException("expecting one table name");
+    }
 
-// expecting at least one column
-String colArg = job.get(COLUMN_LIST);
-if (colArg == null || colArg.length() == 0) {
-  throw new IOException("expecting at least one column");
-}
-}
+    // expecting at least one column
+    String colArg = job.get(COLUMN_LIST);
+    if (colArg == null || colArg.length() == 0) {
+      throw new IOException("expecting at least one column");
+    }
+  }
 }
