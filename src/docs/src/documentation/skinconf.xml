@@ -139,7 +139,7 @@ which will be used to configure the chosen Forrest skin.
         in the class attribute of a <p> node. 
         e.g. <p class="quote"/>
         
-            p.quote {
+    p.quote {
       margin-left: 2em;
       padding: .5em;
       background-color: #f0f0f0;
@@ -147,6 +147,7 @@ which will be used to configure the chosen Forrest skin.
     }
     -->
      #footer a { color: black; }
+     NonBorderTable { border-style: hidden } 
   </extra-css>
 
   <colors>

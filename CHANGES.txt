@@ -2,7 +2,9 @@ Hama Change Log
 
 Trunk (unreleased changes)
 
-    HAMA-10: Refactor the mapred package for the latest version of dependencies (edwardyoon)  
+    HAMA-15: Logo Alignment (edwardyoon) 
+    HAMA-10: Refactor the mapred package 
+             for the latest version of dependencies (edwardyoon)  
     HAMA-9: Upgrade dependencies (edwardyoon)
     HAMA-6: Add a 'who we are' page (edwardyoon)
     HAMA-7: Add some information for a new comer (edwardyoon)
