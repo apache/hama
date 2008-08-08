@@ -77,7 +77,7 @@ public class Vector extends VectorWritable implements VectorInterface {
       d_i = this.getValueAt(dim);
       cosine += q_i * d_i;
     }
-    return cosine / (this.getL2Norm() * v.getL2Norm());
+    return cosine / (this.getNorm2() * v.getNorm2());
   }
 
   public double get(int index) {
