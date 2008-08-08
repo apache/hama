@@ -21,9 +21,7 @@ package org.apache.hama;
 
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.HbaseMapWritable;
-import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hama.VectorInterface.Norm;
 import org.apache.hama.io.VectorWritable;
 import org.apache.log4j.Logger;
 
