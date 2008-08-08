@@ -127,14 +127,6 @@ public abstract class AbstractMatrix extends AbstractBase implements MatrixInter
     return result;
   }
 
-  public double bytesToDouble(byte[] b) {
-    return Double.parseDouble(Bytes.toString(b));
-  }
-
-  public byte[] doubleToBytes(Double d) {
-    return Bytes.toBytes(d.toString());
-  }
-
   /** {@inheritDoc} */
   public RowResult getRowResult(byte[] row) {
     try {

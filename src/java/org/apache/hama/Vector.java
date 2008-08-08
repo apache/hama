@@ -81,8 +81,7 @@ public class Vector extends VectorWritable implements VectorInterface {
   }
 
   public double get(int index) {
-    // TODO Auto-generated method stub
-    return 0;
+    return bytesToInt(this.cells.get(intToBytes(index)).getValue());
   }
 
   public double norm(Norm type) {
