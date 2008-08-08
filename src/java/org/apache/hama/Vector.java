@@ -38,15 +38,11 @@ public class Vector extends VectorWritable implements VectorInterface {
   }
 
   /**
-   * Create a RowResult from a row and Cell map
+   * Constructor a Vector
    */
   public Vector(final byte[] row, final HbaseMapWritable<byte[], Cell> m) {
     this.row = row;
     this.cells = m;
-  }
-
-  public byte[] getRow() {
-    return row;
   }
 
   public Vector(RowResult r) {
@@ -57,11 +53,19 @@ public class Vector extends VectorWritable implements VectorInterface {
     parse(r.entrySet());
   }
 
+  /**
+   * @param rowKey
+   * @param b
+   */
   public Vector(byte[] rowKey, Matrix b) {
     this.row = rowKey;
     parse(b.getRowResult(this.row).entrySet());
   }
 
+  public byte[] getRow() {
+    return row;
+  }
+  
   public void add(int index, double value) {
     // TODO Auto-generated method stub
 
