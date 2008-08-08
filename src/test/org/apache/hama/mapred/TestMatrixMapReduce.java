@@ -27,9 +27,9 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.HamaTestCase;
 import org.apache.hama.Matrix;
+import org.apache.hama.Vector;
 import org.apache.hama.algebra.AdditionMap;
 import org.apache.hama.algebra.AdditionReduce;
-import org.apache.hama.io.VectorDatum;
 import org.apache.log4j.Logger;
 
 /**
@@ -64,7 +64,7 @@ public class TestMatrixMapReduce extends HamaTestCase {
     jobConf.setJobName("test MR job");
 
     MatrixMap.initJob("MatrixA", "MatrixB", AdditionMap.class,
-        ImmutableBytesWritable.class, VectorDatum.class, jobConf);
+        ImmutableBytesWritable.class, Vector.class, jobConf);
     MatrixReduce.initJob("xanadu", AdditionReduce.class, jobConf);
 
     jobConf.setNumMapTasks(1);

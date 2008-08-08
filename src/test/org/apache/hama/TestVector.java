@@ -50,7 +50,7 @@ public class TestVector extends HamaTestCase {
     Vector v1 = new Vector(m1.getRowResult(0));
     Vector v2 = new Vector(m1.getRowResult(1));
 
-    double cos = v1.getCosine(v2);
+    double cos = v1.dot(v2);
     assertEquals(cos, result);
     m1.close();
   }

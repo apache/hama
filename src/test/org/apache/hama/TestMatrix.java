@@ -27,7 +27,7 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.algebra.AdditionMap;
 import org.apache.hama.algebra.AdditionReduce;
-import org.apache.hama.io.VectorDatum;
+import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.MatrixMap;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.hama.mapred.TestMatrixMapReduce;

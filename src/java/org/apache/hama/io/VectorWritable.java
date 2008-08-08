@@ -8,6 +8,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.hadoop.hbase.HConstants;
@@ -16,40 +18,37 @@ import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.AbstractBase;
 import org.apache.hama.Vector;
 
-public class VectorDatum implements Writable, Map<byte[], Cell> {
-  private byte[] row = null;
-  private final HbaseMapWritable<byte[], Cell> cells;
+public class VectorWritable extends AbstractBase implements Writable,
+    Map<byte[], Cell> {
+  public byte[] row;
+  public HbaseMapWritable<byte[], Cell> cells;
+  public int[] m_dims;
+  public double[] m_vals;
 
-  public VectorDatum() {
-    this(null, new HbaseMapWritable<byte[], Cell>());
-  }
+  public void parse(Set<Entry<byte[], Cell>> entrySet) {
+    SortedMap<Integer, Double> m = new TreeMap<Integer, Double>();
+    for (Map.Entry<byte[], Cell> f : entrySet) {
+      m.put(getColumnIndex(f.getKey()), Double.parseDouble(Bytes.toString(f
+          .getValue().getValue())));
+    }
 
-  /**
-   * Create a RowResult from a row and Cell map
-   */
-  public VectorDatum(final byte[] row, final HbaseMapWritable<byte[], Cell> m) {
-    this.row = row;
-    this.cells = m;
-  }
+    this.m_dims = new int[m.keySet().size()];
+    this.m_vals = new double[m.keySet().size()];
 
-  /**
-   * Get the row for this RowResult
-   */
-  public byte[] getRow() {
-    return row;
+    int i = 0;
+    for (Map.Entry<Integer, Double> f : m.entrySet()) {
+      this.m_dims[i] = f.getKey();
+      this.m_vals[i] = f.getValue();
+      i++;
+    }
   }
 
   public Cell put(@SuppressWarnings("unused")
   byte[] key, @SuppressWarnings("unused")
   Cell value) {
-    throw new UnsupportedOperationException("VectorDatum is read-only!");
-  }
-
-  @SuppressWarnings("unchecked")
-  public void putAll(@SuppressWarnings("unused")
-  Map map) {
     throw new UnsupportedOperationException("VectorDatum is read-only!");
   }
 
@@ -73,10 +72,6 @@ public class VectorDatum implements Writable, Map<byte[], Cell> {
 
   public boolean isEmpty() {
     return cells.isEmpty();
-  }
-
-  public int size() {
-    return cells.size();
   }
 
   public void clear() {
@@ -103,6 +98,27 @@ public class VectorDatum implements Writable, Map<byte[], Cell> {
     return result;
   }
 
+  public void readFields(final DataInput in) throws IOException {
+    this.row = Bytes.readByteArray(in);
+    this.cells.readFields(in);
+    parse(this.cells.entrySet());
+  }
+
+  public void write(final DataOutput out) throws IOException {
+    Bytes.writeByteArray(out, this.row);
+    this.cells.write(out);
+  }
+
+  public VectorWritable addition(byte[] bs, Vector v2) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public void putAll(Map<? extends byte[], ? extends Cell> m) {
+    // TODO Auto-generated method stub
+
+  }
+
   /**
    * Get the Cell that corresponds to column
    */
@@ -117,30 +133,9 @@ public class VectorDatum implements Writable, Map<byte[], Cell> {
     return get(Bytes.toBytes(key));
   }
 
-  /**
-   * Row entry.
-   */
-  public class Entry implements Map.Entry<byte[], Cell> {
-    private final byte[] column;
-    private final Cell cell;
-
-    Entry(byte[] row, Cell cell) {
-      this.column = row;
-      this.cell = cell;
-    }
-
-    public Cell setValue(@SuppressWarnings("unused")
-    Cell c) {
-      throw new UnsupportedOperationException("VectorDatum is read-only!");
-    }
-
-    public byte[] getKey() {
-      return column;
-    }
-
-    public Cell getValue() {
-      return cell;
-    }
+  public int size() {
+    //return this.cells.size();
+    return m_dims.length;
   }
 
   @Override
@@ -177,17 +172,29 @@ public class VectorDatum implements Writable, Map<byte[], Cell> {
     return sb.toString();
   }
 
-  public void readFields(final DataInput in) throws IOException {
-    this.row = Bytes.readByteArray(in);
-    this.cells.readFields(in);
-  }
+  /**
+   * Row entry.
+   */
+  public class Entries implements Map.Entry<byte[], Cell> {
+    private final byte[] column;
+    private final Cell cell;
 
-  public void write(final DataOutput out) throws IOException {
-    Bytes.writeByteArray(out, this.row);
-    this.cells.write(out);
-  }
+    Entries(byte[] row, Cell cell) {
+      this.column = row;
+      this.cell = cell;
+    }
 
-  public Vector getVector() {
-    return new Vector(this);
+    public Cell setValue(@SuppressWarnings("unused")
+    Cell c) {
+      throw new UnsupportedOperationException("VectorDatum is read-only!");
+    }
+
+    public byte[] getKey() {
+      return column;
+    }
+
+    public Cell getValue() {
+      return cell;
+    }
   }
 }

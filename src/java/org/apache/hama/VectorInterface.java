@@ -1,30 +1,79 @@
 package org.apache.hama;
 
-import org.apache.hama.io.VectorDatum;
-
 /**
- * A vector. Features are dimension-value pairs. This class implements a
- * simple dictionary data structure to map dimensions onto their values. Note
- * that for convenience, features do not have be sorted according to their
- * dimensions at this point. The SVMLightTrainer class has an option for sorting
- * input vectors prior to training.
+ * Basic vector interface.
  */
 public interface VectorInterface {
   
+  /**
+   * @return size of the vector
+   */
+  public int size();
+
+  /**
+   * @param index
+   * @return v(index)
+   */
+  public double get(int index); 
+  
+  /**
+   * v(index) = value
+   *  
+   * @param index
+   * @param value
+   */
+  public void set(int index, double value);
+  
+  /**
+   * @param v
+   * @return x = v 
+   */
+  public Vector set(Vector v);
+
+  /**
+   * v(index) += value
+   *  
+   * @param index
+   * @param value
+   */
+  public void add(int index, double value);
+  
+  /**
+   * @param alpha
+   * @param v
+   * @return  x = alpha*v + x
+   */
+  public boolean add(double alpha, Vector v);
+
+  /**
+   * @param v
+   * @return x = v + x
+   */
+  public Vector add(Vector v);
+  
+  /**
+   * @param v
+   * @return x dot v
+   */
+  public double dot(Vector v);
+
+  /**
+   * Computes the given norm of the vector
+   * 
+   * @param type
+   * @return norm of the vector
+   */
+  public double norm(Vector.Norm type);
+
+  @Deprecated
   public double getValueAt(int index);
   
+  @Deprecated
   public int getDimAt(int index);
   
-  public int size();
-  
+  @Deprecated
   public double getL1Norm();
   
+  @Deprecated
   public double getL2Norm();
-  
-  public double getCosine(Vector v);
-  
-  public VectorDatum addition(byte[] bs, Vector v2);
-  
-  // TODO: save, copy,...,etc
-  
 }

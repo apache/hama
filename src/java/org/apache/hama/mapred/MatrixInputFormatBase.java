@@ -22,10 +22,11 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.io.VectorDatum;
+import org.apache.hama.Vector;
+import org.apache.hama.io.VectorWritable;
 
 public abstract class MatrixInputFormatBase
-implements InputFormat<ImmutableBytesWritable, VectorDatum> {
+implements InputFormat<ImmutableBytesWritable, Vector> {
   private final Log LOG = LogFactory.getLog(MatrixInputFormatBase.class);
   private byte [][] inputColumns;
   private HTable table;
@@ -36,7 +37,7 @@ implements InputFormat<ImmutableBytesWritable, VectorDatum> {
    * Iterate over an HBase table data, return (Text, VectorResult) pairs
    */
   protected class TableRecordReader
-  implements RecordReader<ImmutableBytesWritable, VectorDatum> {
+  implements RecordReader<ImmutableBytesWritable, Vector> {
     private byte [] startRow;
     private byte [] endRow;
     private RowFilterInterface trrRowFilter;
@@ -77,7 +78,7 @@ implements InputFormat<ImmutableBytesWritable, VectorDatum> {
     }
 
     /**
-     * @param inputColumns the columns to be placed in {@link VectorDatum}.
+     * @param inputColumns the columns to be placed in {@link VectorWritable}.
      */
     public void setInputColumns(final byte [][] inputColumns) {
       this.trrInputColumns = inputColumns;
@@ -124,8 +125,8 @@ implements InputFormat<ImmutableBytesWritable, VectorDatum> {
      *
      * @see org.apache.hadoop.mapred.RecordReader#createValue()
      */
-    public VectorDatum createValue() {
-      return new VectorDatum();
+    public Vector createValue() {
+      return new Vector();
     }
 
     /** {@inheritDoc} */
@@ -151,7 +152,7 @@ implements InputFormat<ImmutableBytesWritable, VectorDatum> {
      * @throws IOException
      */
     @SuppressWarnings("unchecked")
-    public boolean next(ImmutableBytesWritable key, VectorDatum value)
+    public boolean next(ImmutableBytesWritable key, Vector value)
     throws IOException {
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
@@ -170,7 +171,7 @@ implements InputFormat<ImmutableBytesWritable, VectorDatum> {
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<ImmutableBytesWritable, VectorDatum> getRecordReader(InputSplit split,
+  public RecordReader<ImmutableBytesWritable, Vector> getRecordReader(InputSplit split,
       @SuppressWarnings("unused")
       JobConf job, @SuppressWarnings("unused")
       Reporter reporter)
@@ -239,7 +240,7 @@ implements InputFormat<ImmutableBytesWritable, VectorDatum> {
   }
 
   /**
-   * @param inputColumns to be passed in {@link VectorDatum} to the map task.
+   * @param inputColumns to be passed in {@link VectorWritable} to the map task.
    */
   protected void setInputColums(byte [][] inputColumns) {
     this.inputColumns = inputColumns;

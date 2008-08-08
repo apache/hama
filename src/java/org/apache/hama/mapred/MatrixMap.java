@@ -15,12 +15,12 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.Constants;
 import org.apache.hama.Matrix;
-import org.apache.hama.io.VectorDatum;
+import org.apache.hama.Vector;
 
 @SuppressWarnings("unchecked")
 public abstract class MatrixMap<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements
-    Mapper<ImmutableBytesWritable, VectorDatum, K, V> {
+    Mapper<ImmutableBytesWritable, Vector, K, V> {
   protected static Matrix B;
 
   public static void initJob(String matrixA, String matrixB,
@@ -38,6 +38,6 @@ public abstract class MatrixMap<K extends WritableComparable, V extends Writable
     job.set(MatrixInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 
-  public abstract void map(ImmutableBytesWritable key, VectorDatum value,
+  public abstract void map(ImmutableBytesWritable key, Vector value,
       OutputCollector<K, V> output, Reporter reporter) throws IOException;
 }

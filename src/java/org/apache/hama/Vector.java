@@ -19,54 +19,71 @@
  */
 package org.apache.hama;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.Map.Entry;
-
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hama.io.VectorDatum;
+import org.apache.hama.io.VectorWritable;
 import org.apache.log4j.Logger;
 
-public class Vector extends AbstractBase implements VectorInterface {
+public class Vector extends VectorWritable implements VectorInterface {
   static final Logger LOG = Logger.getLogger(Vector.class);
-  protected int[] m_dims;
-  protected double[] m_vals;
+
+  public enum Norm {
+    // TODO : Add types
+  }
+
+  public Vector() {
+    this(null, new HbaseMapWritable<byte[], Cell>());
+  }
+
+  /**
+   * Create a RowResult from a row and Cell map
+   */
+  public Vector(final byte[] row, final HbaseMapWritable<byte[], Cell> m) {
+    this.row = row;
+    this.cells = m;
+  }
+
+  public byte[] getRow() {
+    return row;
+  }
 
   public Vector(RowResult r) {
     parse(r.entrySet());
   }
 
-  public Vector(VectorDatum r) {
+  public Vector(VectorWritable r) {
     parse(r.entrySet());
   }
 
-  private void parse(Set<Entry<byte[], Cell>> entrySet) {
-    SortedMap<Integer, Double> m = new TreeMap<Integer, Double>();
-    for (Map.Entry<byte[], Cell> f : entrySet) {
-      m.put(getColumnIndex(f.getKey()), Double.parseDouble(Bytes.toString(f
-          .getValue().getValue())));
-    }
-
-    this.m_dims = new int[m.keySet().size()];
-    this.m_vals = new double[m.keySet().size()];
-
-    int i = 0;
-    for (Map.Entry<Integer, Double> f : m.entrySet()) {
-      this.m_dims[i] = f.getKey();
-      this.m_vals[i] = f.getValue();
-      i++;
-    }
+  public Vector(byte[] rowKey, Matrix b) {
+    this.row = rowKey;
+    parse(b.getRowResult(this.row).entrySet());
   }
 
-  /**
-   * Returns the cosine similarity between two feature vectors.
-   */
-  public double getCosine(Vector v) {
+  public void add(int index, double value) {
+    // TODO Auto-generated method stub
+
+  }
+
+  public boolean add(double alpha, Vector v) {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
+  public Vector add(Vector v2) {
+    HbaseMapWritable<byte[], Cell> trunk = new HbaseMapWritable<byte[], Cell>();
+    for (int i = 0; i < this.size(); i++) {
+      double value = (this.getValueAt(i) + v2.getValueAt(i));
+      Cell cValue = new Cell(String.valueOf(value), 0);
+      trunk.put(Bytes.toBytes("column:" + i), cValue);
+    }
+
+    return new Vector(row, trunk);
+  }
+
+  public double dot(Vector v) {
     double cosine = 0.0;
     int dim;
     double q_i, d_i;
@@ -77,6 +94,26 @@ public class Vector extends AbstractBase implements VectorInterface {
       cosine += q_i * d_i;
     }
     return cosine / (this.getL2Norm() * v.getL2Norm());
+  }
+
+  public double get(int index) {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  public double norm(Norm type) {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  public void set(int index, double value) {
+    // TODO Auto-generated method stub
+
+  }
+
+  public Vector set(Vector v) {
+    // TODO Auto-generated method stub
+    return null;
   }
 
   /**
@@ -108,20 +145,5 @@ public class Vector extends AbstractBase implements VectorInterface {
 
   public double getValueAt(int index) {
     return m_vals[index];
-  }
-
-  public int size() {
-    return m_dims.length;
-  }
-
-  public VectorDatum addition(byte[] bs, Vector v2) {
-    HbaseMapWritable<byte[], Cell> trunk = new HbaseMapWritable<byte[], Cell>();
-    for (int i = 0; i < this.size(); i++) {
-      double value = (this.getValueAt(i) + v2.getValueAt(i));
-      Cell cValue = new Cell(String.valueOf(value), 0);
-      trunk.put(Bytes.toBytes("column:" + i), cValue);
-    }
-
-    return new VectorDatum(bs, trunk);
   }
 }
