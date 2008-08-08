@@ -2,6 +2,7 @@ Hama Change Log
 
 Trunk (unreleased changes)
 
+    HAMA-17: Vector to Writable conversion (edwardyoon)
     HAMA-15: Logo Alignment (edwardyoon) 
     HAMA-10: Refactor the mapred package 
              for the latest version of dependencies (edwardyoon)  
