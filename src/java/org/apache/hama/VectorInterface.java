@@ -4,7 +4,7 @@ package org.apache.hama;
  * Basic vector interface.
  */
 public interface VectorInterface {
-  
+
   /**
    * @return size of the vector
    */
@@ -14,34 +14,34 @@ public interface VectorInterface {
    * @param index
    * @return v(index)
    */
-  public double get(int index); 
-  
+  public double get(int index);
+
   /**
    * v(index) = value
-   *  
+   * 
    * @param index
    * @param value
    */
   public void set(int index, double value);
-  
+
   /**
    * @param v
-   * @return x = v 
+   * @return x = v
    */
   public Vector set(Vector v);
 
   /**
    * v(index) += value
-   *  
+   * 
    * @param index
    * @param value
    */
   public void add(int index, double value);
-  
+
   /**
    * @param alpha
    * @param v
-   * @return  x = alpha*v + x
+   * @return x = alpha*v + x
    */
   public boolean add(double alpha, Vector v);
 
@@ -50,7 +50,7 @@ public interface VectorInterface {
    * @return x = v + x
    */
   public Vector add(Vector v);
-  
+
   /**
    * @param v
    * @return x dot v
@@ -63,17 +63,26 @@ public interface VectorInterface {
    * @param type
    * @return norm of the vector
    */
-  public double norm(Vector.Norm type);
+  public double norm(Norm type);
 
-  @Deprecated
-  public double getValueAt(int index);
-  
-  @Deprecated
-  public int getDimAt(int index);
-  
-  @Deprecated
-  public double getL1Norm();
-  
-  @Deprecated
-  public double getL2Norm();
+  /**
+   * Supported vector-norms.
+   */
+  enum Norm {
+
+    /** Sum of the absolute values of the entries */
+    One,
+
+    /** The root of sum of squares */
+    Two,
+
+    /**
+     * As the 2 norm may overflow, an overflow resistant version is also
+     * available. Note that it may be slower.
+     */
+    TwoRobust,
+
+    /** Largest entry in absolute value */
+    Infinity
+  }
 }

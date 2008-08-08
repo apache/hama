@@ -19,6 +19,7 @@
  */
 package org.apache.hama;
 
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
 
 public class TestVector extends HamaTestCase {
@@ -47,8 +48,8 @@ public class TestVector extends HamaTestCase {
     LOG.info("get test : " + m1.get(0, 0));
     LOG.info("get test : " + m1.get(0, 1));
 
-    Vector v1 = new Vector(m1.getRowResult(0));
-    Vector v2 = new Vector(m1.getRowResult(1));
+    Vector v1 = new Vector(Bytes.toBytes(String.valueOf(0)), m1);
+    Vector v2 = new Vector(Bytes.toBytes(String.valueOf(1)), m1);
 
     double cos = v1.dot(v2);
     assertEquals(cos, result);

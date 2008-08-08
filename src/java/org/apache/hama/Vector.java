@@ -23,49 +23,31 @@ import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hama.VectorInterface.Norm;
 import org.apache.hama.io.VectorWritable;
 import org.apache.log4j.Logger;
 
 public class Vector extends VectorWritable implements VectorInterface {
   static final Logger LOG = Logger.getLogger(Vector.class);
 
-  public enum Norm {
-    // TODO : Add types
-  }
-
   public Vector() {
     this(null, new HbaseMapWritable<byte[], Cell>());
   }
 
-  /**
-   * Constructor a Vector
-   */
   public Vector(final byte[] row, final HbaseMapWritable<byte[], Cell> m) {
     this.row = row;
     this.cells = m;
   }
 
-  public Vector(RowResult r) {
-    parse(r.entrySet());
-  }
-
-  public Vector(VectorWritable r) {
-    parse(r.entrySet());
-  }
-
   /**
-   * @param rowKey
-   * @param b
+   * @param row
+   * @param matrix
    */
-  public Vector(byte[] rowKey, Matrix b) {
-    this.row = rowKey;
-    parse(b.getRowResult(this.row).entrySet());
+  public Vector(byte[] row, Matrix matrix) {
+    this.row = row;
+    parse(matrix.getRowResult(this.row).entrySet());
   }
 
-  public byte[] getRow() {
-    return row;
-  }
-  
   public void add(int index, double value) {
     // TODO Auto-generated method stub
 
@@ -106,8 +88,14 @@ public class Vector extends VectorWritable implements VectorInterface {
   }
 
   public double norm(Norm type) {
-    // TODO Auto-generated method stub
-    return 0;
+    if (type == Norm.One)
+      return getL1Norm();
+    else if (type == Norm.Two)
+      return getL2Norm();
+    else if (type == Norm.TwoRobust)
+      return getL2NormRobust();
+    else
+      return getNormInf();
   }
 
   public void set(int index, double value) {
@@ -120,10 +108,6 @@ public class Vector extends VectorWritable implements VectorInterface {
     return null;
   }
 
-  /**
-   * Returns the linear norm factor of this vector's values (i.e., the sum of
-   * it's values).
-   */
   public double getL1Norm() {
     double sum = 0.0;
     for (int i = 0; i < m_vals.length; i++) {
@@ -132,15 +116,22 @@ public class Vector extends VectorWritable implements VectorInterface {
     return sum;
   }
 
-  /**
-   * Returns the L2 norm factor of this vector's values.
-   */
   public double getL2Norm() {
     double square_sum = 0.0;
     for (int i = 0; i < m_vals.length; i++) {
       square_sum += (m_vals[i] * m_vals[i]);
     }
     return Math.sqrt(square_sum);
+  }
+
+  public double getL2NormRobust() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  public double getNormInf() {
+    // TODO Auto-generated method stub
+    return 0;
   }
 
   public int getDimAt(int index) {
