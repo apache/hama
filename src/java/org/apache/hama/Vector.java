@@ -87,11 +87,11 @@ public class Vector extends VectorWritable implements VectorInterface {
 
   public double norm(Norm type) {
     if (type == Norm.One)
-      return getL1Norm();
+      return getNorm1();
     else if (type == Norm.Two)
-      return getL2Norm();
+      return getNorm2();
     else if (type == Norm.TwoRobust)
-      return getL2NormRobust();
+      return getNorm2Robust();
     else
       return getNormInf();
   }
@@ -106,7 +106,7 @@ public class Vector extends VectorWritable implements VectorInterface {
     return null;
   }
 
-  public double getL1Norm() {
+  public double getNorm1() {
     double sum = 0.0;
     for (int i = 0; i < m_vals.length; i++) {
       sum += m_vals[i];
@@ -114,7 +114,7 @@ public class Vector extends VectorWritable implements VectorInterface {
     return sum;
   }
 
-  public double getL2Norm() {
+  public double getNorm2() {
     double square_sum = 0.0;
     for (int i = 0; i < m_vals.length; i++) {
       square_sum += (m_vals[i] * m_vals[i]);
@@ -122,7 +122,7 @@ public class Vector extends VectorWritable implements VectorInterface {
     return Math.sqrt(square_sum);
   }
 
-  public double getL2NormRobust() {
+  public double getNorm2Robust() {
     // TODO Auto-generated method stub
     return 0;
   }
