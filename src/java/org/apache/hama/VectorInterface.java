@@ -6,11 +6,15 @@ package org.apache.hama;
 public interface VectorInterface {
 
   /**
+   * Size of the vector
+   * 
    * @return size of the vector
    */
   public int size();
 
   /**
+   * v(index)
+   * 
    * @param index
    * @return v(index)
    */
@@ -25,6 +29,8 @@ public interface VectorInterface {
   public void set(int index, double value);
 
   /**
+   * x = v
+   * 
    * @param v
    * @return x = v
    */
@@ -39,6 +45,8 @@ public interface VectorInterface {
   public void add(int index, double value);
 
   /**
+   * x = alpha*v + x
+   * 
    * @param alpha
    * @param v
    * @return x = alpha*v + x
@@ -46,12 +54,16 @@ public interface VectorInterface {
   public boolean add(double alpha, Vector v);
 
   /**
+   * x = v + x
+   * 
    * @param v
    * @return x = v + x
    */
   public Vector add(Vector v);
 
   /**
+   * x dot v
+   * 
    * @param v
    * @return x dot v
    */
