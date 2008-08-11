@@ -38,20 +38,27 @@ public class MatrixAddition {
     Matrix a = Matrix.random(conf, row, column);
     Matrix b = Matrix.random(conf, row, column);
 
-    long start = System.currentTimeMillis();
     Matrix c = a.add(b);
-    long end = System.currentTimeMillis();
-    System.out.println(executeTime(start, end));
+
+    System.out.println("Matrix A");
+    for(int i =  0; i < row; i++) {
+      for(int j =  0; j < row; j++) {
+        System.out.println(a.get(i, j));
+      }
+    }
     
+    System.out.println("Matrix B");
+    for(int i =  0; i < row; i++) {
+      for(int j =  0; j < row; j++) {
+        System.out.println(b.get(i, j));
+      }
+    }
+    
+    System.out.println("Matrix C");
     for(int i =  0; i < row; i++) {
       for(int j =  0; j < row; j++) {
         System.out.println(c.get(i, j));
       }
     }
-  }
-
-  public static String executeTime(long start, long end) {
-    return "(" + String.format("%.2f", Double.valueOf((end - start) * 0.001))
-        + " sec)";
   }
 }
