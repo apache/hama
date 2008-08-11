@@ -13,6 +13,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
+    HAMA-27: Replace table.get(Text, Text) to table.get(String, String) (edwardyoon)
     HAMA-12: Matrix interface re-arrangement (edwardyoon)
     HAMA-21: Implement get(int index) method (edwardyoon)
     HAMA-19: Remove vector-norms enum to interface from implementation (edwardyoon)

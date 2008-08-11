@@ -49,10 +49,6 @@ public abstract class AbstractMatrix extends AbstractBase implements
   protected HTable table;
   /** Matrix attribute description */
   protected HTableDescriptor tableDesc;
-  /** The parallel degree of map function */
-  protected int mapper;
-  /** The parallel degree of reduce function */
-  protected int reducer;
 
   /**
    * Sets the job configuration
@@ -66,8 +62,6 @@ public abstract class AbstractMatrix extends AbstractBase implements
     } catch (MasterNotRunningException e) {
       LOG.info(e);
     }
-    mapper = conf.getInt("mapred.map.tasks", 1);
-    reducer = conf.getInt("mapred.reduce.tasks", 1);
   }
 
   /**
@@ -85,8 +79,8 @@ public abstract class AbstractMatrix extends AbstractBase implements
 
   /** {@inheritDoc} */
   public double get(int i, int j) {
-    Text row = new Text(String.valueOf(i));
-    Text column = new Text(Constants.COLUMN + String.valueOf(j));
+    String row = String.valueOf(i);
+    String column = Constants.COLUMN + String.valueOf(j);
     Cell c;
     double result = -1;
     try {
@@ -105,8 +99,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
     try {
       return new Vector(row, table.getRow(String.valueOf(row)));
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOG.error(e, e);
     }
     return null;
   }
@@ -116,7 +109,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
     try {
       return new Vector(bytesToInt(row), table.getRow(row));
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error(e, e);
     }
     return null;
   }
@@ -156,7 +149,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
   }
 
   /** {@inheritDoc} */
-  public void add(int i, int j, double d) {
+  public void add(int i, int j, double value) {
     // TODO Auto-generated method stub
   }
 

@@ -19,20 +19,18 @@
  */
 package org.apache.hama;
 
-import org.apache.hadoop.io.Text;
-
 /**
  * Some constants used in the hama
  */
 public class Constants {
   /** Meta-columnfamily to store the matrix-info */
-  public final static Text METADATA = new Text("metadata:");
+  public final static String METADATA = "metadata:";
   /** The number of the matrix rows */
-  public final static Text METADATA_ROWS = new Text("metadata:rows");
+  public final static String METADATA_ROWS = "metadata:rows";
   /** The number of the matrix columns */
-  public final static Text METADATA_COLUMNS = new Text("metadata:columns");
+  public final static String METADATA_COLUMNS = "metadata:columns";
   /** The type of the matrix */
-  public final static Text METADATA_TYPE = new Text("metadata:type");
+  public final static String METADATA_TYPE = "metadata:type";
   /** Default columnfamily name */
   public final static String COLUMN = "column:";
 
