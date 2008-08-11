@@ -78,7 +78,7 @@ public class Vector extends VectorWritable implements VectorInterface {
   }
 
   public double get(int index) {
-    return bytesToInt(this.cells.get(intToBytes(index)).getValue());
+    return bytesToDouble(this.cells.get(getColumnIndex(index)).getValue());
   }
 
   public double norm(Norm type) {

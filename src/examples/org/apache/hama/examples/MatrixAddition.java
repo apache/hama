@@ -36,18 +36,18 @@ public class MatrixAddition {
     HamaConfiguration conf = new HamaConfiguration();
 
     Matrix a = Matrix.random(conf, row, column);
-    System.out.println("Create the " + row + " * " + column
-        + " random matrix A.");
     Matrix b = Matrix.random(conf, row, column);
-    System.out.println("Create the " + row + " * " + column
-        + " random matrix B.");
 
     long start = System.currentTimeMillis();
     Matrix c = a.add(b);
     long end = System.currentTimeMillis();
     System.out.println(executeTime(start, end));
-
-    System.out.println(c.get(0, 0));
+    
+    for(int i =  0; i < row; i++) {
+      for(int j =  0; j < row; j++) {
+        System.out.println(c.get(i, j));
+      }
+    }
   }
 
   public static String executeTime(long start, long end) {

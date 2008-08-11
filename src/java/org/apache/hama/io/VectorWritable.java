@@ -20,19 +20,24 @@ import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.AbstractBase;
 import org.apache.hama.Vector;
+import org.apache.log4j.Logger;
 
 public class VectorWritable extends AbstractBase implements Writable,
     Map<byte[], Cell> {
+  static final Logger LOG = Logger.getLogger(VectorWritable.class);
   public byte[] row;
   public HbaseMapWritable<byte[], Cell> cells;
   public int[] m_dims;
   public double[] m_vals;
 
   public void parse(Set<Entry<byte[], Cell>> entrySet) {
+    this.cells = new HbaseMapWritable<byte[], Cell>();
+    
     SortedMap<Integer, Double> m = new TreeMap<Integer, Double>();
     for (Map.Entry<byte[], Cell> f : entrySet) {
       m.put(getColumnIndex(f.getKey()), Double.parseDouble(Bytes.toString(f
           .getValue().getValue())));
+      this.cells.put(f.getKey(), f.getValue());
     }
 
     this.m_dims = new int[m.keySet().size()];
@@ -134,7 +139,7 @@ public class VectorWritable extends AbstractBase implements Writable,
   }
 
   public int size() {
-    //return this.cells.size();
+    // return this.cells.size();
     return m_dims.length;
   }
 

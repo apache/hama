@@ -113,7 +113,8 @@ public class Matrix extends AbstractMatrix {
    * @return an m-by-n matrix with uniformly distributed random elements.
    */
   public static Matrix random(HamaConfiguration conf, int m, int n) {
-    Matrix rand = new Matrix(conf, RandomVariable.randMatrixName());
+    Text name = RandomVariable.randMatrixName();
+    Matrix rand = new Matrix(conf, name);
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < n; j++) {
         rand.set(i, j, RandomVariable.rand());
@@ -121,6 +122,7 @@ public class Matrix extends AbstractMatrix {
     }
 
     rand.setDimension(m, n);
+    LOG.info("Create the " + m + " * " + n + " random matrix : " + name);
     return rand;
   }
 

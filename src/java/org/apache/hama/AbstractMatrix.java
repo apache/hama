@@ -76,7 +76,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
   protected void create() {
     try {
       tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA.toString()));
-      LOG.info("Initializaing.");
+      LOG.info("Initializing the matrix storage.");
       admin.createTable(tableDesc);
     } catch (IOException e) {
       LOG.error(e, e);
@@ -103,8 +103,9 @@ public abstract class AbstractMatrix extends AbstractBase implements
   /** {@inheritDoc} */
   public Vector getRow(int row) {
     try {
-      return new Vector(row, table.getRow(String.valueOf(row).getBytes()));
+      return new Vector(row, table.getRow(String.valueOf(row)));
     } catch (IOException e) {
+      // TODO Auto-generated catch block
       e.printStackTrace();
     }
     return null;
@@ -119,7 +120,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
     }
     return null;
   }
-  
+
   /** {@inheritDoc} */
   public int getRows() {
     Cell rows = null;

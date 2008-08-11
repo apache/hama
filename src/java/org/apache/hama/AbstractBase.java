@@ -25,4 +25,8 @@ public abstract class AbstractBase {
     return Integer.parseInt(cKey
         .substring(cKey.indexOf(":") + 1, cKey.length()));
   }
+  
+  public byte[] getColumnIndex(int b) {
+    return Bytes.toBytes(Constants.COLUMN + String.valueOf(b));
+  }
 }
