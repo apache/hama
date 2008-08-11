@@ -23,7 +23,8 @@ Trunk (unreleased changes)
     HAMA-9: Upgrade dependencies (edwardyoon)
 
   BUG FIXES
-  
+
+    HAMA-26: hama-formatter.xml should be removed (edwardyoon)  
     HAMA-25: Vector.get() returns double (edwardyoon)
 
 ----
