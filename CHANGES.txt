@@ -35,7 +35,7 @@ Google Code Trunk
 
   NEW FEATURES
   
-    Issue-22: Hama project web-site	(Edward J. Yoon)
+    Issue-22: Hama project web-site (Edward J. Yoon)
     Issue-21: Add feature vector (Edward J. Yoon)
     Issue-13: Add setDimension() method to reduce function (Edward J. Yoon) 
     Issue-7: Meta-column to store the matrix-info (Chanwit via Edward J. Yoon)
