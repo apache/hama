@@ -19,12 +19,8 @@
  */
 package org.apache.hama;
 
-import org.apache.hadoop.hbase.io.RowResult;
-
 /**
- * Basic matrix interface. It holds <code>double</code>s in a rectangular 2D
- * array, and it is used alongside <code>Vector</code> in numerical
- * computations. Implementing classes decides on the actual storage.
+ * Basic matrix interface.
  */
 public interface MatrixInterface {
 
@@ -43,53 +39,47 @@ public interface MatrixInterface {
    * @param row the row index of the matrix
    * @return the feature vector of row
    */
-  public RowResult getRowResult(byte[] row);
-
-  /**
-   * Sets the double value of (i, j)
-   * 
-   * @param i ith row of the matrix
-   * @param j jth column of the matrix
-   * @param d the value of entry
-   */
-  public void set(int i, int j, double d);
-
-  /**
-   * Adds value to (i, j)
-   * 
-   * @param i i th row of the matrix
-   * @param j j th column of the matrix
-   * @param d the value of entry
-   */
-  public void add(int i, int j, double d);
-
-  /**
-   * Delete a Row to Matrix.
-   * 
-   * @param i row number to delete
-   */
-  public void deleteRowEquals(int i);
-
-  /**
-   * Delete a Column to Matrix.
-   * 
-   * @param j column number to delete
-   */
-  public void deleteColumnEquals(int j);
+  public Vector getRow(int row);
 
   /**
    * Get a number of row of the matrix from the meta-data column
    * 
    * @return a number of rows of the matrix
    */
-  public int getRowDimension();
+  public int getRows();
 
   /**
    * Get a number of column of the matrix from the meta-data column
    * 
    * @return a number of columns of the matrix
    */
-  public int getColumnDimension();
+  public int getColumns();
+
+  /**
+   * Sets the double value of (i, j)
+   * 
+   * @param i ith row of the matrix
+   * @param j jth column of the matrix
+   * @param value the value of entry
+   */
+  public void set(int i, int j, double value);
+
+  /**
+   * A=alpha*B
+   * 
+   * @param alpha
+   * @param B
+   * @return A
+   */
+  public Matrix set(double alpha, Matrix B);
+
+  /**
+   * A=B
+   * 
+   * @param B
+   * @return A
+   */
+  public Matrix set(Matrix B);
 
   /**
    * Sets the dimension of matrix
@@ -100,12 +90,63 @@ public interface MatrixInterface {
   public void setDimension(int rows, int columns);
 
   /**
-   * Modify dimensions of matrix
+   * A(i, j) += value
    * 
-   * @param m number of rows
-   * @param n number of columns
+   * @param i
+   * @param j
+   * @param value
    */
-  public void reset(int m, int n);
+  public void add(int i, int j, double value);
+
+  /**
+   * A = B + A
+   * 
+   * @param B
+   * @return
+   */
+  public Matrix add(Matrix B);
+
+  /**
+   * A = alpha*B + A
+   * 
+   * @param alpha
+   * @param B
+   * @return A
+   */
+  public Matrix add(double alpha, Matrix B);
+
+  /**
+   * C = A*B
+   * 
+   * @param B
+   * @return C
+   */
+  public Matrix mult(Matrix B);
+
+  /**
+   * C = alpha*A*B + C
+   * 
+   * @param alpha
+   * @param B
+   * @param C
+   * @return C
+   */
+  public Matrix multAdd(double alpha, Matrix B, Matrix C);
+
+  /**
+   * Computes the given norm of the matrix
+   * 
+   * @param type
+   * @return norm of the matrix
+   */
+  public double norm(Norm type);
+
+  /**
+   * Supported matrix-norms.
+   */
+  enum Norm {
+    // TODO
+  }
 
   /**
    * Return the matrix name
@@ -113,66 +154,4 @@ public interface MatrixInterface {
    * @return the name of the matrix
    */
   public String getName();
-
-  /**
-   * Make a deep copy of a matrix
-   * 
-   * @return clone matrix
-   */
-  public Matrix copy();
-
-  /**
-   * Multiply two matrices
-   * 
-   * @param b matrix b
-   * @return the result of the multiplication of matrix a and matrix b
-   */
-  public Matrix multiply(Matrix b);
-
-  /**
-   * Add two matrices
-   * 
-   * @param b matrix b
-   * @return the result of the addition of matrix a and matrix b
-   */
-  public Matrix addition(Matrix b);
-
-  /**
-   * Subtract two matrices
-   * 
-   * @param b matrix b
-   * @return the result of the substraction of matrix a and matrix b
-   */
-  public Matrix subtraction(Matrix b);
-
-  /**
-   * Calculates determinant of a matrix
-   * 
-   * @return the value of determinant
-   */
-  public double determinant();
-
-  /**
-   * Save the matrix to table
-   * 
-   * @param matrixName the name of the matrix
-   */
-  public void save(String matrixName);
-
-  /**
-   * Decomposition
-   * 
-   * @return the decomposed result
-   */
-  // public TriangularMatrix decompose(Decomposition technique);
-  /**
-   * Clear object
-   */
-  public void clear();
-
-  /**
-   * Close object
-   */
-  public void close();
-
 }

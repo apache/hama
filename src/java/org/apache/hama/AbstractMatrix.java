@@ -30,7 +30,6 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -38,7 +37,8 @@ import org.apache.log4j.Logger;
 /**
  * Methods of the matrix classes
  */
-public abstract class AbstractMatrix extends AbstractBase implements MatrixInterface {
+public abstract class AbstractMatrix extends AbstractBase implements
+    MatrixInterface {
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
   /** Hbase Configuration */
@@ -77,37 +77,12 @@ public abstract class AbstractMatrix extends AbstractBase implements MatrixInter
    */
   protected void create() {
     try {
-      tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA
-          .toString()));
+      tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA.toString()));
       LOG.info("Initializaing.");
       admin.createTable(tableDesc);
     } catch (IOException e) {
       LOG.error(e, e);
     }
-  }
-
-  /** {@inheritDoc} */
-  public int getRowDimension() {
-    Cell rows = null;
-    try {
-      rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
-
-    return Bytes.toInt(rows.getValue());
-  }
-
-  /** {@inheritDoc} */
-  public int getColumnDimension() {
-    Cell columns = null;
-    try {
-      columns = table.get(Constants.METADATA,
-          Constants.METADATA_COLUMNS);
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
-    return Bytes.toInt(columns.getValue());
   }
 
   /** {@inheritDoc} */
@@ -128,18 +103,19 @@ public abstract class AbstractMatrix extends AbstractBase implements MatrixInter
   }
 
   /** {@inheritDoc} */
-  public RowResult getRowResult(byte[] row) {
+  public Vector getRow(int row) {
     try {
-      return table.getRow(row);
+      return new Vector(row, table.getRow(String.valueOf(row).getBytes()));
     } catch (IOException e) {
       e.printStackTrace();
     }
     return null;
   }
 
-  public RowResult getRowResult(int row) {
+  /** {@inheritDoc} */
+  public Vector getRow(byte[] row) {
     try {
-      return table.getRow(String.valueOf(row).getBytes());
+      return new Vector(bytesToInt(row), table.getRow(row));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -147,9 +123,32 @@ public abstract class AbstractMatrix extends AbstractBase implements MatrixInter
   }
   
   /** {@inheritDoc} */
-  public void set(int i, int j, double d) {
+  public int getRows() {
+    Cell rows = null;
+    try {
+      rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
+    } catch (IOException e) {
+      LOG.error(e, e);
+    }
+
+    return Bytes.toInt(rows.getValue());
+  }
+
+  /** {@inheritDoc} */
+  public int getColumns() {
+    Cell columns = null;
+    try {
+      columns = table.get(Constants.METADATA, Constants.METADATA_COLUMNS);
+    } catch (IOException e) {
+      LOG.error(e, e);
+    }
+    return Bytes.toInt(columns.getValue());
+  }
+
+  /** {@inheritDoc} */
+  public void set(int i, int j, double value) {
     BatchUpdate b = new BatchUpdate(new Text(String.valueOf(i)));
-    b.put(new Text(Constants.COLUMN + String.valueOf(j)), doubleToBytes(d));
+    b.put(new Text(Constants.COLUMN + String.valueOf(j)), doubleToBytes(value));
     try {
       table.commit(b);
     } catch (IOException e) {
@@ -159,21 +158,6 @@ public abstract class AbstractMatrix extends AbstractBase implements MatrixInter
 
   /** {@inheritDoc} */
   public void add(int i, int j, double d) {
-    // TODO Auto-generated method stub
-  }
-
-  /** {@inheritDoc} */
-  public void deleteColumnEquals(int j) {
-    // TODO Auto-generated method stub
-  }
-
-  /** {@inheritDoc} */
-  public void deleteRowEquals(int i) {
-    // TODO Auto-generated method stub
-  }
-
-  /** {@inheritDoc} */
-  public void reset(int m, int n) {
     // TODO Auto-generated method stub
   }
 
@@ -193,48 +177,5 @@ public abstract class AbstractMatrix extends AbstractBase implements MatrixInter
   /** {@inheritDoc} */
   public String getName() {
     return (matrixName != null) ? matrixName.toString() : null;
-  }
-
-  /**
-   * Return the value of determinant
-   * 
-   * @return the value of determinant
-   */
-  public double getDeterminant() {
-    try {
-      return bytesToDouble(table.get(
-          new Text(String.valueOf(Constants.DETERMINANT)),
-          new Text(Constants.COLUMN)).getValue());
-    } catch (IOException e) {
-      LOG.error(e, e);
-      return -1;
-    }
-  }
-
-  /** {@inheritDoc} */
-  public Matrix copy() {
-    // TODO
-    return null;
-  }
-
-  /** {@inheritDoc} */
-  public void save(String matrixName) {
-    // TODO
-  }
-
-  /** {@inheritDoc} */
-  public void close() {
-    admin = null;
-    matrixName = null;
-    tableDesc = null;
-  }
-
-  /** {@inheritDoc} */
-  public void clear() {
-    try {
-      admin.deleteTable(matrixName);
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
   }
 }

@@ -58,7 +58,6 @@ public class TestMatrixMapReduce extends HamaTestCase {
 
   public void miniMRJob() throws IOException {
     Matrix c = new Matrix(conf, new Text("xanadu"));
-    c.close();
 
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");

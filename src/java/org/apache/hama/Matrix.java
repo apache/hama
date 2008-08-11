@@ -55,8 +55,7 @@ public class Matrix extends AbstractMatrix {
 
       if (!admin.tableExists(matrixName)) {
         tableDesc = new HTableDescriptor(matrixName.toString());
-        tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN
-            .toString()));
+        tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN.toString()));
         create();
       }
 
@@ -82,8 +81,7 @@ public class Matrix extends AbstractMatrix {
 
       if (!admin.tableExists(matrixName)) {
         tableDesc = new HTableDescriptor(matrixName.toString());
-        tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN
-            .toString()));
+        tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN.toString()));
         create();
       }
 
@@ -121,91 +119,40 @@ public class Matrix extends AbstractMatrix {
     return rand;
   }
 
-  /**
-   * Generate matrix with identity elements
-   * 
-   * @param conf configuration object
-   * @param m the number of rows.
-   * @param n the number of columns.
-   * @return an m-by-n matrix with ones on the diagonal and zeros elsewhere.
-   */
-  public static Matrix identity(HBaseConfiguration conf, int m, int n) {
-    // TODO
+  public Matrix add(Matrix B) {
+    
+    
+    // TODO Auto-generated method stub
     return null;
   }
 
-  /** {@inheritDoc} */
-  public Matrix multiply(Matrix b) {
-    /*
-     * String output = Constants.RESULT + System.currentTimeMillis(); Matrix c =
-     * new Matrix(config, new Text(output)); JobConf jobConf = new
-     * JobConf(config); jobConf.setJobName("parallel matrix multiplication of " +
-     * getName() + " and " + b.getName());
-     * jobConf.setInputFormat(MatrixInputFormat.class);
-     * jobConf.setOutputFormat(MatrixOutputFormat.class);
-     * MultiplicationMap.initJob(getName(), b.getName(),
-     * MultiplicationMap.class, jobConf); MultiplicationReduce.initJob(output,
-     * MultiplicationReduce.class, jobConf); jobConf.setNumMapTasks(mapper);
-     * jobConf.setNumReduceTasks(reducer); try { JobClient.runJob(jobConf); }
-     * catch (IOException e) { LOG.info(e); } return c;
-     */
+  public Matrix add(double alpha, Matrix B) {
+    // TODO Auto-generated method stub
     return null;
   }
 
-  /** {@inheritDoc} */
-  public Matrix addition(Matrix b) {
-    return additionSubtraction(b, Constants.PLUS);
-  }
-
-  /** {@inheritDoc} */
-  public Matrix subtraction(Matrix b) {
-    return additionSubtraction(b, Constants.PLUS);
-  }
-
-  /**
-   * Method for add or subtract operation
-   * 
-   * @param target
-   * @param operator
-   * @return matrix
-   */
-  public Matrix additionSubtraction(Matrix target, String operator) {
-    /*
-     * String b = target.getName(); String output = Constants.RESULT +
-     * System.currentTimeMillis(); Matrix c = new Matrix(config, new
-     * Text(output)); String jobName = "parallel matrix " + operator + " of " +
-     * getName() + " and " + b; LOG.info(jobName); JobConf jobConf = new
-     * JobConf(config); jobConf.setJobName(jobName);
-     * jobConf.setInputFormat(MatrixInputFormat.class);
-     * jobConf.setOutputFormat(MatrixOutputFormat.class);
-     * AdditionSubtractionMap.initJob(getName(), b, operator,
-     * AdditionSubtractionMap.class, jobConf);
-     * AdditionSubtractionReduce.initJob(output,
-     * AdditionSubtractionReduce.class, jobConf);
-     * jobConf.setNumMapTasks(mapper); jobConf.setNumReduceTasks(reducer); try {
-     * JobClient.runJob(jobConf); } catch (IOException e) { LOG.info(e); }
-     * return c;
-     */
+  public Matrix mult(Matrix B) {
+    // TODO Auto-generated method stub
     return null;
   }
 
-  /** {@inheritDoc} */
-  public double determinant() {
-    /*
-     * JobConf jobConf = new JobConf(config); jobConf.setJobName("matrix
-     * determinant"); String check = Constants.RESULT +
-     * System.currentTimeMillis(); Matrix c = new Matrix(config, new
-     * Text(check)); for (int i = 0; i < getRowDimension(); i++) { c.set(i, 0,
-     * 1.0); } c.setDimension(getRowDimension(), 0);
-     * jobConf.setInputFormat(MatrixInputFormat.class);
-     * jobConf.setOutputFormat(MatrixOutputFormat.class);
-     * DeterminantMap.initJob(getName(), check, DeterminantMap.class, jobConf);
-     * DeterminantReduce.initJob(getName(), DeterminantReduce.class, jobConf);
-     * jobConf.setNumMapTasks(mapper); jobConf.setNumReduceTasks(reducer); try {
-     * JobClient.runJob(jobConf); } catch (IOException e) { LOG.info(e); }
-     * c.clear(); return getDeterminant();
-     */
+  public Matrix multAdd(double alpha, Matrix B, Matrix C) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public double norm(Norm type) {
+    // TODO Auto-generated method stub
     return 0;
   }
 
+  public Matrix set(double alpha, Matrix B) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public Matrix set(Matrix B) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

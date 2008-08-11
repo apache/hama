@@ -21,6 +21,7 @@ package org.apache.hama;
 
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.HbaseMapWritable;
+import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.io.VectorWritable;
 import org.apache.log4j.Logger;
@@ -37,15 +38,11 @@ public class Vector extends VectorWritable implements VectorInterface {
     this.cells = m;
   }
 
-  /**
-   * @param row
-   * @param matrix
-   */
-  public Vector(byte[] row, Matrix matrix) {
-    this.row = row;
-    parse(matrix.getRowResult(this.row).entrySet());
+  public Vector(int row, RowResult rowResult) {
+    this.row = intToBytes(row);
+    parse(rowResult.entrySet());
   }
-
+  
   public void add(int index, double value) {
     // TODO Auto-generated method stub
 
