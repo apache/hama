@@ -2,32 +2,70 @@ package org.apache.hama;
 
 import org.apache.hadoop.hbase.util.Bytes;
 
+/**
+ * Provides a number format conversion
+ */
 public abstract class AbstractBase {
 
-  public int bytesToInt(byte[] b) {
-    return Integer.parseInt(Bytes.toString(b));
-  }
-  
-  public byte[] intToBytes(int d) {
-    return Bytes.toBytes(String.valueOf(d));
-  }
-  
-  public double bytesToDouble(byte[] b) {
-    return Double.parseDouble(Bytes.toString(b));
+  /**
+   * Bytes to integer conversion
+   * 
+   * @param b
+   * @return the converted value
+   */
+  public int bytesToInt(byte[] bytes) {
+    return Integer.parseInt(Bytes.toString(bytes));
   }
 
-  public byte[] doubleToBytes(Double d) {
-    return Bytes.toBytes(d.toString());
+  /**
+   * Integer to bytes conversion
+   * 
+   * @param integer
+   * @return the converted value
+   */
+  public byte[] intToBytes(int integer) {
+    return Bytes.toBytes(String.valueOf(integer));
   }
 
-  public int getColumnIndex(byte[] b) {
-    String cKey = new String(b);
+  /**
+   * Bytes to double conversion
+   * 
+   * @param bytes
+   * @return the converted value
+   */
+  public double bytesToDouble(byte[] bytes) {
+    return Double.parseDouble(Bytes.toString(bytes));
+  }
+
+  /**
+   * Double to bytes conversion
+   * 
+   * @param doubleValue
+   * @return the converted value
+   */
+  public byte[] doubleToBytes(Double doubleValue) {
+    return Bytes.toBytes(doubleValue.toString());
+  }
+
+  /**
+   * Gets the column index
+   * 
+   * @param bytes
+   * @return the converted value
+   */
+  public int getColumnIndex(byte[] bytes) {
+    String cKey = new String(bytes);
     return Integer.parseInt(cKey
         .substring(cKey.indexOf(":") + 1, cKey.length()));
   }
-  
+
+  /**
+   * Gets the column index
+   * 
+   * @param b
+   * @return the converted value
+   */
   public byte[] getColumnIndex(int b) {
     return Bytes.toBytes(Constants.COLUMN + String.valueOf(b));
   }
-  
 }

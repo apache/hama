@@ -22,10 +22,11 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.AbstractBase;
 import org.apache.hama.Vector;
 import org.apache.hama.io.VectorWritable;
 
-public abstract class MatrixInputFormatBase
+public abstract class MatrixInputFormatBase extends AbstractBase
 implements InputFormat<ImmutableBytesWritable, Vector> {
   private final Log LOG = LogFactory.getLog(MatrixInputFormatBase.class);
   private byte [][] inputColumns;

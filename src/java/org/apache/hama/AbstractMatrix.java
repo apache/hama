@@ -69,7 +69,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
    */
   protected void create() {
     try {
-      tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA.toString()));
+      tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA));
       LOG.info("Initializing the matrix storage.");
       admin.createTable(tableDesc);
     } catch (IOException e) {
