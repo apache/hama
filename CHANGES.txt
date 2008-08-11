@@ -13,10 +13,12 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
-    HAMA-27: Replace table.get(Text, Text) to table.get(String, String) (edwardyoon)
+    HAMA-27: Replace table.get(Text, Text) 
+               to table.get(String, String) (edwardyoon)
     HAMA-12: Matrix interface re-arrangement (edwardyoon)
     HAMA-21: Implement get(int index) method (edwardyoon)
-    HAMA-19: Remove vector-norms enum to interface from implementation (edwardyoon)
+    HAMA-19: Remove vector-norms enum to interface 
+               from implementation (edwardyoon)
     HAMA-17: Vector to Writable conversion (edwardyoon)
     HAMA-15: Logo Alignment (edwardyoon) 
     HAMA-10: Refactor the mapred package 
@@ -32,6 +34,7 @@ Trunk (unreleased changes)
 Google Code Trunk 
 
   NEW FEATURES
+  
     Issue-22: Hama project web-site	(Edward J. Yoon)
     Issue-21: Add feature vector (Edward J. Yoon)
     Issue-13: Add setDimension() method to reduce function (Edward J. Yoon) 
@@ -39,6 +42,7 @@ Google Code Trunk
     Issue-1: Hama Initial Code (Edward J. Yoon)
 
   IMPROVEMENTS
+  
     Issue-23: add FindBugs Ant task to build script (Minslovely)
     Issue-17: Logigng full stack (Minslovely)
     Issue-4: Remove Groovy inteface to sandbox (Edward J. Yoon)
