@@ -25,7 +25,6 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.algebra.AdditionMap;
@@ -53,7 +52,7 @@ public class Matrix extends AbstractMatrix {
    * @param conf configuration object
    * @param matrixName the name of the matrix
    */
-  public Matrix(HamaConfiguration conf, Text matrixName) {
+  public Matrix(HamaConfiguration conf, String matrixName) {
     try {
       setConfiguration(conf);
       this.matrixName = matrixName;
@@ -65,7 +64,6 @@ public class Matrix extends AbstractMatrix {
       }
 
       table = new HTable(config, matrixName);
-
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -113,7 +111,7 @@ public class Matrix extends AbstractMatrix {
    * @return an m-by-n matrix with uniformly distributed random elements.
    */
   public static Matrix random(HamaConfiguration conf, int m, int n) {
-    Text name = RandomVariable.randMatrixName();
+    String name = RandomVariable.randMatrixName();
     Matrix rand = new Matrix(conf, name);
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < n; j++) {
@@ -127,7 +125,7 @@ public class Matrix extends AbstractMatrix {
   }
 
   public Matrix add(Matrix B) {
-    Text output = RandomVariable.randMatrixName();
+    String output = RandomVariable.randMatrixName();
     Matrix C = new Matrix(config, output);
 
     JobConf jobConf = new JobConf(config);
@@ -136,9 +134,6 @@ public class Matrix extends AbstractMatrix {
     MatrixMap.initJob(this.getName(), B.getName(), AdditionMap.class,
         ImmutableBytesWritable.class, Vector.class, jobConf);
     MatrixReduce.initJob(C.getName(), AdditionReduce.class, jobConf);
-
-    jobConf.setNumMapTasks(1);
-    jobConf.setNumReduceTasks(1);
 
     try {
       JobClient.runJob(jobConf);

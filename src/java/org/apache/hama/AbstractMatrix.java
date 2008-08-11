@@ -44,7 +44,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
   /** Hbase admin object */
   protected HBaseAdmin admin;
   /** The name of Matrix */
-  protected Text matrixName;
+  protected String matrixName;
   /** Hbase table object */
   protected HTable table;
   /** Matrix attribute description */
