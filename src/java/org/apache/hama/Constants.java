@@ -33,30 +33,9 @@ public class Constants {
   public final static Text METADATA_COLUMNS = new Text("metadata:columns");
   /** The type of the matrix */
   public final static Text METADATA_TYPE = new Text("metadata:type");
-
-  /** plus operator */
-  public final static String PLUS = "+";
-  /** minus operator */
-  public final static String MINUS = "-";
-
   /** Default columnfamily name */
   public final static String COLUMN = "column:";
-  /** The numerator version of the fraction matrix */
-  public final static Text NUMERATOR = new Text("numerator:");
-  /** The denominator version of the fration matrix */
-  public final static Text DENOMINATOR = new Text("denominator:");
-  /** The original version of the fraction matrix */
-  public final static Text ORIGINAL = new Text("original:");
-  /** The lower matrix version of the triangular matrix */
-  public final static Text LOWER = new Text("lower:");
-  /** The upper matrix version of the triangular matrix */
-  public final static Text UPPER = new Text("upper:");
 
-  /** A determinant value record */
-  public final static Text DETERMINANT = new Text("determinant");
-
-  /** Temporary random matices name-head */
+  /** Temporary random matices name prefix */
   public final static String RANDOM = "rand";
-  /** Temporary result matices name-head */
-  public final static String RESULT = "result";
 }

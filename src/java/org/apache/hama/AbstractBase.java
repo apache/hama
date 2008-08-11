@@ -29,4 +29,5 @@ public abstract class AbstractBase {
   public byte[] getColumnIndex(int b) {
     return Bytes.toBytes(Constants.COLUMN + String.valueOf(b));
   }
+  
 }
