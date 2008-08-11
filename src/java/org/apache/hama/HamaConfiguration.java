@@ -14,18 +14,19 @@ public class HamaConfiguration extends HBaseConfiguration {
     super();
     addHbaseResources();
   }
-  
+
   /**
    * Create a clone of passed configuration.
+   * 
    * @param c Configuration to clone.
    */
   public HamaConfiguration(final Configuration c) {
     this();
-    for (Entry<String, String>e: c) {
+    for (Entry<String, String> e : c) {
       set(e.getKey(), e.getValue());
     }
   }
-  
+
   private void addHbaseResources() {
     addResource("hama-site.xml");
   }

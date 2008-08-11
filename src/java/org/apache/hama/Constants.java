@@ -20,20 +20,36 @@
 package org.apache.hama;
 
 /**
- * Some constants used in the hama
+ * Some constants used in the Hama
  */
 public class Constants {
-  /** Meta-columnfamily to store the matrix-info */
+  /** 
+   * Meta-columnFamily to store the matrix-info 
+   */
   public final static String METADATA = "metadata:";
-  /** The number of the matrix rows */
+  
+  /** 
+   * The number of the matrix rows 
+   */
   public final static String METADATA_ROWS = "metadata:rows";
-  /** The number of the matrix columns */
+  
+  /** 
+   * The number of the matrix columns 
+   */
   public final static String METADATA_COLUMNS = "metadata:columns";
-  /** The type of the matrix */
+  
+  /** 
+   * The type of the matrix
+   */
   public final static String METADATA_TYPE = "metadata:type";
-  /** Default columnfamily name */
+  
+  /** 
+   * Default columnFamily name 
+   */
   public final static String COLUMN = "column:";
 
-  /** Temporary random matices name prefix */
+  /** 
+   * Temporary random matrices name prefix 
+   */
   public final static String RANDOM = "rand";
 }
