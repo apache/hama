@@ -19,27 +19,21 @@
  */
 package org.apache.hama.examples;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 
-public class MatrixMultiplication {
+public class MatrixAddition {
 
   public static void main(String[] args) {
-    /*
-    if (args.length < 3) {
-      System.out.println("multiplication <map_num> <row_m> <column_n>");
+    if (args.length < 2) {
+      System.out.println("addition <row_m> <column_n>");
       System.exit(-1);
     }
 
-    int map = Integer.parseInt(args[0]);
-    int row = Integer.parseInt(args[1]);
-    int column = Integer.parseInt(args[2]);
+    int row = Integer.parseInt(args[0]);
+    int column = Integer.parseInt(args[1]);
 
-    Configuration conf = new HBaseConfiguration();
-    
-    conf.setInt("mapred.map.tasks", map);
-    conf.setInt("mapred.reduce.tasks", 1);
+    HamaConfiguration conf = new HamaConfiguration();
 
     Matrix a = Matrix.random(conf, row, column);
     System.out.println("Create the " + row + " * " + column
@@ -49,14 +43,11 @@ public class MatrixMultiplication {
         + " random matrix B.");
 
     long start = System.currentTimeMillis();
-    Matrix c = a.multiply(b);
+    Matrix c = a.add(b);
     long end = System.currentTimeMillis();
-
     System.out.println(executeTime(start, end));
-    a.clear();
-    b.clear();
-    c.clear();
-    */
+
+    System.out.println(c.get(0, 0));
   }
 
   public static String executeTime(long start, long end) {

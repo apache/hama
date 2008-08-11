@@ -2,7 +2,6 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -14,6 +13,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 import org.apache.hama.Vector;
 
@@ -34,7 +34,7 @@ public abstract class MatrixMap<K extends WritableComparable, V extends Writable
     job.setMapperClass(mapper);
     FileInputFormat.addInputPaths(job, matrixA);
 
-    B = new Matrix(new HBaseConfiguration(), new Text(matrixB));
+    B = new Matrix(new HamaConfiguration(), new Text(matrixB));
     job.set(MatrixInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 

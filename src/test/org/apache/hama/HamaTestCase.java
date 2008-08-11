@@ -30,6 +30,7 @@ public class HamaTestCase extends HBaseClusterTestCase {
   protected Matrix matrixA;
   protected Matrix matrixB;
   protected int SIZE = 5;
+  protected HamaConfiguration conf = new HamaConfiguration();
   
   /** constructor */
   public HamaTestCase() {

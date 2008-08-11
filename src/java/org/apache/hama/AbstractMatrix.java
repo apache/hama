@@ -21,8 +21,6 @@ package org.apache.hama;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
@@ -41,8 +39,8 @@ public abstract class AbstractMatrix extends AbstractBase implements
     MatrixInterface {
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
-  /** Hbase Configuration */
-  protected HBaseConfiguration config;
+  /** Hama Configuration */
+  protected HamaConfiguration config;
   /** Hbase admin object */
   protected HBaseAdmin admin;
   /** The name of Matrix */
@@ -61,8 +59,8 @@ public abstract class AbstractMatrix extends AbstractBase implements
    * 
    * @param conf configuration object
    */
-  public void setConfiguration(Configuration conf) {
-    config = (HBaseConfiguration) conf;
+  public void setConfiguration(HamaConfiguration conf) {
+    config = (HamaConfiguration) conf;
     try {
       admin = new HBaseAdmin(config);
     } catch (MasterNotRunningException e) {

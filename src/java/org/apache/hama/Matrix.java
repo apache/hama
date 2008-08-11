@@ -21,12 +21,17 @@ package org.apache.hama;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hama.algebra.AdditionMap;
+import org.apache.hama.algebra.AdditionReduce;
+import org.apache.hama.mapred.MatrixMap;
+import org.apache.hama.mapred.MatrixReduce;
 
 /**
  * A library for mathematical operations on matrices of double.
@@ -38,7 +43,7 @@ public class Matrix extends AbstractMatrix {
    * 
    * @param conf configuration object
    */
-  public Matrix(Configuration conf) {
+  public Matrix(HamaConfiguration conf) {
     setConfiguration(conf);
   }
 
@@ -48,7 +53,7 @@ public class Matrix extends AbstractMatrix {
    * @param conf configuration object
    * @param matrixName the name of the matrix
    */
-  public Matrix(Configuration conf, Text matrixName) {
+  public Matrix(HamaConfiguration conf, Text matrixName) {
     try {
       setConfiguration(conf);
       this.matrixName = matrixName;
@@ -74,7 +79,7 @@ public class Matrix extends AbstractMatrix {
    * @param n the number of columns.
    * @param s fill the matrix with this scalar value.
    */
-  public Matrix(HBaseConfiguration conf, int m, int n, double s) {
+  public Matrix(HamaConfiguration conf, int m, int n, double s) {
     try {
       setConfiguration(conf);
       matrixName = RandomVariable.randMatrixName();
@@ -107,7 +112,7 @@ public class Matrix extends AbstractMatrix {
    * @param n the number of columns.
    * @return an m-by-n matrix with uniformly distributed random elements.
    */
-  public static Matrix random(Configuration conf, int m, int n) {
+  public static Matrix random(HamaConfiguration conf, int m, int n) {
     Matrix rand = new Matrix(conf, RandomVariable.randMatrixName());
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < n; j++) {
@@ -120,10 +125,27 @@ public class Matrix extends AbstractMatrix {
   }
 
   public Matrix add(Matrix B) {
-    
-    
-    // TODO Auto-generated method stub
-    return null;
+    Text output = RandomVariable.randMatrixName();
+    Matrix C = new Matrix(config, output);
+
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("addition MR job");
+
+    MatrixMap.initJob(this.getName(), B.getName(), AdditionMap.class,
+        ImmutableBytesWritable.class, Vector.class, jobConf);
+    MatrixReduce.initJob(C.getName(), AdditionReduce.class, jobConf);
+
+    jobConf.setNumMapTasks(1);
+    jobConf.setNumReduceTasks(1);
+
+    try {
+      JobClient.runJob(jobConf);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
+    return C;
   }
 
   public Matrix add(double alpha, Matrix B) {
