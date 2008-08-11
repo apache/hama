@@ -13,7 +13,7 @@ public interface VectorInterface {
   public int size();
 
   /**
-   * v(index)
+   * Gets the value of index
    * 
    * @param index
    * @return v(index)
@@ -21,7 +21,7 @@ public interface VectorInterface {
   public double get(int index);
 
   /**
-   * v(index) = value
+   * Sets the value of index
    * 
    * @param index
    * @param value
@@ -29,7 +29,7 @@ public interface VectorInterface {
   public void set(int index, double value);
 
   /**
-   * x = v
+   * Sets the vector
    * 
    * @param v
    * @return x = v
@@ -37,7 +37,7 @@ public interface VectorInterface {
   public Vector set(Vector v);
 
   /**
-   * v(index) += value
+   * Adds the value to v(index)
    * 
    * @param index
    * @param value
