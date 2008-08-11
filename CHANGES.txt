@@ -2,6 +2,7 @@ Hama Change Log
 
 Trunk (unreleased changes)
 
+    HAMA-12: Matrix interface re-arrangement (edwardyoon)
     HAMA-21: Implement get(int index) method (edwardyoon)
     HAMA-19: Remove vector-norms enum to interface from implementation (edwardyoon)
     HAMA-17: Vector to Writable conversion (edwardyoon)
