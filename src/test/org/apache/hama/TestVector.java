@@ -20,28 +20,42 @@
 package org.apache.hama;
 
 public class TestVector extends HamaTestCase {
+  final double cosine = 0.6978227007909176;
+  final double norm1 = 12.0;
+  final double norm2 = 6.782329983125268;
+  private double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
 
   /**
-   * Test cosine similarity
+   * Test vector
    */
-  public void testCosine() {
-    final double result = 0.6978227007909176;
+  public void testGetVector() {
     Matrix m1 = new Matrix(conf, "dotTest");
 
-    m1.set(0, 0, 2);
-    m1.set(0, 1, 5);
-    m1.set(0, 2, 1);
-    m1.set(0, 3, 4);
-
-    m1.set(1, 0, 4);
-    m1.set(1, 1, 1);
-    m1.set(1, 2, 3);
-    m1.set(1, 3, 3);
+    for (int i = 0; i < 2; i++) {
+      for (int j = 0; j < 4; j++) {
+        m1.set(i, j, values[i][j]);
+      }
+    }
 
     Vector v1 = m1.getRow(0);
     Vector v2 = m1.getRow(1);
 
-    double cos = v1.dot(v2);
-    assertEquals(cos, result);
+    dotTest(v1, v2);
+    norm1Test(v1, v2);
+    norm2Test(v1, v2);
   }
+
+  public void dotTest(Vector v1, Vector v2) {
+    double cos = v1.dot(v2);
+    assertEquals(cos, cosine);
+  }
+
+  public void norm1Test(Vector v1, Vector v2) {
+    assertEquals(norm1, v1.getNorm1());
+  }
+
+  public void norm2Test(Vector v1, Vector v2) {
+    assertEquals(norm2, v1.getNorm2());
+  }
+
 }

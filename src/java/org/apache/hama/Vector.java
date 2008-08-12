@@ -19,6 +19,10 @@
  */
 package org.apache.hama;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.io.RowResult;
@@ -39,10 +43,13 @@ public class Vector extends VectorWritable implements VectorInterface {
   }
 
   public Vector(int row, RowResult rowResult) {
+    this.cells = new HbaseMapWritable<byte[], Cell>();
     this.row = intToBytes(row);
-    parse(rowResult.entrySet());
+    for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
+      this.cells.put(f.getKey(), f.getValue());
+    }
   }
-  
+
   public void add(int index, double value) {
     // TODO Auto-generated method stub
 
@@ -56,7 +63,7 @@ public class Vector extends VectorWritable implements VectorInterface {
   public Vector add(Vector v2) {
     HbaseMapWritable<byte[], Cell> trunk = new HbaseMapWritable<byte[], Cell>();
     for (int i = 0; i < this.size(); i++) {
-      double value = (this.getValueAt(i) + v2.getValueAt(i));
+      double value = (this.get(i) + v2.get(i));
       Cell cValue = new Cell(String.valueOf(value), 0);
       trunk.put(Bytes.toBytes("column:" + i), cValue);
     }
@@ -66,12 +73,10 @@ public class Vector extends VectorWritable implements VectorInterface {
 
   public double dot(Vector v) {
     double cosine = 0.0;
-    int dim;
     double q_i, d_i;
     for (int i = 0; i < Math.min(this.size(), v.size()); i++) {
-      dim = v.getDimAt(i);
-      q_i = v.getValueAt(dim);
-      d_i = this.getValueAt(dim);
+      q_i = v.get(i);
+      d_i = this.get(i);
       cosine += q_i * d_i;
     }
     return cosine / (this.getNorm2() * v.getNorm2());
@@ -104,17 +109,28 @@ public class Vector extends VectorWritable implements VectorInterface {
 
   public double getNorm1() {
     double sum = 0.0;
-    for (int i = 0; i < m_vals.length; i++) {
-      sum += m_vals[i];
+
+    Set<byte[]> keySet = cells.keySet();
+    Iterator<byte[]> it = keySet.iterator();
+
+    while (it.hasNext()) {
+      sum += bytesToDouble(get(it.next()).getValue());
     }
+
     return sum;
   }
 
   public double getNorm2() {
     double square_sum = 0.0;
-    for (int i = 0; i < m_vals.length; i++) {
-      square_sum += (m_vals[i] * m_vals[i]);
+
+    Set<byte[]> keySet = cells.keySet();
+    Iterator<byte[]> it = keySet.iterator();
+
+    while (it.hasNext()) {
+      double value = bytesToDouble(get(it.next()).getValue());
+      square_sum += value * value;
     }
+
     return Math.sqrt(square_sum);
   }
 
@@ -126,13 +142,5 @@ public class Vector extends VectorWritable implements VectorInterface {
   public double getNormInf() {
     // TODO Auto-generated method stub
     return 0;
-  }
-
-  public int getDimAt(int index) {
-    return m_dims[index];
-  }
-
-  public double getValueAt(int index) {
-    return m_vals[index];
   }
 }

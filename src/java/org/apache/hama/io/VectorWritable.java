@@ -8,8 +8,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.hadoop.hbase.HConstants;
@@ -27,29 +25,6 @@ public class VectorWritable extends AbstractBase implements Writable,
   static final Logger LOG = Logger.getLogger(VectorWritable.class);
   public byte[] row;
   public HbaseMapWritable<byte[], Cell> cells;
-  public int[] m_dims;
-  public double[] m_vals;
-
-  public void parse(Set<Entry<byte[], Cell>> entrySet) {
-    this.cells = new HbaseMapWritable<byte[], Cell>();
-    
-    SortedMap<Integer, Double> m = new TreeMap<Integer, Double>();
-    for (Map.Entry<byte[], Cell> f : entrySet) {
-      m.put(getColumnIndex(f.getKey()), Double.parseDouble(Bytes.toString(f
-          .getValue().getValue())));
-      this.cells.put(f.getKey(), f.getValue());
-    }
-
-    this.m_dims = new int[m.keySet().size()];
-    this.m_vals = new double[m.keySet().size()];
-
-    int i = 0;
-    for (Map.Entry<Integer, Double> f : m.entrySet()) {
-      this.m_dims[i] = f.getKey();
-      this.m_vals[i] = f.getValue();
-      i++;
-    }
-  }
 
   public Cell put(@SuppressWarnings("unused")
   byte[] key, @SuppressWarnings("unused")
@@ -106,7 +81,6 @@ public class VectorWritable extends AbstractBase implements Writable,
   public void readFields(final DataInput in) throws IOException {
     this.row = Bytes.readByteArray(in);
     this.cells.readFields(in);
-    parse(this.cells.entrySet());
   }
 
   public void write(final DataOutput out) throws IOException {
@@ -138,9 +112,15 @@ public class VectorWritable extends AbstractBase implements Writable,
     return get(Bytes.toBytes(key));
   }
 
+  /**
+   * Get the double value without timestamp
+   */
+  public double get(int key) {
+    return bytesToDouble(get(intToBytes(key)).getValue());
+  }
+
   public int size() {
-    // return this.cells.size();
-    return m_dims.length;
+    return this.cells.size();
   }
 
   @Override
