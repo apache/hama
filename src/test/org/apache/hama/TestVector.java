@@ -43,6 +43,7 @@ public class TestVector extends HamaTestCase {
     dotTest(v1, v2);
     norm1Test(v1, v2);
     norm2Test(v1, v2);
+    scalingTest(v2);
   }
 
   public void dotTest(Vector v1, Vector v2) {
@@ -58,4 +59,11 @@ public class TestVector extends HamaTestCase {
     assertEquals(norm2, v1.getNorm2());
   }
 
+  private void scalingTest(Vector v2) {
+    v2.scale(0.5);
+    
+    for (int i = 0; i < v2.size(); i++) {
+      assertEquals(values[1][i] * 0.5, v2.get(i));
+    }
+  }
 }

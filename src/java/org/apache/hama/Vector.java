@@ -64,7 +64,7 @@ public class Vector extends VectorWritable implements VectorInterface {
     HbaseMapWritable<byte[], Cell> trunk = new HbaseMapWritable<byte[], Cell>();
     for (int i = 0; i < this.size(); i++) {
       double value = (this.get(i) + v2.get(i));
-      Cell cValue = new Cell(String.valueOf(value), 0);
+      Cell cValue = new Cell(String.valueOf(value), System.currentTimeMillis());
       trunk.put(Bytes.toBytes("column:" + i), cValue);
     }
 
@@ -80,6 +80,21 @@ public class Vector extends VectorWritable implements VectorInterface {
       cosine += q_i * d_i;
     }
     return cosine / (this.getNorm2() * v.getNorm2());
+  }
+
+  public Vector scale(double alpha) {
+    Set<byte[]> keySet = cells.keySet();
+    Iterator<byte[]> it = keySet.iterator();
+
+    while (it.hasNext()) {
+      byte[] key = it.next();
+      double oValue = bytesToDouble(get(key).getValue());
+      double nValue = oValue * alpha;
+      Cell cValue = new Cell(String.valueOf(nValue), System.currentTimeMillis());
+      cells.put(key, cValue);
+    }
+
+    return this;
   }
 
   public double get(int index) {
