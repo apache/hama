@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
 
+    HAMA-29: Replace Matrix(Conf, Text) to Matrix(Conf, String) (edwardyoon)
     HAMA-25: Add matrix addition example (edwardyoon)
     HAMA-23: Add Hama configuration files (edwardyoon)
     HAMA-6: Add a 'who we are' page (edwardyoon)
