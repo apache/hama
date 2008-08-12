@@ -3,7 +3,8 @@ Hama Change Log
 Trunk (unreleased changes)
 
   NEW FEATURES
-
+    
+    HAMA-31: Refactor VectorWritable (edwardyoon)
     HAMA-29: Replace Matrix(Conf, Text) to Matrix(Conf, String) (edwardyoon)
     HAMA-25: Add matrix addition example (edwardyoon)
     HAMA-23: Add Hama configuration files (edwardyoon)
