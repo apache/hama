@@ -4,8 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
-    HAMA-31: Refactor VectorWritable (edwardyoon)
-    HAMA-29: Replace Matrix(Conf, Text) to Matrix(Conf, String) (edwardyoon)
+    HAMA-30: Add scaling method to Vector (edwardyoon)
     HAMA-25: Add matrix addition example (edwardyoon)
     HAMA-23: Add Hama configuration files (edwardyoon)
     HAMA-6: Add a 'who we are' page (edwardyoon)
@@ -15,6 +14,8 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
+    HAMA-31: Refactor VectorWritable (edwardyoon)
+    HAMA-29: Replace Matrix(Conf, Text) to Matrix(Conf, String) (edwardyoon)
     HAMA-27: Replace table.get(Text, Text) 
                to table.get(String, String) (edwardyoon)
     HAMA-12: Matrix interface re-arrangement (edwardyoon)
