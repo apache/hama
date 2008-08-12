@@ -16,6 +16,7 @@ public class AdditionMap extends MatrixMap<ImmutableBytesWritable, Vector> {
     
     Vector v1 = B.getRow(key.get());
     output.collect(key, v1.add(value));
+    
   }
 
 }
