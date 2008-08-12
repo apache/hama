@@ -10,7 +10,7 @@ public abstract class AbstractBase {
   /**
    * Bytes to integer conversion
    * 
-   * @param b
+   * @param bytes
    * @return the converted value
    */
   public int bytesToInt(byte[] bytes) {
@@ -62,10 +62,10 @@ public abstract class AbstractBase {
   /**
    * Gets the column index
    * 
-   * @param b
+   * @param integer
    * @return the converted value
    */
-  public byte[] getColumnIndex(int b) {
-    return Bytes.toBytes(Constants.COLUMN + String.valueOf(b));
+  public byte[] getColumnIndex(int integer) {
+    return Bytes.toBytes(Constants.COLUMN + String.valueOf(integer));
   }
 }

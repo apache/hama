@@ -104,7 +104,6 @@ public abstract class AbstractMatrix extends AbstractBase implements
     return null;
   }
 
-  /** {@inheritDoc} */
   public Vector getRow(byte[] row) {
     try {
       return new Vector(bytesToInt(row), table.getRow(row));

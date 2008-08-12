@@ -51,7 +51,7 @@ public interface VectorInterface {
    * @param v
    * @return x = alpha*v + x
    */
-  public boolean add(double alpha, Vector v);
+  public Vector add(double alpha, Vector v);
 
   /**
    * x = v + x

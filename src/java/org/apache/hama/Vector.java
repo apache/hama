@@ -48,9 +48,9 @@ public class Vector extends VectorWritable implements VectorInterface {
 
   }
 
-  public boolean add(double alpha, Vector v) {
+  public Vector add(double alpha, Vector v) {
     // TODO Auto-generated method stub
-    return false;
+    return null;
   }
 
   public Vector add(Vector v2) {
