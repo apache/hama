@@ -58,9 +58,9 @@ public abstract class AbstractMatrix extends AbstractBase implements
   public void setConfiguration(HamaConfiguration conf) {
     config = (HamaConfiguration) conf;
     try {
-      admin = new HBaseAdmin(config);
+        admin = new HBaseAdmin(config);
     } catch (MasterNotRunningException e) {
-      LOG.info(e);
+      LOG.error(e, e);
     }
   }
 

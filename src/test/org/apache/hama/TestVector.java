@@ -19,8 +19,6 @@
  */
 package org.apache.hama;
 
-import org.apache.hadoop.io.Text;
-
 public class TestVector extends HamaTestCase {
 
   /**
@@ -28,7 +26,7 @@ public class TestVector extends HamaTestCase {
    */
   public void testCosine() {
     final double result = 0.6978227007909176;
-    Matrix m1 = new Matrix(conf, new Text("cosine"));
+    Matrix m1 = new Matrix(conf, "dotTest");
 
     m1.set(0, 0, 2);
     m1.set(0, 1, 5);
@@ -39,9 +37,6 @@ public class TestVector extends HamaTestCase {
     m1.set(1, 1, 1);
     m1.set(1, 2, 3);
     m1.set(1, 3, 3);
-
-    LOG.info("get test : " + m1.get(0, 0));
-    LOG.info("get test : " + m1.get(0, 1));
 
     Vector v1 = m1.getRow(0);
     Vector v2 = m1.getRow(1);

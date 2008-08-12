@@ -27,8 +27,6 @@ import org.apache.log4j.Logger;
  */
 public class HamaTestCase extends HBaseClusterTestCase {
   static final Logger LOG = Logger.getLogger(HamaTestCase.class);
-  protected Matrix matrixA;
-  protected Matrix matrixB;
   protected int SIZE = 5;
   protected HamaConfiguration conf = new HamaConfiguration();
   

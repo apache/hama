@@ -22,7 +22,6 @@ package org.apache.hama.mapred;
 import java.io.IOException;
 
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.HamaTestCase;
@@ -37,6 +36,9 @@ import org.apache.log4j.Logger;
  */
 public class TestMatrixMapReduce extends HamaTestCase {
   static final Logger LOG = Logger.getLogger(TestMatrixMapReduce.class);
+  private String A = "matrixA";
+  private String B = "matrixB";
+  private String output = "output";
 
   /** constructor */
   public TestMatrixMapReduce() {
@@ -44,27 +46,26 @@ public class TestMatrixMapReduce extends HamaTestCase {
   }
 
   public void testMatrixMapReduce() throws IOException {
-    matrixA = new Matrix(conf, new Text("MatrixA"));
+    Matrix matrixA = new Matrix(conf, A);
     matrixA.set(0, 0, 1);
     matrixA.set(0, 1, 0);
-    
 
-    matrixA = new Matrix(conf, new Text("MatrixB"));
-    matrixA.set(0, 0, 1);
-    matrixA.set(0, 1, 1);
-    
+    Matrix matrixB = new Matrix(conf, B);
+    matrixB.set(0, 0, 1);
+    matrixB.set(0, 1, 1);
+
     miniMRJob();
   }
 
   public void miniMRJob() throws IOException {
-    Matrix c = new Matrix(conf, new Text("xanadu"));
+    Matrix c = new Matrix(conf, output);
 
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    MatrixMap.initJob("MatrixA", "MatrixB", AdditionMap.class,
-        ImmutableBytesWritable.class, Vector.class, jobConf);
-    MatrixReduce.initJob("xanadu", AdditionReduce.class, jobConf);
+    MatrixMap.initJob(A, B, AdditionMap.class, ImmutableBytesWritable.class,
+        Vector.class, jobConf);
+    MatrixReduce.initJob(output, AdditionReduce.class, jobConf);
 
     jobConf.setNumMapTasks(1);
     jobConf.setNumReduceTasks(1);
