@@ -40,21 +40,24 @@ public class MatrixAddition {
 
     Matrix c = a.add(b);
 
-    System.out.println("Matrix A");
+    System.out.println("\nMatrix A");
+    System.out.println("----------------------");
     for(int i =  0; i < row; i++) {
       for(int j =  0; j < row; j++) {
         System.out.println(a.get(i, j));
       }
     }
     
-    System.out.println("Matrix B");
+    System.out.println("\nMatrix B");
+    System.out.println("----------------------");
     for(int i =  0; i < row; i++) {
       for(int j =  0; j < row; j++) {
         System.out.println(b.get(i, j));
       }
     }
     
-    System.out.println("Matrix C");
+    System.out.println("\nC = A + B");
+    System.out.println("----------------------");
     for(int i =  0; i < row; i++) {
       for(int j =  0; j < row; j++) {
         System.out.println(c.get(i, j));
