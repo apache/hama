@@ -50,6 +50,17 @@ public class Vector extends VectorWritable implements VectorInterface {
     }
   }
 
+  /**
+   * Get the row for this Vector
+   */
+  public byte [] getRow() {
+    return row;
+  }
+  
+  public HbaseMapWritable<byte[], Cell> getCells() {
+    return cells;
+  }
+  
   public void add(int index, double value) {
     // TODO Auto-generated method stub
 
@@ -98,7 +109,7 @@ public class Vector extends VectorWritable implements VectorInterface {
   }
 
   public double get(int index) {
-    return bytesToDouble(this.cells.get(getColumnIndex(index)).getValue());
+    return bytesToDouble(cells.get(getColumnIndex(index)).getValue());
   }
 
   public double norm(Norm type) {
@@ -113,13 +124,12 @@ public class Vector extends VectorWritable implements VectorInterface {
   }
 
   public void set(int index, double value) {
-    // TODO Auto-generated method stub
-
+    Cell cValue = new Cell(String.valueOf(value), System.currentTimeMillis());
+    cells.put(getColumnIndex(index), cValue);
   }
 
   public Vector set(Vector v) {
-    // TODO Auto-generated method stub
-    return null;
+    return new Vector(v.getRow(), v.getCells());
   }
 
   public double getNorm1() {

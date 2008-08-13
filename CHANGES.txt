@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    HAMA-33: Add set() method (edwardyoon)
     HAMA-30: Add scaling method to Vector (edwardyoon)
     HAMA-25: Add matrix addition example (edwardyoon)
     HAMA-23: Add Hama configuration files (edwardyoon)
