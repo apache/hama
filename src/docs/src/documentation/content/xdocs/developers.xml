@@ -45,7 +45,8 @@
     The following sections show how to set up the code style for Hama in Eclipse. 
     It is strongly preferred that patches use this style before they are supplied.
     <br /><br />
-    <a href="hama-eclipse-formatter.xml">Download hama-eclipse-formatter.xml</a>.
+    <a href="http://incubator.apache.org/hama/hama-eclipse-formatter.xml">
+    Download hama-eclipse-formatter.xml</a>.
     <br /><br />
     After this, select Window > Preferences, and open up the configuration for 
     Java > Code Style > Code Formatter. Click on the button labeled Import... 
