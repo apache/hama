@@ -102,7 +102,7 @@ public interface MatrixInterface {
    * A = B + A
    * 
    * @param B
-   * @return
+   * @return A
    */
   public Matrix add(Matrix B);
 
