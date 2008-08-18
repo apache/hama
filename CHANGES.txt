@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    HAMA-36: Add svn information to website (edward yoon)
     HAMA-33: Add set() method (edwardyoon)
     HAMA-30: Add scaling method to Vector (edwardyoon)
     HAMA-25: Add matrix addition example (edwardyoon)
@@ -15,6 +16,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
+    HAMA-20: Adding license header to a whole code base
     HAMA-31: Refactor VectorWritable (edwardyoon)
     HAMA-29: Replace Matrix(Conf, Text) to Matrix(Conf, String) (edwardyoon)
     HAMA-27: Replace table.get(Text, Text) 
