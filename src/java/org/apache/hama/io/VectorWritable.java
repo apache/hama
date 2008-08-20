@@ -39,24 +39,22 @@ import org.apache.hama.AbstractBase;
 import org.apache.hama.Vector;
 import org.apache.log4j.Logger;
 
-public class VectorWritable extends AbstractBase implements Writable,
-    Map<byte[], Cell> {
-  static final Logger LOG = Logger.getLogger(VectorWritable.class);
+public class VectorWritable extends AbstractBase implements Writable, Map<byte[], Cell> {
+
+  private static final Logger LOG = Logger.getLogger(VectorWritable.class);
+
   public byte[] row;
   public HbaseMapWritable<byte[], Cell> cells;
 
-  public Cell put(@SuppressWarnings("unused")
-  byte[] key, @SuppressWarnings("unused")
-  Cell value) {
+  public Cell put(byte[] key, Cell value) {
     throw new UnsupportedOperationException("VectorDatum is read-only!");
   }
 
   public Cell get(Object key) {
-    return (Cell) this.cells.get(key);
+    return this.cells.get(key);
   }
 
-  public Cell remove(@SuppressWarnings("unused")
-  Object key) {
+  public Cell remove(Object key) {
     throw new UnsupportedOperationException("VectorDatum is read-only!");
   }
 
@@ -64,8 +62,7 @@ public class VectorWritable extends AbstractBase implements Writable,
     return cells.containsKey(key);
   }
 
-  public boolean containsValue(@SuppressWarnings("unused")
-  Object value) {
+  public boolean containsValue(Object value) {
     throw new UnsupportedOperationException("Don't support containsValue!");
   }
 
@@ -108,13 +105,11 @@ public class VectorWritable extends AbstractBase implements Writable,
   }
 
   public VectorWritable addition(byte[] bs, Vector v2) {
-    // TODO Auto-generated method stub
-    return null;
+    throw new UnsupportedOperationException("Not implemented yet");
   }
 
   public void putAll(Map<? extends byte[], ? extends Cell> m) {
-    // TODO Auto-generated method stub
-
+    throw new UnsupportedOperationException("Not implemented yet");
   }
 
   /**
@@ -177,9 +172,12 @@ public class VectorWritable extends AbstractBase implements Writable,
   }
 
   /**
-   * Row entry.
-   */
+   *
+   * The inner class for an entry of row.
+   *
+   **/
   public class Entries implements Map.Entry<byte[], Cell> {
+
     private final byte[] column;
     private final Cell cell;
 
@@ -188,8 +186,7 @@ public class VectorWritable extends AbstractBase implements Writable,
       this.cell = cell;
     }
 
-    public Cell setValue(@SuppressWarnings("unused")
-    Cell c) {
+    public Cell setValue(Cell c) {
       throw new UnsupportedOperationException("VectorDatum is read-only!");
     }
 
@@ -200,5 +197,7 @@ public class VectorWritable extends AbstractBase implements Writable,
     public Cell getValue() {
       return cell;
     }
+
   }
+
 }
