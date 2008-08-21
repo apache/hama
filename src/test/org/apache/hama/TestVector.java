@@ -46,6 +46,12 @@ public class TestVector extends HamaTestCase {
     scalingTest(v2);
   }
 
+  /**
+   * Test |a| dot |b|
+   * 
+   * @param v1
+   * @param v2
+   */
   private void dotTest(Vector v1, Vector v2) {
     double cos = v1.dot(v2);
     assertEquals(cos, cosine);

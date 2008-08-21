@@ -37,11 +37,9 @@ import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.AbstractBase;
 import org.apache.hama.Vector;
-import org.apache.log4j.Logger;
 
-public class VectorWritable extends AbstractBase implements Writable, Map<byte[], Cell> {
-
-  private static final Logger LOG = Logger.getLogger(VectorWritable.class);
+public class VectorWritable extends AbstractBase implements Writable,
+    Map<byte[], Cell> {
 
   public byte[] row;
   public HbaseMapWritable<byte[], Cell> cells;
@@ -172,10 +170,10 @@ public class VectorWritable extends AbstractBase implements Writable, Map<byte[]
   }
 
   /**
-   *
+   * 
    * The inner class for an entry of row.
-   *
-   **/
+   * 
+   */
   public class Entries implements Map.Entry<byte[], Cell> {
 
     private final byte[] column;
