@@ -35,11 +35,10 @@ import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.AbstractBase;
 import org.apache.hama.Vector;
+import org.apache.hama.util.Numeric;
 
-public class VectorWritable extends AbstractBase implements Writable,
-    Map<byte[], Cell> {
+public class VectorWritable implements Writable, Map<byte[], Cell> {
 
   public byte[] row;
   public HbaseMapWritable<byte[], Cell> cells;
@@ -128,7 +127,7 @@ public class VectorWritable extends AbstractBase implements Writable,
    * Get the double value without timestamp
    */
   public double get(int key) {
-    return bytesToDouble(get(intToBytes(key)).getValue());
+    return Numeric.bytesToDouble(get(Numeric.intToBytes(key)).getValue());
   }
 
   public int size() {

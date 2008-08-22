@@ -22,14 +22,13 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.AbstractBase;
 import org.apache.hama.Vector;
 import org.apache.hama.io.VectorWritable;
 
-public abstract class MatrixInputFormatBase extends AbstractBase
-implements InputFormat<ImmutableBytesWritable, Vector> {
+public abstract class MatrixInputFormatBase implements
+    InputFormat<ImmutableBytesWritable, Vector> {
   private final Log LOG = LogFactory.getLog(MatrixInputFormatBase.class);
-  private byte [][] inputColumns;
+  private byte[][] inputColumns;
   private HTable table;
   private TableRecordReader tableRecordReader;
   private RowFilterInterface rowFilter;
@@ -37,37 +36,36 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
   /**
    * Iterate over an HBase table data, return (Text, VectorResult) pairs
    */
-  protected class TableRecordReader
-  implements RecordReader<ImmutableBytesWritable, Vector> {
-    private byte [] startRow;
-    private byte [] endRow;
+  protected class TableRecordReader implements
+      RecordReader<ImmutableBytesWritable, Vector> {
+    private byte[] startRow;
+    private byte[] endRow;
     private RowFilterInterface trrRowFilter;
     private Scanner scanner;
     private HTable htable;
-    private byte [][] trrInputColumns;
+    private byte[][] trrInputColumns;
 
     /**
      * Build the scanner. Not done in constructor to allow for extension.
-     *
+     * 
      * @throws IOException
      */
     public void init() throws IOException {
       if ((endRow != null) && (endRow.length > 0)) {
         if (trrRowFilter != null) {
-          final Set<RowFilterInterface> rowFiltersSet =
-            new HashSet<RowFilterInterface>();
+          final Set<RowFilterInterface> rowFiltersSet = new HashSet<RowFilterInterface>();
           rowFiltersSet.add(new StopRowFilter(endRow));
           rowFiltersSet.add(trrRowFilter);
           this.scanner = this.htable.getScanner(trrInputColumns, startRow,
-            new RowFilterSet(RowFilterSet.Operator.MUST_PASS_ALL,
-              rowFiltersSet));
+              new RowFilterSet(RowFilterSet.Operator.MUST_PASS_ALL,
+                  rowFiltersSet));
         } else {
-          this.scanner =
-            this.htable.getScanner(trrInputColumns, startRow, endRow);
+          this.scanner = this.htable.getScanner(trrInputColumns, startRow,
+              endRow);
         }
       } else {
-        this.scanner =
-          this.htable.getScanner(trrInputColumns, startRow, trrRowFilter);
+        this.scanner = this.htable.getScanner(trrInputColumns, startRow,
+            trrRowFilter);
       }
     }
 
@@ -81,22 +79,22 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
     /**
      * @param inputColumns the columns to be placed in {@link VectorWritable}.
      */
-    public void setInputColumns(final byte [][] inputColumns) {
+    public void setInputColumns(final byte[][] inputColumns) {
       this.trrInputColumns = inputColumns;
     }
 
     /**
      * @param startRow the first row in the split
      */
-    public void setStartRow(final byte [] startRow) {
+    public void setStartRow(final byte[] startRow) {
       this.startRow = startRow;
     }
 
     /**
-     *
+     * 
      * @param endRow the last row in the split
      */
-    public void setEndRow(final byte [] endRow) {
+    public void setEndRow(final byte[] endRow) {
       this.endRow = endRow;
     }
 
@@ -114,7 +112,7 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
 
     /**
      * @return ImmutableBytesWritable
-     *
+     * 
      * @see org.apache.hadoop.mapred.RecordReader#createKey()
      */
     public ImmutableBytesWritable createKey() {
@@ -123,7 +121,7 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
 
     /**
      * @return VectorResult
-     *
+     * 
      * @see org.apache.hadoop.mapred.RecordReader#createValue()
      */
     public Vector createValue() {
@@ -146,15 +144,15 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
     /**
      * @param key HStoreKey as input key.
      * @param value MapWritable as input value
-     *
-     * Converts Scanner.next() to Text, VectorResult
-     *
+     * 
+     *          Converts Scanner.next() to Text, VectorResult
+     * 
      * @return true if there was more data
      * @throws IOException
      */
     @SuppressWarnings("unchecked")
     public boolean next(ImmutableBytesWritable key, Vector value)
-    throws IOException {
+        throws IOException {
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
       if (hasMore) {
@@ -166,17 +164,15 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
   }
 
   /**
-   * Builds a TableRecordReader. If no TableRecordReader was provided, uses
-   * the default.
-   *
+   * Builds a TableRecordReader. If no TableRecordReader was provided, uses the
+   * default.
+   * 
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<ImmutableBytesWritable, Vector> getRecordReader(InputSplit split,
-      @SuppressWarnings("unused")
-      JobConf job, @SuppressWarnings("unused")
-      Reporter reporter)
-  throws IOException {
+  public RecordReader<ImmutableBytesWritable, Vector> getRecordReader(
+      InputSplit split, @SuppressWarnings("unused") JobConf job,
+      @SuppressWarnings("unused") Reporter reporter) throws IOException {
     TableSplit tSplit = (TableSplit) split;
     TableRecordReader trr = this.tableRecordReader;
     // if no table record reader was provided use default
@@ -201,16 +197,17 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
    * multiple {@link HRegion}s and are grouped the most evenly possible. In the
    * case splits are uneven the bigger splits are placed first in the
    * {@link InputSplit} array.
-   *
+   * 
    * @param job the map task {@link JobConf}
    * @param numSplits a hint to calculate the number of splits
-   *
+   * 
    * @return the input splits
-   *
-   * @see org.apache.hadoop.mapred.InputFormat#getSplits(org.apache.hadoop.mapred.JobConf, int)
+   * 
+   * @see org.apache.hadoop.mapred.InputFormat#getSplits(org.apache.hadoop.mapred.JobConf,
+   *      int)
    */
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-    byte [][] startKeys = this.table.getStartKeys();
+    byte[][] startKeys = this.table.getStartKeys();
     if (startKeys == null || startKeys.length == 0) {
       throw new IOException("Expecting at least one region");
     }
@@ -243,13 +240,13 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
   /**
    * @param inputColumns to be passed in {@link VectorWritable} to the map task.
    */
-  protected void setInputColums(byte [][] inputColumns) {
+  protected void setInputColums(byte[][] inputColumns) {
     this.inputColumns = inputColumns;
   }
 
   /**
    * Allows subclasses to set the {@link HTable}.
-   *
+   * 
    * @param table to get the data from
    */
   protected void setHTable(HTable table) {
@@ -258,9 +255,9 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
 
   /**
    * Allows subclasses to set the {@link TableRecordReader}.
-   *
-   * @param tableRecordReader
-   *                to provide other {@link TableRecordReader} implementations.
+   * 
+   * @param tableRecordReader to provide other {@link TableRecordReader}
+   *          implementations.
    */
   protected void setTableRecordReader(TableRecordReader tableRecordReader) {
     this.tableRecordReader = tableRecordReader;
@@ -268,7 +265,7 @@ implements InputFormat<ImmutableBytesWritable, Vector> {
 
   /**
    * Allows subclasses to set the {@link RowFilterInterface} to be used.
-   *
+   * 
    * @param rowFilter
    */
   protected void setRowFilter(RowFilterInterface rowFilter) {

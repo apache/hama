@@ -28,6 +28,7 @@ import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.io.VectorWritable;
+import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
 public class Vector extends VectorWritable implements VectorInterface {
@@ -44,7 +45,7 @@ public class Vector extends VectorWritable implements VectorInterface {
 
   public Vector(int row, RowResult rowResult) {
     this.cells = new HbaseMapWritable<byte[], Cell>();
-    this.row = intToBytes(row);
+    this.row = Numeric.intToBytes(row);
     for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
       this.cells.put(f.getKey(), f.getValue());
     }
@@ -53,14 +54,14 @@ public class Vector extends VectorWritable implements VectorInterface {
   /**
    * Get the row for this Vector
    */
-  public byte [] getRow() {
+  public byte[] getRow() {
     return row;
   }
-  
+
   public HbaseMapWritable<byte[], Cell> getCells() {
     return cells;
   }
-  
+
   public void add(int index, double value) {
     // TODO Auto-generated method stub
 
@@ -99,7 +100,7 @@ public class Vector extends VectorWritable implements VectorInterface {
 
     while (it.hasNext()) {
       byte[] key = it.next();
-      double oValue = bytesToDouble(get(key).getValue());
+      double oValue = Numeric.bytesToDouble(get(key).getValue());
       double nValue = oValue * alpha;
       Cell cValue = new Cell(String.valueOf(nValue), System.currentTimeMillis());
       cells.put(key, cValue);
@@ -109,7 +110,8 @@ public class Vector extends VectorWritable implements VectorInterface {
   }
 
   public double get(int index) {
-    return bytesToDouble(cells.get(getColumnIndex(index)).getValue());
+    return Numeric.bytesToDouble(cells.get(Numeric.getColumnIndex(index))
+        .getValue());
   }
 
   public double norm(Norm type) {
@@ -125,7 +127,7 @@ public class Vector extends VectorWritable implements VectorInterface {
 
   public void set(int index, double value) {
     Cell cValue = new Cell(String.valueOf(value), System.currentTimeMillis());
-    cells.put(getColumnIndex(index), cValue);
+    cells.put(Numeric.getColumnIndex(index), cValue);
   }
 
   public Vector set(Vector v) {
@@ -139,7 +141,7 @@ public class Vector extends VectorWritable implements VectorInterface {
     Iterator<byte[]> it = keySet.iterator();
 
     while (it.hasNext()) {
-      sum += bytesToDouble(get(it.next()).getValue());
+      sum += Numeric.bytesToDouble(get(it.next()).getValue());
     }
 
     return sum;
@@ -152,7 +154,7 @@ public class Vector extends VectorWritable implements VectorInterface {
     Iterator<byte[]> it = keySet.iterator();
 
     while (it.hasNext()) {
-      double value = bytesToDouble(get(it.next()).getValue());
+      double value = Numeric.bytesToDouble(get(it.next()).getValue());
       square_sum += value * value;
     }
 

@@ -30,13 +30,13 @@ import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
 /**
  * Methods of the matrix classes
  */
-public abstract class AbstractMatrix extends AbstractBase implements
-    MatrixInterface {
+public abstract class AbstractMatrix implements MatrixInterface {
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
   /** Hama Configuration */
@@ -58,7 +58,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
   public void setConfiguration(HamaConfiguration conf) {
     config = (HamaConfiguration) conf;
     try {
-        admin = new HBaseAdmin(config);
+      admin = new HBaseAdmin(config);
     } catch (MasterNotRunningException e) {
       LOG.error(e, e);
     }
@@ -86,7 +86,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
     try {
       c = table.get(row, column);
       if (c != null) {
-        result = bytesToDouble(c.getValue());
+        result = Numeric.bytesToDouble(c.getValue());
       }
     } catch (IOException e) {
       LOG.error(e, e);
@@ -106,7 +106,7 @@ public abstract class AbstractMatrix extends AbstractBase implements
 
   public Vector getRow(byte[] row) {
     try {
-      return new Vector(bytesToInt(row), table.getRow(row));
+      return new Vector(Numeric.bytesToInt(row), table.getRow(row));
     } catch (IOException e) {
       LOG.error(e, e);
     }
@@ -139,7 +139,8 @@ public abstract class AbstractMatrix extends AbstractBase implements
   /** {@inheritDoc} */
   public void set(int i, int j, double value) {
     BatchUpdate b = new BatchUpdate(new Text(String.valueOf(i)));
-    b.put(new Text(Constants.COLUMN + String.valueOf(j)), doubleToBytes(value));
+    b.put(new Text(Constants.COLUMN + String.valueOf(j)), Numeric
+        .doubleToBytes(value));
     try {
       table.commit(b);
     } catch (IOException e) {
