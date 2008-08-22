@@ -79,12 +79,11 @@ public abstract class AbstractMatrix implements MatrixInterface {
 
   /** {@inheritDoc} */
   public double get(int i, int j) {
-    String row = String.valueOf(i);
-    String column = Constants.COLUMN + String.valueOf(j);
     Cell c;
     double result = -1;
     try {
-      c = table.get(row, column);
+      c = table
+          .get(Bytes.toBytes(String.valueOf(i)), Numeric.getColumnIndex(j));
       if (c != null) {
         result = Numeric.bytesToDouble(c.getValue());
       }
