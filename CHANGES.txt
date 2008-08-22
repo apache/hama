@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    HAMA-37: Add forrest build (website) to Hudson patch build script (edwardyoon)
     HAMA-34: Hudson/Jira Intergration (edward yoon)
     HAMA-36: Add svn information to website (edward yoon)
     HAMA-33: Add set() method (edwardyoon)
