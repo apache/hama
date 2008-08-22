@@ -18,6 +18,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
+    HAMA-41: Add some tests (edwardyoon)
     HAMA-38: Remove AbstractBase and make a new NumericUtil (edwardyoon)
     HAMA-20: Adding license header to a whole code base
     HAMA-31: Refactor VectorWritable (edwardyoon)
