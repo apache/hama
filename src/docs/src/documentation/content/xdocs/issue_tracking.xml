@@ -25,6 +25,8 @@
   </header>
   
   <body>
+    <section>
+    <title>Issue Tracking</title>
     <p>
     Hama tracks both bugs and enhancement requests 
     <a href="https://issues.apache.org/jira/browse/HAMA">here</a> using Apache JIRA. 
@@ -36,5 +38,6 @@
       <li>Check the user <a href="./mailing_lists.html">mailing list</a>, 
       both by searching the archives and by asking questions.</li>
     </ul>
+  </section>
   </body>
 </document>
