@@ -4,7 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
-    HAMA-37: Add forrest build (website) to Hudson patch build script (edwardyoon)
+    HAMA-37: Add forrest build to Hudson patch build script (edwardyoon)
     HAMA-34: Hudson/Jira Intergration (edward yoon)
     HAMA-36: Add svn information to website (edward yoon)
     HAMA-33: Add set() method (edwardyoon)
@@ -40,21 +40,3 @@ Trunk (unreleased changes)
 
     HAMA-26: hama-formatter.xml should be removed (edwardyoon)  
     HAMA-25: Vector.get() returns double (edwardyoon)
-
-----
-Google Code Trunk 
-
-  NEW FEATURES
-  
-    Issue-22: Hama project web-site (Edward J. Yoon)
-    Issue-21: Add feature vector (Edward J. Yoon)
-    Issue-13: Add setDimension() method to reduce function (Edward J. Yoon) 
-    Issue-7: Meta-column to store the matrix-info (Chanwit via Edward J. Yoon)
-    Issue-1: Hama Initial Code (Edward J. Yoon)
-
-  IMPROVEMENTS
-  
-    Issue-23: add FindBugs Ant task to build script (Minslovely)
-    Issue-17: Logigng full stack (Minslovely)
-    Issue-4: Remove Groovy inteface to sandbox (Edward J. Yoon)
-    Issue-3: Code Formatter (Edward J. Yoon) 
