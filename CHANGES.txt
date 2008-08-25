@@ -40,4 +40,3 @@ Trunk (unreleased changes)
 
     HAMA-26: hama-formatter.xml should be removed (edwardyoon)  
     HAMA-25: Vector.get() returns double (edwardyoon)
-    
