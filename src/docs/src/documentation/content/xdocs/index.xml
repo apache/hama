@@ -28,7 +28,7 @@
     <section>
       <title> Introduction </title>
       <table class="NonBorderTable">
-      <tr><td><img src="./images/hama_logo.png" alt="Hama Logo" /></td>
+      <tr><td><img src="./images/hama_paint_logo.png" alt="Hama Logo" /></td>
       <td><strong>Hama</strong> (means a hippopotamus in Korean) is a 
       parallel matrix computational package,
       which provides an library of matrix operations for the large-scale

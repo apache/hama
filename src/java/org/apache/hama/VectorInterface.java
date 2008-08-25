@@ -19,9 +19,7 @@
  */
 package org.apache.hama;
 
-/**
- * Basic vector interface.
- */
+@Deprecated
 public interface VectorInterface {
 
   /**

@@ -24,12 +24,13 @@ public class TestVector extends HamaTestCase {
   private final double norm1 = 12.0;
   private final double norm2 = 6.782329983125268;
   private double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
+  private final String m = "dotTest";
 
   /**
    * Test vector
    */
   public void testGetVector() {
-    Matrix m1 = new Matrix(conf, "dotTest");
+    Matrix m1 = new DenseMatrix(conf, m);
 
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 4; j++) {
@@ -58,11 +59,11 @@ public class TestVector extends HamaTestCase {
   }
 
   private void norm1Test(Vector v1, Vector v2) {
-    assertEquals(norm1, v1.getNorm1());
+    assertEquals(norm1, ((DenseVector) v1).getNorm1());
   }
 
   private void norm2Test(Vector v1, Vector v2) {
-    assertEquals(norm2, v1.getNorm2());
+    assertEquals(norm2, ((DenseVector) v1).getNorm2());
   }
 
   private void scalingTest(Vector v2) {
@@ -74,7 +75,7 @@ public class TestVector extends HamaTestCase {
   }
   
   public void testGetSet() {
-    Vector v1 = new Vector();
+    Vector v1 = new DenseVector();
     v1.set(0, 0.2);
     assertEquals(v1.get(0), 0.2);
   }

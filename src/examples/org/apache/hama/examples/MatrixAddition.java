@@ -19,6 +19,7 @@
  */
 package org.apache.hama.examples;
 
+import org.apache.hama.DenseMatrix;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 
@@ -35,8 +36,8 @@ public class MatrixAddition {
 
     HamaConfiguration conf = new HamaConfiguration();
 
-    Matrix a = Matrix.random(conf, row, column);
-    Matrix b = Matrix.random(conf, row, column);
+    Matrix a = DenseMatrix.random(conf, row, column);
+    Matrix b = DenseMatrix.random(conf, row, column);
 
     Matrix c = a.add(b);
 

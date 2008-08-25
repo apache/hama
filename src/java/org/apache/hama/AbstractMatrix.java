@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
 /**
  * Methods of the matrix classes
  */
-public abstract class AbstractMatrix implements MatrixInterface {
+public abstract class AbstractMatrix implements Matrix {
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
   /** Hama Configuration */
@@ -91,25 +91,6 @@ public abstract class AbstractMatrix implements MatrixInterface {
       LOG.error(e, e);
     }
     return result;
-  }
-
-  /** {@inheritDoc} */
-  public Vector getRow(int row) {
-    try {
-      return new Vector(row, table.getRow(String.valueOf(row)));
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
-    return null;
-  }
-
-  public Vector getRow(byte[] row) {
-    try {
-      return new Vector(Numeric.bytesToInt(row), table.getRow(row));
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
-    return null;
   }
 
   /** {@inheritDoc} */
