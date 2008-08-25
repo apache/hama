@@ -28,7 +28,7 @@ public class TestMatrix extends HamaTestCase {
    * Random matrix creation test
    */
   public void testRandomMatrix() {
-    Matrix rand = DenseMatrix.random(conf, SIZE, SIZE);
+    Matrix rand = Matrix.random(conf, SIZE, SIZE);
     assertTrue(rand.getRows() == SIZE);
   }
 }
