@@ -19,110 +19,155 @@
  */
 package org.apache.hama;
 
-/**
- * Basic vector interface.
- */
-public interface Vector {
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.io.HbaseMapWritable;
+import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hama.io.VectorWritable;
+import org.apache.hama.util.Numeric;
+import org.apache.log4j.Logger;
+
+public class Vector extends VectorWritable implements VectorInterface {
+  static final Logger LOG = Logger.getLogger(Vector.class);
+
+  public Vector() {
+    this(null, new HbaseMapWritable<byte[], Cell>());
+  }
+
+  public Vector(final byte[] row, final HbaseMapWritable<byte[], Cell> m) {
+    this.row = row;
+    this.cells = m;
+  }
+
+  public Vector(int row, RowResult rowResult) {
+    this.cells = new HbaseMapWritable<byte[], Cell>();
+    this.row = Numeric.intToBytes(row);
+    for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
+      this.cells.put(f.getKey(), f.getValue());
+    }
+  }
 
   /**
-   * Size of the vector
-   * 
-   * @return size of the vector
+   * Get the row for this Vector
    */
-  public int size();
+  public byte[] getRow() {
+    return row;
+  }
 
-  /**
-   * Gets the value of index
-   * 
-   * @param index
-   * @return v(index)
-   */
-  public double get(int index);
+  public HbaseMapWritable<byte[], Cell> getCells() {
+    return cells;
+  }
 
-  /**
-   * Sets the value of index
-   * 
-   * @param index
-   * @param value
-   */
-  public void set(int index, double value);
+  public void add(int index, double value) {
+    // TODO Auto-generated method stub
 
-  /**
-   * Sets the vector
-   * 
-   * @param v
-   * @return x = v
-   */
-  public Vector set(Vector v);
+  }
 
-  /**
-   * Adds the value to v(index)
-   * 
-   * @param index
-   * @param value
-   */
-  public void add(int index, double value);
+  public Vector add(double alpha, Vector v) {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
-  /**
-   * x = alpha*v + x
-   * 
-   * @param alpha
-   * @param v
-   * @return x = alpha*v + x
-   */
-  public Vector add(double alpha, Vector v);
+  public Vector add(Vector v2) {
+    HbaseMapWritable<byte[], Cell> trunk = new HbaseMapWritable<byte[], Cell>();
+    for (int i = 0; i < this.size(); i++) {
+      double value = (this.get(i) + v2.get(i));
+      Cell cValue = new Cell(String.valueOf(value), System.currentTimeMillis());
+      trunk.put(Bytes.toBytes("column:" + i), cValue);
+    }
 
-  /**
-   * x = v + x
-   * 
-   * @param v
-   * @return x = v + x
-   */
-  public Vector add(Vector v);
+    return new Vector(row, trunk);
+  }
 
-  /**
-   * x dot v
-   * 
-   * @param v
-   * @return x dot v
-   */
-  public double dot(Vector v);
+  public double dot(Vector v) {
+    double cosine = 0.0;
+    double q_i, d_i;
+    for (int i = 0; i < Math.min(this.size(), v.size()); i++) {
+      q_i = v.get(i);
+      d_i = this.get(i);
+      cosine += q_i * d_i;
+    }
+    return cosine / (this.getNorm2() * v.getNorm2());
+  }
 
-  /**
-   * v = alpha*v 
-   * 
-   * @param alpha
-   * @return v = alpha*v
-   */
-  public Vector scale(double alpha);
-  
-  
-  /**
-   * Computes the given norm of the vector
-   * 
-   * @param type
-   * @return norm of the vector
-   */
-  public double norm(Norm type);
+  public Vector scale(double alpha) {
+    Set<byte[]> keySet = cells.keySet();
+    Iterator<byte[]> it = keySet.iterator();
 
-  /**
-   * Supported vector-norms.
-   */
-  enum Norm {
+    while (it.hasNext()) {
+      byte[] key = it.next();
+      double oValue = Numeric.bytesToDouble(get(key).getValue());
+      double nValue = oValue * alpha;
+      Cell cValue = new Cell(String.valueOf(nValue), System.currentTimeMillis());
+      cells.put(key, cValue);
+    }
 
-    /** Sum of the absolute values of the entries */
-    One,
+    return this;
+  }
 
-    /** The root of sum of squares */
-    Two,
+  public double get(int index) {
+    return Numeric.bytesToDouble(cells.get(Numeric.getColumnIndex(index))
+        .getValue());
+  }
 
-    /**
-     * As the 2 norm may overflow, an overflow resistant version is also
-     * available. Note that it may be slower.
-     */
-    TwoRobust,
+  public double norm(Norm type) {
+    if (type == Norm.One)
+      return getNorm1();
+    else if (type == Norm.Two)
+      return getNorm2();
+    else if (type == Norm.TwoRobust)
+      return getNorm2Robust();
+    else
+      return getNormInf();
+  }
 
-    /** Largest entry in absolute value */
-    Infinity
+  public void set(int index, double value) {
+    Cell cValue = new Cell(String.valueOf(value), System.currentTimeMillis());
+    cells.put(Numeric.getColumnIndex(index), cValue);
+  }
+
+  public Vector set(Vector v) {
+    return new Vector(v.getRow(), v.getCells());
+  }
+
+  public double getNorm1() {
+    double sum = 0.0;
+
+    Set<byte[]> keySet = cells.keySet();
+    Iterator<byte[]> it = keySet.iterator();
+
+    while (it.hasNext()) {
+      sum += Numeric.bytesToDouble(get(it.next()).getValue());
+    }
+
+    return sum;
+  }
+
+  public double getNorm2() {
+    double square_sum = 0.0;
+
+    Set<byte[]> keySet = cells.keySet();
+    Iterator<byte[]> it = keySet.iterator();
+
+    while (it.hasNext()) {
+      double value = Numeric.bytesToDouble(get(it.next()).getValue());
+      square_sum += value * value;
+    }
+
+    return Math.sqrt(square_sum);
+  }
+
+  public double getNorm2Robust() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  public double getNormInf() {
+    // TODO Auto-generated method stub
+    return 0;
   }
 }

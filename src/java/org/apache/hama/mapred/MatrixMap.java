@@ -31,19 +31,18 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.Constants;
-import org.apache.hama.DenseMatrix;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 import org.apache.hama.Vector;
 
-@Deprecated
+@SuppressWarnings("unchecked")
 public abstract class MatrixMap<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements
     Mapper<ImmutableBytesWritable, Vector, K, V> {
-  protected static Matrix MATRIX_B;
+  protected static Matrix B;
 
   public static void initJob(String matrixA, String matrixB,
-      Class<? extends DenseMap> mapper,
+      Class<? extends MatrixMap> mapper,
       Class<? extends WritableComparable> outputKeyClass,
       Class<? extends Writable> outputValueClass, JobConf job) {
 
@@ -53,7 +52,7 @@ public abstract class MatrixMap<K extends WritableComparable, V extends Writable
     job.setMapperClass(mapper);
     FileInputFormat.addInputPaths(job, matrixA);
 
-    MATRIX_B = new DenseMatrix(new HamaConfiguration(), matrixB);
+    B = new Matrix(new HamaConfiguration(), matrixB);
     job.set(MatrixInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 

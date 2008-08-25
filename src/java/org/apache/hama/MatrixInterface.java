@@ -19,7 +19,9 @@
  */
 package org.apache.hama;
 
-@Deprecated
+/**
+ * Basic matrix interface.
+ */
 public interface MatrixInterface {
 
   /**

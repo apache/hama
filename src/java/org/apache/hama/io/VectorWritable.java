@@ -196,4 +196,5 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
     }
 
   }
+
 }

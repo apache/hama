@@ -24,20 +24,18 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.DenseVector;
 import org.apache.hama.Vector;
-import org.apache.hama.mapred.DenseMap;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.mapred.MatrixMap;
 
-public class AdditionMap extends DenseMap<ImmutableBytesWritable, DenseVector> {
+public class AdditionMap extends MatrixMap<ImmutableBytesWritable, Vector> {
 
-  @Override
   public void map(ImmutableBytesWritable key, Vector value,
-      OutputCollector<ImmutableBytesWritable, DenseVector> output,
+      OutputCollector<ImmutableBytesWritable, Vector> output,
       Reporter reporter) throws IOException {
-
-    Vector v1 = MATRIX_B.getRow(Numeric.bytesToInt(key.get()));
-    output.collect(key, (DenseVector) v1.add(value));
-
+    
+    Vector v1 = B.getRow(key.get());
+    output.collect(key, v1.add(value));
+    
   }
+
 }
