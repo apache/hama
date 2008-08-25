@@ -63,7 +63,7 @@
     <property name="javac.debug" value="on" />
 
     <property name="javadoc.link.java" 
-                 value="http://java.sun.com/j2se/1.5/docs/api/" />
+                 value="http://java.sun.com/javase/6/docs/api/" />
     <property name="javadoc.packages" value="org.apache.hama.*" />
 
     <fileset id="lib.jars" dir="${basedir}" includes="lib/*.jar" />
