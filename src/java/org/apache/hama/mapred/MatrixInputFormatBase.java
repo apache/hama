@@ -1,3 +1,22 @@
+/**
+ * Copyright 2007 The Apache Software Foundation
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.hama.mapred;
 
 import java.io.IOException;
@@ -22,11 +41,10 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.Vector;
-import org.apache.hama.io.VectorWritable;
+import org.apache.hama.DenseVector;
 
 public abstract class MatrixInputFormatBase implements
-    InputFormat<ImmutableBytesWritable, Vector> {
+    InputFormat<ImmutableBytesWritable, DenseVector> {
   private final Log LOG = LogFactory.getLog(MatrixInputFormatBase.class);
   private byte[][] inputColumns;
   private HTable table;
@@ -34,10 +52,10 @@ public abstract class MatrixInputFormatBase implements
   private RowFilterInterface rowFilter;
 
   /**
-   * Iterate over an HBase table data, return (Text, VectorResult) pairs
+   * Iterate over an HBase table data, return (Text, DenseVector) pairs
    */
   protected class TableRecordReader implements
-      RecordReader<ImmutableBytesWritable, Vector> {
+      RecordReader<ImmutableBytesWritable, DenseVector> {
     private byte[] startRow;
     private byte[] endRow;
     private RowFilterInterface trrRowFilter;
@@ -77,7 +95,7 @@ public abstract class MatrixInputFormatBase implements
     }
 
     /**
-     * @param inputColumns the columns to be placed in {@link VectorWritable}.
+     * @param inputColumns the columns to be placed in {@link DenseVector}.
      */
     public void setInputColumns(final byte[][] inputColumns) {
       this.trrInputColumns = inputColumns;
@@ -120,12 +138,12 @@ public abstract class MatrixInputFormatBase implements
     }
 
     /**
-     * @return VectorResult
+     * @return DenseVector
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createValue()
      */
-    public Vector createValue() {
-      return new Vector();
+    public DenseVector createValue() {
+      return new DenseVector();
     }
 
     /** {@inheritDoc} */
@@ -145,13 +163,13 @@ public abstract class MatrixInputFormatBase implements
      * @param key HStoreKey as input key.
      * @param value MapWritable as input value
      * 
-     *          Converts Scanner.next() to Text, VectorResult
+     *          Converts Scanner.next() to Text, DenseVector
      * 
      * @return true if there was more data
      * @throws IOException
      */
     @SuppressWarnings("unchecked")
-    public boolean next(ImmutableBytesWritable key, Vector value)
+    public boolean next(ImmutableBytesWritable key, DenseVector value)
         throws IOException {
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
@@ -170,7 +188,7 @@ public abstract class MatrixInputFormatBase implements
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<ImmutableBytesWritable, Vector> getRecordReader(
+  public RecordReader<ImmutableBytesWritable, DenseVector> getRecordReader(
       InputSplit split, @SuppressWarnings("unused") JobConf job,
       @SuppressWarnings("unused") Reporter reporter) throws IOException {
     TableSplit tSplit = (TableSplit) split;
@@ -238,7 +256,7 @@ public abstract class MatrixInputFormatBase implements
   }
 
   /**
-   * @param inputColumns to be passed in {@link VectorWritable} to the map task.
+   * @param inputColumns to be passed in {@link DenseVector} to the map task.
    */
   protected void setInputColums(byte[][] inputColumns) {
     this.inputColumns = inputColumns;

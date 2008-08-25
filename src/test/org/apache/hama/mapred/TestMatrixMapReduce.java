@@ -24,9 +24,10 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hama.DenseMatrix;
+import org.apache.hama.DenseVector;
 import org.apache.hama.HamaTestCase;
 import org.apache.hama.Matrix;
-import org.apache.hama.Vector;
 import org.apache.hama.algebra.AdditionMap;
 import org.apache.hama.algebra.AdditionReduce;
 import org.apache.log4j.Logger;
@@ -46,11 +47,11 @@ public class TestMatrixMapReduce extends HamaTestCase {
   }
 
   public void testMatrixMapReduce() throws IOException {
-    Matrix matrixA = new Matrix(conf, A);
+    Matrix matrixA = new DenseMatrix(conf, A);
     matrixA.set(0, 0, 1);
     matrixA.set(0, 1, 0);
 
-    Matrix matrixB = new Matrix(conf, B);
+    Matrix matrixB = new DenseMatrix(conf, B);
     matrixB.set(0, 0, 1);
     matrixB.set(0, 1, 1);
 
@@ -58,13 +59,13 @@ public class TestMatrixMapReduce extends HamaTestCase {
   }
 
   public void miniMRJob() throws IOException {
-    Matrix c = new Matrix(conf, output);
+    Matrix c = new DenseMatrix(conf, output);
 
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    MatrixMap.initJob(A, B, AdditionMap.class, ImmutableBytesWritable.class,
-        Vector.class, jobConf);
+    DenseMap.initJob(A, B, AdditionMap.class, ImmutableBytesWritable.class,
+        DenseVector.class, jobConf);
     MatrixReduce.initJob(output, AdditionReduce.class, jobConf);
 
     jobConf.setNumMapTasks(1);

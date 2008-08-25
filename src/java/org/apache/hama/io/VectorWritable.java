@@ -152,15 +152,15 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
       sb.append(", timestamp=");
       sb.append(Long.toString(e.getValue().getTimestamp()));
       sb.append(", value=");
-      byte[] v = e.getValue().getValue();
+      byte[] value = e.getValue().getValue();
       if (Bytes.equals(e.getKey(), HConstants.COL_REGIONINFO)) {
         try {
-          sb.append(Writables.getHRegionInfo(v).toString());
+          sb.append(Writables.getHRegionInfo(value).toString());
         } catch (IOException ioe) {
           sb.append(ioe.toString());
         }
       } else {
-        sb.append(v);
+        sb.append(value);
       }
       sb.append(")");
     }
@@ -178,8 +178,8 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
     private final byte[] column;
     private final Cell cell;
 
-    Entries(byte[] row, Cell cell) {
-      this.column = row;
+    Entries(byte[] column, Cell cell) {
+      this.column = column;
       this.cell = cell;
     }
 

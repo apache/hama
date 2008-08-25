@@ -19,6 +19,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
+    HAMA-40: Rename MatrixInterface to Matrix (edwardyoon)
     HAMA-14: Using Java 6 (edwardyoon)
     HAMA-22: Add IRC channel information to website (edwardyoon)
     HAMA-41: Add some tests (edwardyoon)
