@@ -44,7 +44,7 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
   public HbaseMapWritable<byte[], Cell> cells;
 
   public Cell put(byte[] key, Cell value) {
-    throw new UnsupportedOperationException("VectorDatum is read-only!");
+    throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
 
   public Cell get(Object key) {
@@ -52,7 +52,7 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
   }
 
   public Cell remove(Object key) {
-    throw new UnsupportedOperationException("VectorDatum is read-only!");
+    throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
 
   public boolean containsKey(Object key) {
@@ -184,7 +184,7 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
     }
 
     public Cell setValue(Cell c) {
-      throw new UnsupportedOperationException("VectorDatum is read-only!");
+      throw new UnsupportedOperationException("VectorWritable is read-only!");
     }
 
     public byte[] getKey() {
