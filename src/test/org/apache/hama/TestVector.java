@@ -58,6 +58,12 @@ public class TestVector extends HamaTestCase {
     assertEquals(cos, cosine);
   }
 
+  /**
+   * Test Norm one
+   * 
+   * @param v1
+   * @param v2
+   */
   private void norm1Test(Vector v1, Vector v2) {
     assertEquals(norm1, ((DenseVector) v1).getNorm1());
   }

@@ -54,7 +54,7 @@ public abstract class MatrixInputFormatBase implements
   /**
    * Iterate over an HBase table data, return (Text, DenseVector) pairs
    */
-  protected class TableRecordReader implements
+  protected static class TableRecordReader implements
       RecordReader<ImmutableBytesWritable, DenseVector> {
     private byte[] startRow;
     private byte[] endRow;

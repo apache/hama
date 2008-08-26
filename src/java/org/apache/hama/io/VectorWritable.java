@@ -173,7 +173,7 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
    * The inner class for an entry of row.
    * 
    */
-  public class Entries implements Map.Entry<byte[], Cell> {
+  public static class Entries implements Map.Entry<byte[], Cell> {
 
     private final byte[] column;
     private final Cell cell;

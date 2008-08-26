@@ -1,3 +1,22 @@
+/**
+ * Copyright 2007 The Apache Software Foundation
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.hama;
 
 import java.util.Iterator;
@@ -7,7 +26,6 @@ import java.util.Set;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.io.RowResult;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
@@ -19,7 +37,7 @@ public class DenseVector extends VectorWritable implements Vector {
     this(null, new HbaseMapWritable<byte[], Cell>());
   }
 
-  public DenseVector(final byte[] rowKey, final HbaseMapWritable<byte[], Cell> m) {
+  public DenseVector(final byte[] row, final HbaseMapWritable<byte[], Cell> m) {
     this.row = row;
     this.cells = m;
   }
@@ -58,7 +76,7 @@ public class DenseVector extends VectorWritable implements Vector {
     for (int i = 0; i < this.size(); i++) {
       double value = (this.get(i) + v2.get(i));
       Cell cValue = new Cell(String.valueOf(value), System.currentTimeMillis());
-      trunk.put(Bytes.toBytes("column:" + i), cValue);
+      trunk.put(Numeric.getColumnIndex(i), cValue);
     }
 
     return new DenseVector(row, trunk);
@@ -112,7 +130,8 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public DenseVector set(Vector v) {
-    return new DenseVector(((DenseVector) v).getRow(), ((DenseVector) v).getCells());
+    return new DenseVector(((DenseVector) v).getRow(), ((DenseVector) v)
+        .getCells());
   }
 
   public double getNorm1() {

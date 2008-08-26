@@ -32,7 +32,7 @@ import org.apache.hama.util.Numeric;
 public class AdditionMap extends DenseMap<ImmutableBytesWritable, DenseVector> {
 
   @Override
-  public void map(ImmutableBytesWritable key, Vector value,
+  public void map(ImmutableBytesWritable key, DenseVector value,
       OutputCollector<ImmutableBytesWritable, DenseVector> output,
       Reporter reporter) throws IOException {
 
@@ -40,4 +40,5 @@ public class AdditionMap extends DenseMap<ImmutableBytesWritable, DenseVector> {
     output.collect(key, (DenseVector) v1.add(value));
 
   }
+
 }
