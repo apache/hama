@@ -31,20 +31,21 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.filter.RowFilterInterface;
 import org.apache.hadoop.hbase.filter.RowFilterSet;
 import org.apache.hadoop.hbase.filter.StopRowFilter;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.util.Writables;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
+import org.apache.hama.util.Numeric;
 
 public abstract class MatrixInputFormatBase implements
-    InputFormat<ImmutableBytesWritable, DenseVector> {
+    InputFormat<IntWritable, DenseVector> {
   private final Log LOG = LogFactory.getLog(MatrixInputFormatBase.class);
   private byte[][] inputColumns;
   private HTable table;
@@ -55,7 +56,7 @@ public abstract class MatrixInputFormatBase implements
    * Iterate over an HBase table data, return (Text, DenseVector) pairs
    */
   protected static class TableRecordReader implements
-      RecordReader<ImmutableBytesWritable, DenseVector> {
+      RecordReader<IntWritable, DenseVector> {
     private byte[] startRow;
     private byte[] endRow;
     private RowFilterInterface trrRowFilter;
@@ -136,8 +137,8 @@ public abstract class MatrixInputFormatBase implements
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createKey()
      */
-    public ImmutableBytesWritable createKey() {
-      return new ImmutableBytesWritable();
+    public IntWritable createKey() {
+      return new IntWritable();
     }
 
     /**
@@ -172,12 +173,12 @@ public abstract class MatrixInputFormatBase implements
      * @throws IOException
      */
     @SuppressWarnings("unchecked")
-    public boolean next(ImmutableBytesWritable key, DenseVector value)
+    public boolean next(IntWritable key, DenseVector value)
         throws IOException {
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
       if (hasMore) {
-        key.set(result.getRow());
+        key.set(Numeric.bytesToInt(result.getRow()));
         Writables.copyWritable(result, value);
       }
       return hasMore;
@@ -191,7 +192,7 @@ public abstract class MatrixInputFormatBase implements
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<ImmutableBytesWritable, DenseVector> getRecordReader(
+  public RecordReader<IntWritable, DenseVector> getRecordReader(
       InputSplit split, @SuppressWarnings("unused") JobConf job,
       @SuppressWarnings("unused") Reporter reporter) throws IOException {
     TableSplit tSplit = (TableSplit) split;

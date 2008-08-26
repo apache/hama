@@ -25,21 +25,21 @@ import java.util.Map;
 
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
 import org.apache.hama.mapred.MatrixReduce;
+import org.apache.hama.util.Numeric;
 
-public class AdditionReduce extends
-    MatrixReduce<ImmutableBytesWritable, DenseVector> {
+public class AdditionReduce extends MatrixReduce<IntWritable, DenseVector> {
 
   @Override
-  public void reduce(ImmutableBytesWritable key, Iterator<DenseVector> values,
-      OutputCollector<ImmutableBytesWritable, BatchUpdate> output,
-      Reporter reporter) throws IOException {
+  public void reduce(IntWritable key, Iterator<DenseVector> values,
+      OutputCollector<IntWritable, BatchUpdate> output, Reporter reporter)
+      throws IOException {
 
-    BatchUpdate b = new BatchUpdate(key.get());
+    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(key.get()));
     DenseVector vector = values.next();
     for (Map.Entry<byte[], Cell> f : vector.entrySet()) {
       b.put(f.getKey(), f.getValue().getValue());

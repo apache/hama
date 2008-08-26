@@ -21,22 +21,21 @@ package org.apache.hama.algebra;
 
 import java.io.IOException;
 
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
 import org.apache.hama.Vector;
 import org.apache.hama.mapred.DenseMap;
-import org.apache.hama.util.Numeric;
 
-public class AdditionMap extends DenseMap<ImmutableBytesWritable, DenseVector> {
+public class AdditionMap extends DenseMap<IntWritable, DenseVector> {
 
   @Override
-  public void map(ImmutableBytesWritable key, DenseVector value,
-      OutputCollector<ImmutableBytesWritable, DenseVector> output,
+  public void map(IntWritable key, DenseVector value,
+      OutputCollector<IntWritable, DenseVector> output,
       Reporter reporter) throws IOException {
 
-    Vector v1 = MATRIX_B.getRow(Numeric.bytesToInt(key.get()));
+    Vector v1 = MATRIX_B.getRow(key.get());
     output.collect(key, (DenseVector) v1.add(value));
 
   }

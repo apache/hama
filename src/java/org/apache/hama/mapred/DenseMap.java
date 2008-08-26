@@ -21,7 +21,7 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -39,7 +39,7 @@ import org.apache.hama.Matrix;
 @SuppressWarnings("unchecked")
 public abstract class DenseMap<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements
-    Mapper<ImmutableBytesWritable, DenseVector, K, V> {
+    Mapper<IntWritable, DenseVector, K, V> {
   protected static Matrix MATRIX_B;
 
   public static void initJob(String matrixA, String matrixB,
@@ -57,6 +57,6 @@ public abstract class DenseMap<K extends WritableComparable, V extends Writable>
     job.set(MatrixInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 
-  public abstract void map(ImmutableBytesWritable key, DenseVector value,
+  public abstract void map(IntWritable key, DenseVector value,
       OutputCollector<K, V> output, Reporter reporter) throws IOException;
 }

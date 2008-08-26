@@ -21,7 +21,7 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.DenseMatrix;
@@ -64,7 +64,7 @@ public class TestMatrixMapReduce extends HamaTestCase {
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    DenseMap.initJob(A, B, AdditionMap.class, ImmutableBytesWritable.class,
+    DenseMap.initJob(A, B, AdditionMap.class, IntWritable.class,
         DenseVector.class, jobConf);
     MatrixReduce.initJob(output, AdditionReduce.class, jobConf);
 
@@ -76,5 +76,4 @@ public class TestMatrixMapReduce extends HamaTestCase {
     assertEquals(c.get(0, 0), 2.0);
     assertEquals(c.get(0, 1), 1.0);
   }
-
 }
