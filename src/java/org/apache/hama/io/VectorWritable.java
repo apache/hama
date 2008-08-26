@@ -160,7 +160,7 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
           sb.append(ioe.toString());
         }
       } else {
-        sb.append(value);
+        sb.append(Bytes.toString(value));
       }
       sb.append(")");
     }
@@ -188,13 +188,12 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
     }
 
     public byte[] getKey() {
-      return column;
+      byte[] key = column;
+      return key;
     }
 
     public Cell getValue() {
       return cell;
     }
-
   }
-
 }

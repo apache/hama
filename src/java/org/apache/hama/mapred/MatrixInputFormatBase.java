@@ -98,14 +98,16 @@ public abstract class MatrixInputFormatBase implements
      * @param inputColumns the columns to be placed in {@link DenseVector}.
      */
     public void setInputColumns(final byte[][] inputColumns) {
-      this.trrInputColumns = inputColumns;
+      byte[][] columns = inputColumns;
+      this.trrInputColumns = columns;
     }
 
     /**
      * @param startRow the first row in the split
      */
     public void setStartRow(final byte[] startRow) {
-      this.startRow = startRow;
+      byte[] sRow = startRow;
+      this.startRow = sRow;
     }
 
     /**
@@ -113,7 +115,8 @@ public abstract class MatrixInputFormatBase implements
      * @param endRow the last row in the split
      */
     public void setEndRow(final byte[] endRow) {
-      this.endRow = endRow;
+      byte[] eRow = endRow;
+      this.endRow = eRow;
     }
 
     /**
@@ -225,7 +228,11 @@ public abstract class MatrixInputFormatBase implements
    *      int)
    */
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-    byte[][] startKeys = this.table.getStartKeys();
+    byte[][] startKeys = null;
+    try {
+      startKeys = this.table.getStartKeys();
+    } catch (NullPointerException ne) {}
+    
     if (startKeys == null || startKeys.length == 0) {
       throw new IOException("Expecting at least one region");
     }

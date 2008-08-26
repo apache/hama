@@ -40,7 +40,7 @@ import org.apache.hama.Matrix;
 public abstract class DenseMap<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements
     Mapper<ImmutableBytesWritable, DenseVector, K, V> {
-  public static Matrix MATRIX_B;
+  protected static Matrix MATRIX_B;
 
   public static void initJob(String matrixA, String matrixB,
       Class<? extends DenseMap> mapper,

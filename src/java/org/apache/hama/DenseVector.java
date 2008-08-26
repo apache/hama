@@ -38,7 +38,8 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public DenseVector(final byte[] row, final HbaseMapWritable<byte[], Cell> m) {
-    this.row = row;
+    byte[] key = row;
+    this.row = key;
     this.cells = m;
   }
 
@@ -54,7 +55,8 @@ public class DenseVector extends VectorWritable implements Vector {
    * Get the row for this Vector
    */
   public byte[] getRow() {
-    return row;
+    byte[] key = row;
+    return key;
   }
 
   public HbaseMapWritable<byte[], Cell> getCells() {
