@@ -23,6 +23,7 @@ package org.apache.hama;
  * Basic matrix interface.
  */
 public interface Matrix {
+  
   /**
    * Gets the double value of (i, j)
    * 
