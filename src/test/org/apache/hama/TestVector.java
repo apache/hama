@@ -19,12 +19,17 @@
  */
 package org.apache.hama;
 
+import java.util.Iterator;
+
+import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hama.util.Numeric;
+
 public class TestVector extends HamaTestCase {
-  private final double cosine = 0.6978227007909176;
-  private final double norm1 = 12.0;
-  private final double norm2 = 6.782329983125268;
+  private static final double cosine = 0.6978227007909176;
+  private static final double norm1 = 12.0;
+  private static final double norm2 = 6.782329983125268;
   private double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
-  private final String m = "dotTest";
+  private static final String m = "dotTest";
 
   /**
    * Test vector
@@ -74,15 +79,29 @@ public class TestVector extends HamaTestCase {
 
   private void scalingTest(Vector v2) {
     v2.scale(0.5);
-    
+
     for (int i = 0; i < v2.size(); i++) {
       assertEquals(values[1][i] * 0.5, v2.get(i));
     }
   }
-  
+
   public void testGetSet() {
     Vector v1 = new DenseVector();
     v1.set(0, 0.2);
     assertEquals(v1.get(0), 0.2);
+  }
+
+  public void testIterator() {
+    Vector v1 = new DenseVector();
+    v1.set(0, 0.2);
+    v1.set(1, 0.5);
+    double[] result = { 0.2, 0.5 };
+    int i = 0;
+    Iterator<Cell> it = v1.iterator();
+    while (it.hasNext()) {
+      Cell c = it.next();
+      assertEquals(Numeric.bytesToDouble(c.getValue()), result[i]);
+      i++;
+    }
   }
 }

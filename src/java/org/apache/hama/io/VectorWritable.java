@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -166,6 +167,15 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
     }
     sb.append("}");
     return sb.toString();
+  }
+
+  /**
+   * Returns an Iterator.
+   * 
+   * @return iterator
+   */
+  public Iterator<Cell> iterator() {
+    return cells.values().iterator();
   }
 
   /**

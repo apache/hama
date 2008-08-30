@@ -19,6 +19,10 @@
  */
 package org.apache.hama;
 
+import java.util.Iterator;
+
+import org.apache.hadoop.hbase.io.Cell;
+
 /**
  * Basic vector interface.
  */
@@ -125,4 +129,11 @@ public interface Vector {
     /** Largest entry in absolute value */
     Infinity
   }
+
+  /**
+   * Returns an iterator
+   * 
+   * @return iterator
+   */
+  public Iterator<Cell> iterator();
 }

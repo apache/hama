@@ -26,7 +26,7 @@ import org.apache.hama.Constants;
 
 public class TestNumeric extends TestCase {
   final static int TEST_INT = 3;
-  final double TEST_DOUBLE = 0.4;
+  final static double TEST_DOUBLE = 0.4;
 
   /**
    * Integer conversion test
