@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    HAMA-48: Add getColumn(int column) method which returns column vector (edwardyoon)
     HAMA-49: Add iterator() method to vector (edwardyoon)
     HAMA-43: Color Hama Logo (Morakot via chanwit)
     HAMA-37: Add forrest build to Hudson patch build script (edwardyoon)

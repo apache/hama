@@ -19,6 +19,7 @@
  */
 package org.apache.hama;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.hadoop.hbase.io.Cell;
@@ -33,8 +34,9 @@ public class TestVector extends HamaTestCase {
 
   /**
    * Test vector
+   * @throws IOException 
    */
-  public void testGetVector() {
+  public void testGetVector() throws IOException {
     Matrix m1 = new DenseMatrix(conf, m);
 
     for (int i = 0; i < 2; i++) {

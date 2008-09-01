@@ -19,6 +19,12 @@
  */
 package org.apache.hama;
 
+import java.io.IOException;
+import java.util.Iterator;
+
+import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hama.util.Numeric;
+
 /**
  * Matrix test
  */
@@ -26,9 +32,31 @@ public class TestMatrix extends HamaTestCase {
 
   /**
    * Random matrix creation test
+   * 
+   * @throws IOException
+   * 
+   * @throws IOException
    */
-  public void testRandomMatrix() {
+  public void testRandomMatrix() throws IOException {
     Matrix rand = DenseMatrix.random(conf, SIZE, SIZE);
     assertTrue(rand.getRows() == SIZE);
+    
+    getColumnTest(rand);
+  }
+
+  /**
+   * Column vector test.
+   * 
+   * @param rand
+   * @throws IOException
+   */
+  public void getColumnTest(Matrix rand) throws IOException {
+    Vector v = rand.getColumn(0);
+    Iterator<Cell> it = v.iterator();
+    int x = 0;
+    while (it.hasNext()) {
+      assertEquals(rand.get(x, 0), Numeric.bytesToDouble(it.next().getValue()));
+      x++;
+    }
   }
 }

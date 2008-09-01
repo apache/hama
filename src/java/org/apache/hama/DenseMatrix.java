@@ -22,15 +22,21 @@ package org.apache.hama;
 import java.io.IOException;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Scanner;
+import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.algebra.AdditionMap;
 import org.apache.hama.algebra.AdditionReduce;
 import org.apache.hama.mapred.DenseMap;
 import org.apache.hama.mapred.MatrixReduce;
+import org.apache.hama.util.Numeric;
 import org.apache.hama.util.RandomVariable;
 
 public class DenseMatrix extends AbstractMatrix implements Matrix {
@@ -148,15 +154,24 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return null;
   }
 
-  public DenseVector getRow(int row) {
-    try {
-      return new DenseVector(row, table.getRow(String.valueOf(row)));
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
-    return null;
+  public DenseVector getRow(int row) throws IOException {
+    return new DenseVector(row, table.getRow(String.valueOf(row)));
   }
   
+  public Vector getColumn(int column) throws IOException {
+    byte[] columnKey = Numeric.getColumnIndex(column);
+    byte[][] c = { columnKey };
+    Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
+
+    HbaseMapWritable<byte[], Cell> trunk = new HbaseMapWritable<byte[], Cell>();
+
+    for (RowResult row : scan) {
+      trunk.put(row.getRow(), row.get(columnKey));
+    }
+
+    return new DenseVector(columnKey, trunk);
+  }
+
   public Matrix mult(Matrix B) {
     // TODO Auto-generated method stub
     return null;
@@ -181,5 +196,4 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     // TODO Auto-generated method stub
     return null;
   }
-
 }

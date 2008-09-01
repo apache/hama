@@ -19,11 +19,13 @@
  */
 package org.apache.hama;
 
+import java.io.IOException;
+
 /**
  * Basic matrix interface.
  */
 public interface Matrix {
-  
+
   /**
    * Gets the double value of (i, j)
    * 
@@ -37,9 +39,19 @@ public interface Matrix {
    * Gets the vector of row
    * 
    * @param row the row index of the matrix
-   * @return the feature vector of row
+   * @return the vector of row
+   * @throws IOException
    */
-  public Vector getRow(int row);
+  public Vector getRow(int row) throws IOException;
+
+  /**
+   * Gets the vector of column
+   * 
+   * @param column the column index of the matrix
+   * @return the vector of column
+   * @throws IOException
+   */
+  public Vector getColumn(int column) throws IOException;
 
   /**
    * Get a number of row of the matrix from the meta-data column
