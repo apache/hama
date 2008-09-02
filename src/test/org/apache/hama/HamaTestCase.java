@@ -33,18 +33,5 @@ public class HamaTestCase extends HBaseClusterTestCase {
   /** constructor */
   public HamaTestCase() {
     super();
-
-    // Initializing the hbase configuration
-    conf.set("mapred.output.dir", conf.get("hadoop.tmp.dir"));
-
-    conf.setInt("mapred.map.tasks", 10);
-    conf.setInt("mapred.reduce.tasks", 1);
-
-    conf.setInt("hbase.hregion.memcache.flush.size", 1024 * 1024);
-    conf.setInt("hbase.hstore.compactionThreshold", 2);
-    conf.setLong("hbase.hregion.max.filesize", 1024 * 1024);
-    conf.setInt("hbase.master.lease.period", 10 * 1000);
-    conf.setInt("hbase.master.lease.thread.wakefrequency", 5 * 1000);
-    conf.setInt("hbase.client.pause", 10 * 1000);
   }
 }
