@@ -25,7 +25,7 @@ import java.util.Iterator;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hama.util.Numeric;
 
-public class TestVector extends HamaTestCase {
+public class TestDenseVector extends HamaTestCase {
   private static final double cosine = 0.6978227007909176;
   private static final double norm1 = 12.0;
   private static final double norm2 = 6.782329983125268;

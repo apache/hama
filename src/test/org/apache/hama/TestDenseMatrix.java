@@ -28,7 +28,7 @@ import org.apache.hama.util.Numeric;
 /**
  * Matrix test
  */
-public class TestMatrix extends HamaTestCase {
+public class TestDenseMatrix extends HamaTestCase {
 
   /**
    * Matrix Test
