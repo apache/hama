@@ -23,6 +23,7 @@ package org.apache.hama;
  * Some constants used in the Hama
  */
 public class Constants {
+  
   /** 
    * Meta-columnFamily to store the matrix-info 
    */

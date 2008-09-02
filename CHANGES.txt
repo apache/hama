@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    HAMA-13: Matrix multiplication (edwardyoon)
     HAMA-48: Add getColumn(int column) method which returns column vector (edwardyoon)
     HAMA-49: Add iterator() method to vector (edwardyoon)
     HAMA-43: Color Hama Logo (Morakot via chanwit)

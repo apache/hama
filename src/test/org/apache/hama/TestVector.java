@@ -34,7 +34,8 @@ public class TestVector extends HamaTestCase {
 
   /**
    * Test vector
-   * @throws IOException 
+   * 
+   * @throws IOException
    */
   public void testGetVector() throws IOException {
     Matrix m1 = new DenseMatrix(conf, m);
@@ -79,6 +80,11 @@ public class TestVector extends HamaTestCase {
     assertEquals(norm2, ((DenseVector) v1).getNorm2());
   }
 
+  /**
+   * Test scaling
+   * 
+   * @param v2
+   */
   private void scalingTest(Vector v2) {
     v2.scale(0.5);
 
@@ -87,12 +93,18 @@ public class TestVector extends HamaTestCase {
     }
   }
 
+  /**
+   * Test get/set methods
+   */
   public void testGetSet() {
     Vector v1 = new DenseVector();
     v1.set(0, 0.2);
     assertEquals(v1.get(0), 0.2);
   }
 
+  /**
+   * Test iterator
+   */
   public void testIterator() {
     Vector v1 = new DenseVector();
     v1.set(0, 0.2);

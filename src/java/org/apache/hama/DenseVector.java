@@ -74,14 +74,21 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public Vector add(Vector v2) {
-    HbaseMapWritable<byte[], Cell> trunk = new HbaseMapWritable<byte[], Cell>();
-    for (int i = 0; i < this.size(); i++) {
-      double value = (this.get(i) + v2.get(i));
-      Cell cValue = new Cell(String.valueOf(value), System.currentTimeMillis());
-      trunk.put(Numeric.getColumnIndex(i), cValue);
+    if (this.size() == 0) {
+      DenseVector trunk = (DenseVector) v2;
+      this.row = trunk.row;
+      this.cells = trunk.cells;
+      return this;
     }
 
-    return new DenseVector(row, trunk);
+    for (int i = 0; i < this.size(); i++) {
+      double value = (this.get(i) + v2.get(i));
+
+      Cell cValue = new Cell(Numeric.doubleToBytes(value), now());
+      this.cells.put(Numeric.getColumnIndex(i), cValue);
+    }
+
+    return this;
   }
 
   public double dot(Vector v) {
@@ -99,18 +106,22 @@ public class DenseVector extends VectorWritable implements Vector {
     Set<byte[]> keySet = cells.keySet();
     Iterator<byte[]> it = keySet.iterator();
 
+    int i = 0;
     while (it.hasNext()) {
       byte[] key = it.next();
-      double oValue = Numeric.bytesToDouble(get(key).getValue());
+      double oValue = Numeric.bytesToDouble(this.get(key).getValue());
       double nValue = oValue * alpha;
-      Cell cValue = new Cell(String.valueOf(nValue), System.currentTimeMillis());
-      cells.put(key, cValue);
+
+      Cell cValue = new Cell(Numeric.doubleToBytes(nValue), now());
+      this.cells.put(Numeric.getColumnIndex(i), cValue);
+      i++;
     }
 
     return this;
   }
 
   public double get(int index) {
+
     return Numeric.bytesToDouble(cells.get(Numeric.getColumnIndex(index))
         .getValue());
   }
@@ -127,7 +138,7 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public void set(int index, double value) {
-    Cell cValue = new Cell(String.valueOf(value), System.currentTimeMillis());
+    Cell cValue = new Cell(Numeric.doubleToBytes(value), now());
     cells.put(Numeric.getColumnIndex(index), cValue);
   }
 

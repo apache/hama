@@ -206,4 +206,8 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
       return cell;
     }
   }
+  
+  public long now() {
+    return System.currentTimeMillis();
+  }
 }

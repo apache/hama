@@ -31,16 +31,14 @@ import org.apache.hama.util.Numeric;
 public class TestMatrix extends HamaTestCase {
 
   /**
-   * Random matrix creation test
-   * 
-   * @throws IOException
+   * Matrix Test
    * 
    * @throws IOException
    */
-  public void testRandomMatrix() throws IOException {
+  public void testGetMatrixSize() throws IOException {
     Matrix rand = DenseMatrix.random(conf, SIZE, SIZE);
     assertTrue(rand.getRows() == SIZE);
-    
+
     getColumnTest(rand);
   }
 
@@ -57,6 +55,57 @@ public class TestMatrix extends HamaTestCase {
     while (it.hasNext()) {
       assertEquals(rand.get(x, 0), Numeric.bytesToDouble(it.next().getValue()));
       x++;
+    }
+  }
+
+  /**
+   * Test matrices addition
+   */
+  public void testMatrixAdd() {
+    Matrix rand1 = DenseMatrix.random(conf, SIZE, SIZE);
+    Matrix rand2 = DenseMatrix.random(conf, SIZE, SIZE);
+
+    Matrix result = rand1.add(rand2);
+
+    for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
+        assertEquals(result.get(i, j), rand1.get(i, j) + rand2.get(i, j));
+      }
+    }
+  }
+
+  /**
+   * Test matrices multiplication
+   */
+  public void testMatrixMult() {
+    Matrix m1 = DenseMatrix.random(conf, SIZE, SIZE);
+    Matrix m2 = DenseMatrix.random(conf, SIZE, SIZE);
+
+    Matrix result = m1.mult(m2);
+
+    verifyMultResult(SIZE, m1, m2, result);
+  }
+
+  /**
+   * Verifying multiplication result
+   * 
+   * @param size
+   * @param m1
+   * @param m2
+   * @param result
+   */
+  private void verifyMultResult(int size, Matrix m1, Matrix m2, Matrix result) {
+    double[][] C = new double[SIZE][SIZE];
+
+    for (int i = 0; i < SIZE; i++)
+      for (int j = 0; j < SIZE; j++)
+        for (int k = 0; k < SIZE; k++)
+          C[i][k] += m1.get(i, j) * m2.get(j, k);
+
+    for (int i = 0; i < 2; i++) {
+      for (int j = 0; j < 2; j++) {
+        assertEquals(result.get(i, j), C[i][j]);
+      }
     }
   }
 }

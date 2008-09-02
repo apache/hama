@@ -26,6 +26,7 @@ import org.apache.hama.Constants;
  * Provides a number format conversion
  */
 public class Numeric {
+  
   /**
    * Bytes to integer conversion
    * 

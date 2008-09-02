@@ -28,12 +28,14 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.HbaseMapWritable;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.algebra.AdditionMap;
 import org.apache.hama.algebra.AdditionReduce;
+import org.apache.hama.algebra.MultiplicationMap;
+import org.apache.hama.algebra.MultiplicationReduce;
 import org.apache.hama.mapred.DenseMap;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.hama.util.Numeric;
@@ -136,13 +138,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setJobName("addition MR job");
 
     DenseMap.initJob(this.getName(), B.getName(), AdditionMap.class,
-        ImmutableBytesWritable.class, DenseVector.class, jobConf);
+        IntWritable.class, DenseVector.class, jobConf);
     MatrixReduce.initJob(C.getName(), AdditionReduce.class, jobConf);
 
     try {
       JobClient.runJob(jobConf);
     } catch (IOException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
 
@@ -173,8 +174,23 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public Matrix mult(Matrix B) {
-    // TODO Auto-generated method stub
-    return null;
+    String output = RandomVariable.randMatrixName();
+    Matrix C = new DenseMatrix(config, output);
+
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("multiplication MR job");
+
+    DenseMap.initJob(this.getName(), B.getName(), MultiplicationMap.class,
+        IntWritable.class, DenseVector.class, jobConf);
+    MatrixReduce.initJob(C.getName(), MultiplicationReduce.class, jobConf);
+
+    try {
+      JobClient.runJob(jobConf);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return C;
   }
 
   public Matrix multAdd(double alpha, Matrix B, Matrix C) {
