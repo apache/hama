@@ -154,7 +154,7 @@ public class DenseVector extends VectorWritable implements Vector {
     Iterator<byte[]> it = keySet.iterator();
 
     while (it.hasNext()) {
-      sum += Numeric.bytesToDouble(get(it.next()).getValue());
+      sum += Numeric.bytesToDouble(this.get(it.next()).getValue());
     }
 
     return sum;
@@ -167,7 +167,7 @@ public class DenseVector extends VectorWritable implements Vector {
     Iterator<byte[]> it = keySet.iterator();
 
     while (it.hasNext()) {
-      double value = Numeric.bytesToDouble(get(it.next()).getValue());
+      double value = Numeric.bytesToDouble(this.get(it.next()).getValue());
       square_sum += value * value;
     }
 
