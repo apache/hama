@@ -24,11 +24,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.hadoop.hbase.io.BatchUpdate;
-import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
+import org.apache.hama.io.VectorEntry;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.hama.util.Numeric;
 
@@ -41,8 +41,8 @@ public class AdditionReduce extends MatrixReduce<IntWritable, DenseVector> {
 
     BatchUpdate b = new BatchUpdate(Numeric.intToBytes(key.get()));
     DenseVector vector = values.next();
-    for (Map.Entry<byte[], Cell> f : vector.entrySet()) {
-      b.put(f.getKey(), f.getValue().getValue());
+    for (Map.Entry<Integer, VectorEntry> f : vector.entrySet()) {
+      b.put(Numeric.getColumnIndex(f.getKey()), Numeric.doubleToBytes(f.getValue().getValue()));
     }
 
     output.collect(key, b);

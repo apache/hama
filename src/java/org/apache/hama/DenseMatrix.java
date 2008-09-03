@@ -26,8 +26,6 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
-import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobClient;
@@ -36,6 +34,8 @@ import org.apache.hama.algebra.AdditionMap;
 import org.apache.hama.algebra.AdditionReduce;
 import org.apache.hama.algebra.MultiplicationMap;
 import org.apache.hama.algebra.MultiplicationReduce;
+import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.mapred.DenseMap;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.hama.util.Numeric;
@@ -164,13 +164,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     byte[][] c = { columnKey };
     Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
 
-    HbaseMapWritable<byte[], Cell> trunk = new HbaseMapWritable<byte[], Cell>();
+    VectorMapWritable<Integer, VectorEntry> trunk = new VectorMapWritable<Integer, VectorEntry>();
 
     for (RowResult row : scan) {
-      trunk.put(row.getRow(), row.get(columnKey));
+      trunk.put(Numeric.bytesToInt(row.getRow()), new VectorEntry(row.get(columnKey)));
     }
 
-    return new DenseVector(columnKey, trunk);
+    return new DenseVector(column, trunk);
   }
 
   public Matrix mult(Matrix B) {

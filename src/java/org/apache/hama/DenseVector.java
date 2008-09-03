@@ -24,8 +24,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
@@ -34,38 +35,39 @@ public class DenseVector extends VectorWritable implements Vector {
   static final Logger LOG = Logger.getLogger(Vector.class);
 
   public DenseVector() {
-    this(null, new HbaseMapWritable<byte[], Cell>());
+    this(-1, new VectorMapWritable<Integer, VectorEntry>());
   }
 
-  public DenseVector(final byte[] row, final HbaseMapWritable<byte[], Cell> m) {
-    byte[] key = row;
+  public DenseVector(final int row,
+      final VectorMapWritable<Integer, VectorEntry> m) {
+    int key = row;
     this.row = key;
-    this.cells = m;
+    this.entries = m;
   }
 
   public DenseVector(int row, RowResult rowResult) {
-    this.cells = new HbaseMapWritable<byte[], Cell>();
-    this.row = Numeric.intToBytes(row);
+    this.entries = new VectorMapWritable<Integer, VectorEntry>();
+    this.row = row;
     for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
-      this.cells.put(f.getKey(), f.getValue());
+      this.entries.put(Numeric.getColumnIndex(f.getKey()), new VectorEntry(f
+          .getValue()));
     }
   }
 
   /**
    * Get the row for this Vector
    */
-  public byte[] getRow() {
-    byte[] key = row;
+  public int getRow() {
+    int key = row;
     return key;
   }
 
-  public HbaseMapWritable<byte[], Cell> getCells() {
-    return cells;
+  public VectorMapWritable<Integer, VectorEntry> getCells() {
+    return entries;
   }
 
   public void add(int index, double value) {
     // TODO Auto-generated method stub
-
   }
 
   public Vector add(double alpha, Vector v) {
@@ -77,15 +79,14 @@ public class DenseVector extends VectorWritable implements Vector {
     if (this.size() == 0) {
       DenseVector trunk = (DenseVector) v2;
       this.row = trunk.row;
-      this.cells = trunk.cells;
+      this.entries = trunk.entries;
       return this;
     }
 
     for (int i = 0; i < this.size(); i++) {
       double value = (this.get(i) + v2.get(i));
 
-      Cell cValue = new Cell(Numeric.doubleToBytes(value), now());
-      this.cells.put(Numeric.getColumnIndex(i), cValue);
+      this.entries.put(i, new VectorEntry(value));
     }
 
     return this;
@@ -103,17 +104,16 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public Vector scale(double alpha) {
-    Set<byte[]> keySet = cells.keySet();
-    Iterator<byte[]> it = keySet.iterator();
+    Set<Integer> keySet = entries.keySet();
+    Iterator<Integer> it = keySet.iterator();
 
     int i = 0;
     while (it.hasNext()) {
-      byte[] key = it.next();
-      double oValue = Numeric.bytesToDouble(this.get(key).getValue());
+      int key = it.next();
+      double oValue = this.get(key);
       double nValue = oValue * alpha;
 
-      Cell cValue = new Cell(Numeric.doubleToBytes(nValue), now());
-      this.cells.put(Numeric.getColumnIndex(i), cValue);
+      this.entries.put(i, new VectorEntry(nValue));
       i++;
     }
 
@@ -121,9 +121,7 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public double get(int index) {
-
-    return Numeric.bytesToDouble(cells.get(Numeric.getColumnIndex(index))
-        .getValue());
+    return entries.get(index).getValue();
   }
 
   public double norm(Norm type) {
@@ -138,8 +136,7 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public void set(int index, double value) {
-    Cell cValue = new Cell(Numeric.doubleToBytes(value), now());
-    cells.put(Numeric.getColumnIndex(index), cValue);
+    entries.put(index, new VectorEntry(value));
   }
 
   public DenseVector set(Vector v) {
@@ -150,11 +147,11 @@ public class DenseVector extends VectorWritable implements Vector {
   public double getNorm1() {
     double sum = 0.0;
 
-    Set<byte[]> keySet = cells.keySet();
-    Iterator<byte[]> it = keySet.iterator();
+    Set<Integer> keySet = entries.keySet();
+    Iterator<Integer> it = keySet.iterator();
 
     while (it.hasNext()) {
-      sum += Numeric.bytesToDouble(this.get(it.next()).getValue());
+      sum += this.get(it.next()).getValue();
     }
 
     return sum;
@@ -163,11 +160,11 @@ public class DenseVector extends VectorWritable implements Vector {
   public double getNorm2() {
     double square_sum = 0.0;
 
-    Set<byte[]> keySet = cells.keySet();
-    Iterator<byte[]> it = keySet.iterator();
+    Set<Integer> keySet = entries.keySet();
+    Iterator<Integer> it = keySet.iterator();
 
     while (it.hasNext()) {
-      double value = Numeric.bytesToDouble(this.get(it.next()).getValue());
+      double value = this.get(it.next()).getValue();
       square_sum += value * value;
     }
 

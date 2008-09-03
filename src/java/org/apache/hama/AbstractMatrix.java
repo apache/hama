@@ -82,8 +82,7 @@ public abstract class AbstractMatrix implements Matrix {
     Cell c;
     double result = -1;
     try {
-      c = table
-          .get(Bytes.toBytes(String.valueOf(i)), Numeric.getColumnIndex(j));
+      c = table.get(Bytes.toBytes(String.valueOf(i)), Numeric.getColumnIndex(j));
       if (c != null) {
         result = Numeric.bytesToDouble(c.getValue());
       }

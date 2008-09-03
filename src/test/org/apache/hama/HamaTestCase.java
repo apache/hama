@@ -26,7 +26,7 @@ import org.apache.hadoop.hbase.HBaseClusterTestCase;
  */
 public class HamaTestCase extends HBaseClusterTestCase {
   protected int SIZE = 5;
-  protected HamaConfiguration conf = new HamaConfiguration();
+  protected final HamaConfiguration conf = new HamaConfiguration();
   
   /** constructor */
   public HamaTestCase() {

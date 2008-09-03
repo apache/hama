@@ -31,33 +31,32 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.hadoop.hbase.HConstants;
-import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.io.HbaseMapWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Vector;
 import org.apache.hama.util.Numeric;
 
-public class VectorWritable implements Writable, Map<byte[], Cell> {
+public abstract class VectorWritable implements Writable,
+    Map<Integer, VectorEntry> {
 
-  public byte[] row;
-  public HbaseMapWritable<byte[], Cell> cells;
+  public Integer row;
+  public VectorMapWritable<Integer, VectorEntry> entries;
 
-  public Cell put(byte[] key, Cell value) {
+  public VectorEntry put(Integer key, VectorEntry value) {
     throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
 
-  public Cell get(Object key) {
-    return this.cells.get(key);
+  public VectorEntry get(Object key) {
+    return this.entries.get(key);
   }
 
-  public Cell remove(Object key) {
+  public VectorEntry remove(Object key) {
     throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
 
   public boolean containsKey(Object key) {
-    return cells.containsKey(key);
+    return entries.containsKey(key);
   }
 
   public boolean containsValue(Object value) {
@@ -65,62 +64,62 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
   }
 
   public boolean isEmpty() {
-    return cells.isEmpty();
+    return entries.isEmpty();
   }
 
   public void clear() {
     throw new UnsupportedOperationException("VectorDatum is read-only!");
   }
 
-  public Set<byte[]> keySet() {
-    Set<byte[]> result = new TreeSet<byte[]>(Bytes.BYTES_COMPARATOR);
-    for (byte[] w : cells.keySet()) {
+  public Set<Integer> keySet() {
+    Set<Integer> result = new TreeSet<Integer>();
+    for (Integer w : entries.keySet()) {
       result.add(w);
     }
     return result;
   }
 
-  public Set<Map.Entry<byte[], Cell>> entrySet() {
-    return Collections.unmodifiableSet(this.cells.entrySet());
+  public Set<Map.Entry<Integer, VectorEntry>> entrySet() {
+    return Collections.unmodifiableSet(this.entries.entrySet());
   }
 
-  public Collection<Cell> values() {
-    ArrayList<Cell> result = new ArrayList<Cell>();
-    for (Writable w : cells.values()) {
-      result.add((Cell) w);
+  public Collection<VectorEntry> values() {
+    ArrayList<VectorEntry> result = new ArrayList<VectorEntry>();
+    for (Writable w : entries.values()) {
+      result.add((VectorEntry) w);
     }
     return result;
   }
 
   public void readFields(final DataInput in) throws IOException {
-    this.row = Bytes.readByteArray(in);
-    this.cells.readFields(in);
+    this.row = Numeric.bytesToInt(Bytes.readByteArray(in));
+    this.entries.readFields(in);
   }
 
   public void write(final DataOutput out) throws IOException {
-    Bytes.writeByteArray(out, this.row);
-    this.cells.write(out);
+    Bytes.writeByteArray(out, Numeric.intToBytes(this.row));
+    this.entries.write(out);
   }
 
-  public VectorWritable addition(byte[] bs, Vector v2) {
+  public VectorWritable addition(Integer bs, Vector v2) {
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
-  public void putAll(Map<? extends byte[], ? extends Cell> m) {
+  public void putAll(Map<? extends Integer, ? extends VectorEntry> m) {
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
   /**
-   * Get the Cell that corresponds to column
+   * Get the VectorEntry that corresponds to column
    */
-  public Cell get(byte[] column) {
-    return this.cells.get(column);
+  public VectorEntry get(Integer column) {
+    return this.entries.get(column);
   }
 
   /**
-   * Get the Cell that corresponds to column, using a String key
+   * Get the VectorEntry that corresponds to column, using a String key
    */
-  public Cell get(String key) {
+  public VectorEntry get(String key) {
     return get(Bytes.toBytes(key));
   }
 
@@ -128,33 +127,33 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
    * Get the double value without timestamp
    */
   public double get(int key) {
-    return Numeric.bytesToDouble(get(Numeric.intToBytes(key)).getValue());
+    return this.get(Numeric.intToBytes(key)).getValue();
   }
 
   public int size() {
-    return this.cells.size();
+    return this.entries.size();
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("row=");
-    sb.append(Bytes.toString(this.row));
+    sb.append(String.valueOf(this.row));
     sb.append(", cells={");
     boolean moreThanOne = false;
-    for (Map.Entry<byte[], Cell> e : this.cells.entrySet()) {
+    for (Map.Entry<Integer, VectorEntry> e : this.entries.entrySet()) {
       if (moreThanOne) {
         sb.append(", ");
       } else {
         moreThanOne = true;
       }
       sb.append("(column=");
-      sb.append(Bytes.toString(e.getKey()));
+      sb.append(String.valueOf(e.getKey()));
       sb.append(", timestamp=");
       sb.append(Long.toString(e.getValue().getTimestamp()));
       sb.append(", value=");
-      byte[] value = e.getValue().getValue();
-      if (Bytes.equals(e.getKey(), HConstants.COL_REGIONINFO)) {
+      byte[] value = Numeric.doubleToBytes(e.getValue().getValue());
+      if (Bytes.equals(Numeric.intToBytes(e.getKey()), HConstants.COL_REGIONINFO)) {
         try {
           sb.append(Writables.getHRegionInfo(value).toString());
         } catch (IOException ioe) {
@@ -174,8 +173,8 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
    * 
    * @return iterator
    */
-  public Iterator<Cell> iterator() {
-    return cells.values().iterator();
+  public Iterator<VectorEntry> iterator() {
+    return entries.values().iterator();
   }
 
   /**
@@ -183,17 +182,17 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
    * The inner class for an entry of row.
    * 
    */
-  public static class Entries implements Map.Entry<byte[], Cell> {
+  public static class Entries implements Map.Entry<byte[], VectorEntry> {
 
     private final byte[] column;
-    private final Cell cell;
+    private final VectorEntry entry;
 
-    Entries(byte[] column, Cell cell) {
+    Entries(byte[] column, VectorEntry entry) {
       this.column = column;
-      this.cell = cell;
+      this.entry = entry;
     }
 
-    public Cell setValue(Cell c) {
+    public VectorEntry setValue(VectorEntry c) {
       throw new UnsupportedOperationException("VectorWritable is read-only!");
     }
 
@@ -202,12 +201,8 @@ public class VectorWritable implements Writable, Map<byte[], Cell> {
       return key;
     }
 
-    public Cell getValue() {
-      return cell;
+    public VectorEntry getValue() {
+      return entry;
     }
-  }
-  
-  public long now() {
-    return System.currentTimeMillis();
   }
 }

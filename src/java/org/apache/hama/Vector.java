@@ -21,7 +21,7 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
-import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hama.io.VectorEntry;
 
 /**
  * Basic vector interface.
@@ -135,5 +135,5 @@ public interface Vector {
    * 
    * @return iterator
    */
-  public Iterator<Cell> iterator();
+  public Iterator<VectorEntry> iterator();
 }

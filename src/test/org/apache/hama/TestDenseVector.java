@@ -21,14 +21,13 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
-import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.io.VectorEntry;
 
 public class TestDenseVector extends HamaTestCase {
   private static final double cosine = 0.6978227007909176;
   private static final double norm1 = 12.0;
   private static final double norm2 = 6.782329983125268;
-  private double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
+  private static double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
   private Matrix m1;
   private Vector v1;
   private Vector v2;
@@ -90,10 +89,10 @@ public class TestDenseVector extends HamaTestCase {
    */
   public void testIterator() {
     int i = 0;
-    Iterator<Cell> it = v1.iterator();
+    Iterator<VectorEntry> it = v1.iterator();
     while (it.hasNext()) {
-      Cell c = it.next();
-      assertEquals(Numeric.bytesToDouble(c.getValue()), values[0][i]);
+      VectorEntry c = it.next();
+      assertEquals(c.getValue(), values[0][i]);
       i++;
     }
   }

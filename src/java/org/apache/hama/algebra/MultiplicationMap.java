@@ -22,14 +22,13 @@ package org.apache.hama.algebra;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
 import org.apache.hama.Vector;
+import org.apache.hama.io.VectorEntry;
 import org.apache.hama.mapred.DenseMap;
-import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
 public class MultiplicationMap extends DenseMap<IntWritable, DenseVector> {
@@ -40,14 +39,14 @@ public class MultiplicationMap extends DenseMap<IntWritable, DenseVector> {
       OutputCollector<IntWritable, DenseVector> output, Reporter reporter)
       throws IOException {
 
-    Iterator<Cell> it = value.iterator();
+    Iterator<VectorEntry> it = value.iterator();
     int i = 0;
     while (it.hasNext()) {
-      Cell c = it.next();
+      VectorEntry c = it.next();
       
       Vector v = MATRIX_B.getRow(i);
       
-      double alpha = Numeric.bytesToDouble(c.getValue());
+      double alpha = c.getValue();
       output.collect(key, (DenseVector) v.scale(alpha));
       i++;
     }

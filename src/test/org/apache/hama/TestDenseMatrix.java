@@ -22,13 +22,15 @@ package org.apache.hama;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.io.VectorEntry;
+import org.apache.log4j.Logger;
 
 /**
  * Matrix test
  */
 public class TestDenseMatrix extends HamaTestCase {
+  static final Logger LOG = Logger.getLogger(TestDenseMatrix.class);
+  
   private Matrix m1;
   private Matrix m2;
   
@@ -46,10 +48,10 @@ public class TestDenseMatrix extends HamaTestCase {
    */
   public void testGetColumn() throws IOException {
     Vector v = m1.getColumn(0);
-    Iterator<Cell> it = v.iterator();
+    Iterator<VectorEntry> it = v.iterator();
     int x = 0;
     while (it.hasNext()) {
-      assertEquals(m1.get(x, 0), Numeric.bytesToDouble(it.next().getValue()));
+      assertEquals(m1.get(x, 0), it.next().getValue());
       x++;
     }
   }
@@ -94,6 +96,7 @@ public class TestDenseMatrix extends HamaTestCase {
 
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
+        LOG.info("result: " + result.get(i, j) + ", C: " + C[i][j]);
         assertEquals(result.get(i, j), C[i][j]);
       }
     }
