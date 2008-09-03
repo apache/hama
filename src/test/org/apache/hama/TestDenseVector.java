@@ -19,7 +19,6 @@
  */
 package org.apache.hama;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.hadoop.hbase.io.Cell;
@@ -30,62 +29,48 @@ public class TestDenseVector extends HamaTestCase {
   private static final double norm1 = 12.0;
   private static final double norm2 = 6.782329983125268;
   private double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
-  private static final String m = "dotTest";
+  private Matrix m1;
+  private Vector v1;
+  private Vector v2;
 
-  /**
-   * Test vector
-   * 
-   * @throws IOException
-   */
-  public void testGetVector() throws IOException {
-    Matrix m1 = new DenseMatrix(conf, m);
+  public void setUp() throws Exception {
+    super.setUp();
+    m1 = new DenseMatrix(conf, "vectorTest");
 
-    for (int i = 0; i < 2; i++) {
-      for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < 2; i++)
+      for (int j = 0; j < 4; j++)
         m1.set(i, j, values[i][j]);
-      }
-    }
 
-    Vector v1 = m1.getRow(0);
-    Vector v2 = m1.getRow(1);
-
-    dotTest(v1, v2);
-    norm1Test(v1, v2);
-    norm2Test(v1, v2);
-    scalingTest(v2);
+    v1 = m1.getRow(0);
+    v2 = m1.getRow(1);
   }
 
   /**
    * Test |a| dot |b|
-   * 
-   * @param v1
-   * @param v2
    */
-  private void dotTest(Vector v1, Vector v2) {
+  public void testDot() {
     double cos = v1.dot(v2);
     assertEquals(cos, cosine);
   }
 
   /**
-   * Test Norm one
-   * 
-   * @param v1
-   * @param v2
+   * Test norm one
    */
-  private void norm1Test(Vector v1, Vector v2) {
+  public void testNom1() {
     assertEquals(norm1, ((DenseVector) v1).getNorm1());
   }
 
-  private void norm2Test(Vector v1, Vector v2) {
+  /**
+   * Test norm two
+   */
+  public void testNom2() {
     assertEquals(norm2, ((DenseVector) v1).getNorm2());
   }
 
   /**
    * Test scaling
-   * 
-   * @param v2
    */
-  private void scalingTest(Vector v2) {
+  public void scalingTest() {
     v2.scale(0.5);
 
     for (int i = 0; i < v2.size(); i++) {
@@ -97,24 +82,18 @@ public class TestDenseVector extends HamaTestCase {
    * Test get/set methods
    */
   public void testGetSet() {
-    Vector v1 = new DenseVector();
-    v1.set(0, 0.2);
-    assertEquals(v1.get(0), 0.2);
+    assertEquals(v1.get(0), values[0][0]);
   }
 
   /**
    * Test iterator
    */
   public void testIterator() {
-    Vector v1 = new DenseVector();
-    v1.set(0, 0.2);
-    v1.set(1, 0.5);
-    double[] result = { 0.2, 0.5 };
     int i = 0;
     Iterator<Cell> it = v1.iterator();
     while (it.hasNext()) {
       Cell c = it.next();
-      assertEquals(Numeric.bytesToDouble(c.getValue()), result[i]);
+      assertEquals(Numeric.bytesToDouble(c.getValue()), values[0][i]);
       i++;
     }
   }

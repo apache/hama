@@ -29,31 +29,27 @@ import org.apache.hama.util.Numeric;
  * Matrix test
  */
 public class TestDenseMatrix extends HamaTestCase {
-
-  /**
-   * Matrix Test
-   * 
-   * @throws IOException
-   */
-  public void testGetMatrixSize() throws IOException {
-    Matrix rand = DenseMatrix.random(conf, SIZE, SIZE);
-    assertTrue(rand.getRows() == SIZE);
-
-    getColumnTest(rand);
+  private Matrix m1;
+  private Matrix m2;
+  
+  public void setUp() throws Exception{
+    super.setUp();
+    m1 = DenseMatrix.random(conf, SIZE, SIZE);
+    m2 = DenseMatrix.random(conf, SIZE, SIZE);
   }
-
+  
   /**
    * Column vector test.
    * 
    * @param rand
    * @throws IOException
    */
-  public void getColumnTest(Matrix rand) throws IOException {
-    Vector v = rand.getColumn(0);
+  public void testGetColumn() throws IOException {
+    Vector v = m1.getColumn(0);
     Iterator<Cell> it = v.iterator();
     int x = 0;
     while (it.hasNext()) {
-      assertEquals(rand.get(x, 0), Numeric.bytesToDouble(it.next().getValue()));
+      assertEquals(m1.get(x, 0), Numeric.bytesToDouble(it.next().getValue()));
       x++;
     }
   }
@@ -62,14 +58,11 @@ public class TestDenseMatrix extends HamaTestCase {
    * Test matrices addition
    */
   public void testMatrixAdd() {
-    Matrix rand1 = DenseMatrix.random(conf, SIZE, SIZE);
-    Matrix rand2 = DenseMatrix.random(conf, SIZE, SIZE);
-
-    Matrix result = rand1.add(rand2);
+    Matrix result = m1.add(m2);
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
-        assertEquals(result.get(i, j), rand1.get(i, j) + rand2.get(i, j));
+        assertEquals(result.get(i, j), m1.get(i, j) + m2.get(i, j));
       }
     }
   }
@@ -78,9 +71,6 @@ public class TestDenseMatrix extends HamaTestCase {
    * Test matrices multiplication
    */
   public void testMatrixMult() {
-    Matrix m1 = DenseMatrix.random(conf, SIZE, SIZE);
-    Matrix m2 = DenseMatrix.random(conf, SIZE, SIZE);
-
     Matrix result = m1.mult(m2);
 
     verifyMultResult(SIZE, m1, m2, result);

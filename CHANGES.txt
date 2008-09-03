@@ -22,6 +22,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
+    HAMA-52: Fixture setup (edwardyoon)
     HAMA-42: Replace ImmutableBytesWritable to IntWritable (edwardyoon)
     HAMA-44: Remove findbugs warnings (edwardyoon)
     HAMA-40: Rename MatrixInterface to Matrix (edwardyoon)

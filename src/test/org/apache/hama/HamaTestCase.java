@@ -20,13 +20,11 @@
 package org.apache.hama;
 
 import org.apache.hadoop.hbase.HBaseClusterTestCase;
-import org.apache.log4j.Logger;
 
 /**
  * Forming up the miniDfs and miniHbase
  */
 public class HamaTestCase extends HBaseClusterTestCase {
-  static final Logger LOG = Logger.getLogger(HamaTestCase.class);
   protected int SIZE = 5;
   protected HamaConfiguration conf = new HamaConfiguration();
   
