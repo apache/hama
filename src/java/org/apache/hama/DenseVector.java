@@ -49,8 +49,8 @@ public class DenseVector extends VectorWritable implements Vector {
     this.entries = new VectorMapWritable<Integer, VectorEntry>();
     this.row = row;
     for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
-      this.entries.put(Numeric.getColumnIndex(f.getKey()), new VectorEntry(f
-          .getValue()));
+      VectorEntry entry = new VectorEntry(f.getValue());
+      this.entries.put(Numeric.getColumnIndex(f.getKey()), entry);
     }
   }
 
@@ -62,7 +62,7 @@ public class DenseVector extends VectorWritable implements Vector {
     return key;
   }
 
-  public VectorMapWritable<Integer, VectorEntry> getCells() {
+  public VectorMapWritable<Integer, VectorEntry> getEntries() {
     return entries;
   }
 
@@ -141,7 +141,7 @@ public class DenseVector extends VectorWritable implements Vector {
 
   public DenseVector set(Vector v) {
     return new DenseVector(((DenseVector) v).getRow(), ((DenseVector) v)
-        .getCells());
+        .getEntries());
   }
 
   public double getNorm1() {
