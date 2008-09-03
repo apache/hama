@@ -24,12 +24,10 @@ import org.apache.hadoop.hbase.HBaseClusterTestCase;
 /**
  * Forming up the miniDfs and miniHbase
  */
-public class HamaTestCase extends HBaseClusterTestCase {
-  protected int SIZE = 5;
+public class HCluster extends HBaseClusterTestCase {
   protected final HamaConfiguration conf = new HamaConfiguration();
-  
-  /** constructor */
-  public HamaTestCase() {
-    super();
+
+  public void setUp() throws Exception {
+    super.setUp();
   }
 }

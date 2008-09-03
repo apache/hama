@@ -26,7 +26,7 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
-import org.apache.hama.HamaTestCase;
+import org.apache.hama.HCluster;
 import org.apache.hama.Matrix;
 import org.apache.hama.algebra.AdditionMap;
 import org.apache.hama.algebra.AdditionReduce;
@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 /**
  * Test Matrix Map/Reduce job
  */
-public class TestMatrixMapReduce extends HamaTestCase {
+public class TestMatrixMapReduce extends HCluster {
   static final Logger LOG = Logger.getLogger(TestMatrixMapReduce.class);
   private String A = "matrixA";
   private String B = "matrixB";

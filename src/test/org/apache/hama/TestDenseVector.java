@@ -21,27 +21,46 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
+import junit.extensions.TestSetup;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hama.io.VectorEntry;
 
-public class TestDenseVector extends HamaTestCase {
+public class TestDenseVector extends TestCase {
+  final static Log LOG = LogFactory.getLog(TestDenseVector.class.getName());
   private static final double cosine = 0.6978227007909176;
   private static final double norm1 = 12.0;
   private static final double norm2 = 6.782329983125268;
   private static double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
-  private Matrix m1;
-  private Vector v1;
-  private Vector v2;
+  private static Matrix m1;
+  private static Vector v1;
+  private static Vector v2;
 
-  public void setUp() throws Exception {
-    super.setUp();
-    m1 = new DenseMatrix(conf, "vectorTest");
+  public static Test suite() {
+    TestSetup setup = new TestSetup(new TestSuite(TestDenseVector.class)) {
+      protected void setUp() throws Exception {
+        HCluster hCluster = new HCluster();
+        hCluster.setUp();
 
-    for (int i = 0; i < 2; i++)
-      for (int j = 0; j < 4; j++)
-        m1.set(i, j, values[i][j]);
+        m1 = new DenseMatrix(hCluster.conf, "vectorTest");
 
-    v1 = m1.getRow(0);
-    v2 = m1.getRow(1);
+        for (int i = 0; i < 2; i++)
+          for (int j = 0; j < 4; j++)
+            m1.set(i, j, values[i][j]);
+
+        v1 = m1.getRow(0);
+        v2 = m1.getRow(1);
+      }
+
+      protected void tearDown() {
+        LOG.info("tearDown()");
+      }
+    };
+    return setup;
   }
 
   /**
@@ -56,14 +75,16 @@ public class TestDenseVector extends HamaTestCase {
    * Test norm one
    */
   public void testNom1() {
-    assertEquals(norm1, ((DenseVector) v1).getNorm1());
+    double result = ((DenseVector) v1).getNorm1();
+    assertEquals(norm1, result);
   }
 
   /**
    * Test norm two
    */
   public void testNom2() {
-    assertEquals(norm2, ((DenseVector) v1).getNorm2());
+    double result = ((DenseVector) v1).getNorm2();
+    assertEquals(norm2, result);
   }
 
   /**

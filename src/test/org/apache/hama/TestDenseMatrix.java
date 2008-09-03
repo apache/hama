@@ -22,22 +22,38 @@ package org.apache.hama;
 import java.io.IOException;
 import java.util.Iterator;
 
+import junit.extensions.TestSetup;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
 import org.apache.hama.io.VectorEntry;
 import org.apache.log4j.Logger;
 
 /**
  * Matrix test
  */
-public class TestDenseMatrix extends HamaTestCase {
+public class TestDenseMatrix extends TestCase {
   static final Logger LOG = Logger.getLogger(TestDenseMatrix.class);
+  private static int SIZE = 5;
+  private static Matrix m1;
+  private static Matrix m2;
   
-  private Matrix m1;
-  private Matrix m2;
-  
-  public void setUp() throws Exception{
-    super.setUp();
-    m1 = DenseMatrix.random(conf, SIZE, SIZE);
-    m2 = DenseMatrix.random(conf, SIZE, SIZE);
+  public static Test suite() {
+    TestSetup setup = new TestSetup(new TestSuite(TestDenseMatrix.class)) {
+      protected void setUp() throws Exception {
+        HCluster hCluster = new HCluster();
+        hCluster.setUp();
+        
+        m1 = DenseMatrix.random(hCluster.conf, SIZE, SIZE);
+        m2 = DenseMatrix.random(hCluster.conf, SIZE, SIZE);
+      }
+
+      protected void tearDown() {
+        LOG.info("tearDown()");
+      }
+    };
+    return setup;
   }
   
   /**
