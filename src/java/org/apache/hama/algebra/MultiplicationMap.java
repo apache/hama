@@ -42,12 +42,8 @@ public class MultiplicationMap extends DenseMap<IntWritable, DenseVector> {
     Iterator<VectorEntry> it = value.iterator();
     int i = 0;
     while (it.hasNext()) {
-      VectorEntry c = it.next();
-      
       Vector v = MATRIX_B.getRow(i);
-      
-      double alpha = c.getValue();
-      output.collect(key, (DenseVector) v.scale(alpha));
+      output.collect(key, (DenseVector) v.scale(it.next().getValue()));
       i++;
     }
   }
