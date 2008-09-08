@@ -115,8 +115,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @param m the number of rows.
    * @param n the number of columns.
    * @return an m-by-n matrix with uniformly distributed random elements.
+   * @throws IOException
    */
-  public static Matrix random(HamaConfiguration conf, int m, int n) {
+  public static Matrix random(HamaConfiguration conf, int m, int n)
+      throws IOException {
     String name = RandomVariable.randMatrixName();
     Matrix rand = new DenseMatrix(conf, name);
     for (int i = 0; i < m; i++) {
@@ -130,7 +132,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return rand;
   }
 
-  public Matrix add(Matrix B) {
+  public Matrix add(Matrix B) throws IOException {
     String output = RandomVariable.randMatrixName();
     Matrix C = new DenseMatrix(config, output);
 
@@ -141,16 +143,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         IntWritable.class, DenseVector.class, jobConf);
     MatrixReduce.initJob(C.getName(), AdditionReduce.class, jobConf);
 
-    try {
-      JobClient.runJob(jobConf);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
+    JobClient.runJob(jobConf);
     return C;
   }
 
-  public Matrix add(double alpha, Matrix B) {
+  public Matrix add(double alpha, Matrix B) throws IOException {
     // TODO Auto-generated method stub
     return null;
   }
@@ -158,7 +155,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseVector getRow(int row) throws IOException {
     return new DenseVector(row, table.getRow(String.valueOf(row)));
   }
-  
+
   public Vector getColumn(int column) throws IOException {
     byte[] columnKey = Numeric.getColumnIndex(column);
     byte[][] c = { columnKey };
@@ -167,13 +164,14 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     VectorMapWritable<Integer, VectorEntry> trunk = new VectorMapWritable<Integer, VectorEntry>();
 
     for (RowResult row : scan) {
-      trunk.put(Numeric.bytesToInt(row.getRow()), new VectorEntry(row.get(columnKey)));
+      trunk.put(Numeric.bytesToInt(row.getRow()), new VectorEntry(row
+          .get(columnKey)));
     }
 
     return new DenseVector(column, trunk);
   }
 
-  public Matrix mult(Matrix B) {
+  public Matrix mult(Matrix B) throws IOException {
     String output = RandomVariable.randMatrixName();
     Matrix C = new DenseMatrix(config, output);
 
@@ -184,31 +182,26 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         IntWritable.class, DenseVector.class, jobConf);
     MatrixReduce.initJob(C.getName(), MultiplicationReduce.class, jobConf);
 
-    try {
-      JobClient.runJob(jobConf);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
+    JobClient.runJob(jobConf);
     return C;
   }
 
-  public Matrix multAdd(double alpha, Matrix B, Matrix C) {
+  public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException {
     // TODO Auto-generated method stub
     return null;
   }
 
-  public double norm(Norm type) {
+  public double norm(Norm type) throws IOException {
     // TODO Auto-generated method stub
     return 0;
   }
 
-  public Matrix set(double alpha, Matrix B) {
+  public Matrix set(double alpha, Matrix B) throws IOException {
     // TODO Auto-generated method stub
     return null;
   }
 
-  public Matrix set(Matrix B) {
+  public Matrix set(Matrix B) throws IOException {
     // TODO Auto-generated method stub
     return null;
   }

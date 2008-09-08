@@ -32,8 +32,9 @@ public interface Matrix {
    * @param i ith row of the matrix
    * @param j jth column of the matrix
    * @return the value of entry
+   * @throws IOException 
    */
-  public double get(int i, int j);
+  public double get(int i, int j) throws IOException;
 
   /**
    * Gets the vector of row
@@ -57,15 +58,17 @@ public interface Matrix {
    * Get a number of row of the matrix from the meta-data column
    * 
    * @return a number of rows of the matrix
+   * @throws IOException 
    */
-  public int getRows();
+  public int getRows() throws IOException;
 
   /**
    * Get a number of column of the matrix from the meta-data column
    * 
    * @return a number of columns of the matrix
+   * @throws IOException 
    */
-  public int getColumns();
+  public int getColumns() throws IOException;
 
   /**
    * Sets the double value of (i, j)
@@ -73,8 +76,9 @@ public interface Matrix {
    * @param i ith row of the matrix
    * @param j jth column of the matrix
    * @param value the value of entry
+   * @throws IOException 
    */
-  public void set(int i, int j, double value);
+  public void set(int i, int j, double value) throws IOException;
 
   /**
    * A=alpha*B
@@ -82,24 +86,27 @@ public interface Matrix {
    * @param alpha
    * @param B
    * @return A
+   * @throws IOException 
    */
-  public Matrix set(double alpha, Matrix B);
+  public Matrix set(double alpha, Matrix B) throws IOException;
 
   /**
    * A=B
    * 
    * @param B
    * @return A
+   * @throws IOException 
    */
-  public Matrix set(Matrix B);
+  public Matrix set(Matrix B) throws IOException;
 
   /**
    * Sets the dimension of matrix
    * 
    * @param rows the number of rows
    * @param columns the number of columns
+   * @throws IOException
    */
-  public void setDimension(int rows, int columns);
+  public void setDimension(int rows, int columns) throws IOException;
 
   /**
    * A(i, j) += value
@@ -107,16 +114,18 @@ public interface Matrix {
    * @param i
    * @param j
    * @param value
+   * @throws IOException 
    */
-  public void add(int i, int j, double value);
+  public void add(int i, int j, double value) throws IOException;
 
   /**
    * A = B + A
    * 
    * @param B
    * @return A
+   * @throws IOException 
    */
-  public Matrix add(Matrix B);
+  public Matrix add(Matrix B) throws IOException;
 
   /**
    * A = alpha*B + A
@@ -124,16 +133,18 @@ public interface Matrix {
    * @param alpha
    * @param B
    * @return A
+   * @throws IOException
    */
-  public Matrix add(double alpha, Matrix B);
+  public Matrix add(double alpha, Matrix B) throws IOException;
 
   /**
    * C = A*B
    * 
    * @param B
    * @return C
+   * @throws IOException 
    */
-  public Matrix mult(Matrix B);
+  public Matrix mult(Matrix B) throws IOException;
 
   /**
    * C = alpha*A*B + C
@@ -142,16 +153,18 @@ public interface Matrix {
    * @param B
    * @param C
    * @return C
+   * @throws IOException 
    */
-  public Matrix multAdd(double alpha, Matrix B, Matrix C);
+  public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException;
 
   /**
    * Computes the given norm of the matrix
    * 
    * @param type
    * @return norm of the matrix
+   * @throws IOException 
    */
-  public double norm(Norm type);
+  public double norm(Norm type) throws IOException;
 
   /**
    * Supported matrix-norms.

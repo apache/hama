@@ -19,13 +19,15 @@
  */
 package org.apache.hama.examples;
 
+import java.io.IOException;
+
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 
 public class MatrixAddition {
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     if (args.length < 2) {
       System.out.println("addition <row_m> <column_n>");
       System.exit(-1);

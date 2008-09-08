@@ -22,6 +22,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
+    HAMA-39: IO operations should throws an IOException (edwardyoon)
     HAMA-52: Fixture setup (edwardyoon)
     HAMA-42: Replace ImmutableBytesWritable to IntWritable (edwardyoon)
     HAMA-44: Remove findbugs warnings (edwardyoon)

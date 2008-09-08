@@ -38,13 +38,13 @@ public class TestDenseMatrix extends TestCase {
   private static int SIZE = 5;
   private static Matrix m1;
   private static Matrix m2;
-  
+
   public static Test suite() {
     TestSetup setup = new TestSetup(new TestSuite(TestDenseMatrix.class)) {
       protected void setUp() throws Exception {
         HCluster hCluster = new HCluster();
         hCluster.setUp();
-        
+
         m1 = DenseMatrix.random(hCluster.conf, SIZE, SIZE);
         m2 = DenseMatrix.random(hCluster.conf, SIZE, SIZE);
       }
@@ -55,7 +55,7 @@ public class TestDenseMatrix extends TestCase {
     };
     return setup;
   }
-  
+
   /**
    * Column vector test.
    * 
@@ -74,8 +74,10 @@ public class TestDenseMatrix extends TestCase {
 
   /**
    * Test matrices addition
+   * 
+   * @throws IOException
    */
-  public void testMatrixAdd() {
+  public void testMatrixAdd() throws IOException {
     Matrix result = m1.add(m2);
 
     for (int i = 0; i < SIZE; i++) {
@@ -87,8 +89,10 @@ public class TestDenseMatrix extends TestCase {
 
   /**
    * Test matrices multiplication
+   * 
+   * @throws IOException
    */
-  public void testMatrixMult() {
+  public void testMatrixMult() throws IOException {
     Matrix result = m1.mult(m2);
 
     verifyMultResult(SIZE, m1, m2, result);
@@ -101,8 +105,10 @@ public class TestDenseMatrix extends TestCase {
    * @param m1
    * @param m2
    * @param result
+   * @throws IOException
    */
-  private void verifyMultResult(int size, Matrix m1, Matrix m2, Matrix result) {
+  private void verifyMultResult(int size, Matrix m1, Matrix m2, Matrix result)
+      throws IOException {
     double[][] C = new double[SIZE][SIZE];
 
     for (int i = 0; i < SIZE; i++)

@@ -78,71 +78,49 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   /** {@inheritDoc} */
-  public double get(int i, int j) {
-    Cell c;
+  public double get(int i, int j) throws IOException {
     double result = -1;
-    try {
-      c = table.get(Bytes.toBytes(String.valueOf(i)), Numeric.getColumnIndex(j));
-      if (c != null) {
-        result = Numeric.bytesToDouble(c.getValue());
-      }
-    } catch (IOException e) {
-      LOG.error(e, e);
+    Cell c = table.get(Bytes.toBytes(String.valueOf(i)), Numeric
+        .getColumnIndex(j));
+    if (c != null) {
+      result = Numeric.bytesToDouble(c.getValue());
     }
     return result;
   }
 
   /** {@inheritDoc} */
-  public int getRows() {
+  public int getRows() throws IOException {
     Cell rows = null;
-    try {
-      rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
-
+    rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
     return Bytes.toInt(rows.getValue());
   }
 
   /** {@inheritDoc} */
-  public int getColumns() {
-    Cell columns = null;
-    try {
-      columns = table.get(Constants.METADATA, Constants.METADATA_COLUMNS);
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
+  public int getColumns() throws IOException {
+    Cell columns = table.get(Constants.METADATA, Constants.METADATA_COLUMNS);
     return Bytes.toInt(columns.getValue());
   }
 
   /** {@inheritDoc} */
-  public void set(int i, int j, double value) {
+  public void set(int i, int j, double value) throws IOException {
     BatchUpdate b = new BatchUpdate(new Text(String.valueOf(i)));
     b.put(new Text(Constants.COLUMN + String.valueOf(j)), Numeric
         .doubleToBytes(value));
-    try {
-      table.commit(b);
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
+    table.commit(b);
   }
 
   /** {@inheritDoc} */
-  public void add(int i, int j, double value) {
+  public void add(int i, int j, double value) throws IOException {
     // TODO Auto-generated method stub
   }
 
   /** {@inheritDoc} */
-  public void setDimension(int rows, int columns) {
+  public void setDimension(int rows, int columns) throws IOException {
     BatchUpdate b = new BatchUpdate(Constants.METADATA);
     b.put(Constants.METADATA_ROWS, Bytes.toBytes(rows));
     b.put(Constants.METADATA_COLUMNS, Bytes.toBytes(columns));
 
-    try {
-      table.commit(b);
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
+    table.commit(b);
   }
 
   /** {@inheritDoc} */
