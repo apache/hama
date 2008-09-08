@@ -172,7 +172,6 @@ public abstract class MatrixInputFormatBase implements
      * @return true if there was more data
      * @throws IOException
      */
-    @SuppressWarnings("unchecked")
     public boolean next(IntWritable key, DenseVector value)
         throws IOException {
       RowResult result = this.scanner.next();
@@ -193,8 +192,7 @@ public abstract class MatrixInputFormatBase implements
    *      JobConf, Reporter)
    */
   public RecordReader<IntWritable, DenseVector> getRecordReader(
-      InputSplit split, @SuppressWarnings("unused") JobConf job,
-      @SuppressWarnings("unused") Reporter reporter) throws IOException {
+      InputSplit split, JobConf job, Reporter reporter) throws IOException {
     TableSplit tSplit = (TableSplit) split;
     TableRecordReader trr = this.tableRecordReader;
     // if no table record reader was provided use default

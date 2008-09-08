@@ -62,14 +62,12 @@ public class MatrixOutputFormat extends
     }
 
     /** {@inheritDoc} */
-    public void close(@SuppressWarnings("unused")
-    Reporter reporter) {
+    public void close(Reporter reporter) {
       // Nothing to do.
     }
 
     /** {@inheritDoc} */
-    public void write(@SuppressWarnings("unused")
-    IntWritable key, BatchUpdate value) throws IOException {
+    public void write(IntWritable key, BatchUpdate value) throws IOException {
       m_table.commit(value);
     }
   }
@@ -77,10 +75,8 @@ public class MatrixOutputFormat extends
   /** {@inheritDoc} */
   @Override
   @SuppressWarnings("unchecked")
-  public RecordWriter getRecordWriter(@SuppressWarnings("unused")
-  FileSystem ignored, JobConf job, @SuppressWarnings("unused")
-  String name, @SuppressWarnings("unused")
-  Progressable progress) throws IOException {
+  public RecordWriter getRecordWriter(FileSystem ignored, JobConf job,
+      String name, Progressable progress) throws IOException {
 
     // expecting exactly one path
 
@@ -97,7 +93,6 @@ public class MatrixOutputFormat extends
 
   /** {@inheritDoc} */
   @Override
-  @SuppressWarnings("unused")
   public void checkOutputSpecs(FileSystem ignored, JobConf job)
       throws FileAlreadyExistsException, InvalidJobConfException, IOException {
 

@@ -123,13 +123,11 @@ public class VectorMapWritable<K, V> implements Map<Integer, V>, Writable,
   // Writable
 
   /** @return the Class class for the specified id */
-  @SuppressWarnings( { "unchecked", "boxing" })
   protected Class<?> getClass(byte id) {
     return CODE_TO_CLASS.get(id);
   }
 
   /** @return the id for the specified Class */
-  @SuppressWarnings( { "unchecked", "boxing" })
   protected byte getId(Class<?> clazz) {
     Byte b = CLASS_TO_CODE.get(clazz);
     if (b == null) {
@@ -157,7 +155,8 @@ public class VectorMapWritable<K, V> implements Map<Integer, V>, Writable,
   }
 
   /** {@inheritDoc} */
-  public void readFields(DataInput in) throws IOException {
+  @SuppressWarnings("unchecked")
+public void readFields(DataInput in) throws IOException {
     // First clear the map. Otherwise we will just accumulate
     // entries every time this method is called.
     this.instance.clear();
