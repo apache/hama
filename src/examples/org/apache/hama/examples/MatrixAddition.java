@@ -38,9 +38,6 @@ public class MatrixAddition {
 
     HamaConfiguration conf = new HamaConfiguration();
     
-    conf.set("fs.default.name", "hdfs://udanax.org:54310");
-    conf.set("hbase.master", "udanax.org:60000");
-
     Matrix a = DenseMatrix.random(conf, row, column);
     Matrix b = DenseMatrix.random(conf, row, column);
 
