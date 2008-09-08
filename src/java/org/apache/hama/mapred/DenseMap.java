@@ -31,9 +31,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.Constants;
-import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
-import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 
 @SuppressWarnings("unchecked")
@@ -42,18 +40,14 @@ public abstract class DenseMap<K extends WritableComparable, V extends Writable>
     Mapper<IntWritable, DenseVector, K, V> {
   public static Matrix MATRIX_B;
 
-  public static void initJob(String matrixA, String matrixB,
+  public static void initJob(String matrixA, 
       Class<? extends DenseMap> mapper,
-      Class<? extends WritableComparable> outputKeyClass,
-      Class<? extends Writable> outputValueClass, JobConf job) {
+      JobConf job) {
 
     job.setInputFormat(MatrixInputFormat.class);
-    job.setMapOutputValueClass(outputValueClass);
-    job.setMapOutputKeyClass(outputKeyClass);
     job.setMapperClass(mapper);
     FileInputFormat.addInputPaths(job, matrixA);
 
-    MATRIX_B = new DenseMatrix(new HamaConfiguration(), matrixB);
     job.set(MatrixInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 

@@ -48,5 +48,6 @@ Trunk (unreleased changes)
 
   BUG FIXES
 
+    HAMA-53: NullPointerException on distributed cluster (edwardyoon)
     HAMA-26: hama-formatter.xml should be removed (edwardyoon)  
     HAMA-25: Vector.get() returns double (edwardyoon)

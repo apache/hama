@@ -37,11 +37,12 @@ public class MatrixAddition {
     int column = Integer.parseInt(args[1]);
 
     HamaConfiguration conf = new HamaConfiguration();
+    
+    conf.set("fs.default.name", "hdfs://udanax.org:54310");
+    conf.set("hbase.master", "udanax.org:60000");
 
     Matrix a = DenseMatrix.random(conf, row, column);
     Matrix b = DenseMatrix.random(conf, row, column);
-
-    Matrix c = a.add(b);
 
     System.out.println("\nMatrix A");
     System.out.println("----------------------");
@@ -58,6 +59,9 @@ public class MatrixAddition {
         System.out.println(b.get(i, j));
       }
     }
+    System.out.println();
+    
+    Matrix c = a.add(b);
     
     System.out.println("\nC = A + B");
     System.out.println("----------------------");

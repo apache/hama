@@ -64,7 +64,7 @@ public class TestMatrixMapReduce extends HCluster {
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    DenseMap.initJob(A, B, AdditionMap.class, IntWritable.class,
+    AdditionMap.initJob(A, B, AdditionMap.class, IntWritable.class,
         DenseVector.class, jobConf);
     MatrixReduce.initJob(output, AdditionReduce.class, jobConf);
 

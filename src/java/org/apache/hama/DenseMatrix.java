@@ -36,7 +36,6 @@ import org.apache.hama.algebra.MultiplicationMap;
 import org.apache.hama.algebra.MultiplicationReduce;
 import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
-import org.apache.hama.mapred.DenseMap;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.hama.util.Numeric;
 import org.apache.hama.util.RandomVariable;
@@ -139,7 +138,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job");
 
-    DenseMap.initJob(this.getName(), B.getName(), AdditionMap.class,
+    AdditionMap.initJob(this.getName(), B.getName(), AdditionMap.class,
         IntWritable.class, DenseVector.class, jobConf);
     MatrixReduce.initJob(C.getName(), AdditionReduce.class, jobConf);
 
@@ -178,7 +177,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job");
 
-    DenseMap.initJob(this.getName(), B.getName(), MultiplicationMap.class,
+    MultiplicationMap.initJob(this.getName(), B.getName(), MultiplicationMap.class,
         IntWritable.class, DenseVector.class, jobConf);
     MatrixReduce.initJob(C.getName(), MultiplicationReduce.class, jobConf);
 
