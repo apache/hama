@@ -23,14 +23,13 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.filter.RowFilterInterface;
 import org.apache.hadoop.hbase.filter.RowFilterSet;
 import org.apache.hadoop.hbase.filter.StopRowFilter;
+import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.regionserver.HRegion;
@@ -41,12 +40,12 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.Constants;
 import org.apache.hama.DenseVector;
 import org.apache.hama.util.Numeric;
 
 public abstract class MatrixInputFormatBase implements
     InputFormat<IntWritable, DenseVector> {
-  private final Log LOG = LogFactory.getLog(MatrixInputFormatBase.class);
   private byte[][] inputColumns;
   private HTable table;
   private TableRecordReader tableRecordReader;
@@ -167,13 +166,12 @@ public abstract class MatrixInputFormatBase implements
      * @param key HStoreKey as input key.
      * @param value MapWritable as input value
      * 
-     *          Converts Scanner.next() to Text, DenseVector
+     * Converts Scanner.next() to Text, DenseVector
      * 
      * @return true if there was more data
      * @throws IOException
      */
-    public boolean next(IntWritable key, DenseVector value)
-        throws IOException {
+    public boolean next(IntWritable key, DenseVector value) throws IOException {
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
       if (hasMore) {
@@ -208,57 +206,27 @@ public abstract class MatrixInputFormatBase implements
     return trr;
   }
 
-  /**
-   * Calculates the splits that will serve as input for the map tasks.
-   * <ul>
-   * Splits are created in number equal to the smallest between numSplits and
-   * the number of {@link HRegion}s in the table. If the number of splits is
-   * smaller than the number of {@link HRegion}s then splits are spanned across
-   * multiple {@link HRegion}s and are grouped the most evenly possible. In the
-   * case splits are uneven the bigger splits are placed first in the
-   * {@link InputSplit} array.
-   * 
-   * @param job the map task {@link JobConf}
-   * @param numSplits a hint to calculate the number of splits
-   * 
-   * @return the input splits
-   * 
-   * @see org.apache.hadoop.mapred.InputFormat#getSplits(org.apache.hadoop.mapred.JobConf,
-   *      int)
-   */
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-    byte[][] startKeys = null;
-    try {
-      startKeys = this.table.getStartKeys();
-    } catch (NullPointerException ne) {}
-    
-    if (startKeys == null || startKeys.length == 0) {
-      throw new IOException("Expecting at least one region");
+    Cell meta = this.table.get(Constants.METADATA, Constants.METADATA_ROWS);
+
+    if (Numeric.bytesToInt(meta.getValue()) < numSplits) {
+      numSplits = Numeric.bytesToInt(meta.getValue());
     }
-    if (this.table == null) {
-      throw new IOException("No table was provided");
+
+    int[] startKeys = new int[numSplits];
+    int interval = Numeric.bytesToInt(meta.getValue()) / numSplits;
+
+    for (int i = 0; i < numSplits; i++) {
+      startKeys[i] = (i * interval);
     }
-    if (this.inputColumns == null || this.inputColumns.length == 0) {
-      throw new IOException("Expecting at least one column");
-    }
-    int realNumSplits = numSplits > startKeys.length ? startKeys.length
-        : numSplits;
-    InputSplit[] splits = new InputSplit[realNumSplits];
-    int middle = startKeys.length / realNumSplits;
-    int startPos = 0;
-    for (int i = 0; i < realNumSplits; i++) {
-      int lastPos = startPos + middle;
-      lastPos = startKeys.length % realNumSplits > i ? lastPos + 1 : lastPos;
-      splits[i] = new TableSplit(this.table.getTableName(),
-          startKeys[startPos], ((i + 1) < realNumSplits) ? startKeys[lastPos]
-              : HConstants.EMPTY_START_ROW);
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("split: " + i + "->" + splits[i]);
-      }
-      startPos = lastPos;
+
+    InputSplit[] splits = new InputSplit[startKeys.length];
+    for (int i = 0; i < startKeys.length; i++) {
+      splits[i] = new TableSplit(this.table.getTableName(), 
+          Numeric.intToBytes(startKeys[i]), ((i + 1) < startKeys.length) ? 
+              Numeric.intToBytes(startKeys[i + 1]) : HConstants.EMPTY_START_ROW);
     }
     return splits;
-
   }
 
   /**
@@ -281,7 +249,7 @@ public abstract class MatrixInputFormatBase implements
    * Allows subclasses to set the {@link TableRecordReader}.
    * 
    * @param tableRecordReader to provide other {@link TableRecordReader}
-   *          implementations.
+   *                implementations.
    */
   protected void setTableRecordReader(TableRecordReader tableRecordReader) {
     this.tableRecordReader = tableRecordReader;

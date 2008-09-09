@@ -92,13 +92,13 @@ public abstract class AbstractMatrix implements Matrix {
   public int getRows() throws IOException {
     Cell rows = null;
     rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
-    return Bytes.toInt(rows.getValue());
+    return Numeric.bytesToInt(rows.getValue());
   }
 
   /** {@inheritDoc} */
   public int getColumns() throws IOException {
     Cell columns = table.get(Constants.METADATA, Constants.METADATA_COLUMNS);
-    return Bytes.toInt(columns.getValue());
+    return Numeric.bytesToInt(columns.getValue());
   }
 
   /** {@inheritDoc} */
@@ -117,8 +117,8 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) throws IOException {
     BatchUpdate b = new BatchUpdate(Constants.METADATA);
-    b.put(Constants.METADATA_ROWS, Bytes.toBytes(rows));
-    b.put(Constants.METADATA_COLUMNS, Bytes.toBytes(columns));
+    b.put(Constants.METADATA_ROWS, Numeric.intToBytes(rows));
+    b.put(Constants.METADATA_COLUMNS, Numeric.intToBytes(columns));
 
     table.commit(b);
   }

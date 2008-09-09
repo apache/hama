@@ -50,11 +50,13 @@ public class TestMatrixMapReduce extends HCluster {
     Matrix matrixA = new DenseMatrix(conf, A);
     matrixA.set(0, 0, 1);
     matrixA.set(0, 1, 0);
+    matrixA.setDimension(1, 2);
 
     Matrix matrixB = new DenseMatrix(conf, B);
     matrixB.set(0, 0, 1);
     matrixB.set(0, 1, 1);
-
+    matrixB.setDimension(1, 2);
+    
     miniMRJob();
   }
 

@@ -137,6 +137,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job");
+    jobConf.setNumMapTasks(2);
 
     AdditionMap.initJob(this.getName(), B.getName(), AdditionMap.class,
         IntWritable.class, DenseVector.class, jobConf);
