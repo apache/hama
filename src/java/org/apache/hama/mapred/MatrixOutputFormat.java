@@ -63,7 +63,7 @@ public class MatrixOutputFormat extends
 
     /** {@inheritDoc} */
     public void close(Reporter reporter) {
-      // Nothing to do.
+      // TODO : Sets the (row, column) dimension
     }
 
     /** {@inheritDoc} */
