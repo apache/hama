@@ -28,8 +28,6 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.Text;
 import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
@@ -80,8 +78,7 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public double get(int i, int j) throws IOException {
     double result = -1;
-    Cell c = table.get(Bytes.toBytes(String.valueOf(i)), Numeric
-        .getColumnIndex(j));
+    Cell c = table.get(Numeric.intToBytes(i), Numeric.getColumnIndex(j));
     if (c != null) {
       result = Numeric.bytesToDouble(c.getValue());
     }
@@ -103,9 +100,8 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void set(int i, int j, double value) throws IOException {
-    BatchUpdate b = new BatchUpdate(new Text(String.valueOf(i)));
-    b.put(new Text(Constants.COLUMN + String.valueOf(j)), Numeric
-        .doubleToBytes(value));
+    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(i));
+    b.put(Numeric.getColumnIndex(j), Numeric.doubleToBytes(value));
     table.commit(b);
   }
 
