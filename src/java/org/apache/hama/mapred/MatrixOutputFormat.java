@@ -27,7 +27,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
-import org.apache.hadoop.hbase.mapred.TableOutputFormat;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.FileAlreadyExistsException;
 import org.apache.hadoop.mapred.FileOutputFormat;
@@ -41,8 +40,8 @@ public class MatrixOutputFormat extends
     FileOutputFormat<IntWritable, BatchUpdate> {
 
   /** JobConf parameter that specifies the output table */
-  public static final String OUTPUT_TABLE = "hbase.mapred.outputtable";
-  private final Log LOG = LogFactory.getLog(TableOutputFormat.class);
+  public static final String OUTPUT_TABLE = "hama.mapred.output";
+  private final static Log LOG = LogFactory.getLog(MatrixOutputFormat.class);
 
   /**
    * Convert Reduce output (key, value) to (HStoreKey, KeyedDataArrayWritable)
@@ -63,7 +62,6 @@ public class MatrixOutputFormat extends
 
     /** {@inheritDoc} */
     public void close(Reporter reporter) {
-      // TODO : Sets the (row, column) dimension
     }
 
     /** {@inheritDoc} */

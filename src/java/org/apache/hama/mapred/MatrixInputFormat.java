@@ -37,11 +37,8 @@ public class MatrixInputFormat extends MatrixInputFormatBase implements
 
   /**
    * space delimited list of columns
-   * 
-   * @see org.apache.hadoop.hbase.regionserver.HAbstractScanner for column name
-   *      wildcards
    */
-  public static final String COLUMN_LIST = "hbase.mapred.tablecolumns";
+  public static final String COLUMN_LIST = "hama.mapred.tablecolumns";
 
   /** {@inheritDoc} */
   public void configure(JobConf job) {

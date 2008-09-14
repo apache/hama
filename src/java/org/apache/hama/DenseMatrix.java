@@ -28,7 +28,6 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.algebra.AdditionMap;
 import org.apache.hama.algebra.AdditionReduce;
@@ -133,18 +132,17 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   public Matrix add(Matrix B) throws IOException {
     String output = RandomVariable.randMatrixName();
-    Matrix C = new DenseMatrix(config, output);
+    Matrix result = new DenseMatrix(config, output);
 
     JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("addition MR job");
-    jobConf.setNumMapTasks(2);
+    jobConf.setJobName("addition MR job" + result.getName());
 
     AdditionMap.initJob(this.getName(), B.getName(), AdditionMap.class,
         IntWritable.class, DenseVector.class, jobConf);
-    MatrixReduce.initJob(C.getName(), AdditionReduce.class, jobConf);
+    MatrixReduce.initJob(result.getName(), AdditionReduce.class, jobConf);
 
-    JobClient.runJob(jobConf);
-    return C;
+    execute(jobConf, result);
+    return result;
   }
 
   public Matrix add(double alpha, Matrix B) throws IOException {
@@ -173,17 +171,16 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   public Matrix mult(Matrix B) throws IOException {
     String output = RandomVariable.randMatrixName();
-    Matrix C = new DenseMatrix(config, output);
+    Matrix result = new DenseMatrix(config, output);
 
     JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("multiplication MR job");
+    jobConf.setJobName("multiplication MR job : " + result.getName());
 
-    MultiplicationMap.initJob(this.getName(), B.getName(), MultiplicationMap.class,
-        IntWritable.class, DenseVector.class, jobConf);
-    MatrixReduce.initJob(C.getName(), MultiplicationReduce.class, jobConf);
-
-    JobClient.runJob(jobConf);
-    return C;
+    MultiplicationMap.initJob(this.getName(), B.getName(),
+        MultiplicationMap.class, IntWritable.class, DenseVector.class, jobConf);
+    MatrixReduce.initJob(result.getName(), MultiplicationReduce.class, jobConf);
+    execute(jobConf, result);
+    return result;
   }
 
   public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException {

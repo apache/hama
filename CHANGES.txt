@@ -48,6 +48,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
 
+    HAMA-55: Write dimension attributes when job completed (edwardyoon)
     HAMA-54: Split doesn't split by map task num (edwardyoon)
     HAMA-53: NullPointerException on distributed cluster (edwardyoon)
     HAMA-26: hama-formatter.xml should be removed (edwardyoon)  

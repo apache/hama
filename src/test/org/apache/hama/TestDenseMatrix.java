@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
  */
 public class TestDenseMatrix extends TestCase {
   static final Logger LOG = Logger.getLogger(TestDenseMatrix.class);
-  private static int SIZE = 5;
+  private static int SIZE = 10;
   private static Matrix m1;
   private static Matrix m2;
 
@@ -80,6 +80,9 @@ public class TestDenseMatrix extends TestCase {
   public void testMatrixAdd() throws IOException {
     Matrix result = m1.add(m2);
 
+    assertEquals(result.getRows(), SIZE);
+    assertEquals(result.getColumns(), SIZE);
+
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
         assertEquals(result.get(i, j), m1.get(i, j) + m2.get(i, j));
@@ -95,31 +98,36 @@ public class TestDenseMatrix extends TestCase {
   public void testMatrixMult() throws IOException {
     Matrix result = m1.mult(m2);
 
-    verifyMultResult(SIZE, m1, m2, result);
+    assertEquals(result.getRows(), SIZE);
+    assertEquals(result.getColumns(), SIZE);
+
+    verifyMultResult(m1, m2, result);
   }
 
   /**
    * Verifying multiplication result
    * 
-   * @param size
    * @param m1
    * @param m2
    * @param result
    * @throws IOException
    */
-  private void verifyMultResult(int size, Matrix m1, Matrix m2, Matrix result)
+  private void verifyMultResult(Matrix m1, Matrix m2, Matrix result)
       throws IOException {
     double[][] C = new double[SIZE][SIZE];
 
-    for (int i = 0; i < SIZE; i++)
-      for (int j = 0; j < SIZE; j++)
-        for (int k = 0; k < SIZE; k++)
+    for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
+        for (int k = 0; k < SIZE; k++) {
           C[i][k] += m1.get(i, j) * m2.get(j, k);
+        }
+      }
+    }
 
-    for (int i = 0; i < 2; i++) {
-      for (int j = 0; j < 2; j++) {
-        LOG.info("result: " + result.get(i, j) + ", C: " + C[i][j]);
-        assertEquals(result.get(i, j), C[i][j]);
+    for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
+        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), 
+            String.valueOf(C[i][j]).substring(0, 14));
       }
     }
   }

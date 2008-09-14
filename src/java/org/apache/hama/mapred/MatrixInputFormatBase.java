@@ -32,7 +32,6 @@ import org.apache.hadoop.hbase.filter.StopRowFilter;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
-import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.InputFormat;

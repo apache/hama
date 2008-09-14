@@ -43,16 +43,16 @@ public class MatrixAddition {
 
     System.out.println("\nMatrix A");
     System.out.println("----------------------");
-    for(int i =  0; i < row; i++) {
-      for(int j =  0; j < row; j++) {
+    for(int i =  0; i < a.getRows(); i++) {
+      for(int j =  0; j < a.getColumns(); j++) {
         System.out.println(a.get(i, j));
       }
     }
     
     System.out.println("\nMatrix B");
     System.out.println("----------------------");
-    for(int i =  0; i < row; i++) {
-      for(int j =  0; j < row; j++) {
+    for(int i =  0; i < b.getRows(); i++) {
+      for(int j =  0; j < b.getColumns(); j++) {
         System.out.println(b.get(i, j));
       }
     }
@@ -62,8 +62,8 @@ public class MatrixAddition {
     
     System.out.println("\nC = A + B");
     System.out.println("----------------------");
-    for(int i =  0; i < row; i++) {
-      for(int j =  0; j < row; j++) {
+    for(int i =  0; i < c.getRows(); i++) {
+      for(int j =  0; j < c.getColumns(); j++) {
         System.out.println(c.get(i, j));
       }
     }
