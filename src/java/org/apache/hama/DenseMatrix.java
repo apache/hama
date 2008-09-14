@@ -20,12 +20,14 @@
 package org.apache.hama;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
+import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
@@ -201,5 +203,20 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public Matrix set(Matrix B) throws IOException {
     // TODO Auto-generated method stub
     return null;
+  }
+
+  public void setRow(int row, Vector vector) throws IOException {
+    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(row));
+    for (Map.Entry<Integer, VectorEntry> e : ((DenseVector) vector)
+        .getEntries().entrySet()) {
+      b.put(Numeric.getColumnIndex(e.getKey()), Numeric.doubleToBytes(e
+          .getValue().getValue()));
+    }
+
+    table.commit(b);
+  }
+
+  public void setColumn(int column, Vector vector) throws IOException {
+    // TODO Auto-generated method stub
   }
 }

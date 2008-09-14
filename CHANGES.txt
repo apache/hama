@@ -22,6 +22,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
   
+    HAMA-56: Add setRow(int row, Vector vector) method to matrix inteface (edwardyoon)
     HAMA-39: IO operations should throws an IOException (edwardyoon)
     HAMA-52: Fixture setup (edwardyoon)
     HAMA-42: Replace ImmutableBytesWritable to IntWritable (edwardyoon)

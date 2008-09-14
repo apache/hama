@@ -104,6 +104,25 @@ public class TestDenseMatrix extends TestCase {
     verifyMultResult(m1, m2, result);
   }
 
+  public void testSetRow() throws IOException {
+    Vector v = new DenseVector();
+    double[] entries = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+
+    for (int i = 0; i < SIZE; i++) {
+      v.set(i, entries[i]);
+    }
+
+    m1.setRow(SIZE + 1, v);
+    Iterator<VectorEntry> it = m1.getRow(SIZE + 1).iterator();
+
+    // We should remove the timestamp and row attribute from the vector
+    int i = 0;
+    while (it.hasNext()) {
+      assertEquals(entries[i], it.next().getValue());
+      i++;
+    }
+  }
+
   /**
    * Verifying multiplication result
    * 
@@ -126,8 +145,8 @@ public class TestDenseMatrix extends TestCase {
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
-        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), 
-            String.valueOf(C[i][j]).substring(0, 14));
+        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), String
+            .valueOf(C[i][j]).substring(0, 14));
       }
     }
   }

@@ -138,7 +138,6 @@ public abstract class VectorWritable implements Writable,
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("row=");
-    sb.append(String.valueOf(this.row));
     sb.append(", cells={");
     boolean moreThanOne = false;
     for (Map.Entry<Integer, VectorEntry> e : this.entries.entrySet()) {

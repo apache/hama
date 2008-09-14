@@ -100,6 +100,24 @@ public interface Matrix {
   public Matrix set(Matrix B) throws IOException;
 
   /**
+   * Set the row of a matrix to a given vector
+   * 
+   * @param row
+   * @param vector
+   * @throws IOException
+   */
+  public void setRow(int row, Vector vector) throws IOException;
+  
+  /**
+   * Set the column of a matrix to a given vector
+   * 
+   * @param column
+   * @param vector
+   * @throws IOException
+   */
+  public void setColumn(int column, Vector vector) throws IOException;
+  
+  /**
    * Sets the dimension of matrix
    * 
    * @param rows the number of rows
