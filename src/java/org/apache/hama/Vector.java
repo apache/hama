@@ -100,7 +100,6 @@ public interface Vector {
    */
   public Vector scale(double alpha);
   
-  
   /**
    * Computes the given norm of the vector
    * 
