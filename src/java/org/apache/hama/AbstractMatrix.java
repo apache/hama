@@ -69,14 +69,10 @@ public abstract class AbstractMatrix implements Matrix {
   /**
    * Create matrix space
    */
-  protected void create() {
-    try {
-      this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
-      LOG.info("Initializing the matrix storage.");
-      this.admin.createTable(this.tableDesc);
-    } catch (IOException e) {
-      LOG.error(e, e);
-    }
+  protected void create() throws IOException {
+    this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
+    LOG.info("Initializing the matrix storage.");
+    this.admin.createTable(this.tableDesc);
   }
 
   public void execute(JobConf jobConf, Matrix result) throws IOException {
