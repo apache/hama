@@ -121,9 +121,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     String name = RandomVariable.randMatrixName();
     Matrix rand = new DenseMatrix(conf, name);
     for (int i = 0; i < m; i++) {
+      DenseVector vector = new DenseVector();
       for (int j = 0; j < n; j++) {
-        rand.set(i, j, RandomVariable.rand());
+        vector.set(j, RandomVariable.rand());
       }
+      rand.setRow(i, vector);
     }
 
     rand.setDimension(m, n);
@@ -207,7 +209,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public void setRow(int row, Vector vector) throws IOException {
     VectorUpdate update = new VectorUpdate(row);
     update.putAll(((DenseVector) vector).getEntries().entrySet());
-
     table.commit(update.getBatchUpdate());
   }
 
