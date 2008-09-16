@@ -72,6 +72,12 @@ public class TestDenseMatrix extends TestCase {
     }
   }
 
+  public void testGetSetAttribute() throws IOException {
+    m1.setRowAttribute(0, "test1");
+    assertEquals(m1.getRowAttribute(0), "test1");
+    assertEquals(m1.getRowAttribute(1), null);
+  }
+  
   /**
    * Test matrices addition
    * 

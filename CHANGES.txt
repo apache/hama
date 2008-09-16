@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    HAMA-51: Add get/setRowAttribute() method (edwardyoon)
     HAMA-13: Matrix multiplication (edwardyoon)
     HAMA-48: Add getColumn(int column) method which returns column vector (edwardyoon)
     HAMA-49: Add iterator() method to vector (edwardyoon)

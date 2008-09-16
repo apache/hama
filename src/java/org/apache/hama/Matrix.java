@@ -55,7 +55,7 @@ public interface Matrix {
   public Vector getColumn(int column) throws IOException;
 
   /**
-   * Get a number of row of the matrix from the meta-data column
+   * Get the number of row of the matrix from the meta-data column
    * 
    * @return a number of rows of the matrix
    * @throws IOException 
@@ -63,13 +63,29 @@ public interface Matrix {
   public int getRows() throws IOException;
 
   /**
-   * Get a number of column of the matrix from the meta-data column
+   * Get the number of column of the matrix from the meta-data column
    * 
    * @return a number of columns of the matrix
    * @throws IOException 
    */
   public int getColumns() throws IOException;
 
+  /**
+   * Gets the attribute of the row
+   * 
+   * @throws IOException
+   */
+  public String getRowAttribute(int row) throws IOException;
+  
+  /**
+   * Sets the attribute of the row
+   * 
+   * @param row
+   * @param name
+   * @throws IOException
+   */
+  public void setRowAttribute(int row, String name) throws IOException;
+  
   /**
    * Sets the double value of (i, j)
    * 
@@ -191,7 +207,7 @@ public interface Matrix {
     /** Largest entry in absolute value */
     Infinity
   }
-
+  
   /**
    * Return the matrix name
    * 

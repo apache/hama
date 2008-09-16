@@ -44,6 +44,11 @@ public class Constants {
    */
   public final static String METADATA_TYPE = "metadata:type";
   
+  /**
+   * The attribute of the indices
+   */
+  public final static String ATTRIBUTE = "attribute:";
+  
   /** 
    * Default columnFamily name 
    */

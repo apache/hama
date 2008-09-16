@@ -28,6 +28,7 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
@@ -71,6 +72,7 @@ public abstract class AbstractMatrix implements Matrix {
   protected void create() {
     try {
       tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA));
+      tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       LOG.info("Initializing the matrix storage.");
       admin.createTable(tableDesc);
     } catch (IOException e) {
@@ -86,9 +88,9 @@ public abstract class AbstractMatrix implements Matrix {
         .getCounter();
     // TODO : Thinking about more efficient method.
     int columns = result.getRow(0).size();
-    result.setDimension((int)rows, columns);
+    result.setDimension((int) rows, columns);
   }
-  
+
   /** {@inheritDoc} */
   public double get(int i, int j) throws IOException {
     double result = -1;
@@ -129,6 +131,21 @@ public abstract class AbstractMatrix implements Matrix {
     BatchUpdate b = new BatchUpdate(Constants.METADATA);
     b.put(Constants.METADATA_ROWS, Numeric.intToBytes(rows));
     b.put(Constants.METADATA_COLUMNS, Numeric.intToBytes(columns));
+
+    table.commit(b);
+  }
+
+  public String getRowAttribute(int row) throws IOException {
+    Cell rows = null;
+    rows = table.get(Numeric.intToBytes(row), Bytes.toBytes(Constants.ATTRIBUTE
+        + "string"));
+
+    return (rows != null) ? Bytes.toString(rows.getValue()) : null;
+  }
+
+  public void setRowAttribute(int row, String name) throws IOException {
+    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(row));
+    b.put(Constants.ATTRIBUTE + "string", Bytes.toBytes(name));
 
     table.commit(b);
   }
