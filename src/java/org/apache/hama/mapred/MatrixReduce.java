@@ -31,10 +31,11 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.io.VectorUpdate;
 
 @SuppressWarnings("unchecked")
 public abstract class MatrixReduce<K extends WritableComparable, V extends Writable>
-    extends MapReduceBase implements Reducer<K, V, IntWritable, BatchUpdate> {
+    extends MapReduceBase implements Reducer<K, V, IntWritable, VectorUpdate> {
   /**
    * Use this before submitting a TableReduce job. It will
    * appropriately set up the JobConf.
@@ -61,6 +62,6 @@ public abstract class MatrixReduce<K extends WritableComparable, V extends Writa
    * @throws IOException
    */
   public abstract void reduce(K key, Iterator<V> values,
-    OutputCollector<IntWritable, BatchUpdate> output, Reporter reporter)
+    OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
   throws IOException;
 }

@@ -26,12 +26,12 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
@@ -58,9 +58,9 @@ public abstract class AbstractMatrix implements Matrix {
    * @param conf configuration object
    */
   public void setConfiguration(HamaConfiguration conf) {
-    config = (HamaConfiguration) conf;
+    this.config = conf;
     try {
-      admin = new HBaseAdmin(config);
+      this.admin = new HBaseAdmin(config);
     } catch (MasterNotRunningException e) {
       LOG.error(e, e);
     }
@@ -71,10 +71,10 @@ public abstract class AbstractMatrix implements Matrix {
    */
   protected void create() {
     try {
-      tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA));
-      tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
+      this.tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA));
+      this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       LOG.info("Initializing the matrix storage.");
-      admin.createTable(tableDesc);
+      this.admin.createTable(this.tableDesc);
     } catch (IOException e) {
       LOG.error(e, e);
     }
@@ -116,9 +116,9 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void set(int i, int j, double value) throws IOException {
-    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(i));
-    b.put(Numeric.getColumnIndex(j), Numeric.doubleToBytes(value));
-    table.commit(b);
+    VectorUpdate update = new VectorUpdate(i);
+    update.put(j, value);
+    table.commit(update.getBatchUpdate());
   }
 
   /** {@inheritDoc} */
@@ -128,11 +128,11 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) throws IOException {
-    BatchUpdate b = new BatchUpdate(Constants.METADATA);
-    b.put(Constants.METADATA_ROWS, Numeric.intToBytes(rows));
-    b.put(Constants.METADATA_COLUMNS, Numeric.intToBytes(columns));
+    VectorUpdate update = new VectorUpdate(Constants.METADATA);
+    update.put(Constants.METADATA_ROWS, rows);
+    update.put(Constants.METADATA_COLUMNS, columns);
 
-    table.commit(b);
+    table.commit(update.getBatchUpdate());
   }
 
   public String getRowAttribute(int row) throws IOException {
@@ -144,10 +144,9 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public void setRowAttribute(int row, String name) throws IOException {
-    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(row));
-    b.put(Constants.ATTRIBUTE + "string", Bytes.toBytes(name));
-
-    table.commit(b);
+    VectorUpdate update = new VectorUpdate(row);
+    update.put(Constants.ATTRIBUTE + "string", name);
+    table.commit(update.getBatchUpdate());
   }
 
   /** {@inheritDoc} */

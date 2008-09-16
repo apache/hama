@@ -20,14 +20,12 @@
 package org.apache.hama;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
-import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
@@ -37,6 +35,7 @@ import org.apache.hama.algebra.MultiplicationMap;
 import org.apache.hama.algebra.MultiplicationReduce;
 import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
+import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.hama.util.Numeric;
 import org.apache.hama.util.RandomVariable;
@@ -206,14 +205,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public void setRow(int row, Vector vector) throws IOException {
-    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(row));
-    for (Map.Entry<Integer, VectorEntry> e : ((DenseVector) vector)
-        .getEntries().entrySet()) {
-      b.put(Numeric.getColumnIndex(e.getKey()), Numeric.doubleToBytes(e
-          .getValue().getValue()));
-    }
+    VectorUpdate update = new VectorUpdate(row);
+    update.putAll(((DenseVector) vector).getEntries().entrySet());
 
-    table.commit(b);
+    table.commit(update.getBatchUpdate());
   }
 
   public void setColumn(int column, Vector vector) throws IOException {

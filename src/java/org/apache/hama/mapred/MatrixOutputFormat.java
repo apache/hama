@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.FileAlreadyExistsException;
 import org.apache.hadoop.mapred.FileOutputFormat;
@@ -35,9 +34,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
+import org.apache.hama.io.VectorUpdate;
 
 public class MatrixOutputFormat extends
-    FileOutputFormat<IntWritable, BatchUpdate> {
+    FileOutputFormat<IntWritable, VectorUpdate> {
 
   /** JobConf parameter that specifies the output table */
   public static final String OUTPUT_TABLE = "hama.mapred.output";
@@ -48,7 +48,7 @@ public class MatrixOutputFormat extends
    * and write to an HBase table
    */
   protected static class TableRecordWriter implements
-      RecordWriter<IntWritable, BatchUpdate> {
+      RecordWriter<IntWritable, VectorUpdate> {
     private HTable m_table;
 
     /**
@@ -65,8 +65,8 @@ public class MatrixOutputFormat extends
     }
 
     /** {@inheritDoc} */
-    public void write(IntWritable key, BatchUpdate value) throws IOException {
-      m_table.commit(value);
+    public void write(IntWritable key, VectorUpdate value) throws IOException {
+      m_table.commit(value.getBatchUpdate());
     }
   }
 

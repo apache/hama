@@ -22,7 +22,8 @@ Trunk (unreleased changes)
     HAMA-2: The intial donation of Hama from the google project (edwardyoon)
     
   IMPROVEMENTS
-  
+    
+    HAMA-58: Remove duplicated code (edwardyoon)
     HAMA-56: Add setRow(int row, Vector vector) method to matrix inteface (edwardyoon)
     HAMA-39: IO operations should throws an IOException (edwardyoon)
     HAMA-52: Fixture setup (edwardyoon)

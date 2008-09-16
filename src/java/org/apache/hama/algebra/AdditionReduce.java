@@ -23,29 +23,29 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
 import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.MatrixReduce;
-import org.apache.hama.util.Numeric;
 
 public class AdditionReduce extends MatrixReduce<IntWritable, DenseVector> {
 
   @Override
   public void reduce(IntWritable key, Iterator<DenseVector> values,
-      OutputCollector<IntWritable, BatchUpdate> output, Reporter reporter)
+      OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
 
-    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(key.get()));
+    VectorUpdate update = new VectorUpdate(key.get());
     DenseVector vector = values.next();
+    
     for (Map.Entry<Integer, VectorEntry> f : vector.entrySet()) {
-      b.put(Numeric.getColumnIndex(f.getKey()), Numeric.doubleToBytes(f.getValue().getValue()));
+      update.put(f.getKey(), f.getValue().getValue());
     }
 
-    output.collect(key, b);
+    output.collect(key, update);
   }
 
 }

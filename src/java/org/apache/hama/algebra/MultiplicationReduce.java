@@ -24,13 +24,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
+import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.MatrixReduce;
-import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
 public class MultiplicationReduce extends
@@ -39,10 +38,11 @@ public class MultiplicationReduce extends
 
   @Override
   public void reduce(IntWritable key, Iterator<DenseVector> values,
-      OutputCollector<IntWritable, BatchUpdate> output, Reporter reporter)
+      OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
 
-    BatchUpdate b = new BatchUpdate(Numeric.intToBytes(key.get()));
+    VectorUpdate update = new VectorUpdate(key.get());
+
     DenseVector sum;
     Map<Integer, Double> buffer = new HashMap<Integer, Double>();
 
@@ -57,13 +57,8 @@ public class MultiplicationReduce extends
         }
       }
     }
-
-    for (Map.Entry<Integer, Double> f : buffer.entrySet()) {
-      byte[] value = Numeric.doubleToBytes(f.getValue());
-      b.put(Numeric.getColumnIndex(f.getKey()), value);
-    }
-
-    output.collect(key, b);
+    update.putAll(buffer);
+    output.collect(key, update);
   }
 
 }
