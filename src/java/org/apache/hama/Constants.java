@@ -32,7 +32,7 @@ public class Constants {
   /**
    * Column index & attributes
    */
-  public final static String COLUMN_INDEX = "columnIndex";
+  public final static String CINDEX = "cIndex";
   
   /**
    * The attribute column family

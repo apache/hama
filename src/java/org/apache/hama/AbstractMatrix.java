@@ -150,13 +150,13 @@ public abstract class AbstractMatrix implements Matrix {
 
   public String getColumnAttribute(int column) throws IOException {
     Cell rows = null;
-    rows = table.get(Constants.COLUMN_INDEX, 
+    rows = table.get(Constants.CINDEX, 
         (Constants.ATTRIBUTE + column));
     return (rows != null) ? Bytes.toString(rows.getValue()) : null;
   }
 
   public void setColumnAttribute(int column, String name) throws IOException {
-    VectorUpdate update = new VectorUpdate(Constants.COLUMN_INDEX);
+    VectorUpdate update = new VectorUpdate(Constants.CINDEX);
     update.put(column, name);
     table.commit(update.getBatchUpdate());
   }

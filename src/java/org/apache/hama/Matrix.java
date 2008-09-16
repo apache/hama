@@ -39,20 +39,20 @@ public interface Matrix {
   /**
    * Gets the vector of row
    * 
-   * @param row the row index of the matrix
+   * @param i the row index of the matrix
    * @return the vector of row
    * @throws IOException
    */
-  public Vector getRow(int row) throws IOException;
+  public Vector getRow(int i) throws IOException;
 
   /**
    * Gets the vector of column
    * 
-   * @param column the column index of the matrix
+   * @param j the column index of the matrix
    * @return the vector of column
    * @throws IOException
    */
-  public Vector getColumn(int column) throws IOException;
+  public Vector getColumn(int j) throws IOException;
 
   /**
    * Get the number of row of the matrix from the meta-data column
@@ -75,32 +75,32 @@ public interface Matrix {
    * 
    * @throws IOException
    */
-  public String getRowAttribute(int row) throws IOException;
+  public String getRowAttribute(int i) throws IOException;
   
   /**
    * Sets the attribute of the row
    * 
-   * @param row
+   * @param i
    * @param name
    * @throws IOException
    */
-  public void setRowAttribute(int row, String name) throws IOException;
+  public void setRowAttribute(int i, String name) throws IOException;
   
   /**
    * Gets the attribute of the column
    * 
    * @throws IOException
    */
-  public String getColumnAttribute(int column) throws IOException;
+  public String getColumnAttribute(int j) throws IOException;
   
   /**
    * Sets the attribute of the column
    * 
-   * @param column
+   * @param j
    * @param name
    * @throws IOException
    */
-  public void setColumnAttribute(int column, String name) throws IOException;
+  public void setColumnAttribute(int j, String name) throws IOException;
   
   /**
    * Sets the double value of (i, j)
