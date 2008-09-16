@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hama.Constants;
 import org.apache.hama.util.Numeric;
 
 public class VectorUpdate {
@@ -34,8 +35,12 @@ public class VectorUpdate {
     this.batchUpdate = new BatchUpdate(Numeric.intToBytes(i));
   }
 
-  public VectorUpdate(String metadata) {
-    this.batchUpdate = new BatchUpdate(metadata);
+  public VectorUpdate(String row) {
+    this.batchUpdate = new BatchUpdate(row);
+  }
+
+  public VectorUpdate(byte[] row) {
+    this.batchUpdate = new BatchUpdate(row);
   }
 
   public void put(int j, double value) {
@@ -43,12 +48,17 @@ public class VectorUpdate {
         .doubleToBytes(value));
   }
 
-  public void put(String column, String val) {
-    this.batchUpdate.put(column, Bytes.toBytes(val));
+  public void put(int j, String name) {
+    this.batchUpdate.put(Bytes.toBytes((Constants.ATTRIBUTE + j)), Bytes
+        .toBytes(name));
   }
 
-  public void put(String metadataRows, int rows) {
-    this.batchUpdate.put(metadataRows, Numeric.intToBytes(rows));
+  public void put(String j, String val) {
+    this.batchUpdate.put(j, Bytes.toBytes(val));
+  }
+
+  public void put(String row, int val) {
+    this.batchUpdate.put(row, Numeric.intToBytes(val));
   }
 
   public BatchUpdate getBatchUpdate() {

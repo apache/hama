@@ -73,9 +73,13 @@ public class TestDenseMatrix extends TestCase {
   }
 
   public void testGetSetAttribute() throws IOException {
-    m1.setRowAttribute(0, "test1");
-    assertEquals(m1.getRowAttribute(0), "test1");
+    m1.setRowAttribute(0, "row1");
+    assertEquals(m1.getRowAttribute(0), "row1");
     assertEquals(m1.getRowAttribute(1), null);
+    
+    m1.setColumnAttribute(0, "column1");
+    assertEquals(m1.getColumnAttribute(0), "column1");
+    assertEquals(m1.getColumnAttribute(1), null);
   }
   
   /**

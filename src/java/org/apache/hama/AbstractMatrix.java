@@ -71,7 +71,6 @@ public abstract class AbstractMatrix implements Matrix {
    */
   protected void create() {
     try {
-      this.tableDesc.addFamily(new HColumnDescriptor(Constants.METADATA));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
@@ -146,6 +145,19 @@ public abstract class AbstractMatrix implements Matrix {
   public void setRowAttribute(int row, String name) throws IOException {
     VectorUpdate update = new VectorUpdate(row);
     update.put(Constants.ATTRIBUTE + "string", name);
+    table.commit(update.getBatchUpdate());
+  }
+
+  public String getColumnAttribute(int column) throws IOException {
+    Cell rows = null;
+    rows = table.get(Constants.COLUMN_INDEX, 
+        (Constants.ATTRIBUTE + column));
+    return (rows != null) ? Bytes.toString(rows.getValue()) : null;
+  }
+
+  public void setColumnAttribute(int column, String name) throws IOException {
+    VectorUpdate update = new VectorUpdate(Constants.COLUMN_INDEX);
+    update.put(column, name);
     table.commit(update.getBatchUpdate());
   }
 

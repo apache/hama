@@ -27,27 +27,32 @@ public class Constants {
   /** 
    * Meta-columnFamily to store the matrix-info 
    */
-  public final static String METADATA = "metadata:";
+  public final static String METADATA = "metadata";
+  
+  /**
+   * Column index & attributes
+   */
+  public final static String COLUMN_INDEX = "columnIndex";
+  
+  /**
+   * The attribute column family
+   */
+  public final static String ATTRIBUTE = "attribute:";
   
   /** 
    * The number of the matrix rows 
    */
-  public final static String METADATA_ROWS = "metadata:rows";
+  public final static String METADATA_ROWS = "attribute:rows";
   
   /** 
    * The number of the matrix columns 
    */
-  public final static String METADATA_COLUMNS = "metadata:columns";
+  public final static String METADATA_COLUMNS = "attribute:columns";
   
   /** 
    * The type of the matrix
    */
-  public final static String METADATA_TYPE = "metadata:type";
-  
-  /**
-   * The attribute of the indices
-   */
-  public final static String ATTRIBUTE = "attribute:";
+  public final static String METADATA_TYPE = "attribute:type";
   
   /** 
    * Default columnFamily name 

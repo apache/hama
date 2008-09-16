@@ -87,6 +87,22 @@ public interface Matrix {
   public void setRowAttribute(int row, String name) throws IOException;
   
   /**
+   * Gets the attribute of the column
+   * 
+   * @throws IOException
+   */
+  public String getColumnAttribute(int column) throws IOException;
+  
+  /**
+   * Sets the attribute of the column
+   * 
+   * @param column
+   * @param name
+   * @throws IOException
+   */
+  public void setColumnAttribute(int column, String name) throws IOException;
+  
+  /**
    * Sets the double value of (i, j)
    * 
    * @param i ith row of the matrix
