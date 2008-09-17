@@ -162,10 +162,10 @@ public abstract class MatrixInputFormatBase implements
     }
 
     /**
-     * @param key HStoreKey as input key.
-     * @param value MapWritable as input value
+     * @param key IntWritable as input key.
+     * @param value DenseVector as input value
      * 
-     * Converts Scanner.next() to Text, DenseVector
+     * Converts Scanner.next() to IntWritable, DenseVector
      * 
      * @return true if there was more data
      * @throws IOException
