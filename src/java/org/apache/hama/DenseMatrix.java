@@ -169,7 +169,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
           .get(columnKey)));
     }
 
-    return new DenseVector(column, trunk);
+    return new DenseVector(trunk);
   }
 
   public Matrix mult(Matrix B) throws IOException {
