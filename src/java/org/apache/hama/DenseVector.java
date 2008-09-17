@@ -35,13 +35,10 @@ public class DenseVector extends VectorWritable implements Vector {
   static final Logger LOG = Logger.getLogger(Vector.class);
 
   public DenseVector() {
-    this(-1, new VectorMapWritable<Integer, VectorEntry>());
+    this(new VectorMapWritable<Integer, VectorEntry>());
   }
 
-  public DenseVector(final int row,
-      final VectorMapWritable<Integer, VectorEntry> m) {
-    int key = row;
-    this.row = key;
+  public DenseVector(VectorMapWritable<Integer, VectorEntry> m) {
     this.entries = m;
   }
 
@@ -54,16 +51,8 @@ public class DenseVector extends VectorWritable implements Vector {
     }
   }
 
-  /**
-   * Get the row for this Vector
-   */
-  public int getRow() {
-    int key = row;
-    return key;
-  }
-
   public VectorMapWritable<Integer, VectorEntry> getEntries() {
-    return entries;
+    return this.entries;
   }
 
   public void add(int index, double value) {
@@ -104,7 +93,7 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public Vector scale(double alpha) {
-    Set<Integer> keySet = entries.keySet();
+    Set<Integer> keySet = this.entries.keySet();
     Iterator<Integer> it = keySet.iterator();
 
     int i = 0;
@@ -121,7 +110,7 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public double get(int index) {
-    return entries.get(index).getValue();
+    return this.entries.get(index).getValue();
   }
 
   public double norm(Norm type) {
@@ -140,14 +129,13 @@ public class DenseVector extends VectorWritable implements Vector {
   }
 
   public DenseVector set(Vector v) {
-    return new DenseVector(((DenseVector) v).getRow(), ((DenseVector) v)
-        .getEntries());
+    return new DenseVector(((DenseVector) v).getEntries());
   }
 
   public double getNorm1() {
     double sum = 0.0;
 
-    Set<Integer> keySet = entries.keySet();
+    Set<Integer> keySet = this.entries.keySet();
     Iterator<Integer> it = keySet.iterator();
 
     while (it.hasNext()) {
