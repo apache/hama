@@ -46,7 +46,7 @@ public class MultiplicationReduce extends
     DenseVector sum;
     Map<Integer, Double> buffer = new HashMap<Integer, Double>();
 
-    // Summation vectors
+    // Summation
     while (values.hasNext()) {
       sum = values.next();
       for (int i = 0; i < sum.size(); i++) {
