@@ -50,10 +50,19 @@ public class TestDenseMatrix extends TestCase {
       }
 
       protected void tearDown() {
-        LOG.info("tearDown()");
+        try {
+          clearTest();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
       }
     };
     return setup;
+  }
+
+  public static void clearTest() throws IOException {
+    m1.clear();
+    m2.clear();
   }
 
   /**
@@ -76,12 +85,12 @@ public class TestDenseMatrix extends TestCase {
     m1.setRowAttribute(0, "row1");
     assertEquals(m1.getRowAttribute(0), "row1");
     assertEquals(m1.getRowAttribute(1), null);
-    
+
     m1.setColumnAttribute(0, "column1");
     assertEquals(m1.getColumnAttribute(0), "column1");
     assertEquals(m1.getColumnAttribute(1), null);
   }
-  
+
   /**
    * Test matrices addition
    * 
@@ -130,6 +139,19 @@ public class TestDenseMatrix extends TestCase {
     while (it.hasNext()) {
       assertEquals(entries[i], it.next().getValue());
       i++;
+    }
+  }
+
+  public void testLoadSave() throws IOException {
+    m1.save("udanax");
+    HCluster hCluster = new HCluster();
+    DenseMatrix loadTest = new DenseMatrix(hCluster.conf);
+    loadTest.load("udanax");
+
+    for (int i = 0; i < loadTest.getRows(); i++) {
+      for (int j = 0; j < loadTest.getColumns(); j++) {
+        assertEquals(m1.get(i, j), loadTest.get(i, j));
+      }
     }
   }
 

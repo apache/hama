@@ -64,7 +64,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
       if (!admin.tableExists(matrixName)) {
         tableDesc = new HTableDescriptor(matrixName);
-        tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
         create();
       }
 
@@ -214,5 +213,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   public void setColumn(int column, Vector vector) throws IOException {
     // TODO Auto-generated method stub
+  }
+
+  public void load(String path) throws IOException {
+    matrixName = hAdmin.get(path);
+    table = new HTable(matrixName);
   }
 }

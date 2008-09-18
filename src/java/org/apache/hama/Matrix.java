@@ -32,7 +32,7 @@ public interface Matrix {
    * @param i ith row of the matrix
    * @param j jth column of the matrix
    * @return the value of entry
-   * @throws IOException 
+   * @throws IOException
    */
   public double get(int i, int j) throws IOException;
 
@@ -58,7 +58,7 @@ public interface Matrix {
    * Get the number of row of the matrix from the meta-data column
    * 
    * @return a number of rows of the matrix
-   * @throws IOException 
+   * @throws IOException
    */
   public int getRows() throws IOException;
 
@@ -66,7 +66,7 @@ public interface Matrix {
    * Get the number of column of the matrix from the meta-data column
    * 
    * @return a number of columns of the matrix
-   * @throws IOException 
+   * @throws IOException
    */
   public int getColumns() throws IOException;
 
@@ -76,7 +76,21 @@ public interface Matrix {
    * @throws IOException
    */
   public String getRowAttribute(int i) throws IOException;
-  
+
+  /**
+   * Gets the attribute of the column
+   * 
+   * @throws IOException
+   */
+  public String getColumnAttribute(int j) throws IOException;
+
+  /**
+   * Return the matrix name
+   * 
+   * @return the name of the matrix
+   */
+  public String getName();
+
   /**
    * Sets the attribute of the row
    * 
@@ -85,14 +99,7 @@ public interface Matrix {
    * @throws IOException
    */
   public void setRowAttribute(int i, String name) throws IOException;
-  
-  /**
-   * Gets the attribute of the column
-   * 
-   * @throws IOException
-   */
-  public String getColumnAttribute(int j) throws IOException;
-  
+
   /**
    * Sets the attribute of the column
    * 
@@ -101,14 +108,14 @@ public interface Matrix {
    * @throws IOException
    */
   public void setColumnAttribute(int j, String name) throws IOException;
-  
+
   /**
    * Sets the double value of (i, j)
    * 
    * @param i ith row of the matrix
    * @param j jth column of the matrix
    * @param value the value of entry
-   * @throws IOException 
+   * @throws IOException
    */
   public void set(int i, int j, double value) throws IOException;
 
@@ -118,7 +125,7 @@ public interface Matrix {
    * @param alpha
    * @param B
    * @return A
-   * @throws IOException 
+   * @throws IOException
    */
   public Matrix set(double alpha, Matrix B) throws IOException;
 
@@ -127,7 +134,7 @@ public interface Matrix {
    * 
    * @param B
    * @return A
-   * @throws IOException 
+   * @throws IOException
    */
   public Matrix set(Matrix B) throws IOException;
 
@@ -139,7 +146,7 @@ public interface Matrix {
    * @throws IOException
    */
   public void setRow(int row, Vector vector) throws IOException;
-  
+
   /**
    * Set the column of a matrix to a given vector
    * 
@@ -148,7 +155,7 @@ public interface Matrix {
    * @throws IOException
    */
   public void setColumn(int column, Vector vector) throws IOException;
-  
+
   /**
    * Sets the dimension of matrix
    * 
@@ -164,7 +171,7 @@ public interface Matrix {
    * @param i
    * @param j
    * @param value
-   * @throws IOException 
+   * @throws IOException
    */
   public void add(int i, int j, double value) throws IOException;
 
@@ -173,7 +180,7 @@ public interface Matrix {
    * 
    * @param B
    * @return A
-   * @throws IOException 
+   * @throws IOException
    */
   public Matrix add(Matrix B) throws IOException;
 
@@ -192,7 +199,7 @@ public interface Matrix {
    * 
    * @param B
    * @return C
-   * @throws IOException 
+   * @throws IOException
    */
   public Matrix mult(Matrix B) throws IOException;
 
@@ -203,7 +210,7 @@ public interface Matrix {
    * @param B
    * @param C
    * @return C
-   * @throws IOException 
+   * @throws IOException
    */
   public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException;
 
@@ -212,7 +219,7 @@ public interface Matrix {
    * 
    * @param type
    * @return norm of the matrix
-   * @throws IOException 
+   * @throws IOException
    */
   public double norm(Norm type) throws IOException;
 
@@ -223,11 +230,28 @@ public interface Matrix {
     /** Largest entry in absolute value */
     Infinity
   }
-  
+
   /**
-   * Return the matrix name
+   * Save to a table or file
    * 
-   * @return the name of the matrix
+   * @param path
+   * @return true if saved
+   * @throws IOException
    */
-  public String getName();
+  public boolean save(String path) throws IOException;
+
+  /**
+   * Load the matrix from a table or file
+   * 
+   * @param path
+   * @throws IOException
+   */
+  public void load(String path) throws IOException;
+
+  /**
+   * Clear current matrix.
+   * 
+   * @throws Exception
+   */
+  public void clear() throws IOException;
 }

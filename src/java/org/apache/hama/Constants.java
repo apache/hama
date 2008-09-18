@@ -63,4 +63,14 @@ public class Constants {
    * Temporary random matrices name prefix 
    */
   public final static String RANDOM = "rand";
+  
+  /**
+   * Admin table name
+   */
+  public final static String ADMINTABLE = "admin.table";
+
+  /**
+   * Matrix path columnFamily
+   */
+  public static final String PATHCOLUMN = "path:";
 }

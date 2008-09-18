@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    HAMA-61: Load / save matrices from HTable (edwardyoon)
     HAMA-51: Add get/setRowAttribute() method (edwardyoon)
     HAMA-13: Matrix multiplication (edwardyoon)
     HAMA-48: Add getColumn(int column) method which returns column vector (edwardyoon)
