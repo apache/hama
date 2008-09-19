@@ -177,8 +177,8 @@ public class TestDenseMatrix extends TestCase {
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
-        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), String
-            .valueOf(C[i][j]).substring(0, 14));
+        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), 
+            String.valueOf(C[i][j]).substring(0, 14));
       }
     }
   }
