@@ -54,51 +54,6 @@
 	  </tr>
 	</table>
 	</section>
-
-	<section>
-	<title>Inactive Committers</title>
-	
-	<p>Hama's inactive committers (They have not committed anything for three months) are:</p>
-	
-	<table>
-	  <tr>
-	    <th>username</th>
-	    <th>name</th>
-	    <th>organization</th>
-	    <th>roles</th>
-	    <th>timezone</th>
-	  </tr>
-	  <tr>
-	    <td>yonghoha</td>
-	    <td>Ha Yongho</td>
-	    <td>TmaxSoft</td>
-	    <td></td>
-	    <td>+9</td>
-	  </tr>
-	  <tr>
-	    <td>bluesvm</td>
-	    <td>Suh ChangHee</td>
-	    <td>NHN</td>
-	    <td></td>
-	    <td>+9</td>
-	  </tr>
-	  <tr>
-	    <td>hongtebari</td>
-	    <td>Hong Taehui</td>
-	    <td>KRIBB</td>
-	    <td></td>
-	    <td>+9</td>
-	  </tr>
-	  <tr>
-	    <td>yoonjoosun</td>
-	    <td>Yoon JooSun</td>
-	    <td>NHN</td>
-	    <td></td>
-	    <td>+9</td>
-	  </tr>
-	  
-	</table>
-	</section>
 	
 	<section>
 	<title>Mentors</title>
@@ -114,7 +69,7 @@
 	<title>Contributors</title>
 	<p>Contributors are:</p>
 	<ul>
-	  <li>Su-kyung Kim, a contributor of Hama logo sketch.</li>
+	  <li>Soo-kyung Kim, a contributor of Hama logo sketch.</li>
 	  <li>Morakot, a contributor of Hama logo paint.</li>
 	</ul>
 	</section>
