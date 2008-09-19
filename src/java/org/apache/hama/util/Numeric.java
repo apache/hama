@@ -19,6 +19,8 @@
  */
 package org.apache.hama.util;
 
+import java.nio.ByteBuffer;
+
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
 
@@ -26,8 +28,8 @@ import org.apache.hama.Constants;
  * Provides a number format conversion
  */
 public class Numeric {
-  private static long BITMASK = 0xFF;
-
+  public static final int SIZEOF_DOUBLE = Double.SIZE/Byte.SIZE;
+  
   /**
    * Bytes to integer conversion
    * 
@@ -55,30 +57,18 @@ public class Numeric {
    * @return the converted value
    */
   public static double bytesToDouble(byte[] bytes) {
-    long value = 0;
-    for (int i = 0; i < 8; i++)
-      value = ((((long)(bytes[i])) & 0xFF) << (56 - i * 8)) | value;
-    return Double.longBitsToDouble(value);
+    return ByteBuffer.wrap(bytes).getDouble();
   }
 
   /**
    * Double to bytes conversion
    * 
-   * @param doubleValue
+   * @param value
    * @return the converted value
    */
-  public static byte[] doubleToBytes(Double doubleValue) {
-    byte[] buf = new byte[8];
-    long longVal = Double.doubleToLongBits(doubleValue);
-    buf[0] = (Long.valueOf((longVal & (BITMASK << 56)) >>> 56)).byteValue();
-    buf[1] = (Long.valueOf((longVal & (BITMASK << 48)) >>> 48)).byteValue();
-    buf[2] = (Long.valueOf((longVal & (BITMASK << 40)) >>> 40)).byteValue();
-    buf[3] = (Long.valueOf((longVal & (BITMASK << 32)) >>> 32)).byteValue();
-    buf[4] = (Long.valueOf((longVal & (long)0x00000000FF000000) >>> 24)).byteValue();
-    buf[5] = (Long.valueOf((longVal & (long)0x0000000000FF0000) >>> 16)).byteValue();
-    buf[6] = (Long.valueOf((longVal & (long)0x000000000000FF00) >>>  8)).byteValue();
-    buf[7] = (Long.valueOf((longVal & (long)0x00000000000000FF))).byteValue();
-    return buf;
+  public static byte[] doubleToBytes(Double value) {
+    // If HBASE-884 done, we should change it.
+    return ByteBuffer.allocate(SIZEOF_DOUBLE).putDouble(value).array();
   }
 
   /**
