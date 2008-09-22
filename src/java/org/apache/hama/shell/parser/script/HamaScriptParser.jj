@@ -1,0 +1,172 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Grammar for HamaScript
+
+options {
+  // Generate non-static functions
+  STATIC = false;
+  // Case is ignored in keywords
+  IGNORE_CASE = true;
+}
+
+PARSER_BEGIN(HamaScriptParser)
+package org.apache.hama.shell.parser.script;
+
+import java.io.IOException;
+
+/** a hama script parser to used in hama shell */
+public abstract class HamaScriptParser
+{
+	protected boolean mInteractive;
+
+	public void setInteractive(boolean interactive)
+	{
+		mInteractive = interactive;
+		token_source.interactive = interactive;
+	}
+	
+	abstract public void prompt();
+	
+	abstract protected void quit();
+
+	abstract protected void printHelp();
+	
+	abstract protected void processScript(String cmd) throws IOException;
+
+}
+PARSER_END(HamaScriptParser)
+
+// Skip all tabs and spaces
+SKIP : { " " |  "\t" }
+
+// commands
+TOKEN: {<HELP: "help">}
+TOKEN: {<QUIT: "quit">}
+
+// hama operations as below: 
+// Starting with "save" or assignment (A=) followed by
+// Single statement followed by ; and newline
+
+TOKEN_MGR_DECLS : {
+	int prevState = DEFAULT;
+	boolean interactive = false;
+	public void secondary_prompt()
+	{
+		if (interactive)
+		{
+			System.err.print("     > ");
+			System.err.flush();
+		}
+	}
+
+}
+
+<DEFAULT> MORE :
+{
+	<"SAVE"> : HAMA_BEGIN
+| 	<(["a"-"z", "A"-"Z"])+(["a"-"z", "A"-"Z"] | ["0"-"9"] | "_")*(" " | "\t")*"="> : HAMA_BEGIN
+}
+
+<HAMA_BEGIN> MORE :
+{
+	<";"> : HAMA_END
+|	<("\n" | "\r" | "\r\n")> {secondary_prompt();}
+|       <(~[])>
+}
+
+<HAMA_END> TOKEN :
+{
+	<HAMA: ""> { 	
+		matchedToken.image = image.toString();
+	}: DEFAULT
+}
+
+// else
+TOKEN: {<EOL:  "\r" | "\n" | "\r\n">}
+TOKEN: {<QUOTE: "'">}
+TOKEN: {<SEMICOLON: ";">}
+TOKEN:
+{
+	<#LETTER : ["a"-"z", "A"-"Z"] >
+|	<#DIGIT : ["0"-"9"] >
+|	<#SPECIALCHAR : ["_"] >
+|	<#FSSPECIALCHAR: ["/"]>
+|       <#FLOAT: <INTEGER> ( "." <INTEGER> )? | "." <INTEGER> >
+|       <#INTEGER: ( <DIGIT> )+ >
+|	<#NUMBER: <INTEGER> | <FLOAT> | <FLOAT> ( ["e","E"] ([ "-","+"])? <FLOAT> )?>
+}
+
+TOKEN: {<ID: (<LETTER>)+(<DIGIT> | <LETTER> | <SPECIALCHAR>)*>}
+TOKEN: {<PATH: (~["(", ")", ";", "\r", " ", "\t", "\n"])+>}
+TOKEN : { <QUOTEDSTRING :  "'"
+      (   (~["'","\\","\n","\r"])
+        | ("\\"
+            ( ["n","t","b","r","f","\\","'"] )
+          )
+        | ("\\u"
+            ["0"-"9","A"-"F","a"-"f"]
+            ["0"-"9","A"-"F","a"-"f"]
+            ["0"-"9","A"-"F","a"-"f"]
+            ["0"-"9","A"-"F","a"-"f"]
+          )
+      )*
+      "'"> }
+void parse() throws IOException:
+{
+	Token t1;
+}
+{
+	(	
+	<EOL>
+	{prompt();}
+	|
+	<HELP>
+	{printHelp();}
+	|
+	t1 = <HAMA>
+	{processScript(t1.image);}
+	|
+	<QUIT>
+	{quit();}
+	|
+	<EOF>
+	{quit();}
+	|
+	// handle invalid token
+	handle_invalid_command(EOL)
+	{prompt();}
+	)
+}
+
+
+JAVACODE 
+void handle_invalid_command(int kind) 
+{
+	ParseException e = generateParseException();  // generate the exception object.
+	
+	if (mInteractive) {
+		System.out.println(e.toString());  // print the error message
+		Token t = getNextToken();
+
+		while (t.kind != kind)
+			t = getNextToken();
+	} else {
+		throw e;
+	}
+}

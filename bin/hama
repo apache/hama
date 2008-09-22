@@ -1,0 +1,230 @@
+#! /usr/bin/env bash
+#
+#/**
+# * Copyright 2007 The Apache Software Foundation
+# *
+# * Licensed to the Apache Software Foundation (ASF) under one
+# * or more contributor license agreements.  See the NOTICE file
+# * distributed with this work for additional information
+# * regarding copyright ownership.  The ASF licenses this file
+# * to you under the Apache License, Version 2.0 (the
+# * "License"); you may not use this file except in compliance
+# * with the License.  You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# */
+# 
+# The hama command script.  Based on the hbase command script putting
+# in hama classes, libs and configurations ahead of hbase's.
+#
+# TODO: Narrow the amount of duplicated code.
+#
+# Environment Variables:
+#
+#   JAVA_HOME        The java implementation to use.  Overrides JAVA_HOME.
+#
+#   HAMA_CLASSPATH   Extra Java CLASSPATH entries.
+#
+#   HAMA_HEAPSIZE    The maximum amount of heap to use, in MB. 
+#                    Default is 1000.
+#
+#   HAMA_CONF_DIR    Alternate conf dir. Default is ${HAMA_HOME}/conf.
+#   
+#   HAMA_JARS        Additional jars to be included for task execution.
+#
+#   HAMA_ROOT_LOGGER The root appender. Default is INFO,console
+#
+bin=`dirname "$0"`
+bin=`cd "$bin"; pwd`
+
+# This will set HAMA_HOME, etc.
+. "$bin"/hama-config.sh
+
+cygwin=false
+case "`uname`" in
+CYGWIN*) cygwin=true;;
+esac
+
+# if no args specified, show usage
+if [ $# = 0 ]; then
+  echo "Usage: hama <command>"
+  echo "where <command> is one of:"
+  echo "  shell            run the HAMA shell"
+  echo "  examples         run the HAMA examples"
+  echo " or"
+  echo "  CLASSNAME        run the class named CLASSNAME"
+  echo "Most commands print help when invoked w/o parameters."
+  exit 1
+fi
+
+# get arguments
+COMMAND=$1
+shift
+
+# Source the hama-env.sh.  Will have JAVA_HOME defined.
+if [ -f "${HAMA_CONF_DIR}/hama-env.sh" ]; then
+  . "${HAMA_CONF_DIR}/hama-env.sh"
+fi
+
+# some Java parameters
+if [ "$JAVA_HOME" != "" ]; then
+  #echo "run java in $JAVA_HOME"
+  JAVA_HOME=$JAVA_HOME
+fi
+  
+if [ "$JAVA_HOME" = "" ]; then
+  echo "Error: JAVA_HOME is not set."
+  exit 1
+fi
+
+JAVA=$JAVA_HOME/bin/java
+JAVA_HEAP_MAX=-Xmx1000m 
+
+# check envvars which might override default args
+if [ "$HAMA_HEAPSIZE" != "" ]; then
+  #echo "run with heapsize $HAMA_HEAPSIZE"
+  JAVA_HEAP_MAX="-Xmx""$HAMA_HEAPSIZE""m"
+  #echo $JAVA_HEAP_MAX
+fi
+
+# so that filenames w/ spaces are handled correctly in loops below
+IFS=
+
+# CLASSPATH initially contains $HAMA_CONF_DIR
+CLASSPATH="${HAMA_CONF_DIR}"
+
+
+CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
+
+# for developers, add hama classes to CLASSPATH
+if [ -d "$HAMA_HOME/build/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/classes
+fi
+if [ -d "$HAMA_HOME/build/test" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/test
+fi
+if [ -d "$HAMA_HOME/build/examples" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build
+fi
+
+# for releases, add hama to CLASSPATH
+for f in $HAMA_HOME/hama*.jar; do
+  if [ -f $f ]; then
+    CLASSPATH=${CLASSPATH}:$f;
+  fi
+  if [[ $f =~ "examples.jar$" ]]; then
+    HAMA_EXAMPLES_JAR=$f;
+  else
+    if [[ $f =~ "test.jar$" ]]; then
+      HAMA_TEST_JAR=$f;
+    else
+      if [[ $f =~ "hama*" ]]; then
+        HAMA_JAR=$f;
+      fi
+    fi
+  fi
+done
+
+# Add libs to CLASSPATH
+for f in $HAMA_HOME/lib/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+  if [[ $f =~ "hbase*" ]]; then
+    if [ "$HAMA_JARS" == "" ] ; then
+      HAMA_JARS=$f;
+    else
+      HAMA_JARS=${HAMA_JARS},$f;
+    fi
+  fi
+done
+
+for f in $HAMA_HOME/lib/jetty-ext/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+for f in $HAMA_HOME/lib/findbugs/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+for f in $HAMA_HOME/lib/findbugs/plugin/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+# add user-specified CLASSPATH last
+if [ "$HAMA_CLASSPATH" != "" ]; then
+  CLASSPATH=${CLASSPATH}:${HAMA_CLASSPATH}
+fi
+
+# default log directory & file
+if [ "$HAMA_LOG_DIR" = "" ]; then
+  HAMA_LOG_DIR="$HAMA_HOME/logs"
+fi
+if [ "$HAMA_LOGFILE" = "" ]; then
+  HAMA_LOGFILE='hama.log'
+fi
+
+# cygwin path translation
+if $cygwin; then
+  CLASSPATH=`cygpath -p -w "$CLASSPATH"`
+  HAMA_HOME=`cygpath -d "$HAMA_HOME"`
+  HAMA_LOG_DIR=`cygpath -d "$HAMA_LOG_DIR"`
+fi
+
+# cygwin path translation
+if $cygwin; then
+  JAVA_LIBRARY_PATH=`cygpath -p "$JAVA_LIBRARY_PATH"`
+fi
+ 
+# restore ordinary behaviour
+unset IFS
+
+# figure out which class to run
+if [ "$COMMAND" = "shell" ] ; then
+  if [ "$HAMA_JAR" == "" ] ; then
+    echo 'Can not find the hama jar. Please check that if it is in $HAMA_HOME.'
+    exit -1
+  else
+    if [ "$HAMA_JARS" == "" ] ; then
+      echo 'Hama shell to be excuted needs the hbase & hama jar. Please check that if it is in $HAMA_HOME/lib'
+      exit -1
+    else
+      CLASS="org.apache.hadoop.mapred.JobShell -libjars $HAMA_JARS,$HAMA_JAR $HAMA_JAR" 
+    fi
+  fi
+elif [ "$COMMAND" = "examples" ] ; then
+  if [ "$HAMA_EXAMPLES_JAR" == "" ] ; then
+    echo 'Can not find the hama examples jar. Please check that if it is in $HAMA_HOME.'
+    exit -1
+  else
+    if [ "$HAMA_JARS" == "" ] ; then
+      echo 'Hama examples to be excuted needs the hbase & hama jar. Please check that if it is in $HAMA_HOME/lib'
+      exit -1
+    else
+      CLASS="org.apache.hadoop.mapred.JobShell -libjars $HAMA_JARS,$HAMA_JAR $HAMA_EXAMPLES_JAR" 
+    fi
+  fi
+else
+  CLASS=$COMMAND
+fi
+
+# Have JVM dump heap if we run out of memory.  Files will be 'launch directory'
+# and are named like the following: java_pid21612.hprof. Apparently it doesn't
+# 'cost' to have this flag enabled. Its a 1.6 flag only. See:
+# http://blogs.sun.com/alanb/entry/outofmemoryerror_looks_a_bit_better 
+HAMA_OPTS="$HAMA_OPTS -XX:+HeapDumpOnOutOfMemoryError"
+HAMA_OPTS="$HAMA_OPTS -Dhama.log.dir=$HAMA_LOG_DIR"
+HAMA_OPTS="$HAMA_OPTS -Dhama.log.file=$HAMA_LOGFILE"
+HAMA_OPTS="$HAMA_OPTS -Dhama.home.dir=$HAMA_HOME"
+HAMA_OPTS="$HAMA_OPTS -Dhama.id.str=$HAMA_IDENT_STRING"
+HAMA_OPTS="$HAMA_OPTS -Dhama.root.logger=${HAMA_ROOT_LOGGER:-INFO,console}"
+if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
+  HAMA_OPTS="$HAMA_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
+fi  
+
+# run it
+exec "$JAVA" $JAVA_HEAP_MAX $HAMA_OPTS -classpath "$CLASSPATH" $CLASS "$@"

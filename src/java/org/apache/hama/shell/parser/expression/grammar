@@ -1,0 +1,25 @@
+<hamaexpression> := <expr> ";"
+
+<expr> := <IDENTIFIER> "=" <basicoperation> ["MAP" <integer>] ["REDUCE" <integer>] | "SAVE" <IDENTIFIER> "AS" <filename>
+
+<basicoperation> := <algebraop> | <loadop> | <randmatrixop>
+
+<loadop> := "LOAD" <filename> "AS" <typename> "USING" <classname>
+
+<randmatrixop> := "MATRIX.RANDOM" <integer> <integer>
+
+<algebraop> := <additiveop>
+
+<additiveop> := <multiplicationop> ( ( "+" | "-" ) <multiplicationop> )*
+
+<multiplicationop> := <unaryop> ( "*" <unaryop> )*
+
+<unaryop> := "(" <additiveop> ")" | <IDENTIFIER>
+
+<typename> := "matrix"
+
+<filename> := <quotedstring>
+
+<classname> := <quotedstring>
+
+<quotedstring> := "'"<string>"'"

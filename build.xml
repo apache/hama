@@ -29,6 +29,7 @@
     <property file="${basedir}/build.properties" />
 
     <property name="src.dir" location="${basedir}/src/java" />
+    <property name="src.gen.dir" location="${basedir}/src-gen" />
     <property name="src.test" location="${basedir}/src/test" />
     <property name="src.examples" location="${basedir}/src/examples" />
 
@@ -37,6 +38,14 @@
     <property name="docs.dir" value="${basedir}/docs" />
     <property name="docs.src" value="${basedir}/src/docs" />
 
+	<!-- javacc properties -->
+    <property name="javacc.home" value="${basedir}/lib" />
+
+    <property name="src.gen.parser.expression.dir" value="${src.gen.dir}/org/apache/hama/shell/parser/expression" />
+    <property name="src.gen.parser.script.dir" value="${src.gen.dir}/org/apache/hama/shell/parser/script" />
+
+	<!-- build properties -->
+	
     <property name="test.output" value="no" />
     <property name="test.timeout" value="600000" />
 
@@ -83,6 +92,9 @@
     	classname="edu.umd.cs.findbugs.anttask.FindBugsTask" />
 
     <target name="init">
+        <mkdir dir="${src.gen.dir}" />
+        <mkdir dir="${src.gen.parser.script.dir}" />
+        <mkdir dir="${src.gen.parser.expression.dir}" />
         <mkdir dir="${build.dir}" />
         <mkdir dir="${build.classes}" />
         <mkdir dir="${build.test}" />
@@ -95,12 +107,21 @@
             <fileset dir="${lib.dir}" />
         </copy>
     </target>
+	
+	<!-- ================================================================== -->
+    <!-- Java Compiler Compiler, generate Parsers                           -->
+    <!-- ================================================================== -->
+    <target name="cc-compile" depends="init" description="Create and Compile Parser">
+        <jjtree target="${src.dir}/org/apache/hama/shell/parser/expression/HamaExpressionParser.jjt" outputdirectory="${src.gen.parser.expression.dir}" javacchome="${javacc.home}" />
+        <javacc target="${src.gen.parser.expression.dir}/HamaExpressionParser.jj" outputdirectory="${src.gen.parser.expression.dir}" javacchome="${javacc.home}" />
+        <javacc target="${src.dir}/org/apache/hama/shell/parser/script/HamaScriptParser.jj" outputdirectory="${src.gen.parser.script.dir}" javacchome="${javacc.home}" />
+    </target>
 
-    <target name="compile" depends="init">
+    <target name="compile" depends="init, cc-compile">
         <!--Compile whats under src and generated java classes made from jsp-->
         <mkdir dir="${build.src}" />
         <javac encoding="${build.encoding}" 
-                srcdir="${src.dir};${build.src}" includes="**/*.java" 
+                srcdir="${src.dir};${src.gen.dir};${build.src}" includes="**/*.java" 
         	destdir="${build.classes}" debug="${javac.debug}" 
                 deprecation="${javac.deprecation}">
             <classpath refid="classpath" />
@@ -120,6 +141,10 @@
     <target name="jar" depends="compile">
         <jar jarfile="${build.dir}/${final.name}.jar" 
               basedir="${build.classes}">
+            <manifest>
+                <attribute name="Main-Class" 
+                    value="org/apache/hama/shell/HamaShell" />
+            </manifest>
         </jar>
     </target>
 
@@ -220,13 +245,16 @@
     </target>
 
     <!-- Javadoc -->
-    <target name="javadoc" description="Generate javadoc">
+    <target name="javadoc" depends="cc-compile" description="Generate javadoc">
         <mkdir dir="${build.javadoc}" />
         <javadoc overview="${src.dir}/overview.html" packagenames="org.apache.hama.*" 
         	    destdir="${build.javadoc}" author="true" version="true" use="true" 
         	    windowtitle="${Name} ${version} API" doctitle="${Name} ${version} API" 
         	    bottom="Copyright &amp;copy; ${year} The Apache Software Foundation">
             <packageset dir="${src.dir}">
+                <include name="org/apache/**" />
+            </packageset>
+            <packageset dir="${src.gen.dir}">
                 <include name="org/apache/**" />
             </packageset>
             <link href="${javadoc.link.java}" />
@@ -292,6 +320,7 @@
     <!-- Clean.  Delete the build files, and their directories              -->
     <!-- ================================================================== -->
     <target name="clean">
+        <delete dir="${src.gen.dir}" />
         <delete dir="${build.dir}" />
     </target>
 </project>
