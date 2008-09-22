@@ -28,12 +28,12 @@ import org.apache.hama.HamaConfiguration;
 
 /**
  * HamaShell
- *
+ * 
  */
 // TODO : improve to make it executed in batch mode.
-//        now it parse the input stream to expression by expression.
-//        so we only can execute expression by expression.
-//        it is not efficient.
+// now it parse the input stream to expression by expression.
+// so we only can execute expression by expression.
+// it is not efficient.
 public class HamaShell {
 
   private final Log log = LogFactory.getLog(getClass());
@@ -46,11 +46,12 @@ public class HamaShell {
   /**
    * HamaShell Constructor.
    * 
-   * @param in          input stream to be parsed
-   * @param shellEnv    shell environment
-   * @param conf        Hama Configuration
+   * @param in input stream to be parsed
+   * @param shellEnv shell environment
+   * @param conf Hama Configuration
    */
-  public HamaShell(BufferedReader in, HamaShellEnv shellEnv, HamaConfiguration conf) {
+  public HamaShell(BufferedReader in, HamaShellEnv shellEnv,
+      HamaConfiguration conf) {
     this.in = in;
     this.env = shellEnv;
     this.conf = conf;
@@ -82,9 +83,10 @@ public class HamaShell {
       log.error(e.getMessage());
     }
   }
-  
+
   public static void main(String[] args) {
-    HamaShell shell = new HamaShell(new BufferedReader( new InputStreamReader(System.in)), new HamaShellEnv(), new HamaConfiguration());
+    HamaShell shell = new HamaShell(new BufferedReader(new InputStreamReader(
+        System.in)), new HamaShellEnv(), new HamaConfiguration());
     shell.run();
   }
 
