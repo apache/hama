@@ -30,4 +30,8 @@ public class HCluster extends HBaseClusterTestCase {
   public void setUp() throws Exception {
     super.setUp();
   }
+  
+  public HamaConfiguration getConf() {
+    return conf;
+  }
 }

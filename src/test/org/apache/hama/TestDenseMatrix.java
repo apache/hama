@@ -45,8 +45,8 @@ public class TestDenseMatrix extends TestCase {
         HCluster hCluster = new HCluster();
         hCluster.setUp();
 
-        m1 = DenseMatrix.random(hCluster.conf, SIZE, SIZE);
-        m2 = DenseMatrix.random(hCluster.conf, SIZE, SIZE);
+        m1 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
+        m2 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
       }
 
       protected void tearDown() {

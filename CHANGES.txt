@@ -25,6 +25,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-68: Shell parser JUnit test cases (samuel via edwardyoon)
     HAMA-65: Remove the information of an inactive committers (edwardyoon) 
     HAMA-58: Remove duplicated code (edwardyoon)
     HAMA-56: Add setRow(int row, Vector vector) method to matrix inteface (edwardyoon)
