@@ -29,10 +29,10 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hama.algebra.AdditionMap;
-import org.apache.hama.algebra.AdditionReduce;
-import org.apache.hama.algebra.MultiplicationMap;
-import org.apache.hama.algebra.MultiplicationReduce;
+import org.apache.hama.algebra.Add1DLayoutMap;
+import org.apache.hama.algebra.Add1DLayoutReduce;
+import org.apache.hama.algebra.Mult1DLayoutMap;
+import org.apache.hama.algebra.Mult1DLayoutReduce;
 import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.io.VectorUpdate;
@@ -139,9 +139,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job" + result.getName());
 
-    AdditionMap.initJob(this.getName(), B.getName(), AdditionMap.class,
+    Add1DLayoutMap.initJob(this.getName(), B.getName(), Add1DLayoutMap.class,
         IntWritable.class, DenseVector.class, jobConf);
-    MatrixReduce.initJob(result.getName(), AdditionReduce.class, jobConf);
+    MatrixReduce.initJob(result.getName(), Add1DLayoutReduce.class, jobConf);
 
     execute(jobConf, result);
     return result;
@@ -178,9 +178,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getName());
 
-    MultiplicationMap.initJob(this.getName(), B.getName(),
-        MultiplicationMap.class, IntWritable.class, DenseVector.class, jobConf);
-    MatrixReduce.initJob(result.getName(), MultiplicationReduce.class, jobConf);
+    Mult1DLayoutMap.initJob(this.getName(), B.getName(),
+        Mult1DLayoutMap.class, IntWritable.class, DenseVector.class, jobConf);
+    MatrixReduce.initJob(result.getName(), Mult1DLayoutReduce.class, jobConf);
     execute(jobConf, result);
     return result;
   }

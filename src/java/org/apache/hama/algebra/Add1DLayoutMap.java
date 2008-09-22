@@ -20,7 +20,6 @@
 package org.apache.hama.algebra;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
@@ -31,21 +30,20 @@ import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 import org.apache.hama.Vector;
-import org.apache.hama.io.VectorEntry;
 import org.apache.hama.mapred.DenseMap;
 import org.apache.log4j.Logger;
 
-public class MultiplicationMap extends DenseMap<IntWritable, DenseVector> {
-  static final Logger LOG = Logger.getLogger(MultiplicationMap.class);
+public class Add1DLayoutMap extends DenseMap<IntWritable, DenseVector> {
+  static final Logger LOG = Logger.getLogger(Add1DLayoutMap.class);
   protected Matrix matrix_b;
-  public static final String MATRIX_B = "hama.multiplication.matrix.b";
+  public static final String MATRIX_B = "hama.addition.matrix.b";
   
   public void configure(JobConf job) {
     matrix_b = new DenseMatrix(new HamaConfiguration(), job.get(MATRIX_B, ""));
   }
-  
+
   public static void initJob(String matrix_a, String matrix_b,
-      Class<MultiplicationMap> map, 
+      Class<Add1DLayoutMap> map, 
       Class<IntWritable> outputKeyClass, 
       Class<DenseVector> outputValueClass, 
       JobConf jobConf) {
@@ -57,18 +55,15 @@ public class MultiplicationMap extends DenseMap<IntWritable, DenseVector> {
     
     initJob(matrix_a, map, jobConf);
   }
-  
+
   @Override
   public void map(IntWritable key, DenseVector value,
       OutputCollector<IntWritable, DenseVector> output, Reporter reporter)
       throws IOException {
 
-    Iterator<VectorEntry> it = value.iterator();
-    int i = 0;
-    while (it.hasNext()) {
-      Vector v = matrix_b.getRow(i);
-      output.collect(key, (DenseVector) v.scale(it.next().getValue()));
-      i++;
-    }
+    Vector v1 = matrix_b.getRow(key.get());
+    output.collect(key, (DenseVector) v1.add(value));
+
   }
+
 }

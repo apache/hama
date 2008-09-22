@@ -32,9 +32,9 @@ import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.log4j.Logger;
 
-public class MultiplicationReduce extends
+public class Mult1DLayoutReduce extends
     MatrixReduce<IntWritable, DenseVector> {
-  static final Logger LOG = Logger.getLogger(MultiplicationReduce.class);
+  static final Logger LOG = Logger.getLogger(Mult1DLayoutReduce.class);
 
   @Override
   public void reduce(IntWritable key, Iterator<DenseVector> values,

@@ -72,11 +72,11 @@ public class AlgebraOperator {
    * 
    * if it is a
    * 
-   * @see {@link Matrix} operator, return it's value (matrix). if it is a
-   * @see {@link Matrix#add(Matrix)} operator, do addition and return it's value
+   * @see Matrix operator, return it's value (matrix). if it is a
+   * @see Matrix#add(Matrix) operator, do addition and return it's value
    *      (matrix). if it is a
-   * @see {@link Matrix#mult(Matrix)} operator, do multiplication and return
-   *      it's value (matrix).
+   * @see Matrix#mult(Matrix) operator, do multiplication and return it's value
+   *      (matrix).
    * 
    * @return Matrix ( or AlgebraOperator(used internally) )
    * @throws AlgebraOpException
