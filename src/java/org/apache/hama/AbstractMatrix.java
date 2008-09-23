@@ -28,9 +28,6 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
@@ -78,17 +75,6 @@ public abstract class AbstractMatrix implements Matrix {
     
     LOG.info("Initializing the matrix storage.");
     this.admin.createTable(this.tableDesc);
-  }
-
-  public void execute(JobConf jobConf, Matrix result) throws IOException {
-    RunningJob rJob = JobClient.runJob(jobConf);
-    // TODO : When HADOOP-4043 done, we should change this.
-    long rows = rJob.getCounters().findCounter(
-        "org.apache.hadoop.mapred.Task$Counter", 8, "REDUCE_OUTPUT_RECORDS")
-        .getCounter();
-    // TODO : Thinking about more efficient method.
-    int columns = result.getRow(0).size();
-    result.setDimension((int) rows, columns);
   }
 
   /** {@inheritDoc} */

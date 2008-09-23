@@ -37,6 +37,7 @@ import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.MatrixReduce;
+import org.apache.hama.util.JobManager;
 import org.apache.hama.util.Numeric;
 import org.apache.hama.util.RandomVariable;
 
@@ -143,7 +144,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         IntWritable.class, DenseVector.class, jobConf);
     MatrixReduce.initJob(result.getName(), Add1DLayoutReduce.class, jobConf);
 
-    execute(jobConf, result);
+    JobManager.execute(jobConf, result);
     return result;
   }
 
@@ -181,7 +182,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     Mult1DLayoutMap.initJob(this.getName(), B.getName(),
         Mult1DLayoutMap.class, IntWritable.class, DenseVector.class, jobConf);
     MatrixReduce.initJob(result.getName(), Mult1DLayoutReduce.class, jobConf);
-    execute(jobConf, result);
+    JobManager.execute(jobConf, result);
     return result;
   }
 
