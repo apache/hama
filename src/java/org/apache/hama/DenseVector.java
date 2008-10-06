@@ -20,14 +20,10 @@
 package org.apache.hama;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
-import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
-import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
 public class DenseVector extends AbstractVector implements Vector {
@@ -39,14 +35,6 @@ public class DenseVector extends AbstractVector implements Vector {
 
   public DenseVector(VectorMapWritable<Integer, VectorEntry> m) {
     this.entries = m;
-  }
-
-  public DenseVector(RowResult rowResult) {
-    this.entries = new VectorMapWritable<Integer, VectorEntry>();
-    for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
-      VectorEntry entry = new VectorEntry(f.getValue());
-      this.entries.put(Numeric.getColumnIndex(f.getKey()), entry);
-    }
   }
 
   public Vector add(double alpha, Vector v) {

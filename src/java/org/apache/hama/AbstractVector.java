@@ -41,9 +41,14 @@ public abstract class AbstractVector {
    * @return iterator
    */
   public Iterator<VectorEntry> iterator() {
-    return entries.values().iterator();
+    return this.entries.values().iterator();
   }
   
+  /**
+   * Returns a size of vector
+   * 
+   * @return a size of vector
+   */
   public int size() {
     return this.entries.size();
   }

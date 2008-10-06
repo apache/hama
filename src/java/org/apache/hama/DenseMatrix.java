@@ -20,12 +20,14 @@
 package org.apache.hama;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
+import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
@@ -155,7 +157,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public DenseVector getRow(int row) throws IOException {
-    return new DenseVector(table.getRow(String.valueOf(row)));
+    VectorMapWritable<Integer, VectorEntry> values = new VectorMapWritable<Integer, VectorEntry>();
+    RowResult rowResult = table.getRow(String.valueOf(row));
+
+    for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
+      VectorEntry entry = new VectorEntry(f.getValue());
+      values.put(Numeric.getColumnIndex(f.getKey()), entry);
+    }
+
+    return new DenseVector(values);
   }
 
   public Vector getColumn(int column) throws IOException {
@@ -180,8 +190,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getName());
 
-    Mult1DLayoutMap.initJob(this.getName(), B.getName(),
-        Mult1DLayoutMap.class, IntWritable.class, VectorWritable.class, jobConf);
+    Mult1DLayoutMap.initJob(this.getName(), B.getName(), Mult1DLayoutMap.class,
+        IntWritable.class, VectorWritable.class, jobConf);
     MatrixReduce.initJob(result.getName(), Mult1DLayoutReduce.class, jobConf);
     JobManager.execute(jobConf, result);
     return result;
