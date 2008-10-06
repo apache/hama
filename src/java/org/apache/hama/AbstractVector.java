@@ -47,4 +47,8 @@ public abstract class AbstractVector {
   public int size() {
     return this.entries.size();
   }
+  
+  public VectorMapWritable<Integer, VectorEntry> getEntries() {
+    return this.entries;
+  }
 }

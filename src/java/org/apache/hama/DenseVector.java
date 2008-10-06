@@ -49,10 +49,6 @@ public class DenseVector extends AbstractVector implements Vector {
     }
   }
 
-  public VectorMapWritable<Integer, VectorEntry> getEntries() {
-    return this.entries;
-  }
-
   public Vector add(double alpha, Vector v) {
     // TODO Auto-generated method stub
     return null;
