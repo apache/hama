@@ -31,13 +31,13 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.Constants;
-import org.apache.hama.DenseVector;
 import org.apache.hama.Matrix;
+import org.apache.hama.io.VectorWritable;
 
 @SuppressWarnings("unchecked")
 public abstract class DenseMap<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements
-    Mapper<IntWritable, DenseVector, K, V> {
+    Mapper<IntWritable, VectorWritable, K, V> {
   public static Matrix MATRIX_B;
 
   public static void initJob(String matrixA, 
@@ -51,6 +51,6 @@ public abstract class DenseMap<K extends WritableComparable, V extends Writable>
     job.set(MatrixInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 
-  public abstract void map(IntWritable key, DenseVector value,
+  public abstract void map(IntWritable key, VectorWritable value,
       OutputCollector<K, V> output, Reporter reporter) throws IOException;
 }

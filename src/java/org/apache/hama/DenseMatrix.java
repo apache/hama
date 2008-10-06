@@ -36,6 +36,7 @@ import org.apache.hama.algebra.Mult1DLayoutReduce;
 import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.io.VectorUpdate;
+import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.hama.util.JobManager;
 import org.apache.hama.util.Numeric;
@@ -141,7 +142,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setJobName("addition MR job" + result.getName());
 
     Add1DLayoutMap.initJob(this.getName(), B.getName(), Add1DLayoutMap.class,
-        IntWritable.class, DenseVector.class, jobConf);
+        IntWritable.class, VectorWritable.class, jobConf);
     MatrixReduce.initJob(result.getName(), Add1DLayoutReduce.class, jobConf);
 
     JobManager.execute(jobConf, result);
@@ -154,7 +155,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public DenseVector getRow(int row) throws IOException {
-    return new DenseVector(row, table.getRow(String.valueOf(row)));
+    return new DenseVector(table.getRow(String.valueOf(row)));
   }
 
   public Vector getColumn(int column) throws IOException {
@@ -180,7 +181,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setJobName("multiplication MR job : " + result.getName());
 
     Mult1DLayoutMap.initJob(this.getName(), B.getName(),
-        Mult1DLayoutMap.class, IntWritable.class, DenseVector.class, jobConf);
+        Mult1DLayoutMap.class, IntWritable.class, VectorWritable.class, jobConf);
     MatrixReduce.initJob(result.getName(), Mult1DLayoutReduce.class, jobConf);
     JobManager.execute(jobConf, result);
     return result;

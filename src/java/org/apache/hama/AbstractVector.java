@@ -17,35 +17,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.algebra;
+package org.apache.hama;
 
-import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
 
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorEntry;
-import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.MatrixReduce;
+import org.apache.hama.io.VectorMapWritable;
 
-public class Add1DLayoutReduce extends MatrixReduce<IntWritable, VectorWritable> {
-
-  @Override
-  public void reduce(IntWritable key, Iterator<VectorWritable> values,
-      OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
-      throws IOException {
-
-    VectorUpdate update = new VectorUpdate(key.get());
-    VectorWritable vector = values.next();
-    
-    for (Map.Entry<Integer, VectorEntry> f : vector.entrySet()) {
-      update.put(f.getKey(), f.getValue().getValue());
-    }
-
-    output.collect(key, update);
+public abstract class AbstractVector {
+  public VectorMapWritable<Integer, VectorEntry> entries;
+  
+  public double get(int index) {
+    return this.entries.get(index).getValue();
   }
-
+  
+  public void add(int index, double value) {
+    // TODO Auto-generated method stub
+  }
+  
+  /**
+   * Returns an Iterator.
+   * 
+   * @return iterator
+   */
+  public Iterator<VectorEntry> iterator() {
+    return entries.values().iterator();
+  }
+  
+  public int size() {
+    return this.entries.size();
+  }
 }

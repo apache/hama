@@ -37,8 +37,8 @@ import org.apache.hama.io.VectorUpdate;
 public abstract class MatrixReduce<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements Reducer<K, V, IntWritable, VectorUpdate> {
   /**
-   * Use this before submitting a TableReduce job. It will
-   * appropriately set up the JobConf.
+   * Use this before submitting a TableReduce job. It will appropriately set up
+   * the JobConf.
    * 
    * @param table
    * @param reducer
@@ -62,6 +62,6 @@ public abstract class MatrixReduce<K extends WritableComparable, V extends Writa
    * @throws IOException
    */
   public abstract void reduce(K key, Iterator<V> values,
-    OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
-  throws IOException;
+      OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
+      throws IOException;
 }

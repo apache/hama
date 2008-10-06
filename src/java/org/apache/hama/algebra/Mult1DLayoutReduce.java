@@ -27,23 +27,23 @@ import java.util.Map;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.DenseVector;
 import org.apache.hama.io.VectorUpdate;
+import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.MatrixReduce;
 import org.apache.log4j.Logger;
 
 public class Mult1DLayoutReduce extends
-    MatrixReduce<IntWritable, DenseVector> {
+    MatrixReduce<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(Mult1DLayoutReduce.class);
 
   @Override
-  public void reduce(IntWritable key, Iterator<DenseVector> values,
+  public void reduce(IntWritable key, Iterator<VectorWritable> values,
       OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
 
     VectorUpdate update = new VectorUpdate(key.get());
 
-    DenseVector sum;
+    VectorWritable sum;
     Map<Integer, Double> buffer = new HashMap<Integer, Double>();
 
     // Summation
@@ -51,9 +51,9 @@ public class Mult1DLayoutReduce extends
       sum = values.next();
       for (int i = 0; i < sum.size(); i++) {
         if (buffer.containsKey(i)) {
-          buffer.put(i, sum.get(i) + buffer.get(i));
+          buffer.put(i, sum.get(i).getValue() + buffer.get(i));
         } else {
-          buffer.put(i, sum.get(i));
+          buffer.put(i, sum.get(i).getValue());
         }
       }
     }

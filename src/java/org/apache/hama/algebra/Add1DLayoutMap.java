@@ -30,39 +30,39 @@ import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 import org.apache.hama.Vector;
+import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.DenseMap;
 import org.apache.log4j.Logger;
 
-public class Add1DLayoutMap extends DenseMap<IntWritable, DenseVector> {
+public class Add1DLayoutMap extends DenseMap<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(Add1DLayoutMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.addition.matrix.b";
-  
+
   public void configure(JobConf job) {
     matrix_b = new DenseMatrix(new HamaConfiguration(), job.get(MATRIX_B, ""));
   }
 
   public static void initJob(String matrix_a, String matrix_b,
-      Class<Add1DLayoutMap> map, 
-      Class<IntWritable> outputKeyClass, 
-      Class<DenseVector> outputValueClass, 
-      JobConf jobConf) {
-    
+      Class<Add1DLayoutMap> map, Class<IntWritable> outputKeyClass,
+      Class<VectorWritable> outputValueClass, JobConf jobConf) {
+
     jobConf.setMapOutputValueClass(outputValueClass);
     jobConf.setMapOutputKeyClass(outputKeyClass);
     jobConf.setMapperClass(map);
     jobConf.set(MATRIX_B, matrix_b);
-    
+
     initJob(matrix_a, map, jobConf);
   }
 
   @Override
-  public void map(IntWritable key, DenseVector value,
-      OutputCollector<IntWritable, DenseVector> output, Reporter reporter)
+  public void map(IntWritable key, VectorWritable value,
+      OutputCollector<IntWritable, VectorWritable> output, Reporter reporter)
       throws IOException {
 
     Vector v1 = matrix_b.getRow(key.get());
-    output.collect(key, (DenseVector) v1.add(value));
+    output.collect(key, new VectorWritable(key.get(), (DenseVector) v1
+        .add(value.getDenseVector())));
 
   }
 

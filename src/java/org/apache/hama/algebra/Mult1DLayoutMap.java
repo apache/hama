@@ -32,45 +32,46 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 import org.apache.hama.Vector;
 import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.DenseMap;
 import org.apache.log4j.Logger;
 
 /**
- * 1D Block Layout version 
+ * 1D Block Layout version
  */
-public class Mult1DLayoutMap extends DenseMap<IntWritable, DenseVector> {
+public class Mult1DLayoutMap extends DenseMap<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(Mult1DLayoutMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.multiplication.matrix.b";
-  
+
   public void configure(JobConf job) {
     matrix_b = new DenseMatrix(new HamaConfiguration(), job.get(MATRIX_B, ""));
   }
-  
+
   public static void initJob(String matrix_a, String matrix_b,
-      Class<Mult1DLayoutMap> map, 
-      Class<IntWritable> outputKeyClass, 
-      Class<DenseVector> outputValueClass, 
-      JobConf jobConf) {
-    
+      Class<Mult1DLayoutMap> map, Class<IntWritable> outputKeyClass,
+      Class<VectorWritable> outputValueClass, JobConf jobConf) {
+
     jobConf.setMapOutputValueClass(outputValueClass);
     jobConf.setMapOutputKeyClass(outputKeyClass);
     jobConf.setMapperClass(map);
     jobConf.set(MATRIX_B, matrix_b);
-    
+
     initJob(matrix_a, map, jobConf);
   }
-  
+
   @Override
-  public void map(IntWritable key, DenseVector value,
-      OutputCollector<IntWritable, DenseVector> output, Reporter reporter)
+  public void map(IntWritable key, VectorWritable value,
+      OutputCollector<IntWritable, VectorWritable> output, Reporter reporter)
       throws IOException {
 
-    Iterator<VectorEntry> it = value.iterator();
+    Iterator<VectorEntry> it = value.getDenseVector().iterator();
     int i = 0;
     while (it.hasNext()) {
       Vector v = matrix_b.getRow(i);
-      output.collect(key, (DenseVector) v.scale(it.next().getValue()));
+
+      output.collect(key, new VectorWritable(key.get(), (DenseVector) v
+          .scale(it.next().getValue())));
       i++;
     }
   }

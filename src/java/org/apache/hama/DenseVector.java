@@ -27,13 +27,12 @@ import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
-import org.apache.hama.io.VectorWritable;
 import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
-public class DenseVector extends VectorWritable implements Vector {
+public class DenseVector extends AbstractVector implements Vector {
   static final Logger LOG = Logger.getLogger(Vector.class);
-
+  
   public DenseVector() {
     this(new VectorMapWritable<Integer, VectorEntry>());
   }
@@ -42,9 +41,8 @@ public class DenseVector extends VectorWritable implements Vector {
     this.entries = m;
   }
 
-  public DenseVector(int row, RowResult rowResult) {
+  public DenseVector(RowResult rowResult) {
     this.entries = new VectorMapWritable<Integer, VectorEntry>();
-    this.row = row;
     for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
       VectorEntry entry = new VectorEntry(f.getValue());
       this.entries.put(Numeric.getColumnIndex(f.getKey()), entry);
@@ -55,10 +53,6 @@ public class DenseVector extends VectorWritable implements Vector {
     return this.entries;
   }
 
-  public void add(int index, double value) {
-    // TODO Auto-generated method stub
-  }
-
   public Vector add(double alpha, Vector v) {
     // TODO Auto-generated method stub
     return null;
@@ -67,7 +61,6 @@ public class DenseVector extends VectorWritable implements Vector {
   public Vector add(Vector v2) {
     if (this.size() == 0) {
       DenseVector trunk = (DenseVector) v2;
-      this.row = trunk.row;
       this.entries = trunk.entries;
       return this;
     }
@@ -109,10 +102,6 @@ public class DenseVector extends VectorWritable implements Vector {
     return this;
   }
 
-  public double get(int index) {
-    return this.entries.get(index).getValue();
-  }
-
   public double norm(Norm type) {
     if (type == Norm.One)
       return getNorm1();
@@ -139,7 +128,7 @@ public class DenseVector extends VectorWritable implements Vector {
     Iterator<Integer> it = keySet.iterator();
 
     while (it.hasNext()) {
-      sum += this.get(it.next()).getValue();
+      sum += get(it.next());
     }
 
     return sum;
@@ -152,7 +141,7 @@ public class DenseVector extends VectorWritable implements Vector {
     Iterator<Integer> it = keySet.iterator();
 
     while (it.hasNext()) {
-      double value = this.get(it.next()).getValue();
+      double value = get(it.next()); //this.get(it.next()).getValue();
       square_sum += value * value;
     }
 

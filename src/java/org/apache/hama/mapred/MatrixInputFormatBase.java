@@ -40,21 +40,21 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.Constants;
-import org.apache.hama.DenseVector;
+import org.apache.hama.io.VectorWritable;
 import org.apache.hama.util.Numeric;
 
 public abstract class MatrixInputFormatBase implements
-    InputFormat<IntWritable, DenseVector> {
+    InputFormat<IntWritable, VectorWritable> {
   private byte[][] inputColumns;
   private HTable table;
   private TableRecordReader tableRecordReader;
   private RowFilterInterface rowFilter;
 
   /**
-   * Iterate over an HBase table data, return (Text, DenseVector) pairs
+   * Iterate over an HBase table data, return (Text, VectorWritable) pairs
    */
   protected static class TableRecordReader implements
-      RecordReader<IntWritable, DenseVector> {
+      RecordReader<IntWritable, VectorWritable> {
     private byte[] startRow;
     private byte[] endRow;
     private RowFilterInterface trrRowFilter;
@@ -94,7 +94,7 @@ public abstract class MatrixInputFormatBase implements
     }
 
     /**
-     * @param inputColumns the columns to be placed in {@link DenseVector}.
+     * @param inputColumns the columns to be placed in {@link VectorWritable}.
      */
     public void setInputColumns(final byte[][] inputColumns) {
       byte[][] columns = inputColumns;
@@ -140,12 +140,12 @@ public abstract class MatrixInputFormatBase implements
     }
 
     /**
-     * @return DenseVector
+     * @return VectorWritable
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createValue()
      */
-    public DenseVector createValue() {
-      return new DenseVector();
+    public VectorWritable createValue() {
+      return new VectorWritable();
     }
 
     /** {@inheritDoc} */
@@ -163,14 +163,14 @@ public abstract class MatrixInputFormatBase implements
 
     /**
      * @param key IntWritable as input key.
-     * @param value DenseVector as input value
+     * @param value VectorWritable as input value
      * 
-     * Converts Scanner.next() to IntWritable, DenseVector
+     * Converts Scanner.next() to IntWritable, VectorWritable
      * 
      * @return true if there was more data
      * @throws IOException
      */
-    public boolean next(IntWritable key, DenseVector value) throws IOException {
+    public boolean next(IntWritable key, VectorWritable value) throws IOException {
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
       if (hasMore) {
@@ -188,7 +188,7 @@ public abstract class MatrixInputFormatBase implements
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<IntWritable, DenseVector> getRecordReader(
+  public RecordReader<IntWritable, VectorWritable> getRecordReader(
       InputSplit split, JobConf job, Reporter reporter) throws IOException {
     TableSplit tSplit = (TableSplit) split;
     TableRecordReader trr = this.tableRecordReader;
@@ -229,7 +229,7 @@ public abstract class MatrixInputFormatBase implements
   }
 
   /**
-   * @param inputColumns to be passed in {@link DenseVector} to the map task.
+   * @param inputColumns to be passed in {@link VectorWritable} to the map task.
    */
   protected void setInputColums(byte[][] inputColumns) {
     this.inputColumns = inputColumns;

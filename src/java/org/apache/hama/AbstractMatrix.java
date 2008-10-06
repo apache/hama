@@ -49,7 +49,7 @@ public abstract class AbstractMatrix implements Matrix {
   /** Matrix attribute description */
   protected HTableDescriptor tableDesc;
   public HamaAdmin hAdmin;
-  
+
   /**
    * Sets the job configuration
    * 
@@ -62,7 +62,7 @@ public abstract class AbstractMatrix implements Matrix {
     } catch (MasterNotRunningException e) {
       LOG.error(e, e);
     }
-    
+
     hAdmin = new HamaAdmin(conf, admin);
   }
 
@@ -72,7 +72,7 @@ public abstract class AbstractMatrix implements Matrix {
   protected void create() throws IOException {
     this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
     this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
-    
+
     LOG.info("Initializing the matrix storage.");
     this.admin.createTable(this.tableDesc);
   }
@@ -137,8 +137,7 @@ public abstract class AbstractMatrix implements Matrix {
 
   public String getColumnAttribute(int column) throws IOException {
     Cell rows = null;
-    rows = table.get(Constants.CINDEX, 
-        (Constants.ATTRIBUTE + column));
+    rows = table.get(Constants.CINDEX, (Constants.ATTRIBUTE + column));
     return (rows != null) ? Bytes.toString(rows.getValue()) : null;
   }
 
@@ -152,7 +151,7 @@ public abstract class AbstractMatrix implements Matrix {
   public String getName() {
     return (matrixName != null) ? matrixName : null;
   }
-  
+
   public void clear() throws IOException {
     admin.deleteTable(matrixName);
   }
