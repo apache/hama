@@ -143,6 +143,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job" + result.getName());
 
+    jobConf.setNumMapTasks(Integer.parseInt(config.get("mapred.map.tasks")));
+    jobConf.setNumReduceTasks(Integer.parseInt(config
+        .get("mapred.reduce.tasks")));
+
     Add1DLayoutMap.initJob(this.getName(), B.getName(), Add1DLayoutMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
     MatrixReduce.initJob(result.getName(), Add1DLayoutReduce.class, jobConf);
@@ -189,6 +193,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getName());
+
+    jobConf.setNumMapTasks(Integer.parseInt(config.get("mapred.map.tasks")));
+    jobConf.setNumReduceTasks(Integer.parseInt(config
+        .get("mapred.reduce.tasks")));
 
     Mult1DLayoutMap.initJob(this.getName(), B.getName(), Mult1DLayoutMap.class,
         IntWritable.class, VectorWritable.class, jobConf);

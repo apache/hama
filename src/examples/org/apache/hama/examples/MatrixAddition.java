@@ -20,51 +20,67 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 
 public class MatrixAddition {
+  private static HamaConfiguration conf = new HamaConfiguration();
+  private static int row;
+  private static int column;
 
   public static void main(String[] args) throws IOException {
     if (args.length < 2) {
-      System.out.println("addition <row_m> <column_n>");
+      System.out.println("addition  [-m maps] [-r reduces] <row_m> <column_n>");
       System.exit(-1);
+    } else {
+      parseArgs(args);
     }
 
-    int row = Integer.parseInt(args[0]);
-    int column = Integer.parseInt(args[1]);
-
-    HamaConfiguration conf = new HamaConfiguration();
-    
     Matrix a = DenseMatrix.random(conf, row, column);
     Matrix b = DenseMatrix.random(conf, row, column);
 
-    System.out.println("\nMatrix A");
-    System.out.println("----------------------");
-    for(int i =  0; i < a.getRows(); i++) {
-      for(int j =  0; j < a.getColumns(); j++) {
-        System.out.println(a.get(i, j));
-      }
-    }
-    
-    System.out.println("\nMatrix B");
-    System.out.println("----------------------");
-    for(int i =  0; i < b.getRows(); i++) {
-      for(int j =  0; j < b.getColumns(); j++) {
-        System.out.println(b.get(i, j));
-      }
-    }
-    System.out.println();
-    
+    printMatrix("Matrix A", a);
+    printMatrix("Matrix B", b);
+
     Matrix c = a.add(b);
-    
-    System.out.println("\nC = A + B");
+
+    printMatrix("C = A + B", c);
+  }
+
+  private static void parseArgs(String[] args) {
+    List<String> other_args = new ArrayList<String>();
+    for (int i = 0; i < args.length; ++i) {
+      try {
+        if ("-m".equals(args[i])) {
+          conf.set("mapred.map.tasks", args[++i]);
+        } else if ("-r".equals(args[i])) {
+          conf.set("mapred.reduce.tasks", args[++i]);
+        } else {
+          other_args.add(args[i]);
+        }
+      } catch (NumberFormatException except) {
+        System.out.println("ERROR: Integer expected instead of " + args[i]);
+      } catch (ArrayIndexOutOfBoundsException except) {
+        System.out.println("ERROR: Required parameter missing from "
+            + args[i - 1]);
+      }
+    }
+
+    row = Integer.parseInt(other_args.get(0));
+    column = Integer.parseInt(other_args.get(1));
+  }
+
+  private static void printMatrix(String string, Matrix matrix)
+      throws IOException {
+    System.out.println("\n" + string);
     System.out.println("----------------------");
-    for(int i =  0; i < c.getRows(); i++) {
-      for(int j =  0; j < c.getColumns(); j++) {
-        System.out.println(c.get(i, j));
+    for (int i = 0; i < matrix.getRows(); i++) {
+      for (int j = 0; j < matrix.getColumns(); j++) {
+        System.out.println(matrix.get(i, j));
       }
     }
   }
