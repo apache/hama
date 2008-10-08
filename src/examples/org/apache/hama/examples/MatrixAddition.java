@@ -56,9 +56,9 @@ public class MatrixAddition {
     for (int i = 0; i < args.length; ++i) {
       try {
         if ("-m".equals(args[i])) {
-          conf.set("mapred.map.tasks", args[++i]);
+          conf.setNumMapTasks(Integer.parseInt(args[++i]));
         } else if ("-r".equals(args[i])) {
-          conf.set("mapred.reduce.tasks", args[++i]);
+          conf.setNumReduceTasks(Integer.parseInt(args[++i]));
         } else {
           other_args.add(args[i]);
         }

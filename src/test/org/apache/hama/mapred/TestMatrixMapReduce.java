@@ -70,8 +70,8 @@ public class TestMatrixMapReduce extends HCluster {
         VectorWritable.class, jobConf);
     MatrixReduce.initJob(output, Add1DLayoutReduce.class, jobConf);
 
-    jobConf.setNumMapTasks(1);
-    jobConf.setNumReduceTasks(1);
+    jobConf.setNumMapTasks(2);
+    jobConf.setNumReduceTasks(2);
 
     JobClient.runJob(jobConf);
 

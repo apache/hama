@@ -46,6 +46,14 @@ public class HamaConfiguration extends HBaseConfiguration {
     }
   }
 
+  public void setNumMapTasks(int map) {
+    set("mapred.map.tasks",String.valueOf(map));
+  }
+
+  public void setNumReduceTasks(int reduce) {
+    set("mapred.reduce.tasks",String.valueOf(reduce));
+  }
+  
   private void addHbaseResources() {
     addResource("hama-site.xml");
   }
