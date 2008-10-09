@@ -249,9 +249,9 @@ public interface Matrix {
   public void load(String path) throws IOException;
 
   /**
-   * Clear current matrix.
+   * Close current matrix.
    * 
    * @throws Exception
    */
-  public void clear() throws IOException;
+  public void close() throws IOException;
 }

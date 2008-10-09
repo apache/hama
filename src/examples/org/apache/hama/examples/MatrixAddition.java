@@ -49,6 +49,10 @@ public class MatrixAddition {
     Matrix c = a.add(b);
 
     printMatrix("C = A + B", c);
+
+    a.close();
+    b.close();
+    c.close();
   }
 
   private static void parseArgs(String[] args) {

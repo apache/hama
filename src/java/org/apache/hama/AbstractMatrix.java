@@ -152,7 +152,7 @@ public abstract class AbstractMatrix implements Matrix {
     return (matrixName != null) ? matrixName : null;
   }
 
-  public void clear() throws IOException {
+  public void close() throws IOException {
     admin.deleteTable(matrixName);
   }
 
