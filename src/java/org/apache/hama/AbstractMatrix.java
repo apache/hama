@@ -153,10 +153,15 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public void close() throws IOException {
-    admin.deleteTable(matrixName);
+    if(admin.isTableEnabled(matrixName)) {
+      admin.disableTable(matrixName);
+      admin.deleteTable(matrixName);
+    } else {
+      LOG.info("Table doesn't abled");
+    }
   }
 
-  public boolean save(String path) throws IOException {
-    return hAdmin.put(this.matrixName, path);
+  public boolean save(String name) throws IOException {
+    return hAdmin.put(this.matrixName, name);
   }
 }

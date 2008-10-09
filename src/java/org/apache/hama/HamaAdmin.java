@@ -61,10 +61,10 @@ public class HamaAdmin {
     }
   }
 
-  public boolean put(String matrixName, String path) {
+  public boolean put(String matrixName, String name) {
     boolean result = false;
 
-    BatchUpdate update = new BatchUpdate(path);
+    BatchUpdate update = new BatchUpdate(name);
     update.put(Constants.PATHCOLUMN, Bytes.toBytes(matrixName));
     try {
       table.commit(update);
@@ -76,9 +76,13 @@ public class HamaAdmin {
     return result;
   }
 
-  public String get(String path) {
+  /**
+   * @param name
+   * @return real table name
+   */
+  public String get(String name) {
     try {
-      byte[] result = table.get(path, Constants.PATHCOLUMN).getValue();
+      byte[] result = table.get(name, Constants.PATHCOLUMN).getValue();
       return Bytes.toString(result);
     } catch (IOException e) {
       e.printStackTrace();
