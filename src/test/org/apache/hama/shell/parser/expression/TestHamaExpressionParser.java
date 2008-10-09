@@ -80,7 +80,7 @@ public class TestHamaExpressionParser extends TestCase {
       protected void tearDown() {
         log.info("tearDown()");
         try {
-          clear();
+          close();
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -89,12 +89,12 @@ public class TestHamaExpressionParser extends TestCase {
     return setup;
   }
 
-  private static void clear() throws IOException {
-    B.clear();
-    C.clear();
-    D.clear();
-    F.clear();
-    G.clear();
+  private static void close() throws IOException {
+    B.close();
+    C.close();
+    D.close();
+    F.close();
+    G.close();
   }
 
   private static void setUpShellEnv() {

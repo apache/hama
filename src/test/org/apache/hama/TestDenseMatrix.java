@@ -51,7 +51,7 @@ public class TestDenseMatrix extends TestCase {
 
       protected void tearDown() {
         try {
-          clearTest();
+          closeTest();
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -60,9 +60,9 @@ public class TestDenseMatrix extends TestCase {
     return setup;
   }
 
-  public static void clearTest() throws IOException {
-    m1.clear();
-    m2.clear();
+  public static void closeTest() throws IOException {
+    m1.close();
+    m2.close();
   }
 
   /**
