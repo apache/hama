@@ -64,14 +64,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix(HamaConfiguration conf, String matrixName) {
     try {
       setConfiguration(conf);
-      this.matrixName = matrixName;
-
-      if (!admin.tableExists(matrixName)) {
+      if(hAdmin.tableExists(matrixName)) {
+        this.matrixName = hAdmin.get(matrixName);
+      } else {
+        this.matrixName = matrixName;
         tableDesc = new HTableDescriptor(matrixName);
         create();
       }
 
-      table = new HTable(config, matrixName);
+      table = new HTable(config, this.matrixName);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -233,10 +234,5 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   public void setColumn(int column, Vector vector) throws IOException {
     // TODO Auto-generated method stub
-  }
-
-  public void load(String path) throws IOException {
-    matrixName = hAdmin.get(path);
-    table = new HTable(matrixName);
   }
 }

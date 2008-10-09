@@ -26,6 +26,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
+import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 
 /**
@@ -87,6 +88,16 @@ public class HamaAdmin {
     } catch (IOException e) {
       e.printStackTrace();
       return null;
+    }
+  }
+
+  public boolean tableExists(String matrixName) {
+    try {
+      Cell result = table.get(matrixName, Constants.PATHCOLUMN);
+      return (result == null) ? false : true;
+    } catch (IOException e) {
+      e.printStackTrace();
+      return false;
     }
   }
 }

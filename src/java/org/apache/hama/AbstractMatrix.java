@@ -70,11 +70,14 @@ public abstract class AbstractMatrix implements Matrix {
    * Create matrix space
    */
   protected void create() throws IOException {
-    this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
-    this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
+    // It should run only when table doesn't exist. 
+    if (!admin.tableExists(matrixName)) {
+      this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
+      this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
 
-    LOG.info("Initializing the matrix storage.");
-    this.admin.createTable(this.tableDesc);
+      LOG.info("Initializing the matrix storage.");
+      this.admin.createTable(this.tableDesc);
+    }
   }
 
   /** {@inheritDoc} */
@@ -153,7 +156,7 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public void close() throws IOException {
-    if(admin.isTableEnabled(matrixName)) {
+    if (admin.isTableEnabled(matrixName)) {
       admin.disableTable(matrixName);
       admin.deleteTable(matrixName);
     } else {

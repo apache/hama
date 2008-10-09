@@ -145,8 +145,7 @@ public class TestDenseMatrix extends TestCase {
   public void testLoadSave() throws IOException {
     m1.save("udanax");
     HCluster hCluster = new HCluster();
-    DenseMatrix loadTest = new DenseMatrix(hCluster.conf);
-    loadTest.load("udanax");
+    DenseMatrix loadTest = new DenseMatrix(hCluster.conf, "udanax");
 
     for (int i = 0; i < loadTest.getRows(); i++) {
       for (int j = 0; j < loadTest.getColumns(); j++) {

@@ -241,14 +241,6 @@ public interface Matrix {
   public boolean save(String path) throws IOException;
 
   /**
-   * Load the matrix from a table or file
-   * 
-   * @param path
-   * @throws IOException
-   */
-  public void load(String path) throws IOException;
-
-  /**
    * Close current matrix.
    * 
    * @throws Exception
