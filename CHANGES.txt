@@ -26,6 +26,7 @@ Trunk (unreleased changes)
   IMPROVEMENTS
     
     HAMA-76: Remove load() since it duplicated with constructor (edwardyoon)
+    HAMA-74: set the number of map/reduce task on the shell (samuel)
     HAMA-73: Add setNumMap/ReduceTasks() to HamaConfiguration (edwardyoon)
     HAMA-60: Add an arguments for handle parallel degree to MatrixAddition (edwardyoon)
     HAMA-68: Shell parser JUnit test cases (samuel via edwardyoon)

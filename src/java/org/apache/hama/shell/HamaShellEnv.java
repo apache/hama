@@ -35,6 +35,9 @@ public class HamaShellEnv {
 
   Map<String, Object> aliases = new HashMap<String, Object>();
   
+  public static final int DEFAULT_MAP_NUM = 2;
+  public static final int DEFAULT_REDUCE_NUM = 1;
+  
   public Object getAliase(String var) {
     return aliases.get(var);
   }

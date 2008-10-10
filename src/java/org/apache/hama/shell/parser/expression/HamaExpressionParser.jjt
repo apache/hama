@@ -149,22 +149,30 @@ HamaExpression Start() : {HamaExpression expression = null;}
 }
 
 /** An Expression. */
-HamaExpression Expression() : {HamaExpression expression = null; Token t1, t2, t3; Object value; String filename; HamaOperation operation;}
+HamaExpression Expression() : {boolean isMapNumSet = false; boolean isReduceNumSet = false; HamaExpression expression = null; Token t1, t2, t3; Object value; String filename; HamaOperation operation;}
 {
   (
   ( t3=<IDENTIFIER> "=" operation=BasicOperation() 
   	[ <MAP> t1=<INTEGER>
   	  {
-  	  	operation.setMapNum(Integer.valueOf(t1.image));
+  	  	operation.setNumMapTasks(Integer.valueOf(t1.image));
+  	  	isMapNumSet = true;
   	  } 
   	] 
   	[ <REDUCE> t2=<INTEGER>
   	  {
-  	  	operation.setReduceNum(Integer.valueOf(t2.image));
+  	  	operation.setNumReduceTasks(Integer.valueOf(t2.image));
+  	  	isReduceNumSet = true;
   	  } 
   	] 
   ) 
-  { expression = new EvalExpression(conf, shellEnv, t3.image, operation); } 
+  { 
+  	if(!isMapNumSet)
+  	  operation.setNumMapTasks(HamaShellEnv.DEFAULT_MAP_NUM);
+  	if(!isReduceNumSet)
+  	  operation.setNumReduceTasks(HamaShellEnv.DEFAULT_REDUCE_NUM);
+  	expression = new EvalExpression(conf, shellEnv, t3.image, operation); 
+  } 
   | 
   ( <SAVE> value=AliaseName() <AS> filename=FileName() ) 
   { expression = new SaveExpression(conf, shellEnv, value, filename); }

@@ -25,7 +25,6 @@ import org.apache.hama.HamaConfiguration;
 public abstract class HamaOperation {
 
   HamaConfiguration conf;
-  int map, reduce;
   
   public HamaOperation(HamaConfiguration conf) {
     this(conf, 2, 1);
@@ -33,16 +32,16 @@ public abstract class HamaOperation {
   
   public HamaOperation(HamaConfiguration conf, int map, int reduce) {
     this.conf = conf;
-    this.map = map;
-    this.reduce = reduce;
+    this.conf.setNumMapTasks(map);
+    this.conf.setNumReduceTasks(reduce);
   }
   
-  public void setMapNum(int mapNum) {
-    this.map = mapNum;
+  public void setNumMapTasks(int mapNum) {
+    this.conf.setNumMapTasks(mapNum);
   }
   
-  public void setReduceNum(int reduceNum) {
-    this.reduce = reduceNum;
+  public void setNumReduceTasks(int reduceNum) {
+    this.conf.setNumReduceTasks(reduceNum);
   }
   
   /**
