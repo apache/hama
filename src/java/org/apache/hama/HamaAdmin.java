@@ -21,83 +21,35 @@ package org.apache.hama;
 
 import java.io.IOException;
 
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.io.BatchUpdate;
-import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.util.Bytes;
+public interface HamaAdmin {
 
-/**
- * Admin tool
- */
-public class HamaAdmin {
-  public HamaConfiguration conf;
-  public HBaseAdmin admin;
-  public HTable table;
-
-  public HamaAdmin(HamaConfiguration conf) {
-    this.conf = conf;
-    initialJob();
-  }
-
-  public HamaAdmin(HamaConfiguration conf, HBaseAdmin admin) {
-    this.conf = conf;
-    this.admin = admin;
-    initialJob();
-  }
-
-  public void initialJob() {
-    try {
-      if (!admin.tableExists(Constants.ADMINTABLE)) {
-        HTableDescriptor tableDesc = new HTableDescriptor(Constants.ADMINTABLE);
-        tableDesc.addFamily(new HColumnDescriptor(Constants.PATHCOLUMN));
-        admin.createTable(tableDesc);
-      }
-
-      table = new HTable(conf, Constants.ADMINTABLE);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  public boolean put(String matrixName, String name) {
-    boolean result = false;
-
-    BatchUpdate update = new BatchUpdate(name);
-    update.put(Constants.PATHCOLUMN, Bytes.toBytes(matrixName));
-    try {
-      table.commit(update);
-      result = true;
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-    return result;
-  }
+  /**
+   * Saves matrix
+   * 
+   * @param tempName
+   * @param name
+   * @return true if it saved
+   */
+  public boolean save(String tempName, String name);
 
   /**
    * @param name
-   * @return real table name
+   * @return return a physical path of matrix
    */
-  public String get(String name) {
-    try {
-      byte[] result = table.get(name, Constants.PATHCOLUMN).getValue();
-      return Bytes.toString(result);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return null;
-    }
-  }
+  public String getPath(String name);
 
-  public boolean tableExists(String matrixName) {
-    try {
-      Cell result = table.get(matrixName, Constants.PATHCOLUMN);
-      return (result == null) ? false : true;
-    } catch (IOException e) {
-      e.printStackTrace();
-      return false;
-    }
-  }
+  /**
+   * @param matrixName
+   * @return true if matrix is exist
+   */
+  public boolean matrixExists(String matrixName);
+
+  /**
+   * Deletes matrix
+   * 
+   * @param matrixName
+   * @throws IOException
+   */
+  public void delete(String matrixName) throws IOException;
+
 }

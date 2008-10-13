@@ -38,17 +38,13 @@ import org.apache.log4j.Logger;
 public abstract class AbstractMatrix implements Matrix {
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
-  /** Hama Configuration */
   protected HamaConfiguration config;
-  /** Hbase admin object */
   protected HBaseAdmin admin;
-  /** The name of Matrix */
+  protected String matrixPath;
   protected String matrixName;
-  /** Hbase table object */
   protected HTable table;
-  /** Matrix attribute description */
   protected HTableDescriptor tableDesc;
-  public HamaAdmin hAdmin;
+  public HamaAdmin store;
 
   /**
    * Sets the job configuration
@@ -63,15 +59,15 @@ public abstract class AbstractMatrix implements Matrix {
       LOG.error(e, e);
     }
 
-    hAdmin = new HamaAdmin(conf, admin);
+    store = new HamaAdminImpl(conf, admin);
   }
 
   /**
    * Create matrix space
    */
   protected void create() throws IOException {
-    // It should run only when table doesn't exist. 
-    if (!admin.tableExists(matrixName)) {
+    // It should run only when table doesn't exist.
+    if (!admin.tableExists(matrixPath)) {
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
 
@@ -152,19 +148,14 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public String getName() {
-    return (matrixName != null) ? matrixName : null;
+    return (this.matrixName != null) ? this.matrixName : null;
   }
 
   public void close() throws IOException {
-    if (admin.isTableEnabled(matrixName)) {
-      admin.disableTable(matrixName);
-      admin.deleteTable(matrixName);
-    } else {
-      LOG.info("Table doesn't abled");
-    }
+    store.delete(this.matrixName);
   }
 
   public boolean save(String name) throws IOException {
-    return hAdmin.put(this.matrixName, name);
+    return store.save(this.matrixPath, name);
   }
 }

@@ -64,15 +64,16 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix(HamaConfiguration conf, String matrixName) {
     try {
       setConfiguration(conf);
-      if(hAdmin.tableExists(matrixName)) {
-        this.matrixName = hAdmin.get(matrixName);
+      this.matrixName = matrixName; 
+      if(store.matrixExists(matrixName)) {
+        this.matrixPath = store.getPath(matrixName);
       } else {
-        this.matrixName = matrixName;
+        this.matrixPath = matrixName;
         tableDesc = new HTableDescriptor(matrixName);
         create();
       }
 
-      table = new HTable(config, this.matrixName);
+      table = new HTable(config, this.matrixPath);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -89,15 +90,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix(HamaConfiguration conf, int m, int n, double s) {
     try {
       setConfiguration(conf);
-      matrixName = RandomVariable.randMatrixName();
+      matrixPath = RandomVariable.randMatrixName();
 
-      if (!admin.tableExists(matrixName)) {
-        tableDesc = new HTableDescriptor(matrixName);
+      if (!admin.tableExists(matrixPath)) {
+        tableDesc = new HTableDescriptor(matrixPath);
         tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
         create();
       }
 
-      table = new HTable(config, matrixName);
+      table = new HTable(config, matrixPath);
 
       for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {

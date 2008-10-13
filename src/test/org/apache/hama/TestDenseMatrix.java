@@ -38,7 +38,8 @@ public class TestDenseMatrix extends TestCase {
   private static int SIZE = 10;
   private static Matrix m1;
   private static Matrix m2;
-
+  private final static String SAVE = "save";
+  
   public static Test suite() {
     TestSetup setup = new TestSetup(new TestSuite(TestDenseMatrix.class)) {
       protected void setUp() throws Exception {
@@ -143,15 +144,17 @@ public class TestDenseMatrix extends TestCase {
   }
 
   public void testLoadSave() throws IOException {
-    m1.save("udanax");
+    m1.save(SAVE);
     HCluster hCluster = new HCluster();
-    DenseMatrix loadTest = new DenseMatrix(hCluster.conf, "udanax");
+    DenseMatrix loadTest = new DenseMatrix(hCluster.conf, SAVE);
 
     for (int i = 0; i < loadTest.getRows(); i++) {
       for (int j = 0; j < loadTest.getColumns(); j++) {
         assertEquals(m1.get(i, j), loadTest.get(i, j));
       }
     }
+    
+    assertEquals(loadTest.getName(), SAVE);
   }
 
   /**
