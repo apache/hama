@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    Hama-80: Add identity(int m, int n) which returns identity matrix (edwardyoon) 
     HAMA-62: Hama Shell Implementation (samuel via edwardyoon)
     HAMA-61: Load / save matrices from HTable (edwardyoon)
     HAMA-51: Add get/setRowAttribute() method (edwardyoon)

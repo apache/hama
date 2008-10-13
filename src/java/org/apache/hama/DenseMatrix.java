@@ -64,8 +64,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix(HamaConfiguration conf, String matrixName) {
     try {
       setConfiguration(conf);
-      this.matrixName = matrixName; 
-      if(store.matrixExists(matrixName)) {
+      this.matrixName = matrixName;
+      if (store.matrixExists(matrixName)) {
         this.matrixPath = store.getPath(matrixName);
       } else {
         this.matrixPath = matrixName;
@@ -136,6 +136,33 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     rand.setDimension(m, n);
     LOG.info("Create the " + m + " * " + n + " random matrix : " + name);
     return rand;
+  }
+
+  /**
+   * Generate identity matrix
+   * 
+   * @param conf configuration object
+   * @param m the number of rows.
+   * @param n the number of columns.
+   * @return an m-by-n matrix with ones on the diagonal and zeros elsewhere.
+   * @throws IOException
+   */
+  public static Matrix identity(HamaConfiguration conf, int m, int n)
+      throws IOException {
+    String name = RandomVariable.randMatrixName();
+    Matrix identity = new DenseMatrix(conf, name);
+
+    for (int i = 0; i < m; i++) {
+      DenseVector vector = new DenseVector();
+      for (int j = 0; j < n; j++) {
+        vector.set(j, (i == j ? 1.0 : 0.0));
+      }
+      identity.setRow(i, vector);
+    }
+
+    identity.setDimension(m, n);
+    LOG.info("Create the " + m + " * " + n + " identity matrix : " + name);
+    return identity;
   }
 
   public Matrix add(Matrix B) throws IOException {
