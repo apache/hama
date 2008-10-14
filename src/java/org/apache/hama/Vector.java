@@ -101,6 +101,15 @@ public interface Vector {
   public Vector scale(double alpha);
   
   /**
+   * Returns a sub-vector.
+   * 
+   * @param i0 the index of the first element
+   * @param i1 the index of the last element
+   * @return v[i0:i1]
+   */
+  public Vector subVector( int i0, int i1 ); 
+  
+  /**
    * Computes the given norm of the vector
    * 
    * @param type

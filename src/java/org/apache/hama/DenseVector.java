@@ -27,7 +27,7 @@ import org.apache.hama.io.VectorMapWritable;
 import org.apache.log4j.Logger;
 
 public class DenseVector extends AbstractVector implements Vector {
-  static final Logger LOG = Logger.getLogger(Vector.class);
+  static final Logger LOG = Logger.getLogger(DenseVector.class);
   
   public DenseVector() {
     this(new VectorMapWritable<Integer, VectorEntry>());
@@ -140,5 +140,15 @@ public class DenseVector extends AbstractVector implements Vector {
   public double getNormInf() {
     // TODO Auto-generated method stub
     return 0;
+  }
+
+  public Vector subVector(int i0, int i1) {
+    Vector res = new DenseVector();
+    LOG.info(i0 + ", " + i1);
+    for(int i = i0; i <= i1; i++ ) {
+      res.set(i, get(i));
+    }
+      
+    return res;
   }
 }

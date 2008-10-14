@@ -71,6 +71,18 @@ public class TestDenseVector extends TestCase {
     assertEquals(cos, cosine);
   }
 
+  public void testSubVector() {
+    int start = 2;
+    Vector subVector = v1.subVector(start, v1.size() - 1);
+    Iterator<VectorEntry> it = subVector.iterator();
+
+    int i = start;
+    while (it.hasNext()) {
+      assertEquals(v1.get(i), it.next().getValue());
+      i++;
+    }
+  }
+
   /**
    * Test norm one
    */
