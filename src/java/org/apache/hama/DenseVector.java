@@ -144,7 +144,6 @@ public class DenseVector extends AbstractVector implements Vector {
 
   public Vector subVector(int i0, int i1) {
     Vector res = new DenseVector();
-    LOG.info(i0 + ", " + i1);
     for(int i = i0; i <= i1; i++ ) {
       res.set(i, get(i));
     }
