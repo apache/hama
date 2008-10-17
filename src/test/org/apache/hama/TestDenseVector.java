@@ -32,6 +32,7 @@ import org.apache.hama.io.VectorEntry;
 
 public class TestDenseVector extends TestCase {
   final static Log LOG = LogFactory.getLog(TestDenseVector.class.getName());
+  
   private static final double cosine = 0.6978227007909176;
   private static final double norm1 = 12.0;
   private static final double norm2 = 6.782329983125268;
@@ -118,15 +119,29 @@ public class TestDenseVector extends TestCase {
   }
 
   /**
-   * Test iterator
+   * Test add()
    */
-  public void testIterator() {
+  public void testAdd() {
+    v1.add(v2);
     int i = 0;
     Iterator<VectorEntry> it = v1.iterator();
     while (it.hasNext()) {
       VectorEntry c = it.next();
-      assertEquals(c.getValue(), values[0][i]);
+      assertEquals(c.getValue(), values[0][i] + values[1][i]);
       i++;
     }
+
+    v1.add(0.5, v2);
+    int j = 0;
+    Iterator<VectorEntry> itt = v1.iterator();
+    while (itt.hasNext()) {
+      VectorEntry c = itt.next();
+      assertEquals(c.getValue(), (values[0][j] + values[1][j]) + (0.5 * values[1][j]));
+      j++;
+    }
+    
+    double old = v1.get(0);
+    v1.add(0, norm1);
+    assertEquals(v1.get(0), old + norm1);
   }
 }

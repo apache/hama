@@ -27,12 +27,16 @@ import org.apache.hama.io.VectorMapWritable;
 public abstract class AbstractVector {
   public VectorMapWritable<Integer, VectorEntry> entries;
   
-  public double get(int index) {
+  public double get(int index) throws NullPointerException {
     return this.entries.get(index).getValue();
   }
   
+  public void set(int index, double value) {
+    entries.put(index, new VectorEntry(value));
+  }
+  
   public void add(int index, double value) {
-    // TODO Auto-generated method stub
+    set(index, get(index) + value);
   }
   
   /**

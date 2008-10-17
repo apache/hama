@@ -27,6 +27,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-28: Implement Vector.add() method (edwardyoon)
     HAMA-78: Separate Interface and Implementation for HamaAdmin (edwardyoon)
     HAMA-76: Remove load() since it duplicated with constructor (edwardyoon)
     HAMA-74: set the number of map/reduce task on the shell (samuel)

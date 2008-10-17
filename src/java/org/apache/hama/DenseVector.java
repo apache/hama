@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 
 public class DenseVector extends AbstractVector implements Vector {
   static final Logger LOG = Logger.getLogger(DenseVector.class);
-  
+
   public DenseVector() {
     this(new VectorMapWritable<Integer, VectorEntry>());
   }
@@ -38,8 +38,13 @@ public class DenseVector extends AbstractVector implements Vector {
   }
 
   public Vector add(double alpha, Vector v) {
-    // TODO Auto-generated method stub
-    return null;
+    if (alpha == 0)
+      return this;
+
+    for (int i = 0; i < this.size(); i++) {
+      set(i, get(i) + alpha * v.get(i));
+    }
+    return this;
   }
 
   public Vector add(Vector v2) {
@@ -97,10 +102,6 @@ public class DenseVector extends AbstractVector implements Vector {
       return getNormInf();
   }
 
-  public void set(int index, double value) {
-    entries.put(index, new VectorEntry(value));
-  }
-
   public DenseVector set(Vector v) {
     return new DenseVector(((DenseVector) v).getEntries());
   }
@@ -125,7 +126,7 @@ public class DenseVector extends AbstractVector implements Vector {
     Iterator<Integer> it = keySet.iterator();
 
     while (it.hasNext()) {
-      double value = get(it.next()); //this.get(it.next()).getValue();
+      double value = get(it.next()); // this.get(it.next()).getValue();
       square_sum += value * value;
     }
 
@@ -144,10 +145,10 @@ public class DenseVector extends AbstractVector implements Vector {
 
   public Vector subVector(int i0, int i1) {
     Vector res = new DenseVector();
-    for(int i = i0; i <= i1; i++ ) {
+    for (int i = i0; i <= i1; i++) {
       res.set(i, get(i));
     }
-      
+
     return res;
   }
 }
