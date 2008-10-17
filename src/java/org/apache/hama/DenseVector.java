@@ -126,7 +126,7 @@ public class DenseVector extends AbstractVector implements Vector {
     Iterator<Integer> it = keySet.iterator();
 
     while (it.hasNext()) {
-      double value = get(it.next()); // this.get(it.next()).getValue();
+      double value = get(it.next());
       square_sum += value * value;
     }
 
