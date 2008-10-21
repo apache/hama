@@ -73,4 +73,9 @@ public class Constants {
    * Matrix path columnFamily
    */
   public static final String PATHCOLUMN = "path:";
+  
+  /**
+   * Temporary Aliase name prefix in Hama Shell
+   */
+  public static final String RANDOMALIASE = "_";
 }

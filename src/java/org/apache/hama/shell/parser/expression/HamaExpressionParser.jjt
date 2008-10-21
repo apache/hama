@@ -221,7 +221,7 @@ HamaOperation AlgebraOp() : {AlgebraOperator op;}
 /** An Additive Operation. */
 AlgebraOperator AdditiveOp() : {AlgebraOperator op, op1, op2; Token t;}
 {
-  ( op1=MultiplicativeOp() { op = new AlgebraOperator(op1); } ( ( t=<ADDOP> op2=MultiplicativeOp() ){ op.addOpAndOperand(t.image, op2); } )* )
+  ( op1=MultiplicativeOp() { op = new AlgebraOperator(op1, shellEnv); } ( ( t=<ADDOP> op2=MultiplicativeOp() ){ op.addOpAndOperand(t.image, op2); } )* )
   { 
   	return op; 
   }
@@ -230,7 +230,7 @@ AlgebraOperator AdditiveOp() : {AlgebraOperator op, op1, op2; Token t;}
 /** A Multiplicative Operation. */
 AlgebraOperator MultiplicativeOp() : {AlgebraOperator op, op1, op2; Token t;}
 {
-  ( op1=UnaryOp() { op = new AlgebraOperator(op1); } ( ( t=<MULOP> op2=UnaryOp() ){op.addOpAndOperand(t.image, op2);} )* )
+  ( op1=UnaryOp() { op = new AlgebraOperator(op1, shellEnv); } ( ( t=<MULOP> op2=UnaryOp() ){op.addOpAndOperand(t.image, op2);} )* )
   {
   	return op;
   }
@@ -242,7 +242,7 @@ AlgebraOperator UnaryOp() : {AlgebraOperator op; Object b;}
   (
   ( "(" op=AdditiveOp() ")" ) 
   | 
-  b = AliaseName() { op = new AlgebraOperator(b); }
+  b = AliaseName() { op = new AlgebraOperator(b, shellEnv); }
   )
   {
   	return op;

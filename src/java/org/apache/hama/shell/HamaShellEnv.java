@@ -17,8 +17,13 @@
  */
 package org.apache.hama.shell;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.hama.Matrix;
+import org.apache.hama.util.RandomVariable;
+import org.apache.log4j.Logger;
 /**
  * HamaShellEnv.
  * 
@@ -32,7 +37,8 @@ import java.util.Map;
 // so that we can use these information to rearrange the expressions
 // and make the hama shell executed more efficiently and parallel.
 public class HamaShellEnv {
-
+  
+  static final Logger LOG = Logger.getLogger(HamaShellEnv.class);
   Map<String, Object> aliases = new HashMap<String, Object>();
   
   public static final int DEFAULT_MAP_NUM = 2;
@@ -57,4 +63,34 @@ public class HamaShellEnv {
     return aliases;
   }
   
+  /**
+   * Get the random aliase name from hama shell.
+   * make sure the random aliase name doesn't exist in hama shell before.
+   * @return random aliase name
+   */
+  public String getRandomAliaseName() {
+    String rName = RandomVariable.randAliaseName();
+    while(aliases.containsKey(rName)) {
+      rName = RandomVariable.randAliaseName();
+    }
+    return rName;
+  }
+    
+  /**
+   * Clear all the aliases in the hama shell.
+   */
+  public void clearAliases() {
+    for(Object obj : aliases.values()) {
+      if(obj == null)
+        continue;
+      if(obj instanceof Matrix) {
+        try {
+          ((Matrix)obj).close();
+        } catch (IOException e) {
+          LOG.info("Matrix close : " + e.getMessage());
+        }
+      }
+    }
+  }
+
 }

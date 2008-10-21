@@ -51,18 +51,39 @@ public class RandomVariable {
   }
 
   /**
-   * Generate a random name.
+   * Generate a random matrix name.
    * 
-   * @return random name
+   * @return random matrix name
    */
   public static String randMatrixName() {
-    String rName = Constants.RANDOM;
-    for (int i = 1; i <= 5; i++) {
+    return randString(Constants.RANDOM, 5);
+  }
+  
+  /**
+   * Generate a random aliase name.
+   * 
+   * @return random aliase name
+   */
+  public static String randAliaseName() {
+    return randString(Constants.RANDOMALIASE, 5);
+  }
+  
+  /**
+    * Generate a random string using the specified prefix and a fixed length. 
+    * @param prefix
+    *        the specified string prefix.
+    * @param length
+    *        the length of the string to be appended.
+    * @return random string.
+    */
+  public static String randString(String prefix, int length) {
+    StringBuilder result = new StringBuilder(prefix);
+    for (int i = 0; i < length; i++) {
       char ch = (char) ((Math.random() * 26) + 97);
-      rName += ch;
+      result.append(ch);
     }
-
-    return rName;
+      
+    return result.toString();
   }
 
   /**

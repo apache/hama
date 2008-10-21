@@ -85,9 +85,11 @@ public class HamaShell {
   }
 
   public static void main(String[] args) {
+    HamaShellEnv shellEnv = new HamaShellEnv();
     HamaShell shell = new HamaShell(new BufferedReader(new InputStreamReader(
-        System.in)), new HamaShellEnv(), new HamaConfiguration());
+        System.in)), shellEnv, new HamaConfiguration());
     shell.run();
+    shellEnv.clearAliases();
   }
 
 }

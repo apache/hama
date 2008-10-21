@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hama.Matrix;
+import org.apache.hama.shell.HamaShellEnv;
 
 public class AlgebraOperator {
 
@@ -32,6 +33,9 @@ public class AlgebraOperator {
   Object operand;
   List<Entry> otherOperands;
 
+  // HamaShellEnv to keep all the temporary matrices generated 
+  // during the execution of hama expression in shell
+  HamaShellEnv env;
   /**
    * 
    * An Entry Class to store all the Operators and other Operands.
@@ -55,9 +59,10 @@ public class AlgebraOperator {
     }
   }
 
-  public AlgebraOperator(Object operand) {
+  public AlgebraOperator(Object operand, HamaShellEnv env) {
     this.operand = operand;
     this.otherOperands = null;
+    this.env = env;
   }
 
   public void addOpAndOperand(String op, AlgebraOperator otherOperand) {
@@ -183,7 +188,10 @@ public class AlgebraOperator {
           } else
             throw new AlgebraOpException(
                 "Uncognized Operator. It should be '+' '-' '*'.");
-
+      
+          // for "m" will be replace by a new matrix in next loop.
+          // so we need to record it.
+          env.setAliase(env.getRandomAliaseName(), m);
         }
 
         return m;
@@ -209,10 +217,21 @@ public class AlgebraOperator {
     }
 
     // Now we can do multiplication.
+    // All the matrices in the multiplication has been recorded as
+    // Aliase or Temp Aliase in Hama Shell Env. so we just need to
+    // keep all the temp matrix in Hama Shell Env during the matrix
+    // multiplication.
     Matrix matrix = matrices.get(0);
+    if(matrices.size() == 1)
+      return matrix;
+
     for (int i = 1; i < matrices.size(); i++) {
       Matrix m = matrices.get(i);
       matrix = matrix.mult(m);
+      // keep the temp matrix in Hama shell env for cleaning
+      // TODO: the last matrix may be keeped by an Aliase an a TempAliase.
+      //       we need some method to tell them from each other.
+      env.setAliase(env.getRandomAliaseName(), matrix);
     }
 
     return matrix;
