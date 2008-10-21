@@ -28,17 +28,40 @@
     <section>
       <title> Introduction </title>
       <table class="NonBorderTable">
-      <tr><td><img src="./images/hama_paint_logo.png" alt="Hama Logo" /></td>
-      <td><strong>Hama</strong> (means a hippopotamus in Korean) is a 
-      parallel matrix computational package,
-      which provides an library of matrix operations for the large-scale
-      processing development environment and Map/Reduce framework for
-      the large-scale Numerical Analysis and Data Mining, which need the
-      intensive computation power of matrix inversion, e.g. linear regression,
-      PCA, SVM and etc.
-      It will be also useful for many scientific applications, e.g. physics
-      computations, linear algebra, computational fluid dynamics, statistics,
-      graphic rendering and many more.
+      <tr><td><strong>Hama</strong> (means a hippopotamus in Korean)  Hama is a parallel 
+      matrix computation package currently in incubation with Apache. It is a library 
+      of matrix operations for large-scale processing and development environments 
+      as well as a  Map/Reduce framework for a large-scale numerical analysis and data 
+      mining, that need the intensive computation power of matrix inversion, e.g., linear 
+      regression, PCA, SVM and etc. It will be useful for many scientific applications, 
+      e.g., physics computations, linear algebra, computational fluid dynamics, 
+      statistics, graphic rendering and many more.<br /><br />
+      
+      <ul>
+        <li>Scientific simulation and modeling
+          <ul>
+            <li>Matrix-vector/matrix-matrix multiply</li> 
+            <li>Soving linear systems</li>
+          </ul>
+        </li>
+      </ul>
+      <ul>
+        <li>Information retrieval 
+          <ul>
+            <li>Sorting</li> 
+            <li>Finding eigenvalues and eigenvectors</li>
+          </ul>
+        </li>
+      </ul>
+      <ul>
+        <li>Computer graphics and computational geometry 
+          <ul>
+            <li>Matrix multiply</li> 
+            <li>Computing matrix determinate</li>
+          </ul>
+        </li>
+      </ul>
+      
       </td></tr></table>
     </section>
     <section>
@@ -57,12 +80,6 @@
        <a href="./developers.html">Apache SVN repository</a>.
        </li>
     </ul>
-    </section>
-    <section>
-      <title>Parallelism in Map/Reduce</title>
-      <p>
-        <img src="./images/MapReduce.png" alt="Map/Reduce Diagram" />
-      </p>
     </section>
   </body>
 </document>
