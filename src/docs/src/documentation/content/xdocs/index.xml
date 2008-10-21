@@ -28,7 +28,7 @@
     <section>
       <title> Introduction </title>
       <table class="NonBorderTable">
-      <tr><td><strong>Hama</strong> (means a hippopotamus in Korean)  Hama is a parallel 
+      <tr><td><strong>Hama</strong> (means a hippopotamus in Korean) is a parallel 
       matrix computation package currently in incubation with Apache. It is a library 
       of matrix operations for large-scale processing and development environments 
       as well as a  Map/Reduce framework for a large-scale numerical analysis and data 
