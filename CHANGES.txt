@@ -28,6 +28,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-89: Exception Handling of a ParseException (samuel)
     HAMA-77: clear the matrices in hbase after quiting the shell (samuel via edwardyoon)
     HAMA-28: Implement Vector.add() method (edwardyoon)
     HAMA-78: Separate Interface and Implementation for HamaAdmin (edwardyoon)

@@ -90,13 +90,40 @@ public class HamaShellParser extends HamaScriptParser {
 
   @Override
   protected void printHelp() {
-    System.out.println("Operations:");
-    System.out.println("<hama operation>;");
-    System.out.println("such as : \"A = B + C\" or \"save A as file\"");
+    System.out.println("HAMA V1.0 SHELL COMMANDS");
+    System.out.println("all the supported commands in hama shell will be:");
+    System.out.println("'<hama expression> ;',");
+    System.out.println("'quit',");
+    System.out.println("'help'.");
+    System.out.println();
+    System.out.println("Hama Expressions:");
+    System.out.println("Load\t\tload a matrix from a specified source. but now is unsupported.");
+    System.out.println();
+    System.out.println("Save\t\tsave a matrix to a specified target. but now is unsupported.");
+    System.out.println();
+    System.out.println("Add\t\tMatrix Addition.");
+    System.out.println("\t\thama> a = b + c;");
+    System.out.println();
+    System.out.println("Sub\t\tMatrix Subtraction.");
+    System.out.println("\t\thama> a = b - c;");
+    System.out.println();
+    System.out.println("Multiply\tMatrix Multiplication.");
+    System.out.println("\t\thama> a = b * c;");
+    System.out.println();
+    System.out.println("Random\t\tGenerate a random matrix.");
+    System.out.println("\t\thama> a = matrix.random 10 10;");
+    System.out.println();
+    System.out.println("Examples");
+    System.out.println("hama> a = matrix.random 10 10;");
+    System.out.println("hama> b = matrix.random 10 10;");
+    System.out.println("hama> c = a + b;");
+    System.out.println("hama> d = (a + c) * ( b + a * c );");
     System.out.println();
     System.out.println("Commands:");
     System.out.println("quit -- exit the hama shell");
     System.out.println("help -- dispaly the usage informations");
+    System.out.println();
+    System.out.println("For more on the Hama Shell, see http://wiki.apache.org/hama/Shell");
   }
 
   /**

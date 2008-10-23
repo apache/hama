@@ -161,7 +161,8 @@ void handle_invalid_command(int kind)
 	ParseException e = generateParseException();  // generate the exception object.
 	
 	if (mInteractive) {
-		System.out.println(e.toString());  // print the error message
+		printGuide();
+		
 		Token t = getNextToken();
 
 		while (t.kind != kind)
@@ -169,4 +170,16 @@ void handle_invalid_command(int kind)
 	} else {
 		throw e;
 	}
+}
+
+JAVACODE
+private void printGuide()
+{
+	System.out.println("HAMA V1.0 SHELL COMMANDS");
+    System.out.println("all the supported commands in hama shell will be:");
+    System.out.println("'<hama expression> ;',");
+    System.out.println("'quit',");
+    System.out.println("'help'.");
+    System.out.println();
+    System.out.println("Try type 'help' to see details.");
 }
