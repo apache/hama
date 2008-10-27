@@ -43,12 +43,7 @@ public class MatrixAddition {
     Matrix a = DenseMatrix.random(conf, row, column);
     Matrix b = DenseMatrix.random(conf, row, column);
 
-    printMatrix("Matrix A", a);
-    printMatrix("Matrix B", b);
-
     Matrix c = a.add(b);
-
-    printMatrix("C = A + B", c);
 
     a.close();
     b.close();
@@ -76,16 +71,5 @@ public class MatrixAddition {
 
     row = Integer.parseInt(other_args.get(0));
     column = Integer.parseInt(other_args.get(1));
-  }
-
-  private static void printMatrix(String string, Matrix matrix)
-      throws IOException {
-    System.out.println("\n" + string);
-    System.out.println("----------------------");
-    for (int i = 0; i < matrix.getRows(); i++) {
-      for (int j = 0; j < matrix.getColumns(); j++) {
-        System.out.println(matrix.get(i, j));
-      }
-    }
   }
 }
