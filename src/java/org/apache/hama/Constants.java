@@ -78,4 +78,6 @@ public class Constants {
    * Temporary Aliase name prefix in Hama Shell
    */
   public static final String RANDOMALIASE = "_";
+
+  public static final String MATRIXTYPE = "type:";
 }

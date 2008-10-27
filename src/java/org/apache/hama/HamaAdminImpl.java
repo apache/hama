@@ -28,9 +28,10 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.log4j.Logger;
 
 public class HamaAdminImpl implements HamaAdmin {
-
+  static final Logger LOG = Logger.getLogger(HamaAdminImpl.class);
   public HamaConfiguration conf;
   public HBaseAdmin admin;
   public HTable table;
@@ -51,6 +52,7 @@ public class HamaAdminImpl implements HamaAdmin {
       if (!admin.tableExists(Constants.ADMINTABLE)) {
         HTableDescriptor tableDesc = new HTableDescriptor(Constants.ADMINTABLE);
         tableDesc.addFamily(new HColumnDescriptor(Constants.PATHCOLUMN));
+        tableDesc.addFamily(new HColumnDescriptor(Constants.MATRIXTYPE));
         admin.createTable(tableDesc);
       }
 
@@ -84,11 +86,14 @@ public class HamaAdminImpl implements HamaAdmin {
     }
   }
 
-  public boolean save(String tempName, String name) {
+  public boolean save(Matrix mat, String aliaseName) {
     boolean result = false;
 
-    BatchUpdate update = new BatchUpdate(name);
-    update.put(Constants.PATHCOLUMN, Bytes.toBytes(tempName));
+    BatchUpdate update = new BatchUpdate(aliaseName);
+    update.put(Constants.PATHCOLUMN, Bytes.toBytes(mat.getName()));
+    // So, If we load a dense matrix, return the DenseMatrix.
+    update.put(Constants.MATRIXTYPE, Bytes.toBytes(mat.getType()));
+    
     try {
       table.commit(update);
       result = true;
@@ -101,12 +106,12 @@ public class HamaAdminImpl implements HamaAdmin {
 
   public void delete(String matrixName) throws IOException {
     String table;
-    if(matrixExists(matrixName)) {
+    if (matrixExists(matrixName)) {
       table = getPath(matrixName);
     } else {
       table = matrixName;
     }
-    
+
     if (admin.isTableEnabled(table)) {
       admin.disableTable(table);
       admin.deleteTable(table);

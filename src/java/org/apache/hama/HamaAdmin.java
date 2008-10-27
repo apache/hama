@@ -24,13 +24,13 @@ import java.io.IOException;
 public interface HamaAdmin {
 
   /**
-   * Saves matrix
-   * 
-   * @param tempName
-   * @param name
+   * Saves matrix as name 'AliaseName'
+   *
+   * @param matrix
+   * @param aliaseName
    * @return true if it saved
    */
-  public boolean save(String tempName, String name);
+  public boolean save(Matrix matrix, String aliaseName); 
 
   /**
    * @param name

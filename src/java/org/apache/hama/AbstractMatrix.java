@@ -156,6 +156,6 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public boolean save(String name) throws IOException {
-    return store.save(this.matrixPath, name);
+    return store.save(this, name);
   }
 }

@@ -241,6 +241,10 @@ public interface Matrix {
   public boolean save(String path) throws IOException;
 
   /**
+   * @return the matrix type
+   */
+  public String getType();
+  /**
    * Close current matrix.
    * 
    * @throws Exception
