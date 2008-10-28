@@ -65,7 +65,7 @@ public class SubMatrix {
    * 
    * @param i
    * @param j
-   * @return
+   * @return the value of submatrix(i, j)
    */
   public double get(int i, int j) {
     return matrix[i][j];
