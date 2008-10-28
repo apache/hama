@@ -26,6 +26,9 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hama.Matrix;
 
+/**
+ * A map/reduce job manager 
+ */
 public class JobManager {
   
   public static void execute(JobConf jobConf, Matrix result) throws IOException {

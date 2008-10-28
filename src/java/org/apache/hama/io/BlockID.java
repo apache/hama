@@ -78,6 +78,9 @@ public class BlockID implements WritableComparable {
     }
   }
 
+  /**
+   * BlockID Comparator 
+   */
   public static class Comparator extends WritableComparator {
     protected Comparator() {
       super(BlockID.class);

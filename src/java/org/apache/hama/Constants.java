@@ -23,61 +23,40 @@ package org.apache.hama;
  * Some constants used in the Hama
  */
 public class Constants {
-  
-  /** 
-   * Meta-columnFamily to store the matrix-info 
-   */
+
+  /** Meta-columnFamily to store the matrix-info */
   public final static String METADATA = "metadata";
-  
-  /**
-   * Column index & attributes
-   */
+
+  /** Column index & attributes */
   public final static String CINDEX = "cIndex";
-  
-  /**
-   * The attribute column family
-   */
+
+  /** The attribute column family */
   public final static String ATTRIBUTE = "attribute:";
-  
-  /** 
-   * The number of the matrix rows 
-   */
+
+  /** The number of the matrix rows */
   public final static String METADATA_ROWS = "attribute:rows";
-  
-  /** 
-   * The number of the matrix columns 
-   */
+
+  /** The number of the matrix columns */
   public final static String METADATA_COLUMNS = "attribute:columns";
-  
-  /** 
-   * The type of the matrix
-   */
+
+  /** The type of the matrix */
   public final static String METADATA_TYPE = "attribute:type";
-  
-  /** 
-   * Default columnFamily name 
-   */
+
+  /** Default columnFamily name */
   public final static String COLUMN = "column:";
 
-  /** 
-   * Temporary random matrices name prefix 
-   */
+  /** Temporary random matrices name prefix */
   public final static String RANDOM = "rand";
-  
-  /**
-   * Admin table name
-   */
+
+  /** Admin table name */
   public final static String ADMINTABLE = "admin.table";
 
-  /**
-   * Matrix path columnFamily
-   */
+  /** Matrix path columnFamily */
   public static final String PATHCOLUMN = "path:";
-  
-  /**
-   * Temporary Aliase name prefix in Hama Shell
-   */
+
+  /** Temporary Aliase name prefix in Hama Shell */
   public static final String RANDOMALIASE = "_";
 
+  /** Matrix type information (e.g. DenseMatrix, SparseMatrix, .., etc) */
   public static final String MATRIXTYPE = "type:";
 }
