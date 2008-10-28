@@ -4,8 +4,9 @@ Trunk (unreleased changes)
 
   NEW FEATURES
     
+    HAMA-92: Add subMatrix() to Matrix (edwardyoon)
     HAMA-83: Add a writable comparable for BlockID (edwardyoon) 
-    HAMA-81: Add subVector(int i0, int i1) to Vector interface (edwardyoon)
+    HAMA-81: Add subVector(int i0, int i1) to Vector (edwardyoon)
     Hama-80: Add identity(int m, int n) which returns identity matrix (edwardyoon) 
     HAMA-62: Hama Shell Implementation (samuel via edwardyoon)
     HAMA-61: Load / save matrices from HTable (edwardyoon)

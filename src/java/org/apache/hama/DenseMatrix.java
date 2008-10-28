@@ -267,4 +267,28 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public String getType() {
     return this.getClass().getSimpleName();
   }
+
+  public SubMatrix subMatrix(int i0, int i1, int j0, int j1) throws IOException {
+    int columnSize = (j1 - j0) + 1;
+    SubMatrix result = new SubMatrix((i1-i0) + 1, columnSize);
+    byte[][] c = new byte[columnSize][];
+    for (int i = 0; i < columnSize; i++) {
+      c[i] = Numeric.getColumnIndex(j0 + i);
+    }
+
+    Scanner scan = table.getScanner(c, Numeric.intToBytes(i0), Numeric
+        .intToBytes(i1 + 1));
+
+    int rKey = 0, cKey = 0;
+    for (RowResult row : scan) {
+      for (Map.Entry<byte[], Cell> e : row.entrySet()) {
+        result.set(rKey, cKey, Numeric.bytesToDouble(e.getValue().getValue()));
+        cKey++;
+      }
+      rKey++;
+      cKey = 0;
+    }
+
+    return result;
+  }
 }

@@ -241,9 +241,25 @@ public interface Matrix {
   public boolean save(String path) throws IOException;
 
   /**
+   * Returns the matrix type
+   * 
    * @return the matrix type
    */
   public String getType();
+
+  /**
+   * Returns the sub matrix formed by selecting certain rows and
+   * columns from a bigger matrix. The sub matrix is a in-memory operation only.
+   * 
+   * @param i0 the start index of row
+   * @param i1 the end index of row
+   * @param j0 the start index of column
+   * @param j1 the end index of column
+   * @return the sub matrix of matrix
+   * @throws IOException
+   */
+  public SubMatrix subMatrix(int i0, int i1, int j0, int j1) throws IOException;
+
   /**
    * Close current matrix.
    * 
