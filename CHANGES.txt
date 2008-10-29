@@ -61,15 +61,15 @@ Trunk (unreleased changes)
     HAMA-31: Refactor VectorWritable (edwardyoon)
     HAMA-29: Replace Matrix(Conf, Text) to Matrix(Conf, String) (edwardyoon)
     HAMA-27: Replace table.get(Text, Text) 
-             to table.get(String, String) (edwardyoon)
+               to table.get(String, String) (edwardyoon)
     HAMA-12: Matrix interface re-arrangement (edwardyoon)
     HAMA-21: Implement get(int index) method (edwardyoon)
     HAMA-19: Remove vector-norms enum to interface 
-             from implementation (edwardyoon)
+               from implementation (edwardyoon)
     HAMA-17: Vector to Writable conversion (edwardyoon)
     HAMA-15: Logo Alignment (edwardyoon) 
     HAMA-10: Refactor the mapred package 
-             for the latest version of dependencies (edwardyoon)  
+               for the latest version of dependencies (edwardyoon)  
     HAMA-9: Upgrade dependencies (edwardyoon)
 
   BUG FIXES
