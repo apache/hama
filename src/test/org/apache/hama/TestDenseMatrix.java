@@ -27,6 +27,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hama.io.VectorEntry;
 import org.apache.log4j.Logger;
 
@@ -38,13 +39,21 @@ public class TestDenseMatrix extends TestCase {
   private static int SIZE = 10;
   private static Matrix m1;
   private static Matrix m2;
-  private final static String SAVE = "save";
+  private final static String aliase1 = "matrix_aliase_A";
+  private final static String aliase2 = "matrix_aliase_B";
+  private static HamaConfiguration conf;
+  private static HBaseAdmin admin;
+  private static HamaAdmin hamaAdmin;
   
   public static Test suite() {
     TestSetup setup = new TestSetup(new TestSuite(TestDenseMatrix.class)) {
       protected void setUp() throws Exception {
         HCluster hCluster = new HCluster();
         hCluster.setUp();
+        
+        conf = hCluster.getConf();
+        admin = new HBaseAdmin(conf);
+        hamaAdmin = new HamaAdminImpl(conf, admin);
 
         m1 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
         m2 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
@@ -171,9 +180,11 @@ public class TestDenseMatrix extends TestCase {
   }
 
   public void testLoadSave() throws IOException {
-    m1.save(SAVE);
-    HCluster hCluster = new HCluster();
-    DenseMatrix loadTest = new DenseMatrix(hCluster.conf, SAVE);
+    String path1 = m1.getPath();
+    // save m1 to aliase1 
+    m1.save(aliase1);
+    // load matrix m1 using aliase1
+    DenseMatrix loadTest = new DenseMatrix(conf, aliase1, false);
 
     for (int i = 0; i < loadTest.getRows(); i++) {
       for (int j = 0; j < loadTest.getColumns(); j++) {
@@ -181,7 +192,70 @@ public class TestDenseMatrix extends TestCase {
       }
     }
     
-    assertEquals(loadTest.getName(), SAVE);
+    assertEquals(path1, loadTest.getPath());
+    // close loadTest, it just disconnect to the table but didn't delete it.
+    loadTest.close();
+    
+    // try to close m1 & load matrix m1 using aliase1 again.
+    m1.close();
+    DenseMatrix loadTest2 = new DenseMatrix(conf, aliase1, false);
+    assertEquals(path1, loadTest2.getPath());
+    // remove aliase1
+    // because loadTest2 connect the aliase1, so we just remove aliase entry
+    // but didn't delete the table.
+    hamaAdmin.delete(aliase1);
+    assertEquals(true, admin.tableExists(path1));
+    // close loadTest2, because it is the last one who reference table 'path1'
+    // it will do the gc!
+    loadTest2.close();
+    assertEquals(false, admin.tableExists(path1));
+    
+    // if we try to load non-existed matrix using aliase name, it should fail.
+    DenseMatrix loadTest3 = null;
+    try {
+      loadTest3 = new DenseMatrix(conf, aliase1, false);
+      fail("Try to load a non-existed matrix should fail!");
+    } catch (IOException e) {
+      
+    } finally {
+      if(loadTest3!=null)
+        loadTest3.close();
+    }
+  }
+  
+  public void testForceCreate() throws IOException {
+    String path2 = m2.getPath();
+    // save m2 to aliase2 
+    m2.save(aliase2);
+    // load matrix m2 using aliase2
+    DenseMatrix loadTest = new DenseMatrix(conf, aliase2, false);
+
+    for (int i = 0; i < loadTest.getRows(); i++) {
+      for (int j = 0; j < loadTest.getColumns(); j++) {
+        assertEquals(m2.get(i, j), loadTest.get(i, j));
+      }
+    }
+    
+    assertEquals(path2, loadTest.getPath());
+    
+    // force to create matrix loadTest2 using aliasename 'aliase2'
+    DenseMatrix loadTest2 = new DenseMatrix(conf, aliase2, true);
+    String loadPath2 = loadTest2.getPath();
+    assertFalse(path2.equals(loadPath2));
+    assertEquals(loadPath2, hamaAdmin.getPath(aliase2));
+    assertFalse(path2.equals(hamaAdmin.getPath(aliase2)));
+    
+    // try to close m2 & loadTest, it table will be deleted finally
+    m2.close();
+    assertEquals(true, admin.tableExists(path2));
+    loadTest.close();
+    assertEquals(false, admin.tableExists(path2));
+
+    // remove 'aliase2' & close loadTest2
+    loadTest2.close();
+    assertEquals(true, admin.tableExists(loadPath2));
+    hamaAdmin.delete(aliase2);
+    assertEquals(false, admin.tableExists(loadPath2));
   }
 
   /**

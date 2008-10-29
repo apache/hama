@@ -41,6 +41,27 @@ public class Constants {
 
   /** The type of the matrix */
   public final static String METADATA_TYPE = "attribute:type";
+  
+  /** The reference of the matrix */
+  /** (1) when we create a Matrix object, we set up a connection to hbase table,
+   *      the reference of the table will be incremented.
+   *  (2) when we close a Matrix object, we disconnect the hbase table, 
+   *      the reference of the table will be decremented.
+   *      i)  if the reference of the table is not zero:
+   *          we should not delete the table, because some other matrix object
+   *          connect to the table.
+   *      ii) if the reference of the table is zero:
+   *          we need to know if the matrix table is aliased.
+   *          1) if the matrix table is aliased, we should not delete the table.
+   *          2) if the matrix table is not aliased, we need to delete the table.
+   */
+  public final static String METADATA_REFERENCE = "attribute:reference";
+  
+  /** The aliase names column family */
+  public final static String ALIASEFAMILY = "aliase:";
+  
+  /** The aliase names of the matrix, sperated by "," */
+  public final static String ALIASENAME = "aliase:name";
 
   /** Default columnFamily name */
   public final static String COLUMN = "column:";
@@ -56,7 +77,13 @@ public class Constants {
 
   /** Temporary Aliase name prefix in Hama Shell */
   public static final String RANDOMALIASE = "_";
-
-  /** Matrix type information (e.g. DenseMatrix, SparseMatrix, .., etc) */
-  public static final String MATRIXTYPE = "type:";
+  
+  /** default matrix's path length (tablename length) */
+  public static final int DEFAULT_PATH_LENGTH = 5;
+  
+  /** default matrix's max path length (tablename length) */
+  public static final int DEFAULT_MAXPATHLEN = 10000;
+  
+  /** default try times to generate a suitable tablename */
+  public static final int DEFAULT_TRY_TIMES = 10000000;
 }

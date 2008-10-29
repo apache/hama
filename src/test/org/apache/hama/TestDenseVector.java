@@ -47,7 +47,7 @@ public class TestDenseVector extends TestCase {
         HCluster hCluster = new HCluster();
         hCluster.setUp();
 
-        m1 = new DenseMatrix(hCluster.getConf(), "vectorTest");
+        m1 = new DenseMatrix(hCluster.getConf());
 
         for (int i = 0; i < 2; i++)
           for (int j = 0; j < 4; j++)

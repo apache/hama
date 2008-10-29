@@ -37,22 +37,24 @@ import org.apache.log4j.Logger;
  */
 public class TestMatrixMapReduce extends HCluster {
   static final Logger LOG = Logger.getLogger(TestMatrixMapReduce.class);
-  private String A = "matrixA";
-  private String B = "matrixB";
-  private String output = "output";
-
+  String pathA;
+  String pathB;
+  String output;
+  
   /** constructor */
   public TestMatrixMapReduce() {
     super();
   }
 
   public void testMatrixMapReduce() throws IOException {
-    Matrix matrixA = new DenseMatrix(conf, A);
+    Matrix matrixA = new DenseMatrix(conf);
+    pathA = matrixA.getPath();
     matrixA.set(0, 0, 1);
     matrixA.set(0, 1, 0);
     matrixA.setDimension(1, 2);
 
-    Matrix matrixB = new DenseMatrix(conf, B);
+    Matrix matrixB = new DenseMatrix(conf);
+    pathB = matrixB.getPath();
     matrixB.set(0, 0, 1);
     matrixB.set(0, 1, 1);
     matrixB.setDimension(1, 2);
@@ -60,13 +62,14 @@ public class TestMatrixMapReduce extends HCluster {
     miniMRJob();
   }
 
-  public void miniMRJob() throws IOException {
-    Matrix c = new DenseMatrix(conf, output);
-
+  private void miniMRJob() throws IOException {
+    Matrix c = new DenseMatrix(conf);
+    output = c.getPath();
+    
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    Add1DLayoutMap.initJob(A, B, Add1DLayoutMap.class, IntWritable.class,
+    Add1DLayoutMap.initJob(pathA, pathB, Add1DLayoutMap.class, IntWritable.class,
         VectorWritable.class, jobConf);
     MatrixReduce.initJob(output, Add1DLayoutReduce.class, jobConf);
 

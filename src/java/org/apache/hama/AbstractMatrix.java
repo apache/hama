@@ -26,6 +26,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.io.VectorUpdate;
@@ -40,12 +41,14 @@ public abstract class AbstractMatrix implements Matrix {
 
   protected HamaConfiguration config;
   protected HBaseAdmin admin;
+  // a matrix just need a table path to point to the table which stores matrix.
+  // let HamaAdmin manage Matrix Name space.
   protected String matrixPath;
-  protected String matrixName;
   protected HTable table;
   protected HTableDescriptor tableDesc;
-  public HamaAdmin store;
+  protected HamaAdmin hamaAdmin;
 
+  protected boolean closed = true;
   /**
    * Sets the job configuration
    * 
@@ -59,7 +62,7 @@ public abstract class AbstractMatrix implements Matrix {
       LOG.error(e, e);
     }
 
-    store = new HamaAdminImpl(conf, admin);
+    hamaAdmin = new HamaAdminImpl(conf, admin);
   }
 
   /**
@@ -70,9 +73,22 @@ public abstract class AbstractMatrix implements Matrix {
     if (!admin.tableExists(matrixPath)) {
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
+      this.tableDesc.addFamily(new HColumnDescriptor(Constants.ALIASEFAMILY));
 
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
+      LOG.info("Create Matrix " + matrixPath);
+      
+      // connect to the table.
+      table = new HTable(config, matrixPath);
+      // Record the matrix type in METADATA_TYPE
+      BatchUpdate update = new BatchUpdate(Constants.METADATA);
+      update.put(Constants.METADATA_TYPE, Bytes.toBytes(this.getClass().getSimpleName()));
+
+      table.commit(update);
+      
+      // the new matrix's reference is 1.
+      setReference(1);
     }
   }
 
@@ -147,15 +163,68 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   /** {@inheritDoc} */
-  public String getName() {
-    return (this.matrixName != null) ? this.matrixName : null;
+  public String getPath() {
+    return matrixPath;
+  }
+  
+  protected void setReference(int reference) throws IOException {
+    BatchUpdate update = new BatchUpdate(Constants.METADATA);
+    update.put(Constants.METADATA_REFERENCE, Bytes.toBytes(reference));
+    table.commit(update);
+  }
+  
+  protected int incrementAndGetRef() throws IOException {
+    int reference = 1;
+    Cell rows = null;
+    rows = table.get(Constants.METADATA, Constants.METADATA_REFERENCE);
+    if(rows != null) {
+      reference = Bytes.toInt(rows.getValue());
+      reference++;
+    }
+    setReference(reference);
+    return reference;
+  }
+  
+  protected int decrementAndGetRef() throws IOException {
+    int reference = 0;
+    Cell rows = null;
+    rows = table.get(Constants.METADATA, Constants.METADATA_REFERENCE);
+    if(rows != null) {
+      reference = Bytes.toInt(rows.getValue());
+      if(reference>0) // reference==0, we need not to decrement it.
+        reference--;
+    }
+    setReference(reference);
+    return reference;
+  }
+  
+  protected boolean hasAliaseName() throws IOException {
+    Cell rows = null;
+    rows = table.get(Constants.METADATA, Constants.ALIASENAME);
+    return (rows != null) ? true : false;
   }
 
   public void close() throws IOException {
-    store.delete(this.matrixName);
+    if(closed) // have been closed
+      return;
+    int reference = decrementAndGetRef();
+    if(reference<=0) { // no reference again.
+      if(! hasAliaseName()) { // the table has not been aliased, we delete the table.
+        if (admin.isTableEnabled(matrixPath)) {
+          admin.disableTable(matrixPath);
+          admin.deleteTable(matrixPath);
+        }
+      }
+    } 
+    closed = true;
   }
 
-  public boolean save(String name) throws IOException {
-    return store.save(this, name);
+  public boolean save(String aliasename) throws IOException {
+    // mark & update the aliase name in "alise:name" meta column.
+    // ! one matrix has only one aliasename now.
+    BatchUpdate update = new BatchUpdate(Constants.METADATA);
+    update.put(Constants.ALIASENAME, Bytes.toBytes(aliasename));
+    table.commit(update);
+    return hamaAdmin.save(this, aliasename);
   }
 }

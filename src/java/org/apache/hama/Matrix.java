@@ -85,11 +85,12 @@ public interface Matrix {
   public String getColumnAttribute(int j) throws IOException;
 
   /**
-   * Return the matrix name
+   * Return the matrix path. 
+   * (in hbase, path is the tablename. in filesystem, path may be a file path.)
    * 
    * @return the name of the matrix
    */
-  public String getName();
+  public String getPath();
 
   /**
    * Sets the attribute of the row

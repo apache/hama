@@ -22,7 +22,6 @@ package org.apache.hama;
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
@@ -46,70 +45,151 @@ import org.apache.hama.util.RandomVariable;
 
 public class DenseMatrix extends AbstractMatrix implements Matrix {
 
+  static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
+  static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
+  
   /**
-   * Construct
+   * Construct a raw matrix.
+   * Just create a table in HBase, but didn't lay any schema ( such as
+   * dimensions: i, j ) on it.
    * 
    * @param conf configuration object
+   * @throws IOException 
+   *         throw the exception to let the user know what happend, if we
+   *         didn't create the matrix successfully.
    */
-  public DenseMatrix(HamaConfiguration conf) {
+  public DenseMatrix(HamaConfiguration conf) throws IOException {
     setConfiguration(conf);
+    
+    tryToCreateTable();
+    
+    closed = false;
   }
 
   /**
-   * Construct an matrix
+   * Create/load a matrix aliased as 'matrixName'.
    * 
    * @param conf configuration object
    * @param matrixName the name of the matrix
+   * @param force if force is true, a new matrix will be created 
+   *              no matter 'matrixName' has aliased to an existed matrix;
+   *              otherwise, just try to load an existed matrix alised 
+   *              'matrixName'. 
+   * @throws IOException 
    */
-  public DenseMatrix(HamaConfiguration conf, String matrixName) {
-    try {
-      setConfiguration(conf);
-      this.matrixName = matrixName;
-      if (store.matrixExists(matrixName)) {
-        this.matrixPath = store.getPath(matrixName);
-      } else {
-        this.matrixPath = matrixName;
-        tableDesc = new HTableDescriptor(matrixName);
-        create();
+  public DenseMatrix(HamaConfiguration conf, String matrixName, 
+      boolean force) throws IOException {
+    setConfiguration(conf);
+    // if force is set to true:
+    // 1) if this matrixName has aliase to other matrix, we will remove 
+    //    the old aliase, create a new matrix table, and aliase to it.
+    // 2) if this matrixName has no aliase to other matrix, we will create
+    //    a new matrix table, and alise to it.
+    //
+    // if force is set to false, we just try to load an existed matrix alised
+    // as 'matrixname'.
+    
+    boolean existed = hamaAdmin.matrixExists(matrixName);
+    
+    if (force) {
+      if(existed) {
+        // remove the old aliase
+        hamaAdmin.delete(matrixName);
       }
-
-      table = new HTable(config, this.matrixPath);
-    } catch (Exception e) {
-      e.printStackTrace();
+      // create a new matrix table.
+      tryToCreateTable();
+      // save the new aliase relationship
+      save(matrixName);
+    } else {
+      if(existed) {
+        // try to get the actual path of the table
+        matrixPath = hamaAdmin.getPath(matrixName);
+        // load the matrix
+        table = new HTable(conf, matrixPath);
+        // increment the reference
+        incrementAndGetRef();
+      } else {
+        throw new IOException("Try to load non-existed matrix alised as " + matrixName);
+      }
     }
+
+    closed = false;
+  }
+  
+  /**
+   * Load a matrix from an existed matrix table whose tablename is 'matrixpath'
+   * 
+   * !! It is an internal used for map/reduce.
+   * 
+   * @param conf configuration object
+   * @param matrixpath 
+   * @throws IOException 
+   * @throws IOException 
+   */
+  public DenseMatrix(HamaConfiguration conf, String matrixpath) throws IOException {
+    setConfiguration(conf);
+    matrixPath = matrixpath;
+    // load the matrix
+    table = new HTable(conf, matrixPath);
+    // TODO: now we don't increment the reference of the table
+    //       for it's an internal use for map/reduce.
+    //       if we want to increment the reference of the table,
+    //       we don't know where to call Matrix.close in Add & Mul map/reduce
+    //       process to decrement the reference. It seems difficulty.
   }
 
   /**
-   * Construct an m-by-n constant matrix.
+   * Create an m-by-n constant matrix.
    * 
    * @param conf configuration object
    * @param m the number of rows.
    * @param n the number of columns.
    * @param s fill the matrix with this scalar value.
+   * @throws IOException 
+   *         throw the exception to let the user know what happend, if we
+   *         didn't create the matrix successfully.
    */
-  public DenseMatrix(HamaConfiguration conf, int m, int n, double s) {
-    try {
-      setConfiguration(conf);
-      matrixPath = RandomVariable.randMatrixName();
+  public DenseMatrix(HamaConfiguration conf, int m, int n, double s) throws IOException {
+    setConfiguration(conf);
+    
+    tryToCreateTable();
 
-      if (!admin.tableExists(matrixPath)) {
-        tableDesc = new HTableDescriptor(matrixPath);
-        tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
-        create();
+    closed = false;
+    
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < n; j++) {
+        set(i, j, s);
       }
-
-      table = new HTable(config, matrixPath);
-
-      for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-          set(i, j, s);
-        }
-      }
-
-      setDimension(m, n);
-    } catch (IOException e) {
-      e.printStackTrace();
     }
+
+    setDimension(m, n);
+  }
+  
+  /** try to create a new matrix with a new random name.
+   *  try times will be (Integer.MAX_VALUE - 4) * DEFAULT_TRY_TIMES;
+   * @throws IOException
+   */
+  private void tryToCreateTable() throws IOException {
+    int tryTimes = Constants.DEFAULT_TRY_TIMES;
+    do {
+      matrixPath = TABLE_PREFIX + RandomVariable.randMatrixPath(tryPathLength);
+      
+      if (!admin.tableExists(matrixPath)) { // no table 'matrixPath' in hbase.
+        tableDesc = new HTableDescriptor(matrixPath);
+        create();
+        return;
+      }
+      
+      tryTimes--;
+      if(tryTimes <= 0) { // this loop has exhausted DEFAULT_TRY_TIMES.
+        tryPathLength++;
+        tryTimes = Constants.DEFAULT_TRY_TIMES;
+      }
+      
+    } while(tryPathLength <= Constants.DEFAULT_MAXPATHLEN);
+    // exhaustes the try times.
+    // throw out an IOException to let the user know what happened.
+    throw new IOException("Try too many times to create a table in hbase.");
   }
 
   /**
@@ -123,8 +203,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public static Matrix random(HamaConfiguration conf, int m, int n)
       throws IOException {
-    String name = RandomVariable.randMatrixName();
-    Matrix rand = new DenseMatrix(conf, name);
+    Matrix rand = new DenseMatrix(conf);
     for (int i = 0; i < m; i++) {
       DenseVector vector = new DenseVector();
       for (int j = 0; j < n; j++) {
@@ -134,7 +213,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     }
 
     rand.setDimension(m, n);
-    LOG.info("Create the " + m + " * " + n + " random matrix : " + name);
+    LOG.info("Create the " + m + " * " + n + " random matrix : " + rand.getPath());
     return rand;
   }
 
@@ -149,8 +228,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public static Matrix identity(HamaConfiguration conf, int m, int n)
       throws IOException {
-    String name = RandomVariable.randMatrixName();
-    Matrix identity = new DenseMatrix(conf, name);
+    Matrix identity = new DenseMatrix(conf);
 
     for (int i = 0; i < m; i++) {
       DenseVector vector = new DenseVector();
@@ -161,24 +239,23 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     }
 
     identity.setDimension(m, n);
-    LOG.info("Create the " + m + " * " + n + " identity matrix : " + name);
+    LOG.info("Create the " + m + " * " + n + " identity matrix : " + identity.getPath());
     return identity;
   }
 
   public Matrix add(Matrix B) throws IOException {
-    String output = RandomVariable.randMatrixName();
-    Matrix result = new DenseMatrix(config, output);
+    Matrix result = new DenseMatrix(config);
 
     JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("addition MR job" + result.getName());
+    jobConf.setJobName("addition MR job" + result.getPath());
 
     jobConf.setNumMapTasks(Integer.parseInt(config.get("mapred.map.tasks")));
     jobConf.setNumReduceTasks(Integer.parseInt(config
         .get("mapred.reduce.tasks")));
 
-    Add1DLayoutMap.initJob(this.getName(), B.getName(), Add1DLayoutMap.class,
+    Add1DLayoutMap.initJob(this.getPath(), B.getPath(), Add1DLayoutMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
-    MatrixReduce.initJob(result.getName(), Add1DLayoutReduce.class, jobConf);
+    MatrixReduce.initJob(result.getPath(), Add1DLayoutReduce.class, jobConf);
 
     JobManager.execute(jobConf, result);
     return result;
@@ -217,19 +294,18 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public Matrix mult(Matrix B) throws IOException {
-    String output = RandomVariable.randMatrixName();
-    Matrix result = new DenseMatrix(config, output);
+    Matrix result = new DenseMatrix(config);
 
     JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("multiplication MR job : " + result.getName());
+    jobConf.setJobName("multiplication MR job : " + result.getPath());
 
     jobConf.setNumMapTasks(Integer.parseInt(config.get("mapred.map.tasks")));
     jobConf.setNumReduceTasks(Integer.parseInt(config
         .get("mapred.reduce.tasks")));
 
-    Mult1DLayoutMap.initJob(this.getName(), B.getName(), Mult1DLayoutMap.class,
+    Mult1DLayoutMap.initJob(this.getPath(), B.getPath(), Mult1DLayoutMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
-    MatrixReduce.initJob(result.getName(), Mult1DLayoutReduce.class, jobConf);
+    MatrixReduce.initJob(result.getPath(), Mult1DLayoutReduce.class, jobConf);
     JobManager.execute(jobConf, result);
     return result;
   }

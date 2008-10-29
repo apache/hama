@@ -40,7 +40,11 @@ public class Add1DLayoutMap extends DenseMap<IntWritable, VectorWritable> {
   public static final String MATRIX_B = "hama.addition.matrix.b";
 
   public void configure(JobConf job) {
-    matrix_b = new DenseMatrix(new HamaConfiguration(), job.get(MATRIX_B, ""));
+    try {
+      matrix_b = new DenseMatrix(new HamaConfiguration(), job.get(MATRIX_B, ""));
+    } catch (IOException e) {
+      LOG.warn("Load matrix_b failed : " + e.getMessage());
+    }
   }
 
   public static void initJob(String matrix_a, String matrix_b,

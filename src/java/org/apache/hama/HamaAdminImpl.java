@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
@@ -30,14 +31,19 @@ import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
+/**
+ * An Implementation of {@link org.apache.hama.HamaAdmin} to manage 
+ * the matrix's namespace, and table allocation & garbage collection.
+ */
 public class HamaAdminImpl implements HamaAdmin {
   static final Logger LOG = Logger.getLogger(HamaAdminImpl.class);
-  public HamaConfiguration conf;
-  public HBaseAdmin admin;
-  public HTable table;
+  protected HamaConfiguration conf;
+  protected HBaseAdmin admin;
+  protected HTable table;
 
-  public HamaAdminImpl(HamaConfiguration conf) {
+  public HamaAdminImpl(HamaConfiguration conf) throws MasterNotRunningException {
     this.conf = conf;
+    this.admin = new HBaseAdmin(conf);
     initialJob();
   }
 
@@ -47,12 +53,11 @@ public class HamaAdminImpl implements HamaAdmin {
     initialJob();
   }
 
-  public void initialJob() {
+  private void initialJob() {
     try {
       if (!admin.tableExists(Constants.ADMINTABLE)) {
         HTableDescriptor tableDesc = new HTableDescriptor(Constants.ADMINTABLE);
         tableDesc.addFamily(new HColumnDescriptor(Constants.PATHCOLUMN));
-        tableDesc.addFamily(new HColumnDescriptor(Constants.MATRIXTYPE));
         admin.createTable(tableDesc);
       }
 
@@ -89,10 +94,10 @@ public class HamaAdminImpl implements HamaAdmin {
   public boolean save(Matrix mat, String aliaseName) {
     boolean result = false;
 
+    // we just store the name -> path(tablename) here.
+    // the matrix type is stored in its hbase table. we don't need to store again.
     BatchUpdate update = new BatchUpdate(aliaseName);
-    update.put(Constants.PATHCOLUMN, Bytes.toBytes(mat.getName()));
-    // So, If we load a dense matrix, return the DenseMatrix.
-    update.put(Constants.MATRIXTYPE, Bytes.toBytes(mat.getType()));
+    update.put(Constants.PATHCOLUMN, Bytes.toBytes(mat.getPath()));
     
     try {
       table.commit(update);
@@ -104,17 +109,58 @@ public class HamaAdminImpl implements HamaAdmin {
     return result;
   }
 
+  /** remove the entry of 'matrixName' in admin table. **/
+  private void removeEntry(String matrixName) throws IOException {
+    table.deleteAll(matrixName);
+  }
+  
+  private int getReference(String tableName) throws IOException {
+    HTable matrix = new HTable(conf, tableName);
+    
+    Cell rows = null;
+    rows = matrix.get(Constants.METADATA, Constants.METADATA_REFERENCE);
+    
+    return ( rows == null ) ? 0 : Bytes.toInt(rows.getValue());
+  }
+  
+  private void clearAliaseInfo(String tableName) throws IOException {
+    HTable matrix = new HTable(conf, tableName);
+    
+    matrix.deleteAll(Constants.METADATA, Constants.ALIASENAME);
+  }
+  
   public void delete(String matrixName) throws IOException {
-    String table;
+    // we remove the aliase entry store in Admin table, and
+    // clear the aliase info store in matrix table.
+    // And check the reference of the matrix table:
+    // 1) if the reference of the matrix table is zero:
+    //    we delete the table.
+    // 2) if the reference of the matrix table is not zero:
+    //    we let the matrix who still reference the table to 
+    //    do the garbage collection.
     if (matrixExists(matrixName)) {
-      table = getPath(matrixName);
-    } else {
-      table = matrixName;
-    }
-
-    if (admin.isTableEnabled(table)) {
-      admin.disableTable(table);
-      admin.deleteTable(table);
+      String tablename = getPath(matrixName);
+      
+      // i) remove the aliase entry first.
+      removeEntry(matrixName);
+      
+      if(tablename == null) { // a matrixName point to a null table. we delete the entry.
+        return ; 
+      }
+      
+      if(!admin.tableExists(tablename)) { // have not specified table.
+        return;
+      }
+      
+      // ii) clear the aliase info store in matrix table.
+      clearAliaseInfo(tablename);
+      
+      if(getReference(tablename) <= 0) { // no reference, do gc!!
+        if (admin.isTableEnabled(tablename)) {
+          admin.disableTable(tablename);
+          admin.deleteTable(tablename);
+        }
+      }
     }
   }
 }

@@ -51,12 +51,20 @@ public class RandomVariable {
   }
 
   /**
-   * Generate a random matrix name.
-   * 
+   * Generate a random matrix Path(tablename) with a default length.
    * @return random matrix name
    */
-  public static String randMatrixName() {
+  public static String randMatrixPath() {
     return randString(Constants.RANDOM, 5);
+  }
+  
+  /**
+   * Generate a random matrix Path(tablename) with a given length.
+   * @param length the matrix path's length
+   * @return random matrix name
+   */
+  public static String randMatrixPath(int length) {
+    return randString(Constants.RANDOM, length);
   }
   
   /**

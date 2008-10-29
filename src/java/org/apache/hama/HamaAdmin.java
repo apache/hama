@@ -51,5 +51,5 @@ public interface HamaAdmin {
    * @throws IOException
    */
   public void delete(String matrixName) throws IOException;
-
+  
 }
