@@ -35,17 +35,16 @@ import org.apache.log4j.Logger;
 public class Mult1DLayoutReduce extends
     MatrixReduce<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(Mult1DLayoutReduce.class);
-
+  public static final Map<Integer, Double> buffer = new HashMap<Integer, Double>();
+  
   @Override
   public void reduce(IntWritable key, Iterator<VectorWritable> values,
       OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
 
     VectorUpdate update = new VectorUpdate(key.get());
-
     VectorWritable sum;
-    Map<Integer, Double> buffer = new HashMap<Integer, Double>();
-
+    
     // Summation
     while (values.hasNext()) {
       sum = values.next();
@@ -57,7 +56,9 @@ public class Mult1DLayoutReduce extends
         }
       }
     }
+    
     update.putAll(buffer);
+    buffer.clear();
     output.collect(key, update);
   }
 

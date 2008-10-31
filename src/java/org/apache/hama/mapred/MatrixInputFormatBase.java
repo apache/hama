@@ -131,7 +131,7 @@ public abstract class MatrixInputFormatBase implements
     }
 
     /**
-     * @return ImmutableBytesWritable
+     * @return IntWritable
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createKey()
      */

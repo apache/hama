@@ -49,18 +49,17 @@ public abstract class AbstractMatrix implements Matrix {
   protected HamaAdmin hamaAdmin;
 
   protected boolean closed = true;
+
   /**
    * Sets the job configuration
    * 
    * @param conf configuration object
+   * @throws MasterNotRunningException
    */
-  public void setConfiguration(HamaConfiguration conf) {
+  public void setConfiguration(HamaConfiguration conf)
+      throws MasterNotRunningException {
     this.config = conf;
-    try {
-      this.admin = new HBaseAdmin(config);
-    } catch (MasterNotRunningException e) {
-      LOG.error(e, e);
-    }
+    this.admin = new HBaseAdmin(config);
 
     hamaAdmin = new HamaAdminImpl(conf, admin);
   }
@@ -78,15 +77,16 @@ public abstract class AbstractMatrix implements Matrix {
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
       LOG.info("Create Matrix " + matrixPath);
-      
+
       // connect to the table.
       table = new HTable(config, matrixPath);
       // Record the matrix type in METADATA_TYPE
       BatchUpdate update = new BatchUpdate(Constants.METADATA);
-      update.put(Constants.METADATA_TYPE, Bytes.toBytes(this.getClass().getSimpleName()));
+      update.put(Constants.METADATA_TYPE, Bytes.toBytes(this.getClass()
+          .getSimpleName()));
 
       table.commit(update);
-      
+
       // the new matrix's reference is 1.
       setReference(1);
     }
@@ -166,38 +166,38 @@ public abstract class AbstractMatrix implements Matrix {
   public String getPath() {
     return matrixPath;
   }
-  
+
   protected void setReference(int reference) throws IOException {
     BatchUpdate update = new BatchUpdate(Constants.METADATA);
     update.put(Constants.METADATA_REFERENCE, Bytes.toBytes(reference));
     table.commit(update);
   }
-  
+
   protected int incrementAndGetRef() throws IOException {
     int reference = 1;
     Cell rows = null;
     rows = table.get(Constants.METADATA, Constants.METADATA_REFERENCE);
-    if(rows != null) {
+    if (rows != null) {
       reference = Bytes.toInt(rows.getValue());
       reference++;
     }
     setReference(reference);
     return reference;
   }
-  
+
   protected int decrementAndGetRef() throws IOException {
     int reference = 0;
     Cell rows = null;
     rows = table.get(Constants.METADATA, Constants.METADATA_REFERENCE);
-    if(rows != null) {
+    if (rows != null) {
       reference = Bytes.toInt(rows.getValue());
-      if(reference>0) // reference==0, we need not to decrement it.
+      if (reference > 0) // reference==0, we need not to decrement it.
         reference--;
     }
     setReference(reference);
     return reference;
   }
-  
+
   protected boolean hasAliaseName() throws IOException {
     Cell rows = null;
     rows = table.get(Constants.METADATA, Constants.ALIASENAME);
@@ -205,17 +205,18 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public void close() throws IOException {
-    if(closed) // have been closed
+    if (closed) // have been closed
       return;
     int reference = decrementAndGetRef();
-    if(reference<=0) { // no reference again.
-      if(! hasAliaseName()) { // the table has not been aliased, we delete the table.
+    if (reference <= 0) { // no reference again.
+      if (!hasAliaseName()) { // the table has not been aliased, we delete the
+        // table.
         if (admin.isTableEnabled(matrixPath)) {
           admin.disableTable(matrixPath);
           admin.deleteTable(matrixPath);
         }
       }
-    } 
+    }
     closed = true;
   }
 

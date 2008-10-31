@@ -20,7 +20,6 @@
 package org.apache.hama.algebra;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
@@ -31,7 +30,6 @@ import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 import org.apache.hama.Vector;
-import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.DenseMap;
 import org.apache.log4j.Logger;
@@ -69,14 +67,12 @@ public class Mult1DLayoutMap extends DenseMap<IntWritable, VectorWritable> {
       OutputCollector<IntWritable, VectorWritable> output, Reporter reporter)
       throws IOException {
 
-    Iterator<VectorEntry> it = value.getDenseVector().iterator();
-    int i = 0;
-    while (it.hasNext()) {
-      Vector v = matrix_b.getRow(i);
-
-      output.collect(key, new VectorWritable(key.get(), (DenseVector) v
-          .scale(it.next().getValue())));
-      i++;
+    DenseVector v1 = value.getDenseVector();
+    
+    for(int i = 0; i < v1.size(); i++) {
+      Vector v2 = matrix_b.getRow(i);
+      DenseVector sum = (DenseVector) v2.scale(v1.get(i));
+      output.collect(key, new VectorWritable(key.get(), sum));
     }
   }
 }

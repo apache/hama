@@ -43,7 +43,7 @@ public class VectorMapWritable<K, V> implements Map<Integer, V>, Writable,
     Configurable {
   private AtomicReference<Configuration> conf = new AtomicReference<Configuration>();
 
-  // Static maps of code to class and vice versa. Includes types used in hbase
+  // Static maps of code to class and vice versa. Includes types used in hama
   // only.
   static final Map<Byte, Class<?>> CODE_TO_CLASS = new HashMap<Byte, Class<?>>();
   static final Map<Class<?>, Byte> CLASS_TO_CODE = new HashMap<Class<?>, Byte>();
