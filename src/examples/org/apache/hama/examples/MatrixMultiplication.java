@@ -27,14 +27,14 @@ import org.apache.hama.DenseMatrix;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 
-public class MatrixAddition {
+public class MatrixMultiplication {
   private static HamaConfiguration conf = new HamaConfiguration();
   private static int row;
   private static int column;
 
   public static void main(String[] args) throws IOException {
     if (args.length < 2) {
-      System.out.println("add  [-m maps] [-r reduces] <row_m> <column_n>");
+      System.out.println("mult  [-m maps] [-r reduces] <row_m> <column_n>");
       System.exit(-1);
     } else {
       parseArgs(args);
@@ -43,7 +43,7 @@ public class MatrixAddition {
     Matrix a = DenseMatrix.random(conf, row, column);
     Matrix b = DenseMatrix.random(conf, row, column);
 
-    Matrix c = a.add(b);
+    Matrix c = a.mult(b);
 
     a.close();
     b.close();
