@@ -73,7 +73,9 @@ Trunk (unreleased changes)
     HAMA-9: Upgrade dependencies (edwardyoon)
 
   BUG FIXES
-
+   
+    HAMA-98: change '~=' operation to use `echo $f | grep 'examples$'` 
+               (samuel via edwardyoon)
     HAMA-64: Bytes and Double convert (edwardyoon)
     HAMA-55: Write dimension attributes when job completed (edwardyoon)
     HAMA-54: Split doesn't split by map task num (edwardyoon)
