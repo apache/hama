@@ -118,13 +118,13 @@ for f in $HAMA_HOME/hama*.jar; do
   if [ -f $f ]; then
     CLASSPATH=${CLASSPATH}:$f;
   fi
-  if [[ $f =~ "examples.jar$" ]]; then
+  if [[ `echo $f | grep 'examples.jar$'` ]]; then
     HAMA_EXAMPLES_JAR=$f;
   else
-    if [[ $f =~ "test.jar$" ]]; then
+    if [[ `echo $f | grep 'test.jar$'` ]]; then
       HAMA_TEST_JAR=$f;
     else
-      if [[ $f =~ "hama*" ]]; then
+      if [[ `echo $f | grep 'hama*'` ]]; then
         HAMA_JAR=$f;
       fi
     fi
@@ -134,7 +134,7 @@ done
 # Add libs to CLASSPATH
 for f in $HAMA_HOME/lib/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
-  if [[ $f =~ "hbase*" ]]; then
+  if [[ `echo $f | grep 'hbase*'` ]]; then
     if [ "$HAMA_JARS" == "" ] ; then
       HAMA_JARS=$f;
     else
