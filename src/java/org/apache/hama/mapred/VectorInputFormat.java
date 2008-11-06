@@ -31,9 +31,9 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
 
-public class MatrixInputFormat extends MatrixInputFormatBase implements
+public class VectorInputFormat extends VectorInputFormatBase implements
     JobConfigurable {
-  private final Log LOG = LogFactory.getLog(MatrixInputFormat.class);
+  private final Log LOG = LogFactory.getLog(VectorInputFormat.class);
 
   /**
    * space delimited list of columns

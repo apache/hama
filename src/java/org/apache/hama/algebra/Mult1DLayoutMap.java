@@ -31,13 +31,13 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 import org.apache.hama.Vector;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.DenseMap;
+import org.apache.hama.mapred.RowCyclicMap;
 import org.apache.log4j.Logger;
 
 /**
  * 1D Block Layout version
  */
-public class Mult1DLayoutMap extends DenseMap<IntWritable, VectorWritable> {
+public class Mult1DLayoutMap extends RowCyclicMap<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(Mult1DLayoutMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.multiplication.matrix.b";

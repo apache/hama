@@ -35,20 +35,20 @@ import org.apache.hama.Matrix;
 import org.apache.hama.io.VectorWritable;
 
 @SuppressWarnings("unchecked")
-public abstract class DenseMap<K extends WritableComparable, V extends Writable>
+public abstract class RowCyclicMap<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements
     Mapper<IntWritable, VectorWritable, K, V> {
   public static Matrix MATRIX_B;
 
   public static void initJob(String matrixA, 
-      Class<? extends DenseMap> mapper,
+      Class<? extends RowCyclicMap> mapper,
       JobConf job) {
 
-    job.setInputFormat(MatrixInputFormat.class);
+    job.setInputFormat(VectorInputFormat.class);
     job.setMapperClass(mapper);
     FileInputFormat.addInputPaths(job, matrixA);
 
-    job.set(MatrixInputFormat.COLUMN_LIST, Constants.COLUMN);
+    job.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 
   public abstract void map(IntWritable key, VectorWritable value,

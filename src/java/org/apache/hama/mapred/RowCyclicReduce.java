@@ -34,7 +34,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorUpdate;
 
 @SuppressWarnings("unchecked")
-public abstract class MatrixReduce<K extends WritableComparable, V extends Writable>
+public abstract class RowCyclicReduce<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements Reducer<K, V, IntWritable, VectorUpdate> {
   /**
    * Use this before submitting a TableReduce job. It will appropriately set up
@@ -45,10 +45,10 @@ public abstract class MatrixReduce<K extends WritableComparable, V extends Writa
    * @param job
    */
   public static void initJob(String table,
-      Class<? extends MatrixReduce> reducer, JobConf job) {
-    job.setOutputFormat(MatrixOutputFormat.class);
+      Class<? extends RowCyclicReduce> reducer, JobConf job) {
+    job.setOutputFormat(VectorOutputFormat.class);
     job.setReducerClass(reducer);
-    job.set(MatrixOutputFormat.OUTPUT_TABLE, table);
+    job.set(VectorOutputFormat.OUTPUT_TABLE, table);
     job.setOutputKeyClass(IntWritable.class);
     job.setOutputValueClass(BatchUpdate.class);
   }

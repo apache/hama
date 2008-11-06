@@ -29,9 +29,9 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.MatrixReduce;
+import org.apache.hama.mapred.RowCyclicReduce;
 
-public class Add1DLayoutReduce extends MatrixReduce<IntWritable, VectorWritable> {
+public class Add1DLayoutReduce extends RowCyclicReduce<IntWritable, VectorWritable> {
 
   @Override
   public void reduce(IntWritable key, Iterator<VectorWritable> values,

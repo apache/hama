@@ -71,7 +71,7 @@ public class TestMatrixMapReduce extends HCluster {
 
     Add1DLayoutMap.initJob(pathA, pathB, Add1DLayoutMap.class, IntWritable.class,
         VectorWritable.class, jobConf);
-    MatrixReduce.initJob(output, Add1DLayoutReduce.class, jobConf);
+    RowCyclicReduce.initJob(output, Add1DLayoutReduce.class, jobConf);
 
     jobConf.setNumMapTasks(2);
     jobConf.setNumReduceTasks(2);

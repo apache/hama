@@ -36,12 +36,12 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
 import org.apache.hama.io.VectorUpdate;
 
-public class MatrixOutputFormat extends
+public class VectorOutputFormat extends
     FileOutputFormat<IntWritable, VectorUpdate> {
 
   /** JobConf parameter that specifies the output table */
   public static final String OUTPUT_TABLE = "hama.mapred.output";
-  private final static Log LOG = LogFactory.getLog(MatrixOutputFormat.class);
+  private final static Log LOG = LogFactory.getLog(VectorOutputFormat.class);
 
   /**
    * Convert Reduce output (key, value) to (HStoreKey, KeyedDataArrayWritable)

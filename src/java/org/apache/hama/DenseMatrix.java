@@ -38,7 +38,7 @@ import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.MatrixReduce;
+import org.apache.hama.mapred.RowCyclicReduce;
 import org.apache.hama.util.JobManager;
 import org.apache.hama.util.Numeric;
 import org.apache.hama.util.RandomVariable;
@@ -255,7 +255,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     Add1DLayoutMap.initJob(this.getPath(), B.getPath(), Add1DLayoutMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
-    MatrixReduce.initJob(result.getPath(), Add1DLayoutReduce.class, jobConf);
+    RowCyclicReduce.initJob(result.getPath(), Add1DLayoutReduce.class, jobConf);
 
     JobManager.execute(jobConf, result);
     return result;
@@ -305,7 +305,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     Mult1DLayoutMap.initJob(this.getPath(), B.getPath(), Mult1DLayoutMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
-    MatrixReduce.initJob(result.getPath(), Mult1DLayoutReduce.class, jobConf);
+    RowCyclicReduce.initJob(result.getPath(), Mult1DLayoutReduce.class, jobConf);
     JobManager.execute(jobConf, result);
     return result;
   }

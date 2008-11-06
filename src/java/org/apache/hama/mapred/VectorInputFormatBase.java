@@ -43,7 +43,7 @@ import org.apache.hama.Constants;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.util.Numeric;
 
-public abstract class MatrixInputFormatBase implements
+public abstract class VectorInputFormatBase implements
     InputFormat<IntWritable, VectorWritable> {
   private byte[][] inputColumns;
   private HTable table;

@@ -31,10 +31,10 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 import org.apache.hama.Vector;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.DenseMap;
+import org.apache.hama.mapred.RowCyclicMap;
 import org.apache.log4j.Logger;
 
-public class Add1DLayoutMap extends DenseMap<IntWritable, VectorWritable> {
+public class Add1DLayoutMap extends RowCyclicMap<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(Add1DLayoutMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.addition.matrix.b";
