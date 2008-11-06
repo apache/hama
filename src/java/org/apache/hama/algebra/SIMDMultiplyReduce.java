@@ -32,9 +32,9 @@ import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicReduce;
 import org.apache.log4j.Logger;
 
-public class Mult1DLayoutReduce extends
+public class SIMDMultiplyReduce extends
     RowCyclicReduce<IntWritable, VectorWritable> {
-  static final Logger LOG = Logger.getLogger(Mult1DLayoutReduce.class);
+  static final Logger LOG = Logger.getLogger(SIMDMultiplyReduce.class);
   public static final Map<Integer, Double> buffer = new HashMap<Integer, Double>();
   
   @Override

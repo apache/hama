@@ -34,8 +34,8 @@ import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicMap;
 import org.apache.log4j.Logger;
 
-public class Add1DLayoutMap extends RowCyclicMap<IntWritable, VectorWritable> {
-  static final Logger LOG = Logger.getLogger(Add1DLayoutMap.class);
+public class RowCyclicAdditionMap extends RowCyclicMap<IntWritable, VectorWritable> {
+  static final Logger LOG = Logger.getLogger(RowCyclicAdditionMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.addition.matrix.b";
 
@@ -48,7 +48,7 @@ public class Add1DLayoutMap extends RowCyclicMap<IntWritable, VectorWritable> {
   }
 
   public static void initJob(String matrix_a, String matrix_b,
-      Class<Add1DLayoutMap> map, Class<IntWritable> outputKeyClass,
+      Class<RowCyclicAdditionMap> map, Class<IntWritable> outputKeyClass,
       Class<VectorWritable> outputValueClass, JobConf jobConf) {
 
     jobConf.setMapOutputValueClass(outputValueClass);

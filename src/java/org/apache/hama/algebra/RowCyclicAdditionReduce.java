@@ -31,7 +31,7 @@ import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicReduce;
 
-public class Add1DLayoutReduce extends RowCyclicReduce<IntWritable, VectorWritable> {
+public class RowCyclicAdditionReduce extends RowCyclicReduce<IntWritable, VectorWritable> {
 
   @Override
   public void reduce(IntWritable key, Iterator<VectorWritable> values,

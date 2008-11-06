@@ -27,8 +27,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.HCluster;
 import org.apache.hama.Matrix;
-import org.apache.hama.algebra.Add1DLayoutMap;
-import org.apache.hama.algebra.Add1DLayoutReduce;
+import org.apache.hama.algebra.RowCyclicAdditionMap;
+import org.apache.hama.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.io.VectorWritable;
 import org.apache.log4j.Logger;
 
@@ -69,9 +69,9 @@ public class TestMatrixMapReduce extends HCluster {
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    Add1DLayoutMap.initJob(pathA, pathB, Add1DLayoutMap.class, IntWritable.class,
+    RowCyclicAdditionMap.initJob(pathA, pathB, RowCyclicAdditionMap.class, IntWritable.class,
         VectorWritable.class, jobConf);
-    RowCyclicReduce.initJob(output, Add1DLayoutReduce.class, jobConf);
+    RowCyclicReduce.initJob(output, RowCyclicAdditionReduce.class, jobConf);
 
     jobConf.setNumMapTasks(2);
     jobConf.setNumReduceTasks(2);

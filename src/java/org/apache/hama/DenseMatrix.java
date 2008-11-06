@@ -30,10 +30,10 @@ import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hama.algebra.Add1DLayoutMap;
-import org.apache.hama.algebra.Add1DLayoutReduce;
-import org.apache.hama.algebra.Mult1DLayoutMap;
-import org.apache.hama.algebra.Mult1DLayoutReduce;
+import org.apache.hama.algebra.RowCyclicAdditionMap;
+import org.apache.hama.algebra.RowCyclicAdditionReduce;
+import org.apache.hama.algebra.SIMDMultiplyMap;
+import org.apache.hama.algebra.SIMDMultiplyReduce;
 import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.io.VectorUpdate;
@@ -253,9 +253,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumReduceTasks(Integer.parseInt(config
         .get("mapred.reduce.tasks")));
 
-    Add1DLayoutMap.initJob(this.getPath(), B.getPath(), Add1DLayoutMap.class,
+    RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(), RowCyclicAdditionMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
-    RowCyclicReduce.initJob(result.getPath(), Add1DLayoutReduce.class, jobConf);
+    RowCyclicReduce.initJob(result.getPath(), RowCyclicAdditionReduce.class, jobConf);
 
     JobManager.execute(jobConf, result);
     return result;
@@ -303,9 +303,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumReduceTasks(Integer.parseInt(config
         .get("mapred.reduce.tasks")));
 
-    Mult1DLayoutMap.initJob(this.getPath(), B.getPath(), Mult1DLayoutMap.class,
+    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), SIMDMultiplyMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
-    RowCyclicReduce.initJob(result.getPath(), Mult1DLayoutReduce.class, jobConf);
+    RowCyclicReduce.initJob(result.getPath(), SIMDMultiplyReduce.class, jobConf);
     JobManager.execute(jobConf, result);
     return result;
   }

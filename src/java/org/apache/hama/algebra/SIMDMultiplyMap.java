@@ -35,10 +35,10 @@ import org.apache.hama.mapred.RowCyclicMap;
 import org.apache.log4j.Logger;
 
 /**
- * 1D Block Layout version
+ * SIMD version
  */
-public class Mult1DLayoutMap extends RowCyclicMap<IntWritable, VectorWritable> {
-  static final Logger LOG = Logger.getLogger(Mult1DLayoutMap.class);
+public class SIMDMultiplyMap extends RowCyclicMap<IntWritable, VectorWritable> {
+  static final Logger LOG = Logger.getLogger(SIMDMultiplyMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.multiplication.matrix.b";
 
@@ -51,7 +51,7 @@ public class Mult1DLayoutMap extends RowCyclicMap<IntWritable, VectorWritable> {
   }
 
   public static void initJob(String matrix_a, String matrix_b,
-      Class<Mult1DLayoutMap> map, Class<IntWritable> outputKeyClass,
+      Class<SIMDMultiplyMap> map, Class<IntWritable> outputKeyClass,
       Class<VectorWritable> outputValueClass, JobConf jobConf) {
 
     jobConf.setMapOutputValueClass(outputValueClass);
