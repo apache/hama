@@ -26,7 +26,7 @@ public class ExampleDriver {
     ProgramDriver pgd = new ProgramDriver();
     try {
       pgd.addClass("add", MatrixAddition.class, "matrix-matrix addition.");
-      pgd.addClass("mult", MatrixAddition.class, "matrix-matrix multiplication.");
+      pgd.addClass("mult", MatrixMultiplication.class, "matrix-matrix multiplication.");
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();
