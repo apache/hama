@@ -151,4 +151,8 @@ public class DenseVector extends AbstractVector implements Vector {
 
     return res;
   }
+
+  public void clear() {
+    this.entries = null;
+  }
 }

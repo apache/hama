@@ -41,7 +41,8 @@ public class SIMDMultiplyMap extends RowCyclicMap<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(SIMDMultiplyMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.multiplication.matrix.b";
-
+  public static final DenseVector sum = new DenseVector();;
+  
   public void configure(JobConf job) {
     try {
       matrix_b = new DenseMatrix(new HamaConfiguration(), job.get(MATRIX_B, ""));
@@ -66,13 +67,14 @@ public class SIMDMultiplyMap extends RowCyclicMap<IntWritable, VectorWritable> {
   public void map(IntWritable key, VectorWritable value,
       OutputCollector<IntWritable, VectorWritable> output, Reporter reporter)
       throws IOException {
+    sum.clear();
 
-    DenseVector v1 = value.getDenseVector();
-    
-    for(int i = 0; i < v1.size(); i++) {
+    for(int i = 0; i < value.size(); i++) {
       Vector v2 = matrix_b.getRow(i);
-      DenseVector sum = (DenseVector) v2.scale(v1.get(i));
-      output.collect(key, new VectorWritable(key.get(), sum));
+      DenseVector curr = (DenseVector) v2.scale(value.get(i).getValue());
+      sum.add(curr);
     }
+    
+    output.collect(key, new VectorWritable(key.get(), sum));
   }
 }

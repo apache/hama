@@ -20,13 +20,13 @@
 package org.apache.hama.algebra;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicReduce;
@@ -35,30 +35,20 @@ import org.apache.log4j.Logger;
 public class SIMDMultiplyReduce extends
     RowCyclicReduce<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(SIMDMultiplyReduce.class);
-  public static final Map<Integer, Double> buffer = new HashMap<Integer, Double>();
   
   @Override
   public void reduce(IntWritable key, Iterator<VectorWritable> values,
       OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
 
+
     VectorUpdate update = new VectorUpdate(key.get());
-    VectorWritable sum;
+    VectorWritable vector = values.next();
     
-    // Summation
-    while (values.hasNext()) {
-      sum = values.next();
-      for (int i = 0; i < sum.size(); i++) {
-        if (buffer.containsKey(i)) {
-          buffer.put(i, sum.get(i).getValue() + buffer.get(i));
-        } else {
-          buffer.put(i, sum.get(i).getValue());
-        }
-      }
+    for (Map.Entry<Integer, VectorEntry> f : vector.entrySet()) {
+      update.put(f.getKey(), f.getValue().getValue());
     }
-    
-    update.putAll(buffer);
-    buffer.clear();
+
     output.collect(key, update);
   }
 

@@ -144,4 +144,12 @@ public class TestDenseVector extends TestCase {
     v1.add(0, norm1);
     assertEquals(v1.get(0), old + norm1);
   }
+  
+  /**
+   * Clear test
+   */
+  public void testClear() {
+    ((DenseVector) v1).clear();
+    assertEquals(v1.size(), 0);
+  }
 }

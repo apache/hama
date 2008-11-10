@@ -31,6 +31,8 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-103: Reduce an rows of intermediate 
+                to improve the multiplication performance (edwardyoon)
     HAMA-88: DenseMatrix.close should not delete the table 
                that are aliased in HamaAdmin. (samuel via edwardyoon)
     HAMA-89: Exception Handling of a ParseException (samuel via edwardyoon)

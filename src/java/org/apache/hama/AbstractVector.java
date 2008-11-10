@@ -54,7 +54,7 @@ public abstract class AbstractVector {
    * @return a size of vector
    */
   public int size() {
-    return this.entries.size();
+    return (this.entries != null) ? this.entries.size() : 0;
   }
   
   public VectorMapWritable<Integer, VectorEntry> getEntries() {
