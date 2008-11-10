@@ -27,15 +27,14 @@
   <body>
     <section>
       <title> Introduction </title>
-      <table class="NonBorderTable">
-      <tr><td><strong>Hama</strong> (means a hippopotamus in Korean) is a parallel 
+      <p><strong>Hama</strong> (means a hippopotamus in Korean) is a parallel 
       matrix computation package currently in incubation with Apache. It is a library 
       of matrix operations for large-scale processing and development environments 
       as well as a  Map/Reduce framework for a large-scale numerical analysis and data 
       mining, that need the intensive computation power of matrix inversion, e.g., linear 
       regression, PCA, SVM and etc. It will be useful for many scientific applications, 
       e.g., physics computations, linear algebra, computational fluid dynamics, 
-      statistics, graphic rendering and many more.<br /><br />
+      statistics, graphic rendering and many more.</p>
       
       <ul>
         <li>Scientific simulation and modeling
@@ -62,7 +61,6 @@
         </li>
       </ul>
       
-      </td></tr></table>
     </section>
     <section>
     <title>Recent News</title>

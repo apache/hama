@@ -50,6 +50,12 @@ See http://forrest.apache.org/docs/linking.html for more info.
     <irc        label="IRC channel"    href="irc_channel.html" />
   </docs>
 
+  <docs label="Related Projects">
+    <hadoop label="Hadoop"     href="http://hadoop.apache.org/core/" />
+    <hbase  label="Hbase"      href="http://hadoop.apache.org/hbase/" />
+    <mahout label="Mahout"     href="http://lucene.apache.org/mahout/" />
+  </docs>
+  
   <external-refs>
     <site      href="http://incubator.apache.org/hama/"/>
     <lists     href="http://incubator.apache.org/hama/mailing_lists.html"/>
