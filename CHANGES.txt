@@ -3,6 +3,7 @@ Hama Change Log
 Trunk (unreleased changes)
 
   NEW FEATURES
+  
     HAMA-104: Add getNumMap/reduceTasks to HamaConfiguration (edwardyoon)
     HAMA-92: Add subMatrix() to Matrix (edwardyoon)
     HAMA-83: Add a writable comparable for BlockID (edwardyoon) 
