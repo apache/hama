@@ -57,6 +57,14 @@ public class VectorWritable implements Writable, Map<Integer, VectorEntry> {
     return new DenseVector(entries);
   }
 
+  public Double get(Integer column) {
+    return this.entries.get(column).getValue();
+  }
+
+  public int size() {
+    return this.entries.size();
+  }
+  
   public VectorEntry put(Integer key, VectorEntry value) {
     throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
@@ -121,17 +129,6 @@ public class VectorWritable implements Writable, Map<Integer, VectorEntry> {
 
   public void putAll(Map<? extends Integer, ? extends VectorEntry> m) {
     throw new UnsupportedOperationException("Not implemented yet");
-  }
-
-  /**
-   * Get the VectorEntry that corresponds to column
-   */
-  public VectorEntry get(Integer column) {
-    return this.entries.get(column);
-  }
-
-  public int size() {
-    return this.entries.size();
   }
 
   /**

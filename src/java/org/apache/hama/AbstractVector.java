@@ -32,7 +32,12 @@ public abstract class AbstractVector {
   }
   
   public void set(int index, double value) {
-    entries.put(index, new VectorEntry(value));
+    // If entries are null, create new object 
+    if(this.entries == null) {
+      this.entries = new VectorMapWritable<Integer, VectorEntry>();
+    }
+    
+    this.entries.put(index, new VectorEntry(value));
   }
   
   public void add(int index, double value) {

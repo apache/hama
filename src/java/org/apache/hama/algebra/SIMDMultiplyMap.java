@@ -29,7 +29,6 @@ import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
-import org.apache.hama.Vector;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicMap;
 import org.apache.log4j.Logger;
@@ -70,9 +69,7 @@ public class SIMDMultiplyMap extends RowCyclicMap<IntWritable, VectorWritable> {
     sum.clear();
 
     for(int i = 0; i < value.size(); i++) {
-      Vector v2 = matrix_b.getRow(i);
-      DenseVector curr = (DenseVector) v2.scale(value.get(i).getValue());
-      sum.add(curr);
+      sum.add(matrix_b.getRow(i).scale(value.get(i)));
     }
     
     output.collect(key, new VectorWritable(key.get(), sum));

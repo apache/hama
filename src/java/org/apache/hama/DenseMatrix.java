@@ -204,8 +204,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public static Matrix random(HamaConfiguration conf, int m, int n)
       throws IOException {
     Matrix rand = new DenseMatrix(conf);
+    DenseVector vector = new DenseVector();
+    LOG.info("Create the " + m + " * " + n + " random matrix : " + rand.getPath());
+
     for (int i = 0; i < m; i++) {
-      DenseVector vector = new DenseVector();
+      vector.clear();
       for (int j = 0; j < n; j++) {
         vector.set(j, RandomVariable.rand());
       }
@@ -213,7 +216,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     }
 
     rand.setDimension(m, n);
-    LOG.info("Create the " + m + " * " + n + " random matrix : " + rand.getPath());
     return rand;
   }
 
@@ -229,7 +231,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public static Matrix identity(HamaConfiguration conf, int m, int n)
       throws IOException {
     Matrix identity = new DenseMatrix(conf);
-
+    LOG.info("Create the " + m + " * " + n + " identity matrix : " + identity.getPath());
+    
     for (int i = 0; i < m; i++) {
       DenseVector vector = new DenseVector();
       for (int j = 0; j < n; j++) {
@@ -239,7 +242,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     }
 
     identity.setDimension(m, n);
-    LOG.info("Create the " + m + " * " + n + " identity matrix : " + identity.getPath());
     return identity;
   }
 
@@ -249,9 +251,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job" + result.getPath());
 
-    jobConf.setNumMapTasks(Integer.parseInt(config.get("mapred.map.tasks")));
-    jobConf.setNumReduceTasks(Integer.parseInt(config
-        .get("mapred.reduce.tasks")));
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
     RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(), RowCyclicAdditionMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
@@ -267,15 +268,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public DenseVector getRow(int row) throws IOException {
-    VectorMapWritable<Integer, VectorEntry> values = new VectorMapWritable<Integer, VectorEntry>();
-    RowResult rowResult = table.getRow(String.valueOf(row));
-
-    for (Map.Entry<byte[], Cell> f : rowResult.entrySet()) {
-      VectorEntry entry = new VectorEntry(f.getValue());
-      values.put(Numeric.getColumnIndex(f.getKey()), entry);
-    }
-
-    return new DenseVector(values);
+    return new DenseVector(table.getRow(Numeric.intToBytes(row)));
   }
 
   public Vector getColumn(int column) throws IOException {
@@ -286,8 +279,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     VectorMapWritable<Integer, VectorEntry> trunk = new VectorMapWritable<Integer, VectorEntry>();
 
     for (RowResult row : scan) {
-      trunk.put(Numeric.bytesToInt(row.getRow()), new VectorEntry(row
-          .get(columnKey)));
+      trunk.put(Numeric.bytesToInt(row.getRow()), 
+          new VectorEntry(row.get(columnKey)));
     }
 
     return new DenseVector(trunk);
@@ -299,9 +292,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getPath());
 
-    jobConf.setNumMapTasks(Integer.parseInt(config.get("mapred.map.tasks")));
-    jobConf.setNumReduceTasks(Integer.parseInt(config
-        .get("mapred.reduce.tasks")));
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
     SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), SIMDMultiplyMap.class,
         IntWritable.class, VectorWritable.class, jobConf);
@@ -352,8 +344,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       c[i] = Numeric.getColumnIndex(j0 + i);
     }
 
-    Scanner scan = table.getScanner(c, Numeric.intToBytes(i0), Numeric
-        .intToBytes(i1 + 1));
+    Scanner scan = table.getScanner(c, Numeric.intToBytes(i0), Numeric.intToBytes(i1 + 1));
 
     int rKey = 0, cKey = 0;
     for (RowResult row : scan) {

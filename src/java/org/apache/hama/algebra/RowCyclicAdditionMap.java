@@ -29,12 +29,12 @@ import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
-import org.apache.hama.Vector;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicMap;
 import org.apache.log4j.Logger;
 
-public class RowCyclicAdditionMap extends RowCyclicMap<IntWritable, VectorWritable> {
+public class RowCyclicAdditionMap extends
+    RowCyclicMap<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(RowCyclicAdditionMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.addition.matrix.b";
@@ -64,9 +64,8 @@ public class RowCyclicAdditionMap extends RowCyclicMap<IntWritable, VectorWritab
       OutputCollector<IntWritable, VectorWritable> output, Reporter reporter)
       throws IOException {
 
-    Vector v1 = matrix_b.getRow(key.get());
-    output.collect(key, new VectorWritable(key.get(), (DenseVector) v1
-        .add(value.getDenseVector())));
+    output.collect(key, new VectorWritable(key.get(), 
+        (DenseVector) matrix_b.getRow(key.get()).add(value.getDenseVector())));
 
   }
 

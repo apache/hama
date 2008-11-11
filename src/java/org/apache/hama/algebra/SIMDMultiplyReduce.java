@@ -21,12 +21,10 @@ package org.apache.hama.algebra;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.io.VectorEntry;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicReduce;
@@ -41,13 +39,8 @@ public class SIMDMultiplyReduce extends
       OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
 
-
     VectorUpdate update = new VectorUpdate(key.get());
-    VectorWritable vector = values.next();
-    
-    for (Map.Entry<Integer, VectorEntry> f : vector.entrySet()) {
-      update.put(f.getKey(), f.getValue().getValue());
-    }
+    update.putAll(values.next().entrySet());
 
     output.collect(key, update);
   }
