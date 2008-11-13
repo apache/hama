@@ -31,9 +31,9 @@ import org.apache.hama.Constants;
 import org.apache.hama.SubMatrix;
 
 /**
- * Provides a number format conversion
+ * Provides a bytes utility
  */
-public class Numeric {
+public class BytesUtil {
   public static final int SIZEOF_DOUBLE = Double.SIZE/Byte.SIZE;
   
   /**
