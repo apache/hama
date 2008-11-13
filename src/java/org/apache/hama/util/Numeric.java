@@ -19,10 +19,16 @@
  */
 package org.apache.hama.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
+import org.apache.hama.SubMatrix;
 
 /**
  * Provides a number format conversion
@@ -91,5 +97,26 @@ public class Numeric {
    */
   public static byte[] getColumnIndex(int integer) {
     return Bytes.toBytes(Constants.COLUMN + String.valueOf(integer));
+  }
+  
+  public static byte[] subMatrixToBytes(Object obj) throws IOException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(bos);
+    oos.writeObject(obj);
+    oos.flush();
+    oos.close();
+    bos.close();
+    byte[] data = bos.toByteArray();
+    return data;
+  }
+  
+  public static SubMatrix bytesToSubMatrix(byte[] value) throws IOException,
+      ClassNotFoundException {
+    ByteArrayInputStream bos = new ByteArrayInputStream(value);
+    ObjectInputStream oos = new ObjectInputStream(bos);
+    Object obj = oos.readObject();
+    oos.close();
+    bos.close();
+    return (SubMatrix) obj;
   }
 }

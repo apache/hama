@@ -30,25 +30,28 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
 
-public class VectorEntry implements Writable, Iterable<VectorEntry> {
-  static final Logger LOG = Logger.getLogger(VectorEntry.class);
+public class DoubleEntry implements Writable, Iterable<DoubleEntry> {
+  static final Logger LOG = Logger.getLogger(DoubleEntry.class);
   protected byte[][] values;
+  
+  // We don't need this.
+  @Deprecated
   protected long[] timestamps;
   
   /** For Writable compatibility */
-  public VectorEntry() {
+  public DoubleEntry() {
     values = null;
     timestamps = null;
   }
 
-  public VectorEntry(Cell c) {
+  public DoubleEntry(Cell c) {
     this.values = new byte[1][];
     this.values[0] = c.getValue();
     this.timestamps = new long[1];
     this.timestamps[0] = c.getTimestamp();
   }
 
-  public VectorEntry(double value) {
+  public DoubleEntry(double value) {
     this.values = new byte[1][];
     this.values[0] = Numeric.doubleToBytes(value);
     this.timestamps = new long[1];
@@ -57,7 +60,7 @@ public class VectorEntry implements Writable, Iterable<VectorEntry> {
   
   /** @return the current VectorEntry's value */
   public double getValue() {
-    return Numeric.bytesToDouble(values[0]);
+    return Numeric.bytesToDouble(this.values[0]);
   }
 
   /** @return the current VectorEntry's timestamp */
@@ -71,33 +74,11 @@ public class VectorEntry implements Writable, Iterable<VectorEntry> {
    * @param value
    * @param timestamp
    */
-  public VectorEntry(byte[] value, long timestamp) {
+  public DoubleEntry(byte[] value, long timestamp) {
     this.values = new byte[1][];
     this.values[0] = value;
     this.timestamps = new long[1];
     this.timestamps[0] = timestamp;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public String toString() {
-    if (this.values.length == 1) {
-      return "timestamp=" + this.timestamps[0] + ", value="
-          + Bytes.toString(this.values[0]);
-    }
-    StringBuilder s = new StringBuilder("{ ");
-    for (int i = 0; i < this.values.length; i++) {
-      if (i > 0) {
-        s.append(", ");
-      }
-      s.append("[timestamp=");
-      s.append(timestamps[i]);
-      s.append(", value=");
-      s.append(Bytes.toString(values[i]));
-      s.append("]");
-    }
-    s.append(" }");
-    return s.toString();
   }
 
   //
@@ -133,11 +114,11 @@ public class VectorEntry implements Writable, Iterable<VectorEntry> {
   //
 
   /** {@inheritDoc} */
-  public Iterator<VectorEntry> iterator() {
+  public Iterator<DoubleEntry> iterator() {
     return new VectorEntryIterator();
   }
 
-  private class VectorEntryIterator implements Iterator<VectorEntry> {
+  private class VectorEntryIterator implements Iterator<DoubleEntry> {
     private int currentValue = -1;
 
     VectorEntryIterator() {
@@ -149,9 +130,9 @@ public class VectorEntry implements Writable, Iterable<VectorEntry> {
     }
 
     /** {@inheritDoc} */
-    public VectorEntry next() {
+    public DoubleEntry next() {
       currentValue += 1;
-      return new VectorEntry(values[currentValue], timestamps[currentValue]);
+      return new DoubleEntry(values[currentValue], timestamps[currentValue]);
     }
 
     /** {@inheritDoc} */

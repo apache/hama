@@ -34,7 +34,7 @@ import org.apache.hama.algebra.RowCyclicAdditionMap;
 import org.apache.hama.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.algebra.SIMDMultiplyMap;
 import org.apache.hama.algebra.SIMDMultiplyReduce;
-import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
@@ -276,11 +276,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     byte[][] c = { columnKey };
     Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
 
-    VectorMapWritable<Integer, VectorEntry> trunk = new VectorMapWritable<Integer, VectorEntry>();
+    VectorMapWritable<Integer, DoubleEntry> trunk = new VectorMapWritable<Integer, DoubleEntry>();
 
     for (RowResult row : scan) {
       trunk.put(Numeric.bytesToInt(row.getRow()), 
-          new VectorEntry(row.get(columnKey)));
+          new DoubleEntry(row.get(columnKey)));
     }
 
     return new DenseVector(trunk);

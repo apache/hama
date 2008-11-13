@@ -35,16 +35,16 @@ import org.apache.hama.DenseVector;
 import org.apache.hama.Vector;
 import org.apache.hama.util.Numeric;
 
-public class VectorWritable implements Writable, Map<Integer, VectorEntry> {
+public class VectorWritable implements Writable, Map<Integer, DoubleEntry> {
 
   public Integer row;
-  public VectorMapWritable<Integer, VectorEntry> entries;
+  public VectorMapWritable<Integer, DoubleEntry> entries;
 
   public VectorWritable() {
-    this(new VectorMapWritable<Integer, VectorEntry>());
+    this(new VectorMapWritable<Integer, DoubleEntry>());
   }
 
-  public VectorWritable(VectorMapWritable<Integer, VectorEntry> entries) {
+  public VectorWritable(VectorMapWritable<Integer, DoubleEntry> entries) {
     this.entries = entries;
   }
 
@@ -65,15 +65,15 @@ public class VectorWritable implements Writable, Map<Integer, VectorEntry> {
     return this.entries.size();
   }
   
-  public VectorEntry put(Integer key, VectorEntry value) {
+  public DoubleEntry put(Integer key, DoubleEntry value) {
     throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
 
-  public VectorEntry get(Object key) {
+  public DoubleEntry get(Object key) {
     return this.entries.get(key);
   }
 
-  public VectorEntry remove(Object key) {
+  public DoubleEntry remove(Object key) {
     throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
 
@@ -101,14 +101,14 @@ public class VectorWritable implements Writable, Map<Integer, VectorEntry> {
     return result;
   }
 
-  public Set<Map.Entry<Integer, VectorEntry>> entrySet() {
+  public Set<Map.Entry<Integer, DoubleEntry>> entrySet() {
     return Collections.unmodifiableSet(this.entries.entrySet());
   }
 
-  public Collection<VectorEntry> values() {
-    ArrayList<VectorEntry> result = new ArrayList<VectorEntry>();
+  public Collection<DoubleEntry> values() {
+    ArrayList<DoubleEntry> result = new ArrayList<DoubleEntry>();
     for (Writable w : entries.values()) {
-      result.add((VectorEntry) w);
+      result.add((DoubleEntry) w);
     }
     return result;
   }
@@ -127,7 +127,7 @@ public class VectorWritable implements Writable, Map<Integer, VectorEntry> {
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
-  public void putAll(Map<? extends Integer, ? extends VectorEntry> m) {
+  public void putAll(Map<? extends Integer, ? extends DoubleEntry> m) {
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
@@ -136,17 +136,17 @@ public class VectorWritable implements Writable, Map<Integer, VectorEntry> {
    * The inner class for an entry of row.
    * 
    */
-  public static class Entries implements Map.Entry<byte[], VectorEntry> {
+  public static class Entries implements Map.Entry<byte[], DoubleEntry> {
 
     private final byte[] column;
-    private final VectorEntry entry;
+    private final DoubleEntry entry;
 
-    Entries(byte[] column, VectorEntry entry) {
+    Entries(byte[] column, DoubleEntry entry) {
       this.column = column;
       this.entry = entry;
     }
 
-    public VectorEntry setValue(VectorEntry c) {
+    public DoubleEntry setValue(DoubleEntry c) {
       throw new UnsupportedOperationException("VectorWritable is read-only!");
     }
 
@@ -155,7 +155,7 @@ public class VectorWritable implements Writable, Map<Integer, VectorEntry> {
       return key;
     }
 
-    public VectorEntry getValue() {
+    public DoubleEntry getValue() {
       return entry;
     }
   }

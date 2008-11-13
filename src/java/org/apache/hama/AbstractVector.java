@@ -21,11 +21,11 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
-import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.VectorMapWritable;
 
 public abstract class AbstractVector {
-  public VectorMapWritable<Integer, VectorEntry> entries;
+  public VectorMapWritable<Integer, DoubleEntry> entries;
   
   public double get(int index) throws NullPointerException {
     return this.entries.get(index).getValue();
@@ -34,10 +34,10 @@ public abstract class AbstractVector {
   public void set(int index, double value) {
     // If entries are null, create new object 
     if(this.entries == null) {
-      this.entries = new VectorMapWritable<Integer, VectorEntry>();
+      this.entries = new VectorMapWritable<Integer, DoubleEntry>();
     }
     
-    this.entries.put(index, new VectorEntry(value));
+    this.entries.put(index, new DoubleEntry(value));
   }
   
   public void add(int index, double value) {
@@ -49,7 +49,7 @@ public abstract class AbstractVector {
    * 
    * @return iterator
    */
-  public Iterator<VectorEntry> iterator() {
+  public Iterator<DoubleEntry> iterator() {
     return this.entries.values().iterator();
   }
   
@@ -62,7 +62,7 @@ public abstract class AbstractVector {
     return (this.entries != null) ? this.entries.size() : 0;
   }
   
-  public VectorMapWritable<Integer, VectorEntry> getEntries() {
+  public VectorMapWritable<Integer, DoubleEntry> getEntries() {
     return this.entries;
   }
 }

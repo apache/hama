@@ -28,7 +28,7 @@ import junit.framework.TestSuite;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.DoubleEntry;
 
 public class TestDenseVector extends TestCase {
   final static Log LOG = LogFactory.getLog(TestDenseVector.class.getName());
@@ -75,7 +75,7 @@ public class TestDenseVector extends TestCase {
   public void testSubVector() {
     int start = 2;
     Vector subVector = v1.subVector(start, v1.size() - 1);
-    Iterator<VectorEntry> it = subVector.iterator();
+    Iterator<DoubleEntry> it = subVector.iterator();
 
     int i = start;
     while (it.hasNext()) {
@@ -124,18 +124,18 @@ public class TestDenseVector extends TestCase {
   public void testAdd() {
     v1.add(v2);
     int i = 0;
-    Iterator<VectorEntry> it = v1.iterator();
+    Iterator<DoubleEntry> it = v1.iterator();
     while (it.hasNext()) {
-      VectorEntry c = it.next();
+      DoubleEntry c = it.next();
       assertEquals(c.getValue(), values[0][i] + values[1][i]);
       i++;
     }
 
     v1.add(0.5, v2);
     int j = 0;
-    Iterator<VectorEntry> itt = v1.iterator();
+    Iterator<DoubleEntry> itt = v1.iterator();
     while (itt.hasNext()) {
-      VectorEntry c = itt.next();
+      DoubleEntry c = itt.next();
       assertEquals(c.getValue(), (values[0][j] + values[1][j]) + (0.5 * values[1][j]));
       j++;
     }

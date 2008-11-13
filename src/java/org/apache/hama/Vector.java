@@ -21,7 +21,7 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
-import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.DoubleEntry;
 
 /**
  * Basic vector interface.
@@ -143,5 +143,5 @@ public interface Vector {
    * 
    * @return iterator
    */
-  public Iterator<VectorEntry> iterator();
+  public Iterator<DoubleEntry> iterator();
 }

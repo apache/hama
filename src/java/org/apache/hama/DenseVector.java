@@ -25,7 +25,7 @@ import java.util.Set;
 
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
-import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.VectorMapWritable;
 import org.apache.hama.util.Numeric;
 import org.apache.log4j.Logger;
@@ -34,18 +34,18 @@ public class DenseVector extends AbstractVector implements Vector {
   static final Logger LOG = Logger.getLogger(DenseVector.class);
 
   public DenseVector() {
-    this(new VectorMapWritable<Integer, VectorEntry>());
+    this(new VectorMapWritable<Integer, DoubleEntry>());
   }
 
-  public DenseVector(VectorMapWritable<Integer, VectorEntry> m) {
+  public DenseVector(VectorMapWritable<Integer, DoubleEntry> m) {
     this.entries = m;
   }
 
   public DenseVector(RowResult row) {
-    this.entries = new VectorMapWritable<Integer, VectorEntry>();
+    this.entries = new VectorMapWritable<Integer, DoubleEntry>();
     for (Map.Entry<byte[], Cell> f : row.entrySet()) {
       this.entries.put(Numeric.getColumnIndex(f.getKey()), 
-          new VectorEntry(f.getValue()));
+          new DoubleEntry(f.getValue()));
     }
   }
 
@@ -69,7 +69,7 @@ public class DenseVector extends AbstractVector implements Vector {
     for (int i = 0; i < this.size(); i++) {
       double value = (this.get(i) + v2.get(i));
 
-      this.entries.put(i, new VectorEntry(value));
+      this.entries.put(i, new DoubleEntry(value));
     }
 
     return this;
@@ -87,8 +87,8 @@ public class DenseVector extends AbstractVector implements Vector {
   }
 
   public Vector scale(double alpha) {
-    for(Map.Entry<Integer, VectorEntry> e : this.entries.entrySet()) {
-      this.entries.put(e.getKey(), new VectorEntry(e.getValue().getValue() * alpha));
+    for(Map.Entry<Integer, DoubleEntry> e : this.entries.entrySet()) {
+      this.entries.put(e.getKey(), new DoubleEntry(e.getValue().getValue() * alpha));
     }
     return this;
   }

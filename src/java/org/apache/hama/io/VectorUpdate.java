@@ -71,8 +71,8 @@ public class VectorUpdate {
     }
   }
 
-  public void putAll(Set<Entry<Integer, VectorEntry>> entrySet) {
-    for (Map.Entry<Integer, VectorEntry> e : entrySet) {
+  public void putAll(Set<Entry<Integer, DoubleEntry>> entrySet) {
+    for (Map.Entry<Integer, DoubleEntry> e : entrySet) {
       put(e.getKey(), e.getValue().getValue());
     }
   }

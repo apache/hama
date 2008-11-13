@@ -28,7 +28,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hama.io.VectorEntry;
+import org.apache.hama.io.DoubleEntry;
 import org.apache.log4j.Logger;
 
 /**
@@ -83,7 +83,7 @@ public class TestDenseMatrix extends TestCase {
    */
   public void testGetColumn() throws IOException {
     Vector v = m1.getColumn(0);
-    Iterator<VectorEntry> it = v.iterator();
+    Iterator<DoubleEntry> it = v.iterator();
     int x = 0;
     while (it.hasNext()) {
       assertEquals(m1.get(x, 0), it.next().getValue());
@@ -169,7 +169,7 @@ public class TestDenseMatrix extends TestCase {
     }
 
     m1.setRow(SIZE + 1, v);
-    Iterator<VectorEntry> it = m1.getRow(SIZE + 1).iterator();
+    Iterator<DoubleEntry> it = m1.getRow(SIZE + 1).iterator();
 
     // We should remove the timestamp and row attribute from the vector
     int i = 0;

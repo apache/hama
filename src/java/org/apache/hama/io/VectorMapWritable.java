@@ -53,7 +53,7 @@ public class VectorMapWritable<K, V> implements Map<Integer, V>, Writable,
     addToMap(HStoreKey.class, code++);
     addToMap(ImmutableBytesWritable.class, code++);
     addToMap(Text.class, code++);
-    addToMap(VectorEntry.class, code++);
+    addToMap(DoubleEntry.class, code++);
     addToMap(byte[].class, code++);
   }
 
