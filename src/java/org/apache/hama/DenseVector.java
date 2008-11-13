@@ -27,7 +27,7 @@ import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.VectorMapWritable;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
 public class DenseVector extends AbstractVector implements Vector {
@@ -44,7 +44,7 @@ public class DenseVector extends AbstractVector implements Vector {
   public DenseVector(RowResult row) {
     this.entries = new VectorMapWritable<Integer, DoubleEntry>();
     for (Map.Entry<byte[], Cell> f : row.entrySet()) {
-      this.entries.put(Numeric.getColumnIndex(f.getKey()), 
+      this.entries.put(BytesUtil.getColumnIndex(f.getKey()), 
           new DoubleEntry(f.getValue()));
     }
   }

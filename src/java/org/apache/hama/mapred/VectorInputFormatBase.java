@@ -41,7 +41,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.Constants;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.util.BytesUtil;
 
 public abstract class VectorInputFormatBase implements
     InputFormat<IntWritable, VectorWritable> {
@@ -174,7 +174,7 @@ public abstract class VectorInputFormatBase implements
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
       if (hasMore) {
-        key.set(Numeric.bytesToInt(result.getRow()));
+        key.set(BytesUtil.bytesToInt(result.getRow()));
         Writables.copyWritable(result, value);
       }
       return hasMore;
@@ -208,12 +208,12 @@ public abstract class VectorInputFormatBase implements
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
     Cell meta = this.table.get(Constants.METADATA, Constants.METADATA_ROWS);
 
-    if (Numeric.bytesToInt(meta.getValue()) < numSplits) {
-      numSplits = Numeric.bytesToInt(meta.getValue());
+    if (BytesUtil.bytesToInt(meta.getValue()) < numSplits) {
+      numSplits = BytesUtil.bytesToInt(meta.getValue());
     }
 
     int[] startKeys = new int[numSplits];
-    int interval = Numeric.bytesToInt(meta.getValue()) / numSplits;
+    int interval = BytesUtil.bytesToInt(meta.getValue()) / numSplits;
 
     for (int i = 0; i < numSplits; i++) {
       startKeys[i] = (i * interval);
@@ -222,8 +222,8 @@ public abstract class VectorInputFormatBase implements
     InputSplit[] splits = new InputSplit[startKeys.length];
     for (int i = 0; i < startKeys.length; i++) {
       splits[i] = new TableSplit(this.table.getTableName(), 
-          Numeric.intToBytes(startKeys[i]), ((i + 1) < startKeys.length) ? 
-              Numeric.intToBytes(startKeys[i + 1]) : HConstants.EMPTY_START_ROW);
+          BytesUtil.intToBytes(startKeys[i]), ((i + 1) < startKeys.length) ? 
+              BytesUtil.intToBytes(startKeys[i + 1]) : HConstants.EMPTY_START_ROW);
     }
     return splits;
   }

@@ -33,7 +33,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.DenseVector;
 import org.apache.hama.Vector;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.util.BytesUtil;
 
 public class VectorWritable implements Writable, Map<Integer, DoubleEntry> {
 
@@ -114,12 +114,12 @@ public class VectorWritable implements Writable, Map<Integer, DoubleEntry> {
   }
 
   public void readFields(final DataInput in) throws IOException {
-    this.row = Numeric.bytesToInt(Bytes.readByteArray(in));
+    this.row = BytesUtil.bytesToInt(Bytes.readByteArray(in));
     this.entries.readFields(in);
   }
 
   public void write(final DataOutput out) throws IOException {
-    Bytes.writeByteArray(out, Numeric.intToBytes(this.row));
+    Bytes.writeByteArray(out, BytesUtil.intToBytes(this.row));
     this.entries.write(out);
   }
 

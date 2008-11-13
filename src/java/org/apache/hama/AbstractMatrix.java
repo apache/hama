@@ -30,7 +30,7 @@ import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
 /**
@@ -95,9 +95,9 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public double get(int i, int j) throws IOException {
     double result = -1;
-    Cell c = table.get(Numeric.intToBytes(i), Numeric.getColumnIndex(j));
+    Cell c = table.get(BytesUtil.intToBytes(i), BytesUtil.getColumnIndex(j));
     if (c != null) {
-      result = Numeric.bytesToDouble(c.getValue());
+      result = BytesUtil.bytesToDouble(c.getValue());
     }
     return result;
   }
@@ -106,13 +106,13 @@ public abstract class AbstractMatrix implements Matrix {
   public int getRows() throws IOException {
     Cell rows = null;
     rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
-    return Numeric.bytesToInt(rows.getValue());
+    return BytesUtil.bytesToInt(rows.getValue());
   }
 
   /** {@inheritDoc} */
   public int getColumns() throws IOException {
     Cell columns = table.get(Constants.METADATA, Constants.METADATA_COLUMNS);
-    return Numeric.bytesToInt(columns.getValue());
+    return BytesUtil.bytesToInt(columns.getValue());
   }
 
   /** {@inheritDoc} */
@@ -138,7 +138,7 @@ public abstract class AbstractMatrix implements Matrix {
 
   public String getRowAttribute(int row) throws IOException {
     Cell rows = null;
-    rows = table.get(Numeric.intToBytes(row), Bytes.toBytes(Constants.ATTRIBUTE
+    rows = table.get(BytesUtil.intToBytes(row), Bytes.toBytes(Constants.ATTRIBUTE
         + "string"));
 
     return (rows != null) ? Bytes.toString(rows.getValue()) : null;

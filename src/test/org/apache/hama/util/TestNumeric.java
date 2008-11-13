@@ -32,14 +32,14 @@ public class TestNumeric extends TestCase {
    * Integer conversion test
    */
   public void testInteger() {
-    assertEquals(Numeric.bytesToInt(Numeric.intToBytes(TEST_INT)), TEST_INT);
+    assertEquals(BytesUtil.bytesToInt(BytesUtil.intToBytes(TEST_INT)), TEST_INT);
   }
 
   /**
    * Double conversion test
    */
   public void testDouble() {
-    assertEquals(Numeric.bytesToDouble(Numeric.doubleToBytes(TEST_DOUBLE)),
+    assertEquals(BytesUtil.bytesToDouble(BytesUtil.doubleToBytes(TEST_DOUBLE)),
         TEST_DOUBLE);
   }
 
@@ -47,8 +47,8 @@ public class TestNumeric extends TestCase {
    * Get the column index from hbase.
    */
   public void testGetColumnIndex() {
-    byte[] result = Numeric.getColumnIndex(3);
+    byte[] result = BytesUtil.getColumnIndex(3);
     assertEquals(Bytes.toString(result), Constants.COLUMN
-        + Numeric.getColumnIndex(result));
+        + BytesUtil.getColumnIndex(result));
   }
 }

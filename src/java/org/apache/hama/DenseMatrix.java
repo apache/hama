@@ -40,7 +40,7 @@ import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicReduce;
 import org.apache.hama.util.JobManager;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.RandomVariable;
 
 public class DenseMatrix extends AbstractMatrix implements Matrix {
@@ -268,18 +268,18 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public DenseVector getRow(int row) throws IOException {
-    return new DenseVector(table.getRow(Numeric.intToBytes(row)));
+    return new DenseVector(table.getRow(BytesUtil.intToBytes(row)));
   }
 
   public Vector getColumn(int column) throws IOException {
-    byte[] columnKey = Numeric.getColumnIndex(column);
+    byte[] columnKey = BytesUtil.getColumnIndex(column);
     byte[][] c = { columnKey };
     Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
 
     VectorMapWritable<Integer, DoubleEntry> trunk = new VectorMapWritable<Integer, DoubleEntry>();
 
     for (RowResult row : scan) {
-      trunk.put(Numeric.bytesToInt(row.getRow()), 
+      trunk.put(BytesUtil.bytesToInt(row.getRow()), 
           new DoubleEntry(row.get(columnKey)));
     }
 
@@ -341,15 +341,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     SubMatrix result = new SubMatrix((i1-i0) + 1, columnSize);
     byte[][] c = new byte[columnSize][];
     for (int i = 0; i < columnSize; i++) {
-      c[i] = Numeric.getColumnIndex(j0 + i);
+      c[i] = BytesUtil.getColumnIndex(j0 + i);
     }
 
-    Scanner scan = table.getScanner(c, Numeric.intToBytes(i0), Numeric.intToBytes(i1 + 1));
+    Scanner scan = table.getScanner(c, BytesUtil.intToBytes(i0), BytesUtil.intToBytes(i1 + 1));
 
     int rKey = 0, cKey = 0;
     for (RowResult row : scan) {
       for (Map.Entry<byte[], Cell> e : row.entrySet()) {
-        result.set(rKey, cKey, Numeric.bytesToDouble(e.getValue().getValue()));
+        result.set(rKey, cKey, BytesUtil.bytesToDouble(e.getValue().getValue()));
         cKey++;
       }
       rKey++;

@@ -37,7 +37,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.util.BytesUtil;
 
 public class VectorMapWritable<K, V> implements Map<Integer, V>, Writable,
     Configurable {
@@ -148,7 +148,7 @@ public class VectorMapWritable<K, V> implements Map<Integer, V>, Writable,
 
     // Then write out each key/value pair
     for (Map.Entry<Integer, V> e : instance.entrySet()) {
-      Bytes.writeByteArray(out, Numeric.getColumnIndex(e.getKey()));
+      Bytes.writeByteArray(out, BytesUtil.getColumnIndex(e.getKey()));
       out.writeByte(getId(e.getValue().getClass()));
       ((Writable) e.getValue()).write(out);
     }
@@ -171,7 +171,7 @@ public void readFields(DataInput in) throws IOException {
           .readByte()), getConf());
       value.readFields(in);
       V v = (V) value;
-      this.instance.put(Numeric.getColumnIndex(key), v);
+      this.instance.put(BytesUtil.getColumnIndex(key), v);
     }
   }
 

@@ -27,7 +27,7 @@ import java.util.Iterator;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.util.Numeric;
+import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
 public class DoubleEntry implements Writable, Iterable<DoubleEntry> {
@@ -53,14 +53,14 @@ public class DoubleEntry implements Writable, Iterable<DoubleEntry> {
 
   public DoubleEntry(double value) {
     this.values = new byte[1][];
-    this.values[0] = Numeric.doubleToBytes(value);
+    this.values[0] = BytesUtil.doubleToBytes(value);
     this.timestamps = new long[1];
     this.timestamps[0] = System.currentTimeMillis();
   }
   
   /** @return the current VectorEntry's value */
   public double getValue() {
-    return Numeric.bytesToDouble(this.values[0]);
+    return BytesUtil.bytesToDouble(this.values[0]);
   }
 
   /** @return the current VectorEntry's timestamp */
