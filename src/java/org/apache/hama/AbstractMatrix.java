@@ -73,7 +73,8 @@ public abstract class AbstractMatrix implements Matrix {
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ALIASEFAMILY));
-
+      this.tableDesc.addFamily(new HColumnDescriptor(Constants.BLOCK));
+      
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
       LOG.info("Create Matrix " + matrixPath);

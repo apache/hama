@@ -40,9 +40,12 @@ public class MatrixMultiplication {
       parseArgs(args);
     }
 
-    Matrix a = DenseMatrix.random(conf, row, column);
-    Matrix b = DenseMatrix.random(conf, row, column);
+    DenseMatrix a = DenseMatrix.random(conf, row, column);
+    DenseMatrix b = DenseMatrix.random(conf, row, column);
 
+    a.blocking(conf.getNumMapTasks());
+    b.blocking(conf.getNumMapTasks());
+    
     Matrix c = a.mult(b);
 
     a.close();

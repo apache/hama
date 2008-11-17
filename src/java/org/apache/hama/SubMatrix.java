@@ -25,7 +25,8 @@ import org.apache.log4j.Logger;
  * A sub matrix is a matrix formed by selecting certain rows and columns from a
  * bigger matrix. This is a in-memory operation only.
  */
-public class SubMatrix {
+public class SubMatrix implements java.io.Serializable {
+  private static final long serialVersionUID = 1L;
   static final Logger LOG = Logger.getLogger(SubMatrix.class);
   private double[][] matrix;
 
@@ -72,6 +73,23 @@ public class SubMatrix {
   }
 
   /**
+   * c = a+b
+   * 
+   * @param b
+   * @return c
+   */
+  public SubMatrix add(SubMatrix b) {
+    double[][] C = new double[size()][size()];
+    for (int i = 0; i < size(); i++) {
+      for (int j = 0; j < size(); j++) {
+        C[i][j] += this.get(i, j) + b.get(i, j);
+      }
+    }
+
+    return new SubMatrix(C);
+  }
+
+  /**
    * c = a*b
    * 
    * @param b
@@ -90,11 +108,21 @@ public class SubMatrix {
     return new SubMatrix(C);
   }
 
+  /**
+   * TODO: SubMatrix should be able to get row, column size
+   * 
+   * @return the length
+   */
   public int size() {
     return matrix.length;
   }
 
   public void close() {
     matrix = null;
+  }
+
+  public double[][] getDoubles() {
+    double[][] result = matrix;
+    return result;
   }
 }

@@ -99,7 +99,7 @@ public class BytesUtil {
     return Bytes.toBytes(Constants.COLUMN + String.valueOf(integer));
   }
   
-  public static byte[] subMatrixToBytes(Object obj) throws IOException {
+  public static byte[] subMatrixToBytes(SubMatrix obj) throws IOException {
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     ObjectOutputStream oos = new ObjectOutputStream(bos);
     oos.writeObject(obj);
@@ -110,13 +110,27 @@ public class BytesUtil {
     return data;
   }
   
-  public static SubMatrix bytesToSubMatrix(byte[] value) throws IOException,
-      ClassNotFoundException {
+  public static SubMatrix bytesToSubMatrix(byte[] value) throws IOException {
     ByteArrayInputStream bos = new ByteArrayInputStream(value);
     ObjectInputStream oos = new ObjectInputStream(bos);
-    Object obj = oos.readObject();
+    Object obj = null;
+    try {
+      obj = oos.readObject();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
     oos.close();
     bos.close();
     return (SubMatrix) obj;
+  }
+
+  public static byte[] getBlockIndex(int integer) {
+    return Bytes.toBytes(Constants.BLOCK + String.valueOf(integer));
+  }
+
+  public static int getBlockIndex(byte[] key) {
+    String cKey = new String(key);
+    return Integer.parseInt(cKey
+        .substring(cKey.indexOf(":") + 1, cKey.length()));
   }
 }

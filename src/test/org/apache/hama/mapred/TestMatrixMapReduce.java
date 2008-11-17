@@ -37,9 +37,6 @@ import org.apache.log4j.Logger;
  */
 public class TestMatrixMapReduce extends HCluster {
   static final Logger LOG = Logger.getLogger(TestMatrixMapReduce.class);
-  String pathA;
-  String pathB;
-  String output;
   
   /** constructor */
   public TestMatrixMapReduce() {
@@ -48,28 +45,26 @@ public class TestMatrixMapReduce extends HCluster {
 
   public void testMatrixMapReduce() throws IOException {
     Matrix matrixA = new DenseMatrix(conf);
-    pathA = matrixA.getPath();
     matrixA.set(0, 0, 1);
     matrixA.set(0, 1, 0);
     matrixA.setDimension(1, 2);
 
     Matrix matrixB = new DenseMatrix(conf);
-    pathB = matrixB.getPath();
     matrixB.set(0, 0, 1);
     matrixB.set(0, 1, 1);
     matrixB.setDimension(1, 2);
     
-    miniMRJob();
+    miniMRJob(matrixA.getPath(), matrixB.getPath());
   }
 
-  private void miniMRJob() throws IOException {
+  private void miniMRJob(String string, String string2) throws IOException {
     Matrix c = new DenseMatrix(conf);
-    output = c.getPath();
+    String output = c.getPath();
     
     JobConf jobConf = new JobConf(conf, TestMatrixMapReduce.class);
     jobConf.setJobName("test MR job");
 
-    RowCyclicAdditionMap.initJob(pathA, pathB, RowCyclicAdditionMap.class, IntWritable.class,
+    RowCyclicAdditionMap.initJob(string, string2, RowCyclicAdditionMap.class, IntWritable.class,
         VectorWritable.class, jobConf);
     RowCyclicReduce.initJob(output, RowCyclicAdditionReduce.class, jobConf);
 

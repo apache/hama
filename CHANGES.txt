@@ -4,9 +4,10 @@ Trunk (unreleased changes)
 
   NEW FEATURES
   
+    HAMA-83: 2D sqaure blocking for dense matrix multiplication (edwardyoon)
     HAMA-104: Add getNumMap/reduceTasks to HamaConfiguration (edwardyoon)
     HAMA-92: Add subMatrix() to Matrix (edwardyoon)
-    HAMA-83: Add a writable comparable for BlockID (edwardyoon) 
+    HAMA-84: Add a writable comparable for BlockID (edwardyoon) 
     HAMA-81: Add subVector(int i0, int i1) to Vector (edwardyoon)
     Hama-80: Add identity(int m, int n) 
                which returns identity matrix (edwardyoon) 

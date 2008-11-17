@@ -19,6 +19,7 @@
  */
 package org.apache.hama;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import junit.extensions.TestSetup;
@@ -113,9 +114,11 @@ public class TestDenseVector extends TestCase {
 
   /**
    * Test get/set methods
+   * @throws IOException 
    */
-  public void testGetSet() {
+  public void testGetSet() throws IOException {
     assertEquals(v1.get(0), values[0][0]);
+    assertEquals(m1.getColumn(0).size(), 2);
   }
 
   /**

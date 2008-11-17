@@ -60,11 +60,10 @@ public class BlockEntry implements Writable, Iterable<BlockEntry> {
   }
 
   /**
-   * @return the current VectorEntry's value
+   * @return the current BlockEntry's value
    * @throws IOException
-   * @throws ClassNotFoundException
    */
-  public SubMatrix getValue() throws IOException, ClassNotFoundException {
+  public SubMatrix getValue() throws IOException {
     return BytesUtil.bytesToSubMatrix(this.values[0]);
   }
 

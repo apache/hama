@@ -23,23 +23,21 @@ import java.io.IOException;
 
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hama.Matrix;
 
 /**
  * A map/reduce job manager 
  */
 public class JobManager {
-  
   public static void execute(JobConf jobConf, Matrix result) throws IOException {
-    RunningJob rJob = JobClient.runJob(jobConf);
-    // TODO : When HADOOP-4043 done, we should change this.
-    long rows = rJob.getCounters().findCounter(
-        "org.apache.hadoop.mapred.Task$Counter", 8, "REDUCE_OUTPUT_RECORDS")
-        .getCounter();
+    JobClient.runJob(jobConf);
+    //long rows = rJob.getCounters().findCounter(
+      //  "org.apache.hadoop.mapred.Task$Counter", 8, "REDUCE_OUTPUT_RECORDS")
+      // .getCounter();
     // TODO : Thinking about more efficient method.
+    int rows = result.getColumn(0).size();
     int columns = result.getRow(0).size();
-    result.setDimension((int) rows, columns);
+    result.setDimension(rows, columns);
   }
   
 }

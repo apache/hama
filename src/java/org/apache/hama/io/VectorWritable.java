@@ -38,13 +38,13 @@ import org.apache.hama.util.BytesUtil;
 public class VectorWritable implements Writable, Map<Integer, DoubleEntry> {
 
   public Integer row;
-  public VectorMapWritable<Integer, DoubleEntry> entries;
+  public MapWritable<Integer, DoubleEntry> entries;
 
   public VectorWritable() {
-    this(new VectorMapWritable<Integer, DoubleEntry>());
+    this(new MapWritable<Integer, DoubleEntry>());
   }
 
-  public VectorWritable(VectorMapWritable<Integer, DoubleEntry> entries) {
+  public VectorWritable(MapWritable<Integer, DoubleEntry> entries) {
     this.entries = entries;
   }
 

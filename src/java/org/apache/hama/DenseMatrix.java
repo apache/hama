@@ -20,49 +20,52 @@
 package org.apache.hama;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
+import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hama.algebra.BlockCyclicMultiplyMap;
+import org.apache.hama.algebra.BlockCyclicMultiplyReduce;
 import org.apache.hama.algebra.RowCyclicAdditionMap;
 import org.apache.hama.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.algebra.SIMDMultiplyMap;
 import org.apache.hama.algebra.SIMDMultiplyReduce;
+import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.io.VectorMapWritable;
+import org.apache.hama.io.MapWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
+import org.apache.hama.mapred.BlockCyclicReduce;
 import org.apache.hama.mapred.RowCyclicReduce;
-import org.apache.hama.util.JobManager;
 import org.apache.hama.util.BytesUtil;
+import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
 
 public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
   static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
-  
+
   /**
-   * Construct a raw matrix.
-   * Just create a table in HBase, but didn't lay any schema ( such as
-   * dimensions: i, j ) on it.
+   * Construct a raw matrix. Just create a table in HBase, but didn't lay any
+   * schema ( such as dimensions: i, j ) on it.
    * 
    * @param conf configuration object
-   * @throws IOException 
-   *         throw the exception to let the user know what happend, if we
-   *         didn't create the matrix successfully.
+   * @throws IOException throw the exception to let the user know what happend,
+   *                 if we didn't create the matrix successfully.
    */
   public DenseMatrix(HamaConfiguration conf) throws IOException {
     setConfiguration(conf);
-    
+
     tryToCreateTable();
-    
+
     closed = false;
   }
 
@@ -71,28 +74,27 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * 
    * @param conf configuration object
    * @param matrixName the name of the matrix
-   * @param force if force is true, a new matrix will be created 
-   *              no matter 'matrixName' has aliased to an existed matrix;
-   *              otherwise, just try to load an existed matrix alised 
-   *              'matrixName'. 
-   * @throws IOException 
+   * @param force if force is true, a new matrix will be created no matter
+   *                'matrixName' has aliased to an existed matrix; otherwise,
+   *                just try to load an existed matrix alised 'matrixName'.
+   * @throws IOException
    */
-  public DenseMatrix(HamaConfiguration conf, String matrixName, 
-      boolean force) throws IOException {
+  public DenseMatrix(HamaConfiguration conf, String matrixName, boolean force)
+      throws IOException {
     setConfiguration(conf);
     // if force is set to true:
-    // 1) if this matrixName has aliase to other matrix, we will remove 
-    //    the old aliase, create a new matrix table, and aliase to it.
+    // 1) if this matrixName has aliase to other matrix, we will remove
+    // the old aliase, create a new matrix table, and aliase to it.
     // 2) if this matrixName has no aliase to other matrix, we will create
-    //    a new matrix table, and alise to it.
+    // a new matrix table, and alise to it.
     //
     // if force is set to false, we just try to load an existed matrix alised
     // as 'matrixname'.
-    
+
     boolean existed = hamaAdmin.matrixExists(matrixName);
-    
+
     if (force) {
-      if(existed) {
+      if (existed) {
         // remove the old aliase
         hamaAdmin.delete(matrixName);
       }
@@ -101,7 +103,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       // save the new aliase relationship
       save(matrixName);
     } else {
-      if(existed) {
+      if (existed) {
         // try to get the actual path of the table
         matrixPath = hamaAdmin.getPath(matrixName);
         // load the matrix
@@ -109,33 +111,34 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         // increment the reference
         incrementAndGetRef();
       } else {
-        throw new IOException("Try to load non-existed matrix alised as " + matrixName);
+        throw new IOException("Try to load non-existed matrix alised as "
+            + matrixName);
       }
     }
 
     closed = false;
   }
-  
+
   /**
-   * Load a matrix from an existed matrix table whose tablename is 'matrixpath'
-   * 
-   * !! It is an internal used for map/reduce.
+   * Load a matrix from an existed matrix table whose tablename is 'matrixpath' !!
+   * It is an internal used for map/reduce.
    * 
    * @param conf configuration object
-   * @param matrixpath 
-   * @throws IOException 
-   * @throws IOException 
+   * @param matrixpath
+   * @throws IOException
+   * @throws IOException
    */
-  public DenseMatrix(HamaConfiguration conf, String matrixpath) throws IOException {
+  public DenseMatrix(HamaConfiguration conf, String matrixpath)
+      throws IOException {
     setConfiguration(conf);
     matrixPath = matrixpath;
     // load the matrix
     table = new HTable(conf, matrixPath);
     // TODO: now we don't increment the reference of the table
-    //       for it's an internal use for map/reduce.
-    //       if we want to increment the reference of the table,
-    //       we don't know where to call Matrix.close in Add & Mul map/reduce
-    //       process to decrement the reference. It seems difficulty.
+    // for it's an internal use for map/reduce.
+    // if we want to increment the reference of the table,
+    // we don't know where to call Matrix.close in Add & Mul map/reduce
+    // process to decrement the reference. It seems difficulty.
   }
 
   /**
@@ -145,17 +148,17 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @param m the number of rows.
    * @param n the number of columns.
    * @param s fill the matrix with this scalar value.
-   * @throws IOException 
-   *         throw the exception to let the user know what happend, if we
-   *         didn't create the matrix successfully.
+   * @throws IOException throw the exception to let the user know what happend,
+   *                 if we didn't create the matrix successfully.
    */
-  public DenseMatrix(HamaConfiguration conf, int m, int n, double s) throws IOException {
+  public DenseMatrix(HamaConfiguration conf, int m, int n, double s)
+      throws IOException {
     setConfiguration(conf);
-    
+
     tryToCreateTable();
 
     closed = false;
-    
+
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < n; j++) {
         set(i, j, s);
@@ -164,29 +167,31 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     setDimension(m, n);
   }
-  
-  /** try to create a new matrix with a new random name.
-   *  try times will be (Integer.MAX_VALUE - 4) * DEFAULT_TRY_TIMES;
+
+  /**
+   * try to create a new matrix with a new random name. try times will be
+   * (Integer.MAX_VALUE - 4) * DEFAULT_TRY_TIMES;
+   * 
    * @throws IOException
    */
   private void tryToCreateTable() throws IOException {
     int tryTimes = Constants.DEFAULT_TRY_TIMES;
     do {
       matrixPath = TABLE_PREFIX + RandomVariable.randMatrixPath(tryPathLength);
-      
+
       if (!admin.tableExists(matrixPath)) { // no table 'matrixPath' in hbase.
         tableDesc = new HTableDescriptor(matrixPath);
         create();
         return;
       }
-      
+
       tryTimes--;
-      if(tryTimes <= 0) { // this loop has exhausted DEFAULT_TRY_TIMES.
+      if (tryTimes <= 0) { // this loop has exhausted DEFAULT_TRY_TIMES.
         tryPathLength++;
         tryTimes = Constants.DEFAULT_TRY_TIMES;
       }
-      
-    } while(tryPathLength <= Constants.DEFAULT_MAXPATHLEN);
+
+    } while (tryPathLength <= Constants.DEFAULT_MAXPATHLEN);
     // exhaustes the try times.
     // throw out an IOException to let the user know what happened.
     throw new IOException("Try too many times to create a table in hbase.");
@@ -201,11 +206,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @return an m-by-n matrix with uniformly distributed random elements.
    * @throws IOException
    */
-  public static Matrix random(HamaConfiguration conf, int m, int n)
+  public static DenseMatrix random(HamaConfiguration conf, int m, int n)
       throws IOException {
-    Matrix rand = new DenseMatrix(conf);
+    DenseMatrix rand = new DenseMatrix(conf);
     DenseVector vector = new DenseVector();
-    LOG.info("Create the " + m + " * " + n + " random matrix : " + rand.getPath());
+    LOG.info("Create the " + m + " * " + n + " random matrix : "
+        + rand.getPath());
 
     for (int i = 0; i < m; i++) {
       vector.clear();
@@ -231,8 +237,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public static Matrix identity(HamaConfiguration conf, int m, int n)
       throws IOException {
     Matrix identity = new DenseMatrix(conf);
-    LOG.info("Create the " + m + " * " + n + " identity matrix : " + identity.getPath());
-    
+    LOG.info("Create the " + m + " * " + n + " identity matrix : "
+        + identity.getPath());
+
     for (int i = 0; i < m; i++) {
       DenseVector vector = new DenseVector();
       for (int j = 0; j < n; j++) {
@@ -254,9 +261,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(), RowCyclicAdditionMap.class,
-        IntWritable.class, VectorWritable.class, jobConf);
-    RowCyclicReduce.initJob(result.getPath(), RowCyclicAdditionReduce.class, jobConf);
+    RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(),
+        RowCyclicAdditionMap.class, IntWritable.class, VectorWritable.class,
+        jobConf);
+    RowCyclicReduce.initJob(result.getPath(), RowCyclicAdditionReduce.class,
+        jobConf);
 
     JobManager.execute(jobConf, result);
     return result;
@@ -276,11 +285,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     byte[][] c = { columnKey };
     Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
 
-    VectorMapWritable<Integer, DoubleEntry> trunk = new VectorMapWritable<Integer, DoubleEntry>();
+    MapWritable<Integer, DoubleEntry> trunk = new MapWritable<Integer, DoubleEntry>();
 
     for (RowResult row : scan) {
-      trunk.put(BytesUtil.bytesToInt(row.getRow()), 
-          new DoubleEntry(row.get(columnKey)));
+      trunk.put(BytesUtil.bytesToInt(row.getRow()), new DoubleEntry(row
+          .get(columnKey)));
     }
 
     return new DenseVector(trunk);
@@ -295,9 +304,20 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), SIMDMultiplyMap.class,
-        IntWritable.class, VectorWritable.class, jobConf);
-    RowCyclicReduce.initJob(result.getPath(), SIMDMultiplyReduce.class, jobConf);
+    if (this.isBlocked() && ((DenseMatrix) B).isBlocked()) {
+      BlockCyclicMultiplyMap.initJob(this.getPath(), B.getPath(),
+          BlockCyclicMultiplyMap.class, IntWritable.class, BlockWritable.class,
+          jobConf);
+      BlockCyclicReduce.initJob(result.getPath(),
+          BlockCyclicMultiplyReduce.class, jobConf);
+    } else {
+      SIMDMultiplyMap.initJob(this.getPath(), B.getPath(),
+          SIMDMultiplyMap.class, IntWritable.class, VectorWritable.class,
+          jobConf);
+      RowCyclicReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
+          jobConf);
+    }
+
     JobManager.execute(jobConf, result);
     return result;
   }
@@ -336,26 +356,123 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return this.getClass().getSimpleName();
   }
 
+  // =========================================
+
   public SubMatrix subMatrix(int i0, int i1, int j0, int j1) throws IOException {
     int columnSize = (j1 - j0) + 1;
-    SubMatrix result = new SubMatrix((i1-i0) + 1, columnSize);
-    byte[][] c = new byte[columnSize][];
-    for (int i = 0; i < columnSize; i++) {
-      c[i] = BytesUtil.getColumnIndex(j0 + i);
-    }
+    SubMatrix result = new SubMatrix((i1 - i0) + 1, columnSize);
 
-    Scanner scan = table.getScanner(c, BytesUtil.intToBytes(i0), BytesUtil.intToBytes(i1 + 1));
-
-    int rKey = 0, cKey = 0;
-    for (RowResult row : scan) {
-      for (Map.Entry<byte[], Cell> e : row.entrySet()) {
-        result.set(rKey, cKey, BytesUtil.bytesToDouble(e.getValue().getValue()));
-        cKey++;
+    for (int i = i0, ii = 0; i <= i1; i++, ii++) {
+      for (int j = j0, jj = 0; j <= j1; j++, jj++) {
+        Cell c = table
+            .get(BytesUtil.intToBytes(i), BytesUtil.getColumnIndex(j));
+        result.set(ii, jj, BytesUtil.bytesToDouble(c.getValue()));
       }
-      rKey++;
-      cKey = 0;
     }
 
     return result;
+  }
+
+  /**
+   * The type of the Matrix to be blocked, must be dense.
+   * 
+   * TODO: it should be work on map/reduce
+   */
+  public void blocking(int blockNum) throws IOException {
+    setBlockPosition(blockNum);
+    setBlockSize(blockNum);
+
+    String[] columns = new String[] { Constants.BLOCK_STARTROW,
+        Constants.BLOCK_ENDROW, Constants.BLOCK_STARTCOLUMN,
+        Constants.BLOCK_ENDCOLUMN };
+    Scanner scan = table.getScanner(columns);
+
+    for (RowResult row : scan) {
+      String[] key = Bytes.toString(row.getRow()).split("[,]");
+      int blockR = Integer.parseInt(key[0]);
+      int blockC = Integer.parseInt(key[1]);
+      setBlock(blockR, blockC, blockMatrix(blockR, blockC));
+    }
+  }
+
+  public boolean isBlocked() throws IOException {
+    return (table.get(Constants.METADATA, Constants.BLOCK_SIZE) == null) ? false
+        : true;
+  }
+
+  public SubMatrix getBlock(int i, int j) throws IOException {
+    return BytesUtil.bytesToSubMatrix(table.get(String.valueOf(i),
+        Constants.BLOCK + j).getValue());
+  }
+
+  /**
+   * @return the size of block
+   * @throws IOException
+   */
+  public int getBlockSize() throws IOException {
+    return (isBlocked()) ? BytesUtil.bytesToInt(table.get(Constants.METADATA,
+        Constants.BLOCK_SIZE).getValue()) : -1;
+  }
+
+  protected void setBlockSize(int blockNum) throws IOException {
+    BatchUpdate update = new BatchUpdate(Constants.METADATA);
+    update.put(Constants.BLOCK_SIZE, BytesUtil.intToBytes(blockNum));
+    table.commit(update);
+  }
+
+  protected void setBlock(int i, int j, SubMatrix matrix) throws IOException {
+    BatchUpdate update = new BatchUpdate(String.valueOf(i));
+    update.put(Constants.BLOCK + j, BytesUtil.subMatrixToBytes(matrix));
+    table.commit(update);
+  }
+
+  protected void setBlockPosition(int blockNum) throws IOException {
+    int block_row_size = this.getRows() / blockNum;
+    int block_column_size = this.getColumns() / blockNum;
+
+    for (int i = 0; i < blockNum; i++) {
+      for (int j = 0; j < blockNum; j++) {
+        int startRow = i * block_row_size;
+        int endRow = (startRow + block_row_size) - 1;
+        int startColumn = j * block_column_size;
+        int endColumn = (startColumn + block_column_size) - 1;
+
+        BatchUpdate update = new BatchUpdate(getBlockKey(i, j));
+        update.put(Constants.BLOCK_STARTROW, BytesUtil.intToBytes(startRow));
+        update.put(Constants.BLOCK_ENDROW, BytesUtil.intToBytes(endRow));
+        update.put(Constants.BLOCK_STARTCOLUMN, BytesUtil
+            .intToBytes(startColumn));
+        update.put(Constants.BLOCK_ENDCOLUMN, BytesUtil.intToBytes(endColumn));
+        table.commit(update);
+      }
+    }
+  }
+
+  protected int[] getBlockPosition(int i, int j) throws IOException {
+    int[] result = new int[4];
+    result[0] = BytesUtil.bytesToInt(table.get(getBlockKey(i, j),
+        Constants.BLOCK_STARTROW).getValue());
+    result[1] = BytesUtil.bytesToInt(table.get(getBlockKey(i, j),
+        Constants.BLOCK_ENDROW).getValue());
+    result[2] = BytesUtil.bytesToInt(table.get(getBlockKey(i, j),
+        Constants.BLOCK_STARTCOLUMN).getValue());
+    result[3] = BytesUtil.bytesToInt(table.get(getBlockKey(i, j),
+        Constants.BLOCK_ENDCOLUMN).getValue());
+    return result;
+  }
+
+  protected String getBlockKey(int i, int j) {
+    return i + "," + j;
+  }
+
+  /**
+   * @param i
+   * @param j
+   * @return the sub matrix
+   * @throws IOException
+   */
+  protected SubMatrix blockMatrix(int i, int j) throws IOException {
+    int[] pos = getBlockPosition(i, j);
+    return subMatrix(pos[0], pos[1], pos[2], pos[3]);
   }
 }

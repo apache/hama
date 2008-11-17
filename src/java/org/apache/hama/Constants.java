@@ -86,4 +86,22 @@ public class Constants {
   
   /** default try times to generate a suitable tablename */
   public static final int DEFAULT_TRY_TIMES = 10000000;
+  
+  /** start row of block */ 
+  public static final String BLOCK_STARTROW = "attribute:startRow";
+  
+  /** end row of block */
+  public static final String BLOCK_ENDROW = "attribute:endRow";
+  
+  /** start column of block */
+  public static final String BLOCK_STARTCOLUMN = "attribute:startColumn";
+  
+  /** end column of block */
+  public static final String BLOCK_ENDCOLUMN = "attribute:endColumn";
+
+  /** block dimension */
+  public static final String BLOCK = "block:";
+
+  /** block size */
+  public static final String BLOCK_SIZE = "attribute:blockSize";
 }

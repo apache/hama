@@ -44,13 +44,13 @@ public class TestDenseMatrix extends TestCase {
   private static HamaConfiguration conf;
   private static HBaseAdmin admin;
   private static HamaAdmin hamaAdmin;
-  
+
   public static Test suite() {
     TestSetup setup = new TestSetup(new TestSuite(TestDenseMatrix.class)) {
       protected void setUp() throws Exception {
         HCluster hCluster = new HCluster();
         hCluster.setUp();
-        
+
         conf = hCluster.getConf();
         admin = new HBaseAdmin(conf);
         hamaAdmin = new HamaAdminImpl(conf, admin);
@@ -75,6 +75,27 @@ public class TestDenseMatrix extends TestCase {
     m2.close();
   }
 
+  public void testBlocking() throws IOException, ClassNotFoundException {
+    assertEquals(((DenseMatrix) m1).isBlocked(), false);
+    ((DenseMatrix) m1).blocking(2);
+    assertEquals(((DenseMatrix) m1).isBlocked(), true);
+    int[] pos = ((DenseMatrix) m1).getBlockPosition(1, 0);
+    double[][] a = ((DenseMatrix) m1).blockMatrix(1, 0).getDoubles();
+    LOG.info(pos[0]+", "+pos[1]+", "+pos[2]+", "+pos[3]);
+    double[][] b = ((DenseMatrix) m1).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubles();
+    double[][] c = ((DenseMatrix) m1).getBlock(1, 0).getDoubles();
+    assertEquals(((DenseMatrix) m1).getBlockSize(), 2);
+    assertEquals(c.length, 5);
+    
+    for (int i = 0; i < a.length; i++) {
+      for (int j = 0; j < a.length; j++) {
+        assertEquals(a[i][j], b[i][j]);
+        assertEquals(a[i][j], c[i][j]);
+        assertEquals(b[i][j], c[i][j]);
+      }
+    }
+  }
+
   /**
    * Column vector test.
    * 
@@ -90,7 +111,7 @@ public class TestDenseMatrix extends TestCase {
       x++;
     }
   }
-
+  
   public void testGetSetAttribute() throws IOException {
     m1.setRowAttribute(0, "row1");
     assertEquals(m1.getRowAttribute(0), "row1");
@@ -108,10 +129,10 @@ public class TestDenseMatrix extends TestCase {
         assertEquals(a.get(i, j), m1.get(i + 2, j + 2));
       }
     }
-    
+
     SubMatrix b = m2.subMatrix(0, 2, 0, 2);
     SubMatrix c = a.mult(b);
-    
+
     double[][] C = new double[3][3];
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
@@ -120,7 +141,7 @@ public class TestDenseMatrix extends TestCase {
         }
       }
     }
-    
+
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
         assertEquals(C[i][j], c.get(i, j));
@@ -181,7 +202,7 @@ public class TestDenseMatrix extends TestCase {
 
   public void testLoadSave() throws IOException {
     String path1 = m1.getPath();
-    // save m1 to aliase1 
+    // save m1 to aliase1
     m1.save(aliase1);
     // load matrix m1 using aliase1
     DenseMatrix loadTest = new DenseMatrix(conf, aliase1, false);
@@ -191,11 +212,11 @@ public class TestDenseMatrix extends TestCase {
         assertEquals(m1.get(i, j), loadTest.get(i, j));
       }
     }
-    
+
     assertEquals(path1, loadTest.getPath());
     // close loadTest, it just disconnect to the table but didn't delete it.
     loadTest.close();
-    
+
     // try to close m1 & load matrix m1 using aliase1 again.
     m1.close();
     DenseMatrix loadTest2 = new DenseMatrix(conf, aliase1, false);
@@ -209,23 +230,23 @@ public class TestDenseMatrix extends TestCase {
     // it will do the gc!
     loadTest2.close();
     assertEquals(false, admin.tableExists(path1));
-    
+
     // if we try to load non-existed matrix using aliase name, it should fail.
     DenseMatrix loadTest3 = null;
     try {
       loadTest3 = new DenseMatrix(conf, aliase1, false);
       fail("Try to load a non-existed matrix should fail!");
     } catch (IOException e) {
-      
+
     } finally {
-      if(loadTest3!=null)
+      if (loadTest3 != null)
         loadTest3.close();
     }
   }
-  
+
   public void testForceCreate() throws IOException {
     String path2 = m2.getPath();
-    // save m2 to aliase2 
+    // save m2 to aliase2
     m2.save(aliase2);
     // load matrix m2 using aliase2
     DenseMatrix loadTest = new DenseMatrix(conf, aliase2, false);
@@ -235,16 +256,16 @@ public class TestDenseMatrix extends TestCase {
         assertEquals(m2.get(i, j), loadTest.get(i, j));
       }
     }
-    
+
     assertEquals(path2, loadTest.getPath());
-    
+
     // force to create matrix loadTest2 using aliasename 'aliase2'
     DenseMatrix loadTest2 = new DenseMatrix(conf, aliase2, true);
     String loadPath2 = loadTest2.getPath();
     assertFalse(path2.equals(loadPath2));
     assertEquals(loadPath2, hamaAdmin.getPath(aliase2));
     assertFalse(path2.equals(hamaAdmin.getPath(aliase2)));
-    
+
     // try to close m2 & loadTest, it table will be deleted finally
     m2.close();
     assertEquals(true, admin.tableExists(path2));
@@ -280,8 +301,8 @@ public class TestDenseMatrix extends TestCase {
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
-        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), String
-            .valueOf(C[i][j]).substring(0, 14));
+        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), 
+            String.valueOf(C[i][j]).substring(0, 14));
       }
     }
   }
