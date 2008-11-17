@@ -43,9 +43,11 @@ public class MatrixMultiplication {
     DenseMatrix a = DenseMatrix.random(conf, row, column);
     DenseMatrix b = DenseMatrix.random(conf, row, column);
 
-    a.blocking(conf.getNumMapTasks());
-    b.blocking(conf.getNumMapTasks());
-    
+    if (!a.isBlocked())
+      a.blocking(conf.getNumMapTasks());
+    if (!b.isBlocked())
+      b.blocking(conf.getNumMapTasks());
+
     Matrix c = a.mult(b);
 
     a.close();
