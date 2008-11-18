@@ -62,13 +62,12 @@ public class BlockCyclicMultiplyReduce extends
       int column = e.getKey();
       SubMatrix mat = e.getValue();
 
-      int startRow = row * mat.size();
-      int startColumn = column * mat.size();
+      int startRow = row * mat.getRows();
+      int startColumn = column * mat.getColumns();
 
-      // TODO: sub matrix can be not a regular sqaure
-      for (int i = 0; i < mat.size(); i++) {
+      for (int i = 0; i < mat.getRows(); i++) {
         VectorUpdate update = new VectorUpdate(i + startRow);
-        for (int j = 0; j < mat.size(); j++) {
+        for (int j = 0; j < mat.getColumns(); j++) {
           update.put(j + startColumn, mat.get(i, j));
         }
         output.collect(key, update);

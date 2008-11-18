@@ -37,7 +37,7 @@ public class SubMatrix implements java.io.Serializable {
    * @param j the size of columns
    */
   public SubMatrix(int i, int j) {
-    matrix = new double[i][j];
+    this.matrix = new double[i][j];
   }
 
   /**
@@ -79,9 +79,9 @@ public class SubMatrix implements java.io.Serializable {
    * @return c
    */
   public SubMatrix add(SubMatrix b) {
-    double[][] C = new double[size()][size()];
-    for (int i = 0; i < size(); i++) {
-      for (int j = 0; j < size(); j++) {
+    double[][] C = new double[getRows()][getColumns()];
+    for (int i = 0; i < this.getRows(); i++) {
+      for (int j = 0; j < this.getColumns(); j++) {
         C[i][j] += this.get(i, j) + b.get(i, j);
       }
     }
@@ -96,10 +96,10 @@ public class SubMatrix implements java.io.Serializable {
    * @return c
    */
   public SubMatrix mult(SubMatrix b) {
-    double[][] C = new double[size()][size()];
-    for (int i = 0; i < size(); i++) {
-      for (int j = 0; j < size(); j++) {
-        for (int k = 0; k < size(); k++) {
+    double[][] C = new double[getRows()][getColumns()];
+    for (int i = 0; i < this.getRows(); i++) {
+      for (int j = 0; j < b.getColumns(); j++) {
+        for (int k = 0; k < this.getColumns(); k++) {
           C[i][k] += this.get(i, j) * b.get(j, k);
         }
       }
@@ -108,15 +108,14 @@ public class SubMatrix implements java.io.Serializable {
     return new SubMatrix(C);
   }
 
-  /**
-   * TODO: SubMatrix should be able to get row, column size
-   * 
-   * @return the length
-   */
-  public int size() {
-    return matrix.length;
+  public int getRows() {
+    return this.matrix.length;
   }
-
+  
+  public int getColumns() {
+    return this.matrix[0].length;
+  }
+  
   public void close() {
     matrix = null;
   }

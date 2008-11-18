@@ -124,8 +124,8 @@ public class TestDenseMatrix extends TestCase {
 
   public void testSubMatrix() throws IOException {
     SubMatrix a = m1.subMatrix(2, 4, 2, 4);
-    for (int i = 0; i < a.size(); i++) {
-      for (int j = 0; j < a.size(); j++) {
+    for (int i = 0; i < a.getRows(); i++) {
+      for (int j = 0; j < a.getColumns(); j++) {
         assertEquals(a.get(i, j), m1.get(i + 2, j + 2));
       }
     }
