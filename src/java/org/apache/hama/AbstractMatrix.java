@@ -125,7 +125,9 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void add(int i, int j, double value) throws IOException {
-    // TODO Auto-generated method stub
+    VectorUpdate update = new VectorUpdate(i);
+    update.put(j, value + this.get(i, j));
+    table.commit(update.getBatchUpdate());
   }
 
   /** {@inheritDoc} */

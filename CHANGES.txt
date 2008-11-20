@@ -33,6 +33,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-108: Implement AbstractMatrix.add(int i, int j, double value)
     HAMA-103: Reduce an rows of intermediate 
                 to improve the multiplication performance (edwardyoon)
     HAMA-88: DenseMatrix.close should not delete the table 

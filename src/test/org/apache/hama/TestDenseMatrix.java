@@ -75,6 +75,13 @@ public class TestDenseMatrix extends TestCase {
     m2.close();
   }
 
+  public void testEntryAdd() throws IOException {
+    double origin = m1.get(1, 1);
+    m1.add(1, 1, 0.5);
+    
+    assertEquals(m1.get(1, 1), origin + 0.5);
+  }
+  
   public void testBlocking() throws IOException, ClassNotFoundException {
     assertEquals(((DenseMatrix) m1).isBlocked(), false);
     ((DenseMatrix) m1).blocking(2);
