@@ -33,7 +33,8 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
-    HAMA-108: Implement AbstractMatrix.add(int i, int j, double value)
+    HAMA-99: Implement setColumn(int column, Vector vector) (edwardyoon)
+    HAMA-108: Implement add(int i, int j, double value) (edwardyoon)
     HAMA-103: Reduce an rows of intermediate 
                 to improve the multiplication performance (edwardyoon)
     HAMA-88: DenseMatrix.close should not delete the table 

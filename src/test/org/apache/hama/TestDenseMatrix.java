@@ -199,7 +199,6 @@ public class TestDenseMatrix extends TestCase {
     m1.setRow(SIZE + 1, v);
     Iterator<DoubleEntry> it = m1.getRow(SIZE + 1).iterator();
 
-    // We should remove the timestamp and row attribute from the vector
     int i = 0;
     while (it.hasNext()) {
       assertEquals(entries[i], it.next().getValue());
@@ -207,6 +206,24 @@ public class TestDenseMatrix extends TestCase {
     }
   }
 
+  public void testSetColumn() throws IOException {
+    Vector v = new DenseVector();
+    double[] entries = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
+    
+    for (int i = 0; i < SIZE; i++) {
+      v.set(i, entries[i]);
+    }
+    
+    m1.setColumn(SIZE + 1, v);
+    Iterator<DoubleEntry> it = m1.getColumn(SIZE + 1).iterator();
+
+    int i = 0;
+    while (it.hasNext()) {
+      assertEquals(entries[i], it.next().getValue());
+      i++;
+    }
+  }
+  
   public void testLoadSave() throws IOException {
     String path1 = m1.getPath();
     // save m1 to aliase1

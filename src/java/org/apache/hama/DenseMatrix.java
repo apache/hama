@@ -349,7 +349,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public void setColumn(int column, Vector vector) throws IOException {
-    // TODO Auto-generated method stub
+    for(int i = 0; i < vector.size(); i++) {
+      VectorUpdate update = new VectorUpdate(i);
+      update.put(column, vector.get(i));
+      table.commit(update.getBatchUpdate());
+    }
   }
 
   public String getType() {
