@@ -398,21 +398,21 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public void blocking_mapred(int blockNum) throws IOException {
     setBlockPosition(blockNum);
     setBlockSize(blockNum);
-    
+
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("Blocking MR job" + getPath());
-  
+
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
-    
+
     BlockingMapRed.initJob(getPath(), jobConf);
-    
+
     JobManager.execute(jobConf);
   }
 
   public boolean isBlocked() throws IOException {
-    return (table.get(Constants.METADATA, Constants.BLOCK_SIZE) == null) ? 
-        false : true;
+    return (table.get(Constants.METADATA, Constants.BLOCK_SIZE) == null) ? false
+        : true;
   }
 
   public SubMatrix getBlock(int i, int j) throws IOException {
@@ -479,9 +479,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   protected String getBlockKey(int i, int j) {
     return i + "," + j;
   }
-  
+
   /**
-   * Using a scanner to block a dense matrix.
+   * Using a scanner to block a dense matrix. If the matrix is large, use the
+   * blocking_mapred()
    * 
    * @param blockNum
    * @throws IOException
