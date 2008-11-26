@@ -23,19 +23,18 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
@@ -53,7 +52,6 @@ public class BlockingMapRed {
   /** Parameter of the path of the matrix to be blocked **/
   public static final String BLOCKING_MATRIX = "hama.blocking.matrix";
   
-  protected static final String TEMP_OUTPUT_DIR = "/tmp/hama/";
   /** 
    * Initialize a job to blocking a table
    * 
@@ -68,10 +66,7 @@ public class BlockingMapRed {
     job.setInputFormat(VectorInputFormat.class);
     job.setMapOutputKeyClass(BlockRowId.class);
     job.setMapOutputValueClass(VectorWritable.class);
-    
-    // TODO: we don't need an output
-    FileOutputFormat.setOutputPath(job, new Path(TEMP_OUTPUT_DIR + System.currentTimeMillis()));
-    
+    job.setOutputFormat(NullOutputFormat.class);
     job.setOutputValueGroupingComparator(GroupingComparator.class);
     
     job.set(BLOCKING_MATRIX, matrixPath);
@@ -154,10 +149,7 @@ public class BlockingMapRed {
       }
       
       matrix.setBlock(blkId.getRow(), blkId.getColumn(), subMatrix);
-      
-      // we will not collect anything here.
     }
-    
   }
   
   /**
@@ -274,7 +266,5 @@ public class BlockingMapRed {
       sb.append(">");
       return sb.toString();
     }
-    
   }
-
 }
