@@ -28,7 +28,6 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.algebra.BlockCyclicMultiplyMap;
@@ -43,6 +42,7 @@ import org.apache.hama.io.MapWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.BlockCyclicReduce;
+import org.apache.hama.mapred.BlockingMapRed;
 import org.apache.hama.mapred.RowCyclicReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
@@ -373,8 +373,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return this.getClass().getSimpleName();
   }
 
-  // =========================================
-
   public SubMatrix subMatrix(int i0, int i1, int j0, int j1) throws IOException {
     int columnSize = (j1 - j0) + 1;
     SubMatrix result = new SubMatrix((i1 - i0) + 1, columnSize);
@@ -391,30 +389,29 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
-   * The type of the Matrix to be blocked, must be dense.
+   * Using a map/reduce job to block a dense matrix.
    * 
-   * TODO: it should be work on map/reduce
+   * @param blockNum
+   * @throws IOException
    */
-  public void blocking(int blockNum) throws IOException {
+  public void blocking_mapred(int blockNum) throws IOException {
     setBlockPosition(blockNum);
     setBlockSize(blockNum);
-
-    String[] columns = new String[] { Constants.BLOCK_STARTROW,
-        Constants.BLOCK_ENDROW, Constants.BLOCK_STARTCOLUMN,
-        Constants.BLOCK_ENDCOLUMN };
-    Scanner scan = table.getScanner(columns);
-
-    for (RowResult row : scan) {
-      String[] key = Bytes.toString(row.getRow()).split("[,]");
-      int blockR = Integer.parseInt(key[0]);
-      int blockC = Integer.parseInt(key[1]);
-      setBlock(blockR, blockC, blockMatrix(blockR, blockC));
-    }
+    
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("Blocking MR job" + getPath());
+  
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    
+    BlockingMapRed.initJob(getPath(), jobConf);
+    
+    JobManager.execute(jobConf);
   }
 
   public boolean isBlocked() throws IOException {
-    return (table.get(Constants.METADATA, Constants.BLOCK_SIZE) == null) ? false
-        : true;
+    return (table.get(Constants.METADATA, Constants.BLOCK_SIZE) == null) ? 
+        false : true;
   }
 
   public SubMatrix getBlock(int i, int j) throws IOException {
@@ -437,7 +434,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     table.commit(update);
   }
 
-  protected void setBlock(int i, int j, SubMatrix matrix) throws IOException {
+  public void setBlock(int i, int j, SubMatrix matrix) throws IOException {
     BatchUpdate update = new BatchUpdate(String.valueOf(i));
     update.put(Constants.BLOCK + j, BytesUtil.subMatrixToBytes(matrix));
     table.commit(update);
@@ -480,16 +477,5 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   protected String getBlockKey(int i, int j) {
     return i + "," + j;
-  }
-
-  /**
-   * @param i
-   * @param j
-   * @return the sub matrix
-   * @throws IOException
-   */
-  protected SubMatrix blockMatrix(int i, int j) throws IOException {
-    int[] pos = getBlockPosition(i, j);
-    return subMatrix(pos[0], pos[1], pos[2], pos[3]);
   }
 }

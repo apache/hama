@@ -40,4 +40,14 @@ public class JobManager {
     result.setDimension(rows, columns);
   }
   
+  /** 
+   * a help method to execute a job
+   * 
+   * @param jobConf
+   * @throws IOException
+   */
+  public static void execute(JobConf jobConf) throws IOException {
+    JobClient.runJob(jobConf);
+  }
+  
 }

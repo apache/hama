@@ -84,25 +84,44 @@ public class TestDenseMatrix extends TestCase {
   
   public void testBlocking() throws IOException, ClassNotFoundException {
     assertEquals(((DenseMatrix) m1).isBlocked(), false);
-    ((DenseMatrix) m1).blocking(2);
+    ((DenseMatrix) m1).blocking_mapred(2);
     assertEquals(((DenseMatrix) m1).isBlocked(), true);
     int[] pos = ((DenseMatrix) m1).getBlockPosition(1, 0);
-    double[][] a = ((DenseMatrix) m1).blockMatrix(1, 0).getDoubles();
-    LOG.info(pos[0]+", "+pos[1]+", "+pos[2]+", "+pos[3]);
     double[][] b = ((DenseMatrix) m1).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubles();
     double[][] c = ((DenseMatrix) m1).getBlock(1, 0).getDoubles();
     assertEquals(((DenseMatrix) m1).getBlockSize(), 2);
     assertEquals(c.length, 5);
     
-    for (int i = 0; i < a.length; i++) {
-      for (int j = 0; j < a.length; j++) {
-        assertEquals(a[i][j], b[i][j]);
-        assertEquals(a[i][j], c[i][j]);
+    for (int i = 0; i < b.length; i++) {
+      for (int j = 0; j < b.length; j++) {
         assertEquals(b[i][j], c[i][j]);
       }
     }
   }
 
+  /**
+   * Map/Reduce Blocking Test
+   * 
+   * @throws IOException
+   * @throws ClassNotFoundException
+   */
+  public void testMRBlocking() throws IOException, ClassNotFoundException {
+    assertEquals(((DenseMatrix) m2).isBlocked(), false);
+    ((DenseMatrix) m2).blocking_mapred(2);
+    assertEquals(((DenseMatrix) m2).isBlocked(), true);
+    int[] pos = ((DenseMatrix) m2).getBlockPosition(1, 0);
+    double[][] b = ((DenseMatrix) m2).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubles();
+    double[][] c = ((DenseMatrix) m2).getBlock(1, 0).getDoubles();
+    assertEquals(((DenseMatrix) m2).getBlockSize(), 2);
+    assertEquals(c.length, 5);
+    
+    for (int i = 0; i < b.length; i++) {
+      for (int j = 0; j < b.length; j++) {
+        assertEquals(b[i][j], c[i][j]);
+      }
+    }
+  }
+  
   /**
    * Column vector test.
    * 

@@ -33,6 +33,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-107: Blocking job should be a map/reduce job (samuel via edwardyoon)
     HAMA-99: Implement setColumn(int column, Vector vector) (edwardyoon)
     HAMA-108: Implement add(int i, int j, double value) (edwardyoon)
     HAMA-103: Reduce an rows of intermediate 

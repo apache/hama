@@ -25,8 +25,8 @@ public class TestBlockMatrixMapReduce extends HCluster {
   public void testBlockMatrixMapReduce() throws IOException, ClassNotFoundException {
     Matrix m1 = DenseMatrix.random(conf, SIZE, SIZE);
     Matrix m2 = DenseMatrix.random(conf, SIZE, SIZE);
-    ((DenseMatrix) m1).blocking(2);
-    ((DenseMatrix) m2).blocking(2);
+    ((DenseMatrix) m1).blocking_mapred(2);
+    ((DenseMatrix) m2).blocking_mapred(2);
 
     miniMRJob(m1.getPath(), m2.getPath());
     

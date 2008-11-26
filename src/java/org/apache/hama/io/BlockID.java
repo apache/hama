@@ -58,11 +58,22 @@ public class BlockID implements WritableComparable {
 
   public void write(DataOutput out) throws IOException {
     out.writeInt(row);
-    out.write(column);
+    // out.write(column);
+    out.writeInt(column);
   }
 
+  /**
+   * Make BlockID's string representation be same format.
+   */
   public String toString() {
-    return row + ", " + column;
+    return row + "," + column;
+  }
+
+  @Override
+  public int hashCode() {
+    // simply use a prime number
+    // may be need a more balance hash function
+    return row * 37 + column;
   }
 
   public int compareTo(Object o) {

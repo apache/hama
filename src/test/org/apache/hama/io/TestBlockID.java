@@ -19,10 +19,14 @@
  */
 package org.apache.hama.io;
 
+import java.io.IOException;
+
 import junit.framework.TestCase;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.hadoop.io.DataOutputBuffer;
 
 public class TestBlockID extends TestCase {
   final static Log LOG = LogFactory.getLog(TestBlockID.class.getName());
@@ -40,6 +44,25 @@ public class TestBlockID extends TestCase {
     assertEquals(a.compareTo(c), -1);
 
     assertEquals(b.compareTo(d), 0);
+  }
+  
+  /**
+   * BlockID object IO
+   * @throws IOException 
+   */
+  public void testIO() throws IOException {
+    DataOutputBuffer outBuf = new DataOutputBuffer();
+    DataInputBuffer inBuf = new DataInputBuffer();
+    
+    BlockID a = new BlockID(1, 3);
+    outBuf.reset();
+    a.write(outBuf);
+    
+    inBuf.reset(outBuf.getData(), outBuf.getLength());
+    BlockID b = new BlockID();
+    b.readFields(inBuf);
+    
+    assertEquals(0, a.compareTo(b));
   }
 
 }

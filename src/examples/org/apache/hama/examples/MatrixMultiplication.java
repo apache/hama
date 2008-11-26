@@ -44,9 +44,9 @@ public class MatrixMultiplication {
     DenseMatrix b = DenseMatrix.random(conf, row, column);
 
     if (!a.isBlocked())
-      a.blocking(conf.getNumMapTasks());
+      a.blocking_mapred(conf.getNumMapTasks());
     if (!b.isBlocked())
-      b.blocking(conf.getNumMapTasks());
+      b.blocking_mapred(conf.getNumMapTasks());
 
     Matrix c = a.mult(b);
 
