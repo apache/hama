@@ -252,6 +252,19 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return identity;
   }
 
+  /**
+   * Gets the double value of (i, j)
+   * 
+   * @param i ith row of the matrix
+   * @param j jth column of the matrix
+   * @return the value of entry, or zero If entry is null
+   * @throws IOException
+   */
+  public double get(int i, int j) throws IOException {
+    Cell c = table.get(BytesUtil.intToBytes(i), BytesUtil.getColumnIndex(j));
+    return (c != null) ? BytesUtil.bytesToDouble(c.getValue()) : 0;
+  }
+
   public Matrix add(Matrix B) throws IOException {
     Matrix result = new DenseMatrix(config);
 
@@ -349,7 +362,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public void setColumn(int column, Vector vector) throws IOException {
-    for(int i = 0; i < vector.size(); i++) {
+    for (int i = 0; i < vector.size(); i++) {
       VectorUpdate update = new VectorUpdate(i);
       update.put(column, vector.get(i));
       table.commit(update.getBatchUpdate());

@@ -94,16 +94,6 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   /** {@inheritDoc} */
-  public double get(int i, int j) throws IOException {
-    double result = -1;
-    Cell c = table.get(BytesUtil.intToBytes(i), BytesUtil.getColumnIndex(j));
-    if (c != null) {
-      result = BytesUtil.bytesToDouble(c.getValue());
-    }
-    return result;
-  }
-
-  /** {@inheritDoc} */
   public int getRows() throws IOException {
     Cell rows = null;
     rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
@@ -139,7 +129,7 @@ public abstract class AbstractMatrix implements Matrix {
     table.commit(update.getBatchUpdate());
   }
 
-  public String getRowAttribute(int row) throws IOException {
+  public String getRowLabel(int row) throws IOException {
     Cell rows = null;
     rows = table.get(BytesUtil.intToBytes(row), Bytes.toBytes(Constants.ATTRIBUTE
         + "string"));
@@ -147,19 +137,19 @@ public abstract class AbstractMatrix implements Matrix {
     return (rows != null) ? Bytes.toString(rows.getValue()) : null;
   }
 
-  public void setRowAttribute(int row, String name) throws IOException {
+  public void setRowLabel(int row, String name) throws IOException {
     VectorUpdate update = new VectorUpdate(row);
     update.put(Constants.ATTRIBUTE + "string", name);
     table.commit(update.getBatchUpdate());
   }
 
-  public String getColumnAttribute(int column) throws IOException {
+  public String getColumnLabel(int column) throws IOException {
     Cell rows = null;
     rows = table.get(Constants.CINDEX, (Constants.ATTRIBUTE + column));
     return (rows != null) ? Bytes.toString(rows.getValue()) : null;
   }
 
-  public void setColumnAttribute(int column, String name) throws IOException {
+  public void setColumnLabel(int column, String name) throws IOException {
     VectorUpdate update = new VectorUpdate(Constants.CINDEX);
     update.put(column, name);
     table.commit(update.getBatchUpdate());

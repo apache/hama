@@ -80,6 +80,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
    
+    HAMA-112: DenseMatrix.get(i, j) should returns zero 
+                when entry is null (edwardyoon)
     HAMA-106: SubMatrix should be able to get row, column size (edwardyoon)
     HAMA-98: change '~=' operation to use `echo $f | grep 'examples$'` 
                (samuel via edwardyoon)

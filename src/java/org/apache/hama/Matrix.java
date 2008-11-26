@@ -71,18 +71,18 @@ public interface Matrix {
   public int getColumns() throws IOException;
 
   /**
-   * Gets the attribute of the row
+   * Gets the label of the row
    * 
    * @throws IOException
    */
-  public String getRowAttribute(int i) throws IOException;
+  public String getRowLabel(int i) throws IOException;
 
   /**
-   * Gets the attribute of the column
+   * Gets the label of the column
    * 
    * @throws IOException
    */
-  public String getColumnAttribute(int j) throws IOException;
+  public String getColumnLabel(int j) throws IOException;
 
   /**
    * Return the matrix path. 
@@ -93,22 +93,22 @@ public interface Matrix {
   public String getPath();
 
   /**
-   * Sets the attribute of the row
+   * Sets the label of the row
    * 
    * @param i
    * @param name
    * @throws IOException
    */
-  public void setRowAttribute(int i, String name) throws IOException;
+  public void setRowLabel(int i, String name) throws IOException;
 
   /**
-   * Sets the attribute of the column
+   * Sets the label of the column
    * 
    * @param j
    * @param name
    * @throws IOException
    */
-  public void setColumnAttribute(int j, String name) throws IOException;
+  public void setColumnLabel(int j, String name) throws IOException;
 
   /**
    * Sets the double value of (i, j)
