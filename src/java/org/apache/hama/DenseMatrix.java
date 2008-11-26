@@ -28,6 +28,7 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.algebra.BlockCyclicMultiplyMap;
@@ -478,4 +479,28 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   protected String getBlockKey(int i, int j) {
     return i + "," + j;
   }
+  
+  /**
+   * Using a scanner to block a dense matrix.
+   * 
+   * @param blockNum
+   * @throws IOException
+   */
+  public void blocking(int blockNum) throws IOException {
+    setBlockPosition(blockNum);
+    setBlockSize(blockNum);
+
+    String[] columns = new String[] { Constants.BLOCK_STARTROW,
+        Constants.BLOCK_ENDROW, Constants.BLOCK_STARTCOLUMN,
+        Constants.BLOCK_ENDCOLUMN };
+    Scanner scan = table.getScanner(columns);
+
+    for (RowResult row : scan) {
+      String[] key = Bytes.toString(row.getRow()).split("[,]");
+      int blockR = Integer.parseInt(key[0]);
+      int blockC = Integer.parseInt(key[1]);
+      setBlock(blockR, blockC, getBlock(blockR, blockC));
+    }
+  }
+
 }
