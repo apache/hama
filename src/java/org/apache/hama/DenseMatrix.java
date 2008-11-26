@@ -499,7 +499,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       String[] key = Bytes.toString(row.getRow()).split("[,]");
       int blockR = Integer.parseInt(key[0]);
       int blockC = Integer.parseInt(key[1]);
-      setBlock(blockR, blockC, getBlock(blockR, blockC));
+      int[] pos = getBlockPosition(blockR, blockC);
+      setBlock(blockR, blockC, subMatrix(pos[0], pos[1], pos[2], pos[3]));
     }
   }
 
