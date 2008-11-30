@@ -33,6 +33,8 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-117: Move bytesToSubMatrix/subMatrixToBytes method 
+                to submatrix class from BytesUtil (edwardyoon)
     HAMA-114: Remove unwanted code (edwardyoon)
     HAMA-107: Blocking job should be a map/reduce job (samuel via edwardyoon)
     HAMA-99: Implement setColumn(int column, Vector vector) (edwardyoon)

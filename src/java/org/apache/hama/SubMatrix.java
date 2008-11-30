@@ -19,6 +19,12 @@
  */
 package org.apache.hama;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -50,6 +56,20 @@ public class SubMatrix implements java.io.Serializable {
     this.matrix = matrix;
   }
 
+  public SubMatrix(byte[] matrix) throws IOException {
+    ByteArrayInputStream bos = new ByteArrayInputStream(matrix);
+    ObjectInputStream oos = new ObjectInputStream(bos);
+    Object obj = null;
+    try {
+      obj = oos.readObject();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    oos.close();
+    bos.close();
+    this.matrix = ((SubMatrix)obj).matrix;
+  }
+  
   /**
    * Sets the value
    * 
@@ -111,17 +131,35 @@ public class SubMatrix implements java.io.Serializable {
   public int getRows() {
     return this.matrix.length;
   }
-  
+
   public int getColumns() {
     return this.matrix[0].length;
   }
-  
+
   public void close() {
     matrix = null;
   }
 
-  public double[][] getDoubles() {
+  /**
+   * @return the 2d double array
+   */
+  public double[][] getDoubleArray() {
     double[][] result = matrix;
     return result;
+  }
+
+  /**
+   * @return the bytes of the sub matrix
+   * @throws IOException
+   */
+  public byte[] getBytes() throws IOException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(bos);
+    oos.writeObject(this);
+    oos.flush();
+    oos.close();
+    bos.close();
+    byte[] data = bos.toByteArray();
+    return data;
   }
 }

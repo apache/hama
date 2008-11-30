@@ -416,7 +416,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public SubMatrix getBlock(int i, int j) throws IOException {
-    return BytesUtil.bytesToSubMatrix(table.get(String.valueOf(i),
+    return new SubMatrix(table.get(String.valueOf(i),
         Constants.BLOCK + j).getValue());
   }
 
@@ -437,7 +437,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   public void setBlock(int i, int j, SubMatrix matrix) throws IOException {
     BatchUpdate update = new BatchUpdate(String.valueOf(i));
-    update.put(Constants.BLOCK + j, BytesUtil.subMatrixToBytes(matrix));
+    update.put(Constants.BLOCK + j, matrix.getBytes());
     table.commit(update);
   }
 

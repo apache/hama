@@ -28,7 +28,6 @@ import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.SubMatrix;
-import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
 public class BlockEntry implements Writable, Iterable<BlockEntry> {
@@ -54,7 +53,7 @@ public class BlockEntry implements Writable, Iterable<BlockEntry> {
 
   public BlockEntry(SubMatrix value) throws IOException {
     this.values = new byte[1][];
-    this.values[0] = BytesUtil.subMatrixToBytes(value);
+    this.values[0] = value.getBytes();
     this.timestamps = new long[1];
     this.timestamps[0] = System.currentTimeMillis();
   }
@@ -64,7 +63,7 @@ public class BlockEntry implements Writable, Iterable<BlockEntry> {
    * @throws IOException
    */
   public SubMatrix getValue() throws IOException {
-    return BytesUtil.bytesToSubMatrix(this.values[0]);
+    return new SubMatrix(this.values[0]);
   }
 
   /** @return the current VectorEntry's timestamp */

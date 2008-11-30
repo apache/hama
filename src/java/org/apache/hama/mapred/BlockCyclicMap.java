@@ -35,6 +35,7 @@ import org.apache.hama.Matrix;
 import org.apache.hama.io.BlockWritable;
 import org.apache.log4j.Logger;
 
+@SuppressWarnings("unchecked")
 public abstract class BlockCyclicMap<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements Mapper<IntWritable, BlockWritable, K, V> {
   static final Logger LOG = Logger.getLogger(BlockCyclicMap.class);

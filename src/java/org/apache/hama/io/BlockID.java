@@ -27,6 +27,7 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 
 /** A WritableComparable for BlockIDs. */
+@SuppressWarnings("unchecked")
 public class BlockID implements WritableComparable {
   private int row;
   private int column;

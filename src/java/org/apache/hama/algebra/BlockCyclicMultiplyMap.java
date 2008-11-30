@@ -47,7 +47,6 @@ public class BlockCyclicMultiplyMap extends
     }
   }
 
-  @SuppressWarnings("unchecked")
   public static void initJob(String matrix_a, String matrix_b,
       Class<BlockCyclicMultiplyMap> map, Class<IntWritable> outputKeyClass,
       Class<BlockWritable> outputValueClass, JobConf jobConf) {

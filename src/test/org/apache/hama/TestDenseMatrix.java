@@ -87,8 +87,8 @@ public class TestDenseMatrix extends TestCase {
     ((DenseMatrix) m1).blocking_mapred(2);
     assertEquals(((DenseMatrix) m1).isBlocked(), true);
     int[] pos = ((DenseMatrix) m1).getBlockPosition(1, 0);
-    double[][] b = ((DenseMatrix) m1).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubles();
-    double[][] c = ((DenseMatrix) m1).getBlock(1, 0).getDoubles();
+    double[][] b = ((DenseMatrix) m1).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubleArray();
+    double[][] c = ((DenseMatrix) m1).getBlock(1, 0).getDoubleArray();
     assertEquals(((DenseMatrix) m1).getBlockSize(), 2);
     assertEquals(c.length, 5);
     
@@ -110,8 +110,8 @@ public class TestDenseMatrix extends TestCase {
     ((DenseMatrix) m2).blocking_mapred(2);
     assertEquals(((DenseMatrix) m2).isBlocked(), true);
     int[] pos = ((DenseMatrix) m2).getBlockPosition(1, 0);
-    double[][] b = ((DenseMatrix) m2).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubles();
-    double[][] c = ((DenseMatrix) m2).getBlock(1, 0).getDoubles();
+    double[][] b = ((DenseMatrix) m2).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubleArray();
+    double[][] c = ((DenseMatrix) m2).getBlock(1, 0).getDoubleArray();
     assertEquals(((DenseMatrix) m2).getBlockSize(), 2);
     assertEquals(c.length, 5);
     

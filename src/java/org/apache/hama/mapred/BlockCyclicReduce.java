@@ -33,6 +33,7 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorUpdate;
 
+@SuppressWarnings("unchecked")
 public abstract class BlockCyclicReduce<K extends WritableComparable, V extends Writable>
     extends MapReduceBase implements Reducer<K, V, IntWritable, VectorUpdate> {
   /**

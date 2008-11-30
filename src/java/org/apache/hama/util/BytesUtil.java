@@ -19,16 +19,10 @@
  */
 package org.apache.hama.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
-import org.apache.hama.SubMatrix;
 
 /**
  * Provides a bytes utility
@@ -99,31 +93,6 @@ public class BytesUtil {
     return Bytes.toBytes(Constants.COLUMN + String.valueOf(integer));
   }
   
-  public static byte[] subMatrixToBytes(SubMatrix obj) throws IOException {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    ObjectOutputStream oos = new ObjectOutputStream(bos);
-    oos.writeObject(obj);
-    oos.flush();
-    oos.close();
-    bos.close();
-    byte[] data = bos.toByteArray();
-    return data;
-  }
-  
-  public static SubMatrix bytesToSubMatrix(byte[] value) throws IOException {
-    ByteArrayInputStream bos = new ByteArrayInputStream(value);
-    ObjectInputStream oos = new ObjectInputStream(bos);
-    Object obj = null;
-    try {
-      obj = oos.readObject();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-    oos.close();
-    bos.close();
-    return (SubMatrix) obj;
-  }
-
   public static byte[] getBlockIndex(int integer) {
     return Bytes.toBytes(Constants.BLOCK + String.valueOf(integer));
   }
