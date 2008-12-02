@@ -93,6 +93,7 @@ public class BlockID implements WritableComparable {
   /**
    * BlockID Comparator 
    */
+  /* why we need a special Comparator
   public static class Comparator extends WritableComparator {
     protected Comparator() {
       super(BlockID.class);
@@ -101,6 +102,8 @@ public class BlockID implements WritableComparable {
     public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
       int thisRow = readInt(b1, s1);
       int thatRow = readInt(b2, s2);
+      // why read from l1 & l2
+      // l1 means length 1, and l2 means length 2
       int thisColumn = readInt(b1, l1);
       int thatColumn = readInt(b2, l2);
 
@@ -116,4 +119,5 @@ public class BlockID implements WritableComparable {
   static { // register this comparator
     WritableComparator.define(BlockID.class, new Comparator());
   }
+  */
 }

@@ -84,7 +84,7 @@ public class TestDenseMatrix extends TestCase {
   
   public void testBlocking() throws IOException, ClassNotFoundException {
     assertEquals(((DenseMatrix) m1).isBlocked(), false);
-    ((DenseMatrix) m1).blocking_mapred(2);
+    ((DenseMatrix) m1).blocking(2);
     assertEquals(((DenseMatrix) m1).isBlocked(), true);
     int[] pos = ((DenseMatrix) m1).getBlockPosition(1, 0);
     double[][] b = ((DenseMatrix) m1).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubleArray();
