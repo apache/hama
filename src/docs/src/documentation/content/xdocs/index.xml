@@ -41,6 +41,7 @@
           <ul>
             <li>Matrix-vector/matrix-matrix multiply</li> 
             <li>Soving linear systems</li>
+            <li><a href="http://wiki.apache.org/hama/GraphAndMatrices">Scientific graphs</a></li>
           </ul>
         </li>
       </ul>
@@ -62,6 +63,12 @@
       </ul>
       
     </section>
+    <section>
+    <title>Getting Started</title>
+    <ul>
+      <li><a href="http://wiki.apache.org/hama/GettingStarted">Getting Started</a> with Hama</li>
+    </ul>
+    </section>    
     <section>
     <title>Recent News</title>
     <ul>

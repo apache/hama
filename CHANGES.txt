@@ -33,6 +33,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-118: Add getting started page link (edwardyoon)
     HAMA-117: Move bytesToSubMatrix/subMatrixToBytes method 
                 to submatrix class from BytesUtil (edwardyoon)
     HAMA-114: Remove unwanted code (edwardyoon)
@@ -84,6 +85,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
    
+    HAMA-116: ArrayIndexOutOfBoundsException at BlockingMapRed (samuel)
     HAMA-112: DenseMatrix.get(i, j) should returns zero 
                 when entry is null (edwardyoon)
     HAMA-106: SubMatrix should be able to get row, column size (edwardyoon)
