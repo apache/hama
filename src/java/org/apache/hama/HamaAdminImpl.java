@@ -41,18 +41,33 @@ public class HamaAdminImpl implements HamaAdmin {
   protected HBaseAdmin admin;
   protected HTable table;
 
+  /**
+   * Constructor
+   * 
+   * @param conf
+   * @throws MasterNotRunningException
+   */
   public HamaAdminImpl(HamaConfiguration conf) throws MasterNotRunningException {
     this.conf = conf;
     this.admin = new HBaseAdmin(conf);
     initialJob();
   }
 
+  /**
+   * Constructor
+   * 
+   * @param conf
+   * @param admin
+   */
   public HamaAdminImpl(HamaConfiguration conf, HBaseAdmin admin) {
     this.conf = conf;
     this.admin = admin;
     initialJob();
   }
 
+  /**
+   * Initializing the admin. 
+   */
   private void initialJob() {
     try {
       if (!admin.tableExists(Constants.ADMINTABLE)) {

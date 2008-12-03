@@ -62,12 +62,12 @@ public class SubMatrix implements java.io.Serializable {
     Object obj = null;
     try {
       obj = oos.readObject();
+      this.matrix = ((SubMatrix)obj).getDoubleArray();
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
     oos.close();
     bos.close();
-    this.matrix = ((SubMatrix)obj).matrix;
   }
   
   /**
@@ -128,14 +128,27 @@ public class SubMatrix implements java.io.Serializable {
     return new SubMatrix(C);
   }
 
+  /**
+   * Gets the number of rows
+   * 
+   * @return the number of rows
+   */
   public int getRows() {
     return this.matrix.length;
   }
 
+  /**
+   * Gets the number of columns
+   * 
+   * @return the number of columns
+   */
   public int getColumns() {
     return this.matrix[0].length;
   }
 
+  /**
+   * Close
+   */
   public void close() {
     matrix = null;
   }
@@ -149,6 +162,8 @@ public class SubMatrix implements java.io.Serializable {
   }
 
   /**
+   * Gets the bytes of the sub matrix
+   * 
    * @return the bytes of the sub matrix
    * @throws IOException
    */

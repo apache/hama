@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.io.WritableComparator;
 
 /** A WritableComparable for BlockIDs. */
 @SuppressWarnings("unchecked")

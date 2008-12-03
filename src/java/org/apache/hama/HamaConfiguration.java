@@ -31,7 +31,7 @@ public class HamaConfiguration extends HBaseConfiguration {
   /** constructor */
   public HamaConfiguration() {
     super();
-    addHbaseResources();
+    addHamaResources();
   }
 
   /**
@@ -46,23 +46,46 @@ public class HamaConfiguration extends HBaseConfiguration {
     }
   }
 
+  /**
+   * Sets the number of map task
+   * 
+   * @param map
+   */
   public void setNumMapTasks(int map) {
     set("mapred.map.tasks",String.valueOf(map));
   }
 
+  /**
+   * Sets the number of reduce task
+   * 
+   * @param map
+   */
   public void setNumReduceTasks(int reduce) {
     set("mapred.reduce.tasks",String.valueOf(reduce));
   }
   
+  /**
+   * Gets the number of map task
+   * 
+   * @param map
+   */
   public int getNumMapTasks() {
     return Integer.parseInt(get("mapred.map.tasks"));
   }
 
+  /**
+   * Gets the number of reduce task
+   * 
+   * @param map
+   */
   public int getNumReduceTasks() {
     return Integer.parseInt(get("mapred.reduce.tasks"));
   }
   
-  private void addHbaseResources() {
+  /**
+   * Adds Hama configurations
+   */
+  private void addHamaResources() {
     addResource("hama-site.xml");
   }
 }

@@ -40,8 +40,8 @@ public class MatrixAddition {
       parseArgs(args);
     }
 
-    Matrix a = DenseMatrix.random(conf, row, column);
-    Matrix b = DenseMatrix.random(conf, row, column);
+    DenseMatrix a = DenseMatrix.random_mapred(conf, row, column);
+    DenseMatrix b = DenseMatrix.random_mapred(conf, row, column);
 
     Matrix c = a.add(b);
 

@@ -26,9 +26,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseMatrix;
-import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.Matrix;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.RowCyclicMap;
 import org.apache.log4j.Logger;
@@ -36,7 +34,7 @@ import org.apache.log4j.Logger;
 public class RowCyclicAdditionMap extends
     RowCyclicMap<IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(RowCyclicAdditionMap.class);
-  protected Matrix matrix_b;
+  protected DenseMatrix matrix_b;
   public static final String MATRIX_B = "hama.addition.matrix.b";
 
   public void configure(JobConf job) {
@@ -65,7 +63,7 @@ public class RowCyclicAdditionMap extends
       throws IOException {
 
     output.collect(key, new VectorWritable(key.get(), 
-        (DenseVector) matrix_b.getRow(key.get()).add(value.getDenseVector())));
+        matrix_b.getRow(key.get()).add(value.getDenseVector())));
 
   }
 

@@ -110,7 +110,7 @@ public class BlockingMapRed {
         startColumn = i * mBlockColSize;
         endColumn = startColumn + mBlockColSize - 1;
         output.collect(new BlockID(blkRow, i), new VectorWritable(key.get(),
-            (DenseVector) dv.subVector(startColumn, endColumn)));
+            dv.subVector(startColumn, endColumn)));
       }
     }
 

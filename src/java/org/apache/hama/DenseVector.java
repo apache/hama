@@ -49,7 +49,7 @@ public class DenseVector extends AbstractVector implements Vector {
     }
   }
 
-  public Vector add(double alpha, Vector v) {
+  public DenseVector add(double alpha, Vector v) {
     if (alpha == 0)
       return this;
 
@@ -59,7 +59,7 @@ public class DenseVector extends AbstractVector implements Vector {
     return this;
   }
 
-  public Vector add(Vector v2) {
+  public DenseVector add(Vector v2) {
     if (this.size() == 0) {
       DenseVector trunk = (DenseVector) v2;
       this.entries = trunk.entries;
@@ -145,8 +145,8 @@ public class DenseVector extends AbstractVector implements Vector {
     return 0;
   }
 
-  public Vector subVector(int i0, int i1) {
-    Vector res = new DenseVector();
+  public DenseVector subVector(int i0, int i1) {
+    DenseVector res = new DenseVector();
     for (int i = i0; i <= i1; i++) {
       res.set(i, get(i));
     }

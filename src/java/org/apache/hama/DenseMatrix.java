@@ -369,7 +369,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return new DenseVector(table.getRow(BytesUtil.intToBytes(row)));
   }
 
-  public Vector getColumn(int column) throws IOException {
+  public DenseVector getColumn(int column) throws IOException {
     byte[] columnKey = BytesUtil.getColumnIndex(column);
     byte[][] c = { columnKey };
     Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
