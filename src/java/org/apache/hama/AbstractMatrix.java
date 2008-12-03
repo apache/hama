@@ -97,7 +97,7 @@ public abstract class AbstractMatrix implements Matrix {
   public int getRows() throws IOException {
     Cell rows = null;
     rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
-    return BytesUtil.bytesToInt(rows.getValue());
+    return (rows != null) ? BytesUtil.bytesToInt(rows.getValue()) : 0;
   }
 
   /** {@inheritDoc} */

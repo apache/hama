@@ -40,9 +40,9 @@ public class MatrixMultiplication {
       parseArgs(args);
     }
 
-    DenseMatrix a = DenseMatrix.random(conf, row, column);
-    DenseMatrix b = DenseMatrix.random(conf, row, column);
-
+    DenseMatrix a = DenseMatrix.random_mapred(conf, row, column);
+    DenseMatrix b = DenseMatrix.random_mapred(conf, row, column);
+    
     if (!a.isBlocked())
       a.blocking_mapred(conf.getNumMapTasks());
     if (!b.isBlocked())

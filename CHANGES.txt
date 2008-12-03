@@ -33,6 +33,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-113: Random matrix generator on map/reduce (edwardyoon)
     HAMA-118: Add getting started page link (edwardyoon)
     HAMA-117: Move bytesToSubMatrix/subMatrixToBytes method 
                 to submatrix class from BytesUtil (edwardyoon)

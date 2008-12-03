@@ -21,6 +21,8 @@ package org.apache.hama;
 
 import java.io.IOException;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
@@ -29,8 +31,16 @@ import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hama.algebra.BlockCyclicMultiplyMap;
 import org.apache.hama.algebra.BlockCyclicMultiplyReduce;
 import org.apache.hama.algebra.RowCyclicAdditionMap;
@@ -44,6 +54,7 @@ import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.BlockCyclicReduce;
 import org.apache.hama.mapred.BlockingMapRed;
+import org.apache.hama.mapred.RandomMatrixMap;
 import org.apache.hama.mapred.RowCyclicReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
@@ -53,7 +64,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
   static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
-
+  static private final Path TMP_DIR = new Path(
+      DenseMatrix.class.getSimpleName() + "_TMP_dir");
+  
   /**
    * Construct a raw matrix. Just create a table in HBase, but didn't lay any
    * schema ( such as dimensions: i, j ) on it.
@@ -227,6 +240,68 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
+   * Generate matrix with random elements using Map/Reduce
+   * 
+   * @param conf configuration object
+   * @param m the number of rows.
+   * @param n the number of columns.
+   * @return an m-by-n matrix with uniformly distributed random elements.
+   * @throws IOException
+   */
+  public static DenseMatrix random_mapred(HamaConfiguration conf, int m,
+      int n) throws IOException {
+    DenseMatrix rand = new DenseMatrix(conf);
+    LOG.info("Create the " + m + " * " + n + " random matrix : "
+        + rand.getPath());
+    
+    JobConf jobConf = new JobConf(conf);
+    jobConf.setJobName("random matrix MR job : " + rand.getPath());
+
+    jobConf.setNumMapTasks(conf.getNumMapTasks());
+    jobConf.setNumReduceTasks(conf.getNumReduceTasks());
+
+    final Path inDir = new Path(TMP_DIR, "in");
+    FileInputFormat.setInputPaths(jobConf, inDir);
+    jobConf.setMapperClass(RandomMatrixMap.class);
+
+    jobConf.setOutputKeyClass(BooleanWritable.class);
+    jobConf.setOutputValueClass(LongWritable.class);
+    jobConf.setOutputFormat(NullOutputFormat.class);
+    jobConf.setSpeculativeExecution(false);
+    jobConf.set("matrix.column", String.valueOf(n));
+    jobConf.set("matrix.path", rand.getPath());
+
+    jobConf.setInputFormat(SequenceFileInputFormat.class);
+    final FileSystem fs = FileSystem.get(jobConf);
+    int interval = m/conf.getNumMapTasks();
+    
+    // generate an input file for each map task
+    for (int i = 0; i < conf.getNumMapTasks(); ++i) {
+      final Path file = new Path(inDir, "part" + i);
+      final IntWritable start = new IntWritable(i * interval);
+      IntWritable end = null;
+      if((i + 1) != conf.getNumMapTasks()) {
+        end = new IntWritable(((i * interval) + interval) - 1);        
+      } else {
+        end = new IntWritable(m);       
+      }
+      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, jobConf,
+          file, IntWritable.class, IntWritable.class, CompressionType.NONE);
+      try {
+        writer.append(start, end);
+      } finally {
+        writer.close();
+      }
+      System.out.println("Wrote input for Map #" + i);
+    }
+
+    JobClient.runJob(jobConf);
+    
+    rand.setDimension(m, n);
+    return rand;
+  }
+  
+  /**
    * Generate identity matrix
    * 
    * @param conf configuration object
@@ -398,7 +473,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public void blocking_mapred(int blockNum) throws IOException {
     setBlockPosition(blockNum);
     setBlockSize(blockNum);
-
+    LOG.info("Convert to " + blockNum + " * " + blockNum + " blocked matrix");
+    
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("Blocking MR job" + getPath());
 
@@ -504,5 +580,4 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       setBlock(blockR, blockC, subMatrix(pos[0], pos[1], pos[2], pos[3]));
     }
   }
-
 }
