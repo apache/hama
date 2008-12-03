@@ -58,7 +58,7 @@ public class HamaConfiguration extends HBaseConfiguration {
   /**
    * Sets the number of reduce task
    * 
-   * @param map
+   * @param reduce
    */
   public void setNumReduceTasks(int reduce) {
     set("mapred.reduce.tasks",String.valueOf(reduce));
@@ -66,8 +66,6 @@ public class HamaConfiguration extends HBaseConfiguration {
   
   /**
    * Gets the number of map task
-   * 
-   * @param map
    */
   public int getNumMapTasks() {
     return Integer.parseInt(get("mapred.map.tasks"));
@@ -75,15 +73,13 @@ public class HamaConfiguration extends HBaseConfiguration {
 
   /**
    * Gets the number of reduce task
-   * 
-   * @param map
    */
   public int getNumReduceTasks() {
     return Integer.parseInt(get("mapred.reduce.tasks"));
   }
   
   /**
-   * Adds Hama configurations
+   * Adds Hama configuration files to a Configuration
    */
   private void addHamaResources() {
     addResource("hama-site.xml");

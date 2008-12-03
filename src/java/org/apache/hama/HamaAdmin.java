@@ -21,16 +21,20 @@ package org.apache.hama;
 
 import java.io.IOException;
 
+/**
+ * A administration interface to manage the matrix's namespace, and table
+ * allocation & garbage collection.
+ */
 public interface HamaAdmin {
 
   /**
    * Saves matrix as name 'AliaseName'
-   *
+   * 
    * @param matrix
    * @param aliaseName
    * @return true if it saved
    */
-  public boolean save(Matrix matrix, String aliaseName); 
+  public boolean save(Matrix matrix, String aliaseName);
 
   /**
    * @param name
@@ -51,5 +55,5 @@ public interface HamaAdmin {
    * @throws IOException
    */
   public void delete(String matrixName) throws IOException;
-  
+
 }

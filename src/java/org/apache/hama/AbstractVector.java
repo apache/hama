@@ -24,13 +24,29 @@ import java.util.Iterator;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.MapWritable;
 
+/**
+ * Methods of the vector classes
+ */
 public abstract class AbstractVector {
   public MapWritable<Integer, DoubleEntry> entries;
   
+  /**
+   * Gets the value of index
+   * 
+   * @param index
+   * @return the value of v(index)
+   * @throws NullPointerException
+   */
   public double get(int index) throws NullPointerException {
     return this.entries.get(index).getValue();
   }
   
+  /**
+   * Sets the value of index
+   * 
+   * @param index
+   * @param value
+   */
   public void set(int index, double value) {
     // If entries are null, create new object 
     if(this.entries == null) {
@@ -40,6 +56,12 @@ public abstract class AbstractVector {
     this.entries.put(index, new DoubleEntry(value));
   }
   
+  /**
+   * Adds the value to v(index)
+   * 
+   * @param index
+   * @param value
+   */
   public void add(int index, double value) {
     set(index, get(index) + value);
   }
@@ -62,6 +84,11 @@ public abstract class AbstractVector {
     return (this.entries != null) ? this.entries.size() : 0;
   }
   
+  /**
+   * Returns the {@link org.apache.hama.io.MapWritable}
+   * 
+   * @return the entries of vector
+   */
   public MapWritable<Integer, DoubleEntry> getEntries() {
     return this.entries;
   }
