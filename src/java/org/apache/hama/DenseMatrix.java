@@ -296,8 +296,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     }
 
     JobClient.runJob(jobConf);
-    
     rand.setDimension(m, n);
+    fs.delete(TMP_DIR, true);
     return rand;
   }
   
