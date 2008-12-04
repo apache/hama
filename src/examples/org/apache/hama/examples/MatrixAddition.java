@@ -20,18 +20,11 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.hama.DenseMatrix;
-import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
 
-public class MatrixAddition {
-  private static HamaConfiguration conf = new HamaConfiguration();
-  private static int row;
-  private static int column;
-
+public class MatrixAddition extends AbstractExample {
   public static void main(String[] args) throws IOException {
     if (args.length < 2) {
       System.out.println("add  [-m maps] [-r reduces] <row_m> <column_n>");
@@ -40,36 +33,13 @@ public class MatrixAddition {
       parseArgs(args);
     }
 
-    DenseMatrix a = DenseMatrix.random_mapred(conf, row, column);
-    DenseMatrix b = DenseMatrix.random_mapred(conf, row, column);
+    String matrixA = ARGS.get(0);
+    String matrixB = ARGS.get(1);
+    
+    DenseMatrix a = new DenseMatrix(conf, matrixA, false);
+    DenseMatrix b = new DenseMatrix(conf, matrixB, false);
 
     Matrix c = a.add(b);
-
-    a.close();
-    b.close();
     c.close();
-  }
-
-  private static void parseArgs(String[] args) {
-    List<String> other_args = new ArrayList<String>();
-    for (int i = 0; i < args.length; ++i) {
-      try {
-        if ("-m".equals(args[i])) {
-          conf.setNumMapTasks(Integer.parseInt(args[++i]));
-        } else if ("-r".equals(args[i])) {
-          conf.setNumReduceTasks(Integer.parseInt(args[++i]));
-        } else {
-          other_args.add(args[i]);
-        }
-      } catch (NumberFormatException except) {
-        System.out.println("ERROR: Integer expected instead of " + args[i]);
-      } catch (ArrayIndexOutOfBoundsException except) {
-        System.out.println("ERROR: Required parameter missing from "
-            + args[i - 1]);
-      }
-    }
-
-    row = Integer.parseInt(other_args.get(0));
-    column = Integer.parseInt(other_args.get(1));
   }
 }

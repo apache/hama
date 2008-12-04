@@ -19,19 +19,25 @@
  */
 package org.apache.hama.examples;
 
-import org.apache.hadoop.util.ProgramDriver;
+import java.io.IOException;
 
-public class ExampleDriver {
-  
-  public static void main(String[] args) {
-    ProgramDriver pgd = new ProgramDriver();
-    try {
-      pgd.addClass("random", RandomMatrix.class, "Generate matrix with random elements.");
-      pgd.addClass("add", MatrixAddition.class, "Mat-Mat addition.");
-      pgd.addClass("mult", MatrixMultiplication.class, "Mat-Mat multiplication.");
-      pgd.driver(args);
-    } catch (Throwable e) {
-      e.printStackTrace();
+import org.apache.hama.DenseMatrix;
+
+public class RandomMatrix extends AbstractExample {
+
+  public static void main(String[] args) throws IOException {
+    if (args.length < 3) {
+      System.out
+          .println("add  [-m maps] [-r reduces] <rows> <columns> <matrix_name>");
+      System.exit(-1);
+    } else {
+      parseArgs(args);
     }
+
+    int row = Integer.parseInt(ARGS.get(0));
+    int column = Integer.parseInt(ARGS.get(1));
+
+    DenseMatrix a = DenseMatrix.random_mapred(conf, row, column);
+    a.save(ARGS.get(2));
   }
 }
