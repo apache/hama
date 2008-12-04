@@ -35,10 +35,16 @@ public abstract class AbstractVector {
    * 
    * @param index
    * @return the value of v(index)
-   * @throws NullPointerException
    */
-  public double get(int index) throws NullPointerException {
-    return this.entries.get(index).getValue();
+  public double get(int index) {
+    double value;
+    try {
+      value = this.entries.get(index).getValue();
+    } catch (NullPointerException e) {
+      throw new NullPointerException("v("+index+") : " + e.toString());
+    }
+    
+    return value;
   }
   
   /**
