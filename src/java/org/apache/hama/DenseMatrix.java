@@ -283,7 +283,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       if((i + 1) != conf.getNumMapTasks()) {
         end = new IntWritable(((i * interval) + interval) - 1);        
       } else {
-        end = new IntWritable(m);       
+        end = new IntWritable(m - 1);       
       }
       final SequenceFile.Writer writer = SequenceFile.createWriter(fs, jobConf,
           file, IntWritable.class, IntWritable.class, CompressionType.NONE);

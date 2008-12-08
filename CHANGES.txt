@@ -86,6 +86,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
    
+    HAMA-126: In random_mapred, (m) should be (m-1) 
+                since start from 0. (edwardyoon)
     HAMA-116: ArrayIndexOutOfBoundsException at BlockingMapRed (samuel)
     HAMA-112: DenseMatrix.get(i, j) should returns zero 
                 when entry is null (edwardyoon)
