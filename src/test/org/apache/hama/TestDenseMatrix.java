@@ -149,21 +149,21 @@ public class TestDenseMatrix extends TestCase {
   }
 
   public void testSubMatrix() throws IOException {
-    SubMatrix a = m1.subMatrix(2, 4, 2, 4);
+    SubMatrix a = m1.subMatrix(2, 4, 2, 5); // A : 3 * 4
     for (int i = 0; i < a.getRows(); i++) {
       for (int j = 0; j < a.getColumns(); j++) {
         assertEquals(a.get(i, j), m1.get(i + 2, j + 2));
       }
     }
 
-    SubMatrix b = m2.subMatrix(0, 2, 0, 2);
+    SubMatrix b = m2.subMatrix(0, 3, 0, 2); // B : 4 * 3
     SubMatrix c = a.mult(b);
 
-    double[][] C = new double[3][3];
+    double[][] C = new double[3][3]; // A * B
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
-        for (int k = 0; k < 3; k++) {
-          C[i][k] += m1.get(i + 2, j + 2) * m2.get(j, k);
+        for (int k = 0; k < 4; k++) {
+          C[i][j] += m1.get(i + 2, k + 2) * m2.get(k, j);
         }
       }
     }

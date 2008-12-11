@@ -76,6 +76,9 @@ public class BlockingMapRed {
     protected int mBlockNum;
     protected int mBlockRowSize;
     protected int mBlockColSize;
+    
+    protected int mRows;
+    protected int mColumns;
 
     @Override
     public void configure(JobConf job) {
@@ -85,6 +88,9 @@ public class BlockingMapRed {
         mBlockNum = matrix.getBlockSize();
         mBlockRowSize = matrix.getRows() / mBlockNum;
         mBlockColSize = matrix.getColumns() / mBlockNum;
+        
+        mRows = matrix.getRows();
+        mColumns = matrix.getColumns();
       } catch (IOException e) {
         LOG.warn("Load matrix_blocking failed : " + e.getMessage());
       }
@@ -106,12 +112,18 @@ public class BlockingMapRed {
       int endColumn;
       int blkRow = key.get() / mBlockRowSize;
       DenseVector dv = value.getDenseVector();
-      for (int i = 0; i < mBlockNum; i++) {
+      
+      int i = 0;
+      do {
         startColumn = i * mBlockColSize;
         endColumn = startColumn + mBlockColSize - 1;
+        if(endColumn >= mColumns) // the last sub vector
+          endColumn = mColumns - 1;
         output.collect(new BlockID(blkRow, i), new VectorWritable(key.get(),
             dv.subVector(startColumn, endColumn)));
-      }
+        
+        i++;
+      } while(endColumn < (mColumns-1));
     }
 
   }
@@ -128,21 +140,35 @@ public class BlockingMapRed {
         throws IOException {
       // Note: all the sub-vectors are grouped by {@link
       // org.apache.hama.io.BlockID}
-      SubMatrix subMatrix = new SubMatrix(mBlockRowSize, mBlockColSize);
-      int i = 0, j = 0;
+      
+      // the block's base offset in the original matrix
       int colBase = key.getColumn() * mBlockColSize;
       int rowBase = key.getRow() * mBlockRowSize;
+      
+      // the block's size : rows & columns
+      int smRows = mBlockRowSize;
+      if((rowBase + mBlockRowSize - 1) >= mRows)
+        smRows = mRows - rowBase;
+      int smCols = mBlockColSize;
+      if((colBase + mBlockColSize - 1) >= mColumns)  
+        smCols = mColumns - colBase;
+      
+      // construct the matrix
+      SubMatrix subMatrix = new SubMatrix(smRows, smCols);
+      
+      // i, j is the current offset in the sub-matrix
+      int i = 0, j = 0;
       while (values.hasNext()) {
         VectorWritable vw = values.next();
         // check the size is suitable
-        if (vw.size() != mBlockColSize)
-          throw new IOException("BlockColumnSize dismatched.");
+        if (vw.size() != smCols)
+          throw new IOException("Block Column Size dismatched.");
         i = vw.row - rowBase;
-        if (i >= mBlockRowSize || i < 0)
-          throw new IOException("BlockRowSize dismatched.");
+        if (i >= smRows || i < 0)
+          throw new IOException("Block Row Size dismatched.");
 
         // put the subVector to the subMatrix
-        for (j = 0; j < mBlockColSize; j++) {
+        for (j = 0; j < smCols; j++) {
           subMatrix.set(i, j, vw.get(colBase + j));
         }
       }

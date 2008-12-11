@@ -64,9 +64,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
   static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
-  static private final Path TMP_DIR = new Path(
-      DenseMatrix.class.getSimpleName() + "_TMP_dir");
-  
+  static private final Path TMP_DIR = new Path(DenseMatrix.class
+      .getSimpleName()
+      + "_TMP_dir");
+
   /**
    * Construct a raw matrix. Just create a table in HBase, but didn't lay any
    * schema ( such as dimensions: i, j ) on it.
@@ -248,12 +249,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @return an m-by-n matrix with uniformly distributed random elements.
    * @throws IOException
    */
-  public static DenseMatrix random_mapred(HamaConfiguration conf, int m,
-      int n) throws IOException {
+  public static DenseMatrix random_mapred(HamaConfiguration conf, int m, int n)
+      throws IOException {
     DenseMatrix rand = new DenseMatrix(conf);
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
-    
+
     JobConf jobConf = new JobConf(conf);
     jobConf.setJobName("random matrix MR job : " + rand.getPath());
 
@@ -273,17 +274,17 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     jobConf.setInputFormat(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(jobConf);
-    int interval = m/conf.getNumMapTasks();
-    
+    int interval = m / conf.getNumMapTasks();
+
     // generate an input file for each map task
     for (int i = 0; i < conf.getNumMapTasks(); ++i) {
       final Path file = new Path(inDir, "part" + i);
       final IntWritable start = new IntWritable(i * interval);
       IntWritable end = null;
-      if((i + 1) != conf.getNumMapTasks()) {
-        end = new IntWritable(((i * interval) + interval) - 1);        
+      if ((i + 1) != conf.getNumMapTasks()) {
+        end = new IntWritable(((i * interval) + interval) - 1);
       } else {
-        end = new IntWritable(m - 1);       
+        end = new IntWritable(m - 1);
       }
       final SequenceFile.Writer writer = SequenceFile.createWriter(fs, jobConf,
           file, IntWritable.class, IntWritable.class, CompressionType.NONE);
@@ -300,7 +301,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     fs.delete(TMP_DIR, true);
     return rand;
   }
-  
+
   /**
    * Generate identity matrix
    * 
@@ -470,8 +471,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public SubMatrix getBlock(int i, int j) throws IOException {
-    return new SubMatrix(table.get(String.valueOf(i),
-        Constants.BLOCK + j).getValue());
+    return new SubMatrix(table.get(String.valueOf(i), Constants.BLOCK + j)
+        .getValue());
   }
 
   /**
@@ -499,12 +500,20 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     int block_row_size = this.getRows() / blockNum;
     int block_column_size = this.getColumns() / blockNum;
 
-    for (int i = 0; i < blockNum; i++) {
-      for (int j = 0; j < blockNum; j++) {
-        int startRow = i * block_row_size;
-        int endRow = (startRow + block_row_size) - 1;
-        int startColumn = j * block_column_size;
-        int endColumn = (startColumn + block_column_size) - 1;
+    int startRow, endRow, startColumn, endColumn;
+    int i = 0, j = 0;
+    do {
+      startRow = i * block_row_size;
+      endRow = (startRow + block_row_size) - 1;
+      if (endRow >= this.getRows())
+        endRow = this.getRows() - 1;
+
+      j = 0;
+      do {
+        startColumn = j * block_column_size;
+        endColumn = (startColumn + block_column_size) - 1;
+        if (endColumn >= this.getColumns())
+          endColumn = this.getColumns() - 1;
 
         BatchUpdate update = new BatchUpdate(getBlockKey(i, j));
         update.put(Constants.BLOCK_STARTROW, BytesUtil.intToBytes(startRow));
@@ -513,8 +522,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
             .intToBytes(startColumn));
         update.put(Constants.BLOCK_ENDCOLUMN, BytesUtil.intToBytes(endColumn));
         table.commit(update);
-      }
-    }
+
+        j++;
+      } while (endColumn < (this.getColumns() - 1));
+
+      i++;
+    } while (endRow < (this.getRows() - 1));
   }
 
   protected int[] getBlockPosition(int i, int j) throws IOException {
@@ -542,7 +555,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public void blocking_mapred(int blockNum) throws IOException {
     this.checkBlockNum(blockNum);
-    
+
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("Blocking MR job" + getPath());
 
@@ -563,7 +576,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public void blocking(int blockNum) throws IOException {
     this.checkBlockNum(blockNum);
-    
+
     String[] columns = new String[] { Constants.BLOCK_STARTROW,
         Constants.BLOCK_ENDROW, Constants.BLOCK_STARTCOLUMN,
         Constants.BLOCK_ENDCOLUMN };
@@ -577,14 +590,14 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       setBlock(blockR, blockC, subMatrix(pos[0], pos[1], pos[2], pos[3]));
     }
   }
-  
+
   private void checkBlockNum(int blockNum) throws IOException {
     double blocks = Math.pow(blockNum, 0.5);
     // TODO: Check also it is validation with matrix.
-    if(!String.valueOf(blocks).endsWith(".0"))
+    if (!String.valueOf(blocks).endsWith(".0"))
       throw new IOException("can't divide.");
-    
-    int block_size = (int) blocks;  
+
+    int block_size = (int) blocks;
     setBlockPosition(block_size);
     setBlockSize(block_size);
     LOG.info("Create " + block_size + " * " + block_size + " blocked matrix");

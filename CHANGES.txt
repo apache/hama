@@ -87,6 +87,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
    
+    HAMA-130: Computing Block's range will miss some cell during blocking
+              (samuel)
     HAMA-126: In random_mapred, (m) should be (m-1) 
                 since start from 0. (edwardyoon)
     HAMA-116: ArrayIndexOutOfBoundsException at BlockingMapRed (samuel)
