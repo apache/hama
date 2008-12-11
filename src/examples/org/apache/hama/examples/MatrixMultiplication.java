@@ -27,7 +27,7 @@ import org.apache.hama.Matrix;
 public class MatrixMultiplication extends AbstractExample {
   public static void main(String[] args) throws IOException {
     if (args.length < 2) {
-      System.out.println("mult  [-m maps] [-r reduces] <matrix_A> <matrix_B>");
+      System.out.println("mult  [-m maps] [-r reduces] <matrix_A> <matrix_B> [blocks]");
       System.exit(-1);
     } else {
       parseArgs(args);
@@ -39,11 +39,11 @@ public class MatrixMultiplication extends AbstractExample {
     DenseMatrix a = new DenseMatrix(conf, matrixA, false);
     DenseMatrix b = new DenseMatrix(conf, matrixB, false);
     
-    if (!a.isBlocked())
-      a.blocking_mapred(conf.getNumMapTasks());
-    if (!b.isBlocked())
-      b.blocking_mapred(conf.getNumMapTasks());
-
+    if(ARGS.size() > 2) {
+      a.blocking_mapred(Integer.parseInt(ARGS.get(2)));
+      b.blocking_mapred(Integer.parseInt(ARGS.get(2)));
+    }
+    
     Matrix c = a.mult(b);
     c.close();
   }

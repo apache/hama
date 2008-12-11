@@ -464,28 +464,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return result;
   }
 
-  /**
-   * Using a map/reduce job to block a dense matrix.
-   * 
-   * @param blockNum
-   * @throws IOException
-   */
-  public void blocking_mapred(int blockNum) throws IOException {
-    setBlockPosition(blockNum);
-    setBlockSize(blockNum);
-    LOG.info("Convert to " + blockNum + " * " + blockNum + " blocked matrix");
-    
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("Blocking MR job" + getPath());
-
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
-
-    BlockingMapRed.initJob(getPath(), jobConf);
-
-    JobManager.execute(jobConf);
-  }
-
   public boolean isBlocked() throws IOException {
     return (table.get(Constants.METADATA, Constants.BLOCK_SIZE) == null) ? false
         : true;
@@ -557,6 +535,26 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
+   * Using a map/reduce job to block a dense matrix.
+   * 
+   * @param blockNum
+   * @throws IOException
+   */
+  public void blocking_mapred(int blockNum) throws IOException {
+    this.checkBlockNum(blockNum);
+    
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("Blocking MR job" + getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+
+    BlockingMapRed.initJob(getPath(), jobConf);
+
+    JobManager.execute(jobConf);
+  }
+
+  /**
    * Using a scanner to block a dense matrix. If the matrix is large, use the
    * blocking_mapred()
    * 
@@ -564,9 +562,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public void blocking(int blockNum) throws IOException {
-    setBlockPosition(blockNum);
-    setBlockSize(blockNum);
-
+    this.checkBlockNum(blockNum);
+    
     String[] columns = new String[] { Constants.BLOCK_STARTROW,
         Constants.BLOCK_ENDROW, Constants.BLOCK_STARTCOLUMN,
         Constants.BLOCK_ENDCOLUMN };
@@ -579,5 +576,17 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       int[] pos = getBlockPosition(blockR, blockC);
       setBlock(blockR, blockC, subMatrix(pos[0], pos[1], pos[2], pos[3]));
     }
+  }
+  
+  private void checkBlockNum(int blockNum) throws IOException {
+    double blocks = Math.pow(blockNum, 0.5);
+    // TODO: Check also it is validation with matrix.
+    if(!String.valueOf(blocks).endsWith(".0"))
+      throw new IOException("can't divide.");
+    
+    int block_size = (int) blocks;  
+    setBlockPosition(block_size);
+    setBlockSize(block_size);
+    LOG.info("Create " + block_size + " * " + block_size + " blocked matrix");
   }
 }
