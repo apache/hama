@@ -30,7 +30,6 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -47,6 +46,7 @@ import org.apache.hama.algebra.RowCyclicAdditionMap;
 import org.apache.hama.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.algebra.SIMDMultiplyMap;
 import org.apache.hama.algebra.SIMDMultiplyReduce;
+import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.MapWritable;
@@ -515,7 +515,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         if (endColumn >= this.getColumns())
           endColumn = this.getColumns() - 1;
 
-        BatchUpdate update = new BatchUpdate(getBlockKey(i, j));
+        BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
         update.put(Constants.BLOCK_STARTROW, BytesUtil.intToBytes(startRow));
         update.put(Constants.BLOCK_ENDROW, BytesUtil.intToBytes(endRow));
         update.put(Constants.BLOCK_STARTCOLUMN, BytesUtil
@@ -531,20 +531,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   protected int[] getBlockPosition(int i, int j) throws IOException {
+    RowResult rs = table.getRow(new BlockID(i, j).getBytes());
     int[] result = new int[4];
-    result[0] = BytesUtil.bytesToInt(table.get(getBlockKey(i, j),
-        Constants.BLOCK_STARTROW).getValue());
-    result[1] = BytesUtil.bytesToInt(table.get(getBlockKey(i, j),
-        Constants.BLOCK_ENDROW).getValue());
-    result[2] = BytesUtil.bytesToInt(table.get(getBlockKey(i, j),
-        Constants.BLOCK_STARTCOLUMN).getValue());
-    result[3] = BytesUtil.bytesToInt(table.get(getBlockKey(i, j),
-        Constants.BLOCK_ENDCOLUMN).getValue());
+    
+    result[0] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_STARTROW).getValue());
+    result[1] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_ENDROW).getValue());
+    result[2] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_STARTCOLUMN).getValue());
+    result[3] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_ENDCOLUMN).getValue());
+    
     return result;
-  }
-
-  protected String getBlockKey(int i, int j) {
-    return i + "," + j;
   }
 
   /**
@@ -583,11 +578,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     Scanner scan = table.getScanner(columns);
 
     for (RowResult row : scan) {
-      String[] key = Bytes.toString(row.getRow()).split("[,]");
-      int blockR = Integer.parseInt(key[0]);
-      int blockC = Integer.parseInt(key[1]);
-      int[] pos = getBlockPosition(blockR, blockC);
-      setBlock(blockR, blockC, subMatrix(pos[0], pos[1], pos[2], pos[3]));
+      BlockID bID = new BlockID(row.getRow());
+      int[] pos = getBlockPosition(bID.getRow(), bID.getColumn());
+      setBlock(bID.getRow(), bID.getColumn(), subMatrix(pos[0], pos[1], pos[2], pos[3]));
     }
   }
 

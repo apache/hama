@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Arrays;
 
 import org.apache.log4j.Logger;
 
@@ -93,6 +92,10 @@ public class SubMatrix implements java.io.Serializable {
     return matrix[i][j];
   }
 
+  public void add(int row, int column, double value) {
+    matrix[row][column] = matrix[row][column] + value;
+  }
+
   /**
    * c = a+b
    * 
@@ -100,14 +103,15 @@ public class SubMatrix implements java.io.Serializable {
    * @return c
    */
   public SubMatrix add(SubMatrix b) {
-    double[][] C = new double[getRows()][getColumns()];
+    SubMatrix c = new SubMatrix(this.getRows(), this.getColumns());
+    
     for (int i = 0; i < this.getRows(); i++) {
       for (int j = 0; j < this.getColumns(); j++) {
-        C[i][j] = (this.get(i, j) + b.get(i, j));
+        c.set(i, j, (this.get(i, j) + b.get(i, j)));
       }
     }
 
-    return new SubMatrix(C);
+    return c;
   }
 
   /**
@@ -117,19 +121,17 @@ public class SubMatrix implements java.io.Serializable {
    * @return c
    */
   public SubMatrix mult(SubMatrix b) {
-    double[][] C = new double[this.getRows()][b.getColumns()];
-    for (int i = 0; i < this.getRows(); i++) {
-      Arrays.fill(C[i], 0);
-    }
+    SubMatrix c = new SubMatrix(this.getRows(), b.getColumns());
+    
     for (int i = 0; i < this.getRows(); i++) {
       for (int j = 0; j < b.getColumns(); j++) {
         for (int k = 0; k < this.getColumns(); k++) {
-          C[i][j] += this.get(i, k) * b.get(k, j);
+          c.add(i, j, this.get(i, k) * b.get(k, j));
         }
       }
     }
 
-    return new SubMatrix(C);
+    return c;
   }
 
   /**
