@@ -19,15 +19,20 @@
  */
 package org.apache.hama.io;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import org.apache.hadoop.io.WritableComparable;
 
 /** A WritableComparable for BlockIDs. */
 @SuppressWarnings("unchecked")
-public class BlockID implements WritableComparable {
+public class BlockID implements WritableComparable, java.io.Serializable {
+  private static final long serialVersionUID = 1L;
   private int row;
   private int column;
 
@@ -36,6 +41,21 @@ public class BlockID implements WritableComparable {
 
   public BlockID(int row, int column) {
     set(row, column);
+  }
+
+  public BlockID(byte[] bytes) throws IOException {
+    ByteArrayInputStream bos = new ByteArrayInputStream(bytes);
+    ObjectInputStream oos = new ObjectInputStream(bos);
+    Object obj = null;
+    try {
+      obj = oos.readObject();
+      this.row = ((BlockID)obj).getRow();
+      this.column = ((BlockID)obj).getColumn();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    oos.close();
+    bos.close();
   }
 
   public void set(int row, int column) {
@@ -89,34 +109,14 @@ public class BlockID implements WritableComparable {
     }
   }
 
-  /**
-   * BlockID Comparator 
-   */
-  /* why we need a special Comparator
-  public static class Comparator extends WritableComparator {
-    protected Comparator() {
-      super(BlockID.class);
-    }
-
-    public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
-      int thisRow = readInt(b1, s1);
-      int thatRow = readInt(b2, s2);
-      // why read from l1 & l2
-      // l1 means length 1, and l2 means length 2
-      int thisColumn = readInt(b1, l1);
-      int thatColumn = readInt(b2, l2);
-
-      if (thisRow != thatRow) {
-        return (thisRow < thatRow ? -1 : 1);
-      } else {
-        return (thisColumn < thatColumn ? -1 : (thisColumn == thatColumn ? 0
-            : 1));
-      }
-    }
+  public byte[] getBytes() throws IOException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(bos);
+    oos.writeObject(this);
+    oos.flush();
+    oos.close();
+    bos.close();
+    byte[] data = bos.toByteArray();
+    return data;
   }
-
-  static { // register this comparator
-    WritableComparator.define(BlockID.class, new Comparator());
-  }
-  */
 }

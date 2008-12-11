@@ -33,6 +33,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-134: We don't need to fill C with zeros (edwardyoon)
     HAMA-131: Add argument for the number of blocks (edwardyoon)
     HAMA-113: Random matrix generator on map/reduce (edwardyoon)
     HAMA-118: Add getting started page link (edwardyoon)
