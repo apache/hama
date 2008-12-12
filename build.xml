@@ -308,6 +308,7 @@
     <target name="findbugs" depends="init, jar">
         <findbugs home="${lib.dir}/findbugs" output="xml" 
         	     outputFile="${build.report.findbugs}/hama-findbugs.xml" 
+               excludeFilter="${conf.dir}/findbugs-exclude-filter.xml"
         	     auxClasspathRef="classpath">
             <sourcePath path="${src.dir}" />
             <class location="${build.dir}/${final.name}.jar" />

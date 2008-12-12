@@ -24,11 +24,9 @@ import org.apache.hama.shell.HamaShellEnv;
 abstract public class HamaExpression {
 
   HamaShellEnv env;
-  HamaConfiguration conf;
   
   public HamaExpression(HamaConfiguration conf, HamaShellEnv env) {
     this.env = env;
-    this.conf = conf;
   }
   
   /**

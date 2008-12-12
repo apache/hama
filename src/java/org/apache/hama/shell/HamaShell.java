@@ -38,7 +38,6 @@ public class HamaShell {
 
   private final Log log = LogFactory.getLog(getClass());
 
-  BufferedReader in;
   HamaShellEnv env;
   HamaShellParser parser;
   HamaConfiguration conf;
@@ -52,7 +51,6 @@ public class HamaShell {
    */
   public HamaShell(BufferedReader in, HamaShellEnv shellEnv,
       HamaConfiguration conf) {
-    this.in = in;
     this.env = shellEnv;
     this.conf = conf;
 

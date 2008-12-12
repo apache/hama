@@ -88,6 +88,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
    
+    HAMA-120: remove findbugs warning in shell package (samuel via edwardyoon)
     HAMA-130: Computing Block's range will miss some cell during blocking
               (samuel)
     HAMA-126: In random_mapred, (m) should be (m-1) 

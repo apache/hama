@@ -29,24 +29,22 @@ import org.apache.hama.HamaConfiguration;
  */
 public class LoadOperation extends HamaOperation {
 
-  String filename;
-  String asTypename;
-  String classname;
+  // unsupported now.
+//  String filename;
+//  String classname;
   
   public LoadOperation(HamaConfiguration conf, String filename, String typename, 
       String classname) {
     super(conf);
-    this.filename = filename;
-    this.asTypename = typename;
-    this.classname = classname;
+//    this.filename = filename;
+//    this.classname = classname;
   }
   
   public LoadOperation(HamaConfiguration conf, String filename, String typename, 
       String classname, int map, int reduce) {
     super(conf, map, reduce);
-    this.filename = filename;
-    this.asTypename = typename;
-    this.classname = classname;
+//    this.filename = filename;
+//    this.classname = classname;
   }
 
   public Object operate() throws IOException {
