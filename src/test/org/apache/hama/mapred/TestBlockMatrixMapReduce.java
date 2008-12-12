@@ -56,7 +56,7 @@ public class TestBlockMatrixMapReduce extends HCluster {
 
     BlockCyclicMultiplyMap.initJob(string, string2, BlockCyclicMultiplyMap.class, IntWritable.class,
         BlockWritable.class, jobConf);
-    BlockCyclicReduce.initJob(output, BlockCyclicMultiplyReduce.class, jobConf);
+    BlockCyclicMultiplyReduce.initJob(output, BlockCyclicMultiplyReduce.class, jobConf);
 
     jobConf.setNumMapTasks(2);
     jobConf.setNumReduceTasks(2);

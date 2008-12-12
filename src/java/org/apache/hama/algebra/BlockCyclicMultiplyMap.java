@@ -22,18 +22,22 @@ package org.apache.hama.algebra;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.Constants;
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.SubMatrix;
 import org.apache.hama.io.BlockWritable;
-import org.apache.hama.mapred.BlockCyclicMap;
+import org.apache.hama.mapred.BlockInputFormat;
 import org.apache.log4j.Logger;
 
-public class BlockCyclicMultiplyMap extends
-    BlockCyclicMap<IntWritable, BlockWritable> {
+public class BlockCyclicMultiplyMap extends MapReduceBase implements
+    Mapper<IntWritable, BlockWritable, IntWritable, BlockWritable> {
   static final Logger LOG = Logger.getLogger(BlockCyclicMultiplyMap.class);
   protected DenseMatrix matrix_b;
   public static final String MATRIX_B = "hama.multiplication.matrix.b";
@@ -55,7 +59,10 @@ public class BlockCyclicMultiplyMap extends
     jobConf.setMapperClass(map);
     jobConf.set(MATRIX_B, matrix_b);
 
-    initJob(matrix_a, map, jobConf);
+    jobConf.setInputFormat(BlockInputFormat.class);
+    FileInputFormat.addInputPaths(jobConf, matrix_a);
+
+    jobConf.set(BlockInputFormat.COLUMN_LIST, Constants.BLOCK);
   }
 
   @Override

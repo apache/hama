@@ -24,19 +24,40 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.SubMatrix;
 import org.apache.hama.io.BlockEntry;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.mapred.BlockCyclicReduce;
+import org.apache.hama.mapred.VectorOutputFormat;
 import org.apache.log4j.Logger;
 
-public class BlockCyclicMultiplyReduce extends
-    BlockCyclicReduce<IntWritable, BlockWritable> {
+public class BlockCyclicMultiplyReduce extends MapReduceBase implements
+    Reducer<IntWritable, BlockWritable, IntWritable, VectorUpdate> {
   static final Logger LOG = Logger.getLogger(BlockCyclicMultiplyReduce.class);
+
+  /**
+   * Use this before submitting a BlockCyclicMultiplyReduce job. It will
+   * appropriately set up the JobConf.
+   * 
+   * @param table
+   * @param reducer
+   * @param job
+   */
+  public static void initJob(String table,
+      Class<BlockCyclicMultiplyReduce> reducer, JobConf job) {
+    job.setOutputFormat(VectorOutputFormat.class);
+    job.setReducerClass(reducer);
+    job.set(VectorOutputFormat.OUTPUT_TABLE, table);
+    job.setOutputKeyClass(IntWritable.class);
+    job.setOutputValueClass(BatchUpdate.class);
+  }
 
   @Override
   public void reduce(IntWritable key, Iterator<BlockWritable> values,
