@@ -109,6 +109,13 @@ public class BlockID implements WritableComparable, java.io.Serializable {
     }
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if(o == null) return false;
+    if(!(o instanceof BlockID)) return false;
+    return compareTo(o) == 0;
+  }
+
   public byte[] getBytes() throws IOException {
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     ObjectOutputStream oos = new ObjectOutputStream(bos);
