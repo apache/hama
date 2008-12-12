@@ -22,17 +22,21 @@ package org.apache.hama.algebra;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.Constants;
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.RowCyclicMap;
+import org.apache.hama.mapred.VectorInputFormat;
 import org.apache.log4j.Logger;
 
-public class RowCyclicAdditionMap extends
-    RowCyclicMap<IntWritable, VectorWritable> {
+public class RowCyclicAdditionMap extends MapReduceBase implements
+Mapper<IntWritable, VectorWritable, IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(RowCyclicAdditionMap.class);
   protected DenseMatrix matrix_b;
   public static final String MATRIX_B = "hama.addition.matrix.b";
@@ -54,7 +58,10 @@ public class RowCyclicAdditionMap extends
     jobConf.setMapperClass(map);
     jobConf.set(MATRIX_B, matrix_b);
 
-    initJob(matrix_a, map, jobConf);
+
+    jobConf.setInputFormat(VectorInputFormat.class);
+    FileInputFormat.addInputPaths(jobConf, matrix_a);
+    jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 
   @Override
@@ -66,5 +73,4 @@ public class RowCyclicAdditionMap extends
         matrix_b.getRow(key.get()).add(value.getDenseVector())));
 
   }
-
 }

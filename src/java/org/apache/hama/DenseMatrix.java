@@ -52,10 +52,8 @@ import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.MapWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.BlockCyclicReduce;
 import org.apache.hama.mapred.BlockingMapRed;
 import org.apache.hama.mapred.RandomMatrixMap;
-import org.apache.hama.mapred.RowCyclicReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
@@ -354,8 +352,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(),
         RowCyclicAdditionMap.class, IntWritable.class, VectorWritable.class,
         jobConf);
-    RowCyclicReduce.initJob(result.getPath(), RowCyclicAdditionReduce.class,
-        jobConf);
+    RowCyclicAdditionReduce.initJob(result.getPath(),
+        RowCyclicAdditionReduce.class, jobConf);
 
     JobManager.execute(jobConf, result);
     return result;
@@ -398,13 +396,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       BlockCyclicMultiplyMap.initJob(this.getPath(), B.getPath(),
           BlockCyclicMultiplyMap.class, IntWritable.class, BlockWritable.class,
           jobConf);
-      BlockCyclicReduce.initJob(result.getPath(),
+      BlockCyclicMultiplyReduce.initJob(result.getPath(),
           BlockCyclicMultiplyReduce.class, jobConf);
     } else {
       SIMDMultiplyMap.initJob(this.getPath(), B.getPath(),
           SIMDMultiplyMap.class, IntWritable.class, VectorWritable.class,
           jobConf);
-      RowCyclicReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
+      SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
           jobConf);
     }
 
@@ -533,12 +531,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   protected int[] getBlockPosition(int i, int j) throws IOException {
     RowResult rs = table.getRow(new BlockID(i, j).getBytes());
     int[] result = new int[4];
-    
-    result[0] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_STARTROW).getValue());
+
+    result[0] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_STARTROW)
+        .getValue());
     result[1] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_ENDROW).getValue());
-    result[2] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_STARTCOLUMN).getValue());
-    result[3] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_ENDCOLUMN).getValue());
-    
+    result[2] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_STARTCOLUMN)
+        .getValue());
+    result[3] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_ENDCOLUMN)
+        .getValue());
+
     return result;
   }
 
@@ -580,7 +581,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     for (RowResult row : scan) {
       BlockID bID = new BlockID(row.getRow());
       int[] pos = getBlockPosition(bID.getRow(), bID.getColumn());
-      setBlock(bID.getRow(), bID.getColumn(), subMatrix(pos[0], pos[1], pos[2], pos[3]));
+      setBlock(bID.getRow(), bID.getColumn(), subMatrix(pos[0], pos[1], pos[2],
+          pos[3]));
     }
   }
 

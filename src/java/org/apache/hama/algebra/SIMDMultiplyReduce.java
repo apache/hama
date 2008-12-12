@@ -22,17 +22,38 @@ package org.apache.hama.algebra;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.RowCyclicReduce;
+import org.apache.hama.mapred.VectorOutputFormat;
 import org.apache.log4j.Logger;
 
-public class SIMDMultiplyReduce extends
-    RowCyclicReduce<IntWritable, VectorWritable> {
+public class SIMDMultiplyReduce extends MapReduceBase implements
+    Reducer<IntWritable, VectorWritable, IntWritable, VectorUpdate> {
   static final Logger LOG = Logger.getLogger(SIMDMultiplyReduce.class);
+
+  /**
+   * Use this before submitting a TableReduce job. It will appropriately set up
+   * the JobConf.
+   * 
+   * @param table
+   * @param reducer
+   * @param job
+   */
+  public static void initJob(String table,
+      Class<SIMDMultiplyReduce> reducer, JobConf job) {
+    job.setOutputFormat(VectorOutputFormat.class);
+    job.setReducerClass(reducer);
+    job.set(VectorOutputFormat.OUTPUT_TABLE, table);
+    job.setOutputKeyClass(IntWritable.class);
+    job.setOutputValueClass(BatchUpdate.class);
+  }
   
   @Override
   public void reduce(IntWritable key, Iterator<VectorWritable> values,

@@ -21,54 +21,99 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.mapred.TableSplit;
+import org.apache.hadoop.hbase.util.Writables;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.io.BlockWritable;
+import org.apache.hama.util.BytesUtil;
 
-public class BlockInputFormat extends BlockInputFormatBase implements
-    JobConfigurable {
-  private static final Log LOG = LogFactory.getLog(BlockInputFormat.class);
-
+public class BlockInputFormat extends TableInputFormatBase implements
+    InputFormat<IntWritable, BlockWritable>, JobConfigurable {
+  private TableRecordReader tableRecordReader;
+  
   /**
-   * space delimited list of columns
+   * Iterate over an HBase table data, return (IntWritable, BlockWritable) pairs
    */
-  public static final String COLUMN_LIST = "hama.mapred.tablecolumns";
+  protected static class TableRecordReader extends TableRecordReaderBase
+      implements RecordReader<IntWritable, BlockWritable> {
 
-  /** {@inheritDoc} */
-  public void configure(JobConf job) {
-    Path[] tableNames = FileInputFormat.getInputPaths(job);
-    String colArg = job.get(COLUMN_LIST);
-    String[] colNames = colArg.split(" ");
-    byte[][] m_cols = new byte[colNames.length][];
-    for (int i = 0; i < m_cols.length; i++) {
-      m_cols[i] = Bytes.toBytes(colNames[i]);
+    /**
+     * @return IntWritable
+     * 
+     * @see org.apache.hadoop.mapred.RecordReader#createKey()
+     */
+    public IntWritable createKey() {
+      return new IntWritable();
     }
-    setInputColums(m_cols);
-    try {
-      setHTable(new HTable(new HBaseConfiguration(job), tableNames[0].getName()));
-    } catch (Exception e) {
-      LOG.error(e);
+
+    /**
+     * @return BlockWritable
+     * 
+     * @see org.apache.hadoop.mapred.RecordReader#createValue()
+     */
+    public BlockWritable createValue() {
+      return new BlockWritable();
+    }
+
+    /**
+     * @param key IntWritable as input key.
+     * @param value BlockWritable as input value
+     * 
+     * Converts Scanner.next() to IntWritable, BlockWritable
+     * 
+     * @return true if there was more data
+     * @throws IOException
+     */
+    public boolean next(IntWritable key, BlockWritable value)
+        throws IOException {
+      RowResult result = this.scanner.next();
+      boolean hasMore = result != null && result.size() > 0;
+      if (hasMore) {
+        key.set(BytesUtil.bytesToInt(result.getRow()));
+        Writables.copyWritable(result, value);
+      }
+      return hasMore;
     }
   }
 
-  /** {@inheritDoc} */
-  public void validateInput(JobConf job) throws IOException {
-    // expecting exactly one path
-    Path[] tableNames = FileInputFormat.getInputPaths(job);
-    if (tableNames == null || tableNames.length > 1) {
-      throw new IOException("expecting one table name");
+  /**
+   * Builds a TableRecordReader. If no TableRecordReader was provided, uses the
+   * default.
+   * 
+   * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
+   *      JobConf, Reporter)
+   */
+  public RecordReader<IntWritable, BlockWritable> getRecordReader(
+      InputSplit split, JobConf job, Reporter reporter) throws IOException {
+    TableSplit tSplit = (TableSplit) split;
+    TableRecordReader trr = this.tableRecordReader;
+    // if no table record reader was provided use default
+    if (trr == null) {
+      trr = new TableRecordReader();
     }
-
-    // expecting at least one column
-    String colArg = job.get(COLUMN_LIST);
-    if (colArg == null || colArg.length() == 0) {
-      throw new IOException("expecting at least one column");
-    }
+    trr.setStartRow(tSplit.getStartRow());
+    trr.setEndRow(tSplit.getEndRow());
+    trr.setHTable(this.table);
+    trr.setInputColumns(this.inputColumns);
+    trr.setRowFilter(this.rowFilter);
+    trr.init();
+    return trr;
+  }
+  
+  /**
+   * Allows subclasses to set the {@link TableRecordReader}.
+   * 
+   * @param tableRecordReader to provide other {@link TableRecordReader}
+   *                implementations.
+   */
+  protected void setTableRecordReader(TableRecordReader tableRecordReader) {
+    this.tableRecordReader = tableRecordReader;
   }
 }

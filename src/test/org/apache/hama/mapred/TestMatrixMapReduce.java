@@ -66,7 +66,7 @@ public class TestMatrixMapReduce extends HCluster {
 
     RowCyclicAdditionMap.initJob(string, string2, RowCyclicAdditionMap.class, IntWritable.class,
         VectorWritable.class, jobConf);
-    RowCyclicReduce.initJob(output, RowCyclicAdditionReduce.class, jobConf);
+    RowCyclicAdditionReduce.initJob(output, RowCyclicAdditionReduce.class, jobConf);
 
     jobConf.setNumMapTasks(2);
     jobConf.setNumReduceTasks(2);
