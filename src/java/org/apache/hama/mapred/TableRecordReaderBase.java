@@ -28,7 +28,7 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.filter.RowFilterInterface;
 import org.apache.hadoop.hbase.filter.RowFilterSet;
 import org.apache.hadoop.hbase.filter.StopRowFilter;
-import org.apache.hama.io.BlockWritable;
+import org.apache.hama.io.BlockPosition;
 
 public abstract class TableRecordReaderBase {
   protected byte[] startRow;
@@ -70,7 +70,7 @@ public abstract class TableRecordReaderBase {
   }
 
   /**
-   * @param inputColumns the columns to be placed in {@link BlockWritable}.
+   * @param inputColumns the columns to be placed in {@link BlockPosition}.
    */
   public void setInputColumns(final byte[][] inputColumns) {
     byte[][] columns = inputColumns;

@@ -30,47 +30,39 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.SubMatrix;
-import org.apache.hama.util.BytesUtil;
 
-public class BlockWritable implements Writable, Map<Integer, BlockEntry> {
+public class BlockPosition implements Writable, Map<Text, IntegerEntry> {
 
-  public Integer row;
-  public BlockMapWritable<Integer, BlockEntry> entries;
+  public BlockID row;
+  public BlockPositionMapWritable<Text, IntegerEntry> entries;
 
-  public BlockWritable() {
-    this(new BlockMapWritable<Integer, BlockEntry>());
+  public BlockPosition() {
+    this(new BlockPositionMapWritable<Text, IntegerEntry>());
   }
 
-  public BlockWritable(BlockMapWritable<Integer, BlockEntry> entries) {
+  public BlockPosition(BlockPositionMapWritable<Text, IntegerEntry> entries) {
     this.entries = entries;
   }
 
-  public BlockWritable(int i, int j, SubMatrix mult) throws IOException {
-    this.row = i;
-    BlockMapWritable<Integer, BlockEntry> tr = new BlockMapWritable<Integer, BlockEntry>();
-    tr.put(j, new BlockEntry(mult));
-    this.entries = tr;
+  public int getIndex(String key) {
+    return this.entries.get(new Text(key)).getValue();
   }
-
+  
   public int size() {
     return this.entries.size();
   }
   
-  public SubMatrix get(int key) throws IOException {
-    return this.entries.get(key).getValue();
-  }
-  
-  public BlockEntry put(Integer key, BlockEntry value) {
+  public IntegerEntry put(Text key, IntegerEntry value) {
     throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
 
-  public BlockEntry get(Object key) {
+  public IntegerEntry get(Object key) {
     return this.entries.get(key);
   }
 
-  public BlockEntry remove(Object key) {
+  public IntegerEntry remove(Object key) {
     throw new UnsupportedOperationException("VectorWritable is read-only!");
   }
 
@@ -90,37 +82,37 @@ public class BlockWritable implements Writable, Map<Integer, BlockEntry> {
     throw new UnsupportedOperationException("VectorDatum is read-only!");
   }
 
-  public Set<Integer> keySet() {
-    Set<Integer> result = new TreeSet<Integer>();
-    for (Integer w : entries.keySet()) {
+  public Set<Text> keySet() {
+    Set<Text> result = new TreeSet<Text>();
+    for (Text w : entries.keySet()) {
       result.add(w);
     }
     return result;
   }
 
-  public Set<Map.Entry<Integer, BlockEntry>> entrySet() {
+  public Set<Map.Entry<Text, IntegerEntry>> entrySet() {
     return Collections.unmodifiableSet(this.entries.entrySet());
   }
 
-  public Collection<BlockEntry> values() {
-    ArrayList<BlockEntry> result = new ArrayList<BlockEntry>();
+  public Collection<IntegerEntry> values() {
+    ArrayList<IntegerEntry> result = new ArrayList<IntegerEntry>();
     for (Writable w : entries.values()) {
-      result.add((BlockEntry) w);
+      result.add((IntegerEntry) w);
     }
     return result;
   }
 
   public void readFields(final DataInput in) throws IOException {
-    this.row = BytesUtil.bytesToInt(Bytes.readByteArray(in));
+    this.row = new BlockID(Bytes.readByteArray(in));
     this.entries.readFields(in);
   }
 
   public void write(final DataOutput out) throws IOException {
-    Bytes.writeByteArray(out, BytesUtil.intToBytes(this.row));
+    Bytes.writeByteArray(out, this.row.getBytes());
     this.entries.write(out);
   }
 
-  public void putAll(Map<? extends Integer, ? extends BlockEntry> m) {
+  public void putAll(Map<? extends Text, ? extends IntegerEntry> m) {
     throw new UnsupportedOperationException("Not implemented yet");
   }
 
@@ -129,17 +121,17 @@ public class BlockWritable implements Writable, Map<Integer, BlockEntry> {
    * The inner class for an entry of row.
    * 
    */
-  public static class Entries implements Map.Entry<byte[], BlockEntry> {
+  public static class Entries implements Map.Entry<byte[], IntegerEntry> {
 
     private final byte[] column;
-    private final BlockEntry entry;
+    private final IntegerEntry entry;
 
-    Entries(byte[] column, BlockEntry entry) {
+    Entries(byte[] column, IntegerEntry entry) {
       this.column = column;
       this.entry = entry;
     }
 
-    public BlockEntry setValue(BlockEntry c) {
+    public IntegerEntry setValue(IntegerEntry c) {
       throw new UnsupportedOperationException("VectorWritable is read-only!");
     }
 
@@ -148,8 +140,9 @@ public class BlockWritable implements Writable, Map<Integer, BlockEntry> {
       return key;
     }
 
-    public BlockEntry getValue() {
+    public IntegerEntry getValue() {
       return entry;
     }
   }
+
 }

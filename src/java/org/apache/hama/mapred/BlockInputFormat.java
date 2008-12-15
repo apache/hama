@@ -21,36 +21,38 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.util.Writables;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.io.BlockWritable;
-import org.apache.hama.util.BytesUtil;
+import org.apache.hama.io.BlockID;
+import org.apache.hama.io.BlockPosition;
 
 public class BlockInputFormat extends TableInputFormatBase implements
-    InputFormat<IntWritable, BlockWritable>, JobConfigurable {
+    InputFormat<BlockID, BlockPosition>, JobConfigurable {
+  static final Log LOG = LogFactory.getLog(BlockInputFormat.class);
   private TableRecordReader tableRecordReader;
   
   /**
-   * Iterate over an HBase table data, return (IntWritable, BlockWritable) pairs
+   * Iterate over an HBase table data, return (BlockID, BlockWritable) pairs
    */
   protected static class TableRecordReader extends TableRecordReaderBase
-      implements RecordReader<IntWritable, BlockWritable> {
+      implements RecordReader<BlockID, BlockPosition> {
 
     /**
      * @return IntWritable
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createKey()
      */
-    public IntWritable createKey() {
-      return new IntWritable();
+    public BlockID createKey() {
+      return new BlockID();
     }
 
     /**
@@ -58,25 +60,27 @@ public class BlockInputFormat extends TableInputFormatBase implements
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createValue()
      */
-    public BlockWritable createValue() {
-      return new BlockWritable();
+    public BlockPosition createValue() {
+      return new BlockPosition();
     }
 
     /**
-     * @param key IntWritable as input key.
+     * @param key BlockID as input key.
      * @param value BlockWritable as input value
      * 
-     * Converts Scanner.next() to IntWritable, BlockWritable
+     * Converts Scanner.next() to BlockID, BlockWritable
      * 
      * @return true if there was more data
      * @throws IOException
      */
-    public boolean next(IntWritable key, BlockWritable value)
+    public boolean next(BlockID key, BlockPosition value)
         throws IOException {
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
       if (hasMore) {
-        key.set(BytesUtil.bytesToInt(result.getRow()));
+        byte[] row = result.getRow();
+        BlockID bID = new BlockID(row);
+        key.set(bID.getRow(), bID.getColumn());
         Writables.copyWritable(result, value);
       }
       return hasMore;
@@ -90,7 +94,7 @@ public class BlockInputFormat extends TableInputFormatBase implements
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<IntWritable, BlockWritable> getRecordReader(
+  public RecordReader<BlockID, BlockPosition> getRecordReader(
       InputSplit split, JobConf job, Reporter reporter) throws IOException {
     TableSplit tSplit = (TableSplit) split;
     TableRecordReader trr = this.tableRecordReader;
