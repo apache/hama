@@ -59,7 +59,6 @@ import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
 
 public class DenseMatrix extends AbstractMatrix implements Matrix {
-
   static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
   static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
   static private final Path TMP_DIR = new Path(DenseMatrix.class
@@ -448,15 +447,16 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return this.getClass().getSimpleName();
   }
 
+  // TODO: Scanner should be used. -- Edward J. Yoon
   public SubMatrix subMatrix(int i0, int i1, int j0, int j1) throws IOException {
     int columnSize = (j1 - j0) + 1;
     SubMatrix result = new SubMatrix((i1 - i0) + 1, columnSize);
 
+    RowResult rs = null;
     for (int i = i0, ii = 0; i <= i1; i++, ii++) {
+      rs = table.getRow(BytesUtil.intToBytes(i));
       for (int j = j0, jj = 0; j <= j1; j++, jj++) {
-        Cell c = table
-            .get(BytesUtil.intToBytes(i), BytesUtil.getColumnIndex(j));
-        result.set(ii, jj, BytesUtil.bytesToDouble(c.getValue()));
+        result.set(ii, jj, rs.get(BytesUtil.getColumnIndex(j)).getValue());
       }
     }
 

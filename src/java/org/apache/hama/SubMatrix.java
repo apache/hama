@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
 /**
@@ -81,6 +82,17 @@ public class SubMatrix implements java.io.Serializable {
     matrix[row][column] = value;
   }
 
+  /**
+   * Sets the value
+   * 
+   * @param row
+   * @param column
+   * @param value
+   */
+  public void set(int row, int column, byte[] value) {
+    matrix[row][column] = BytesUtil.bytesToDouble(value);    
+  }
+  
   /**
    * Gets the value
    * 
@@ -183,4 +195,5 @@ public class SubMatrix implements java.io.Serializable {
     byte[] data = bos.toByteArray();
     return data;
   }
+
 }

@@ -349,15 +349,4 @@ public class TestDenseMatrix extends TestCase {
       }
     }
   }
-  
-  public void testRandomMatrixMapReduce() throws IOException {
-    DenseMatrix rand = DenseMatrix.random_mapred(conf, 20, 20);
-    assertEquals(rand.getRows(), 20);
-    assertEquals(rand.getColumns(), 20);
-    for(int i = 0; i < rand.getRows(); i++) {
-      for(int j = 0; j < rand.getColumns(); j++) {
-        assertTrue(rand.get(i, j) > -1);
-      }
-    }
-  }
 }
