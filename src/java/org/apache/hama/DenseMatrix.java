@@ -452,9 +452,14 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     int columnSize = (j1 - j0) + 1;
     SubMatrix result = new SubMatrix((i1 - i0) + 1, columnSize);
 
+    byte[][] cols = new byte[columnSize][];
+    for (int j = j0, jj = 0; j <= j1; j++, jj++) {
+      cols[jj] = BytesUtil.getColumnIndex(j);
+    }
+
     RowResult rs = null;
     for (int i = i0, ii = 0; i <= i1; i++, ii++) {
-      rs = table.getRow(BytesUtil.intToBytes(i));
+      rs = table.getRow(BytesUtil.intToBytes(i), cols);
       for (int j = j0, jj = 0; j <= j1; j++, jj++) {
         result.set(ii, jj, rs.get(BytesUtil.getColumnIndex(j)).getValue());
       }

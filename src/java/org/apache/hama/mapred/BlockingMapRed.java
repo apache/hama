@@ -65,7 +65,6 @@ public class BlockingMapRed {
    * Abstract Blocking Map/Reduce Class to configure the job.
    */
   public static abstract class BlockingMapRedBase extends MapReduceBase {
-
     protected DenseMatrix matrix;
     
     @Override
