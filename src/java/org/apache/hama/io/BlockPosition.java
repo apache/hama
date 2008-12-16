@@ -19,130 +19,105 @@
  */
 package org.apache.hama.io;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
-public class BlockPosition implements Writable, Map<Text, IntegerEntry> {
-
-  public BlockID row;
-  public BlockPositionMapWritable<Text, IntegerEntry> entries;
+public class BlockPosition implements Writable, java.io.Serializable {
+  private static final long serialVersionUID = 3717208691381491714L;
+  public int startRow;
+  public int endRow;
+  public int startColumn;
+  public int endColumn;
 
   public BlockPosition() {
-    this(new BlockPositionMapWritable<Text, IntegerEntry>());
   }
 
-  public BlockPosition(BlockPositionMapWritable<Text, IntegerEntry> entries) {
-    this.entries = entries;
-  }
-
-  public int getIndex(String key) {
-    return this.entries.get(new Text(key)).getValue();
+  public BlockPosition(byte[] bytes) throws IOException {
+    ByteArrayInputStream bos = new ByteArrayInputStream(bytes);
+    ObjectInputStream oos = new ObjectInputStream(bos);
+    Object obj = null;
+    try {
+      obj = oos.readObject();
+      this.startRow = ((BlockPosition)obj).startRow;
+      this.endRow = ((BlockPosition)obj).endRow;
+      this.startColumn = ((BlockPosition)obj).startColumn;
+      this.endColumn = ((BlockPosition)obj).endColumn;
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    oos.close();
+    bos.close();
   }
   
-  public int size() {
-    return this.entries.size();
-  }
-  
-  public IntegerEntry put(Text key, IntegerEntry value) {
-    throw new UnsupportedOperationException("VectorWritable is read-only!");
-  }
-
-  public IntegerEntry get(Object key) {
-    return this.entries.get(key);
+  public BlockPosition(int startRow, int endRow, int startColumn, int endColumn) {
+    this.startRow = startRow;
+    this.endRow = endRow;
+    this.startColumn = startColumn;
+    this.endColumn = endColumn;
   }
 
-  public IntegerEntry remove(Object key) {
-    throw new UnsupportedOperationException("VectorWritable is read-only!");
+  public void readFields(DataInput in) throws IOException {
+    this.startRow = in.readInt();
+    this.endRow = in.readInt();
+    this.startColumn = in.readInt();
+    this.endColumn = in.readInt();
   }
 
-  public boolean containsKey(Object key) {
-    return entries.containsKey(key);
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(startRow);
+    out.writeInt(endRow);
+    out.writeInt(startColumn);
+    out.writeInt(endColumn);
   }
 
-  public boolean containsValue(Object value) {
-    throw new UnsupportedOperationException("Don't support containsValue!");
+  public int getStartRow() {
+    return startRow;
   }
 
-  public boolean isEmpty() {
-    return entries.isEmpty();
+  public void setStartRow(int startRow) {
+    this.startRow = startRow;
   }
 
-  public void clear() {
-    throw new UnsupportedOperationException("VectorDatum is read-only!");
+  public int getEndRow() {
+    return endRow;
   }
 
-  public Set<Text> keySet() {
-    Set<Text> result = new TreeSet<Text>();
-    for (Text w : entries.keySet()) {
-      result.add(w);
-    }
-    return result;
+  public void setEndRow(int endRow) {
+    this.endRow = endRow;
   }
 
-  public Set<Map.Entry<Text, IntegerEntry>> entrySet() {
-    return Collections.unmodifiableSet(this.entries.entrySet());
+  public int getStartColumn() {
+    return startColumn;
   }
 
-  public Collection<IntegerEntry> values() {
-    ArrayList<IntegerEntry> result = new ArrayList<IntegerEntry>();
-    for (Writable w : entries.values()) {
-      result.add((IntegerEntry) w);
-    }
-    return result;
+  public void setStartColumn(int startColumn) {
+    this.startColumn = startColumn;
   }
 
-  public void readFields(final DataInput in) throws IOException {
-    this.row = new BlockID(Bytes.readByteArray(in));
-    this.entries.readFields(in);
+  public int getEndColumn() {
+    return endColumn;
   }
 
-  public void write(final DataOutput out) throws IOException {
-    Bytes.writeByteArray(out, this.row.getBytes());
-    this.entries.write(out);
+  public void setEndColumn(int endColumn) {
+    this.endColumn = endColumn;
   }
 
-  public void putAll(Map<? extends Text, ? extends IntegerEntry> m) {
-    throw new UnsupportedOperationException("Not implemented yet");
-  }
-
-  /**
-   * 
-   * The inner class for an entry of row.
-   * 
-   */
-  public static class Entries implements Map.Entry<byte[], IntegerEntry> {
-
-    private final byte[] column;
-    private final IntegerEntry entry;
-
-    Entries(byte[] column, IntegerEntry entry) {
-      this.column = column;
-      this.entry = entry;
-    }
-
-    public IntegerEntry setValue(IntegerEntry c) {
-      throw new UnsupportedOperationException("VectorWritable is read-only!");
-    }
-
-    public byte[] getKey() {
-      byte[] key = column;
-      return key;
-    }
-
-    public IntegerEntry getValue() {
-      return entry;
-    }
+  public byte[] getBytes() throws IOException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(bos);
+    oos.writeObject(this);
+    oos.flush();
+    oos.close();
+    bos.close();
+    byte[] data = bos.toByteArray();
+    return data;
   }
 
 }

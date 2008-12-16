@@ -32,7 +32,7 @@ import org.apache.hadoop.io.WritableComparable;
 /** A WritableComparable for BlockIDs. */
 @SuppressWarnings("unchecked")
 public class BlockID implements WritableComparable, java.io.Serializable {
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 6434651179475226613L;
   private int row;
   private int column;
 

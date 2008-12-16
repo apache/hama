@@ -20,9 +20,7 @@
 package org.apache.hama.algebra;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
@@ -32,14 +30,14 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.SubMatrix;
-import org.apache.hama.io.BlockEntry;
+import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.VectorOutputFormat;
 import org.apache.log4j.Logger;
 
 public class BlockCyclicMultiplyReduce extends MapReduceBase implements
-    Reducer<IntWritable, BlockWritable, IntWritable, VectorUpdate> {
+    Reducer<BlockID, BlockWritable, IntWritable, VectorUpdate> {
   static final Logger LOG = Logger.getLogger(BlockCyclicMultiplyReduce.class);
 
   /**
@@ -60,39 +58,29 @@ public class BlockCyclicMultiplyReduce extends MapReduceBase implements
   }
 
   @Override
-  public void reduce(IntWritable key, Iterator<BlockWritable> values,
+  public void reduce(BlockID key, Iterator<BlockWritable> values,
       OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
-    int row = key.get();
-    Map<Integer, SubMatrix> sum = new HashMap<Integer, SubMatrix>();
 
+    SubMatrix s = null;
     while (values.hasNext()) {
-      BlockWritable b = values.next();
-      for (Map.Entry<Integer, BlockEntry> e : b.entrySet()) {
-        int j = e.getKey();
-        SubMatrix value = e.getValue().getValue();
-        if (sum.containsKey(j)) {
-          sum.put(j, sum.get(j).add(value));
-        } else {
-          sum.put(j, value);
-        }
+      SubMatrix b = values.next().get();
+      if (s == null) {
+        s = b;
+      } else {
+        s = s.add(b);
       }
     }
 
-    for (Map.Entry<Integer, SubMatrix> e : sum.entrySet()) {
-      int column = e.getKey();
-      SubMatrix mat = e.getValue();
+    int startRow = key.getRow() * s.getRows();
+    int startColumn = key.getColumn() * s.getColumns();
 
-      int startRow = row * mat.getRows();
-      int startColumn = column * mat.getColumns();
-
-      for (int i = 0; i < mat.getRows(); i++) {
-        VectorUpdate update = new VectorUpdate(i + startRow);
-        for (int j = 0; j < mat.getColumns(); j++) {
-          update.put(j + startColumn, mat.get(i, j));
-        }
-        output.collect(key, update);
+    for (int i = 0; i < s.getRows(); i++) {
+      VectorUpdate update = new VectorUpdate(i + startRow);
+      for (int j = 0; j < s.getColumns(); j++) {
+        update.put(j + startColumn, s.get(i, j));
       }
+      output.collect(new IntWritable(key.getRow()), update);
     }
   }
 }
