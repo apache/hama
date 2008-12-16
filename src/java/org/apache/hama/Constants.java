@@ -19,6 +19,8 @@
  */
 package org.apache.hama;
 
+import org.apache.hama.mapred.BlockingMapRed.MyInputFormat.TableRecordReader;
+
 /**
  * Some constants used in the Hama
  */
@@ -87,21 +89,12 @@ public class Constants {
   /** default try times to generate a suitable tablename */
   public static final int DEFAULT_TRY_TIMES = 10000000;
   
-  /** start row of block */ 
-  public static final String BLOCK_STARTROW = "attribute:startRow";
-  
-  /** end row of block */
-  public static final String BLOCK_ENDROW = "attribute:endRow";
-  
-  /** start column of block */
-  public static final String BLOCK_STARTCOLUMN = "attribute:startColumn";
-  
-  /** end column of block */
-  public static final String BLOCK_ENDCOLUMN = "attribute:endColumn";
-
+  /**
+   * block position column to store {@link BlockPosition} object
+   */
   public static final String BLOCK_POSITION = "attribute:blockPosition";
   
-  /** block dimension */
+  /** block data column */
   public static final String BLOCK = "block:";
 
   /** block size */
