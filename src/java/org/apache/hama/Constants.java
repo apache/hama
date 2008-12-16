@@ -19,8 +19,6 @@
  */
 package org.apache.hama;
 
-import org.apache.hama.mapred.BlockingMapRed.MyInputFormat.TableRecordReader;
-
 /**
  * Some constants used in the Hama
  */
