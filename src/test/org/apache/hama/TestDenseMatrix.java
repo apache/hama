@@ -28,6 +28,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hama.io.BlockPosition;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.log4j.Logger;
 
@@ -78,20 +79,22 @@ public class TestDenseMatrix extends TestCase {
   public void testEntryAdd() throws IOException {
     double origin = m1.get(1, 1);
     m1.add(1, 1, 0.5);
-    
+
     assertEquals(m1.get(1, 1), origin + 0.5);
   }
-  
+
   public void testBlocking() throws IOException, ClassNotFoundException {
     assertEquals(((DenseMatrix) m1).isBlocked(), false);
     ((DenseMatrix) m1).blocking(4);
     assertEquals(((DenseMatrix) m1).isBlocked(), true);
-    int[] pos = ((DenseMatrix) m1).getBlockPosition(1, 0);
-    double[][] b = ((DenseMatrix) m1).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubleArray();
+    BlockPosition pos = ((DenseMatrix) m1).getBlockPosition(1, 0);
+    double[][] b = ((DenseMatrix) m1).subMatrix(pos.getStartRow(),
+        pos.getEndRow(), pos.getStartColumn(), pos.getEndColumn())
+        .getDoubleArray();
     double[][] c = ((DenseMatrix) m1).getBlock(1, 0).getDoubleArray();
     assertEquals(((DenseMatrix) m1).getBlockSize(), 2);
     assertEquals(c.length, 5);
-    
+
     for (int i = 0; i < b.length; i++) {
       for (int j = 0; j < b.length; j++) {
         assertEquals(b[i][j], c[i][j]);
@@ -109,19 +112,21 @@ public class TestDenseMatrix extends TestCase {
     assertEquals(((DenseMatrix) m2).isBlocked(), false);
     ((DenseMatrix) m2).blocking_mapred(4);
     assertEquals(((DenseMatrix) m2).isBlocked(), true);
-    int[] pos = ((DenseMatrix) m2).getBlockPosition(1, 0);
-    double[][] b = ((DenseMatrix) m2).subMatrix(pos[0], pos[1], pos[2], pos[3]).getDoubleArray();
+    BlockPosition pos = ((DenseMatrix) m2).getBlockPosition(1, 0);
+    double[][] b = ((DenseMatrix) m2).subMatrix(pos.getStartRow(),
+        pos.getEndRow(), pos.getStartColumn(), pos.getEndColumn())
+        .getDoubleArray();
     double[][] c = ((DenseMatrix) m2).getBlock(1, 0).getDoubleArray();
     assertEquals(((DenseMatrix) m2).getBlockSize(), 2);
     assertEquals(c.length, 5);
-    
+
     for (int i = 0; i < b.length; i++) {
       for (int j = 0; j < b.length; j++) {
         assertEquals(b[i][j], c[i][j]);
       }
     }
   }
-  
+
   /**
    * Column vector test.
    * 
@@ -137,7 +142,7 @@ public class TestDenseMatrix extends TestCase {
       x++;
     }
   }
-  
+
   public void testGetSetAttribute() throws IOException {
     m1.setRowLabel(0, "row1");
     assertEquals(m1.getRowLabel(0), "row1");
@@ -228,11 +233,11 @@ public class TestDenseMatrix extends TestCase {
   public void testSetColumn() throws IOException {
     Vector v = new DenseVector();
     double[] entries = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
-    
+
     for (int i = 0; i < SIZE; i++) {
       v.set(i, entries[i]);
     }
-    
+
     m1.setColumn(SIZE + 1, v);
     Iterator<DoubleEntry> it = m1.getColumn(SIZE + 1).iterator();
 
@@ -242,7 +247,7 @@ public class TestDenseMatrix extends TestCase {
       i++;
     }
   }
-  
+
   public void testLoadSave() throws IOException {
     String path1 = m1.getPath();
     // save m1 to aliase1
@@ -344,8 +349,8 @@ public class TestDenseMatrix extends TestCase {
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
-        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), 
-            String.valueOf(C[i][j]).substring(0, 14));
+        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), String
+            .valueOf(C[i][j]).substring(0, 14));
       }
     }
   }

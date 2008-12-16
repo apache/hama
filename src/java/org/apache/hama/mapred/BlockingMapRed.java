@@ -20,11 +20,18 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.mapred.TableSplit;
+import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hama.Constants;
@@ -52,7 +59,7 @@ public class BlockingMapRed {
     job.setMapperClass(BlockingMapper.class);
     FileInputFormat.addInputPaths(job, matrixPath);
 
-    job.setInputFormat(BlockInputFormat.class);
+    job.setInputFormat(MyInputFormat.class);
     job.setMapOutputKeyClass(BlockID.class);
     job.setMapOutputValueClass(VectorWritable.class);
     job.setOutputFormat(NullOutputFormat.class);
@@ -66,7 +73,7 @@ public class BlockingMapRed {
    */
   public static abstract class BlockingMapRedBase extends MapReduceBase {
     protected DenseMatrix matrix;
-    
+
     @Override
     public void configure(JobConf job) {
       try {
@@ -88,13 +95,101 @@ public class BlockingMapRed {
     public void map(BlockID key, BlockPosition value,
         OutputCollector<BlockID, VectorWritable> output, Reporter reporter)
         throws IOException {
-      int startRow = value.getIndex(Constants.BLOCK_STARTROW);
-      int endRow = value.getIndex(Constants.BLOCK_ENDROW);
-      int startColumn = value.getIndex(Constants.BLOCK_STARTCOLUMN);
-      int endColumn = value.getIndex(Constants.BLOCK_ENDCOLUMN);
+      int startRow = value.getStartRow();
+      int endRow = value.getEndRow();
+      int startColumn = value.getStartColumn();
+      int endColumn = value.getEndColumn();
 
-      matrix.setBlock(key.getRow(), key.getColumn(), 
-          matrix.subMatrix(startRow, endRow, startColumn, endColumn));
+      matrix.setBlock(key.getRow(), key.getColumn(), matrix.subMatrix(startRow,
+          endRow, startColumn, endColumn));
+    }
+  }
+
+  static class MyInputFormat extends TableInputFormatBase implements
+      InputFormat<BlockID, BlockPosition>, JobConfigurable {
+    static final Log LOG = LogFactory.getLog(MyInputFormat.class);
+    private TableRecordReader tableRecordReader;
+
+    /**
+     * Iterate over an HBase table data, return (BlockID, BlockWritable) pairs
+     */
+    protected static class TableRecordReader extends TableRecordReaderBase
+        implements RecordReader<BlockID, BlockPosition> {
+
+      /**
+       * @return IntWritable
+       * 
+       * @see org.apache.hadoop.mapred.RecordReader#createKey()
+       */
+      public BlockID createKey() {
+        return new BlockID();
+      }
+
+      /**
+       * @return BlockWritable
+       * 
+       * @see org.apache.hadoop.mapred.RecordReader#createValue()
+       */
+      public BlockPosition createValue() {
+        return new BlockPosition();
+      }
+
+      /**
+       * @param key BlockID as input key.
+       * @param value BlockWritable as input value
+       * 
+       * Converts Scanner.next() to BlockID, BlockWritable
+       * 
+       * @return true if there was more data
+       * @throws IOException
+       */
+      public boolean next(BlockID key, BlockPosition value) throws IOException {
+        RowResult result = this.scanner.next();
+        boolean hasMore = result != null && result.size() > 0;
+        if (hasMore) {
+          byte[] row = result.getRow();
+          BlockID bID = new BlockID(row);
+          key.set(bID.getRow(), bID.getColumn());
+          Writables.copyWritable(
+              new BlockPosition(result.get(Constants.BLOCK_POSITION).getValue()), 
+              value);
+        }
+        return hasMore;
+      }
+    }
+
+    /**
+     * Builds a TableRecordReader. If no TableRecordReader was provided, uses
+     * the default.
+     * 
+     * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
+     *      JobConf, Reporter)
+     */
+    public RecordReader<BlockID, BlockPosition> getRecordReader(
+        InputSplit split, JobConf job, Reporter reporter) throws IOException {
+      TableSplit tSplit = (TableSplit) split;
+      TableRecordReader trr = this.tableRecordReader;
+      // if no table record reader was provided use default
+      if (trr == null) {
+        trr = new TableRecordReader();
+      }
+      trr.setStartRow(tSplit.getStartRow());
+      trr.setEndRow(tSplit.getEndRow());
+      trr.setHTable(this.table);
+      trr.setInputColumns(this.inputColumns);
+      trr.setRowFilter(this.rowFilter);
+      trr.init();
+      return trr;
+    }
+
+    /**
+     * Allows subclasses to set the {@link TableRecordReader}.
+     * 
+     * @param tableRecordReader to provide other {@link TableRecordReader}
+     *                implementations.
+     */
+    protected void setTableRecordReader(TableRecordReader tableRecordReader) {
+      this.tableRecordReader = tableRecordReader;
     }
   }
 }

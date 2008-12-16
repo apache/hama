@@ -32,11 +32,12 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.Constants;
 import org.apache.hama.io.BlockID;
-import org.apache.hama.io.BlockPosition;
+import org.apache.hama.io.BlockWritable;
 
 public class BlockInputFormat extends TableInputFormatBase implements
-    InputFormat<BlockID, BlockPosition>, JobConfigurable {
+    InputFormat<BlockID, BlockWritable>, JobConfigurable {
   static final Log LOG = LogFactory.getLog(BlockInputFormat.class);
   private TableRecordReader tableRecordReader;
   
@@ -44,7 +45,7 @@ public class BlockInputFormat extends TableInputFormatBase implements
    * Iterate over an HBase table data, return (BlockID, BlockWritable) pairs
    */
   protected static class TableRecordReader extends TableRecordReaderBase
-      implements RecordReader<BlockID, BlockPosition> {
+      implements RecordReader<BlockID, BlockWritable> {
 
     /**
      * @return IntWritable
@@ -60,8 +61,8 @@ public class BlockInputFormat extends TableInputFormatBase implements
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createValue()
      */
-    public BlockPosition createValue() {
-      return new BlockPosition();
+    public BlockWritable createValue() {
+      return new BlockWritable();
     }
 
     /**
@@ -73,7 +74,7 @@ public class BlockInputFormat extends TableInputFormatBase implements
      * @return true if there was more data
      * @throws IOException
      */
-    public boolean next(BlockID key, BlockPosition value)
+    public boolean next(BlockID key, BlockWritable value)
         throws IOException {
       RowResult result = this.scanner.next();
       boolean hasMore = result != null && result.size() > 0;
@@ -81,7 +82,8 @@ public class BlockInputFormat extends TableInputFormatBase implements
         byte[] row = result.getRow();
         BlockID bID = new BlockID(row);
         key.set(bID.getRow(), bID.getColumn());
-        Writables.copyWritable(result, value);
+        byte[] rs = result.get(Constants.BLOCK).getValue();
+        Writables.copyWritable(new BlockWritable(rs), value);
       }
       return hasMore;
     }
@@ -94,7 +96,7 @@ public class BlockInputFormat extends TableInputFormatBase implements
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<BlockID, BlockPosition> getRecordReader(
+  public RecordReader<BlockID, BlockWritable> getRecordReader(
       InputSplit split, JobConf job, Reporter reporter) throws IOException {
     TableSplit tSplit = (TableSplit) split;
     TableRecordReader trr = this.tableRecordReader;

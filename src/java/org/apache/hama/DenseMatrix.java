@@ -30,6 +30,7 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -47,6 +48,7 @@ import org.apache.hama.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.algebra.SIMDMultiplyMap;
 import org.apache.hama.algebra.SIMDMultiplyReduce;
 import org.apache.hama.io.BlockID;
+import org.apache.hama.io.BlockPosition;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.MapWritable;
@@ -393,7 +395,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     if (this.isBlocked() && ((DenseMatrix) B).isBlocked()) {
       BlockCyclicMultiplyMap.initJob(this.getPath(), B.getPath(),
-          BlockCyclicMultiplyMap.class, IntWritable.class, BlockWritable.class,
+          BlockCyclicMultiplyMap.class, BlockID.class, BlockWritable.class,
           jobConf);
       BlockCyclicMultiplyReduce.initJob(result.getPath(),
           BlockCyclicMultiplyReduce.class, jobConf);
@@ -474,8 +476,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public SubMatrix getBlock(int i, int j) throws IOException {
-    return new SubMatrix(table.get(String.valueOf(i), Constants.BLOCK + j)
-        .getValue());
+    return new SubMatrix(table.get(new BlockID(i, j).getBytes(), 
+        Bytes.toBytes(Constants.BLOCK)).getValue());
   }
 
   /**
@@ -494,8 +496,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public void setBlock(int i, int j, SubMatrix matrix) throws IOException {
-    BatchUpdate update = new BatchUpdate(String.valueOf(i));
-    update.put(Constants.BLOCK + j, matrix.getBytes());
+    BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
+    update.put(Bytes.toBytes(Constants.BLOCK), matrix.getBytes());
     table.commit(update);
   }
 
@@ -519,11 +521,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
           endColumn = this.getColumns() - 1;
 
         BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
-        update.put(Constants.BLOCK_STARTROW, BytesUtil.intToBytes(startRow));
-        update.put(Constants.BLOCK_ENDROW, BytesUtil.intToBytes(endRow));
-        update.put(Constants.BLOCK_STARTCOLUMN, BytesUtil
-            .intToBytes(startColumn));
-        update.put(Constants.BLOCK_ENDCOLUMN, BytesUtil.intToBytes(endColumn));
+        update.put(Constants.BLOCK_POSITION, 
+            new BlockPosition(startRow, endRow, startColumn, endColumn).getBytes());
         table.commit(update);
 
         j++;
@@ -533,19 +532,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     } while (endRow < (this.getRows() - 1));
   }
 
-  protected int[] getBlockPosition(int i, int j) throws IOException {
-    RowResult rs = table.getRow(new BlockID(i, j).getBytes());
-    int[] result = new int[4];
-
-    result[0] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_STARTROW)
-        .getValue());
-    result[1] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_ENDROW).getValue());
-    result[2] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_STARTCOLUMN)
-        .getValue());
-    result[3] = BytesUtil.bytesToInt(rs.get(Constants.BLOCK_ENDCOLUMN)
-        .getValue());
-
-    return result;
+  protected BlockPosition getBlockPosition(int i, int j) throws IOException {
+    byte[] rs = table.get(new BlockID(i, j).getBytes(), 
+        Bytes.toBytes(Constants.BLOCK_POSITION)).getValue();
+    return new BlockPosition(rs);
   }
 
   /**
@@ -577,17 +567,17 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public void blocking(int blockNum) throws IOException {
     this.checkBlockNum(blockNum);
-
-    String[] columns = new String[] { Constants.BLOCK_STARTROW,
-        Constants.BLOCK_ENDROW, Constants.BLOCK_STARTCOLUMN,
-        Constants.BLOCK_ENDCOLUMN };
+    
+    String[] columns = new String[] { Constants.BLOCK_POSITION };
     Scanner scan = table.getScanner(columns);
 
     for (RowResult row : scan) {
       BlockID bID = new BlockID(row.getRow());
-      int[] pos = getBlockPosition(bID.getRow(), bID.getColumn());
-      setBlock(bID.getRow(), bID.getColumn(), subMatrix(pos[0], pos[1], pos[2],
-          pos[3]));
+      BlockPosition pos = 
+        new BlockPosition(row.get(Constants.BLOCK_POSITION).getValue());
+      
+      setBlock(bID.getRow(), bID.getColumn(), subMatrix(pos.getStartRow(), 
+          pos.getEndRow(), pos.getStartColumn(), pos.getEndColumn()));
     }
   }
 

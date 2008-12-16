@@ -99,10 +99,7 @@ public class Constants {
   /** end column of block */
   public static final String BLOCK_ENDCOLUMN = "attribute:endColumn";
 
-
-  public static final String BLOCK_POSITION = Constants.BLOCK_STARTROW 
-  + " " + Constants.BLOCK_ENDROW + " " + Constants.BLOCK_STARTCOLUMN 
-  + " " + Constants.BLOCK_ENDCOLUMN;
+  public static final String BLOCK_POSITION = "attribute:blockPosition";
   
   /** block dimension */
   public static final String BLOCK = "block:";

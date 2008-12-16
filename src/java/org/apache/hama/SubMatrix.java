@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
  * bigger matrix. This is a in-memory operation only.
  */
 public class SubMatrix implements java.io.Serializable {
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 3897536498367921547L;
   static final Logger LOG = Logger.getLogger(SubMatrix.class);
   private double[][] matrix;
 
