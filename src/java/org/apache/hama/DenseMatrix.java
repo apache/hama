@@ -20,6 +20,7 @@
 package org.apache.hama;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -337,7 +338,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public double get(int i, int j) throws IOException {
-    Cell c = table.get(BytesUtil.intToBytes(i), BytesUtil.getColumnIndex(j));
+    Cell c = table.get(BytesUtil.getRowIndex(i), BytesUtil.getColumnIndex(j));
     return (c != null) ? BytesUtil.bytesToDouble(c.getValue()) : 0;
   }
 
@@ -366,7 +367,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public DenseVector getRow(int row) throws IOException {
-    return new DenseVector(table.getRow(BytesUtil.intToBytes(row)));
+    return new DenseVector(table.getRow(BytesUtil.getRowIndex(row)));
   }
 
   public DenseVector getColumn(int column) throws IOException {
@@ -449,7 +450,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return this.getClass().getSimpleName();
   }
 
-  // TODO: Scanner should be used. -- Edward J. Yoon
   public SubMatrix subMatrix(int i0, int i1, int j0, int j1) throws IOException {
     int columnSize = (j1 - j0) + 1;
     SubMatrix result = new SubMatrix((i1 - i0) + 1, columnSize);
@@ -459,12 +459,17 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       cols[jj] = BytesUtil.getColumnIndex(j);
     }
 
+    Scanner scan = table.getScanner(cols, BytesUtil.getRowIndex(i0), 
+        BytesUtil.getRowIndex(i1 + 1));
+    Iterator<RowResult> it = scan.iterator();
+    int i = 0;
     RowResult rs = null;
-    for (int i = i0, ii = 0; i <= i1; i++, ii++) {
-      rs = table.getRow(BytesUtil.intToBytes(i), cols);
+    while (it.hasNext()) {
+      rs = it.next();
       for (int j = j0, jj = 0; j <= j1; j++, jj++) {
-        result.set(ii, jj, rs.get(BytesUtil.getColumnIndex(j)).getValue());
+        result.set(i, jj, rs.get(BytesUtil.getColumnIndex(j)).getValue());
       }
+      i++;
     }
 
     return result;
@@ -476,7 +481,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public SubMatrix getBlock(int i, int j) throws IOException {
-    return new SubMatrix(table.get(new BlockID(i, j).getBytes(), 
+    return new SubMatrix(table.get(new BlockID(i, j).getBytes(),
         Bytes.toBytes(Constants.BLOCK)).getValue());
   }
 
@@ -521,8 +526,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
           endColumn = this.getColumns() - 1;
 
         BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
-        update.put(Constants.BLOCK_POSITION, 
-            new BlockPosition(startRow, endRow, startColumn, endColumn).getBytes());
+        update.put(Constants.BLOCK_POSITION, new BlockPosition(startRow,
+            endRow, startColumn, endColumn).getBytes());
         table.commit(update);
 
         j++;
@@ -533,7 +538,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   protected BlockPosition getBlockPosition(int i, int j) throws IOException {
-    byte[] rs = table.get(new BlockID(i, j).getBytes(), 
+    byte[] rs = table.get(new BlockID(i, j).getBytes(),
         Bytes.toBytes(Constants.BLOCK_POSITION)).getValue();
     return new BlockPosition(rs);
   }
@@ -567,17 +572,17 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public void blocking(int blockNum) throws IOException {
     this.checkBlockNum(blockNum);
-    
+
     String[] columns = new String[] { Constants.BLOCK_POSITION };
     Scanner scan = table.getScanner(columns);
 
     for (RowResult row : scan) {
       BlockID bID = new BlockID(row.getRow());
-      BlockPosition pos = 
-        new BlockPosition(row.get(Constants.BLOCK_POSITION).getValue());
-      
-      setBlock(bID.getRow(), bID.getColumn(), subMatrix(pos.getStartRow(), 
-          pos.getEndRow(), pos.getStartColumn(), pos.getEndColumn()));
+      BlockPosition pos = new BlockPosition(row.get(Constants.BLOCK_POSITION)
+          .getValue());
+
+      setBlock(bID.getRow(), bID.getColumn(), subMatrix(pos.getStartRow(), pos
+          .getEndRow(), pos.getStartColumn(), pos.getEndColumn()));
     }
   }
 

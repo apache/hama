@@ -74,7 +74,7 @@ public abstract class AbstractMatrix implements Matrix {
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ALIASEFAMILY));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.BLOCK));
-      
+
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
       LOG.info("Create Matrix " + matrixPath);
@@ -131,8 +131,8 @@ public abstract class AbstractMatrix implements Matrix {
 
   public String getRowLabel(int row) throws IOException {
     Cell rows = null;
-    rows = table.get(BytesUtil.intToBytes(row), Bytes.toBytes(Constants.ATTRIBUTE
-        + "string"));
+    rows = table.get(BytesUtil.getRowIndex(row), Bytes
+        .toBytes(Constants.ATTRIBUTE + "string"));
 
     return (rows != null) ? Bytes.toString(rows.getValue()) : null;
   }
