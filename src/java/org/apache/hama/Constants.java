@@ -88,7 +88,8 @@ public class Constants {
   public static final int DEFAULT_TRY_TIMES = 10000000;
   
   /**
-   * block position column to store {@link BlockPosition} object
+   * block position column to store 
+   * {@link org.apache.hama.io.BlockPosition} object
    */
   public static final String BLOCK_POSITION = "attribute:blockPosition";
   
