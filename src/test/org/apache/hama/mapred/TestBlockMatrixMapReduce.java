@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 public class TestBlockMatrixMapReduce extends HCluster {
   static final Logger LOG = Logger.getLogger(TestBlockMatrixMapReduce.class);
   static Matrix c;
-  static final int SIZE = 20;
+  static final int SIZE = 32;
 
   /** constructor */
   public TestBlockMatrixMapReduce() {
@@ -46,8 +46,9 @@ public class TestBlockMatrixMapReduce extends HCluster {
       ClassNotFoundException {
     Matrix m1 = DenseMatrix.random(conf, SIZE, SIZE);
     Matrix m2 = DenseMatrix.random(conf, SIZE, SIZE);
-    ((DenseMatrix) m1).blocking_mapred(4);
-    ((DenseMatrix) m2).blocking_mapred(4);
+    // Partitioning 8 * 8 submatrix. It also the test submatrix() and scanner.
+    ((DenseMatrix) m1).blocking_mapred(16);
+    ((DenseMatrix) m2).blocking_mapred(16);
 
     miniMRJob(m1.getPath(), m2.getPath());
 

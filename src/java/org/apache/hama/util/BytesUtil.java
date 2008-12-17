@@ -29,6 +29,7 @@ import org.apache.hama.Constants;
  */
 public class BytesUtil {
   public static final int SIZEOF_DOUBLE = Double.SIZE/Byte.SIZE;
+  public static final int PAD_SIZE = 15; 
   
   /**
    * Bytes to integer conversion
@@ -71,6 +72,47 @@ public class BytesUtil {
     return ByteBuffer.allocate(SIZEOF_DOUBLE).putDouble(value).array();
   }
 
+  /**
+   * Gets the row index
+   * 
+   * @param bytes
+   * @return the converted value
+   */
+  public static int getRowIndex(byte[] bytes) {
+    String rKey = new String(bytes);
+    
+    if(rKey.substring(0, 8).equals("00000000")){
+      int i = 8;
+      while (rKey.charAt(i) == '0') {
+        i++;
+      }
+      return Integer.parseInt(rKey.substring(i, rKey.length()));
+    } else {
+      int i = 0;
+      while (rKey.charAt(i) == '0') {
+        i++;
+      }
+      return Integer.parseInt(rKey.substring(i, rKey.length()));
+    }
+  }
+
+  /**
+   * Gets the row index
+   * 
+   * @param integer
+   * @return the converted value
+   */
+  public static byte[] getRowIndex(int integer) {
+    String index = String.valueOf(integer);
+    int zeros = PAD_SIZE - index.length();
+    StringBuffer buf = new StringBuffer();
+    for (int i = 0; i < zeros; ++i) {
+      buf.append("0");
+    }
+    
+    return Bytes.toBytes(buf.toString() + index);
+  }
+  
   /**
    * Gets the column index
    * 

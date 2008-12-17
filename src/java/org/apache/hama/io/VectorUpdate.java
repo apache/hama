@@ -32,7 +32,7 @@ public class VectorUpdate {
   private BatchUpdate batchUpdate;
 
   public VectorUpdate(int i) {
-    this.batchUpdate = new BatchUpdate(BytesUtil.intToBytes(i));
+    this.batchUpdate = new BatchUpdate(BytesUtil.getRowIndex(i));
   }
 
   public VectorUpdate(String row) {
