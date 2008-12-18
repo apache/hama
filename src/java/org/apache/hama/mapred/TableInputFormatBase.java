@@ -28,14 +28,11 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.filter.RowFilterInterface;
-import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hama.Constants;
-import org.apache.hama.util.BytesUtil;
 
 public abstract class TableInputFormatBase {
   private static final Log LOG = LogFactory.getLog(TableInputFormatBase.class);
@@ -79,24 +76,31 @@ public abstract class TableInputFormatBase {
   }
 
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-    Cell meta = this.table.get(Constants.METADATA, Constants.METADATA_ROWS);
-
-    if (BytesUtil.bytesToInt(meta.getValue()) < numSplits) {
-      numSplits = BytesUtil.bytesToInt(meta.getValue());
+    byte [][] startKeys = this.table.getStartKeys();
+    if (startKeys == null || startKeys.length == 0) {
+      throw new IOException("Expecting at least one region");
     }
-
-    int[] startKeys = new int[numSplits];
-    int interval = BytesUtil.bytesToInt(meta.getValue()) / numSplits;
-
-    for (int i = 0; i < numSplits; i++) {
-      startKeys[i] = (i * interval);
+    if (this.table == null) {
+      throw new IOException("No table was provided");
     }
-
-    InputSplit[] splits = new InputSplit[startKeys.length];
-    for (int i = 0; i < startKeys.length; i++) {
-      splits[i] = new TableSplit(this.table.getTableName(), BytesUtil
-          .intToBytes(startKeys[i]), ((i + 1) < startKeys.length) ? BytesUtil
-          .intToBytes(startKeys[i + 1]) : HConstants.EMPTY_START_ROW);
+    if (this.inputColumns == null || this.inputColumns.length == 0) {
+      throw new IOException("Expecting at least one column");
+    }
+    int realNumSplits = numSplits > startKeys.length? startKeys.length:
+      numSplits;
+    InputSplit[] splits = new InputSplit[realNumSplits];
+    int middle = startKeys.length / realNumSplits;
+    int startPos = 0;
+    for (int i = 0; i < realNumSplits; i++) {
+      int lastPos = startPos + middle;
+      lastPos = startKeys.length % realNumSplits > i ? lastPos + 1 : lastPos;
+      String regionLocation = table.getRegionLocation(startKeys[startPos]).
+        getServerAddress().getHostname(); 
+      splits[i] = new TableSplit(this.table.getTableName(),
+        startKeys[startPos], ((i + 1) < realNumSplits) ? startKeys[lastPos]:
+          HConstants.EMPTY_START_ROW, regionLocation);
+      LOG.info("split: " + i + "->" + splits[i]);
+      startPos = lastPos;
     }
     return splits;
   }
