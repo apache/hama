@@ -21,9 +21,6 @@ package org.apache.hama.algebra;
 
 import java.io.IOException;
 
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Scanner;
-import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -74,14 +71,6 @@ public class BlockCyclicMultiplyMap extends MapReduceBase implements
       throws IOException {
     int blockSize = matrix_b.getBlockSize();
     SubMatrix a = value.get();
-    
-    HTable table = matrix_b.getHTable();
-    Scanner scan = table.getScanner(new String[] {Constants.BLOCK});
-
-    for(RowResult row : scan) {
-      BlockID segment = new BlockID(row.getRow());
-      LOG.info(segment.getRow() + ", " + segment.getColumn());
-    }
     
     for (int j = 0; j < blockSize; j++) {
       SubMatrix b = matrix_b.getBlock(key.getColumn(), j);
