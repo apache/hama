@@ -72,14 +72,13 @@ public class BlockID implements WritableComparable, java.io.Serializable {
   }
 
   public void readFields(DataInput in) throws IOException {
-    row = in.readInt();
     column = in.readInt();
+    row = in.readInt();
   }
 
   public void write(DataOutput out) throws IOException {
-    out.writeInt(row);
-    // out.write(column);
     out.writeInt(column);
+    out.writeInt(row);
   }
 
   /**
