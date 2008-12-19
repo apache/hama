@@ -34,7 +34,9 @@
       mining, that need the intensive computation power of matrix inversion, e.g., linear 
       regression, PCA, SVM and etc. It will be useful for many scientific applications, 
       e.g., physics computations, linear algebra, computational fluid dynamics, 
-      statistics, graphic rendering and many more.</p>
+      statistics, graphic rendering and many more.<br/>
+      <img src="./images/block.png" alt="Building Block"></img>
+      </p>
       
       <ul>
         <li>Scientific simulation and modeling
@@ -61,7 +63,8 @@
           </ul>
         </li>
       </ul>
-      
+      <p>For more information about Hama, please see the 
+      <a href="http://wiki.apache.org/hama">Hama wiki</a>.</p>
     </section>
     <section>
     <title>Getting Started</title>

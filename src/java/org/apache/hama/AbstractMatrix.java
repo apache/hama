@@ -93,6 +93,10 @@ public abstract class AbstractMatrix implements Matrix {
     }
   }
 
+  public HTable getHTable() {
+    return this.table;
+  }
+  
   /** {@inheritDoc} */
   public int getRows() throws IOException {
     Cell rows = null;
