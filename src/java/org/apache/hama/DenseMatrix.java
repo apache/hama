@@ -472,6 +472,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       i++;
     }
 
+    scan.close();
     return result;
   }
 
