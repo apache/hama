@@ -73,6 +73,7 @@ public class BlockCyclicMultiplyMap extends MapReduceBase implements
   public void map(BlockID key, BlockWritable value,
       OutputCollector<BlockID, BlockWritable> output, Reporter reporter)
       throws IOException {
+    // we don't need to get blockSize each time
     int blockSize = matrix_b.getRows();
     SubMatrix a = value.get();
     HTable table = matrix_b.getHTable();

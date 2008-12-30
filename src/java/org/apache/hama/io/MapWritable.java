@@ -54,7 +54,6 @@ public class MapWritable<K, V> implements Map<Integer, V>, Writable,
     addToMap(ImmutableBytesWritable.class, code++);
     addToMap(Text.class, code++);
     addToMap(DoubleEntry.class, code++);
-    addToMap(BlockEntry.class, code++);
     addToMap(byte[].class, code++);
   }
 
