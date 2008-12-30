@@ -21,6 +21,10 @@ package org.apache.hama.algebra;
 
 import java.io.IOException;
 
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Scanner;
+import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -69,13 +73,24 @@ public class BlockCyclicMultiplyMap extends MapReduceBase implements
   public void map(BlockID key, BlockWritable value,
       OutputCollector<BlockID, BlockWritable> output, Reporter reporter)
       throws IOException {
-    int blockSize = matrix_b.getBlockSize();
+    int blockSize = matrix_b.getRows();
     SubMatrix a = value.get();
-    
-    for (int j = 0; j < blockSize; j++) {
-      SubMatrix b = matrix_b.getBlock(key.getColumn(), j);
+    HTable table = matrix_b.getHTable();
+
+    // startKey : new BlockID(key.getColumn(), 0).toString()
+    // endKey : new BlockID(key.getColumn(), blockSize+1).toString()
+    Scanner scan = table.getScanner(new byte[][] { Bytes
+        .toBytes(Constants.BLOCK) },
+        new BlockID(key.getColumn(), 0).getBytes(), new BlockID(
+            key.getColumn(), blockSize + 1).getBytes());
+
+    for (RowResult row : scan) {
+      BlockID bid = new BlockID(row.getRow());
+      SubMatrix b = new SubMatrix(row.get(Constants.BLOCK).getValue());
       SubMatrix c = a.mult(b);
-      output.collect(new BlockID(key.getRow(), j), new BlockWritable(c));
+      output.collect(new BlockID(key.getRow(), bid.getColumn()),
+          new BlockWritable(c));
     }
+    scan.close();
   }
 }

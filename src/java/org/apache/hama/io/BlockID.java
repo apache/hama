@@ -19,20 +19,19 @@
  */
 package org.apache.hama.io;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.log4j.Logger;
 
 /** A WritableComparable for BlockIDs. */
 @SuppressWarnings("unchecked")
-public class BlockID implements WritableComparable, java.io.Serializable {
-  private static final long serialVersionUID = 6434651179475226613L;
+public class BlockID implements WritableComparable {
+  static final Logger LOG = Logger.getLogger(BlockID.class);
+  public static final int PAD_SIZE = 15;
   private int row;
   private int column;
 
@@ -44,18 +43,28 @@ public class BlockID implements WritableComparable, java.io.Serializable {
   }
 
   public BlockID(byte[] bytes) throws IOException {
-    ByteArrayInputStream bos = new ByteArrayInputStream(bytes);
-    ObjectInputStream oos = new ObjectInputStream(bos);
-    Object obj = null;
-    try {
-      obj = oos.readObject();
-      this.row = ((BlockID)obj).getRow();
-      this.column = ((BlockID)obj).getColumn();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
+    String rKey = Bytes.toString(bytes);
+    String keys[] = null;
+    if (rKey.substring(0, 8).equals("00000000")) {
+      int i = 8;
+      while (rKey.charAt(i) == '0') {
+        i++;
+      }
+      keys = rKey.substring(i, rKey.length()).split("[,]");
+    } else {
+      int i = 0;
+      while (rKey.charAt(i) == '0') {
+        i++;
+      }
+      keys = rKey.substring(i, rKey.length()).split("[,]");
     }
-    oos.close();
-    bos.close();
+
+    try {
+      this.row = Integer.parseInt(keys[1]);
+      this.column = Integer.parseInt(keys[2]);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new ArrayIndexOutOfBoundsException(rKey + "\n" + e);
+    }
   }
 
   public void set(int row, int column) {
@@ -72,20 +81,27 @@ public class BlockID implements WritableComparable, java.io.Serializable {
   }
 
   public void readFields(DataInput in) throws IOException {
-    column = in.readInt();
-    row = in.readInt();
+    BlockID value = new BlockID(Bytes.readByteArray(in));
+    this.row = value.getRow();
+    this.column = value.getColumn();
   }
 
   public void write(DataOutput out) throws IOException {
-    out.writeInt(column);
-    out.writeInt(row);
+    Bytes.writeByteArray(out, Bytes.toBytes(this.toString()));
   }
 
   /**
    * Make BlockID's string representation be same format.
    */
   public String toString() {
-    return row + "," + column;
+    int zeros = PAD_SIZE - String.valueOf(row).length()
+        - String.valueOf(column).length();
+    StringBuffer buf = new StringBuffer();
+    for (int i = 0; i < zeros; ++i) {
+      buf.append("0");
+    }
+
+    return buf.toString() + "," + row + "," + column;
   }
 
   @Override
@@ -110,19 +126,14 @@ public class BlockID implements WritableComparable, java.io.Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if(o == null) return false;
-    if(!(o instanceof BlockID)) return false;
+    if (o == null)
+      return false;
+    if (!(o instanceof BlockID))
+      return false;
     return compareTo(o) == 0;
   }
 
-  public byte[] getBytes() throws IOException {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    ObjectOutputStream oos = new ObjectOutputStream(bos);
-    oos.writeObject(this);
-    oos.flush();
-    oos.close();
-    bos.close();
-    byte[] data = bos.toByteArray();
-    return data;
+  public byte[] getBytes() {
+    return Bytes.toBytes(this.toString());
   }
 }

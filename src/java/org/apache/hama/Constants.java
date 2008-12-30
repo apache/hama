@@ -87,15 +87,8 @@ public class Constants {
   /** default try times to generate a suitable tablename */
   public static final int DEFAULT_TRY_TIMES = 10000000;
   
-  /**
-   * block position column to store 
-   * {@link org.apache.hama.io.BlockPosition} object
-   */
-  public static final String BLOCK_POSITION = "attribute:blockPosition";
-  
   /** block data column */
   public static final String BLOCK = "block:";
 
-  /** block size */
-  public static final String BLOCK_SIZE = "attribute:blockSize";
+  public static final String BLOCK_PATH = "attribute:blockPath";
 }

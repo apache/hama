@@ -28,7 +28,6 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hama.io.BlockPosition;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.log4j.Logger;
 
@@ -83,25 +82,6 @@ public class TestDenseMatrix extends TestCase {
     assertEquals(m1.get(1, 1), origin + 0.5);
   }
 
-  public void testBlocking() throws IOException, ClassNotFoundException {
-    assertEquals(((DenseMatrix) m1).isBlocked(), false);
-    ((DenseMatrix) m1).blocking(4);
-    assertEquals(((DenseMatrix) m1).isBlocked(), true);
-    BlockPosition pos = ((DenseMatrix) m1).getBlockPosition(1, 0);
-    double[][] b = ((DenseMatrix) m1).subMatrix(pos.getStartRow(),
-        pos.getEndRow(), pos.getStartColumn(), pos.getEndColumn())
-        .getDoubleArray();
-    double[][] c = ((DenseMatrix) m1).getBlock(1, 0).getDoubleArray();
-    assertEquals(((DenseMatrix) m1).getBlockSize(), 2);
-    assertEquals(c.length, 5);
-
-    for (int i = 0; i < b.length; i++) {
-      for (int j = 0; j < b.length; j++) {
-        assertEquals(b[i][j], c[i][j]);
-      }
-    }
-  }
-
   /**
    * Map/Reduce Blocking Test
    * 
@@ -112,19 +92,6 @@ public class TestDenseMatrix extends TestCase {
     assertEquals(((DenseMatrix) m2).isBlocked(), false);
     ((DenseMatrix) m2).blocking_mapred(4);
     assertEquals(((DenseMatrix) m2).isBlocked(), true);
-    BlockPosition pos = ((DenseMatrix) m2).getBlockPosition(1, 0);
-    double[][] b = ((DenseMatrix) m2).subMatrix(pos.getStartRow(),
-        pos.getEndRow(), pos.getStartColumn(), pos.getEndColumn())
-        .getDoubleArray();
-    double[][] c = ((DenseMatrix) m2).getBlock(1, 0).getDoubleArray();
-    assertEquals(((DenseMatrix) m2).getBlockSize(), 2);
-    assertEquals(c.length, 5);
-
-    for (int i = 0; i < b.length; i++) {
-      for (int j = 0; j < b.length; j++) {
-        assertEquals(b[i][j], c[i][j]);
-      }
-    }
   }
 
   /**
