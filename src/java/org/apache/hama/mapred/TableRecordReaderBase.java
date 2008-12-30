@@ -69,7 +69,7 @@ public abstract class TableRecordReaderBase {
   }
 
   /**
-   * @param inputColumns the columns to be placed in {@link BlockPosition}.
+   * @param inputColumns the columns
    */
   public void setInputColumns(final byte[][] inputColumns) {
     byte[][] columns = inputColumns;
