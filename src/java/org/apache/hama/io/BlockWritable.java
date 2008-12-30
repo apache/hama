@@ -19,16 +19,16 @@
  */
 package org.apache.hama.io;
 
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.SubMatrix;
 
 public class BlockWritable implements Writable {
-  public SubMatrix matrix;
+  private SubMatrix matrix;
 
   public BlockWritable() {
     this.matrix = new SubMatrix(0, 0);
@@ -43,14 +43,35 @@ public class BlockWritable implements Writable {
   }
 
   public void readFields(DataInput in) throws IOException {
-    this.matrix = new SubMatrix(Bytes.readByteArray(in));
+    
+    int rows = in.readInt();
+    int columns = in.readInt();
+    this.matrix = new SubMatrix(rows, columns);
+    
+    for(int i = 0; i < rows; i++) {
+      for(int j = 0; j < columns; j++) {
+        this.matrix.set(i, j, in.readDouble());
+      }
+    }
+    
+    //this.matrix = new SubMatrix(Bytes.readByteArray(in));
   }
 
   public void write(DataOutput out) throws IOException {
-    Bytes.writeByteArray(out, this.matrix.getBytes());
+    //Bytes.writeByteArray(out, this.matrix.getBytes());
+    
+    out.writeInt(this.matrix.getRows());
+    out.writeInt(this.matrix.getColumns());
+    
+    for(int i = 0; i < this.matrix.getRows(); i++) {
+      for(int j = 0; j < this.matrix.getColumns(); j++) {
+        out.writeDouble(this.matrix.get(i, j));
+      }
+    }
   }
 
   public SubMatrix get() {
     return this.matrix;
   }
 }
+

@@ -49,7 +49,6 @@ import org.apache.hama.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.algebra.SIMDMultiplyMap;
 import org.apache.hama.algebra.SIMDMultiplyReduce;
 import org.apache.hama.io.BlockID;
-import org.apache.hama.io.BlockPosition;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.MapWritable;
@@ -395,7 +394,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
     if (this.isBlocked() && ((DenseMatrix) B).isBlocked()) {
-      BlockCyclicMultiplyMap.initJob(this.getPath(), B.getPath(),
+      BlockCyclicMultiplyMap.initJob(this.getBlockedMatrixPath(), 
+          ((DenseMatrix) B).getBlockedMatrixPath(),
           BlockCyclicMultiplyMap.class, BlockID.class, BlockWritable.class,
           jobConf);
       BlockCyclicMultiplyReduce.initJob(result.getPath(),
@@ -477,7 +477,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public boolean isBlocked() throws IOException {
-    return (table.get(Constants.METADATA, Constants.BLOCK_SIZE) == null) ? false
+    return (table.get(Constants.METADATA, Constants.BLOCK_PATH) == null) ? false
         : true;
   }
 
@@ -486,64 +486,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         Bytes.toBytes(Constants.BLOCK)).getValue());
   }
 
-  /**
-   * @return the size of block
-   * @throws IOException
-   */
-  public int getBlockSize() throws IOException {
-    return (isBlocked()) ? BytesUtil.bytesToInt(table.get(Constants.METADATA,
-        Constants.BLOCK_SIZE).getValue()) : -1;
-  }
-
-  protected void setBlockSize(int blockNum) throws IOException {
-    BatchUpdate update = new BatchUpdate(Constants.METADATA);
-    update.put(Constants.BLOCK_SIZE, BytesUtil.intToBytes(blockNum));
-    table.commit(update);
-  }
-
   public void setBlock(int i, int j, SubMatrix matrix) throws IOException {
     BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
     update.put(Bytes.toBytes(Constants.BLOCK), matrix.getBytes());
     table.commit(update);
   }
-
-  protected void setBlockPosition(int blockNum) throws IOException {
-    int block_row_size = this.getRows() / blockNum;
-    int block_column_size = this.getColumns() / blockNum;
-
-    int startRow, endRow, startColumn, endColumn;
-    int i = 0, j = 0;
-    do {
-      startRow = i * block_row_size;
-      endRow = (startRow + block_row_size) - 1;
-      if (endRow >= this.getRows())
-        endRow = this.getRows() - 1;
-
-      j = 0;
-      do {
-        startColumn = j * block_column_size;
-        endColumn = (startColumn + block_column_size) - 1;
-        if (endColumn >= this.getColumns())
-          endColumn = this.getColumns() - 1;
-
-        BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
-        update.put(Constants.BLOCK_POSITION, new BlockPosition(startRow,
-            endRow, startColumn, endColumn).getBytes());
-        table.commit(update);
-
-        j++;
-      } while (endColumn < (this.getColumns() - 1));
-
-      i++;
-    } while (endRow < (this.getRows() - 1));
-  }
-
-  protected BlockPosition getBlockPosition(int i, int j) throws IOException {
-    byte[] rs = table.get(new BlockID(i, j).getBytes(),
-        Bytes.toBytes(Constants.BLOCK_POSITION)).getValue();
-    return new BlockPosition(rs);
-  }
-
+  
   /**
    * Using a map/reduce job to block a dense matrix.
    * 
@@ -551,51 +499,34 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public void blocking_mapred(int blockNum) throws IOException {
-    this.checkBlockNum(blockNum);
+    double blocks = Math.pow(blockNum, 0.5);
+    if (!String.valueOf(blocks).endsWith(".0"))
+      throw new IOException("can't divide.");
 
+    int block_size = (int) blocks;
+    Matrix blockedMatrix = new DenseMatrix(config);
+    blockedMatrix.setDimension(block_size, block_size);
+    this.setBlockedMatrixPath(blockedMatrix.getPath());
+    
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("Blocking MR job" + getPath());
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    BlockingMapRed.initJob(getPath(), jobConf);
-
+    BlockingMapRed.initJob(this.getPath(), blockedMatrix.getPath(), 
+        block_size, this.getRows(), this.getColumns(), jobConf);
     JobManager.execute(jobConf);
   }
 
-  /**
-   * Using a scanner to block a dense matrix. If the matrix is large, use the
-   * blocking_mapred()
-   * 
-   * @param blockNum
-   * @throws IOException
-   */
-  public void blocking(int blockNum) throws IOException {
-    this.checkBlockNum(blockNum);
-
-    String[] columns = new String[] { Constants.BLOCK_POSITION };
-    Scanner scan = table.getScanner(columns);
-
-    for (RowResult row : scan) {
-      BlockID bID = new BlockID(row.getRow());
-      BlockPosition pos = new BlockPosition(row.get(Constants.BLOCK_POSITION)
-          .getValue());
-
-      setBlock(bID.getRow(), bID.getColumn(), subMatrix(pos.getStartRow(), pos
-          .getEndRow(), pos.getStartColumn(), pos.getEndColumn()));
-    }
+  public String getBlockedMatrixPath() throws IOException {
+    return Bytes.toString(table.get(Constants.METADATA,
+        Constants.BLOCK_PATH).getValue());
   }
 
-  private void checkBlockNum(int blockNum) throws IOException {
-    double blocks = Math.pow(blockNum, 0.5);
-    // TODO: Check also it is validation with matrix.
-    if (!String.valueOf(blocks).endsWith(".0"))
-      throw new IOException("can't divide.");
-
-    int block_size = (int) blocks;
-    setBlockPosition(block_size);
-    setBlockSize(block_size);
-    LOG.info("Create " + block_size + " * " + block_size + " blocked matrix");
+  protected void setBlockedMatrixPath(String path) throws IOException {
+    BatchUpdate update = new BatchUpdate(Constants.METADATA);
+    update.put(Constants.BLOCK_PATH, Bytes.toBytes(path));
+    table.commit(update);
   }
 }

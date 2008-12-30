@@ -32,6 +32,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
+import org.apache.hadoop.hbase.HColumnDescriptor.CompressionType;
+import org.apache.hadoop.hbase.HConstants;
 
 /**
  * Methods of the matrix classes
@@ -73,7 +75,10 @@ public abstract class AbstractMatrix implements Matrix {
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ALIASEFAMILY));
-      this.tableDesc.addFamily(new HColumnDescriptor(Constants.BLOCK));
+      this.tableDesc.addFamily(new HColumnDescriptor(
+          Bytes.toBytes(Constants.BLOCK), 1, CompressionType.NONE, 
+          false, false, Integer.MAX_VALUE, HConstants.FOREVER, false
+      ));
 
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);

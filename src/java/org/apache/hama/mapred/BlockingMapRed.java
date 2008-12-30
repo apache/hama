@@ -46,14 +46,22 @@ public class BlockingMapRed {
   static final Log LOG = LogFactory.getLog(BlockingMapRed.class);
   /** Parameter of the path of the matrix to be blocked * */
   public static final String BLOCKING_MATRIX = "hama.blocking.matrix";
+  public static final String BLOCKED_MATRIX = "hama.blocked.matrix";
+  public static final String BLOCK_SIZE = "hama.blocking.size";
+  public static final String ROWS = "hama.blocking.rows";
+  public static final String COLUMNS = "hama.blocking.columns";
 
   /**
    * Initialize a job to blocking a table
    * 
    * @param matrixPath
+   * @param string 
+   * @param j 
+   * @param i 
+   * @param block_size 
    * @param job
    */
-  public static void initJob(String matrixPath, JobConf job) {
+  public static void initJob(String matrixPath, String string, int block_size, int i, int j, JobConf job) {
     job.setMapperClass(BlockingMapper.class);
     job.setReducerClass(BlockingReducer.class);
     FileInputFormat.addInputPaths(job, matrixPath);
@@ -64,6 +72,11 @@ public class BlockingMapRed {
     job.setOutputFormat(NullOutputFormat.class);
 
     job.set(BLOCKING_MATRIX, matrixPath);
+    job.set(BLOCKED_MATRIX, string);
+    job.set(BLOCK_SIZE, String.valueOf(block_size));
+    job.set(ROWS, String.valueOf(i));
+    job.set(COLUMNS, String.valueOf(j));
+    
     job.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
   }
 
@@ -73,6 +86,7 @@ public class BlockingMapRed {
   public static abstract class BlockingMapRedBase extends MapReduceBase {
 
     protected DenseMatrix matrix;
+    protected DenseMatrix blockedMatrix;
     protected int mBlockNum;
     protected int mBlockRowSize;
     protected int mBlockColSize;
@@ -85,12 +99,15 @@ public class BlockingMapRed {
       try {
         matrix = new DenseMatrix(new HamaConfiguration(), job.get(
             BLOCKING_MATRIX, ""));
-        mBlockNum = matrix.getBlockSize();
-        mBlockRowSize = matrix.getRows() / mBlockNum;
-        mBlockColSize = matrix.getColumns() / mBlockNum;
+        blockedMatrix = new DenseMatrix(new HamaConfiguration(), job.get(
+            BLOCKED_MATRIX, ""));
         
-        mRows = matrix.getRows();
-        mColumns = matrix.getColumns();
+        mBlockNum = Integer.parseInt(job.get(BLOCK_SIZE, ""));
+        mRows = Integer.parseInt(job.get(ROWS, ""));
+        mColumns = Integer.parseInt(job.get(COLUMNS, ""));
+        
+        mBlockRowSize = mRows / mBlockNum;
+        mBlockColSize = mColumns / mBlockNum;
       } catch (IOException e) {
         LOG.warn("Load matrix_blocking failed : " + e.getMessage());
       }
@@ -173,7 +190,7 @@ public class BlockingMapRed {
         }
       }
 
-      matrix.setBlock(key.getRow(), key.getColumn(), subMatrix);
+      blockedMatrix.setBlock(key.getRow(), key.getColumn(), subMatrix);
     }
   }
 
