@@ -28,7 +28,6 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.filter.RowFilterInterface;
 import org.apache.hadoop.hbase.filter.RowFilterSet;
 import org.apache.hadoop.hbase.filter.StopRowFilter;
-import org.apache.hama.io.BlockPosition;
 
 public abstract class TableRecordReaderBase {
   protected byte[] startRow;
