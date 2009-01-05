@@ -395,7 +395,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     if (this.isBlocked() && ((DenseMatrix) B).isBlocked()) {
       BlockCyclicMultiplyMap.initJob(this.getBlockedMatrixPath(), 
-          ((DenseMatrix) B).getBlockedMatrixPath(),
+          ((DenseMatrix) B).getBlockedMatrixPath(), this.getBlockedMatrixSize(),
           BlockCyclicMultiplyMap.class, BlockID.class, BlockWritable.class,
           jobConf);
       BlockCyclicMultiplyReduce.initJob(result.getPath(),
@@ -506,7 +506,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     int block_size = (int) blocks;
     Matrix blockedMatrix = new DenseMatrix(config);
     blockedMatrix.setDimension(block_size, block_size);
-    this.setBlockedMatrixPath(blockedMatrix.getPath());
+    this.setBlockedMatrixPath(blockedMatrix.getPath(), block_size);
     
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("Blocking MR job" + getPath());
@@ -524,9 +524,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         Constants.BLOCK_PATH).getValue());
   }
 
-  protected void setBlockedMatrixPath(String path) throws IOException {
+  protected void setBlockedMatrixPath(String path, int size) throws IOException {
     BatchUpdate update = new BatchUpdate(Constants.METADATA);
     update.put(Constants.BLOCK_PATH, Bytes.toBytes(path));
+    update.put(Constants.BLOCK_SIZE, Bytes.toBytes(size));
     table.commit(update);
+  }
+  
+  public int getBlockedMatrixSize() throws IOException {
+    return Bytes.toInt(table.get(Constants.METADATA,
+        Constants.BLOCK_SIZE).getValue());
   }
 }
