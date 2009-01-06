@@ -49,7 +49,7 @@ public class RandomMatrixMap extends MapReduceBase implements
       for (int j = 0; j < column; j++) {
         vector.set(j, RandomVariable.rand());
       }
-      output.collect(key, new VectorWritable(i, vector));
+      output.collect(new IntWritable(i), new VectorWritable(i, vector));
     }
   }
 
