@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.UnknownScannerException;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.util.Writables;
@@ -32,6 +33,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
@@ -76,11 +78,21 @@ public class BlockInputFormat extends TableInputFormatBase implements
      */
     public boolean next(BlockID key, BlockWritable value)
         throws IOException {
-      RowResult result = this.scanner.next();
+      RowResult result;
+      try {
+        result = this.scanner.next();
+      } catch (UnknownScannerException e) {
+        LOG.debug("recovered from " + StringUtils.stringifyException(e));  
+        restart(lastRow);
+        this.scanner.next();    // skip presumed already mapped row
+        result = this.scanner.next();
+      }
+      
       boolean hasMore = result != null && result.size() > 0;
       if (hasMore) {
         byte[] row = result.getRow();
         BlockID bID = new BlockID(row);
+        lastRow = row;
         key.set(bID.getRow(), bID.getColumn());
         byte[] rs = result.get(Constants.BLOCK).getValue();
         Writables.copyWritable(new BlockWritable(rs), value);
@@ -96,8 +108,11 @@ public class BlockInputFormat extends TableInputFormatBase implements
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<BlockID, BlockWritable> getRecordReader(
-      InputSplit split, JobConf job, Reporter reporter) throws IOException {
+  public RecordReader<BlockID, BlockWritable> getRecordReader(InputSplit split,
+      @SuppressWarnings("unused")
+      JobConf job, @SuppressWarnings("unused")
+      Reporter reporter)
+  throws IOException {
     TableSplit tSplit = (TableSplit) split;
     TableRecordReader trr = this.tableRecordReader;
     // if no table record reader was provided use default

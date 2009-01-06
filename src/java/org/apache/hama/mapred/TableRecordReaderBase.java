@@ -32,33 +32,45 @@ import org.apache.hadoop.hbase.filter.StopRowFilter;
 public abstract class TableRecordReaderBase {
   protected byte[] startRow;
   protected byte[] endRow;
+  protected byte [] lastRow;
   protected RowFilterInterface trrRowFilter;
   protected Scanner scanner;
   protected HTable htable;
   protected byte[][] trrInputColumns;
 
   /**
+   * Restart from survivable exceptions by creating a new scanner.
+   *
+   * @param firstRow
+   * @throws IOException
+   */
+  public void restart(byte[] firstRow) throws IOException {
+    if ((endRow != null) && (endRow.length > 0)) {
+      if (trrRowFilter != null) {
+        final Set<RowFilterInterface> rowFiltersSet =
+          new HashSet<RowFilterInterface>();
+        rowFiltersSet.add(new StopRowFilter(endRow));
+        rowFiltersSet.add(trrRowFilter);
+        this.scanner = this.htable.getScanner(trrInputColumns, startRow,
+          new RowFilterSet(RowFilterSet.Operator.MUST_PASS_ALL,
+            rowFiltersSet));
+      } else {
+        this.scanner =
+          this.htable.getScanner(trrInputColumns, firstRow, endRow);
+      }
+    } else {
+      this.scanner =
+        this.htable.getScanner(trrInputColumns, firstRow, trrRowFilter);
+    }
+  }
+  
+  /**
    * Build the scanner. Not done in constructor to allow for extension.
-   * 
+   *
    * @throws IOException
    */
   public void init() throws IOException {
-    if ((endRow != null) && (endRow.length > 0)) {
-      if (trrRowFilter != null) {
-        final Set<RowFilterInterface> rowFiltersSet = new HashSet<RowFilterInterface>();
-        rowFiltersSet.add(new StopRowFilter(endRow));
-        rowFiltersSet.add(trrRowFilter);
-        this.scanner = this.htable
-            .getScanner(trrInputColumns, startRow, new RowFilterSet(
-                RowFilterSet.Operator.MUST_PASS_ALL, rowFiltersSet));
-      } else {
-        this.scanner = this.htable
-            .getScanner(trrInputColumns, startRow, endRow);
-      }
-    } else {
-      this.scanner = this.htable.getScanner(trrInputColumns, startRow,
-          trrRowFilter);
-    }
+    restart(startRow);
   }
 
   /**
