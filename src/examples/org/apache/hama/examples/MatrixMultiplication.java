@@ -48,7 +48,7 @@ public class MatrixMultiplication extends AbstractExample {
     Matrix c = a.mult(b);
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
-        System.out.println("c(" + i + ", " + j + ")" + c.get(i, j));
+        System.out.println("c(" + i + ", " + j + ") : " + c.get(i, j));
       }
     }
     System.out.println("...");
