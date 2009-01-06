@@ -21,6 +21,9 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.UnknownScannerException;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.util.Writables;
@@ -31,11 +34,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.util.BytesUtil;
 
 public class VectorInputFormat extends TableInputFormatBase implements
     InputFormat<IntWritable, VectorWritable>, JobConfigurable {
+  static final Log LOG = LogFactory.getLog(VectorInputFormat.class);
   private TableRecordReader tableRecordReader;
   
   /**
@@ -73,10 +78,21 @@ public class VectorInputFormat extends TableInputFormatBase implements
      */
     public boolean next(IntWritable key, VectorWritable value)
         throws IOException {
-      RowResult result = this.scanner.next();
+      RowResult result;
+      try {
+        result = this.scanner.next();
+      } catch (UnknownScannerException e) {
+        LOG.debug("recovered from " + StringUtils.stringifyException(e));  
+        restart(lastRow);
+        this.scanner.next();    // skip presumed already mapped row
+        result = this.scanner.next();
+      }
+      
       boolean hasMore = result != null && result.size() > 0;
       if (hasMore) {
-        key.set(BytesUtil.bytesToInt(result.getRow()));
+        byte[] row = result.getRow();
+        key.set(BytesUtil.bytesToInt(row));
+        lastRow = row;
         Writables.copyWritable(result, value);
       }
       return hasMore;
