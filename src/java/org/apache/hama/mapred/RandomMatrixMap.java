@@ -21,6 +21,7 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -29,8 +30,6 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.DenseMatrix;
-import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
@@ -41,27 +40,26 @@ import org.apache.log4j.Logger;
 public class RandomMatrixMap extends MapReduceBase implements
     Mapper<IntWritable, IntWritable, BooleanWritable, LongWritable> {
   static final Logger LOG = Logger.getLogger(RandomMatrixMap.class);
-  protected DenseMatrix matrix;
+  protected HTable table;
   protected int column;
-  protected VectorUpdate batchUpdate;
   
   @Override
   public void map(IntWritable key, IntWritable value,
       OutputCollector<BooleanWritable, LongWritable> output, Reporter report)
       throws IOException {
     for (int i = key.get(); i <= value.get(); i++) {
-      batchUpdate = new VectorUpdate(i);
+      VectorUpdate batchUpdate = new VectorUpdate(i);
       for (int j = 0; j < column; j++) {
         batchUpdate.put(j, RandomVariable.rand());
       }
-      matrix.getHTable().commit(batchUpdate.getBatchUpdate());
+      table.commit(batchUpdate.getBatchUpdate());
     }
   }
 
   public void configure(JobConf job) {
     try {
       column = Integer.parseInt(job.get("matrix.column"));
-      matrix = new DenseMatrix(new HamaConfiguration(), job.get("matrix.path"));
+      table = new HTable(job.get("matrix.path"));
     } catch (IOException e) {
       e.printStackTrace();
     }
