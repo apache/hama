@@ -59,10 +59,11 @@ public class RandomMatrixReduce extends MapReduceBase implements
       OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
     VectorUpdate update = new VectorUpdate(key.get());
-    while (values.hasNext()) {
-      update.putAll(values.next().entrySet());
-      output.collect(key, update);
-    }
+    update.putAll(values.next().entrySet());
+    output.collect(key, update);
+    
+    if(values.hasNext())
+      throw new IOException("Unexpected data.");
   }
 
 }

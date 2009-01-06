@@ -251,7 +251,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     DenseMatrix rand = new DenseMatrix(conf);
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
-
+    rand.setDimension(m, n);
+    
     JobConf jobConf = new JobConf(conf);
     jobConf.setJobName("random matrix MR job : " + rand.getPath());
 
@@ -294,7 +295,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     }
 
     JobClient.runJob(jobConf);
-    rand.setDimension(m, n);
     fs.delete(TMP_DIR, true);
     return rand;
   }
