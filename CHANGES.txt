@@ -33,6 +33,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-143: Improve of random_mapred() (edwardyoon)
     HAMA-138: To order, left pad with zeroes to integer key (edwardyoon)
     HAMA-135, HAMA-137: Refactor mapred, I/O package (edwardyoon)
     HAMA-134: We don't need to fill C with zeros (edwardyoon)

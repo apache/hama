@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.FileAlreadyExistsException;
 import org.apache.hadoop.mapred.FileOutputFormat;
@@ -60,13 +61,14 @@ public class VectorOutputFormat extends
       m_table = table;
     }
 
-    /** {@inheritDoc} */
-    public void close(Reporter reporter) {
+    public void close(@SuppressWarnings("unused")
+    Reporter reporter) throws IOException {
+      m_table.flushCommits();
     }
 
     /** {@inheritDoc} */
     public void write(IntWritable key, VectorUpdate value) throws IOException {
-      m_table.commit(value.getBatchUpdate());
+      m_table.commit(new BatchUpdate(value.getBatchUpdate()));
     }
   }
 

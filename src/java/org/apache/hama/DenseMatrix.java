@@ -32,16 +32,13 @@ import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hama.algebra.BlockCyclicMultiplyMap;
 import org.apache.hama.algebra.BlockCyclicMultiplyReduce;
 import org.apache.hama.algebra.RowCyclicAdditionMap;
@@ -56,6 +53,7 @@ import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.BlockingMapRed;
 import org.apache.hama.mapred.RandomMatrixMap;
+import org.apache.hama.mapred.RandomMatrixReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
@@ -263,13 +261,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     final Path inDir = new Path(TMP_DIR, "in");
     FileInputFormat.setInputPaths(jobConf, inDir);
     jobConf.setMapperClass(RandomMatrixMap.class);
-
-    jobConf.setOutputKeyClass(BooleanWritable.class);
-    jobConf.setOutputValueClass(LongWritable.class);
-    jobConf.setOutputFormat(NullOutputFormat.class);
+    jobConf.setMapOutputKeyClass(IntWritable.class);
+    jobConf.setMapOutputValueClass(VectorWritable.class);
+    
+    RandomMatrixReduce.initJob(rand.getPath(), RandomMatrixReduce.class,
+            jobConf);
     jobConf.setSpeculativeExecution(false);
     jobConf.set("matrix.column", String.valueOf(n));
-    jobConf.set("matrix.path", rand.getPath());
 
     jobConf.setInputFormat(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(jobConf);
@@ -436,6 +434,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     VectorUpdate update = new VectorUpdate(row);
     update.putAll(((DenseVector) vector).getEntries().entrySet());
     table.commit(update.getBatchUpdate());
+    table.flushCommits();
   }
 
   public void setColumn(int column, Vector vector) throws IOException {
@@ -443,6 +442,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       VectorUpdate update = new VectorUpdate(i);
       update.put(column, vector.get(i));
       table.commit(update.getBatchUpdate());
+      table.flushCommits();
     }
   }
 
@@ -490,6 +490,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
     update.put(Bytes.toBytes(Constants.BLOCK), matrix.getBytes());
     table.commit(update);
+    table.flushCommits();
   }
   
   /**
@@ -529,6 +530,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     update.put(Constants.BLOCK_PATH, Bytes.toBytes(path));
     update.put(Constants.BLOCK_SIZE, Bytes.toBytes(size));
     table.commit(update);
+    table.flushCommits();
   }
   
   public int getBlockedMatrixSize() throws IOException {
