@@ -39,7 +39,8 @@ public class RandomMatrixMap extends MapReduceBase implements
     Mapper<IntWritable, IntWritable, IntWritable, VectorWritable> {
   static final Logger LOG = Logger.getLogger(RandomMatrixMap.class);
   protected int column;
-  protected DenseVector vector = new DenseVector();;
+  protected DenseVector vector = new DenseVector();
+  
   @Override
   public void map(IntWritable key, IntWritable value,
       OutputCollector<IntWritable, VectorWritable> output, Reporter report)

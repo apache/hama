@@ -45,7 +45,7 @@ public class VectorOutputFormat extends
   private final static Log LOG = LogFactory.getLog(VectorOutputFormat.class);
 
   /**
-   * Convert Reduce output (key, value) to (HStoreKey, KeyedDataArrayWritable)
+   * Convert Reduce output (key, value) to (IntWritable, VectorUpdate)
    * and write to an HBase table
    */
   protected static class TableRecordWriter implements
