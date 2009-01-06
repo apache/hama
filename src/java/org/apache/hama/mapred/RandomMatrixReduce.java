@@ -20,40 +20,49 @@
 package org.apache.hama.mapred;
 
 import java.io.IOException;
+import java.util.Iterator;
 
+import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.DenseVector;
+import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 
-/**
- * Generate matrix with random elements
- */
-public class RandomMatrixMap extends MapReduceBase implements
-    Mapper<IntWritable, IntWritable, IntWritable, VectorWritable> {
-  static final Logger LOG = Logger.getLogger(RandomMatrixMap.class);
-  protected int column;
-  protected DenseVector vector = new DenseVector();;
+public class RandomMatrixReduce extends MapReduceBase implements
+    Reducer<IntWritable, VectorWritable, IntWritable, VectorUpdate> {
+  static final Logger LOG = Logger.getLogger(RandomMatrixReduce.class);
+
+  /**
+   * Use this before submitting a TableReduce job. It will appropriately set up
+   * the JobConf.
+   * 
+   * @param table
+   * @param reducer
+   * @param job
+   */
+  public static void initJob(String table, Class<RandomMatrixReduce> reducer,
+      JobConf job) {
+    job.setOutputFormat(VectorOutputFormat.class);
+    job.setReducerClass(reducer);
+    job.set(VectorOutputFormat.OUTPUT_TABLE, table);
+    job.setOutputKeyClass(IntWritable.class);
+    job.setOutputValueClass(BatchUpdate.class);
+  }
+
   @Override
-  public void map(IntWritable key, IntWritable value,
-      OutputCollector<IntWritable, VectorWritable> output, Reporter report)
+  public void reduce(IntWritable key, Iterator<VectorWritable> values,
+      OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
-    vector.clear();
-    for (int i = key.get(); i <= value.get(); i++) {
-      for (int j = 0; j < column; j++) {
-        vector.set(j, RandomVariable.rand());
-      }
-      output.collect(key, new VectorWritable(i, vector));
+    VectorUpdate update = new VectorUpdate(key.get());
+    while (values.hasNext()) {
+      update.putAll(values.next().entrySet());
+      output.collect(key, update);
     }
   }
 
-  public void configure(JobConf job) {
-    column = Integer.parseInt(job.get("matrix.column"));
-  }
 }

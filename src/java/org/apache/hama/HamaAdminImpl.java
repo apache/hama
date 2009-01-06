@@ -117,6 +117,7 @@ public class HamaAdminImpl implements HamaAdmin {
     
     try {
       table.commit(update);
+      table.flushCommits();
       result = true;
     } catch (IOException e) {
       e.printStackTrace();

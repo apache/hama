@@ -40,12 +40,11 @@ public abstract class TableInputFormatBase {
   protected byte[][] inputColumns;
   protected HTable table;
   protected RowFilterInterface rowFilter;
-  protected static int repeat;
+
   /**
    * space delimited list of columns
    */
   public static final String COLUMN_LIST = "hama.mapred.tablecolumns";
-  public static final String REPEAT_NUM = "hama.mapred.repeat";
   
   public void configure(JobConf job) {
     Path[] tableNames = FileInputFormat.getInputPaths(job);

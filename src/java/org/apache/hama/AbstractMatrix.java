@@ -121,6 +121,7 @@ public abstract class AbstractMatrix implements Matrix {
     VectorUpdate update = new VectorUpdate(i);
     update.put(j, value);
     table.commit(update.getBatchUpdate());
+    table.flushCommits();
   }
 
   /** {@inheritDoc} */
@@ -128,6 +129,7 @@ public abstract class AbstractMatrix implements Matrix {
     VectorUpdate update = new VectorUpdate(i);
     update.put(j, value + this.get(i, j));
     table.commit(update.getBatchUpdate());
+    table.flushCommits();
   }
 
   /** {@inheritDoc} */
@@ -137,6 +139,7 @@ public abstract class AbstractMatrix implements Matrix {
     update.put(Constants.METADATA_COLUMNS, columns);
 
     table.commit(update.getBatchUpdate());
+    table.flushCommits();
   }
 
   public String getRowLabel(int row) throws IOException {
@@ -151,6 +154,7 @@ public abstract class AbstractMatrix implements Matrix {
     VectorUpdate update = new VectorUpdate(row);
     update.put(Constants.ATTRIBUTE + "string", name);
     table.commit(update.getBatchUpdate());
+    table.flushCommits();
   }
 
   public String getColumnLabel(int column) throws IOException {
@@ -174,6 +178,7 @@ public abstract class AbstractMatrix implements Matrix {
     BatchUpdate update = new BatchUpdate(Constants.METADATA);
     update.put(Constants.METADATA_REFERENCE, Bytes.toBytes(reference));
     table.commit(update);
+    table.flushCommits();
   }
 
   protected int incrementAndGetRef() throws IOException {
@@ -233,6 +238,7 @@ public abstract class AbstractMatrix implements Matrix {
     BatchUpdate update = new BatchUpdate(Constants.METADATA);
     update.put(Constants.ALIASENAME, Bytes.toBytes(aliasename));
     table.commit(update);
+    table.flushCommits();
     return hamaAdmin.save(this, aliasename);
   }
 }
