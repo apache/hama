@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.RegionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
@@ -172,8 +173,12 @@ public class HamaAdminImpl implements HamaAdmin {
       
       if(getReference(tablename) <= 0) { // no reference, do gc!!
         if (admin.isTableEnabled(tablename)) {
-          admin.disableTable(tablename);
-          admin.deleteTable(tablename);
+          try {
+            admin.disableTable(tablename);
+            admin.deleteTable(tablename);
+          } catch (RegionException e) {
+            LOG.warn(e);
+          } 
         }
       }
     }
