@@ -29,6 +29,7 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.filter.RowFilterInterface;
 import org.apache.hadoop.hbase.mapred.TableSplit;
+import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -39,12 +40,13 @@ public abstract class TableInputFormatBase {
   protected byte[][] inputColumns;
   protected HTable table;
   protected RowFilterInterface rowFilter;
-
+  protected static int repeat;
   /**
    * space delimited list of columns
    */
   public static final String COLUMN_LIST = "hama.mapred.tablecolumns";
-
+  public static final String REPEAT_NUM = "hama.mapred.repeat";
+  
   public void configure(JobConf job) {
     Path[] tableNames = FileInputFormat.getInputPaths(job);
     String colArg = job.get(COLUMN_LIST);
@@ -75,6 +77,23 @@ public abstract class TableInputFormatBase {
     }
   }
 
+  /**
+   * Calculates the splits that will serve as input for the map tasks.
+   * <ul>
+   * Splits are created in number equal to the smallest between numSplits and
+   * the number of {@link HRegion}s in the table. If the number of splits is
+   * smaller than the number of {@link HRegion}s then splits are spanned across
+   * multiple {@link HRegion}s and are grouped the most evenly possible. In the
+   * case splits are uneven the bigger splits are placed first in the
+   * {@link InputSplit} array.
+   *
+   * @param job the map task {@link JobConf}
+   * @param numSplits a hint to calculate the number of splits (mapred.map.tasks).
+   *
+   * @return the input splits
+   *
+   * @see org.apache.hadoop.mapred.InputFormat#getSplits(org.apache.hadoop.mapred.JobConf, int)
+   */
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
     byte [][] startKeys = this.table.getStartKeys();
     if (startKeys == null || startKeys.length == 0) {
@@ -104,6 +123,7 @@ public abstract class TableInputFormatBase {
     }
     return splits;
   }
+
 
   /**
    * @param inputColumns to be passed to the map task.
