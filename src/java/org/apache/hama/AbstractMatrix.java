@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.RegionException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
@@ -214,8 +215,12 @@ public abstract class AbstractMatrix implements Matrix {
       if (!hasAliaseName()) { // the table has not been aliased, we delete the
         // table.
         if (admin.isTableEnabled(matrixPath)) {
-          admin.disableTable(matrixPath);
-          admin.deleteTable(matrixPath);
+          try {
+            admin.disableTable(matrixPath);
+            admin.deleteTable(matrixPath);
+          } catch (RegionException e) {
+            LOG.warn(e);
+          } 
         }
       }
     }
