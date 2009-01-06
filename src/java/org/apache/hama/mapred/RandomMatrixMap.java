@@ -30,9 +30,8 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseMatrix;
-import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.Matrix;
+import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 
@@ -42,20 +41,20 @@ import org.apache.log4j.Logger;
 public class RandomMatrixMap extends MapReduceBase implements
     Mapper<IntWritable, IntWritable, BooleanWritable, LongWritable> {
   static final Logger LOG = Logger.getLogger(RandomMatrixMap.class);
-  protected Matrix matrix;
+  protected DenseMatrix matrix;
   protected int column;
-
+  protected VectorUpdate batchUpdate;
+  
   @Override
   public void map(IntWritable key, IntWritable value,
       OutputCollector<BooleanWritable, LongWritable> output, Reporter report)
       throws IOException {
-    DenseVector vector = new DenseVector();
     for (int i = key.get(); i <= value.get(); i++) {
-      vector.clear();
+      batchUpdate = new VectorUpdate(i);
       for (int j = 0; j < column; j++) {
-        vector.set(j, RandomVariable.rand());
+        batchUpdate.put(j, RandomVariable.rand());
       }
-      matrix.setRow(i, vector);
+      matrix.getHTable().commit(batchUpdate.getBatchUpdate());
     }
   }
 
