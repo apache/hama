@@ -43,12 +43,21 @@ public class BlockInputFormat extends TableInputFormatBase implements
   static final Log LOG = LogFactory.getLog(BlockInputFormat.class);
   private TableRecordReader tableRecordReader;
   
+  public static int getRepeatCount() {
+    return TableRecordReader.repeatCount;
+  }
+  
+  public static int getRepeat() {
+    return repeat;
+  }
+  
   /**
    * Iterate over an HBase table data, return (BlockID, BlockWritable) pairs
    */
   protected static class TableRecordReader extends TableRecordReaderBase
       implements RecordReader<BlockID, BlockWritable> {
-
+    private static int repeatCount = 0;
+    
     /**
      * @return IntWritable
      * 
@@ -89,6 +98,15 @@ public class BlockInputFormat extends TableInputFormatBase implements
       }
       
       boolean hasMore = result != null && result.size() > 0;
+      
+      // Scanner will be restarted.
+      if(!hasMore && repeatCount < repeat - 1) {
+        this.init();
+        repeatCount++;
+        result = this.scanner.next();
+        hasMore = result != null && result.size() > 0;
+      }
+      
       if (hasMore) {
         byte[] row = result.getRow();
         BlockID bID = new BlockID(row);

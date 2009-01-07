@@ -304,20 +304,20 @@ public class TestDenseMatrix extends TestCase {
    */
   private void verifyMultResult(Matrix m1, Matrix m2, Matrix result)
       throws IOException {
-    double[][] C = new double[SIZE][SIZE];
+    double[][] c = new double[SIZE][SIZE];
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
         for (int k = 0; k < SIZE; k++) {
-          C[i][k] += m1.get(i, j) * m2.get(j, k);
+          c[i][k] += m1.get(i, j) * m2.get(j, k);
         }
       }
     }
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
-        assertEquals(String.valueOf(result.get(i, j)).substring(0, 14), String
-            .valueOf(C[i][j]).substring(0, 14));
+        double gap = (c[i][j] - result.get(i, j));
+        assertTrue(gap < 0.000001 || gap < -0.000001);
       }
     }
   }

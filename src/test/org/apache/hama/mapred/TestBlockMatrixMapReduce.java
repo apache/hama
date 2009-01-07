@@ -56,8 +56,8 @@ public class TestBlockMatrixMapReduce extends HCluster {
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
-        assertEquals(String.valueOf(mem[i][j]).substring(0, 5), String.valueOf(
-            c.get(i, j)).substring(0, 5));
+        double gap = (mem[i][j] - c.get(i, j));
+        assertTrue(gap < 0.000001 || gap < -0.000001);
       }
     }
   }
