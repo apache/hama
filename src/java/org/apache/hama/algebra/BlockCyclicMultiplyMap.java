@@ -22,9 +22,6 @@ package org.apache.hama.algebra;
 import java.io.IOException;
 
 import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Scanner;
-import org.apache.hadoop.hbase.io.RowResult;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -42,33 +39,30 @@ public class BlockCyclicMultiplyMap extends MapReduceBase implements
     Mapper<BlockID, BlockWritable, BlockID, BlockWritable> {
   static final Logger LOG = Logger.getLogger(BlockCyclicMultiplyMap.class);
   protected HTable table;
-  protected int block_size;
   public static final String MATRIX_B = "hama.multiplication.matrix.b";
-  public static final String BLOCK_SIZE = "hama.multiplication.block.size";
 
   public void configure(JobConf job) {
     try {
       table = new HTable(job.get(MATRIX_B, ""));
-      block_size = Integer.parseInt(job.get(BLOCK_SIZE, ""));
     } catch (IOException e) {
       LOG.warn("Load matrix_b failed : " + e.getMessage());
     }
   }
 
-  public static void initJob(String matrix_a, String matrix_b,
-      int block_size, Class<BlockCyclicMultiplyMap> map, Class<BlockID> outputKeyClass,
+  public static void initJob(String matrix_a, String matrix_b, int block_size,
+      Class<BlockCyclicMultiplyMap> map, Class<BlockID> outputKeyClass,
       Class<BlockWritable> outputValueClass, JobConf jobConf) {
 
     jobConf.setMapOutputValueClass(outputValueClass);
     jobConf.setMapOutputKeyClass(outputKeyClass);
     jobConf.setMapperClass(map);
     jobConf.set(MATRIX_B, matrix_b);
-    jobConf.set(BLOCK_SIZE, String.valueOf(block_size));
 
     jobConf.setInputFormat(BlockInputFormat.class);
     FileInputFormat.addInputPaths(jobConf, matrix_a);
 
     jobConf.set(BlockInputFormat.COLUMN_LIST, Constants.BLOCK);
+    jobConf.set(BlockInputFormat.REPEAT_NUM, String.valueOf(block_size));
   }
 
   @Override
@@ -76,35 +70,12 @@ public class BlockCyclicMultiplyMap extends MapReduceBase implements
       OutputCollector<BlockID, BlockWritable> output, Reporter reporter)
       throws IOException {
     SubMatrix a = value.get();
-
-    BlockID startBlock = new BlockID(key.getColumn(), 0);
-    BlockID endBlock = new BlockID(key.getColumn() + 1, 0);
-    Scanner scan;
-    if ((key.getColumn() + 1) == block_size) {
-      scan = table.getScanner(new byte[][] { Bytes
-          .toBytes(Constants.BLOCK) }, startBlock.getBytes());
-    } else {
-      scan = table.getScanner(new byte[][] { Bytes
-          .toBytes(Constants.BLOCK) }, startBlock.getBytes(), endBlock
-          .getBytes());
-    }
-
-    int blocks = 0;
-    for (RowResult row : scan) {
-      BlockID bid = new BlockID(row.getRow());
-      SubMatrix b = new SubMatrix(row.get(Constants.BLOCK).getValue());
-      SubMatrix c = a.mult(b);
-      output.collect(new BlockID(key.getRow(), bid.getColumn()),
-          new BlockWritable(c));
-      blocks++;
-    }
-
-    if (blocks == 0)
-      throw new IOException("There is no matrix b." +
-          "\ntableName: " + new String(table.getTableName())
-          + "\nscanner startKey: " + startBlock.toString() + ", endKey: "
-          + endBlock.toString());
-
-    scan.close();
+    SubMatrix b = new SubMatrix(table.get(
+        new BlockID(key.getColumn(), BlockInputFormat.getRepeatCount())
+            .toString(), Constants.BLOCK).getValue());
+    SubMatrix c = a.mult(b);
+    output.collect(
+        new BlockID(key.getRow(), BlockInputFormat.getRepeatCount()),
+        new BlockWritable(c));
   }
 }
