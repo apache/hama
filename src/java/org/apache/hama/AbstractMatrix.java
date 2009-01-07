@@ -22,9 +22,11 @@ package org.apache.hama;
 import java.io.IOException;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.RegionException;
+import org.apache.hadoop.hbase.HColumnDescriptor.CompressionType;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
@@ -33,8 +35,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
-import org.apache.hadoop.hbase.HColumnDescriptor.CompressionType;
-import org.apache.hadoop.hbase.HConstants;
 
 /**
  * Methods of the matrix classes
@@ -76,10 +76,9 @@ public abstract class AbstractMatrix implements Matrix {
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ALIASEFAMILY));
-      this.tableDesc.addFamily(new HColumnDescriptor(
-          Bytes.toBytes(Constants.BLOCK), 1, CompressionType.NONE, 
-          false, false, Integer.MAX_VALUE, HConstants.FOREVER, false
-      ));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
+          .toBytes(Constants.BLOCK), 1, CompressionType.NONE, false, false,
+          Integer.MAX_VALUE, HConstants.FOREVER, false));
 
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
@@ -87,6 +86,8 @@ public abstract class AbstractMatrix implements Matrix {
 
       // connect to the table.
       table = new HTable(config, matrixPath);
+      table.setAutoFlush(true);
+
       // Record the matrix type in METADATA_TYPE
       BatchUpdate update = new BatchUpdate(Constants.METADATA);
       update.put(Constants.METADATA_TYPE, Bytes.toBytes(this.getClass()
@@ -102,7 +103,7 @@ public abstract class AbstractMatrix implements Matrix {
   public HTable getHTable() {
     return this.table;
   }
-  
+
   /** {@inheritDoc} */
   public int getRows() throws IOException {
     Cell rows = null;
@@ -121,7 +122,7 @@ public abstract class AbstractMatrix implements Matrix {
     VectorUpdate update = new VectorUpdate(i);
     update.put(j, value);
     table.commit(update.getBatchUpdate());
-    table.flushCommits();
+
   }
 
   /** {@inheritDoc} */
@@ -129,7 +130,7 @@ public abstract class AbstractMatrix implements Matrix {
     VectorUpdate update = new VectorUpdate(i);
     update.put(j, value + this.get(i, j));
     table.commit(update.getBatchUpdate());
-    table.flushCommits();
+
   }
 
   /** {@inheritDoc} */
@@ -139,7 +140,6 @@ public abstract class AbstractMatrix implements Matrix {
     update.put(Constants.METADATA_COLUMNS, columns);
 
     table.commit(update.getBatchUpdate());
-    table.flushCommits();
   }
 
   public String getRowLabel(int row) throws IOException {
@@ -154,7 +154,7 @@ public abstract class AbstractMatrix implements Matrix {
     VectorUpdate update = new VectorUpdate(row);
     update.put(Constants.ATTRIBUTE + "string", name);
     table.commit(update.getBatchUpdate());
-    table.flushCommits();
+
   }
 
   public String getColumnLabel(int column) throws IOException {
@@ -178,7 +178,7 @@ public abstract class AbstractMatrix implements Matrix {
     BatchUpdate update = new BatchUpdate(Constants.METADATA);
     update.put(Constants.METADATA_REFERENCE, Bytes.toBytes(reference));
     table.commit(update);
-    table.flushCommits();
+
   }
 
   protected int incrementAndGetRef() throws IOException {
@@ -220,12 +220,15 @@ public abstract class AbstractMatrix implements Matrix {
       if (!hasAliaseName()) { // the table has not been aliased, we delete the
         // table.
         if (admin.isTableEnabled(matrixPath)) {
-          try {
-            admin.disableTable(matrixPath);
-            admin.deleteTable(matrixPath);
-          } catch (RegionException e) {
-            LOG.warn(e);
-          } 
+          while (admin.isTableEnabled(matrixPath)) {
+            try {
+              admin.disableTable(matrixPath);
+            } catch (RegionException e) {
+              LOG.warn(e);
+            }
+          }
+
+          admin.deleteTable(matrixPath);
         }
       }
     }
@@ -238,7 +241,7 @@ public abstract class AbstractMatrix implements Matrix {
     BatchUpdate update = new BatchUpdate(Constants.METADATA);
     update.put(Constants.ALIASENAME, Bytes.toBytes(aliasename));
     table.commit(update);
-    table.flushCommits();
+
     return hamaAdmin.save(this, aliasename);
   }
 }
