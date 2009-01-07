@@ -33,8 +33,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
 /**
- * An Implementation of {@link org.apache.hama.HamaAdmin} to manage 
- * the matrix's namespace, and table allocation & garbage collection.
+ * An Implementation of {@link org.apache.hama.HamaAdmin} to manage the matrix's
+ * namespace, and table allocation & garbage collection.
  */
 public class HamaAdminImpl implements HamaAdmin {
   static final Logger LOG = Logger.getLogger(HamaAdminImpl.class);
@@ -67,7 +67,7 @@ public class HamaAdminImpl implements HamaAdmin {
   }
 
   /**
-   * Initializing the admin. 
+   * Initializing the admin.
    */
   private void initialJob() {
     try {
@@ -78,6 +78,7 @@ public class HamaAdminImpl implements HamaAdmin {
       }
 
       table = new HTable(conf, Constants.ADMINTABLE);
+      table.setAutoFlush(true);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -111,13 +112,14 @@ public class HamaAdminImpl implements HamaAdmin {
     boolean result = false;
 
     // we just store the name -> path(tablename) here.
-    // the matrix type is stored in its hbase table. we don't need to store again.
+    // the matrix type is stored in its hbase table. we don't need to store
+    // again.
     BatchUpdate update = new BatchUpdate(aliaseName);
     update.put(Constants.PATHCOLUMN, Bytes.toBytes(mat.getPath()));
-    
+
     try {
       table.commit(update);
-      table.flushCommits();
+
       result = true;
     } catch (IOException e) {
       e.printStackTrace();
@@ -126,60 +128,64 @@ public class HamaAdminImpl implements HamaAdmin {
     return result;
   }
 
-  /** remove the entry of 'matrixName' in admin table. **/
+  /** remove the entry of 'matrixName' in admin table. * */
   private void removeEntry(String matrixName) throws IOException {
     table.deleteAll(matrixName);
   }
-  
+
   private int getReference(String tableName) throws IOException {
     HTable matrix = new HTable(conf, tableName);
-    
+
     Cell rows = null;
     rows = matrix.get(Constants.METADATA, Constants.METADATA_REFERENCE);
-    
-    return ( rows == null ) ? 0 : Bytes.toInt(rows.getValue());
+
+    return (rows == null) ? 0 : Bytes.toInt(rows.getValue());
   }
-  
+
   private void clearAliaseInfo(String tableName) throws IOException {
     HTable matrix = new HTable(conf, tableName);
-    
+
     matrix.deleteAll(Constants.METADATA, Constants.ALIASENAME);
   }
-  
+
   public void delete(String matrixName) throws IOException {
     // we remove the aliase entry store in Admin table, and
     // clear the aliase info store in matrix table.
     // And check the reference of the matrix table:
     // 1) if the reference of the matrix table is zero:
-    //    we delete the table.
+    // we delete the table.
     // 2) if the reference of the matrix table is not zero:
-    //    we let the matrix who still reference the table to 
-    //    do the garbage collection.
+    // we let the matrix who still reference the table to
+    // do the garbage collection.
     if (matrixExists(matrixName)) {
       String tablename = getPath(matrixName);
-      
+
       // i) remove the aliase entry first.
       removeEntry(matrixName);
-      
-      if(tablename == null) { // a matrixName point to a null table. we delete the entry.
-        return ; 
-      }
-      
-      if(!admin.tableExists(tablename)) { // have not specified table.
+
+      if (tablename == null) { // a matrixName point to a null table. we delete
+                                // the entry.
         return;
       }
-      
+
+      if (!admin.tableExists(tablename)) { // have not specified table.
+        return;
+      }
+
       // ii) clear the aliase info store in matrix table.
       clearAliaseInfo(tablename);
-      
-      if(getReference(tablename) <= 0) { // no reference, do gc!!
+
+      if (getReference(tablename) <= 0) { // no reference, do gc!!
         if (admin.isTableEnabled(tablename)) {
-          try {
-            admin.disableTable(tablename);
-            admin.deleteTable(tablename);
-          } catch (RegionException e) {
-            LOG.warn(e);
-          } 
+          while (admin.isTableEnabled(tablename)) {
+            try {
+              admin.disableTable(tablename);
+            } catch (RegionException e) {
+              LOG.warn(e);
+            }
+          }
+
+          admin.deleteTable(tablename);
         }
       }
     }

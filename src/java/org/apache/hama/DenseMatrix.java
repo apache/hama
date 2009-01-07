@@ -434,7 +434,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     VectorUpdate update = new VectorUpdate(row);
     update.putAll(((DenseVector) vector).getEntries().entrySet());
     table.commit(update.getBatchUpdate());
-    table.flushCommits();
   }
 
   public void setColumn(int column, Vector vector) throws IOException {
@@ -442,7 +441,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       VectorUpdate update = new VectorUpdate(i);
       update.put(column, vector.get(i));
       table.commit(update.getBatchUpdate());
-      table.flushCommits();
     }
   }
 
@@ -490,7 +488,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
     update.put(Bytes.toBytes(Constants.BLOCK), matrix.getBytes());
     table.commit(update);
-    table.flushCommits();
   }
   
   /**
@@ -530,7 +527,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     update.put(Constants.BLOCK_PATH, Bytes.toBytes(path));
     update.put(Constants.BLOCK_SIZE, Bytes.toBytes(size));
     table.commit(update);
-    table.flushCommits();
   }
   
   public int getBlockedMatrixSize() throws IOException {
