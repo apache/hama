@@ -83,18 +83,6 @@ public class TestDenseMatrix extends TestCase {
   }
 
   /**
-   * Map/Reduce Blocking Test
-   * 
-   * @throws IOException
-   * @throws ClassNotFoundException
-   */
-  public void testMRBlocking() throws IOException, ClassNotFoundException {
-    assertEquals(((DenseMatrix) m2).isBlocked(), false);
-    ((DenseMatrix) m2).blocking_mapred(4);
-    assertEquals(((DenseMatrix) m2).isBlocked(), true);
-  }
-
-  /**
    * Column vector test.
    * 
    * @param rand

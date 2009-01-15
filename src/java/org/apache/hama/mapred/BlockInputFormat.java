@@ -20,10 +20,12 @@
 package org.apache.hama.mapred;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.UnknownScannerException;
+import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.util.Writables;
@@ -34,7 +36,6 @@ import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.Constants;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
 
@@ -43,20 +44,11 @@ public class BlockInputFormat extends TableInputFormatBase implements
   static final Log LOG = LogFactory.getLog(BlockInputFormat.class);
   private TableRecordReader tableRecordReader;
   
-  public static int getRepeatCount() {
-    return TableRecordReader.repeatCount;
-  }
-  
-  public static int getRepeat() {
-    return repeat;
-  }
-  
   /**
    * Iterate over an HBase table data, return (BlockID, BlockWritable) pairs
    */
   protected static class TableRecordReader extends TableRecordReaderBase
       implements RecordReader<BlockID, BlockWritable> {
-    private static int repeatCount = 0;
     
     /**
      * @return IntWritable
@@ -99,21 +91,17 @@ public class BlockInputFormat extends TableInputFormatBase implements
       
       boolean hasMore = result != null && result.size() > 0;
       
-      // Scanner will be restarted.
-      if(!hasMore && repeatCount < repeat - 1) {
-        this.init();
-        repeatCount++;
-        result = this.scanner.next();
-        hasMore = result != null && result.size() > 0;
-      }
-      
       if (hasMore) {
         byte[] row = result.getRow();
         BlockID bID = new BlockID(row);
         lastRow = row;
         key.set(bID.getRow(), bID.getColumn());
-        byte[] rs = result.get(Constants.BLOCK).getValue();
-        Writables.copyWritable(new BlockWritable(rs), value);
+
+        BlockWritable block = new BlockWritable();
+        for(Map.Entry<byte[], Cell> e : result.entrySet()) {
+          block.set(e.getKey(), e.getValue().getValue());
+        }
+        Writables.copyWritable(block, value);
       }
       return hasMore;
     }

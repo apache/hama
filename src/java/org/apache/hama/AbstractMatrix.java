@@ -73,13 +73,16 @@ public abstract class AbstractMatrix implements Matrix {
   protected void create() throws IOException {
     // It should run only when table doesn't exist.
     if (!admin.tableExists(matrixPath)) {
-      this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMN));
+      this.tableDesc.addFamily(new HColumnDescriptor(
+          Bytes.toBytes(Constants.COLUMN), 3, CompressionType.NONE, false, false,
+          Integer.MAX_VALUE, HConstants.FOREVER, false));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ALIASEFAMILY));
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.BLOCK), 1, CompressionType.NONE, false, false,
-          Integer.MAX_VALUE, HConstants.FOREVER, false));
-
+      // It's a temporary data.
+      this.tableDesc.addFamily(new HColumnDescriptor(
+      Bytes.toBytes(Constants.BLOCK), 1, CompressionType.NONE, false, false,
+      Integer.MAX_VALUE, HConstants.FOREVER, false));
+      
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
       LOG.info("Create Matrix " + matrixPath);

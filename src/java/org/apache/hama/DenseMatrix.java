@@ -28,10 +28,8 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
-import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
@@ -39,8 +37,8 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hama.algebra.BlockCyclicMultiplyMap;
-import org.apache.hama.algebra.BlockCyclicMultiplyReduce;
+import org.apache.hama.algebra.BlockMultiplyMap;
+import org.apache.hama.algebra.BlockMultiplyReduce;
 import org.apache.hama.algebra.RowCyclicAdditionMap;
 import org.apache.hama.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.algebra.SIMDMultiplyMap;
@@ -383,30 +381,53 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public Matrix mult(Matrix B) throws IOException {
-    Matrix result = new DenseMatrix(config);
-
+  Matrix result = new DenseMatrix(config);
+    
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getPath());
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    
+    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(),
+        SIMDMultiplyMap.class, IntWritable.class, VectorWritable.class,
+        jobConf);
+    SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
+        jobConf);
+    JobManager.execute(jobConf, result);
+    return result;
+  }
 
-    if (this.isBlocked() && ((DenseMatrix) B).isBlocked()) {
-      BlockCyclicMultiplyMap.initJob(this.getBlockedMatrixPath(), 
-          ((DenseMatrix) B).getBlockedMatrixPath(), this.getBlockedMatrixSize(),
-          BlockCyclicMultiplyMap.class, BlockID.class, BlockWritable.class,
-          jobConf);
-      BlockCyclicMultiplyReduce.initJob(result.getPath(),
-          BlockCyclicMultiplyReduce.class, jobConf);
-    } else {
-      SIMDMultiplyMap.initJob(this.getPath(), B.getPath(),
-          SIMDMultiplyMap.class, IntWritable.class, VectorWritable.class,
-          jobConf);
-      SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
-          jobConf);
-    }
+  /**
+   * A * B
+   * 
+   * @param B
+   * @param blocks the number of blocks
+   * @return C
+   * @throws IOException
+   */
+  public Matrix mult(Matrix B, int blocks) throws IOException {
+    Matrix collectionTable = new DenseMatrix(config);
+    LOG.info("Collect Blocks");
+    collectBlocks(this, collectionTable, blocks, true);
+    collectBlocks(B, collectionTable, blocks, false);
+
+    Matrix result = new DenseMatrix(config);
+    
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("multiplication MR job : " + result.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    
+    BlockMultiplyMap.initJob(collectionTable.getPath(), 
+        BlockMultiplyMap.class, BlockID.class, BlockWritable.class,
+        jobConf);
+    BlockMultiplyReduce.initJob(result.getPath(),
+        BlockMultiplyReduce.class, jobConf);
 
     JobManager.execute(jobConf, result);
+    // Should be collectionTable removed?
     return result;
   }
 
@@ -448,6 +469,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return this.getClass().getSimpleName();
   }
 
+  /**
+   * Gets the sub matrix
+   */
   public SubMatrix subMatrix(int i0, int i1, int j0, int j1) throws IOException {
     int columnSize = (j1 - j0) + 1;
     SubMatrix result = new SubMatrix((i1 - i0) + 1, columnSize);
@@ -474,37 +498,23 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return result;
   }
 
-  public boolean isBlocked() throws IOException {
-    return (table.get(Constants.METADATA, Constants.BLOCK_PATH) == null) ? false
-        : true;
-  }
-
-  public SubMatrix getBlock(int i, int j) throws IOException {
-    return new SubMatrix(table.get(new BlockID(i, j).getBytes(),
-        Bytes.toBytes(Constants.BLOCK)).getValue());
-  }
-
-  public void setBlock(int i, int j, SubMatrix matrix) throws IOException {
-    BatchUpdate update = new BatchUpdate(new BlockID(i, j).getBytes());
-    update.put(Bytes.toBytes(Constants.BLOCK), matrix.getBytes());
-    table.commit(update);
-  }
-  
   /**
-   * Using a map/reduce job to block a dense matrix.
+   * Collect Blocks
    * 
+   * @param resource
+   * @param collectionTable
    * @param blockNum
+   * @param bool
    * @throws IOException
    */
-  public void blocking_mapred(int blockNum) throws IOException {
+  public void collectBlocks(Matrix resource, Matrix collectionTable, 
+      int blockNum, boolean bool) throws IOException {
     double blocks = Math.pow(blockNum, 0.5);
     if (!String.valueOf(blocks).endsWith(".0"))
       throw new IOException("can't divide.");
 
     int block_size = (int) blocks;
-    Matrix blockedMatrix = new DenseMatrix(config);
-    blockedMatrix.setDimension(block_size, block_size);
-    this.setBlockedMatrixPath(blockedMatrix.getPath(), block_size);
+    collectionTable.setDimension(block_size, block_size);
     
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("Blocking MR job" + getPath());
@@ -512,25 +522,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    BlockingMapRed.initJob(this.getPath(), blockedMatrix.getPath(), 
-        block_size, this.getRows(), this.getColumns(), jobConf);
+    BlockingMapRed.initJob(resource.getPath(), collectionTable.getPath(), 
+        bool, block_size, this.getRows(), this.getColumns(), jobConf);
     JobManager.execute(jobConf);
-  }
-
-  public String getBlockedMatrixPath() throws IOException {
-    return Bytes.toString(table.get(Constants.METADATA,
-        Constants.BLOCK_PATH).getValue());
-  }
-
-  protected void setBlockedMatrixPath(String path, int size) throws IOException {
-    BatchUpdate update = new BatchUpdate(Constants.METADATA);
-    update.put(Constants.BLOCK_PATH, Bytes.toBytes(path));
-    update.put(Constants.BLOCK_SIZE, Bytes.toBytes(size));
-    table.commit(update);
-  }
-  
-  public int getBlockedMatrixSize() throws IOException {
-    return Bytes.toInt(table.get(Constants.METADATA,
-        Constants.BLOCK_SIZE).getValue());
   }
 }

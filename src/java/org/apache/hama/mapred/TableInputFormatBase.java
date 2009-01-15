@@ -40,19 +40,14 @@ public abstract class TableInputFormatBase {
   protected byte[][] inputColumns;
   protected HTable table;
   protected RowFilterInterface rowFilter;
-  protected static int repeat;
   
   /**
    * space delimited list of columns
    */
   public static final String COLUMN_LIST = "hama.mapred.tablecolumns";
-  public static final String REPEAT_NUM = "hama.mapred.repeat";
   
   public void configure(JobConf job) {
     Path[] tableNames = FileInputFormat.getInputPaths(job);
-    if(job.get(REPEAT_NUM) != null) {
-      setRepeat(Integer.parseInt(job.get(REPEAT_NUM)));
-    }
     String colArg = job.get(COLUMN_LIST);
     String[] colNames = colArg.split(" ");
     byte[][] m_cols = new byte[colNames.length][];
@@ -65,10 +60,6 @@ public abstract class TableInputFormatBase {
     } catch (Exception e) {
       LOG.error(e);
     }
-  }
-
-  private void setRepeat(int parseInt) {
-    repeat =  parseInt;
   }
 
   public void validateInput(JobConf job) throws IOException {
@@ -135,7 +126,6 @@ public abstract class TableInputFormatBase {
     }
     return splits;
   }
-
 
   /**
    * @param inputColumns to be passed to the map task.

@@ -36,9 +36,9 @@ import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.VectorOutputFormat;
 import org.apache.log4j.Logger;
 
-public class BlockCyclicMultiplyReduce extends MapReduceBase implements
+public class BlockMultiplyReduce extends MapReduceBase implements
     Reducer<BlockID, BlockWritable, IntWritable, VectorUpdate> {
-  static final Logger LOG = Logger.getLogger(BlockCyclicMultiplyReduce.class);
+  static final Logger LOG = Logger.getLogger(BlockMultiplyReduce.class);
 
   /**
    * Use this before submitting a BlockCyclicMultiplyReduce job. It will
@@ -49,7 +49,7 @@ public class BlockCyclicMultiplyReduce extends MapReduceBase implements
    * @param job
    */
   public static void initJob(String table,
-      Class<BlockCyclicMultiplyReduce> reducer, JobConf job) {
+      Class<BlockMultiplyReduce> reducer, JobConf job) {
     job.setOutputFormat(VectorOutputFormat.class);
     job.setReducerClass(reducer);
     job.set(VectorOutputFormat.OUTPUT_TABLE, table);
@@ -64,7 +64,7 @@ public class BlockCyclicMultiplyReduce extends MapReduceBase implements
 
     SubMatrix s = null;
     while (values.hasNext()) {
-      SubMatrix b = values.next().get();
+      SubMatrix b = values.next().getMatrices().next();
       if (s == null) {
         s = b;
       } else {

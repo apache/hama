@@ -19,59 +19,90 @@
  */
 package org.apache.hama.io;
 
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.SubMatrix;
 
 public class BlockWritable implements Writable {
-  private SubMatrix matrix;
+  static final Log LOG = LogFactory.getLog(BlockWritable.class);
+  private List<SubMatrix> matrices;
 
   public BlockWritable() {
-    this.matrix = new SubMatrix(0, 0);
+    this.matrices = new ArrayList<SubMatrix>();
   }
 
-  public BlockWritable(SubMatrix c) {
-    this.matrix = c;
-  }
-
-  public BlockWritable(byte[] bytes) throws IOException {
-    this.matrix = new SubMatrix(bytes);
+  public BlockWritable(SubMatrix subMatrix) {
+    this.matrices = new ArrayList<SubMatrix>();
+    this.matrices.add(subMatrix);
   }
 
   public void readFields(DataInput in) throws IOException {
-    
-    int rows = in.readInt();
-    int columns = in.readInt();
-    this.matrix = new SubMatrix(rows, columns);
-    
-    for(int i = 0; i < rows; i++) {
-      for(int j = 0; j < columns; j++) {
-        this.matrix.set(i, j, in.readDouble());
+    this.matrices.clear();
+    int size = in.readInt();
+
+    for (int x = 0; x < size; x++) {
+      int rows = in.readInt();
+      int columns = in.readInt();
+
+      SubMatrix matrix = new SubMatrix(rows, columns);
+
+      for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < columns; j++) {
+          matrix.set(i, j, in.readDouble());
+        }
       }
+
+      this.matrices.add(matrix);
     }
-    
-    //this.matrix = new SubMatrix(Bytes.readByteArray(in));
   }
 
   public void write(DataOutput out) throws IOException {
-    //Bytes.writeByteArray(out, this.matrix.getBytes());
-    
-    out.writeInt(this.matrix.getRows());
-    out.writeInt(this.matrix.getColumns());
-    
-    for(int i = 0; i < this.matrix.getRows(); i++) {
-      for(int j = 0; j < this.matrix.getColumns(); j++) {
-        out.writeDouble(this.matrix.get(i, j));
+    Iterator<SubMatrix> it = this.matrices.iterator();
+
+    int size = this.matrices.size();
+    out.writeInt(size);
+
+    while (it.hasNext()) {
+      SubMatrix matrix = it.next();
+
+      out.writeInt(matrix.getRows());
+      out.writeInt(matrix.getColumns());
+
+      for (int i = 0; i < matrix.getRows(); i++) {
+        for (int j = 0; j < matrix.getColumns(); j++) {
+          out.writeDouble(matrix.get(i, j));
+        }
       }
     }
   }
 
-  public SubMatrix get() {
-    return this.matrix;
+  public void set(byte[] key, byte[] value) throws IOException {
+    int index = 0;
+    if (new String(key).equals(Constants.BLOCK + "b")) {
+      index = 1;
+    }
+
+    this.matrices.add(index, new SubMatrix(value));
+  }
+
+  public Iterator<SubMatrix> getMatrices() {
+    return this.matrices.iterator();
+  }
+  
+  public SubMatrix get(int index) {
+    return this.matrices.get(index);
+  }
+  
+  public int size() {
+    return this.matrices.size();
   }
 }
-
