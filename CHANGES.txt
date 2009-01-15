@@ -33,6 +33,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-144: GetProgress during MR over a matrix (samuel)
     HAMA-129: Improving speed of matrix multiplication (edwardyoon)
     HAMA-142: Trunk doesn't work for large matrices (edwardyoon)
     HAMA-143: Improve of random_mapred() (edwardyoon)

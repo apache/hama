@@ -43,7 +43,7 @@ Mapper<IntWritable, VectorWritable, IntWritable, VectorWritable> {
 
   public void configure(JobConf job) {
     try {
-      matrix_b = new DenseMatrix(new HamaConfiguration(), job.get(MATRIX_B, ""));
+      matrix_b = new DenseMatrix(new HamaConfiguration(job), job.get(MATRIX_B, ""));
     } catch (IOException e) {
       LOG.warn("Load matrix_b failed : " + e.getMessage());
     }
