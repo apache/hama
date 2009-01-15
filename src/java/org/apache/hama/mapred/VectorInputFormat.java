@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.UnknownScannerException;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.InputFormat;
@@ -48,6 +49,27 @@ public class VectorInputFormat extends TableInputFormatBase implements
    */
   protected static class TableRecordReader extends TableRecordReaderBase
       implements RecordReader<IntWritable, VectorWritable> {
+
+   private int totalRows;
+   private int processedRows;
+
+   @Override
+   public void init() throws IOException {
+     super.init();
+     if(endRow.length == 0) { // the last split, we don't know the end row
+       totalRows = 0;         // so we just skip it.
+     } else {
+       if(startRow.length == 0) { // the first split, start row is 0
+         totalRows = BytesUtil.bytesToInt(endRow);
+       } else {
+         totalRows = BytesUtil.bytesToInt(endRow) - BytesUtil.bytesToInt(startRow);
+       }
+     }
+     processedRows = 0;
+     LOG.info("Split (" + Bytes.toString(startRow) + ", " + Bytes.toString(endRow) + 
+       ") -> " + totalRows);
+   }
+
 
     /**
      * @return IntWritable
@@ -94,9 +116,20 @@ public class VectorInputFormat extends TableInputFormatBase implements
         key.set(BytesUtil.bytesToInt(row));
         lastRow = row;
         Writables.copyWritable(result, value);
+        processedRows++;
       }
       return hasMore;
     }
+
+    @Override
+    public float getProgress() {
+      if(totalRows <= 0) {
+        return 0;
+      } else {
+        return Math.min(1.0f, processedRows / (float)totalRows);
+      }
+    }
+   
   }
   
   /**
