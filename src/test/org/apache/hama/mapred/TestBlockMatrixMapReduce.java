@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.HCluster;
-import org.apache.hama.Matrix;
 import org.apache.log4j.Logger;
 
 public class TestBlockMatrixMapReduce extends HCluster {
@@ -37,13 +36,10 @@ public class TestBlockMatrixMapReduce extends HCluster {
 
   public void testBlockMatrixMapReduce() throws IOException,
       ClassNotFoundException {
-    Matrix m1 = DenseMatrix.random(conf, SIZE, SIZE);
-    Matrix m2 = DenseMatrix.random(conf, SIZE, SIZE);
-    // Partitioning 8 * 8 submatrix. It also the test submatrix() and scanner.
-    ((DenseMatrix) m1).blocking_mapred(16);
-    ((DenseMatrix) m2).blocking_mapred(16);
+    DenseMatrix m1 = DenseMatrix.random(conf, SIZE, SIZE);
+    DenseMatrix m2 = DenseMatrix.random(conf, SIZE, SIZE);
 
-    Matrix c = m1.mult(m2);
+    DenseMatrix c = (DenseMatrix) m1.mult(m2, 16);
 
     double[][] mem = new double[SIZE][SIZE];
     for (int i = 0; i < SIZE; i++) {

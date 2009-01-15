@@ -21,7 +21,6 @@ package org.apache.hama.algebra;
 
 import java.io.IOException;
 
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -35,47 +34,30 @@ import org.apache.hama.io.BlockWritable;
 import org.apache.hama.mapred.BlockInputFormat;
 import org.apache.log4j.Logger;
 
-public class BlockCyclicMultiplyMap extends MapReduceBase implements
+public class BlockMultiplyMap extends MapReduceBase implements
     Mapper<BlockID, BlockWritable, BlockID, BlockWritable> {
-  static final Logger LOG = Logger.getLogger(BlockCyclicMultiplyMap.class);
-  protected HTable table;
-  public static final String MATRIX_B = "hama.multiplication.matrix.b";
+  static final Logger LOG = Logger.getLogger(BlockMultiplyMap.class);
 
-  public void configure(JobConf job) {
-    try {
-      table = new HTable(job.get(MATRIX_B, ""));
-    } catch (IOException e) {
-      LOG.warn("Load matrix_b failed : " + e.getMessage());
-    }
-  }
-
-  public static void initJob(String matrix_a, String matrix_b, int block_size,
-      Class<BlockCyclicMultiplyMap> map, Class<BlockID> outputKeyClass,
+  public static void initJob(String matrix_a,
+      Class<BlockMultiplyMap> map, Class<BlockID> outputKeyClass,
       Class<BlockWritable> outputValueClass, JobConf jobConf) {
 
     jobConf.setMapOutputValueClass(outputValueClass);
     jobConf.setMapOutputKeyClass(outputKeyClass);
     jobConf.setMapperClass(map);
-    jobConf.set(MATRIX_B, matrix_b);
 
     jobConf.setInputFormat(BlockInputFormat.class);
     FileInputFormat.addInputPaths(jobConf, matrix_a);
 
     jobConf.set(BlockInputFormat.COLUMN_LIST, Constants.BLOCK);
-    jobConf.set(BlockInputFormat.REPEAT_NUM, String.valueOf(block_size));
   }
 
   @Override
   public void map(BlockID key, BlockWritable value,
       OutputCollector<BlockID, BlockWritable> output, Reporter reporter)
       throws IOException {
-    SubMatrix a = value.get();
-    SubMatrix b = new SubMatrix(table.get(
-        new BlockID(key.getColumn(), BlockInputFormat.getRepeatCount())
-            .toString(), Constants.BLOCK).getValue());
-    SubMatrix c = a.mult(b);
-    output.collect(
-        new BlockID(key.getRow(), BlockInputFormat.getRepeatCount()),
-        new BlockWritable(c));
+    
+    SubMatrix c = value.get(0).mult(value.get(1));
+    output.collect(key, new BlockWritable(c));
   }
 }

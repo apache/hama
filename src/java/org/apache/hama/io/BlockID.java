@@ -34,7 +34,8 @@ public class BlockID implements WritableComparable {
   public static final int PAD_SIZE = 15;
   private int row;
   private int column;
-
+  private int seq = -1;
+  
   public BlockID() {
   }
 
@@ -61,10 +62,16 @@ public class BlockID implements WritableComparable {
 
     try {
       this.row = Integer.parseInt(keys[1]);
-      this.column = Integer.parseInt(keys[2]);
+      String[] columns = keys[2].split("[-]");
+      this.column = Integer.parseInt(columns[0]);
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new ArrayIndexOutOfBoundsException(rKey + "\n" + e);
     }
+  }
+
+  public BlockID(int row, int column, int seq) {
+    set(row, column);
+    this.seq = seq;
   }
 
   public void set(int row, int column) {
@@ -101,7 +108,11 @@ public class BlockID implements WritableComparable {
       buf.append("0");
     }
 
-    return buf.toString() + "," + row + "," + column;
+    if(seq > -1) {
+      return buf.toString() + "," + row + "," + column + "-" + seq;
+    } else {
+      return buf.toString() + "," + row + "," + column;
+    }
   }
 
   @Override

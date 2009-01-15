@@ -29,13 +29,11 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hama.Constants;
-import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
-import org.apache.hama.HamaConfiguration;
 import org.apache.hama.SubMatrix;
 import org.apache.hama.io.BlockID;
+import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.VectorWritable;
 
 /**
@@ -45,74 +43,71 @@ public class BlockingMapRed {
 
   static final Log LOG = LogFactory.getLog(BlockingMapRed.class);
   /** Parameter of the path of the matrix to be blocked * */
-  public static final String BLOCKING_MATRIX = "hama.blocking.matrix";
-  public static final String BLOCKED_MATRIX = "hama.blocked.matrix";
   public static final String BLOCK_SIZE = "hama.blocking.size";
   public static final String ROWS = "hama.blocking.rows";
   public static final String COLUMNS = "hama.blocking.columns";
+  public static final String MATRIX_POS = "a.ore.b";
 
   /**
    * Initialize a job to blocking a table
    * 
    * @param matrixPath
-   * @param string 
+   * @param collectionTable 
+   * @param block_size 
    * @param j 
    * @param i 
-   * @param block_size 
    * @param job
    */
-  public static void initJob(String matrixPath, String string, int block_size, int i, int j, JobConf job) {
+  public static void initJob(String matrixPath, String collectionTable, boolean bool
+      ,int block_size, int i, int j, JobConf job) {
     job.setMapperClass(BlockingMapper.class);
     job.setReducerClass(BlockingReducer.class);
     FileInputFormat.addInputPaths(job, matrixPath);
 
     job.setInputFormat(VectorInputFormat.class);
+    
     job.setMapOutputKeyClass(BlockID.class);
     job.setMapOutputValueClass(VectorWritable.class);
-    job.setOutputFormat(NullOutputFormat.class);
-
-    job.set(BLOCKING_MATRIX, matrixPath);
-    job.set(BLOCKED_MATRIX, string);
+    
+    job.setOutputFormat(BlockOutputFormat.class);
+    job.setOutputKeyClass(BlockID.class);
+    job.setOutputValueClass(BlockWritable.class);
     job.set(BLOCK_SIZE, String.valueOf(block_size));
     job.set(ROWS, String.valueOf(i));
     job.set(COLUMNS, String.valueOf(j));
-    
+    job.setBoolean(MATRIX_POS, bool);
     job.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
+    if(bool)
+      job.set(BlockOutputFormat.COLUMN, "a");
+    else
+      job.set(BlockOutputFormat.COLUMN, "b");
+    job.set(BlockOutputFormat.OUTPUT_TABLE, collectionTable);
   }
 
   /**
    * Abstract Blocking Map/Reduce Class to configure the job.
    */
   public static abstract class BlockingMapRedBase extends MapReduceBase {
-
-    protected DenseMatrix matrix;
-    protected DenseMatrix blockedMatrix;
     protected int mBlockNum;
     protected int mBlockRowSize;
     protected int mBlockColSize;
     
     protected int mRows;
     protected int mColumns;
+    
+    protected boolean matrixPos;
 
     @Override
     public void configure(JobConf job) {
-      try {
-        matrix = new DenseMatrix(new HamaConfiguration(), job.get(
-            BLOCKING_MATRIX, ""));
-        blockedMatrix = new DenseMatrix(new HamaConfiguration(), job.get(
-            BLOCKED_MATRIX, ""));
-        
         mBlockNum = Integer.parseInt(job.get(BLOCK_SIZE, ""));
         mRows = Integer.parseInt(job.get(ROWS, ""));
         mColumns = Integer.parseInt(job.get(COLUMNS, ""));
         
         mBlockRowSize = mRows / mBlockNum;
         mBlockColSize = mColumns / mBlockNum;
-      } catch (IOException e) {
-        LOG.warn("Load matrix_blocking failed : " + e.getMessage());
-      }
+        
+        matrixPos = job.getBoolean(MATRIX_POS, true);
     }
-
   }
 
   /**
@@ -142,21 +137,19 @@ public class BlockingMapRed {
         i++;
       } while(endColumn < (mColumns-1));
     }
-
   }
 
   /**
    * Reducer Class
    */
   public static class BlockingReducer extends BlockingMapRedBase implements
-      Reducer<BlockID, VectorWritable, BlockID, SubMatrix> {
+      Reducer<BlockID, VectorWritable, BlockID, BlockWritable> {
 
     @Override
     public void reduce(BlockID key, Iterator<VectorWritable> values,
-        OutputCollector<BlockID, SubMatrix> output, Reporter reporter)
+        OutputCollector<BlockID, BlockWritable> output, Reporter reporter)
         throws IOException {
-      // Note: all the sub-vectors are grouped by {@link
-      // org.apache.hama.io.BlockID}
+      // Note: all the sub-vectors are grouped by {@link org.apache.hama.io.BlockID}
       
       // the block's base offset in the original matrix
       int colBase = key.getColumn() * mBlockColSize;
@@ -189,9 +182,22 @@ public class BlockingMapRed {
           subMatrix.set(i, j, vw.get(colBase + j));
         }
       }
+      BlockWritable outValue = new BlockWritable(subMatrix);
 
-      blockedMatrix.setBlock(key.getRow(), key.getColumn(), subMatrix);
+      // It'll used for only matrix multiplication.
+      if(matrixPos) {
+        for (int x = 0; x < mBlockNum; x++) {
+          int r = (key.getRow() * mBlockNum) * mBlockNum;
+          int seq = (x * mBlockNum) + key.getColumn() + r;
+          output.collect(new BlockID(key.getRow(), x, seq), outValue);
+        }
+      } else {
+        for (int x = 0; x < mBlockNum; x++) {
+          int seq = (x * mBlockNum * mBlockNum) + 
+                          (key.getColumn() * mBlockNum) + key.getRow();
+          output.collect(new BlockID(x, key.getColumn(), seq), outValue);
+        }
+      }
     }
   }
-
 }

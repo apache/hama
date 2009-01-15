@@ -30,14 +30,16 @@ import org.apache.hama.Matrix;
  */
 public class JobManager {
   public static void execute(JobConf jobConf, Matrix result) throws IOException {
-    JobClient.runJob(jobConf);
-    //long rows = rJob.getCounters().findCounter(
-      //  "org.apache.hadoop.mapred.Task$Counter", 8, "REDUCE_OUTPUT_RECORDS")
-      // .getCounter();
-    // TODO : Thinking about more efficient method.
-    int rows = result.getColumn(0).size();
-    int columns = result.getRow(0).size();
-    result.setDimension(rows, columns);
+    try {
+      JobClient.runJob(jobConf);
+      // TODO : Thinking about more efficient method.
+      int rows = result.getColumn(0).size();
+      int columns = result.getRow(0).size();
+      result.setDimension(rows, columns);
+    } catch (IOException e) {
+      result.close();
+      throw new IOException(e);
+    }
   }
   
   /** 

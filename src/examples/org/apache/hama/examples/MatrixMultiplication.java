@@ -39,17 +39,16 @@ public class MatrixMultiplication extends AbstractExample {
 
     DenseMatrix a = new DenseMatrix(conf, matrixA, false);
     DenseMatrix b = new DenseMatrix(conf, matrixB, false);
-
+    Matrix c;
+    
     if (ARGS.size() > 2) {
-      a.blocking_mapred(Integer.parseInt(ARGS.get(2)));
-      b.blocking_mapred(Integer.parseInt(ARGS.get(2)));
+      c = a.mult(b, Integer.parseInt(ARGS.get(2)));
+    } else {
+      c = a.mult(b);
     }
 
-    Matrix c = a.mult(b);
     for (int i = 0; i < 2; i++) {
-      for (int j = 0; j < 2; j++) {
-        System.out.println("c(" + i + ", " + j + ") : " + c.get(i, j));
-      }
+      System.out.println("c(" + 0 + ", " + i + ") : " + c.get(0, i));
     }
     System.out.println("...");
   }
