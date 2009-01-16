@@ -33,8 +33,7 @@ import org.apache.log4j.Logger;
  * A sub matrix is a matrix formed by selecting certain rows and columns from a
  * bigger matrix. This is a in-memory operation only.
  */
-public class SubMatrix implements java.io.Serializable {
-  private static final long serialVersionUID = 3897536498367921547L;
+public class SubMatrix {
   static final Logger LOG = Logger.getLogger(SubMatrix.class);
   private double[][] matrix;
 
