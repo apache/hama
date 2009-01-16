@@ -89,8 +89,4 @@ public class Constants {
   
   /** block data column */
   public static final String BLOCK = "block:";
-
-  public static final String BLOCK_PATH = "attribute:blockPath";
-
-  public static final String BLOCK_SIZE = "attribute:blockSize";
 }
