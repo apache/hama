@@ -20,6 +20,8 @@
 package org.apache.hama;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
@@ -161,6 +163,7 @@ public abstract class AbstractMatrix implements Matrix {
    */
   public static class TableReadMapper extends MapReduceBase implements
       TableMap<ImmutableBytesWritable, BatchUpdate> {
+    private static List<Double> alpha = new ArrayList<Double>();
 
     @SuppressWarnings("unchecked")
     public void map(ImmutableBytesWritable key, RowResult value,
@@ -170,9 +173,23 @@ public abstract class AbstractMatrix implements Matrix {
 
       BatchUpdate update = new BatchUpdate(key.get());
       for (Map.Entry<byte[], Cell> e : value.entrySet()) {
-        update.put(e.getKey(), e.getValue().getValue());
+        if (alpha.size() == 0) {
+          update.put(e.getKey(), e.getValue().getValue());
+        } else {
+          String column = new String(e.getKey());
+          if(column.startsWith(Constants.COLUMN)) {
+            double currValue = BytesUtil.bytesToDouble(e.getValue().getValue());
+            update.put(e.getKey(), (BytesUtil.doubleToBytes(currValue * alpha.get(0))));
+          } else {
+            update.put(e.getKey(), e.getValue().getValue());
+          }
+        }
       }
       output.collect(key, update);
+    }
+
+    public static void setAlpha(double a) {
+      alpha.add(a);
     }
   }
 
@@ -186,8 +203,28 @@ public abstract class AbstractMatrix implements Matrix {
 
     TableMapReduceUtil.initTableMapJob(B.getPath(), Constants.COLUMN + " "
         + Constants.ATTRIBUTE + " " + Constants.ALIASEFAMILY + " "
-        + Constants.BLOCK, TableReadMapper.class,
-        ImmutableBytesWritable.class, BatchUpdate.class, jobConf);
+        + Constants.BLOCK, TableReadMapper.class, ImmutableBytesWritable.class,
+        BatchUpdate.class, jobConf);
+    TableMapReduceUtil.initTableReduceJob(this.getPath(),
+        IdentityTableReduce.class, jobConf);
+
+    JobManager.execute(jobConf);
+    return this;
+  }
+
+  /** {@inheritDoc} */
+  public Matrix set(double alpha, Matrix B) throws IOException {
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("set MR job : " + this.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+
+    TableReadMapper.setAlpha(alpha);
+    TableMapReduceUtil.initTableMapJob(B.getPath(), Constants.COLUMN + " "
+        + Constants.ATTRIBUTE + " " + Constants.ALIASEFAMILY + " "
+        + Constants.BLOCK, TableReadMapper.class, ImmutableBytesWritable.class,
+        BatchUpdate.class, jobConf);
     TableMapReduceUtil.initTableReduceJob(this.getPath(),
         IdentityTableReduce.class, jobConf);
 

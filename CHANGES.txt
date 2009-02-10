@@ -4,7 +4,6 @@ Trunk (unreleased changes)
 
   NEW FEATURES
   
-    HAMA-100: Implement of set(Matrix B) (edwardyoon)
     HAMA-145: Add privacy policy page (edwardyoon)
     HAMA-83: 2D sqaure blocking for dense matrix multiplication (edwardyoon)
     HAMA-104: Add getNumMap/reduceTasks to HamaConfiguration (edwardyoon)
@@ -35,6 +34,8 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-148: Implement of set(double alpha, Matrix B) (edwardyoon)
+    HAMA-100: Implement of set(Matrix B) (edwardyoon)
     HAMA-144: GetProgress during MR over a matrix (samuel)
     HAMA-129: Improving speed of matrix multiplication (edwardyoon)
     HAMA-142: Trunk doesn't work for large matrices (edwardyoon)

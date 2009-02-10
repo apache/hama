@@ -215,6 +215,17 @@ public class TestDenseMatrix extends TestCase {
     }
   }
 
+  public void testSetAlphaMatrix() throws IOException {
+    Matrix a = new DenseMatrix(conf);
+    a.set(0.5, m1);
+    
+    for (int i = 0; i < 5; i++) {
+      int x = RandomVariable.randInt(0, 10);
+      int y = RandomVariable.randInt(0, 10);
+      assertEquals(a.get(x, y), (m1.get(x, y) * 0.5));
+    }
+  }
+  
   public void testLoadSave() throws IOException {
     String path1 = m1.getPath();
     // save m1 to aliase1
