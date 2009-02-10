@@ -20,6 +20,7 @@
 package org.apache.hama;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
@@ -31,9 +32,19 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.mapred.IdentityTableReduce;
+import org.apache.hadoop.hbase.mapred.TableMap;
+import org.apache.hadoop.hbase.mapred.TableMapReduceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
+import org.apache.hama.util.JobManager;
 import org.apache.log4j.Logger;
 
 /**
@@ -73,16 +84,16 @@ public abstract class AbstractMatrix implements Matrix {
   protected void create() throws IOException {
     // It should run only when table doesn't exist.
     if (!admin.tableExists(matrixPath)) {
-      this.tableDesc.addFamily(new HColumnDescriptor(
-          Bytes.toBytes(Constants.COLUMN), 3, CompressionType.NONE, false, false,
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
+          .toBytes(Constants.COLUMN), 3, CompressionType.NONE, false, false,
           Integer.MAX_VALUE, HConstants.FOREVER, false));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       this.tableDesc.addFamily(new HColumnDescriptor(Constants.ALIASEFAMILY));
       // It's a temporary data.
-      this.tableDesc.addFamily(new HColumnDescriptor(
-      Bytes.toBytes(Constants.BLOCK), 1, CompressionType.NONE, false, false,
-      Integer.MAX_VALUE, HConstants.FOREVER, false));
-      
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
+          .toBytes(Constants.BLOCK), 1, CompressionType.NONE, false, false,
+          Integer.MAX_VALUE, HConstants.FOREVER, false));
+
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
       LOG.info("Create Matrix " + matrixPath);
@@ -143,6 +154,45 @@ public abstract class AbstractMatrix implements Matrix {
     update.put(Constants.METADATA_COLUMNS, columns);
 
     table.commit(update.getBatchUpdate());
+  }
+
+  /**
+   * Just full scan a table.
+   */
+  public static class TableReadMapper extends MapReduceBase implements
+      TableMap<ImmutableBytesWritable, BatchUpdate> {
+
+    @SuppressWarnings("unchecked")
+    public void map(ImmutableBytesWritable key, RowResult value,
+        OutputCollector<ImmutableBytesWritable, BatchUpdate> output,
+        @SuppressWarnings("unused")
+        Reporter reporter) throws IOException {
+
+      BatchUpdate update = new BatchUpdate(key.get());
+      for (Map.Entry<byte[], Cell> e : value.entrySet()) {
+        update.put(e.getKey(), e.getValue().getValue());
+      }
+      output.collect(key, update);
+    }
+  }
+
+  /** {@inheritDoc} */
+  public Matrix set(Matrix B) throws IOException {
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("set MR job : " + this.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+
+    TableMapReduceUtil.initTableMapJob(B.getPath(), Constants.COLUMN + " "
+        + Constants.ATTRIBUTE + " " + Constants.ALIASEFAMILY + " "
+        + Constants.BLOCK, TableReadMapper.class,
+        ImmutableBytesWritable.class, BatchUpdate.class, jobConf);
+    TableMapReduceUtil.initTableReduceJob(this.getPath(),
+        IdentityTableReduce.class, jobConf);
+
+    JobManager.execute(jobConf);
+    return this;
   }
 
   public String getRowLabel(int row) throws IOException {

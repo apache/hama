@@ -29,6 +29,7 @@ import junit.framework.TestSuite;
 
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hama.io.DoubleEntry;
+import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 
 /**
@@ -200,6 +201,17 @@ public class TestDenseMatrix extends TestCase {
     while (it.hasNext()) {
       assertEquals(entries[i], it.next().getValue());
       i++;
+    }
+  }
+
+  public void testSetMatrix() throws IOException {
+    Matrix a = new DenseMatrix(conf);
+    a.set(m1);
+
+    for (int i = 0; i < 5; i++) {
+      int x = RandomVariable.randInt(0, 10);
+      int y = RandomVariable.randInt(0, 10);
+      assertEquals(a.get(x, y), m1.get(x, y));
     }
   }
 
