@@ -441,11 +441,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return 0;
   }
 
-  public Matrix set(double alpha, Matrix B) throws IOException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
   public void setRow(int row, Vector vector) throws IOException {
     VectorUpdate update = new VectorUpdate(row);
     update.putAll(((DenseVector) vector).getEntries().entrySet());
