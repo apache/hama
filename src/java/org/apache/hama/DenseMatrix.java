@@ -49,9 +49,10 @@ import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.MapWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
-import org.apache.hama.mapred.BlockingMapRed;
+import org.apache.hama.mapred.CollectBlocksMapper;
 import org.apache.hama.mapred.RandomMatrixMap;
 import org.apache.hama.mapred.RandomMatrixReduce;
+import org.apache.hama.mapred.VectorInputFormat;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
@@ -250,7 +251,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
     rand.setDimension(m, n);
-    
+
     JobConf jobConf = new JobConf(conf);
     jobConf.setJobName("random matrix MR job : " + rand.getPath());
 
@@ -262,9 +263,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setMapperClass(RandomMatrixMap.class);
     jobConf.setMapOutputKeyClass(IntWritable.class);
     jobConf.setMapOutputValueClass(VectorWritable.class);
-    
+
     RandomMatrixReduce.initJob(rand.getPath(), RandomMatrixReduce.class,
-            jobConf);
+        jobConf);
     jobConf.setSpeculativeExecution(false);
     jobConf.set("matrix.column", String.valueOf(n));
 
@@ -381,17 +382,16 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public Matrix mult(Matrix B) throws IOException {
-  Matrix result = new DenseMatrix(config);
-    
+    Matrix result = new DenseMatrix(config);
+
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getPath());
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
-    
-    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(),
-        SIMDMultiplyMap.class, IntWritable.class, VectorWritable.class,
-        jobConf);
+
+    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), SIMDMultiplyMap.class,
+        IntWritable.class, VectorWritable.class, jobConf);
     SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
         jobConf);
     JobManager.execute(jobConf, result);
@@ -409,26 +409,30 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public Matrix mult(Matrix B, int blocks) throws IOException {
     Matrix collectionTable = new DenseMatrix(config);
     LOG.info("Collect Blocks");
-    collectBlocks(this, collectionTable, blocks, true);
-    collectBlocks(B, collectionTable, blocks, false);
+    collectBlocks(this, B, blocks, collectionTable);
 
     Matrix result = new DenseMatrix(config);
-    
+
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getPath());
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
-    
-    BlockMultiplyMap.initJob(collectionTable.getPath(), 
-        BlockMultiplyMap.class, BlockID.class, BlockWritable.class,
+
+    BlockMultiplyMap.initJob(collectionTable.getPath(), BlockMultiplyMap.class,
+        BlockID.class, BlockWritable.class, jobConf);
+    BlockMultiplyReduce.initJob(result.getPath(), BlockMultiplyReduce.class,
         jobConf);
-    BlockMultiplyReduce.initJob(result.getPath(),
-        BlockMultiplyReduce.class, jobConf);
 
     JobManager.execute(jobConf, result);
     // Should be collectionTable removed?
     return result;
+  }
+
+  private void collectBlocks(Matrix a, Matrix b, int blocks,
+      Matrix collectionTable) throws IOException {
+    collectBlocksMapRed(a.getPath(), collectionTable, blocks, true);
+    collectBlocksMapRed(b.getPath(), collectionTable, blocks, false);
   }
 
   public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException {
@@ -471,8 +475,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       cols[jj] = BytesUtil.getColumnIndex(j);
     }
 
-    Scanner scan = table.getScanner(cols, BytesUtil.getRowIndex(i0), 
-        BytesUtil.getRowIndex(i1 + 1));
+    Scanner scan = table.getScanner(cols, BytesUtil.getRowIndex(i0), BytesUtil
+        .getRowIndex(i1 + 1));
     Iterator<RowResult> it = scan.iterator();
     int i = 0;
     RowResult rs = null;
@@ -491,13 +495,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   /**
    * Collect Blocks
    * 
-   * @param resource
+   * @param path
    * @param collectionTable
    * @param blockNum
    * @param bool
    * @throws IOException
    */
-  public void collectBlocks(Matrix resource, Matrix collectionTable, 
+  public void collectBlocksMapRed(String path, Matrix collectionTable,
       int blockNum, boolean bool) throws IOException {
     double blocks = Math.pow(blockNum, 0.5);
     if (!String.valueOf(blocks).endsWith(".0"))
@@ -505,15 +509,21 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     int block_size = (int) blocks;
     collectionTable.setDimension(block_size, block_size);
-    
+
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("Blocking MR job" + getPath());
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    jobConf.setMapperClass(CollectBlocksMapper.class);
+    jobConf.setInputFormat(VectorInputFormat.class);
+    jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
 
-    BlockingMapRed.initJob(resource.getPath(), collectionTable.getPath(), 
-        bool, block_size, this.getRows(), this.getColumns(), jobConf);
+    FileInputFormat.addInputPaths(jobConf, path);
+
+    CollectBlocksMapper.initJob(collectionTable.getPath(), bool, block_size,
+        this.getRows(), this.getColumns(), jobConf);
+
     JobManager.execute(jobConf);
   }
 }

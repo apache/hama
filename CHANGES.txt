@@ -34,6 +34,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
     
+    HAMA-150: Refactor blockingMapRed (edwardyoon)
     HAMA-148: Implement of set(double alpha, Matrix B) (edwardyoon)
     HAMA-100: Implement of set(Matrix B) (edwardyoon)
     HAMA-144: GetProgress during MR over a matrix (samuel)
