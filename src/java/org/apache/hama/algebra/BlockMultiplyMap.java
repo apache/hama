@@ -56,7 +56,6 @@ public class BlockMultiplyMap extends MapReduceBase implements
   public void map(BlockID key, BlockWritable value,
       OutputCollector<BlockID, BlockWritable> output, Reporter reporter)
       throws IOException {
-    
     SubMatrix c = value.get(0).mult(value.get(1));
     output.collect(key, new BlockWritable(c));
   }
