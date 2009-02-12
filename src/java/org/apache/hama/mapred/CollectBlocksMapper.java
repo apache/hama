@@ -28,7 +28,7 @@ import org.apache.hama.io.VectorWritable;
 /**
  * A Map/Reduce help class for blocking a DenseMatrix to a block-formated matrix
  */
-public class CollectBlocksMapper extends CollectBlocksBase implements
+public class CollectBlocksMapper extends CollectBlocksMapReduceBase implements
     CollectBlocksMap<IntWritable, VectorWritable> {
 
   @Override

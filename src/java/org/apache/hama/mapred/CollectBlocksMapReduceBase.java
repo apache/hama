@@ -25,7 +25,7 @@ import org.apache.hama.io.VectorWritable;
 /**
  * Abstract Blocking Map/Reduce Class to configure the job.
  */
-public abstract class CollectBlocksBase extends MapReduceBase {
+public abstract class CollectBlocksMapReduceBase extends MapReduceBase {
   /** Parameter of the path of the matrix to be blocked * */
   public static final String BLOCK_SIZE = "hama.blocking.size";
   public static final String ROWS = "hama.blocking.rows";

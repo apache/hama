@@ -29,6 +29,7 @@ public class ExampleDriver {
       pgd.addClass("random", RandomMatrix.class, "Generate matrix with random elements.");
       pgd.addClass("add", MatrixAddition.class, "Mat-Mat addition.");
       pgd.addClass("mult", MatrixMultiplication.class, "Mat-Mat multiplication.");
+      pgd.addClass("multfiles", MatrixMultiplication.class, "file matrices multiplication.");
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();

@@ -32,7 +32,7 @@ import org.apache.hama.io.VectorWritable;
  * to avoid duplicated records. Each row has a two sub matrices of a(i, k) and
  * b(k, j).
  */
-public class CollectBlocksReducer extends CollectBlocksBase implements
+public class CollectBlocksReducer extends CollectBlocksMapReduceBase implements
     Reducer<BlockID, VectorWritable, BlockID, BlockWritable> {
 
   @Override
