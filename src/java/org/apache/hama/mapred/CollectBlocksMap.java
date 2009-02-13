@@ -22,6 +22,12 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.VectorWritable;
 
+/**
+ * Scan an table/file to collect blocks.
+ * 
+ * @param <K> WritableComparable key class
+ * @param <V> Writable value class
+ */
 @SuppressWarnings("unchecked")
 public interface CollectBlocksMap<K extends WritableComparable, V extends Writable>
     extends Mapper<K, V, BlockID, VectorWritable> {
