@@ -22,13 +22,13 @@ package org.apache.hama;
 import java.util.Iterator;
 
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.io.MapWritable;
+import org.apache.hama.io.HMapWritable;
 
 /**
  * Methods of the vector classes
  */
 public abstract class AbstractVector {
-  public MapWritable<Integer, DoubleEntry> entries;
+  public HMapWritable<Integer, DoubleEntry> entries;
   
   /**
    * Gets the value of index
@@ -56,7 +56,7 @@ public abstract class AbstractVector {
   public void set(int index, double value) {
     // If entries are null, create new object 
     if(this.entries == null) {
-      this.entries = new MapWritable<Integer, DoubleEntry>();
+      this.entries = new HMapWritable<Integer, DoubleEntry>();
     }
     
     this.entries.put(index, new DoubleEntry(value));
@@ -91,11 +91,11 @@ public abstract class AbstractVector {
   }
   
   /**
-   * Returns the {@link org.apache.hama.io.MapWritable}
+   * Returns the {@link org.apache.hama.io.HMapWritable}
    * 
    * @return the entries of vector
    */
-  public MapWritable<Integer, DoubleEntry> getEntries() {
+  public HMapWritable<Integer, DoubleEntry> getEntries() {
     return this.entries;
   }
 }

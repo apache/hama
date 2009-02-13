@@ -46,7 +46,7 @@ import org.apache.hama.algebra.SIMDMultiplyReduce;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.io.MapWritable;
+import org.apache.hama.io.HMapWritable;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.CollectBlocksMapper;
@@ -96,6 +96,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     // if force is set to true:
     // 1) if this matrixName has aliase to other matrix, we will remove
     // the old aliase, create a new matrix table, and aliase to it.
+    
     // 2) if this matrixName has no aliase to other matrix, we will create
     // a new matrix table, and alise to it.
     //
@@ -340,7 +341,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   public Matrix add(Matrix B) throws IOException {
     Matrix result = new DenseMatrix(config);
-
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job" + result.getPath());
 
@@ -358,8 +358,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   public Matrix add(double alpha, Matrix B) throws IOException {
-    // TODO Auto-generated method stub
-    return null;
+    Matrix temp = new DenseMatrix(config);
+    temp.set(alpha, B);
+    
+    Matrix result = this.add(temp);
+    return result;
   }
 
   public DenseVector getRow(int row) throws IOException {
@@ -371,7 +374,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     byte[][] c = { columnKey };
     Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
 
-    MapWritable<Integer, DoubleEntry> trunk = new MapWritable<Integer, DoubleEntry>();
+    HMapWritable<Integer, DoubleEntry> trunk = new HMapWritable<Integer, DoubleEntry>();
 
     for (RowResult row : scan) {
       trunk.put(BytesUtil.bytesToInt(row.getRow()), new DoubleEntry(row

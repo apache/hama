@@ -39,7 +39,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
 
-public class BlockInputFormat extends TableInputFormatBase implements
+public class BlockInputFormat extends HTableInputFormatBase implements
     InputFormat<BlockID, BlockWritable>, JobConfigurable {
   static final Log LOG = LogFactory.getLog(BlockInputFormat.class);
   private TableRecordReader tableRecordReader;
@@ -47,7 +47,7 @@ public class BlockInputFormat extends TableInputFormatBase implements
   /**
    * Iterate over an HBase table data, return (BlockID, BlockWritable) pairs
    */
-  protected static class TableRecordReader extends TableRecordReaderBase
+  protected static class TableRecordReader extends HTableRecordReaderBase
       implements RecordReader<BlockID, BlockWritable> {
     
     /**

@@ -29,7 +29,7 @@ import org.apache.hadoop.hbase.filter.RowFilterInterface;
 import org.apache.hadoop.hbase.filter.RowFilterSet;
 import org.apache.hadoop.hbase.filter.StopRowFilter;
 
-public abstract class TableRecordReaderBase {
+public abstract class HTableRecordReaderBase {
   protected byte[] startRow;
   protected byte[] endRow;
   protected byte [] lastRow;

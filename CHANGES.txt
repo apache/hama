@@ -3,7 +3,7 @@ Hama Change Log
 Trunk (unreleased changes)
 
   NEW FEATURES
-  
+
     HAMA-151: Add multiplication example of file matrices (edwardyoon)
     HAMA-145: Add privacy policy page (edwardyoon)
     HAMA-83: 2D sqaure blocking for dense matrix multiplication (edwardyoon)
@@ -34,7 +34,8 @@ Trunk (unreleased changes)
     HAMA-2: The intial donation of Hama from the google project (edwardyoon)
     
   IMPROVEMENTS
-    
+
+    HAMA-109: Implement add(double alpha, Matrix B) (edwardyoon)
     HAMA-150: Refactor blockingMapRed (edwardyoon)
     HAMA-148: Implement of set(double alpha, Matrix B) (edwardyoon)
     HAMA-100: Implement of set(Matrix B) (edwardyoon)
@@ -98,7 +99,7 @@ Trunk (unreleased changes)
     HAMA-9: Upgrade dependencies (edwardyoon)
 
   BUG FIXES
-   
+
     HAMA-147: Fix typos (edwardyoon)
     HAMA-140: In subMatrix(), Scanner should be closed (edwardyoon)
     HAMA-120: remove findbugs warning in shell package (samuel via edwardyoon)
