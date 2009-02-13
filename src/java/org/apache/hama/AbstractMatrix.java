@@ -134,17 +134,32 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   /** {@inheritDoc} */
-  public void set(int i, int j, double value) throws IOException {
-    VectorUpdate update = new VectorUpdate(i);
-    update.put(j, value);
-    table.commit(update.getBatchUpdate());
+  public String getRowLabel(int row) throws IOException {
+    Cell rows = null;
+    rows = table.get(BytesUtil.getRowIndex(row), Bytes
+        .toBytes(Constants.ATTRIBUTE + "string"));
 
+    return (rows != null) ? Bytes.toString(rows.getValue()) : null;
   }
 
   /** {@inheritDoc} */
-  public void add(int i, int j, double value) throws IOException {
+  public String getColumnLabel(int column) throws IOException {
+    Cell rows = null;
+    rows = table.get(Constants.CINDEX, (Constants.ATTRIBUTE + column));
+    return (rows != null) ? Bytes.toString(rows.getValue()) : null;
+  }
+
+  /** {@inheritDoc} */
+  public void setRowLabel(int row, String name) throws IOException {
+    VectorUpdate update = new VectorUpdate(row);
+    update.put(Constants.ATTRIBUTE + "string", name);
+    table.commit(update.getBatchUpdate());
+  }
+  
+  /** {@inheritDoc} */
+  public void set(int i, int j, double value) throws IOException {
     VectorUpdate update = new VectorUpdate(i);
-    update.put(j, value + this.get(i, j));
+    update.put(j, value);
     table.commit(update.getBatchUpdate());
 
   }
@@ -158,6 +173,14 @@ public abstract class AbstractMatrix implements Matrix {
     table.commit(update.getBatchUpdate());
   }
 
+  /** {@inheritDoc} */
+  public void add(int i, int j, double value) throws IOException {
+    VectorUpdate update = new VectorUpdate(i);
+    update.put(j, value + this.get(i, j));
+    table.commit(update.getBatchUpdate());
+
+  }
+  
   /**
    * Just full scan a table.
    */
@@ -234,27 +257,7 @@ public abstract class AbstractMatrix implements Matrix {
     return this;
   }
 
-  public String getRowLabel(int row) throws IOException {
-    Cell rows = null;
-    rows = table.get(BytesUtil.getRowIndex(row), Bytes
-        .toBytes(Constants.ATTRIBUTE + "string"));
-
-    return (rows != null) ? Bytes.toString(rows.getValue()) : null;
-  }
-
-  public void setRowLabel(int row, String name) throws IOException {
-    VectorUpdate update = new VectorUpdate(row);
-    update.put(Constants.ATTRIBUTE + "string", name);
-    table.commit(update.getBatchUpdate());
-
-  }
-
-  public String getColumnLabel(int column) throws IOException {
-    Cell rows = null;
-    rows = table.get(Constants.CINDEX, (Constants.ATTRIBUTE + column));
-    return (rows != null) ? Bytes.toString(rows.getValue()) : null;
-  }
-
+  /** {@inheritDoc} */
   public void setColumnLabel(int column, String name) throws IOException {
     VectorUpdate update = new VectorUpdate(Constants.CINDEX);
     update.put(column, name);

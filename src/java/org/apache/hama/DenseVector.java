@@ -30,6 +30,9 @@ import org.apache.hama.io.HMapWritable;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
+/**
+ * This class represents a dense vector.
+ */
 public class DenseVector extends AbstractVector implements Vector {
   static final Logger LOG = Logger.getLogger(DenseVector.class);
 
@@ -49,6 +52,13 @@ public class DenseVector extends AbstractVector implements Vector {
     }
   }
 
+  /**
+   * x = alpha*v + x
+   * 
+   * @param alpha
+   * @param v
+   * @return x = alpha*v + x
+   */
   public DenseVector add(double alpha, Vector v) {
     if (alpha == 0)
       return this;
@@ -59,6 +69,12 @@ public class DenseVector extends AbstractVector implements Vector {
     return this;
   }
 
+  /**
+   * x = v + x
+   * 
+   * @param v2
+   * @return x = v + x
+   */
   public DenseVector add(Vector v2) {
     if (this.size() == 0) {
       DenseVector trunk = (DenseVector) v2;
@@ -75,6 +91,12 @@ public class DenseVector extends AbstractVector implements Vector {
     return this;
   }
 
+  /**
+   * x dot v
+   * 
+   * @param v
+   * @return x dot v
+   */
   public double dot(Vector v) {
     double cosine = 0.0;
     double q_i, d_i;
@@ -86,6 +108,12 @@ public class DenseVector extends AbstractVector implements Vector {
     return cosine / (this.getNorm2() * ((DenseVector) v).getNorm2());
   }
 
+  /**
+   * v = alpha*v 
+   * 
+   * @param alpha
+   * @return v = alpha*v
+   */
   public Vector scale(double alpha) {
     for(Map.Entry<Integer, DoubleEntry> e : this.entries.entrySet()) {
       this.entries.put(e.getKey(), new DoubleEntry(e.getValue().getValue() * alpha));
@@ -93,6 +121,12 @@ public class DenseVector extends AbstractVector implements Vector {
     return this;
   }
 
+  /**
+   * Computes the given norm of the vector
+   * 
+   * @param type
+   * @return norm of the vector
+   */
   public double norm(Norm type) {
     if (type == Norm.One)
       return getNorm1();
@@ -104,6 +138,12 @@ public class DenseVector extends AbstractVector implements Vector {
       return getNormInf();
   }
 
+  /**
+   * Sets the vector
+   * 
+   * @param v
+   * @return x = v
+   */
   public DenseVector set(Vector v) {
     return new DenseVector(((DenseVector) v).getEntries());
   }
@@ -145,6 +185,13 @@ public class DenseVector extends AbstractVector implements Vector {
     return 0;
   }
 
+  /**
+   * Returns a sub-vector.
+   * 
+   * @param i0 the index of the first element
+   * @param i1 the index of the last element
+   * @return v[i0:i1]
+   */
   public DenseVector subVector(int i0, int i1) {
     DenseVector res = new DenseVector();
     for (int i = i0; i <= i1; i++) {
@@ -154,6 +201,9 @@ public class DenseVector extends AbstractVector implements Vector {
     return res;
   }
 
+  /**
+   * Clears the entries.
+   */
   public void clear() {
     this.entries = null;
   }
