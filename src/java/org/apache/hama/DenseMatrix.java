@@ -57,6 +57,9 @@ import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
 
+/**
+ * This class represents a dense matrix.
+ */
 public class DenseMatrix extends AbstractMatrix implements Matrix {
   static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
   static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
@@ -339,6 +342,74 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return (c != null) ? BytesUtil.bytesToDouble(c.getValue()) : 0;
   }
 
+  /**
+   * Gets the vector of row
+   * 
+   * @param i the row index of the matrix
+   * @return the vector of row
+   * @throws IOException
+   */
+  public DenseVector getRow(int i) throws IOException {
+    return new DenseVector(table.getRow(BytesUtil.getRowIndex(i)));
+  }
+  
+  /**
+   * Gets the vector of column
+   * 
+   * @param j the column index of the matrix
+   * @return the vector of column
+   * @throws IOException
+   */
+  public DenseVector getColumn(int j) throws IOException {
+    byte[] columnKey = BytesUtil.getColumnIndex(j);
+    byte[][] c = { columnKey };
+    Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
+
+    HMapWritable<Integer, DoubleEntry> trunk = new HMapWritable<Integer, DoubleEntry>();
+
+    for (RowResult row : scan) {
+      trunk.put(BytesUtil.bytesToInt(row.getRow()), new DoubleEntry(row
+          .get(columnKey)));
+    }
+
+    return new DenseVector(trunk);
+  }
+
+  /**
+   * Set the row of a matrix to a given vector
+   * 
+   * @param row
+   * @param vector
+   * @throws IOException
+   */
+  public void setRow(int row, Vector vector) throws IOException {
+    VectorUpdate update = new VectorUpdate(row);
+    update.putAll(((DenseVector) vector).getEntries().entrySet());
+    table.commit(update.getBatchUpdate());
+  }
+
+  /**
+   * Set the column of a matrix to a given vector
+   * 
+   * @param column
+   * @param vector
+   * @throws IOException
+   */
+  public void setColumn(int column, Vector vector) throws IOException {
+    for (int i = 0; i < vector.size(); i++) {
+      VectorUpdate update = new VectorUpdate(i);
+      update.put(column, vector.get(i));
+      table.commit(update.getBatchUpdate());
+    }
+  }
+  
+  /**
+   * A = B + A
+   * 
+   * @param B
+   * @return A
+   * @throws IOException
+   */
   public Matrix add(Matrix B) throws IOException {
     Matrix result = new DenseMatrix(config);
     JobConf jobConf = new JobConf(config);
@@ -357,6 +428,14 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return result;
   }
 
+  /**
+   * A = alpha*B + A
+   * 
+   * @param alpha
+   * @param B
+   * @return A
+   * @throws IOException
+   */
   public Matrix add(double alpha, Matrix B) throws IOException {
     Matrix temp = new DenseMatrix(config);
     temp.set(alpha, B);
@@ -364,26 +443,14 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     Matrix result = this.add(temp);
     return result;
   }
-
-  public DenseVector getRow(int row) throws IOException {
-    return new DenseVector(table.getRow(BytesUtil.getRowIndex(row)));
-  }
-
-  public DenseVector getColumn(int column) throws IOException {
-    byte[] columnKey = BytesUtil.getColumnIndex(column);
-    byte[][] c = { columnKey };
-    Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
-
-    HMapWritable<Integer, DoubleEntry> trunk = new HMapWritable<Integer, DoubleEntry>();
-
-    for (RowResult row : scan) {
-      trunk.put(BytesUtil.bytesToInt(row.getRow()), new DoubleEntry(row
-          .get(columnKey)));
-    }
-
-    return new DenseVector(trunk);
-  }
-
+  
+  /**
+   * C = A*B using SIMD algorithm
+   * 
+   * @param B
+   * @return C
+   * @throws IOException
+   */
   public Matrix mult(Matrix B) throws IOException {
     Matrix result = new DenseMatrix(config);
 
@@ -402,7 +469,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
-   * A * B
+   * C = A * B using Blocking algorithm
    * 
    * @param B
    * @param blocks the number of blocks
@@ -412,8 +479,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public Matrix mult(Matrix B, int blocks) throws IOException {
     Matrix collectionTable = new DenseMatrix(config);
     LOG.info("Collect Blocks");
-    collectBlocks(this, B, blocks, collectionTable);
 
+    collectBlocksMapRed(this.getPath(), collectionTable, blocks, true);
+    collectBlocksMapRed(B.getPath(), collectionTable, blocks, false);
+    
     Matrix result = new DenseMatrix(config);
 
     JobConf jobConf = new JobConf(config);
@@ -432,42 +501,49 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return result;
   }
 
-  private void collectBlocks(Matrix a, Matrix b, int blocks,
-      Matrix collectionTable) throws IOException {
-    collectBlocksMapRed(a.getPath(), collectionTable, blocks, true);
-    collectBlocksMapRed(b.getPath(), collectionTable, blocks, false);
-  }
-
+  /**
+   * C = alpha*A*B + C
+   * 
+   * @param alpha
+   * @param B
+   * @param C
+   * @return C
+   * @throws IOException
+   */
   public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException {
     // TODO Auto-generated method stub
     return null;
   }
 
+  /**
+   * Computes the given norm of the matrix
+   * 
+   * @param type
+   * @return norm of the matrix
+   * @throws IOException
+   */
   public double norm(Norm type) throws IOException {
     // TODO Auto-generated method stub
     return 0;
   }
 
-  public void setRow(int row, Vector vector) throws IOException {
-    VectorUpdate update = new VectorUpdate(row);
-    update.putAll(((DenseVector) vector).getEntries().entrySet());
-    table.commit(update.getBatchUpdate());
-  }
-
-  public void setColumn(int column, Vector vector) throws IOException {
-    for (int i = 0; i < vector.size(); i++) {
-      VectorUpdate update = new VectorUpdate(i);
-      update.put(column, vector.get(i));
-      table.commit(update.getBatchUpdate());
-    }
-  }
-
+  /**
+   * Returns type of matrix
+   */
   public String getType() {
     return this.getClass().getSimpleName();
   }
 
   /**
-   * Gets the sub matrix
+   * Returns the sub matrix formed by selecting certain rows and
+   * columns from a bigger matrix. The sub matrix is a in-memory operation only.
+   * 
+   * @param i0 the start index of row
+   * @param i1 the end index of row
+   * @param j0 the start index of column
+   * @param j1 the end index of column
+   * @return the sub matrix of matrix
+   * @throws IOException
    */
   public SubMatrix subMatrix(int i0, int i1, int j0, int j1) throws IOException {
     int columnSize = (j1 - j0) + 1;
@@ -498,9 +574,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   /**
    * Collect Blocks
    * 
-   * @param path
-   * @param collectionTable
-   * @param blockNum
+   * @param path a input path
+   * @param collectionTable the collection table
+   * @param blockNum the number of blocks
    * @param bool
    * @throws IOException
    */

@@ -148,15 +148,15 @@ public class HamaAdminImpl implements HamaAdmin {
     matrix.deleteAll(Constants.METADATA, Constants.ALIASENAME);
   }
 
+  /**
+   * we remove the aliase entry store in Admin table, and clear the aliase info
+   * store in matrix table. And check the reference of the matrix table:
+   * 
+   * 1) if the reference of the matrix table is zero: we delete the table. 
+   * 2) if the reference of the matrix table is not zero: we let the matrix who still
+   * reference the table to do the garbage collection.
+   */
   public void delete(String matrixName) throws IOException {
-    // we remove the aliase entry store in Admin table, and
-    // clear the aliase info store in matrix table.
-    // And check the reference of the matrix table:
-    // 1) if the reference of the matrix table is zero:
-    // we delete the table.
-    // 2) if the reference of the matrix table is not zero:
-    // we let the matrix who still reference the table to
-    // do the garbage collection.
     if (matrixExists(matrixName)) {
       String tablename = getPath(matrixName);
 
@@ -164,7 +164,7 @@ public class HamaAdminImpl implements HamaAdmin {
       removeEntry(matrixName);
 
       if (tablename == null) { // a matrixName point to a null table. we delete
-                                // the entry.
+        // the entry.
         return;
       }
 
