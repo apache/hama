@@ -35,8 +35,8 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 
-public abstract class TableInputFormatBase {
-  private static final Log LOG = LogFactory.getLog(TableInputFormatBase.class);
+public abstract class HTableInputFormatBase {
+  private static final Log LOG = LogFactory.getLog(HTableInputFormatBase.class);
   protected byte[][] inputColumns;
   protected HTable table;
   protected RowFilterInterface rowFilter;

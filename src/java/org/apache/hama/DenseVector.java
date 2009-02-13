@@ -26,7 +26,7 @@ import java.util.Set;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.io.MapWritable;
+import org.apache.hama.io.HMapWritable;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
@@ -34,15 +34,15 @@ public class DenseVector extends AbstractVector implements Vector {
   static final Logger LOG = Logger.getLogger(DenseVector.class);
 
   public DenseVector() {
-    this(new MapWritable<Integer, DoubleEntry>());
+    this(new HMapWritable<Integer, DoubleEntry>());
   }
 
-  public DenseVector(MapWritable<Integer, DoubleEntry> m) {
+  public DenseVector(HMapWritable<Integer, DoubleEntry> m) {
     this.entries = m;
   }
 
   public DenseVector(RowResult row) {
-    this.entries = new MapWritable<Integer, DoubleEntry>();
+    this.entries = new HMapWritable<Integer, DoubleEntry>();
     for (Map.Entry<byte[], Cell> f : row.entrySet()) {
       this.entries.put(BytesUtil.getColumnIndex(f.getKey()), 
           new DoubleEntry(f.getValue()));

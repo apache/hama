@@ -39,7 +39,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.io.VectorWritable;
 import org.apache.hama.util.BytesUtil;
 
-public class VectorInputFormat extends TableInputFormatBase implements
+public class VectorInputFormat extends HTableInputFormatBase implements
     InputFormat<IntWritable, VectorWritable>, JobConfigurable {
   static final Log LOG = LogFactory.getLog(VectorInputFormat.class);
   private TableRecordReader tableRecordReader;
@@ -47,7 +47,7 @@ public class VectorInputFormat extends TableInputFormatBase implements
   /**
    * Iterate over an HBase table data, return (IntWritable, VectorWritable) pairs
    */
-  protected static class TableRecordReader extends TableRecordReaderBase
+  protected static class TableRecordReader extends HTableRecordReaderBase
       implements RecordReader<IntWritable, VectorWritable> {
 
    private int totalRows;

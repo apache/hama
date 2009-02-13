@@ -168,6 +168,34 @@ public class TestDenseMatrix extends TestCase {
     verifyMultResult(m1, m2, result);
   }
 
+  public void testSetMatrix() throws IOException {
+    Matrix a = new DenseMatrix(conf);
+    a.set(m1);
+
+    for (int i = 0; i < 5; i++) {
+      int x = RandomVariable.randInt(0, 10);
+      int y = RandomVariable.randInt(0, 10);
+      assertEquals(a.get(x, y), m1.get(x, y));
+    }
+  }
+
+  public void testSetAlphaMatrix() throws IOException {
+    Matrix a = new DenseMatrix(conf);
+    a.set(0.5, m1);
+    
+    for (int i = 0; i < 5; i++) {
+      int x = RandomVariable.randInt(0, 10);
+      int y = RandomVariable.randInt(0, 10);
+      assertEquals(a.get(x, y), (m1.get(x, y) * 0.5));
+    }
+  }
+  
+  public void testAddAlphaMatrix() throws IOException {
+    double value = m1.get(0, 0) + (m2.get(0, 0) * 0.1);
+    Matrix result = m1.add(0.1, m2);
+    assertEquals(value, result.get(0, 0));
+  }
+  
   public void testSetRow() throws IOException {
     Vector v = new DenseVector();
     double[] entries = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
@@ -204,28 +232,6 @@ public class TestDenseMatrix extends TestCase {
     }
   }
 
-  public void testSetMatrix() throws IOException {
-    Matrix a = new DenseMatrix(conf);
-    a.set(m1);
-
-    for (int i = 0; i < 5; i++) {
-      int x = RandomVariable.randInt(0, 10);
-      int y = RandomVariable.randInt(0, 10);
-      assertEquals(a.get(x, y), m1.get(x, y));
-    }
-  }
-
-  public void testSetAlphaMatrix() throws IOException {
-    Matrix a = new DenseMatrix(conf);
-    a.set(0.5, m1);
-    
-    for (int i = 0; i < 5; i++) {
-      int x = RandomVariable.randInt(0, 10);
-      int y = RandomVariable.randInt(0, 10);
-      assertEquals(a.get(x, y), (m1.get(x, y) * 0.5));
-    }
-  }
-  
   public void testLoadSave() throws IOException {
     String path1 = m1.getPath();
     // save m1 to aliase1

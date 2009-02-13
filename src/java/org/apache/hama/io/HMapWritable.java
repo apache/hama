@@ -39,7 +39,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.util.BytesUtil;
 
-public class MapWritable<K, V> implements Map<Integer, V>, Writable,
+public class HMapWritable<K, V> implements Map<Integer, V>, Writable,
     Configurable {
   private AtomicReference<Configuration> conf = new AtomicReference<Configuration>();
 

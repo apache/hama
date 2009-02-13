@@ -189,6 +189,8 @@ public abstract class AbstractMatrix implements Matrix {
     }
 
     public static void setAlpha(double a) {
+      if(alpha.size() > 0) 
+        alpha = new ArrayList<Double>();
       alpha.add(a);
     }
   }
