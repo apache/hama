@@ -22,6 +22,7 @@ package org.apache.hama.mapred;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hama.DenseMatrix;
@@ -29,7 +30,6 @@ import org.apache.hama.HCluster;
 import org.apache.hama.Matrix;
 import org.apache.hama.algebra.RowCyclicAdditionMap;
 import org.apache.hama.algebra.RowCyclicAdditionReduce;
-import org.apache.hama.io.VectorWritable;
 import org.apache.log4j.Logger;
 
 /**
@@ -65,7 +65,7 @@ public class TestMatrixMapReduce extends HCluster {
     jobConf.setJobName("test MR job");
 
     RowCyclicAdditionMap.initJob(string, string2, RowCyclicAdditionMap.class, IntWritable.class,
-        VectorWritable.class, jobConf);
+        MapWritable.class, jobConf);
     RowCyclicAdditionReduce.initJob(output, RowCyclicAdditionReduce.class, jobConf);
 
     jobConf.setNumMapTasks(2);

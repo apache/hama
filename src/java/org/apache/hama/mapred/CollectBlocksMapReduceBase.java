@@ -16,11 +16,11 @@
  */
 package org.apache.hama.mapred;
 
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
-import org.apache.hama.io.VectorWritable;
 
 /**
  * Abstract Blocking Map/Reduce Class to configure the job.
@@ -59,7 +59,7 @@ public abstract class CollectBlocksMapReduceBase extends MapReduceBase {
       int block_size, int i, int j, JobConf job) {
     job.setReducerClass(CollectBlocksReducer.class);
     job.setMapOutputKeyClass(BlockID.class);
-    job.setMapOutputValueClass(VectorWritable.class);
+    job.setMapOutputValueClass(MapWritable.class);
 
     job.setOutputFormat(BlockOutputFormat.class);
     job.setOutputKeyClass(BlockID.class);

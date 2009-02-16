@@ -29,6 +29,7 @@ import junit.framework.TestSuite;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.DoubleEntry;
 
 public class TestDenseVector extends TestCase {
@@ -76,11 +77,11 @@ public class TestDenseVector extends TestCase {
   public void testSubVector() {
     int start = 2;
     Vector subVector = v1.subVector(start, v1.size() - 1);
-    Iterator<DoubleEntry> it = subVector.iterator();
+    Iterator<Writable> it = subVector.iterator();
 
     int i = start;
     while (it.hasNext()) {
-      assertEquals(v1.get(i), it.next().getValue());
+      assertEquals(v1.get(i), ((DoubleEntry) it.next()).getValue());
       i++;
     }
   }
@@ -127,18 +128,18 @@ public class TestDenseVector extends TestCase {
   public void testAdd() {
     v1.add(v2);
     int i = 0;
-    Iterator<DoubleEntry> it = v1.iterator();
+    Iterator<Writable> it = v1.iterator();
     while (it.hasNext()) {
-      DoubleEntry c = it.next();
+      DoubleEntry c = (DoubleEntry) it.next();
       assertEquals(c.getValue(), values[0][i] + values[1][i]);
       i++;
     }
 
     v1.add(0.5, v2);
     int j = 0;
-    Iterator<DoubleEntry> itt = v1.iterator();
+    Iterator<Writable> itt = v1.iterator();
     while (itt.hasNext()) {
-      DoubleEntry c = itt.next();
+      DoubleEntry c = (DoubleEntry) itt.next();
       assertEquals(c.getValue(), (values[0][j] + values[1][j]) + (0.5 * values[1][j]));
       j++;
     }

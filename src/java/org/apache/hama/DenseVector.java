@@ -25,8 +25,11 @@ import java.util.Set;
 
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.io.HMapWritable;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
@@ -35,23 +38,35 @@ import org.apache.log4j.Logger;
  */
 public class DenseVector extends AbstractVector implements Vector {
   static final Logger LOG = Logger.getLogger(DenseVector.class);
-
   public DenseVector() {
-    this(new HMapWritable<Integer, DoubleEntry>());
+    this(new MapWritable());
   }
 
-  public DenseVector(HMapWritable<Integer, DoubleEntry> m) {
+  public DenseVector(MapWritable m) {
     this.entries = m;
   }
 
   public DenseVector(RowResult row) {
-    this.entries = new HMapWritable<Integer, DoubleEntry>();
+    this.entries = new MapWritable();
     for (Map.Entry<byte[], Cell> f : row.entrySet()) {
-      this.entries.put(BytesUtil.getColumnIndex(f.getKey()), 
+      this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())), 
           new DoubleEntry(f.getValue()));
     }
   }
 
+  public DenseVector(int row, MapWritable m) {
+    this.entries = m;
+    this.entries.put(new Text("row"), new IntWritable(row));
+  }
+  
+  public void setRow(int row) {
+    this.entries.put(new Text("row"), new IntWritable(row));
+  }
+  
+  public int getRow() {
+    return ((IntWritable) this.entries.get(new Text("row"))).get();
+  }
+  
   /**
    * x = alpha*v + x
    * 
@@ -85,7 +100,7 @@ public class DenseVector extends AbstractVector implements Vector {
     for (int i = 0; i < this.size(); i++) {
       double value = (this.get(i) + v2.get(i));
 
-      this.entries.put(i, new DoubleEntry(value));
+      this.entries.put(new IntWritable(i), new DoubleEntry(value));
     }
 
     return this;
@@ -115,8 +130,8 @@ public class DenseVector extends AbstractVector implements Vector {
    * @return v = alpha*v
    */
   public Vector scale(double alpha) {
-    for(Map.Entry<Integer, DoubleEntry> e : this.entries.entrySet()) {
-      this.entries.put(e.getKey(), new DoubleEntry(e.getValue().getValue() * alpha));
+    for(Map.Entry<Writable, Writable> e : this.entries.entrySet()) {
+      this.entries.put(e.getKey(), new DoubleEntry(((DoubleEntry) e.getValue()).getValue() * alpha));
     }
     return this;
   }
@@ -151,11 +166,11 @@ public class DenseVector extends AbstractVector implements Vector {
   public double getNorm1() {
     double sum = 0.0;
 
-    Set<Integer> keySet = this.entries.keySet();
-    Iterator<Integer> it = keySet.iterator();
+    Set<Writable> keySet = this.entries.keySet();
+    Iterator<Writable> it = keySet.iterator();
 
     while (it.hasNext()) {
-      sum += get(it.next());
+      sum += get(((IntWritable) it.next()).get());
     }
 
     return sum;
@@ -164,11 +179,11 @@ public class DenseVector extends AbstractVector implements Vector {
   public double getNorm2() {
     double square_sum = 0.0;
 
-    Set<Integer> keySet = entries.keySet();
-    Iterator<Integer> it = keySet.iterator();
+    Set<Writable> keySet = entries.keySet();
+    Iterator<Writable> it = keySet.iterator();
 
     while (it.hasNext()) {
-      double value = get(it.next());
+      double value = get(((IntWritable) it.next()).get());
       square_sum += value * value;
     }
 
@@ -194,6 +209,9 @@ public class DenseVector extends AbstractVector implements Vector {
    */
   public DenseVector subVector(int i0, int i1) {
     DenseVector res = new DenseVector();
+    if(this.entries.containsKey(new Text("row"))) 
+        res.setRow(this.getRow());
+    
     for (int i = i0; i <= i1; i++) {
       res.set(i, get(i));
     }

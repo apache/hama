@@ -19,13 +19,16 @@ package org.apache.hama.mapred;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.DenseVector;
 import org.apache.hama.SubMatrix;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
-import org.apache.hama.io.VectorWritable;
 
 /**
  * Rows are named as c(i, j) with sequential number ((N^2 * i) + ((j * N) + k)
@@ -33,10 +36,11 @@ import org.apache.hama.io.VectorWritable;
  * b(k, j).
  */
 public class CollectBlocksReducer extends CollectBlocksMapReduceBase implements
-    Reducer<BlockID, VectorWritable, BlockID, BlockWritable> {
-
+    Reducer<BlockID, MapWritable, BlockID, BlockWritable> {
+  static final Log LOG = LogFactory.getLog(CollectBlocksReducer.class);
+  
   @Override
-  public void reduce(BlockID key, Iterator<VectorWritable> values,
+  public void reduce(BlockID key, Iterator<MapWritable> values,
       OutputCollector<BlockID, BlockWritable> output, Reporter reporter)
       throws IOException {
     // Note: all the sub-vectors are grouped by {@link
@@ -60,11 +64,12 @@ public class CollectBlocksReducer extends CollectBlocksMapReduceBase implements
     // i, j is the current offset in the sub-matrix
     int i = 0, j = 0;
     while (values.hasNext()) {
-      VectorWritable vw = values.next();
+      DenseVector vw = new DenseVector(values.next());
       // check the size is suitable
       if (vw.size() != smCols)
         throw new IOException("Block Column Size dismatched.");
-      i = vw.row - rowBase;
+      i = vw.getRow() - rowBase;
+      
       if (i >= smRows || i < 0)
         throw new IOException("Block Row Size dismatched.");
 

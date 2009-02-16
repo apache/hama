@@ -24,18 +24,18 @@ import java.util.Iterator;
 
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.VectorOutputFormat;
 import org.apache.log4j.Logger;
 
 public class SIMDMultiplyReduce extends MapReduceBase implements
-    Reducer<IntWritable, VectorWritable, IntWritable, VectorUpdate> {
+    Reducer<IntWritable, MapWritable, IntWritable, VectorUpdate> {
   static final Logger LOG = Logger.getLogger(SIMDMultiplyReduce.class);
 
   /**
@@ -56,12 +56,12 @@ public class SIMDMultiplyReduce extends MapReduceBase implements
   }
   
   @Override
-  public void reduce(IntWritable key, Iterator<VectorWritable> values,
+  public void reduce(IntWritable key, Iterator<MapWritable> values,
       OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
 
     VectorUpdate update = new VectorUpdate(key.get());
-    update.putAll(values.next().entrySet());
+    update.putAll(values.next());
 
     output.collect(key, update);
   }

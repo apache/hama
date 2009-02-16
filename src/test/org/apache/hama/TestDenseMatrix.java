@@ -28,6 +28,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
@@ -91,10 +92,10 @@ public class TestDenseMatrix extends TestCase {
    */
   public void testGetColumn() throws IOException {
     Vector v = m1.getColumn(0);
-    Iterator<DoubleEntry> it = v.iterator();
+    Iterator<Writable> it = v.iterator();
     int x = 0;
     while (it.hasNext()) {
-      assertEquals(m1.get(x, 0), it.next().getValue());
+      assertEquals(m1.get(x, 0), ((DoubleEntry) it.next()).getValue());
       x++;
     }
   }
@@ -205,11 +206,11 @@ public class TestDenseMatrix extends TestCase {
     }
 
     m1.setRow(SIZE + 1, v);
-    Iterator<DoubleEntry> it = m1.getRow(SIZE + 1).iterator();
+    Iterator<Writable> it = m1.getRow(SIZE + 1).iterator();
 
     int i = 0;
     while (it.hasNext()) {
-      assertEquals(entries[i], it.next().getValue());
+      assertEquals(entries[i], ((DoubleEntry) it.next()).getValue());
       i++;
     }
   }
@@ -223,11 +224,11 @@ public class TestDenseMatrix extends TestCase {
     }
 
     m1.setColumn(SIZE + 1, v);
-    Iterator<DoubleEntry> it = m1.getColumn(SIZE + 1).iterator();
+    Iterator<Writable> it = m1.getColumn(SIZE + 1).iterator();
 
     int i = 0;
     while (it.hasNext()) {
-      assertEquals(entries[i], it.next().getValue());
+      assertEquals(entries[i], ((DoubleEntry) it.next()).getValue());
       i++;
     }
   }

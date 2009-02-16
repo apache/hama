@@ -21,14 +21,17 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.io.HMapWritable;
 
 /**
  * Methods of the vector classes
  */
 public abstract class AbstractVector {
-  public HMapWritable<Integer, DoubleEntry> entries;
+  protected MapWritable entries;
   
   /**
    * Gets the value of index
@@ -39,7 +42,7 @@ public abstract class AbstractVector {
   public double get(int index) {
     double value;
     try {
-      value = this.entries.get(index).getValue();
+      value = ((DoubleEntry) this.entries.get(new IntWritable(index))).getValue();
     } catch (NullPointerException e) {
       throw new NullPointerException("v("+index+") : " + e.toString());
     }
@@ -56,10 +59,10 @@ public abstract class AbstractVector {
   public void set(int index, double value) {
     // If entries are null, create new object 
     if(this.entries == null) {
-      this.entries = new HMapWritable<Integer, DoubleEntry>();
+      this.entries = new MapWritable();
     }
     
-    this.entries.put(index, new DoubleEntry(value));
+    this.entries.put(new IntWritable(index), new DoubleEntry(value));
   }
   
   /**
@@ -77,7 +80,7 @@ public abstract class AbstractVector {
    * 
    * @return iterator
    */
-  public Iterator<DoubleEntry> iterator() {
+  public Iterator<Writable> iterator() {
     return this.entries.values().iterator();
   }
   
@@ -87,15 +90,19 @@ public abstract class AbstractVector {
    * @return a size of vector
    */
   public int size() {
-    return (this.entries != null) ? this.entries.size() : 0;
+    int x = 0;
+    if(this.entries != null && this.entries.containsKey(new Text("row"))) 
+      x = 1;
+    
+    return (this.entries != null) ? this.entries.size() - x : 0;
   }
   
   /**
-   * Returns the {@link org.apache.hama.io.HMapWritable}
+   * Returns the {@link org.apache.hadoop.io.MapWritable}
    * 
    * @return the entries of vector
    */
-  public HMapWritable<Integer, DoubleEntry> getEntries() {
+  public MapWritable getEntries() {
     return this.entries;
   }
 }

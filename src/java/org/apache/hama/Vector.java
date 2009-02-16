@@ -21,7 +21,7 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
-import org.apache.hama.io.DoubleEntry;
+import org.apache.hadoop.io.Writable;
 
 /**
  * Basic vector interface.
@@ -143,5 +143,5 @@ public interface Vector {
    * 
    * @return iterator
    */
-  public Iterator<DoubleEntry> iterator();
+  public Iterator<Writable> iterator();
 }
