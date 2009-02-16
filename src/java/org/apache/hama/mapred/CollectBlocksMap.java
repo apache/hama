@@ -16,11 +16,11 @@
  */
 package org.apache.hama.mapred;
 
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hama.io.BlockID;
-import org.apache.hama.io.VectorWritable;
 
 /**
  * Scan an table/file to collect blocks.
@@ -30,5 +30,5 @@ import org.apache.hama.io.VectorWritable;
  */
 @SuppressWarnings("unchecked")
 public interface CollectBlocksMap<K extends WritableComparable, V extends Writable>
-    extends Mapper<K, V, BlockID, VectorWritable> {
+    extends Mapper<K, V, BlockID, MapWritable> {
 }

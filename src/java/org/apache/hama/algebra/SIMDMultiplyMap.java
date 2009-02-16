@@ -22,6 +22,7 @@ package org.apache.hama.algebra;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -33,7 +34,7 @@ import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
-import org.apache.hama.io.VectorWritable;
+import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.mapred.VectorInputFormat;
 import org.apache.log4j.Logger;
 
@@ -41,7 +42,7 @@ import org.apache.log4j.Logger;
  * SIMD version
  */
 public class SIMDMultiplyMap extends MapReduceBase implements
-Mapper<IntWritable, VectorWritable, IntWritable, VectorWritable> {
+Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
   static final Logger LOG = Logger.getLogger(SIMDMultiplyMap.class);
   protected Matrix matrix_b;
   public static final String MATRIX_B = "hama.multiplication.matrix.b";
@@ -57,7 +58,7 @@ Mapper<IntWritable, VectorWritable, IntWritable, VectorWritable> {
 
   public static void initJob(String matrix_a, String matrix_b,
       Class<SIMDMultiplyMap> map, Class<IntWritable> outputKeyClass,
-      Class<VectorWritable> outputValueClass, JobConf jobConf) {
+      Class<MapWritable> outputValueClass, JobConf jobConf) {
 
     jobConf.setMapOutputValueClass(outputValueClass);
     jobConf.setMapOutputKeyClass(outputKeyClass);
@@ -70,15 +71,15 @@ Mapper<IntWritable, VectorWritable, IntWritable, VectorWritable> {
   }
 
   @Override
-  public void map(IntWritable key, VectorWritable value,
-      OutputCollector<IntWritable, VectorWritable> output, Reporter reporter)
+  public void map(IntWritable key, MapWritable value,
+      OutputCollector<IntWritable, MapWritable> output, Reporter reporter)
       throws IOException {
     sum.clear();
 
     for(int i = 0; i < value.size(); i++) {
-      sum.add(matrix_b.getRow(i).scale(value.get(i)));
+      sum.add(matrix_b.getRow(i).scale(((DoubleEntry) value.get(new IntWritable(i))).getValue()));
     }
     
-    output.collect(key, new VectorWritable(key.get(), sum));
+    output.collect(key, sum.getEntries());
   }
 }

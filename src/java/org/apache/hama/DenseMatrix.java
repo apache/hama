@@ -31,6 +31,7 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -46,9 +47,7 @@ import org.apache.hama.algebra.SIMDMultiplyReduce;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.io.HMapWritable;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.CollectBlocksMapper;
 import org.apache.hama.mapred.RandomMatrixMap;
 import org.apache.hama.mapred.RandomMatrixReduce;
@@ -266,7 +265,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     FileInputFormat.setInputPaths(jobConf, inDir);
     jobConf.setMapperClass(RandomMatrixMap.class);
     jobConf.setMapOutputKeyClass(IntWritable.class);
-    jobConf.setMapOutputValueClass(VectorWritable.class);
+    jobConf.setMapOutputValueClass(MapWritable.class);
 
     RandomMatrixReduce.initJob(rand.getPath(), RandomMatrixReduce.class,
         jobConf);
@@ -365,10 +364,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     byte[][] c = { columnKey };
     Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
 
-    HMapWritable<Integer, DoubleEntry> trunk = new HMapWritable<Integer, DoubleEntry>();
+    MapWritable trunk = new MapWritable();
 
     for (RowResult row : scan) {
-      trunk.put(BytesUtil.bytesToInt(row.getRow()), new DoubleEntry(row
+      trunk.put(new IntWritable(BytesUtil.bytesToInt(row.getRow())), new DoubleEntry(row
           .get(columnKey)));
     }
 
@@ -384,7 +383,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public void setRow(int row, Vector vector) throws IOException {
     VectorUpdate update = new VectorUpdate(row);
-    update.putAll(((DenseVector) vector).getEntries().entrySet());
+    update.putAll(((DenseVector) vector).getEntries());
     table.commit(update.getBatchUpdate());
   }
 
@@ -419,7 +418,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
     RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(),
-        RowCyclicAdditionMap.class, IntWritable.class, VectorWritable.class,
+        RowCyclicAdditionMap.class, IntWritable.class, MapWritable.class,
         jobConf);
     RowCyclicAdditionReduce.initJob(result.getPath(),
         RowCyclicAdditionReduce.class, jobConf);
@@ -461,7 +460,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
     SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), SIMDMultiplyMap.class,
-        IntWritable.class, VectorWritable.class, jobConf);
+        IntWritable.class, MapWritable.class, jobConf);
     SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
         jobConf);
     JobManager.execute(jobConf, result);

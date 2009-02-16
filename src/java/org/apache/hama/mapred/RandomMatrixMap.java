@@ -22,13 +22,13 @@ package org.apache.hama.mapred;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
-import org.apache.hama.io.VectorWritable;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 
@@ -36,21 +36,21 @@ import org.apache.log4j.Logger;
  * Generate matrix with random elements
  */
 public class RandomMatrixMap extends MapReduceBase implements
-    Mapper<IntWritable, IntWritable, IntWritable, VectorWritable> {
+    Mapper<IntWritable, IntWritable, IntWritable, MapWritable> {
   static final Logger LOG = Logger.getLogger(RandomMatrixMap.class);
   protected int column;
   protected DenseVector vector = new DenseVector();
   
   @Override
   public void map(IntWritable key, IntWritable value,
-      OutputCollector<IntWritable, VectorWritable> output, Reporter report)
+      OutputCollector<IntWritable, MapWritable> output, Reporter report)
       throws IOException {
     vector.clear();
     for (int i = key.get(); i <= value.get(); i++) {
       for (int j = 0; j < column; j++) {
         vector.set(j, RandomVariable.rand());
       }
-      output.collect(new IntWritable(i), new VectorWritable(i, vector));
+      output.collect(new IntWritable(i), vector.getEntries());
     }
   }
 

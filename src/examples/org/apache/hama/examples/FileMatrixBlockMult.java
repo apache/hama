@@ -41,7 +41,6 @@ import org.apache.hama.algebra.BlockMultiplyMap;
 import org.apache.hama.algebra.BlockMultiplyReduce;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
-import org.apache.hama.io.VectorWritable;
 import org.apache.hama.mapred.CollectBlocksMap;
 import org.apache.hama.mapred.CollectBlocksMapReduceBase;
 import org.apache.hama.util.JobManager;
@@ -61,33 +60,31 @@ public class FileMatrixBlockMult extends AbstractExample {
 
     @Override
     public void map(IntWritable key, MapWritable value,
-        OutputCollector<BlockID, VectorWritable> output, Reporter reporter)
+        OutputCollector<BlockID, MapWritable> output, Reporter reporter)
         throws IOException {
-      int startColumn;
-      int endColumn;
-      int blkRow = key.get() / mBlockRowSize;
+      int startColumn, endColumn, blkRow = key.get() / mBlockRowSize, i = 0;
       this.value = value;
-
-      int i = 0;
+      
       do {
         startColumn = i * mBlockColSize;
         endColumn = startColumn + mBlockColSize - 1;
         if (endColumn >= mColumns) // the last sub vector
           endColumn = mColumns - 1;
-        output.collect(new BlockID(blkRow, i), new VectorWritable(key.get(),
-            subVector(startColumn, endColumn)));
+        output.collect(new BlockID(blkRow, i), subVector(key.get(), startColumn, endColumn));
 
         i++;
       } while (endColumn < (mColumns - 1));
     }
 
-    private DenseVector subVector(int i0, int i1) {
+    private MapWritable subVector(int row, int i0, int i1) {
       DenseVector res = new DenseVector();
+      res.setRow(row);
+      
       for (int i = i0; i <= i1; i++) {
         res.set(i, ((DoubleWritable) this.value.get(new IntWritable(i))).get());
       }
 
-      return res;
+      return res.getEntries();
     }
   }
 

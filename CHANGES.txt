@@ -35,6 +35,7 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
 
+    HAMA-152: Replace MapWritable to hadoop.io.MapWritable (edwardyoon)
     HAMA-109: Implement add(double alpha, Matrix B) (edwardyoon)
     HAMA-150: Refactor blockingMapRed (edwardyoon)
     HAMA-148: Implement of set(double alpha, Matrix B) (edwardyoon)

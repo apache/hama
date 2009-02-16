@@ -19,35 +19,33 @@ package org.apache.hama.mapred;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.DenseVector;
 import org.apache.hama.io.BlockID;
-import org.apache.hama.io.VectorWritable;
+import org.apache.log4j.Logger;
 
 /**
  * A Map/Reduce help class for blocking a DenseMatrix to a block-formated matrix
  */
 public class CollectBlocksMapper extends CollectBlocksMapReduceBase implements
-    CollectBlocksMap<IntWritable, VectorWritable> {
-
+    CollectBlocksMap<IntWritable, MapWritable> {
+  static final Logger LOG = Logger.getLogger(CollectBlocksMapper.class);
+  
   @Override
-  public void map(IntWritable key, VectorWritable value,
-      OutputCollector<BlockID, VectorWritable> output, Reporter reporter)
+  public void map(IntWritable key, MapWritable value,
+      OutputCollector<BlockID, MapWritable> output, Reporter reporter)
       throws IOException {
-    int startColumn;
-    int endColumn;
-    int blkRow = key.get() / mBlockRowSize;
-    DenseVector dv = value.getDenseVector();
+    int startColumn, endColumn, blkRow = key.get() / mBlockRowSize, i = 0;
+    DenseVector dv = new DenseVector(key.get(), value);
 
-    int i = 0;
     do {
       startColumn = i * mBlockColSize;
       endColumn = startColumn + mBlockColSize - 1;
       if (endColumn >= mColumns) // the last sub vector
         endColumn = mColumns - 1;
-      output.collect(new BlockID(blkRow, i), new VectorWritable(key.get(), dv
-          .subVector(startColumn, endColumn)));
+      output.collect(new BlockID(blkRow, i), dv.subVector(startColumn, endColumn).getEntries());
 
       i++;
     } while (endColumn < (mColumns - 1));

@@ -25,6 +25,9 @@ import java.util.Map.Entry;
 
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.util.BytesUtil;
 
@@ -74,6 +77,12 @@ public class VectorUpdate {
   public void putAll(Set<Entry<Integer, DoubleEntry>> entrySet) {
     for (Map.Entry<Integer, DoubleEntry> e : entrySet) {
       put(e.getKey(), e.getValue().getValue());
+    }
+  }
+  
+  public void putAll(MapWritable entries) {
+    for (Map.Entry<Writable, Writable> e : entries.entrySet()) {
+      put(((IntWritable) e.getKey()).get(), ((DoubleEntry) e.getValue()).getValue());
     }
   }
 }

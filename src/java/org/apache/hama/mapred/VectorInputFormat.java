@@ -29,6 +29,7 @@ import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Writables;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -36,19 +37,19 @@ import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.io.VectorWritable;
+import org.apache.hama.DenseVector;
 import org.apache.hama.util.BytesUtil;
 
 public class VectorInputFormat extends HTableInputFormatBase implements
-    InputFormat<IntWritable, VectorWritable>, JobConfigurable {
+    InputFormat<IntWritable, MapWritable>, JobConfigurable {
   static final Log LOG = LogFactory.getLog(VectorInputFormat.class);
   private TableRecordReader tableRecordReader;
   
   /**
-   * Iterate over an HBase table data, return (IntWritable, VectorWritable) pairs
+   * Iterate over an HBase table data, return (IntWritable, MapWritable) pairs
    */
   protected static class TableRecordReader extends HTableRecordReaderBase
-      implements RecordReader<IntWritable, VectorWritable> {
+      implements RecordReader<IntWritable, MapWritable> {
 
    private int totalRows;
    private int processedRows;
@@ -81,24 +82,24 @@ public class VectorInputFormat extends HTableInputFormatBase implements
     }
 
     /**
-     * @return VectorWritable
+     * @return MapWritable
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createValue()
      */
-    public VectorWritable createValue() {
-      return new VectorWritable();
+    public MapWritable createValue() {
+      return new MapWritable();
     }
 
     /**
      * @param key IntWritable as input key.
-     * @param value VectorWritable as input value
+     * @param value MapWritable as input value
      * 
-     * Converts Scanner.next() to IntWritable, VectorWritable
+     * Converts Scanner.next() to IntWritable, MapWritable
      * 
      * @return true if there was more data
      * @throws IOException
      */
-    public boolean next(IntWritable key, VectorWritable value)
+    public boolean next(IntWritable key, MapWritable value)
         throws IOException {
       RowResult result;
       try {
@@ -115,7 +116,7 @@ public class VectorInputFormat extends HTableInputFormatBase implements
         byte[] row = result.getRow();
         key.set(BytesUtil.bytesToInt(row));
         lastRow = row;
-        Writables.copyWritable(result, value);
+        Writables.copyWritable(new DenseVector(result).getEntries(), value);
         processedRows++;
       }
       return hasMore;
@@ -129,7 +130,6 @@ public class VectorInputFormat extends HTableInputFormatBase implements
         return Math.min(1.0f, processedRows / (float)totalRows);
       }
     }
-   
   }
   
   /**
@@ -139,7 +139,7 @@ public class VectorInputFormat extends HTableInputFormatBase implements
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(InputSplit,
    *      JobConf, Reporter)
    */
-  public RecordReader<IntWritable, VectorWritable> getRecordReader(
+  public RecordReader<IntWritable, MapWritable> getRecordReader(
       InputSplit split, JobConf job, Reporter reporter) throws IOException {
     TableSplit tSplit = (TableSplit) split;
     TableRecordReader trr = this.tableRecordReader;
