@@ -213,6 +213,8 @@ public class TestDenseMatrix extends TestCase {
       assertEquals(entries[i], ((DoubleEntry) it.next()).getValue());
       i++;
     }
+    
+    assertEquals(m1.getRows(), SIZE + 1);
   }
 
   public void testSetColumn() throws IOException {
@@ -231,8 +233,29 @@ public class TestDenseMatrix extends TestCase {
       assertEquals(entries[i], ((DoubleEntry) it.next()).getValue());
       i++;
     }
+    
+    assertEquals(m1.getColumns(), SIZE + 1);
   }
 
+  public void testEnsureForAddition() {
+    try {
+      m1.add(m2);
+      fail("Matrix-Addition should be failed while rows and columns aren't same.");
+    } catch (IOException e) {
+      LOG.info(e.toString());
+    }
+  }
+  
+
+  public void testEnsureForMultiplication() {
+    try {
+      m1.mult(m2);
+      fail("Matrix-Mult should be failed while A.columns!=B.rows.");
+    } catch (IOException e) {
+      LOG.info(e.toString());
+    }
+  }
+  
   public void testLoadSave() throws IOException {
     String path1 = m1.getPath();
     // save m1 to aliase1
