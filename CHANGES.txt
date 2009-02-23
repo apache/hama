@@ -101,6 +101,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
 
+    HAMA-155: When out of index, should throw exception (edwardyoon)
     HAMA-147: Fix typos (edwardyoon)
     HAMA-140: In subMatrix(), Scanner should be closed (edwardyoon)
     HAMA-120: remove findbugs warning in shell package (samuel via edwardyoon)

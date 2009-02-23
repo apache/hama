@@ -119,6 +119,13 @@ public class TestDenseVector extends TestCase {
    */
   public void testGetSet() throws IOException {
     assertEquals(v1.get(0), values[0][0]);
+    boolean ex = false;
+    try {
+      v1.get(5);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      ex = true;
+    }
+    assertTrue(ex);
     assertEquals(m1.getColumn(0).size(), 2);
   }
 

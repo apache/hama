@@ -337,6 +337,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public double get(int i, int j) throws IOException {
+    if(this.getRows() < i || this.getColumns() < j)
+      throw new ArrayIndexOutOfBoundsException(i +", "+ j);
+    
     Cell c = table.get(BytesUtil.getRowIndex(i), BytesUtil.getColumnIndex(j));
     return (c != null) ? BytesUtil.bytesToDouble(c.getValue()) : 0;
   }
