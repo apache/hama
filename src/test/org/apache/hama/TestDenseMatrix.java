@@ -84,6 +84,17 @@ public class TestDenseMatrix extends TestCase {
     assertEquals(m1.get(1, 1), origin + 0.5);
   }
 
+  public void testGet() throws IOException {
+    boolean ex = false;
+    try {
+      m1.get(SIZE + 1, SIZE + 1);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      ex = true;
+    }
+    assertTrue(ex);
+    assertTrue(m1.get(0, 0) > 0);
+  }
+  
   /**
    * Column vector test.
    * 

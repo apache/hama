@@ -44,7 +44,7 @@ public abstract class AbstractVector {
     try {
       value = ((DoubleEntry) this.entries.get(new IntWritable(index))).getValue();
     } catch (NullPointerException e) {
-      throw new NullPointerException("v("+index+") : " + e.toString());
+      throw new ArrayIndexOutOfBoundsException(index);
     }
     
     return value;
