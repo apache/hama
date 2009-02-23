@@ -382,6 +382,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public void setRow(int row, Vector vector) throws IOException {
+    if(this.getRows() < row)
+      increaseRows();
+    
     VectorUpdate update = new VectorUpdate(row);
     update.putAll(((DenseVector) vector).getEntries());
     table.commit(update.getBatchUpdate());
@@ -395,21 +398,26 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public void setColumn(int column, Vector vector) throws IOException {
+    if (this.getColumns() < column)
+      increaseColumns();
+      
     for (int i = 0; i < vector.size(); i++) {
       VectorUpdate update = new VectorUpdate(i);
       update.put(column, vector.get(i));
       table.commit(update.getBatchUpdate());
     }
   }
-  
+
   /**
-   * A = B + A
+   * C = B + A
    * 
    * @param B
-   * @return A
+   * @return C
    * @throws IOException
    */
   public Matrix add(Matrix B) throws IOException {
+    ensureForAddition(B);
+    
     Matrix result = new DenseMatrix(config);
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job" + result.getPath());
@@ -428,19 +436,26 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
-   * A = alpha*B + A
+   * C = alpha*B + A
    * 
    * @param alpha
    * @param B
-   * @return A
+   * @return C
    * @throws IOException
    */
   public Matrix add(double alpha, Matrix B) throws IOException {
+    ensureForAddition(B);
+    
     Matrix temp = new DenseMatrix(config);
     temp.set(alpha, B);
-    
     Matrix result = this.add(temp);
     return result;
+  }
+  
+  private void ensureForAddition(Matrix m) throws IOException {
+    if(getRows()!= m.getRows() || getColumns() != m.getColumns()) {
+      throw new IOException("Matrices' rows and columns should be same while A+B.");
+    }
   }
   
   /**
@@ -451,6 +466,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public Matrix mult(Matrix B) throws IOException {
+    ensureForMultiplication(B);
+    
     Matrix result = new DenseMatrix(config);
 
     JobConf jobConf = new JobConf(config);
@@ -476,6 +493,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public Matrix mult(Matrix B, int blocks) throws IOException {
+    ensureForMultiplication(B);
+    
     Matrix collectionTable = new DenseMatrix(config);
     LOG.info("Collect Blocks");
 
@@ -498,6 +517,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     JobManager.execute(jobConf, result);
     // Should be collectionTable removed?
     return result;
+  }
+  
+  private void ensureForMultiplication(Matrix m) throws IOException {
+    if(getColumns() != m.getRows()) {
+      throw new IOException("A's columns should equal with B's rows while A*B.");
+    }
   }
 
   /**

@@ -172,7 +172,25 @@ public abstract class AbstractMatrix implements Matrix {
 
     table.commit(update.getBatchUpdate());
   }
-
+  
+  public void increaseRows() throws IOException {
+    int nValue = this.getRows() + 1;
+    try {
+      this.setDimension(nValue, this.getColumns());
+    } catch (NullPointerException ne) {
+      // If there is no metadata of dimension, nothing to do.
+    }
+  }
+  
+  public void increaseColumns() throws IOException {
+    int nValue = this.getColumns() + 1;
+    try {
+      this.setDimension(this.getRows(), nValue);
+    } catch (NullPointerException ne) {
+      // If there is no metadata of dimension, nothing to do.
+    }
+  }
+  
   /** {@inheritDoc} */
   public void add(int i, int j, double value) throws IOException {
     VectorUpdate update = new VectorUpdate(i);
