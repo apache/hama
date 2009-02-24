@@ -25,7 +25,6 @@ import java.util.Iterator;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HConstants;
-import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
@@ -60,8 +59,6 @@ import org.apache.hama.util.RandomVariable;
  * This class represents a dense matrix.
  */
 public class DenseMatrix extends AbstractMatrix implements Matrix {
-  static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
-  static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
   static private final Path TMP_DIR = new Path(DenseMatrix.class
       .getSimpleName()
       + "_TMP_dir");
@@ -183,35 +180,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
-   * try to create a new matrix with a new random name. try times will be
-   * (Integer.MAX_VALUE - 4) * DEFAULT_TRY_TIMES;
-   * 
-   * @throws IOException
-   */
-  private void tryToCreateTable() throws IOException {
-    int tryTimes = Constants.DEFAULT_TRY_TIMES;
-    do {
-      matrixPath = TABLE_PREFIX + RandomVariable.randMatrixPath(tryPathLength);
-
-      if (!admin.tableExists(matrixPath)) { // no table 'matrixPath' in hbase.
-        tableDesc = new HTableDescriptor(matrixPath);
-        create();
-        return;
-      }
-
-      tryTimes--;
-      if (tryTimes <= 0) { // this loop has exhausted DEFAULT_TRY_TIMES.
-        tryPathLength++;
-        tryTimes = Constants.DEFAULT_TRY_TIMES;
-      }
-
-    } while (tryPathLength <= Constants.DEFAULT_MAXPATHLEN);
-    // exhaustes the try times.
-    // throw out an IOException to let the user know what happened.
-    throw new IOException("Try too many times to create a table in hbase.");
-  }
-
-  /**
    * Generate matrix with random elements
    * 
    * @param conf configuration object
@@ -310,9 +278,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @return an m-by-n matrix with ones on the diagonal and zeros elsewhere.
    * @throws IOException
    */
-  public static Matrix identity(HamaConfiguration conf, int m, int n)
+  public static DenseMatrix identity(HamaConfiguration conf, int m, int n)
       throws IOException {
-    Matrix identity = new DenseMatrix(conf);
+    DenseMatrix identity = new DenseMatrix(conf);
     LOG.info("Create the " + m + " * " + n + " identity matrix : "
         + identity.getPath());
 
@@ -341,7 +309,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       throw new ArrayIndexOutOfBoundsException(i +", "+ j);
     
     Cell c = table.get(BytesUtil.getRowIndex(i), BytesUtil.getColumnIndex(j));
-    return (c != null) ? BytesUtil.bytesToDouble(c.getValue()) : 0;
+    if(c == null)
+      throw new NullPointerException("Unexpected null");
+    
+    return BytesUtil.bytesToDouble(c.getValue());
   }
 
   /**
@@ -377,6 +348,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return new DenseVector(trunk);
   }
 
+  /** {@inheritDoc} */
+  public void set(int i, int j, double value) throws IOException {
+    VectorUpdate update = new VectorUpdate(i);
+    update.put(j, value);
+    table.commit(update.getBatchUpdate());
+  }
+  
   /**
    * Set the row of a matrix to a given vector
    * 
@@ -418,10 +396,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @return C
    * @throws IOException
    */
-  public Matrix add(Matrix B) throws IOException {
+  public DenseMatrix add(Matrix B) throws IOException {
     ensureForAddition(B);
     
-    Matrix result = new DenseMatrix(config);
+    DenseMatrix result = new DenseMatrix(config);
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job" + result.getPath());
 
@@ -446,12 +424,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @return C
    * @throws IOException
    */
-  public Matrix add(double alpha, Matrix B) throws IOException {
+  public DenseMatrix add(double alpha, Matrix B) throws IOException {
     ensureForAddition(B);
     
-    Matrix temp = new DenseMatrix(config);
+    DenseMatrix temp = new DenseMatrix(config);
     temp.set(alpha, B);
-    Matrix result = this.add(temp);
+    DenseMatrix result = this.add(temp);
     return result;
   }
   
@@ -468,10 +446,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @return C
    * @throws IOException
    */
-  public Matrix mult(Matrix B) throws IOException {
+  public DenseMatrix mult(Matrix B) throws IOException {
     ensureForMultiplication(B);
     
-    Matrix result = new DenseMatrix(config);
+    DenseMatrix result = new DenseMatrix(config);
 
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getPath());
@@ -479,7 +457,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), SIMDMultiplyMap.class,
+    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), this.getType(), SIMDMultiplyMap.class,
         IntWritable.class, MapWritable.class, jobConf);
     SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
         jobConf);
@@ -495,16 +473,16 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @return C
    * @throws IOException
    */
-  public Matrix mult(Matrix B, int blocks) throws IOException {
+  public DenseMatrix mult(Matrix B, int blocks) throws IOException {
     ensureForMultiplication(B);
     
-    Matrix collectionTable = new DenseMatrix(config);
+    DenseMatrix collectionTable = new DenseMatrix(config);
     LOG.info("Collect Blocks");
 
     collectBlocksMapRed(this.getPath(), collectionTable, blocks, true);
     collectBlocksMapRed(B.getPath(), collectionTable, blocks, false);
     
-    Matrix result = new DenseMatrix(config);
+    DenseMatrix result = new DenseMatrix(config);
 
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getPath());

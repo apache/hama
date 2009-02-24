@@ -19,6 +19,7 @@
  */
 package org.apache.hama;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -97,12 +98,11 @@ public class DenseVector extends AbstractVector implements Vector {
       return this;
     }
 
-    for (int i = 0; i < this.size(); i++) {
-      double value = (this.get(i) + v2.get(i));
-
-      this.entries.put(new IntWritable(i), new DoubleEntry(value));
+    for(Map.Entry<Writable, Writable> e : this.getEntries().entrySet()) {
+      double value = ((DoubleEntry) e.getValue()).getValue() + v2.get(((IntWritable) e.getKey()).get());
+      this.entries.put(e.getKey(), new DoubleEntry(value));
     }
-
+    
     return this;
   }
 
@@ -129,7 +129,7 @@ public class DenseVector extends AbstractVector implements Vector {
    * @param alpha
    * @return v = alpha*v
    */
-  public Vector scale(double alpha) {
+  public DenseVector scale(double alpha) {
     for(Map.Entry<Writable, Writable> e : this.entries.entrySet()) {
       this.entries.put(e.getKey(), new DoubleEntry(((DoubleEntry) e.getValue()).getValue() * alpha));
     }
@@ -190,6 +190,49 @@ public class DenseVector extends AbstractVector implements Vector {
     return Math.sqrt(square_sum);
   }
 
+  /**
+   * Gets the value of index
+   * 
+   * @param index
+   * @return the value of v(index)
+   * @throws IOException 
+   */
+  public double get(int index) {
+    double value;
+    try {
+      value = ((DoubleEntry) this.entries.get(new IntWritable(index))).getValue();
+    } catch (NullPointerException e) {
+      throw new NullPointerException("Unexpected null value : " + e.toString());
+    }
+    
+    return value;
+  }
+  
+  /**
+   * Sets the value of index
+   * 
+   * @param index
+   * @param value
+   */
+  public void set(int index, double value) {
+    // If entries are null, create new object 
+    if(this.entries == null) {
+      this.entries = new MapWritable();
+    }
+    
+    this.entries.put(new IntWritable(index), new DoubleEntry(value));
+  }
+  
+  /**
+   * Adds the value to v(index)
+   * 
+   * @param index
+   * @param value
+   */
+  public void add(int index, double value) {
+    set(index, get(index) + value);
+  }
+  
   public double getNorm2Robust() {
     // TODO Auto-generated method stub
     return 0;
@@ -217,12 +260,5 @@ public class DenseVector extends AbstractVector implements Vector {
     }
 
     return res;
-  }
-
-  /**
-   * Clears the entries.
-   */
-  public void clear() {
-    this.entries = null;
   }
 }

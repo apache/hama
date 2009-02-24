@@ -34,7 +34,9 @@ import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.Matrix;
-import org.apache.hama.io.DoubleEntry;
+import org.apache.hama.SparseMatrix;
+import org.apache.hama.SparseVector;
+import org.apache.hama.Vector;
 import org.apache.hama.mapred.VectorInputFormat;
 import org.apache.log4j.Logger;
 
@@ -45,18 +47,27 @@ public class SIMDMultiplyMap extends MapReduceBase implements
 Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
   static final Logger LOG = Logger.getLogger(SIMDMultiplyMap.class);
   protected Matrix matrix_b;
+  protected Vector sum;
+  protected String type;
   public static final String MATRIX_B = "hama.multiplication.matrix.b";
-  public static final DenseVector sum = new DenseVector();;
+  public static final String MATRIX_TYPE = "hama.multiplication.matrix.type";
   
   public void configure(JobConf job) {
     try {
-      matrix_b = new DenseMatrix(new HamaConfiguration(job), job.get(MATRIX_B, ""));
+      type = job.get(MATRIX_TYPE, "");
+      if(type.equals("SparseMatrix")) {
+        matrix_b = new SparseMatrix(new HamaConfiguration(job), job.get(MATRIX_B, ""));
+        sum = new SparseVector();
+      } else {
+        matrix_b = new DenseMatrix(new HamaConfiguration(job), job.get(MATRIX_B, ""));
+        sum = new DenseVector();
+      }
     } catch (IOException e) {
       LOG.warn("Load matrix_b failed : " + e.getMessage());
     }
   }
 
-  public static void initJob(String matrix_a, String matrix_b,
+  public static void initJob(String matrix_a, String matrix_b, String type, 
       Class<SIMDMultiplyMap> map, Class<IntWritable> outputKeyClass,
       Class<MapWritable> outputValueClass, JobConf jobConf) {
 
@@ -64,6 +75,7 @@ Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
     jobConf.setMapOutputKeyClass(outputKeyClass);
     jobConf.setMapperClass(map);
     jobConf.set(MATRIX_B, matrix_b);
+    jobConf.set(MATRIX_TYPE, type);
 
     jobConf.setInputFormat(VectorInputFormat.class);
     FileInputFormat.addInputPaths(jobConf, matrix_a);
@@ -74,12 +86,26 @@ Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
   public void map(IntWritable key, MapWritable value,
       OutputCollector<IntWritable, MapWritable> output, Reporter reporter)
       throws IOException {
-    sum.clear();
-
-    for(int i = 0; i < value.size(); i++) {
-      sum.add(matrix_b.getRow(i).scale(((DoubleEntry) value.get(new IntWritable(i))).getValue()));
+    if(type.equals("SparseMatrix")) {
+      ((SparseVector) sum).clear();
+      SparseVector currVector = new SparseVector(value);
+      
+      for(int i = 0; i < matrix_b.getColumns(); i++) {
+        ((SparseVector) sum).add(((SparseMatrix) matrix_b).getRow(i).scale(
+            currVector.get(i)));
+      }
+      
+      
+      output.collect(key, ((SparseVector) sum).getEntries());
+    } else {
+      ((DenseVector) sum).clear();
+      DenseVector currVector = new DenseVector(value);
+      for(int i = 0; i < value.size(); i++) {
+        ((DenseVector) sum).add(((DenseMatrix) matrix_b).getRow(i).scale(
+            currVector.get(i)));
+      }
+      output.collect(key, ((DenseVector) sum).getEntries());
     }
     
-    output.collect(key, sum.getEntries());
   }
 }

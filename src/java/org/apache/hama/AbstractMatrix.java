@@ -47,12 +47,15 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
+import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 
 /**
  * Methods of the matrix classes
  */
 public abstract class AbstractMatrix implements Matrix {
+  static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
+  static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
   protected HamaConfiguration config;
@@ -80,6 +83,35 @@ public abstract class AbstractMatrix implements Matrix {
     hamaAdmin = new HamaAdminImpl(conf, admin);
   }
 
+  /**
+   * try to create a new matrix with a new random name. try times will be
+   * (Integer.MAX_VALUE - 4) * DEFAULT_TRY_TIMES;
+   * 
+   * @throws IOException
+   */
+  protected void tryToCreateTable() throws IOException {
+    int tryTimes = Constants.DEFAULT_TRY_TIMES;
+    do {
+      matrixPath = TABLE_PREFIX + RandomVariable.randMatrixPath(tryPathLength);
+
+      if (!admin.tableExists(matrixPath)) { // no table 'matrixPath' in hbase.
+        tableDesc = new HTableDescriptor(matrixPath);
+        create();
+        return;
+      }
+
+      tryTimes--;
+      if (tryTimes <= 0) { // this loop has exhausted DEFAULT_TRY_TIMES.
+        tryPathLength++;
+        tryTimes = Constants.DEFAULT_TRY_TIMES;
+      }
+
+    } while (tryPathLength <= Constants.DEFAULT_MAXPATHLEN);
+    // exhaustes the try times.
+    // throw out an IOException to let the user know what happened.
+    throw new IOException("Try too many times to create a table in hbase.");
+  }
+  
   /**
    * Create matrix space
    */
@@ -156,14 +188,6 @@ public abstract class AbstractMatrix implements Matrix {
     table.commit(update.getBatchUpdate());
   }
   
-  /** {@inheritDoc} */
-  public void set(int i, int j, double value) throws IOException {
-    VectorUpdate update = new VectorUpdate(i);
-    update.put(j, value);
-    table.commit(update.getBatchUpdate());
-
-  }
-
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) throws IOException {
     VectorUpdate update = new VectorUpdate(Constants.METADATA);
