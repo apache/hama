@@ -21,59 +21,15 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.io.DoubleEntry;
 
 /**
  * Methods of the vector classes
  */
 public abstract class AbstractVector {
   protected MapWritable entries;
-  
-  /**
-   * Gets the value of index
-   * 
-   * @param index
-   * @return the value of v(index)
-   */
-  public double get(int index) {
-    double value;
-    try {
-      value = ((DoubleEntry) this.entries.get(new IntWritable(index))).getValue();
-    } catch (NullPointerException e) {
-      throw new ArrayIndexOutOfBoundsException(index);
-    }
-    
-    return value;
-  }
-  
-  /**
-   * Sets the value of index
-   * 
-   * @param index
-   * @param value
-   */
-  public void set(int index, double value) {
-    // If entries are null, create new object 
-    if(this.entries == null) {
-      this.entries = new MapWritable();
-    }
-    
-    this.entries.put(new IntWritable(index), new DoubleEntry(value));
-  }
-  
-  /**
-   * Adds the value to v(index)
-   * 
-   * @param index
-   * @param value
-   */
-  public void add(int index, double value) {
-    set(index, get(index) + value);
-  }
   
   /**
    * Returns an Iterator.
@@ -104,5 +60,12 @@ public abstract class AbstractVector {
    */
   public MapWritable getEntries() {
     return this.entries;
+  }
+  
+  /**
+   * Clears the entries.
+   */
+  public void clear() {
+    this.entries = null;
   }
 }

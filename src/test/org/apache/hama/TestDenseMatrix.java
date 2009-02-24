@@ -185,8 +185,9 @@ public class TestDenseMatrix extends TestCase {
     a.set(m1);
 
     for (int i = 0; i < 5; i++) {
-      int x = RandomVariable.randInt(0, 10);
-      int y = RandomVariable.randInt(0, 10);
+      // between 0 ~ SIZE -1
+      int x = RandomVariable.randInt(0, SIZE - 1);
+      int y = RandomVariable.randInt(0, SIZE - 1);
       assertEquals(a.get(x, y), m1.get(x, y));
     }
   }
@@ -196,8 +197,8 @@ public class TestDenseMatrix extends TestCase {
     a.set(0.5, m1);
     
     for (int i = 0; i < 5; i++) {
-      int x = RandomVariable.randInt(0, 10);
-      int y = RandomVariable.randInt(0, 10);
+      int x = RandomVariable.randInt(0, SIZE - 1);
+      int y = RandomVariable.randInt(0, SIZE - 1);
       assertEquals(a.get(x, y), (m1.get(x, y) * 0.5));
     }
   }
@@ -274,8 +275,8 @@ public class TestDenseMatrix extends TestCase {
     // load matrix m1 using aliase1
     DenseMatrix loadTest = new DenseMatrix(conf, aliase1, false);
 
-    for (int i = 0; i < loadTest.getRows(); i++) {
-      for (int j = 0; j < loadTest.getColumns(); j++) {
+    for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
         assertEquals(m1.get(i, j), loadTest.get(i, j));
       }
     }

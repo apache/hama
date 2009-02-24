@@ -39,9 +39,9 @@ public class TestDenseVector extends TestCase {
   private static final double norm1 = 12.0;
   private static final double norm2 = 6.782329983125268;
   private static double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
-  private static Matrix m1;
-  private static Vector v1;
-  private static Vector v2;
+  private static DenseMatrix m1;
+  private static DenseVector v1;
+  private static DenseVector v2;
 
   public static Test suite() {
     TestSetup setup = new TestSetup(new TestSuite(TestDenseVector.class)) {
@@ -122,7 +122,7 @@ public class TestDenseVector extends TestCase {
     boolean ex = false;
     try {
       v1.get(5);
-    } catch (ArrayIndexOutOfBoundsException e) {
+    } catch (NullPointerException e) {
       ex = true;
     }
     assertTrue(ex);
