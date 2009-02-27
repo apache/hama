@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 
 public class SparseVector extends AbstractVector implements Vector {
   static final Logger LOG = Logger.getLogger(SparseVector.class);
+
   public SparseVector() {
     this(new MapWritable());
   }
@@ -40,11 +41,11 @@ public class SparseVector extends AbstractVector implements Vector {
   public SparseVector(MapWritable m) {
     this.entries = m;
   }
-  
+
   public SparseVector(RowResult row) {
     this.entries = new MapWritable();
     for (Map.Entry<byte[], Cell> f : row.entrySet()) {
-      this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())), 
+      this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())),
           new DoubleEntry(f.getValue()));
     }
   }
@@ -54,7 +55,7 @@ public class SparseVector extends AbstractVector implements Vector {
     // TODO Auto-generated method stub
     return null;
   }
-  
+
   /**
    * x = v + x
    * 
@@ -68,14 +69,16 @@ public class SparseVector extends AbstractVector implements Vector {
       return this;
     }
 
-    for(Map.Entry<Writable, Writable> e : ((SparseVector )v2).getEntries().entrySet()) {
-      
-      if(this.entries.containsKey(e.getKey())) {
+    for (Map.Entry<Writable, Writable> e : ((SparseVector) v2).getEntries()
+        .entrySet()) {
+
+      if (this.entries.containsKey(e.getKey())) {
         // add
-        double value = ((DoubleEntry) e.getValue()).getValue() + this.get(((IntWritable) e.getKey()).get());
+        double value = ((DoubleEntry) e.getValue()).getValue()
+            + this.get(((IntWritable) e.getKey()).get());
         this.entries.put(e.getKey(), new DoubleEntry(value));
       } else {
-        //  put
+        // put
         this.entries.put(e.getKey(), e.getValue());
       }
     }
@@ -96,14 +99,16 @@ public class SparseVector extends AbstractVector implements Vector {
   }
 
   /**
-   * v = alpha*v 
+   * v = alpha*v
    * 
    * @param alpha
    * @return v = alpha*v
    */
   public SparseVector scale(double alpha) {
-    for(Map.Entry<Writable, Writable> e : this.entries.entrySet()) {
-      this.entries.put(e.getKey(), new DoubleEntry(((DoubleEntry) e.getValue()).getValue() * alpha));
+    for (Map.Entry<Writable, Writable> e : this.entries.entrySet()) {
+      this.entries.put(e.getKey(), new DoubleEntry(((DoubleEntry) e.getValue())
+          .getValue()
+          * alpha));
     }
     return this;
   }
@@ -113,19 +118,20 @@ public class SparseVector extends AbstractVector implements Vector {
    * 
    * @param index
    * @return the value of v(index)
-   * @throws IOException 
+   * @throws IOException
    */
   public double get(int index) {
     double value;
     try {
-      value = ((DoubleEntry) this.entries.get(new IntWritable(index))).getValue();
+      value = ((DoubleEntry) this.entries.get(new IntWritable(index)))
+          .getValue();
     } catch (NullPointerException e) { // returns zero if there is no value
       return 0;
     }
-    
+
     return value;
   }
-  
+
   /**
    * Sets the value of index
    * 
@@ -133,15 +139,15 @@ public class SparseVector extends AbstractVector implements Vector {
    * @param value
    */
   public void set(int index, double value) {
-    // If entries are null, create new object 
-    if(this.entries == null) {
+    // If entries are null, create new object
+    if (this.entries == null) {
       this.entries = new MapWritable();
     }
-    
-    if(value != 0) // only stores non-zero element
+
+    if (value != 0) // only stores non-zero element
       this.entries.put(new IntWritable(index), new DoubleEntry(value));
   }
-  
+
   /**
    * Adds the value to v(index)
    * 
@@ -151,7 +157,7 @@ public class SparseVector extends AbstractVector implements Vector {
   public void add(int index, double value) {
     set(index, get(index) + value);
   }
-  
+
   @Override
   public Vector set(Vector v) {
     // TODO Auto-generated method stub

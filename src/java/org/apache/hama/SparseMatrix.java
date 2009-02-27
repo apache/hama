@@ -65,6 +65,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     // we don't know where to call Matrix.close in Add & Mul map/reduce
     // process to decrement the reference. It seems difficulty.
   }
+
   /**
    * Generate matrix with random elements
    * 
@@ -84,8 +85,8 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     for (int i = 0; i < m; i++) {
       vector.clear();
       for (int j = 0; j < n; j++) {
-        Random r = new Random(); 
-        if(r.nextInt(2) != 0)
+        Random r = new Random();
+        if (r.nextInt(2) != 0)
           vector.set(j, RandomVariable.rand());
       }
       rand.setRow(i, vector);
@@ -94,7 +95,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     rand.setDimension(m, n);
     return rand;
   }
-  
+
   @Override
   public Matrix add(Matrix B) throws IOException {
     // TODO Auto-generated method stub
@@ -109,9 +110,9 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
 
   @Override
   public double get(int i, int j) throws IOException {
-    if(this.getRows() < i || this.getColumns() < j)
-      throw new ArrayIndexOutOfBoundsException(i +", "+ j);
-    
+    if (this.getRows() < i || this.getColumns() < j)
+      throw new ArrayIndexOutOfBoundsException(i + ", " + j);
+
     Cell c = table.get(BytesUtil.getRowIndex(i), BytesUtil.getColumnIndex(j));
     return (c != null) ? BytesUtil.bytesToDouble(c.getValue()) : 0.0;
   }
@@ -136,13 +137,13 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void set(int i, int j, double value) throws IOException {
-    if(value != 0) {
+    if (value != 0) {
       VectorUpdate update = new VectorUpdate(i);
       update.put(j, value);
       table.commit(update.getBatchUpdate());
     }
   }
-  
+
   /**
    * Returns type of matrix
    */
@@ -160,8 +161,8 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), this.getType(), SIMDMultiplyMap.class,
-        IntWritable.class, MapWritable.class, jobConf);
+    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), this.getType(),
+        SIMDMultiplyMap.class, IntWritable.class, MapWritable.class, jobConf);
     SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
         jobConf);
     JobManager.execute(jobConf);
@@ -184,15 +185,15 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
   @Override
   public void setColumn(int column, Vector vector) throws IOException {
     // TODO Auto-generated method stub
-    
+
   }
 
   @Override
   public void setRow(int row, Vector vector) throws IOException {
-    if(this.getRows() < row)
+    if (this.getRows() < row)
       increaseRows();
-    
-    if(vector.size() > 0) {  // stores if size > 0
+
+    if (vector.size() > 0) { // stores if size > 0
       VectorUpdate update = new VectorUpdate(row);
       update.putAll(((SparseVector) vector).getEntries());
       table.commit(update.getBatchUpdate());

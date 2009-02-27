@@ -64,12 +64,13 @@ public class TestSparseVector extends TestCase {
 
   /**
    * Test get/set methods
-   * @throws IOException 
+   * 
+   * @throws IOException
    */
   public void testGetSet() throws IOException {
     assertEquals(v1.get(1), 0.0);
     assertEquals(v2.get(1), 0.0);
-    
+
     HTable table = m1.getHTable();
     Cell c = table.get(BytesUtil.getRowIndex(0), BytesUtil.getColumnIndex(1));
     assertTrue(c == null);
