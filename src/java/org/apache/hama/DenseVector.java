@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
  */
 public class DenseVector extends AbstractVector implements Vector {
   static final Logger LOG = Logger.getLogger(DenseVector.class);
+
   public DenseVector() {
     this(new MapWritable());
   }
@@ -50,7 +51,7 @@ public class DenseVector extends AbstractVector implements Vector {
   public DenseVector(RowResult row) {
     this.entries = new MapWritable();
     for (Map.Entry<byte[], Cell> f : row.entrySet()) {
-      this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())), 
+      this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())),
           new DoubleEntry(f.getValue()));
     }
   }
@@ -59,15 +60,15 @@ public class DenseVector extends AbstractVector implements Vector {
     this.entries = m;
     this.entries.put(new Text("row"), new IntWritable(row));
   }
-  
+
   public void setRow(int row) {
     this.entries.put(new Text("row"), new IntWritable(row));
   }
-  
+
   public int getRow() {
     return ((IntWritable) this.entries.get(new Text("row"))).get();
   }
-  
+
   /**
    * x = alpha*v + x
    * 
@@ -98,11 +99,12 @@ public class DenseVector extends AbstractVector implements Vector {
       return this;
     }
 
-    for(Map.Entry<Writable, Writable> e : this.getEntries().entrySet()) {
-      double value = ((DoubleEntry) e.getValue()).getValue() + v2.get(((IntWritable) e.getKey()).get());
+    for (Map.Entry<Writable, Writable> e : this.getEntries().entrySet()) {
+      double value = ((DoubleEntry) e.getValue()).getValue()
+          + v2.get(((IntWritable) e.getKey()).get());
       this.entries.put(e.getKey(), new DoubleEntry(value));
     }
-    
+
     return this;
   }
 
@@ -124,14 +126,16 @@ public class DenseVector extends AbstractVector implements Vector {
   }
 
   /**
-   * v = alpha*v 
+   * v = alpha*v
    * 
    * @param alpha
    * @return v = alpha*v
    */
   public DenseVector scale(double alpha) {
-    for(Map.Entry<Writable, Writable> e : this.entries.entrySet()) {
-      this.entries.put(e.getKey(), new DoubleEntry(((DoubleEntry) e.getValue()).getValue() * alpha));
+    for (Map.Entry<Writable, Writable> e : this.entries.entrySet()) {
+      this.entries.put(e.getKey(), new DoubleEntry(((DoubleEntry) e.getValue())
+          .getValue()
+          * alpha));
     }
     return this;
   }
@@ -195,19 +199,20 @@ public class DenseVector extends AbstractVector implements Vector {
    * 
    * @param index
    * @return the value of v(index)
-   * @throws IOException 
+   * @throws IOException
    */
   public double get(int index) {
     double value;
     try {
-      value = ((DoubleEntry) this.entries.get(new IntWritable(index))).getValue();
+      value = ((DoubleEntry) this.entries.get(new IntWritable(index)))
+          .getValue();
     } catch (NullPointerException e) {
       throw new NullPointerException("Unexpected null value : " + e.toString());
     }
-    
+
     return value;
   }
-  
+
   /**
    * Sets the value of index
    * 
@@ -215,14 +220,14 @@ public class DenseVector extends AbstractVector implements Vector {
    * @param value
    */
   public void set(int index, double value) {
-    // If entries are null, create new object 
-    if(this.entries == null) {
+    // If entries are null, create new object
+    if (this.entries == null) {
       this.entries = new MapWritable();
     }
-    
+
     this.entries.put(new IntWritable(index), new DoubleEntry(value));
   }
-  
+
   /**
    * Adds the value to v(index)
    * 
@@ -232,7 +237,7 @@ public class DenseVector extends AbstractVector implements Vector {
   public void add(int index, double value) {
     set(index, get(index) + value);
   }
-  
+
   public double getNorm2Robust() {
     // TODO Auto-generated method stub
     return 0;
@@ -252,9 +257,9 @@ public class DenseVector extends AbstractVector implements Vector {
    */
   public DenseVector subVector(int i0, int i1) {
     DenseVector res = new DenseVector();
-    if(this.entries.containsKey(new Text("row"))) 
-        res.setRow(this.getRow());
-    
+    if (this.entries.containsKey(new Text("row")))
+      res.setRow(this.getRow());
+
     for (int i = i0; i <= i1; i++) {
       res.set(i, get(i));
     }

@@ -62,16 +62,16 @@ public class TestSparseMatrix extends TestCase {
 
   public void testSparsity() throws IOException {
     boolean appeared = false;
-    for(int i = 0; i < m1.getRows(); i++) {
-      for(int j = 0; j < m1.getColumns(); j++) {
-        if(m1.get(i, j) == 0)
+    for (int i = 0; i < m1.getRows(); i++) {
+      for (int j = 0; j < m1.getColumns(); j++) {
+        if (m1.get(i, j) == 0)
           appeared = true;
       }
     }
-    
+
     assertTrue(appeared);
   }
-  
+
   /**
    * Test matrices multiplication
    * 
@@ -81,7 +81,7 @@ public class TestSparseMatrix extends TestCase {
     SparseMatrix result = m1.mult(m2);
     verifyMultResult(m1, m2, result);
   }
-  
+
   /**
    * Verifying multiplication result
    * 
@@ -90,8 +90,8 @@ public class TestSparseMatrix extends TestCase {
    * @param result
    * @throws IOException
    */
-  private void verifyMultResult(SparseMatrix m1, SparseMatrix m2, SparseMatrix result)
-      throws IOException {
+  private void verifyMultResult(SparseMatrix m1, SparseMatrix m2,
+      SparseMatrix result) throws IOException {
     double[][] c = new double[SIZE][SIZE];
 
     for (int i = 0; i < SIZE; i++) {
