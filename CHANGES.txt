@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
 
+    HAMA-162: Add Graph using Sparse Matrix (edwardyoon)
     HAMA-151: Add multiplication example of file matrices (edwardyoon)
     HAMA-145: Add privacy policy page (edwardyoon)
     HAMA-83: 2D sqaure blocking for dense matrix multiplication (edwardyoon)

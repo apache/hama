@@ -59,6 +59,7 @@ import org.apache.hama.util.RandomVariable;
  * This class represents a dense matrix.
  */
 public class DenseMatrix extends AbstractMatrix implements Matrix {
+  static private final String TABLE_PREFIX = DenseMatrix.class.getSimpleName();
   static private final Path TMP_DIR = new Path(DenseMatrix.class
       .getSimpleName()
       + "_TMP_dir");
@@ -74,7 +75,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix(HamaConfiguration conf) throws IOException {
     setConfiguration(conf);
 
-    tryToCreateTable();
+    tryToCreateTable(TABLE_PREFIX);
 
     closed = false;
   }
@@ -110,7 +111,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         hamaAdmin.delete(matrixName);
       }
       // create a new matrix table.
-      tryToCreateTable();
+      tryToCreateTable(TABLE_PREFIX);
       // save the new aliase relationship
       save(matrixName);
     } else {
@@ -166,7 +167,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       throws IOException {
     setConfiguration(conf);
 
-    tryToCreateTable();
+    tryToCreateTable(TABLE_PREFIX);
 
     closed = false;
 

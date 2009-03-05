@@ -55,7 +55,6 @@ import org.apache.log4j.Logger;
  */
 public abstract class AbstractMatrix implements Matrix {
   static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
-  static final String TABLE_PREFIX = DenseMatrix.class.getSimpleName() + "_";
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
 
   protected HamaConfiguration config;
@@ -89,10 +88,10 @@ public abstract class AbstractMatrix implements Matrix {
    * 
    * @throws IOException
    */
-  protected void tryToCreateTable() throws IOException {
+  protected void tryToCreateTable(String table_prefix) throws IOException {
     int tryTimes = Constants.DEFAULT_TRY_TIMES;
     do {
-      matrixPath = TABLE_PREFIX + RandomVariable.randMatrixPath(tryPathLength);
+      matrixPath = table_prefix + "_" + RandomVariable.randMatrixPath(tryPathLength);
 
       if (!admin.tableExists(matrixPath)) { // no table 'matrixPath' in hbase.
         tableDesc = new HTableDescriptor(matrixPath);
