@@ -30,7 +30,7 @@ import org.apache.hadoop.io.Writable;
  */
 public abstract class AbstractVector {
   protected MapWritable entries;
-  
+
   /**
    * Returns an Iterator.
    * 
@@ -39,20 +39,21 @@ public abstract class AbstractVector {
   public Iterator<Writable> iterator() {
     return this.entries.values().iterator();
   }
-  
+
   /**
-   * Returns a size of vector
+   * Returns a size of vector. If vector is sparse, returns the number of only
+   * non-zero elements.
    * 
    * @return a size of vector
    */
   public int size() {
     int x = 0;
-    if(this.entries != null && this.entries.containsKey(new Text("row"))) 
+    if (this.entries != null && this.entries.containsKey(new Text("row")))
       x = 1;
-    
+
     return (this.entries != null) ? this.entries.size() - x : 0;
   }
-  
+
   /**
    * Returns the {@link org.apache.hadoop.io.MapWritable}
    * 
@@ -61,7 +62,7 @@ public abstract class AbstractVector {
   public MapWritable getEntries() {
     return this.entries;
   }
-  
+
   /**
    * Clears the entries.
    */
