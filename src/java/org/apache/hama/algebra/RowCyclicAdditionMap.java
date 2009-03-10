@@ -39,25 +39,38 @@ import org.apache.log4j.Logger;
 public class RowCyclicAdditionMap extends MapReduceBase implements
 Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
   static final Logger LOG = Logger.getLogger(RowCyclicAdditionMap.class);
-  protected DenseMatrix matrix_b;
-  public static final String MATRIX_B = "hama.addition.matrix.b";
+  protected DenseMatrix[] matrix_summands;
+  protected double[] matrix_alphas;
+  public static final String MATRIX_SUMMANDS = "hama.addition.summands";
+  public static final String MATRIX_ALPHAS = "hama.addition.alphas";
 
   public void configure(JobConf job) {
     try {
-      matrix_b = new DenseMatrix(new HamaConfiguration(job), job.get(MATRIX_B, ""));
+      String[] matrix_names = job.get(MATRIX_SUMMANDS, "").split(","); 
+      String[] matrix_alpha_strs = job.get(MATRIX_ALPHAS, "").split(",");
+      assert(matrix_names.length == matrix_alpha_strs.length && matrix_names.length >= 1);
+      
+      matrix_summands = new DenseMatrix[matrix_names.length];
+      matrix_alphas = new double[matrix_names.length];
+      for(int i=0; i<matrix_names.length; i++) {
+        matrix_summands[i] = new DenseMatrix(new HamaConfiguration(job), matrix_names[i]);
+        matrix_alphas[i] = Double.valueOf(matrix_alpha_strs[i]);
+      }
     } catch (IOException e) {
       LOG.warn("Load matrix_b failed : " + e.getMessage());
     }
   }
 
-  public static void initJob(String matrix_a, String matrix_b,
-      Class<RowCyclicAdditionMap> map, Class<IntWritable> outputKeyClass,
-      Class<MapWritable> outputValueClass, JobConf jobConf) {
+  public static void initJob(String matrix_a, String matrix_summandlist, 
+      String matrix_alphalist, Class<RowCyclicAdditionMap> map, 
+      Class<IntWritable> outputKeyClass, Class<MapWritable> outputValueClass, 
+      JobConf jobConf) {
 
     jobConf.setMapOutputValueClass(outputValueClass);
     jobConf.setMapOutputKeyClass(outputKeyClass);
     jobConf.setMapperClass(map);
-    jobConf.set(MATRIX_B, matrix_b);
+    jobConf.set(MATRIX_SUMMANDS, matrix_summandlist);
+    jobConf.set(MATRIX_ALPHAS, matrix_alphalist);
 
     jobConf.setInputFormat(VectorInputFormat.class);
     FileInputFormat.addInputPaths(jobConf, matrix_a);
@@ -69,10 +82,13 @@ Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
       OutputCollector<IntWritable, MapWritable> output, Reporter reporter)
       throws IOException {
     
-    DenseVector a = matrix_b.getRow(key.get());
-    DenseVector b = new DenseVector(value);
-    DenseVector c = a.add(b);
-    output.collect(key, c.getEntries());
+    DenseVector result = new DenseVector(value);
+    DenseVector summand;
+    for(int i=0; i<matrix_summands.length; i++) {
+      summand = matrix_summands[i].getRow(key.get());
+      result = result.add(matrix_alphas[i], summand);
+    }
+    output.collect(key, result.getEntries());
 
   }
 }

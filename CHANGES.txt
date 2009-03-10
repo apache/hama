@@ -36,6 +36,8 @@ Trunk (unreleased changes)
     
   IMPROVEMENTS
 
+    HAMA-154: Combine multi-mapreduce jobs into a single mapreduce job 
+                while computing (samuel via edwardyoon)
     HAMA-152: Replace MapWritable to hadoop.io.MapWritable (edwardyoon)
     HAMA-109: Implement add(double alpha, Matrix B) (edwardyoon)
     HAMA-150: Refactor blockingMapRed (edwardyoon)

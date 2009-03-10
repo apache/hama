@@ -41,6 +41,7 @@ public class TestDenseMatrix extends TestCase {
   private static int SIZE = 10;
   private static Matrix m1;
   private static Matrix m2;
+  private static Matrix m3;
   private final static String aliase1 = "matrix_aliase_A";
   private final static String aliase2 = "matrix_aliase_B";
   private static HamaConfiguration conf;
@@ -59,6 +60,7 @@ public class TestDenseMatrix extends TestCase {
 
         m1 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
         m2 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
+        m3 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
       }
 
       protected void tearDown() {
@@ -162,6 +164,19 @@ public class TestDenseMatrix extends TestCase {
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
         assertEquals(result.get(i, j), m1.get(i, j) + m2.get(i, j));
+      }
+    }
+  }
+  
+  public void testMultiMatrixAdd() throws IOException {
+    Matrix result = ((DenseMatrix)m1).add(m2, m3);
+    
+    assertEquals(result.getRows(), SIZE);
+    assertEquals(result.getColumns(), SIZE);
+    
+    for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
+        assertEquals(result.get(i, j), m1.get(i, j) + m2.get(i, j) + m3.get(i, j));
       }
     }
   }
