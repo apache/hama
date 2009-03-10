@@ -96,7 +96,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     // if force is set to true:
     // 1) if this matrixName has aliase to other matrix, we will remove
     // the old aliase, create a new matrix table, and aliase to it.
-    
+
     // 2) if this matrixName has no aliase to other matrix, we will create
     // a new matrix table, and alise to it.
     //
@@ -306,13 +306,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public double get(int i, int j) throws IOException {
-    if(this.getRows() < i || this.getColumns() < j)
-      throw new ArrayIndexOutOfBoundsException(i +", "+ j);
-    
+    if (this.getRows() < i || this.getColumns() < j)
+      throw new ArrayIndexOutOfBoundsException(i + ", " + j);
+
     Cell c = table.get(BytesUtil.getRowIndex(i), BytesUtil.getColumnIndex(j));
-    if(c == null)
+    if (c == null)
       throw new NullPointerException("Unexpected null");
-    
+
     return BytesUtil.bytesToDouble(c.getValue());
   }
 
@@ -326,7 +326,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseVector getRow(int i) throws IOException {
     return new DenseVector(table.getRow(BytesUtil.getRowIndex(i)));
   }
-  
+
   /**
    * Gets the vector of column
    * 
@@ -342,8 +342,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     MapWritable trunk = new MapWritable();
 
     for (RowResult row : scan) {
-      trunk.put(new IntWritable(BytesUtil.bytesToInt(row.getRow())), new DoubleEntry(row
-          .get(columnKey)));
+      trunk.put(new IntWritable(BytesUtil.bytesToInt(row.getRow())),
+          new DoubleEntry(row.get(columnKey)));
     }
 
     return new DenseVector(trunk);
@@ -355,7 +355,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     update.put(j, value);
     table.commit(update.getBatchUpdate());
   }
-  
+
   /**
    * Set the row of a matrix to a given vector
    * 
@@ -364,9 +364,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public void setRow(int row, Vector vector) throws IOException {
-    if(this.getRows() < row)
+    if (this.getRows() < row)
       increaseRows();
-    
+
     VectorUpdate update = new VectorUpdate(row);
     update.putAll(((DenseVector) vector).getEntries());
     table.commit(update.getBatchUpdate());
@@ -382,39 +382,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public void setColumn(int column, Vector vector) throws IOException {
     if (this.getColumns() < column)
       increaseColumns();
-      
+
     for (int i = 0; i < vector.size(); i++) {
       VectorUpdate update = new VectorUpdate(i);
       update.put(column, vector.get(i));
       table.commit(update.getBatchUpdate());
     }
-  }
-
-  /**
-   * C = B + A
-   * 
-   * @param B
-   * @return C
-   * @throws IOException
-   */
-  public DenseMatrix add(Matrix B) throws IOException {
-    ensureForAddition(B);
-    
-    DenseMatrix result = new DenseMatrix(config);
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("addition MR job" + result.getPath());
-
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
-
-    RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(),
-        RowCyclicAdditionMap.class, IntWritable.class, MapWritable.class,
-        jobConf);
-    RowCyclicAdditionReduce.initJob(result.getPath(),
-        RowCyclicAdditionReduce.class, jobConf);
-
-    JobManager.execute(jobConf, result);
-    return result;
   }
 
   /**
@@ -427,19 +400,76 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public DenseMatrix add(double alpha, Matrix B) throws IOException {
     ensureForAddition(B);
-    
-    DenseMatrix temp = new DenseMatrix(config);
-    temp.set(alpha, B);
-    DenseMatrix result = this.add(temp);
+
+    DenseMatrix result = new DenseMatrix(config);
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("addition MR job" + result.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+
+    RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(), Double
+        .toString(alpha), RowCyclicAdditionMap.class, IntWritable.class,
+        MapWritable.class, jobConf);
+    RowCyclicAdditionReduce.initJob(result.getPath(),
+        RowCyclicAdditionReduce.class, jobConf);
+
+    JobManager.execute(jobConf, result);
     return result;
   }
-  
+
+  /**
+   * C = B + A
+   * 
+   * @param B
+   * @return C
+   * @throws IOException
+   */
+  public DenseMatrix add(Matrix B) throws IOException {
+    return add(1.0, B);
+  }
+
+  public DenseMatrix add(Matrix... matrices) throws IOException {
+    // ensure all the matrices are suitable for addition.
+    for (Matrix m : matrices) {
+      ensureForAddition(m);
+    }
+
+    DenseMatrix result = new DenseMatrix(config);
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("addition MR job" + result.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+
+    StringBuilder summandList = new StringBuilder();
+    StringBuilder alphaList = new StringBuilder();
+    for (Matrix m : matrices) {
+      summandList.append(m.getPath());
+      summandList.append(",");
+      alphaList.append("1");
+      alphaList.append(",");
+    }
+    summandList.deleteCharAt(summandList.length() - 1);
+    alphaList.deleteCharAt(alphaList.length() - 1);
+
+    RowCyclicAdditionMap.initJob(this.getPath(), summandList.toString(),
+        alphaList.toString(), RowCyclicAdditionMap.class, IntWritable.class,
+        MapWritable.class, jobConf);
+    RowCyclicAdditionReduce.initJob(result.getPath(),
+        RowCyclicAdditionReduce.class, jobConf);
+
+    JobManager.execute(jobConf, result);
+    return result;
+  }
+
   private void ensureForAddition(Matrix m) throws IOException {
-    if(getRows()!= m.getRows() || getColumns() != m.getColumns()) {
-      throw new IOException("Matrices' rows and columns should be same while A+B.");
+    if (getRows() != m.getRows() || getColumns() != m.getColumns()) {
+      throw new IOException(
+          "Matrices' rows and columns should be same while A+B.");
     }
   }
-  
+
   /**
    * C = A*B using SIMD algorithm
    * 
@@ -449,7 +479,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public DenseMatrix mult(Matrix B) throws IOException {
     ensureForMultiplication(B);
-    
+
     DenseMatrix result = new DenseMatrix(config);
 
     JobConf jobConf = new JobConf(config);
@@ -458,8 +488,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), this.getType(), SIMDMultiplyMap.class,
-        IntWritable.class, MapWritable.class, jobConf);
+    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), this.getType(),
+        SIMDMultiplyMap.class, IntWritable.class, MapWritable.class, jobConf);
     SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
         jobConf);
     JobManager.execute(jobConf, result);
@@ -476,13 +506,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public DenseMatrix mult(Matrix B, int blocks) throws IOException {
     ensureForMultiplication(B);
-    
+
     DenseMatrix collectionTable = new DenseMatrix(config);
     LOG.info("Collect Blocks");
 
     collectBlocksMapRed(this.getPath(), collectionTable, blocks, true);
     collectBlocksMapRed(B.getPath(), collectionTable, blocks, false);
-    
+
     DenseMatrix result = new DenseMatrix(config);
 
     JobConf jobConf = new JobConf(config);
@@ -500,9 +530,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     // Should be collectionTable removed?
     return result;
   }
-  
+
   private void ensureForMultiplication(Matrix m) throws IOException {
-    if(getColumns() != m.getRows()) {
+    if (getColumns() != m.getRows()) {
       throw new IOException("A's columns should equal with B's rows while A*B.");
     }
   }
@@ -541,8 +571,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
-   * Returns the sub matrix formed by selecting certain rows and
-   * columns from a bigger matrix. The sub matrix is a in-memory operation only.
+   * Returns the sub matrix formed by selecting certain rows and columns from a
+   * bigger matrix. The sub matrix is a in-memory operation only.
    * 
    * @param i0 the start index of row
    * @param i1 the end index of row
