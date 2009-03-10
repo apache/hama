@@ -28,7 +28,7 @@ public class MatrixMultiplication extends AbstractExample {
   public static void main(String[] args) throws IOException {
     if (args.length < 2) {
       System.out
-          .println("mult  [-m maps] [-r reduces] <matrix_A> <matrix_B> [blocks]");
+          .println("mult [-m maps] [-r reduces] <matrix A> <matrix B> [blocks]");
       System.exit(-1);
     } else {
       parseArgs(args);

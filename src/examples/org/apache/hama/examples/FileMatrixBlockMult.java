@@ -118,7 +118,7 @@ public class FileMatrixBlockMult extends AbstractExample {
   public static void main(String[] args) throws IOException {
     if (args.length < 5) {
       System.out
-          .println("multfiles  [-m maps] [-r reduces] <seqfile1> <seqfile1> <blocks> <rows> <columns>");
+          .println("multfiles [-m maps] [-r reduces] <seqfile1> <seqfile1> <blocks> <rows> <columns>");
       System.exit(-1);
     } else {
       parseArgs(args);
