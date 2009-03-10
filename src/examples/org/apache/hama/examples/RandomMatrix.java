@@ -28,7 +28,7 @@ public class RandomMatrix extends AbstractExample {
   public static void main(String[] args) throws IOException {
     if (args.length < 3) {
       System.out
-          .println("rand  [-m maps] [-r reduces] <rows> <columns> <matrix_name>");
+          .println("rand [-m maps] [-r reduces] <rows> <columns> <matrix_name>");
       System.exit(-1);
     } else {
       parseArgs(args);
