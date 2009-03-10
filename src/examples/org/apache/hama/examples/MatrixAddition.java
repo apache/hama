@@ -42,11 +42,11 @@ public class MatrixAddition extends AbstractExample {
 
     Matrix c;
     if (ARGS.size() > 2) {
-      System.out.println("C = A + B");
-      c = a.add(b);
-    } else {
       System.out.println("C = "+ Double.parseDouble(ARGS.get(2)) +" * B + A");
       c = a.add(Double.parseDouble(ARGS.get(2)), b);
+    } else {
+      System.out.println("C = A + B");
+      c = a.add(b);
     }
     
     c.close();
