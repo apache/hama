@@ -75,4 +75,20 @@ public class TestSparseVector extends TestCase {
     Cell c = table.get(BytesUtil.getRowIndex(0), BytesUtil.getColumnIndex(1));
     assertTrue(c == null);
   }
+  
+  /**
+   * Test add()
+   */
+  public void testAdd() {
+    v1.add(v2);
+    
+    for(int i = 0; i < values[0].length; i++) {
+      assertEquals(v1.get(i), values[0][i] + values[1][i]);
+    }
+
+    v1.add(0.5, v2);
+    for(int i = 0; i < values[0].length; i++) {
+      assertEquals(v1.get(i),  (values[0][i] + values[1][i]) + (0.5 * values[1][i]));
+    }
+  }
 }

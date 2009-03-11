@@ -21,6 +21,7 @@ package org.apache.hama;
 
 import java.util.Iterator;
 
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 
 /**
@@ -144,4 +145,11 @@ public interface Vector {
    * @return iterator
    */
   public Iterator<Writable> iterator();
+  
+  /**
+   * Returns the {@link org.apache.hadoop.io.MapWritable}
+   * 
+   * @return the entries of vector
+   */
+  public MapWritable getEntries();
 }

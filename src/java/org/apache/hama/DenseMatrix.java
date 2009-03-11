@@ -368,7 +368,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       increaseRows();
 
     VectorUpdate update = new VectorUpdate(row);
-    update.putAll(((DenseVector) vector).getEntries());
+    update.putAll(vector.getEntries());
     table.commit(update.getBatchUpdate());
   }
 
