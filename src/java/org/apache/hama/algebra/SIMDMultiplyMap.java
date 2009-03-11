@@ -95,7 +95,6 @@ Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
             currVector.get(i)));
       }
       
-      
       output.collect(key, ((SparseVector) sum).getEntries());
     } else {
       ((DenseVector) sum).clear();

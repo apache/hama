@@ -20,10 +20,16 @@
 package org.apache.hama;
 
 import java.util.Iterator;
+import java.util.Map;
 
+import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.io.DoubleEntry;
+import org.apache.hama.util.BytesUtil;
 
 /**
  * Methods of the vector classes
@@ -31,6 +37,14 @@ import org.apache.hadoop.io.Writable;
 public abstract class AbstractVector {
   protected MapWritable entries;
 
+  public void initMap(RowResult row) {
+    this.entries = new MapWritable();
+    for (Map.Entry<byte[], Cell> f : row.entrySet()) {
+      this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())),
+          new DoubleEntry(f.getValue()));
+    }    
+  }
+  
   /**
    * Returns an Iterator.
    * 

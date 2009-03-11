@@ -24,14 +24,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
 /**
@@ -49,11 +47,7 @@ public class DenseVector extends AbstractVector implements Vector {
   }
 
   public DenseVector(RowResult row) {
-    this.entries = new MapWritable();
-    for (Map.Entry<byte[], Cell> f : row.entrySet()) {
-      this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())),
-          new DoubleEntry(f.getValue()));
-    }
+    this.initMap(row);
   }
 
   public DenseVector(int row, MapWritable m) {
@@ -81,7 +75,7 @@ public class DenseVector extends AbstractVector implements Vector {
       return this;
 
     for (int i = 0; i < this.size(); i++) {
-      set(i, get(i) + alpha * v.get(i));
+      set(i, alpha * v.get(i) + get(i));
     }
     return this;
   }
@@ -164,7 +158,7 @@ public class DenseVector extends AbstractVector implements Vector {
    * @return x = v
    */
   public DenseVector set(Vector v) {
-    return new DenseVector(((DenseVector) v).getEntries());
+    return new DenseVector(v.getEntries());
   }
 
   public double getNorm1() {
