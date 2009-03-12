@@ -105,6 +105,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
 
+    HAMA-169: Vector's first location bug fixed,
+              getNormInf() and getNorm2Robust() are implemented (edwardyoon)
     HAMA-155: When out of index, should throw exception (edwardyoon)
     HAMA-147: Fix typos (edwardyoon)
     HAMA-140: In subMatrix(), Scanner should be closed (edwardyoon)

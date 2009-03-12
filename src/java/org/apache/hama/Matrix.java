@@ -228,8 +228,17 @@ public interface Matrix {
    * Supported matrix-norms.
    */
   enum Norm {
+    /** Maximum absolute row sum */
+    One,
+
+    /** The root of sum of the sum of squares */
+    Frobenius,
+    
     /** Largest entry in absolute value */
-    Infinity
+    Infinity,
+    
+    /** Largest entry in absolute value. Not a proper matrix norm  */
+    Maxvalue
   }
 
   /**

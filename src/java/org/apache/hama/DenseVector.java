@@ -55,14 +55,68 @@ public class DenseVector extends AbstractVector implements Vector {
     this.entries.put(new Text("row"), new IntWritable(row));
   }
 
+  /**
+   * Sets the vector
+   * 
+   * @param v
+   * @return x = v
+   */
+  public DenseVector set(Vector v) {
+    return new DenseVector(v.getEntries());
+  }
+
+  /**
+   * Sets the value of index
+   * 
+   * @param index
+   * @param value
+   */
+  public void set(int index, double value) {
+    // If entries are null, create new object
+    if (this.entries == null) {
+      this.entries = new MapWritable();
+    }
+
+    this.entries.put(new IntWritable(index), new DoubleEntry(value));
+  }
+  
   public void setRow(int row) {
     this.entries.put(new Text("row"), new IntWritable(row));
   }
 
+  /**
+   * Gets the value of index
+   * 
+   * @param index
+   * @return the value of v(index)
+   * @throws IOException
+   */
+  public double get(int index) {
+    double value;
+    try {
+      value = ((DoubleEntry) this.entries.get(new IntWritable(index)))
+          .getValue();
+    } catch (NullPointerException e) {
+      throw new NullPointerException("Unexpected null value : " + e.toString());
+    }
+
+    return value;
+  }
+  
   public int getRow() {
     return ((IntWritable) this.entries.get(new Text("row"))).get();
   }
 
+  /**
+   * Adds the value to v(index)
+   * 
+   * @param index
+   * @param value
+   */
+  public void add(int index, double value) {
+    set(index, get(index) + value);
+  }
+  
   /**
    * x = alpha*v + x
    * 
@@ -74,9 +128,11 @@ public class DenseVector extends AbstractVector implements Vector {
     if (alpha == 0)
       return this;
 
-    for (int i = 0; i < this.size(); i++) {
-      set(i, alpha * v.get(i) + get(i));
+    for (Map.Entry<Writable, Writable> e : this.getEntries().entrySet()) {
+      int key = ((IntWritable) e.getKey()).get();
+      this.add(key, alpha * v.get(key));
     }
+
     return this;
   }
 
@@ -94,9 +150,8 @@ public class DenseVector extends AbstractVector implements Vector {
     }
 
     for (Map.Entry<Writable, Writable> e : this.getEntries().entrySet()) {
-      double value = ((DoubleEntry) e.getValue()).getValue()
-          + v2.get(((IntWritable) e.getKey()).get());
-      this.entries.put(e.getKey(), new DoubleEntry(value));
+      int key = ((IntWritable) e.getKey()).get();
+      this.add(key, v2.get(key));
     }
 
     return this;
@@ -151,17 +206,7 @@ public class DenseVector extends AbstractVector implements Vector {
       return getNormInf();
   }
 
-  /**
-   * Sets the vector
-   * 
-   * @param v
-   * @return x = v
-   */
-  public DenseVector set(Vector v) {
-    return new DenseVector(v.getEntries());
-  }
-
-  public double getNorm1() {
+  protected double getNorm1() {
     double sum = 0.0;
 
     Set<Writable> keySet = this.entries.keySet();
@@ -174,7 +219,7 @@ public class DenseVector extends AbstractVector implements Vector {
     return sum;
   }
 
-  public double getNorm2() {
+  protected double getNorm2() {
     double square_sum = 0.0;
 
     Set<Writable> keySet = entries.keySet();
@@ -189,57 +234,37 @@ public class DenseVector extends AbstractVector implements Vector {
   }
 
   /**
-   * Gets the value of index
+   * Returns the robust norm of the vector
    * 
-   * @param index
-   * @return the value of v(index)
-   * @throws IOException
+   * @return the robust norm of the vector
    */
-  public double get(int index) {
-    double value;
-    try {
-      value = ((DoubleEntry) this.entries.get(new IntWritable(index)))
-          .getValue();
-    } catch (NullPointerException e) {
-      throw new NullPointerException("Unexpected null value : " + e.toString());
+  protected double getNorm2Robust() {
+    double scale = 0, ssq = 1;
+    for (int i = 0; i < this.size(); i++) {
+      double val = get(i);
+      if (val != 0) {
+        double absxi = Math.abs(val);
+        if (scale < absxi) {
+          ssq = 1 + ssq * Math.pow(scale / absxi, 2);
+          scale = absxi;
+        } else
+          ssq = ssq + Math.pow(absxi / scale, 2);
+      }
     }
-
-    return value;
+    return scale * Math.sqrt(ssq);
   }
 
   /**
-   * Sets the value of index
+   * Returns the infinity norm of the vector
    * 
-   * @param index
-   * @param value
+   * @return the infinity norm of the vector
    */
-  public void set(int index, double value) {
-    // If entries are null, create new object
-    if (this.entries == null) {
-      this.entries = new MapWritable();
+  protected double getNormInf() {
+    double max = 0.0;
+    for (int i = 0; i < this.size(); i++) {
+      max = Math.max(max, Math.abs(get(i)));
     }
-
-    this.entries.put(new IntWritable(index), new DoubleEntry(value));
-  }
-
-  /**
-   * Adds the value to v(index)
-   * 
-   * @param index
-   * @param value
-   */
-  public void add(int index, double value) {
-    set(index, get(index) + value);
-  }
-
-  public double getNorm2Robust() {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  public double getNormInf() {
-    // TODO Auto-generated method stub
-    return 0;
+    return max;
   }
 
   /**
