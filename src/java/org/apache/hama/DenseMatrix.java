@@ -21,6 +21,7 @@ package org.apache.hama;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -32,6 +33,7 @@ import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -383,9 +385,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     if (this.getColumns() < column)
       increaseColumns();
 
-    for (int i = 0; i < vector.size(); i++) {
-      VectorUpdate update = new VectorUpdate(i);
-      update.put(column, vector.get(i));
+    for(Map.Entry<Writable, Writable> e : vector.getEntries().entrySet()) {
+      int key = ((IntWritable) e.getKey()).get();
+      double value = ((DoubleEntry) e.getValue()).getValue();
+      VectorUpdate update = new VectorUpdate(key);
+      update.put(column, value);
       table.commit(update.getBatchUpdate());
     }
   }

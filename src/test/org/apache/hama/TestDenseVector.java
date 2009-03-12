@@ -38,6 +38,8 @@ public class TestDenseVector extends TestCase {
   private static final double cosine = 0.6978227007909176;
   private static final double norm1 = 12.0;
   private static final double norm2 = 6.782329983125268;
+  private static final double normInf = 5.0;
+  private static final double norm2Robust = 6.782329983125269;
   private static double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
   private static DenseMatrix m1;
   private static DenseVector v1;
@@ -90,18 +92,30 @@ public class TestDenseVector extends TestCase {
    * Test norm one
    */
   public void testNom1() {
-    double result = ((DenseVector) v1).getNorm1();
-    assertEquals(norm1, result);
+    assertEquals(norm1, v1.norm(Vector.Norm.One));
   }
 
   /**
    * Test norm two
    */
   public void testNom2() {
-    double result = ((DenseVector) v1).getNorm2();
-    assertEquals(norm2, result);
+    assertEquals(norm2, v1.norm(Vector.Norm.Two));
   }
 
+  /**
+   * Test infinity norm
+   */
+  public void testNormInf() {
+    assertEquals(normInf, v1.norm(Vector.Norm.Infinity));
+  }
+  
+  /**
+   * Test infinity norm
+   */
+  public void testNorm2Robust() {
+    assertEquals(norm2Robust, v1.norm(Vector.Norm.TwoRobust));
+  }
+  
   /**
    * Test scaling
    */
