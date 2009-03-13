@@ -42,9 +42,9 @@ public abstract class AbstractVector {
     for (Map.Entry<byte[], Cell> f : row.entrySet()) {
       this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())),
           new DoubleEntry(f.getValue()));
-    }    
+    }
   }
-  
+
   /**
    * Returns an Iterator.
    * 
@@ -75,6 +75,16 @@ public abstract class AbstractVector {
    */
   public MapWritable getEntries() {
     return this.entries;
+  }
+
+  /**
+   * Checks for conformant sizes
+   */
+  protected void checkComformantSize(Vector v2) {
+    if (this.size() != v2.size()) {
+      throw new IndexOutOfBoundsException("v1.size != v2.size (" + this.size()
+          + " != " + v2.size() + ")");
+    }
   }
 
   /**

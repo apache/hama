@@ -61,6 +61,15 @@ public interface Vector {
   public Vector set(Vector v);
 
   /**
+   * x = alpha * v
+   * 
+   * @param alpha
+   * @param v
+   * @return x = alpha * v
+   */
+  public Vector set(double alpha, Vector v);
+  
+  /**
    * Adds the value to v(index)
    * 
    * @param index

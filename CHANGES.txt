@@ -105,6 +105,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
 
+    HAMA-172: Vector.add(Vector v) throw the Index out of bounds 
+                exception when they are different (edwardyoon)
     HAMA-169: Vector's first location bug fixed,
               getNormInf() and getNorm2Robust() are implemented (edwardyoon)
     HAMA-155: When out of index, should throw exception (edwardyoon)

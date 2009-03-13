@@ -44,7 +44,8 @@ public class TestDenseVector extends TestCase {
   private static DenseMatrix m1;
   private static DenseVector v1;
   private static DenseVector v2;
-
+  private static DenseVector smallSize = new DenseVector();
+  
   public static Test suite() {
     TestSetup setup = new TestSetup(new TestSuite(TestDenseVector.class)) {
       protected void setUp() throws Exception {
@@ -59,6 +60,7 @@ public class TestDenseVector extends TestCase {
 
         v1 = m1.getRow(0);
         v2 = m1.getRow(1);
+        smallSize.set(0, 0.5);
       }
 
       protected void tearDown() {
@@ -74,6 +76,15 @@ public class TestDenseVector extends TestCase {
   public void testDot() {
     double cos = v1.dot(v2);
     assertEquals(cos, cosine);
+    
+    boolean except = false;
+    try {
+      v1.dot(smallSize);
+    } catch (IndexOutOfBoundsException e) {
+      except = true;
+    }
+    
+    assertTrue(except);
   }
 
   public void testSubVector() {
@@ -168,6 +179,41 @@ public class TestDenseVector extends TestCase {
     double old = v1.get(0);
     v1.add(0, norm1);
     assertEquals(v1.get(0), old + norm1);
+    
+    boolean except = false;
+    try {
+      v1.add(smallSize);
+    } catch (IndexOutOfBoundsException e) {
+      except = true;
+    }
+    
+    assertTrue(except);
+    
+    except = false;
+    try {
+      v1.add(0.6, smallSize);
+    } catch (IndexOutOfBoundsException e) {
+      except = true;
+    }
+    
+    assertTrue(except);
+  }
+  
+  public void testSet() {
+    v1.set(v2);
+    
+    for(int i = 0; i < v1.size(); i ++) {
+      assertEquals(v2.get(i), v1.get(i));
+    }
+    
+    boolean except = false;
+    try {
+      v1.set(0.6, smallSize);
+    } catch (IndexOutOfBoundsException e) {
+      except = true;
+    }
+    
+    assertTrue(except);
   }
   
   /**
