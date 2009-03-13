@@ -56,16 +56,6 @@ public class DenseVector extends AbstractVector implements Vector {
   }
 
   /**
-   * Sets the vector
-   * 
-   * @param v
-   * @return x = v
-   */
-  public DenseVector set(Vector v) {
-    return new DenseVector(v.getEntries());
-  }
-
-  /**
    * Sets the value of index
    * 
    * @param index
@@ -78,6 +68,34 @@ public class DenseVector extends AbstractVector implements Vector {
     }
 
     this.entries.put(new IntWritable(index), new DoubleEntry(value));
+  }
+  
+  /**
+   * Sets the vector
+   * 
+   * @param v
+   * @return x = v
+   */
+  public DenseVector set(Vector v) {
+    this.set(1, v);
+    return this;
+  }
+
+  public Vector set(double alpha, Vector v) {
+    checkComformantSize(v);
+    boolean zeroFill = false;
+    if(alpha == 0) 
+      zeroFill = true;
+    
+    for (Map.Entry<Writable, Writable> e : v.getEntries().entrySet()) {
+      int key = ((IntWritable) e.getKey()).get();
+      if(zeroFill)
+        this.set(key, 0);
+      else
+        this.set(key, alpha * ((DoubleEntry) e.getValue()).getValue());
+    }
+    
+    return this;
   }
   
   public void setRow(int row) {
@@ -125,6 +143,7 @@ public class DenseVector extends AbstractVector implements Vector {
    * @return x = alpha*v + x
    */
   public DenseVector add(double alpha, Vector v) {
+    checkComformantSize(v);
     if (alpha == 0)
       return this;
 
@@ -143,11 +162,7 @@ public class DenseVector extends AbstractVector implements Vector {
    * @return x = v + x
    */
   public DenseVector add(Vector v2) {
-    if (this.size() == 0) {
-      DenseVector trunk = (DenseVector) v2;
-      this.entries = trunk.entries;
-      return this;
-    }
+    checkComformantSize(v2);
 
     for (Map.Entry<Writable, Writable> e : this.getEntries().entrySet()) {
       int key = ((IntWritable) e.getKey()).get();
@@ -164,6 +179,8 @@ public class DenseVector extends AbstractVector implements Vector {
    * @return x dot v
    */
   public double dot(Vector v) {
+    checkComformantSize(v);
+    
     double cosine = 0.0;
     double q_i, d_i;
     for (int i = 0; i < Math.min(this.size(), v.size()); i++) {

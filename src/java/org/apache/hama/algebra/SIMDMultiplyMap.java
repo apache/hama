@@ -20,9 +20,11 @@
 package org.apache.hama.algebra;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -91,8 +93,8 @@ Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
       SparseVector currVector = new SparseVector(value);
       
       for(int i = 0; i < matrix_b.getColumns(); i++) {
-        ((SparseVector) sum).add(((SparseMatrix) matrix_b).getRow(i).scale(
-            currVector.get(i)));
+        SparseVector scaled = ((SparseMatrix) matrix_b).getRow(i).scale(currVector.get(i));
+        ((SparseVector) sum).add(scaled);
       }
       
       output.collect(key, ((SparseVector) sum).getEntries());
@@ -100,8 +102,16 @@ Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
       ((DenseVector) sum).clear();
       DenseVector currVector = new DenseVector(value);
       for(int i = 0; i < value.size(); i++) {
-        ((DenseVector) sum).add(((DenseMatrix) matrix_b).getRow(i).scale(
-            currVector.get(i)));
+        DenseVector scaled = ((DenseMatrix) matrix_b).getRow(i).scale(currVector.get(i));
+        
+        // Should be initialized for adding vectors.
+        if(sum.size() == 0) {
+          for(Map.Entry<Writable, Writable> e: scaled.getEntries().entrySet()) {
+            sum.set(((IntWritable) e.getKey()).get(), 0);
+          }
+        }
+        
+        ((DenseVector) sum).add(scaled);
       }
       output.collect(key, ((DenseVector) sum).getEntries());
     }

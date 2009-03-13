@@ -184,4 +184,10 @@ public class SparseVector extends AbstractVector implements Vector {
     return null;
   }
 
+  @Override
+  public Vector set(double alpha, Vector v) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 }
