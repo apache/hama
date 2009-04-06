@@ -138,10 +138,7 @@ public interface Vector {
     /** The root of sum of squares */
     Two,
 
-    /**
-     * As the 2 norm may overflow, an overflow resistant version is also
-     * available. Note that it may be slower.
-     */
+    /** The robust norm of the vector */
     TwoRobust,
 
     /** Largest entry in absolute value */

@@ -237,7 +237,7 @@ public interface Matrix {
     /** Largest entry in absolute value */
     Infinity,
     
-    /** Largest entry in absolute value. Not a proper matrix norm  */
+    /** Largest entry in absolute value.  */
     Maxvalue
   }
 
