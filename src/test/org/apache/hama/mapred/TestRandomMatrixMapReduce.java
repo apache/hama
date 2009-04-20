@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.HCluster;
+import org.apache.hama.SparseMatrix;
 import org.apache.log4j.Logger;
 
 public class TestRandomMatrixMapReduce extends HCluster {
@@ -40,5 +41,18 @@ public class TestRandomMatrixMapReduce extends HCluster {
     }
     
     rand.close();
+    
+    SparseMatrix rand2 = SparseMatrix.random_mapred(conf, 20, 20);
+    assertEquals(20, rand2.getRows());
+    assertEquals(20, rand2.getColumns());
+    boolean zeroAppear = false;
+    for(int i = 0; i < 20; i++) {
+      for(int j = 0; j < 20; j++) {
+        if(rand2.get(i, j) == 0.0)
+          zeroAppear = true;
+      }
+    }
+    assertTrue(zeroAppear);
+    rand2.close();
   }
 }

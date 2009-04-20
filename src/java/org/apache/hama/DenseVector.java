@@ -302,4 +302,10 @@ public class DenseVector extends AbstractVector implements Vector {
 
     return res;
   }
+
+  public void zeroFill(int size) {
+    for(int i = 0; i < size; i++) {
+      this.set(i, 0);
+    }
+  }
 }

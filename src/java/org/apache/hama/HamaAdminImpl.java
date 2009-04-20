@@ -152,8 +152,8 @@ public class HamaAdminImpl implements HamaAdmin {
    * we remove the aliase entry store in Admin table, and clear the aliase info
    * store in matrix table. And check the reference of the matrix table:
    * 
-   * 1) if the reference of the matrix table is zero: we delete the table. 
-   * 2) if the reference of the matrix table is not zero: we let the matrix who still
+   * 1) if the reference of the matrix table is zero: we delete the table. 2) if
+   * the reference of the matrix table is not zero: we let the matrix who still
    * reference the table to do the garbage collection.
    */
   public void delete(String matrixName) throws IOException {
@@ -188,6 +188,27 @@ public class HamaAdminImpl implements HamaAdmin {
           admin.deleteTable(tablename);
         }
       }
+    }
+  }
+
+  @Override
+  public Matrix getMatrix(String matrixName) throws IOException {
+    String path = getPath(matrixName);
+    if(getType(path).equals("SparseMatrix"))
+      return new SparseMatrix(conf, path);
+    else
+      return new DenseMatrix(conf, path);
+  }
+
+  private String getType(String path) {
+    try {
+      HTable matrix = new HTable(conf, path);
+      byte[] result = matrix.get(Constants.METADATA,
+          Constants.ATTRIBUTE + "type").getValue();
+      return Bytes.toString(result);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
     }
   }
 }

@@ -52,4 +52,19 @@ public class JobManager {
     JobClient.runJob(jobConf);
   }
   
+  public static class MultipleJob extends Thread {
+    private JobConf jobConf;
+
+    public MultipleJob(JobConf jobConf) {
+      this.jobConf = jobConf;
+    }
+
+    public void run() {
+      try {
+        JobClient.runJob(this.jobConf);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+  }
 }

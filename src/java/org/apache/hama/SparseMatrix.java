@@ -22,20 +22,34 @@ package org.apache.hama;
 import java.io.IOException;
 import java.util.Random;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hama.algebra.SIMDMultiplyMap;
-import org.apache.hama.algebra.SIMDMultiplyReduce;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hama.algebra.SparseMatrixVectorMultMap;
+import org.apache.hama.algebra.SparseMatrixVectorMultReduce;
 import org.apache.hama.io.VectorUpdate;
+import org.apache.hama.mapred.RandomMatrixMap;
+import org.apache.hama.mapred.RandomMatrixReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
 
 public class SparseMatrix extends AbstractMatrix implements Matrix {
   static private final String TABLE_PREFIX = SparseMatrix.class.getSimpleName();
+  static private final Path TMP_DIR = new Path(SparseMatrix.class
+      .getSimpleName()
+      + "_TMP_dir");
+  
   public SparseMatrix(HamaConfiguration conf) throws IOException {
     setConfiguration(conf);
 
@@ -96,6 +110,59 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     return rand;
   }
   
+  public static SparseMatrix random_mapred(HamaConfiguration conf, int m, int n) throws IOException {
+    SparseMatrix rand = new SparseMatrix(conf);
+    LOG.info("Create the " + m + " * " + n + " random matrix : "
+        + rand.getPath());
+    rand.setDimension(m, n);
+
+    JobConf jobConf = new JobConf(conf);
+    jobConf.setJobName("random matrix MR job : " + rand.getPath());
+
+    jobConf.setNumMapTasks(conf.getNumMapTasks());
+    jobConf.setNumReduceTasks(conf.getNumReduceTasks());
+
+    final Path inDir = new Path(TMP_DIR, "in");
+    FileInputFormat.setInputPaths(jobConf, inDir);
+    jobConf.setMapperClass(RandomMatrixMap.class);
+    jobConf.setMapOutputKeyClass(IntWritable.class);
+    jobConf.setMapOutputValueClass(MapWritable.class);
+
+    RandomMatrixReduce.initJob(rand.getPath(), RandomMatrixReduce.class,
+        jobConf);
+    jobConf.setSpeculativeExecution(false);
+    jobConf.set("matrix.column", String.valueOf(n));
+    jobConf.set("matrix.type", TABLE_PREFIX);
+
+    jobConf.setInputFormat(SequenceFileInputFormat.class);
+    final FileSystem fs = FileSystem.get(jobConf);
+    int interval = m / conf.getNumMapTasks();
+
+    // generate an input file for each map task
+    for (int i = 0; i < conf.getNumMapTasks(); ++i) {
+      final Path file = new Path(inDir, "part" + i);
+      final IntWritable start = new IntWritable(i * interval);
+      IntWritable end = null;
+      if ((i + 1) != conf.getNumMapTasks()) {
+        end = new IntWritable(((i * interval) + interval) - 1);
+      } else {
+        end = new IntWritable(m - 1);
+      }
+      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, jobConf,
+          file, IntWritable.class, IntWritable.class, CompressionType.NONE);
+      try {
+        writer.append(start, end);
+      } finally {
+        writer.close();
+      }
+      System.out.println("Wrote input for Map #" + i);
+    }
+
+    JobClient.runJob(jobConf);
+    fs.delete(TMP_DIR, true);
+    return rand;
+  }
+  
   @Override
   public Matrix add(Matrix B) throws IOException {
     // TODO Auto-generated method stub
@@ -131,8 +198,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public SparseVector getRow(int i) throws IOException {
-    // Should returns zero-fill vector.
-    return new SparseVector(table.getRow(BytesUtil.getRowIndex(i)));
+    return new SparseVector(table.getRow(BytesUtil.getRowIndex(i), new byte[][] { Bytes.toBytes(Constants.COLUMN) }));
   }
 
   /** {@inheritDoc} */
@@ -151,21 +217,30 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     return this.getClass().getSimpleName();
   }
 
-  @Override
+  /**
+   * C = A*B using iterative method
+   * 
+   * @param B
+   * @return C
+   * @throws IOException
+   */
   public SparseMatrix mult(Matrix B) throws IOException {
     SparseMatrix result = new SparseMatrix(config);
 
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("multiplication MR job : " + result.getPath());
+    for(int i = 0; i < this.getRows(); i++) {
+      JobConf jobConf = new JobConf(config);
+      jobConf.setJobName("multiplication MR job : " + result.getPath() + " " + i);
 
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+      jobConf.setNumMapTasks(config.getNumMapTasks());
+      jobConf.setNumReduceTasks(config.getNumReduceTasks());
+      
+      SparseMatrixVectorMultMap.initJob(i, this.getPath(), B.getPath(), SparseMatrixVectorMultMap.class,
+          IntWritable.class, MapWritable.class, jobConf);
+      SparseMatrixVectorMultReduce.initJob(result.getPath(), SparseMatrixVectorMultReduce.class,
+          jobConf);
+      JobManager.execute(jobConf);
+    }
 
-    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), this.getType(), SIMDMultiplyMap.class,
-        IntWritable.class, MapWritable.class, jobConf);
-    SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
-        jobConf);
-    JobManager.execute(jobConf);
     result.setDimension(this.getRows(), this.getColumns());
     return result;
   }

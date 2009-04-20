@@ -33,9 +33,10 @@ Trunk (unreleased changes)
     HAMA-7: Add some information for a new comer (edwardyoon)
     HAMA-1: Create the Hama web site (edwardyoon via Ian Holsman)
     HAMA-2: The intial donation of Hama from the google project (edwardyoon)
-    
+
   IMPROVEMENTS
 
+    HAMA-158: Implementation of random sparse matrix (edwardyoon)
     HAMA-164: Example for C = Alpha*B + A (edwardyoon)
     HAMA-154: Combine multi-mapreduce jobs into a single mapreduce job 
                 while computing (samuel via edwardyoon)

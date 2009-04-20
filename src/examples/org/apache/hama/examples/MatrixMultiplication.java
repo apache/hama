@@ -22,7 +22,10 @@ package org.apache.hama.examples;
 import java.io.IOException;
 
 import org.apache.hama.DenseMatrix;
+import org.apache.hama.HamaAdmin;
+import org.apache.hama.HamaAdminImpl;
 import org.apache.hama.Matrix;
+import org.apache.hama.SparseMatrix;
 
 public class MatrixMultiplication extends AbstractExample {
   public static void main(String[] args) throws IOException {
@@ -37,14 +40,24 @@ public class MatrixMultiplication extends AbstractExample {
     String matrixA = ARGS.get(0);
     String matrixB = ARGS.get(1);
 
-    DenseMatrix a = new DenseMatrix(conf, matrixA, false);
-    DenseMatrix b = new DenseMatrix(conf, matrixB, false);
+    HamaAdmin admin = new HamaAdminImpl(conf);
+    Matrix a = admin.getMatrix(matrixA);
+    Matrix b = admin.getMatrix(matrixB);
+
+    if (!a.getType().equals(b.getType())) {
+      System.out.println(a.getType() + " != " + b.getType());
+      System.exit(-1);
+    }
+
     Matrix c;
-    
-    if (ARGS.size() > 2) {
-      c = a.mult(b, Integer.parseInt(ARGS.get(2)));
+    if (a.getType().equals("SparseMatrix")) {
+      c = ((SparseMatrix) a).mult(b);
     } else {
-      c = a.mult(b);
+      if (ARGS.size() > 2) {
+        c = ((DenseMatrix) a).mult(b, Integer.parseInt(ARGS.get(2)));
+      } else {
+        c = ((DenseMatrix) a).mult(b);
+      }
     }
 
     for (int i = 0; i < 2; i++) {

@@ -23,11 +23,13 @@ import java.nio.ByteBuffer;
 
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
+import org.apache.log4j.Logger;
 
 /**
  * Provides a bytes utility
  */
 public class BytesUtil {
+  static final Logger LOG = Logger.getLogger(BytesUtil.class);
   public static final int SIZEOF_DOUBLE = Double.SIZE/Byte.SIZE;
   public static final int PAD_SIZE = 15; 
   
