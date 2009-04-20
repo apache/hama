@@ -30,6 +30,7 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
@@ -41,10 +42,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hama.algebra.BlockMultiplyMap;
 import org.apache.hama.algebra.BlockMultiplyReduce;
+import org.apache.hama.algebra.DenseMatrixVectorMultMap;
+import org.apache.hama.algebra.DenseMatrixVectorMultReduce;
 import org.apache.hama.algebra.RowCyclicAdditionMap;
 import org.apache.hama.algebra.RowCyclicAdditionReduce;
-import org.apache.hama.algebra.SIMDMultiplyMap;
-import org.apache.hama.algebra.SIMDMultiplyReduce;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
@@ -242,7 +243,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         jobConf);
     jobConf.setSpeculativeExecution(false);
     jobConf.set("matrix.column", String.valueOf(n));
-
+    jobConf.set("matrix.type", TABLE_PREFIX);
+    
     jobConf.setInputFormat(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(jobConf);
     int interval = m / conf.getNumMapTasks();
@@ -326,7 +328,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public DenseVector getRow(int i) throws IOException {
-    return new DenseVector(table.getRow(BytesUtil.getRowIndex(i)));
+    return new DenseVector(table.getRow(BytesUtil.getRowIndex(i), new byte[][] { Bytes.toBytes(Constants.COLUMN) }));
   }
 
   /**
@@ -475,7 +477,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
-   * C = A*B using SIMD algorithm
+   * C = A*B using iterative method
    * 
    * @param B
    * @return C
@@ -483,20 +485,23 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public DenseMatrix mult(Matrix B) throws IOException {
     ensureForMultiplication(B);
-
     DenseMatrix result = new DenseMatrix(config);
+    
+    for(int i = 0; i < this.getRows(); i++) {
+      JobConf jobConf = new JobConf(config);
+      jobConf.setJobName("multiplication MR job : " + result.getPath() + " " + i);
 
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("multiplication MR job : " + result.getPath());
+      jobConf.setNumMapTasks(config.getNumMapTasks());
+      jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+      DenseMatrixVectorMultMap.initJob(i, this.getPath(), B.getPath(), DenseMatrixVectorMultMap.class,
+          IntWritable.class, MapWritable.class, jobConf);
+      DenseMatrixVectorMultReduce.initJob(result.getPath(), DenseMatrixVectorMultReduce.class,
+          jobConf);
+      JobManager.execute(jobConf);
+    }
 
-    SIMDMultiplyMap.initJob(this.getPath(), B.getPath(), this.getType(),
-        SIMDMultiplyMap.class, IntWritable.class, MapWritable.class, jobConf);
-    SIMDMultiplyReduce.initJob(result.getPath(), SIMDMultiplyReduce.class,
-        jobConf);
-    JobManager.execute(jobConf, result);
+    result.setDimension(this.getRows(), this.getColumns());
     return result;
   }
 

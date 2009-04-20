@@ -376,6 +376,7 @@ public abstract class AbstractMatrix implements Matrix {
     // ! one matrix has only one aliasename now.
     BatchUpdate update = new BatchUpdate(Constants.METADATA);
     update.put(Constants.ALIASENAME, Bytes.toBytes(aliasename));
+    update.put(Constants.ATTRIBUTE + "type", Bytes.toBytes(this.getType()));
     table.commit(update);
 
     return hamaAdmin.save(this, aliasename);

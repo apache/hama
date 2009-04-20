@@ -167,7 +167,7 @@ public class TestDenseMatrix extends TestCase {
       }
     }
   }
-  
+
   public void testMultiMatrixAdd() throws IOException {
     Matrix result = ((DenseMatrix)m1).add(m2, m3);
     
@@ -326,7 +326,6 @@ public class TestDenseMatrix extends TestCase {
         loadTest3.close();
     }
   }
-
   public void testForceCreate() throws IOException {
     String path2 = m2.getPath();
     // save m2 to aliase2
@@ -342,6 +341,9 @@ public class TestDenseMatrix extends TestCase {
 
     assertEquals(path2, loadTest.getPath());
 
+    Matrix test = hamaAdmin.getMatrix(aliase2);
+    assertEquals(test.getType(), "DenseMatrix");
+    
     // force to create matrix loadTest2 using aliasename 'aliase2'
     DenseMatrix loadTest2 = new DenseMatrix(conf, aliase2, true);
     String loadPath2 = loadTest2.getPath();

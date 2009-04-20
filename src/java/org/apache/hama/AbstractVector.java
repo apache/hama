@@ -30,11 +30,13 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.util.BytesUtil;
+import org.apache.log4j.Logger;
 
 /**
  * Methods of the vector classes
  */
 public abstract class AbstractVector {
+  static final Logger LOG = Logger.getLogger(AbstractVector.class);
   protected MapWritable entries;
 
   public void initMap(RowResult row) {

@@ -22,13 +22,15 @@ package org.apache.hama.examples;
 import java.io.IOException;
 
 import org.apache.hama.DenseMatrix;
+import org.apache.hama.Matrix;
+import org.apache.hama.SparseMatrix;
 
 public class RandomMatrix extends AbstractExample {
 
   public static void main(String[] args) throws IOException {
     if (args.length < 3) {
       System.out
-          .println("rand [-m maps] [-r reduces] <rows> <columns> <matrix_name>");
+          .println("rand [-m maps] [-r reduces] <rows> <columns> <sparse | dense> <matrix_name>");
       System.exit(-1);
     } else {
       parseArgs(args);
@@ -37,7 +39,12 @@ public class RandomMatrix extends AbstractExample {
     int row = Integer.parseInt(ARGS.get(0));
     int column = Integer.parseInt(ARGS.get(1));
 
-    DenseMatrix a = DenseMatrix.random_mapred(conf, row, column);
-    a.save(ARGS.get(2));
+    Matrix a;
+    if(ARGS.get(2).equals("sparse"))
+      a = SparseMatrix.random_mapred(conf, row, column);
+    else
+      a = DenseMatrix.random_mapred(conf, row, column);
+    
+    a.save(ARGS.get(3));
   }
 }

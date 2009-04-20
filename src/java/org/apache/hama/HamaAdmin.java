@@ -56,4 +56,13 @@ public interface HamaAdmin {
    */
   public void delete(String matrixName) throws IOException;
 
+  /**
+   * Load matrix
+   * 
+   * @param matrixName
+   * @return the matrix
+   * @throws IOException 
+   */
+  public Matrix getMatrix(String matrixName) throws IOException;
+
 }

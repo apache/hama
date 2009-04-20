@@ -75,21 +75,13 @@ public class SparseVector extends AbstractVector implements Vector {
    * @return x = v + x
    */
   public SparseVector add(Vector v2) {
-    if (this.size() == 0) {
-      SparseVector trunk = (SparseVector) v2;
-      this.entries = trunk.entries;
-      return this;
-    }
 
     for (Map.Entry<Writable, Writable> e : v2.getEntries().entrySet()) {
+      int key = ((IntWritable) e.getKey()).get();
       if (this.entries.containsKey(e.getKey())) {
-        // add
-        double value = ((DoubleEntry) e.getValue()).getValue()
-            + this.get(((IntWritable) e.getKey()).get());
-        this.entries.put(e.getKey(), new DoubleEntry(value));
+        this.add(key, ((DoubleEntry) e.getValue()).getValue());
       } else {
-        // put
-        this.entries.put(e.getKey(), e.getValue());
+        this.set(key, ((DoubleEntry) e.getValue()).getValue());
       }
     }
 

@@ -30,13 +30,15 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.SparseVector;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.VectorOutputFormat;
 import org.apache.log4j.Logger;
 
-public class SIMDMultiplyReduce extends MapReduceBase implements
+public class SparseMatrixVectorMultReduce extends MapReduceBase implements
     Reducer<IntWritable, MapWritable, IntWritable, VectorUpdate> {
-  static final Logger LOG = Logger.getLogger(SIMDMultiplyReduce.class);
+  static final Logger LOG = Logger
+      .getLogger(SparseMatrixVectorMultReduce.class);
 
   /**
    * Use this before submitting a TableReduce job. It will appropriately set up
@@ -47,21 +49,26 @@ public class SIMDMultiplyReduce extends MapReduceBase implements
    * @param job
    */
   public static void initJob(String table,
-      Class<SIMDMultiplyReduce> reducer, JobConf job) {
+      Class<SparseMatrixVectorMultReduce> reducer, JobConf job) {
     job.setOutputFormat(VectorOutputFormat.class);
     job.setReducerClass(reducer);
     job.set(VectorOutputFormat.OUTPUT_TABLE, table);
     job.setOutputKeyClass(IntWritable.class);
     job.setOutputValueClass(BatchUpdate.class);
   }
-  
+
   @Override
   public void reduce(IntWritable key, Iterator<MapWritable> values,
       OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
       throws IOException {
+    SparseVector sum = new SparseVector();
 
+    while (values.hasNext()) {
+      sum.add(new SparseVector(values.next()));
+    }
+    
     VectorUpdate update = new VectorUpdate(key.get());
-    update.putAll(values.next());
+    update.putAll(sum.getEntries());
 
     output.collect(key, update);
   }
