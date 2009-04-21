@@ -27,7 +27,6 @@ import java.util.Set;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.log4j.Logger;
@@ -52,7 +51,7 @@ public class DenseVector extends AbstractVector implements Vector {
 
   public DenseVector(int row, MapWritable m) {
     this.entries = m;
-    this.entries.put(new Text("row"), new IntWritable(row));
+    this.entries.put(Constants.ROWCOUNT, new IntWritable(row));
   }
 
   /**
@@ -99,7 +98,7 @@ public class DenseVector extends AbstractVector implements Vector {
   }
   
   public void setRow(int row) {
-    this.entries.put(new Text("row"), new IntWritable(row));
+    this.entries.put(Constants.ROWCOUNT, new IntWritable(row));
   }
 
   /**
@@ -122,7 +121,7 @@ public class DenseVector extends AbstractVector implements Vector {
   }
   
   public int getRow() {
-    return ((IntWritable) this.entries.get(new Text("row"))).get();
+    return ((IntWritable) this.entries.get(Constants.ROWCOUNT)).get();
   }
 
   /**
@@ -293,7 +292,7 @@ public class DenseVector extends AbstractVector implements Vector {
    */
   public DenseVector subVector(int i0, int i1) {
     DenseVector res = new DenseVector();
-    if (this.entries.containsKey(new Text("row")))
+    if (this.entries.containsKey(Constants.ROWCOUNT))
       res.setRow(this.getRow());
 
     for (int i = i0; i <= i1; i++) {

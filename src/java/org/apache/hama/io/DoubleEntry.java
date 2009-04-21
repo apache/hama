@@ -33,9 +33,6 @@ import org.apache.log4j.Logger;
 public class DoubleEntry implements Writable, Iterable<DoubleEntry> {
   static final Logger LOG = Logger.getLogger(DoubleEntry.class);
   protected byte[][] values;
-  
-  // We don't need this.
-  @Deprecated
   protected long[] timestamps;
   
   /** For Writable compatibility */

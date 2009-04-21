@@ -242,6 +242,14 @@ public interface Matrix {
   }
 
   /**
+   * Transposes the matrix. In most cases, the matrix must be square
+   * for this to work.
+   * 
+   * @return the transposed matrix
+   */
+  public Matrix transpose() throws IOException;
+  
+  /**
    * Save to a table or file
    * 
    * @param path

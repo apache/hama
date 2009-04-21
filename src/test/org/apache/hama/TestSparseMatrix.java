@@ -60,6 +60,15 @@ public class TestSparseMatrix extends TestCase {
     m2.close();
   }
 
+  public void testTranspose() throws IOException {
+    SparseMatrix trans = (SparseMatrix) m1.transpose();
+    for(int i = 0; i < trans.getRows(); i++) {
+      for(int j = 0; j < trans.getColumns(); j++) {
+        assertEquals(trans.get(i, j), m1.get(j, i));
+      }
+    }
+  }
+  
   public void testSparsity() throws IOException {
     boolean appeared = false;
     for (int i = 0; i < m1.getRows(); i++) {
