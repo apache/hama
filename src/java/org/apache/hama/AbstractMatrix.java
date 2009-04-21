@@ -40,10 +40,14 @@ import org.apache.hadoop.hbase.mapred.IdentityTableReduce;
 import org.apache.hadoop.hbase.mapred.TableMap;
 import org.apache.hadoop.hbase.mapred.TableMapReduceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.algebra.TransposeMap;
+import org.apache.hama.algebra.TransposeReduce;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
@@ -371,6 +375,30 @@ public abstract class AbstractMatrix implements Matrix {
     closed = true;
   }
 
+  public Matrix transpose() throws IOException {
+    Matrix result;
+    if(this.getType().equals("SparseMatrix")) {
+      result = new SparseMatrix(config);
+    } else {
+      result = new DenseMatrix(config);
+    }
+    
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("transpose MR job" + result.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+
+    TransposeMap.initJob(this.getPath(), TransposeMap.class, IntWritable.class,
+        MapWritable.class, jobConf);
+    TransposeReduce.initJob(result.getPath(),
+        TransposeReduce.class, jobConf);
+
+    JobManager.execute(jobConf);
+    result.setDimension(this.getRows(), this.getColumns());
+    return result;
+  }
+  
   public boolean save(String aliasename) throws IOException {
     // mark & update the aliase name in "alise:name" meta column.
     // ! one matrix has only one aliasename now.

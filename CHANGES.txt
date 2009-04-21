@@ -3,7 +3,8 @@ Hama Change Log
 Trunk (unreleased changes)
 
   NEW FEATURES
-
+  
+    HAMA-174: Compute the transpose of a matrix (edwardyoon)
     HAMA-162: Add Graph using Sparse Matrix (edwardyoon)
     HAMA-151: Add multiplication example of file matrices (edwardyoon)
     HAMA-145: Add privacy policy page (edwardyoon)

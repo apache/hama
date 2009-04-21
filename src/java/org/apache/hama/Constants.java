@@ -19,6 +19,8 @@
  */
 package org.apache.hama;
 
+import org.apache.hadoop.io.Text;
+
 /**
  * Some constants used in the Hama
  */
@@ -89,4 +91,6 @@ public class Constants {
   
   /** block data column */
   public static final String BLOCK = "block:";
+  
+  public static final Text ROWCOUNT= new Text("row");
 }

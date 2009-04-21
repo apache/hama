@@ -97,6 +97,15 @@ public class TestDenseMatrix extends TestCase {
     assertTrue(m1.get(0, 0) > 0);
   }
   
+  public void testTranspose() throws IOException {
+    DenseMatrix trans = (DenseMatrix) m1.transpose();
+    for(int i = 0; i < trans.getRows(); i++) {
+      for(int j = 0; j < trans.getColumns(); j++) {
+        assertEquals(trans.get(i, j), m1.get(j, i));
+      }
+    }
+  }
+
   /**
    * Column vector test.
    * 
@@ -272,7 +281,6 @@ public class TestDenseMatrix extends TestCase {
       LOG.info(e.toString());
     }
   }
-  
 
   public void testEnsureForMultiplication() {
     try {
