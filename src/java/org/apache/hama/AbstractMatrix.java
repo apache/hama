@@ -167,7 +167,7 @@ public abstract class AbstractMatrix implements Matrix {
     jobConf.setJobName("norm1 MR job : " + this.getPath());
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    jobConf.setNumReduceTasks(1);
     
     final FileSystem fs = FileSystem.get(jobConf);
     final Path outDir = new Path(new Path(getType() + "_TMP_norm1_dir"), "out");
@@ -191,7 +191,7 @@ public abstract class AbstractMatrix implements Matrix {
       reader.close();
     }
 
-    fs.delete(outDir, true);
+    fs.delete(outDir.getParent(), true);
     return max.get();
   }
   
