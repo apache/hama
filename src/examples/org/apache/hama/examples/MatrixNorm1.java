@@ -19,21 +19,25 @@
  */
 package org.apache.hama.examples;
 
-import org.apache.hadoop.util.ProgramDriver;
+import java.io.IOException;
 
-public class ExampleDriver {
-  
-  public static void main(String[] args) {
-    ProgramDriver pgd = new ProgramDriver();
-    try {
-      pgd.addClass("rand", RandomMatrix.class, "Generate matrix with random elements.");
-      pgd.addClass("add", MatrixAddition.class, "Mat-Mat addition.");
-      pgd.addClass("mult", MatrixMultiplication.class, "Mat-Mat multiplication.");
-      pgd.addClass("multfiles", FileMatrixBlockMult.class, "file matrices multiplication.");
-      pgd.addClass("norm", MatrixNorm1.class, "Maximum absolute row sum of matrix");
-      pgd.driver(args);
-    } catch (Throwable e) {
-      e.printStackTrace();
+import org.apache.hama.HamaAdmin;
+import org.apache.hama.HamaAdminImpl;
+import org.apache.hama.Matrix;
+import org.apache.hama.Matrix.Norm;
+
+public class MatrixNorm1 extends AbstractExample {
+  public static void main(String[] args) throws IOException {
+    if (args.length < 1) {
+      System.out.println("norm [-m maps] [-r reduces] <matrix name>");
+      System.exit(-1);
+    } else {
+      parseArgs(args);
     }
+
+    HamaAdmin admin = new HamaAdminImpl(conf);
+    Matrix a = admin.getMatrix(ARGS.get(0));
+    System.out.println("The maximum absolute row sum of matrix '" + ARGS.get(0)
+        + "' is " + a.norm(Norm.One));
   }
 }
