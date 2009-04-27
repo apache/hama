@@ -251,10 +251,22 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     return null;
   }
 
-  @Override
+  /**
+   * Computes the given norm of the matrix
+   * 
+   * @param type
+   * @return norm of the matrix
+   * @throws IOException
+   */
   public double norm(Norm type) throws IOException {
-    // TODO Auto-generated method stub
-    return 0;
+    if (type == Norm.One)
+      return getNorm1();
+    else if (type == Norm.Frobenius)
+      return getFrobenius();
+    else if (type == Norm.Infinity)
+      return getInfinity();
+    else
+      return getMaxvalue();
   }
 
   @Override

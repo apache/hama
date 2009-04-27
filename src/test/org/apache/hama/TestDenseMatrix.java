@@ -29,6 +29,7 @@ import junit.framework.TestSuite;
 
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Matrix.Norm;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
@@ -233,6 +234,11 @@ public class TestDenseMatrix extends TestCase {
     assertEquals(value, result.get(0, 0));
   }
   
+  public void testNorm1() throws IOException {
+    double norm1 = m1.norm(Norm.One);
+    assertEquals(norm1, verifyNorm1());
+  }
+  
   public void testSetRow() throws IOException {
     Vector v = new DenseVector();
     double[] entries = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
@@ -272,7 +278,7 @@ public class TestDenseMatrix extends TestCase {
     
     assertEquals(m1.getColumns(), SIZE + 1);
   }
-
+  
   public void testEnsureForAddition() {
     try {
       m1.add(m2);
@@ -334,6 +340,7 @@ public class TestDenseMatrix extends TestCase {
         loadTest3.close();
     }
   }
+  
   public void testForceCreate() throws IOException {
     String path2 = m2.getPath();
     // save m2 to aliase2
@@ -398,5 +405,19 @@ public class TestDenseMatrix extends TestCase {
         assertTrue(gap < 0.000001 || gap < -0.000001);
       }
     }
+  }
+
+  private double verifyNorm1() throws IOException {
+    double[] rowSum = new double[m1.getRows()];
+    for (int i = 0; i < m1.getRows(); i++) {
+      for (int j = 0; j < m1.getColumns(); j++) {
+        rowSum[i] += Math.abs(m1.get(i, j));
+      }
+    }
+
+    double max = 0;
+    for (int i = 0; i < rowSum.length; ++i)
+      max = Math.max(rowSum[i], max);
+    return max;
   }
 }

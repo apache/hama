@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -40,12 +42,17 @@ import org.apache.hadoop.hbase.mapred.IdentityTableReduce;
 import org.apache.hadoop.hbase.mapred.TableMap;
 import org.apache.hadoop.hbase.mapred.TableMapReduceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.algebra.MatrixNormMap;
+import org.apache.hama.algebra.MatrixNormReduce;
 import org.apache.hama.algebra.TransposeMap;
 import org.apache.hama.algebra.TransposeReduce;
 import org.apache.hama.io.VectorUpdate;
@@ -60,7 +67,7 @@ import org.apache.log4j.Logger;
 public abstract class AbstractMatrix implements Matrix {
   static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
-
+  
   protected HamaConfiguration config;
   protected HBaseAdmin admin;
   // a matrix just need a table path to point to the table which stores matrix.
@@ -155,6 +162,54 @@ public abstract class AbstractMatrix implements Matrix {
     return this.table;
   }
 
+  protected double getNorm1() throws IOException {
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("norm1 MR job : " + this.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    
+    final FileSystem fs = FileSystem.get(jobConf);
+    final Path outDir = new Path(new Path(getType() + "_TMP_norm1_dir"), "out");
+    if(fs.exists(outDir)) 
+      fs.delete(outDir, true);
+    FileOutputFormat.setOutputPath(jobConf, outDir);
+
+    MatrixNormMap.initJob(this.getPath(), MatrixNormMap.class, IntWritable.class,
+        DoubleWritable.class, jobConf);
+    MatrixNormReduce.initJob(outDir.toString(), MatrixNormReduce.class, jobConf);
+    JobManager.execute(jobConf);
+
+    //read outputs
+    Path inFile = new Path(outDir, "reduce-out");
+    IntWritable numInside = new IntWritable();
+    DoubleWritable max = new DoubleWritable();
+    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+    try {
+      reader.next(numInside, max);
+    } finally {
+      reader.close();
+    }
+
+    fs.delete(outDir, true);
+    return max.get();
+  }
+  
+  protected double getMaxvalue() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  protected double getInfinity() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  protected double getFrobenius() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+  
   /** {@inheritDoc} */
   public int getRows() throws IOException {
     Cell rows = null;

@@ -244,7 +244,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setSpeculativeExecution(false);
     jobConf.set("matrix.column", String.valueOf(n));
     jobConf.set("matrix.type", TABLE_PREFIX);
-    
+
     jobConf.setInputFormat(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(jobConf);
     int interval = m / conf.getNumMapTasks();
@@ -328,7 +328,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public DenseVector getRow(int i) throws IOException {
-    return new DenseVector(table.getRow(BytesUtil.getRowIndex(i), new byte[][] { Bytes.toBytes(Constants.COLUMN) }));
+    return new DenseVector(table.getRow(BytesUtil.getRowIndex(i),
+        new byte[][] { Bytes.toBytes(Constants.COLUMN) }));
   }
 
   /**
@@ -387,7 +388,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     if (this.getColumns() < column)
       increaseColumns();
 
-    for(Map.Entry<Writable, Writable> e : vector.getEntries().entrySet()) {
+    for (Map.Entry<Writable, Writable> e : vector.getEntries().entrySet()) {
       int key = ((IntWritable) e.getKey()).get();
       double value = ((DoubleEntry) e.getValue()).getValue();
       VectorUpdate update = new VectorUpdate(key);
@@ -486,18 +487,20 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix mult(Matrix B) throws IOException {
     ensureForMultiplication(B);
     DenseMatrix result = new DenseMatrix(config);
-    
-    for(int i = 0; i < this.getRows(); i++) {
+
+    for (int i = 0; i < this.getRows(); i++) {
       JobConf jobConf = new JobConf(config);
-      jobConf.setJobName("multiplication MR job : " + result.getPath() + " " + i);
+      jobConf.setJobName("multiplication MR job : " + result.getPath() + " "
+          + i);
 
       jobConf.setNumMapTasks(config.getNumMapTasks());
       jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-      DenseMatrixVectorMultMap.initJob(i, this.getPath(), B.getPath(), DenseMatrixVectorMultMap.class,
-          IntWritable.class, MapWritable.class, jobConf);
-      DenseMatrixVectorMultReduce.initJob(result.getPath(), DenseMatrixVectorMultReduce.class,
+      DenseMatrixVectorMultMap.initJob(i, this.getPath(), B.getPath(),
+          DenseMatrixVectorMultMap.class, IntWritable.class, MapWritable.class,
           jobConf);
+      DenseMatrixVectorMultReduce.initJob(result.getPath(),
+          DenseMatrixVectorMultReduce.class, jobConf);
       JobManager.execute(jobConf);
     }
 
@@ -568,8 +571,14 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public double norm(Norm type) throws IOException {
-    // TODO Auto-generated method stub
-    return 0;
+    if (type == Norm.One)
+      return getNorm1();
+    else if (type == Norm.Frobenius)
+      return getFrobenius();
+    else if (type == Norm.Infinity)
+      return getInfinity();
+    else
+      return getMaxvalue();
   }
 
   /**

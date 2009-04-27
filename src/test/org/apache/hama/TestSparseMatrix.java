@@ -26,6 +26,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.apache.hama.Matrix.Norm;
 import org.apache.log4j.Logger;
 
 public class TestSparseMatrix extends TestCase {
@@ -62,13 +63,13 @@ public class TestSparseMatrix extends TestCase {
 
   public void testTranspose() throws IOException {
     SparseMatrix trans = (SparseMatrix) m1.transpose();
-    for(int i = 0; i < trans.getRows(); i++) {
-      for(int j = 0; j < trans.getColumns(); j++) {
+    for (int i = 0; i < trans.getRows(); i++) {
+      for (int j = 0; j < trans.getColumns(); j++) {
         assertEquals(trans.get(i, j), m1.get(j, i));
       }
     }
   }
-  
+
   public void testSparsity() throws IOException {
     boolean appeared = false;
     for (int i = 0; i < m1.getRows(); i++) {
@@ -89,6 +90,11 @@ public class TestSparseMatrix extends TestCase {
   public void testMatrixMult() throws IOException {
     SparseMatrix result = m1.mult(m2);
     verifyMultResult(m1, m2, result);
+  }
+
+  public void testNorm1() throws IOException {
+    double norm1 = m1.norm(Norm.One);
+    assertEquals(norm1, verifyNorm1());
   }
 
   /**
@@ -117,5 +123,19 @@ public class TestSparseMatrix extends TestCase {
         assertTrue(gap < 0.000001 || gap < -0.000001);
       }
     }
+  }
+
+  private double verifyNorm1() throws IOException {
+    double[] rowSum = new double[m1.getRows()];
+    for (int i = 0; i < m1.getRows(); i++) {
+      for (int j = 0; j < m1.getColumns(); j++) {
+        rowSum[i] += Math.abs(m1.get(i, j));
+      }
+    }
+
+    double max = 0;
+    for (int i = 0; i < rowSum.length; ++i)
+      max = Math.max(rowSum[i], max);
+    return max;
   }
 }

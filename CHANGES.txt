@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
   
+    HAMA-171: Find the maximum absolute row sum using MapReduce (edwardyoon)
     HAMA-174: Compute the transpose of a matrix (edwardyoon)
     HAMA-162: Add Graph using Sparse Matrix (edwardyoon)
     HAMA-151: Add multiplication example of file matrices (edwardyoon)
