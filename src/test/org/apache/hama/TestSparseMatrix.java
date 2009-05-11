@@ -93,8 +93,31 @@ public class TestSparseMatrix extends TestCase {
   }
 
   public void testNorm1() throws IOException {
+    double gap = 0.000001;
+    
     double norm1 = m1.norm(Norm.One);
-    assertEquals(norm1, verifyNorm1());
+    double verify_norm1 = MatrixTestCommon.verifyNorm1(m1);
+    gap = norm1 - verify_norm1;
+    LOG.info("Norm One : gap " + gap);
+    assertTrue(gap < 0.000001 && gap > -0.000001);
+    
+    double normInfinity = m1.norm(Norm.Infinity);
+    double verify_normInf = MatrixTestCommon.verifyNormInfinity(m1);
+    gap = normInfinity - verify_normInf;
+    LOG.info("Norm Infinity : gap " + gap);
+    assertTrue(gap < 0.000001 && gap > -0.000001);
+    
+    double normMaxValue = m1.norm(Norm.Maxvalue);
+    double verify_normMV = MatrixTestCommon.verifyNormMaxValue(m1);
+    gap = normMaxValue - verify_normMV;
+    LOG.info("Norm MaxValue : gap " + gap);
+    assertTrue(gap < 0.000001 && gap > -0.000001);
+    
+    double normFrobenius = m1.norm(Norm.Frobenius);
+    double verify_normFrobenius = MatrixTestCommon.verifyNormFrobenius(m1);
+    gap = normFrobenius - verify_normFrobenius;
+    LOG.info("Norm Frobenius : gap " + gap);
+    assertTrue(gap < 0.000001 && gap > -0.000001);
   }
 
   /**
@@ -120,22 +143,9 @@ public class TestSparseMatrix extends TestCase {
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
         double gap = (c[i][j] - result.get(i, j));
-        assertTrue(gap < 0.000001 || gap < -0.000001);
+        assertTrue(gap < 0.000001 && gap > -0.000001);
       }
     }
   }
-
-  private double verifyNorm1() throws IOException {
-    double[] rowSum = new double[m1.getRows()];
-    for (int i = 0; i < m1.getRows(); i++) {
-      for (int j = 0; j < m1.getColumns(); j++) {
-        rowSum[i] += Math.abs(m1.get(i, j));
-      }
-    }
-
-    double max = 0;
-    for (int i = 0; i < rowSum.length; ++i)
-      max = Math.max(rowSum[i], max);
-    return max;
-  }
+ 
 }
