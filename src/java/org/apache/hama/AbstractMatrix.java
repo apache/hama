@@ -51,10 +51,19 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.algebra.MatrixNormMap;
-import org.apache.hama.algebra.MatrixNormReduce;
+import org.apache.hama.algebra.MatrixNormMapRed;
 import org.apache.hama.algebra.TransposeMap;
 import org.apache.hama.algebra.TransposeReduce;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixFrobeniusNormCombiner;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixFrobeniusNormMapper;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixFrobeniusNormReducer;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixInfinityNormMapper;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixInfinityNormReducer;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixMaxValueNormMapper;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixMaxValueNormReducer;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixOneNormCombiner;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixOneNormMapper;
+import org.apache.hama.algebra.MatrixNormMapRed.MatrixOneNormReducer;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.JobManager;
@@ -170,14 +179,15 @@ public abstract class AbstractMatrix implements Matrix {
     jobConf.setNumReduceTasks(1);
     
     final FileSystem fs = FileSystem.get(jobConf);
-    final Path outDir = new Path(new Path(getType() + "_TMP_norm1_dir"), "out");
+    Path outDir = new Path(new Path(getType() + "_TMP_norm1_dir_" + System.currentTimeMillis()), "out");
     if(fs.exists(outDir)) 
       fs.delete(outDir, true);
-    FileOutputFormat.setOutputPath(jobConf, outDir);
-
-    MatrixNormMap.initJob(this.getPath(), MatrixNormMap.class, IntWritable.class,
-        DoubleWritable.class, jobConf);
-    MatrixNormReduce.initJob(outDir.toString(), MatrixNormReduce.class, jobConf);
+    
+    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(), 
+        MatrixOneNormMapper.class, MatrixOneNormCombiner.class, MatrixOneNormReducer.class, jobConf);
+    
+    // update the out put dir of the job
+    outDir = FileOutputFormat.getOutputPath(jobConf);
     JobManager.execute(jobConf);
 
     //read outputs
@@ -195,19 +205,108 @@ public abstract class AbstractMatrix implements Matrix {
     return max.get();
   }
   
-  protected double getMaxvalue() {
-    // TODO Auto-generated method stub
-    return 0;
+  protected double getMaxvalue() throws IOException {
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("MaxValue Norm MR job : " + this.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(1);
+    
+    final FileSystem fs = FileSystem.get(jobConf);
+    Path outDir = new Path(new Path(getType() + "_TMP_normMaxValue_dir_" + System.currentTimeMillis()), "out");
+    if(fs.exists(outDir)) 
+      fs.delete(outDir, true);
+    
+    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(), 
+        MatrixMaxValueNormMapper.class, MatrixMaxValueNormReducer.class, MatrixMaxValueNormReducer.class, jobConf);
+    
+    // update the out put dir of the job
+    outDir = FileOutputFormat.getOutputPath(jobConf);
+    JobManager.execute(jobConf);
+
+    //read outputs
+    Path inFile = new Path(outDir, "part-00000");
+    IntWritable numInside = new IntWritable();
+    DoubleWritable max = new DoubleWritable();
+    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+    try {
+      reader.next(numInside, max);
+    } finally {
+      reader.close();
+    }
+
+    fs.delete(outDir.getParent(), true);
+    return max.get();
   }
 
-  protected double getInfinity() {
-    // TODO Auto-generated method stub
-    return 0;
+  protected double getInfinity() throws IOException {
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("Infinity Norm MR job : " + this.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(1);
+    
+    final FileSystem fs = FileSystem.get(jobConf);
+    Path outDir = new Path(new Path(getType() + "_TMP_normInifity_dir_" + System.currentTimeMillis()), "out");
+    if(fs.exists(outDir)) 
+      fs.delete(outDir, true);
+    
+    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(), 
+        MatrixInfinityNormMapper.class, MatrixInfinityNormReducer.class, MatrixInfinityNormReducer.class, jobConf);
+    
+    // update the out put dir of the job
+    outDir = FileOutputFormat.getOutputPath(jobConf);
+    
+    JobManager.execute(jobConf);
+
+    //read outputs
+    Path inFile = new Path(outDir, "part-00000");
+    IntWritable numInside = new IntWritable();
+    DoubleWritable max = new DoubleWritable();
+    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+    try {
+      reader.next(numInside, max);
+    } finally {
+      reader.close();
+    }
+
+    fs.delete(outDir.getParent(), true);
+    return max.get();
   }
 
-  protected double getFrobenius() {
-    // TODO Auto-generated method stub
-    return 0;
+  protected double getFrobenius() throws IOException {
+    JobConf jobConf = new JobConf(config);
+    jobConf.setJobName("Frobenius Norm MR job : " + this.getPath());
+
+    jobConf.setNumMapTasks(config.getNumMapTasks());
+    jobConf.setNumReduceTasks(1);
+    
+    final FileSystem fs = FileSystem.get(jobConf);
+    Path outDir = new Path(new Path(getType() + "_TMP_normFrobenius_dir_" + System.currentTimeMillis()), "out");
+    if(fs.exists(outDir)) 
+      fs.delete(outDir, true);
+    
+    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(), 
+        MatrixFrobeniusNormMapper.class, MatrixFrobeniusNormCombiner.class, MatrixFrobeniusNormReducer.class, jobConf);
+    
+    // update the out put dir of the job
+    outDir = FileOutputFormat.getOutputPath(jobConf);
+    
+    JobManager.execute(jobConf);
+
+    //read outputs
+    Path inFile = new Path(outDir, "part-00000");
+    IntWritable numInside = new IntWritable();
+    DoubleWritable sqrt = new DoubleWritable();
+    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+    try {
+      reader.next(numInside, sqrt);
+    } finally {
+      reader.close();
+    }
+
+    fs.delete(outDir.getParent(), true);
+    return sqrt.get();
   }
   
   /** {@inheritDoc} */

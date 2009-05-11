@@ -30,7 +30,7 @@ public class ExampleDriver {
       pgd.addClass("add", MatrixAddition.class, "Mat-Mat addition.");
       pgd.addClass("mult", MatrixMultiplication.class, "Mat-Mat multiplication.");
       pgd.addClass("multfiles", FileMatrixBlockMult.class, "file matrices multiplication.");
-      pgd.addClass("norm", MatrixNorm1.class, "Maximum absolute row sum of matrix");
+      pgd.addClass("norm", MatrixNorm.class, "Maximum absolute row sum of matrix");
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();

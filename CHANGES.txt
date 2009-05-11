@@ -38,6 +38,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-171: Implementation of Matrix.Norm (samuel)
     HAMA-178: Add example of norm (edwardyoon)
     HAMA-158: Implementation of random sparse matrix (edwardyoon)
     HAMA-164: Example for C = Alpha*B + A (edwardyoon)
