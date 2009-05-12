@@ -31,6 +31,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -42,6 +46,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hama.Constants;
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
 import org.apache.hama.HCluster;
@@ -54,13 +59,14 @@ import org.apache.hama.io.BlockWritable;
 import org.apache.hama.mapred.CollectBlocksMap;
 import org.apache.hama.mapred.CollectBlocksMapReduceBase;
 import org.apache.hama.util.JobManager;
+import org.apache.hama.util.RandomVariable;
 
 public class TestFileMatrixBlockMult extends TestCase {
   final static Log LOG = LogFactory.getLog(TestFileMatrixBlockMult.class
       .getName());
   private static HamaConfiguration conf;
   private static Path[] path = new Path[2];
-  private static Matrix collectionTable;
+  private static String collectionTable;
 
   public static Test suite() {
     TestSetup setup = new TestSetup(
@@ -70,7 +76,11 @@ public class TestFileMatrixBlockMult extends TestCase {
         hCluster.setUp();
 
         conf = hCluster.getConf();
-        collectionTable = new DenseMatrix(conf);
+        HBaseAdmin admin = new HBaseAdmin(conf);
+        collectionTable = "collect_" + RandomVariable.randMatrixPath();
+        HTableDescriptor desc = new HTableDescriptor(collectionTable);
+        desc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
+        admin.createTable(desc);
       }
 
       protected void tearDown() {
@@ -115,14 +125,14 @@ public class TestFileMatrixBlockMult extends TestCase {
   }
 
   public void testFileMatrixMult() throws IOException {
-    collectBlocksFromFile(path[0], true, collectionTable.getPath(), conf);
-    collectBlocksFromFile(path[1], false, collectionTable.getPath(), conf);
+    collectBlocksFromFile(path[0], true, collectionTable, conf);
+    collectBlocksFromFile(path[1], false, collectionTable, conf);
 
-    Matrix result = new DenseMatrix(conf);
+    Matrix result = new DenseMatrix(conf, 4, 4);
     JobConf jobConf = new JobConf(conf);
     jobConf.setJobName("multiplication MR job : " + result.getPath());
 
-    BlockMultiplyMap.initJob(collectionTable.getPath(), BlockMultiplyMap.class,
+    BlockMultiplyMap.initJob(collectionTable, BlockMultiplyMap.class,
         BlockID.class, BlockWritable.class, jobConf);
     BlockMultiplyReduce.initJob(result.getPath(), BlockMultiplyReduce.class,
         jobConf);

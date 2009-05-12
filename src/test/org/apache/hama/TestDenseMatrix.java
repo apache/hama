@@ -43,6 +43,7 @@ public class TestDenseMatrix extends TestCase {
   private static Matrix m1;
   private static Matrix m2;
   private static Matrix m3;
+  private static Matrix m4;
   private final static String aliase1 = "matrix_aliase_A";
   private final static String aliase2 = "matrix_aliase_B";
   private static HamaConfiguration conf;
@@ -62,6 +63,7 @@ public class TestDenseMatrix extends TestCase {
         m1 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
         m2 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
         m3 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
+        m4 = DenseMatrix.random(hCluster.getConf(), SIZE-2, SIZE-2);
       }
 
       protected void tearDown() {
@@ -206,7 +208,7 @@ public class TestDenseMatrix extends TestCase {
   }
 
   public void testSetMatrix() throws IOException {
-    Matrix a = new DenseMatrix(conf);
+    Matrix a = new DenseMatrix(conf, m1.getRows(), m1.getColumns());
     a.set(m1);
 
     for (int i = 0; i < 5; i++) {
@@ -218,7 +220,7 @@ public class TestDenseMatrix extends TestCase {
   }
 
   public void testSetAlphaMatrix() throws IOException {
-    Matrix a = new DenseMatrix(conf);
+    Matrix a = new DenseMatrix(conf, m1.getRows(), m1.getColumns());
     a.set(0.5, m1);
     
     for (int i = 0; i < 5; i++) {
@@ -271,16 +273,14 @@ public class TestDenseMatrix extends TestCase {
       v.set(i, entries[i]);
     }
 
-    m1.setRow(SIZE + 1, v);
-    Iterator<Writable> it = m1.getRow(SIZE + 1).iterator();
+    m1.setRow(SIZE, v);
+    Iterator<Writable> it = m1.getRow(SIZE).iterator();
 
     int i = 0;
     while (it.hasNext()) {
       assertEquals(entries[i], ((DoubleEntry) it.next()).getValue());
       i++;
     }
-    
-    assertEquals(m1.getRows(), SIZE + 1);
   }
 
   public void testSetColumn() throws IOException {
@@ -291,21 +291,19 @@ public class TestDenseMatrix extends TestCase {
       v.set(i, entries[i]);
     }
 
-    m1.setColumn(SIZE + 1, v);
-    Iterator<Writable> it = m1.getColumn(SIZE + 1).iterator();
+    m1.setColumn(SIZE, v);
+    Iterator<Writable> it = m1.getColumn(SIZE).iterator();
 
     int i = 0;
     while (it.hasNext()) {
       assertEquals(entries[i], ((DoubleEntry) it.next()).getValue());
       i++;
     }
-    
-    assertEquals(m1.getColumns(), SIZE + 1);
   }
   
   public void testEnsureForAddition() {
     try {
-      m1.add(m2);
+      m1.add(m4);
       fail("Matrix-Addition should be failed while rows and columns aren't same.");
     } catch (IOException e) {
       LOG.info(e.toString());
@@ -314,7 +312,7 @@ public class TestDenseMatrix extends TestCase {
 
   public void testEnsureForMultiplication() {
     try {
-      m1.mult(m2);
+      m1.mult(m4);
       fail("Matrix-Mult should be failed while A.columns!=B.rows.");
     } catch (IOException e) {
       LOG.info(e.toString());

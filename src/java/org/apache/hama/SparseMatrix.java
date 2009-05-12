@@ -50,12 +50,12 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
       .getSimpleName()
       + "_TMP_dir");
   
-  public SparseMatrix(HamaConfiguration conf) throws IOException {
+  public SparseMatrix(HamaConfiguration conf, int m, int n) throws IOException {
     setConfiguration(conf);
 
     tryToCreateTable(TABLE_PREFIX);
-
     closed = false;
+    this.setDimension(m, n);
   }
 
   /**
@@ -91,7 +91,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
    */
   public static SparseMatrix random(HamaConfiguration conf, int m, int n)
       throws IOException {
-    SparseMatrix rand = new SparseMatrix(conf);
+    SparseMatrix rand = new SparseMatrix(conf, m, n);
     SparseVector vector = new SparseVector();
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
@@ -106,15 +106,13 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
       rand.setRow(i, vector);
     }
 
-    rand.setDimension(m, n);
     return rand;
   }
   
   public static SparseMatrix random_mapred(HamaConfiguration conf, int m, int n) throws IOException {
-    SparseMatrix rand = new SparseMatrix(conf);
+    SparseMatrix rand = new SparseMatrix(conf, m, n);
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
-    rand.setDimension(m, n);
 
     JobConf jobConf = new JobConf(conf);
     jobConf.setJobName("random matrix MR job : " + rand.getPath());
@@ -225,7 +223,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public SparseMatrix mult(Matrix B) throws IOException {
-    SparseMatrix result = new SparseMatrix(config);
+    SparseMatrix result = new SparseMatrix(config, this.getRows(), this.getColumns());
 
     for(int i = 0; i < this.getRows(); i++) {
       JobConf jobConf = new JobConf(config);
@@ -241,7 +239,6 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
       JobManager.execute(jobConf);
     }
 
-    result.setDimension(this.getRows(), this.getColumns());
     return result;
   }
 
@@ -278,7 +275,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
   @Override
   public void setRow(int row, Vector vector) throws IOException {
     if(this.getRows() < row)
-      increaseRows();
+      throw new ArrayIndexOutOfBoundsException(row);
     
     if(vector.size() > 0) {  // stores if size > 0
       VectorUpdate update = new VectorUpdate(row);

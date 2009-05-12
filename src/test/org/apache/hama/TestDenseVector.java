@@ -52,7 +52,7 @@ public class TestDenseVector extends TestCase {
         HCluster hCluster = new HCluster();
         hCluster.setUp();
 
-        m1 = new DenseMatrix(hCluster.getConf());
+        m1 = new DenseMatrix(hCluster.getConf(), 2, 4);
 
         for (int i = 0; i < 2; i++)
           for (int j = 0; j < 4; j++)

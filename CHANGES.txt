@@ -110,6 +110,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
 
+    HAMA-183: When we construct the matrix, 
+                dimensions should be defined. (edwardyoon)
     HAMA-172: Vector.add(Vector v) throw the Index out of bounds 
                 exception when they are different (edwardyoon)
     HAMA-169: Vector's first location bug fixed,

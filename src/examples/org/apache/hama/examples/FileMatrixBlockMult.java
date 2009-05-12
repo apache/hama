@@ -24,6 +24,10 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -33,10 +37,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hama.Constants;
 import org.apache.hama.DenseMatrix;
 import org.apache.hama.DenseVector;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.Matrix;
 import org.apache.hama.algebra.BlockMultiplyMap;
 import org.apache.hama.algebra.BlockMultiplyReduce;
 import org.apache.hama.io.BlockID;
@@ -44,6 +48,7 @@ import org.apache.hama.io.BlockWritable;
 import org.apache.hama.mapred.CollectBlocksMap;
 import org.apache.hama.mapred.CollectBlocksMapReduceBase;
 import org.apache.hama.util.JobManager;
+import org.apache.hama.util.RandomVariable;
 
 public class FileMatrixBlockMult extends AbstractExample {
   final static Log LOG = LogFactory.getLog(FileMatrixBlockMult.class.getName());
@@ -96,16 +101,20 @@ public class FileMatrixBlockMult extends AbstractExample {
    */
   private static DenseMatrix matMult(Path a, Path b) throws IOException {
     HamaConfiguration conf = new HamaConfiguration();
-    Matrix collectionTable = new DenseMatrix(conf);
+    HBaseAdmin admin = new HBaseAdmin(conf);
+    String collectionTable = "collect_" + RandomVariable.randMatrixPath();
+    HTableDescriptor desc = new HTableDescriptor(collectionTable);
+    desc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
+    admin.createTable(desc);
+    
+    collectBlocksFromFile(a, true, collectionTable, conf);
+    collectBlocksFromFile(b, false, collectionTable, conf);
 
-    collectBlocksFromFile(a, true, collectionTable.getPath(), conf);
-    collectBlocksFromFile(b, false, collectionTable.getPath(), conf);
-
-    DenseMatrix result = new DenseMatrix(conf);
+    DenseMatrix result = new DenseMatrix(conf, ROWS, COLUMNS);
     JobConf jobConf = new JobConf(conf);
     jobConf.setJobName("multiplication MR job : " + result.getPath());
 
-    BlockMultiplyMap.initJob(collectionTable.getPath(), BlockMultiplyMap.class,
+    BlockMultiplyMap.initJob(collectionTable, BlockMultiplyMap.class,
         BlockID.class, BlockWritable.class, jobConf);
     BlockMultiplyReduce.initJob(result.getPath(), BlockMultiplyReduce.class,
         jobConf);

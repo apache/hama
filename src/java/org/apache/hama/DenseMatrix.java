@@ -25,7 +25,9 @@ import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
@@ -68,19 +70,20 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       + "_TMP_dir");
 
   /**
-   * Construct a raw matrix. Just create a table in HBase, but didn't lay any
-   * schema ( such as dimensions: i, j ) on it.
+   * Construct a raw matrix. Just create a table in HBase.
    * 
    * @param conf configuration object
+   * @param m the number of rows.
+   * @param n the number of columns.
    * @throws IOException throw the exception to let the user know what happend,
    *                 if we didn't create the matrix successfully.
    */
-  public DenseMatrix(HamaConfiguration conf) throws IOException {
+  public DenseMatrix(HamaConfiguration conf, int m, int n) throws IOException {
     setConfiguration(conf);
 
     tryToCreateTable(TABLE_PREFIX);
-
     closed = false;
+    this.setDimension(m, n);
   }
 
   /**
@@ -194,7 +197,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public static DenseMatrix random(HamaConfiguration conf, int m, int n)
       throws IOException {
-    DenseMatrix rand = new DenseMatrix(conf);
+    DenseMatrix rand = new DenseMatrix(conf, m, n);
     DenseVector vector = new DenseVector();
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
@@ -207,7 +210,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       rand.setRow(i, vector);
     }
 
-    rand.setDimension(m, n);
     return rand;
   }
 
@@ -222,10 +224,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public static DenseMatrix random_mapred(HamaConfiguration conf, int m, int n)
       throws IOException {
-    DenseMatrix rand = new DenseMatrix(conf);
+    DenseMatrix rand = new DenseMatrix(conf, m, n);
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
-    rand.setDimension(m, n);
 
     JobConf jobConf = new JobConf(conf);
     jobConf.setJobName("random matrix MR job : " + rand.getPath());
@@ -285,7 +286,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public static DenseMatrix identity(HamaConfiguration conf, int m, int n)
       throws IOException {
-    DenseMatrix identity = new DenseMatrix(conf);
+    DenseMatrix identity = new DenseMatrix(conf, m, n);
     LOG.info("Create the " + m + " * " + n + " identity matrix : "
         + identity.getPath());
 
@@ -297,7 +298,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       identity.setRow(i, vector);
     }
 
-    identity.setDimension(m, n);
     return identity;
   }
 
@@ -356,6 +356,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void set(int i, int j, double value) throws IOException {
+    if(this.getRows() < i || this.getColumns() < j)
+      throw new ArrayIndexOutOfBoundsException(i +", "+j);
     VectorUpdate update = new VectorUpdate(i);
     update.put(j, value);
     table.commit(update.getBatchUpdate());
@@ -369,8 +371,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public void setRow(int row, Vector vector) throws IOException {
-    if (this.getRows() < row)
-      increaseRows();
+    if (this.getRows() < row || this.getColumns() < vector.size())
+      throw new ArrayIndexOutOfBoundsException(row);
 
     VectorUpdate update = new VectorUpdate(row);
     update.putAll(vector.getEntries());
@@ -385,8 +387,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public void setColumn(int column, Vector vector) throws IOException {
-    if (this.getColumns() < column)
-      increaseColumns();
+    if (this.getColumns() < column || this.getRows() < vector.size())
+      throw new ArrayIndexOutOfBoundsException(column);
 
     for (Map.Entry<Writable, Writable> e : vector.getEntries().entrySet()) {
       int key = ((IntWritable) e.getKey()).get();
@@ -408,7 +410,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix add(double alpha, Matrix B) throws IOException {
     ensureForAddition(B);
 
-    DenseMatrix result = new DenseMatrix(config);
+    DenseMatrix result = new DenseMatrix(config, this.getRows(), this
+        .getColumns());
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job" + result.getPath());
 
@@ -421,7 +424,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     RowCyclicAdditionReduce.initJob(result.getPath(),
         RowCyclicAdditionReduce.class, jobConf);
 
-    JobManager.execute(jobConf, result);
+    JobManager.execute(jobConf);
     return result;
   }
 
@@ -442,7 +445,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       ensureForAddition(m);
     }
 
-    DenseMatrix result = new DenseMatrix(config);
+    DenseMatrix result = new DenseMatrix(config, this.getRows(), this
+        .getColumns());
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("addition MR job" + result.getPath());
 
@@ -466,7 +470,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     RowCyclicAdditionReduce.initJob(result.getPath(),
         RowCyclicAdditionReduce.class, jobConf);
 
-    JobManager.execute(jobConf, result);
+    JobManager.execute(jobConf);
     return result;
   }
 
@@ -486,7 +490,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public DenseMatrix mult(Matrix B) throws IOException {
     ensureForMultiplication(B);
-    DenseMatrix result = new DenseMatrix(config);
+    DenseMatrix result = new DenseMatrix(config, this.getRows(), this
+        .getColumns());
 
     for (int i = 0; i < this.getRows(); i++) {
       JobConf jobConf = new JobConf(config);
@@ -504,7 +509,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       JobManager.execute(jobConf);
     }
 
-    result.setDimension(this.getRows(), this.getColumns());
     return result;
   }
 
@@ -519,13 +523,17 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix mult(Matrix B, int blocks) throws IOException {
     ensureForMultiplication(B);
 
-    DenseMatrix collectionTable = new DenseMatrix(config);
+    String collectionTable = "collect_" + RandomVariable.randMatrixPath();
+    HTableDescriptor desc = new HTableDescriptor(collectionTable);
+    desc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
+    this.admin.createTable(desc);
     LOG.info("Collect Blocks");
 
     collectBlocksMapRed(this.getPath(), collectionTable, blocks, true);
     collectBlocksMapRed(B.getPath(), collectionTable, blocks, false);
 
-    DenseMatrix result = new DenseMatrix(config);
+    DenseMatrix result = new DenseMatrix(config, this.getRows(), this
+        .getColumns());
 
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("multiplication MR job : " + result.getPath());
@@ -533,13 +541,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
-    BlockMultiplyMap.initJob(collectionTable.getPath(), BlockMultiplyMap.class,
+    BlockMultiplyMap.initJob(collectionTable, BlockMultiplyMap.class,
         BlockID.class, BlockWritable.class, jobConf);
     BlockMultiplyReduce.initJob(result.getPath(), BlockMultiplyReduce.class,
         jobConf);
 
-    JobManager.execute(jobConf, result);
-    // Should be collectionTable removed?
+    JobManager.execute(jobConf);
+    hamaAdmin.delete(collectionTable);
     return result;
   }
 
@@ -634,15 +642,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @param bool
    * @throws IOException
    */
-  public void collectBlocksMapRed(String path, Matrix collectionTable,
+  public void collectBlocksMapRed(String path, String collectionTable,
       int blockNum, boolean bool) throws IOException {
     double blocks = Math.pow(blockNum, 0.5);
     if (!String.valueOf(blocks).endsWith(".0"))
       throw new IOException("can't divide.");
 
     int block_size = (int) blocks;
-    collectionTable.setDimension(block_size, block_size);
-
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("Blocking MR job" + getPath());
 
@@ -654,8 +660,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     FileInputFormat.addInputPaths(jobConf, path);
 
-    CollectBlocksMapper.initJob(collectionTable.getPath(), bool, block_size,
-        this.getRows(), this.getColumns(), jobConf);
+    CollectBlocksMapper.initJob(collectionTable, bool, block_size, this
+        .getRows(), this.getColumns(), jobConf);
 
     JobManager.execute(jobConf);
   }

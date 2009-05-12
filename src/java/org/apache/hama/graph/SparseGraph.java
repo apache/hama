@@ -51,7 +51,7 @@ public class SparseGraph implements Graph {
    * @throws IOException
    */
   public SparseGraph(HamaConfiguration conf) throws IOException {
-    this.adjMatrix = new SparseMatrix(conf);
+    this.adjMatrix = new SparseMatrix(conf, Integer.MAX_VALUE, Integer.MAX_VALUE);
     this.name = adjMatrix.getPath();
     this.table = adjMatrix.getHTable();
   }
