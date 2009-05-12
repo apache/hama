@@ -43,19 +43,22 @@ import org.apache.hama.mapred.VectorInputFormat;
 
 /** A Catalog class collect all the mr classes to compute the matrix's norm */
 public class MatrixNormMapRed {
-  
-  /** 
-   * Initialize the job to compute the matrix's norm 
-   * @param inputMatrixPath the input matrix's path 
-   * @param outputPath the output file's name that records the norm of the matrix
+
+  /**
+   * Initialize the job to compute the matrix's norm
+   * 
+   * @param inputMatrixPath the input matrix's path
+   * @param outputPath the output file's name that records the norm of the
+   *                matrix
    * @param mapper Mapper
    * @param combiner Combiner
    * @param reducer Reducer
    * @param jobConf Configuration of the job
    */
   public static void initJob(String inputMatrixPath, String outputPath,
-      Class <? extends MatrixNormMapper> mapper, Class <? extends MatrixNormReducer> combiner,
-      Class <? extends MatrixNormReducer> reducer, JobConf jobConf) {
+      Class<? extends MatrixNormMapper> mapper,
+      Class<? extends MatrixNormReducer> combiner,
+      Class<? extends MatrixNormReducer> reducer, JobConf jobConf) {
     jobConf.setMapperClass(mapper);
     jobConf.setMapOutputKeyClass(IntWritable.class);
     jobConf.setMapOutputValueClass(DoubleWritable.class);
@@ -63,7 +66,7 @@ public class MatrixNormMapRed {
     jobConf.setReducerClass(reducer);
     jobConf.setOutputKeyClass(IntWritable.class);
     jobConf.setOutputValueClass(DoubleWritable.class);
-    
+
     // input
     jobConf.setInputFormat(VectorInputFormat.class);
     jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
@@ -72,27 +75,28 @@ public class MatrixNormMapRed {
     jobConf.setOutputFormat(SequenceFileOutputFormat.class);
     FileOutputFormat.setOutputPath(jobConf, new Path(outputPath));
   }
-  
+
   /** the interface of norm mapper */
-  public static interface MatrixNormMapper 
-  extends Mapper<IntWritable, MapWritable, IntWritable, DoubleWritable> {
+  public static interface MatrixNormMapper extends
+      Mapper<IntWritable, MapWritable, IntWritable, DoubleWritable> {
     IntWritable nKey = new IntWritable(-1);
     DoubleWritable nValue = new DoubleWritable(0);
   }
-  
+
   /** the interface of norm reducer/combiner */
-  public static interface MatrixNormReducer
-  extends Reducer<IntWritable, DoubleWritable, IntWritable, DoubleWritable> {
+  public static interface MatrixNormReducer extends
+      Reducer<IntWritable, DoubleWritable, IntWritable, DoubleWritable> {
     IntWritable nKey = new IntWritable(-1);
     DoubleWritable nValue = new DoubleWritable(0);
   }
-  
-  ///
-  /// Infinity Norm
-  ///
-  
+
+  // /
+  // / Infinity Norm
+  // /
+
   /** Infinity Norm */
-  public static class MatrixInfinityNormMapper extends MapReduceBase implements MatrixNormMapper {
+  public static class MatrixInfinityNormMapper extends MapReduceBase implements
+      MatrixNormMapper {
 
     @Override
     public void map(IntWritable key, MapWritable value,
@@ -100,20 +104,21 @@ public class MatrixNormMapRed {
         throws IOException {
 
       double rowSum = 0;
-      for(Map.Entry<Writable, Writable> e : value.entrySet()) {
+      for (Map.Entry<Writable, Writable> e : value.entrySet()) {
         rowSum += Math.abs(((DoubleEntry) e.getValue()).getValue());
       }
       nValue.set(rowSum);
-      
+
       output.collect(nKey, nValue);
     }
 
   }
-  
+
   /**
    * Matrix Infinity Norm Reducer
    */
-  public static class MatrixInfinityNormReducer extends MapReduceBase implements MatrixNormReducer {
+  public static class MatrixInfinityNormReducer extends MapReduceBase implements
+      MatrixNormReducer {
 
     private double max = 0;
 
@@ -126,37 +131,39 @@ public class MatrixNormMapRed {
         max = Math.max(values.next().get(), max);
       }
 
-      // Note: Tricky here. As we known, we collect each row's sum with key(-1). 
-      //       the reduce will just iterate through one key (-1)
-      //       so we collect the max sum-value here
+      // Note: Tricky here. As we known, we collect each row's sum with key(-1).
+      // the reduce will just iterate through one key (-1)
+      // so we collect the max sum-value here
       nValue.set(max);
       output.collect(nKey, nValue);
     }
-    
+
   }
-  
-  ///
-  /// One Norm
-  ///
-  
+
+  // /
+  // / One Norm
+  // /
+
   /** One Norm Mapper */
-  public static class MatrixOneNormMapper extends MapReduceBase implements MatrixNormMapper {
-    
+  public static class MatrixOneNormMapper extends MapReduceBase implements
+      MatrixNormMapper {
+
     @Override
     public void map(IntWritable key, MapWritable value,
         OutputCollector<IntWritable, DoubleWritable> output, Reporter reporter)
         throws IOException {
-      
-      for(Map.Entry<Writable, Writable> e : value.entrySet()) {
+
+      for (Map.Entry<Writable, Writable> e : value.entrySet()) {
         nValue.set(((DoubleEntry) e.getValue()).getValue());
-        output.collect((IntWritable)e.getKey(), nValue);
+        output.collect((IntWritable) e.getKey(), nValue);
       }
     }
   }
-  
-  /** One Norm Combiner **/
-  public static class MatrixOneNormCombiner extends MapReduceBase implements MatrixNormReducer {
-    
+
+  /** One Norm Combiner * */
+  public static class MatrixOneNormCombiner extends MapReduceBase implements
+      MatrixNormReducer {
+
     @Override
     public void reduce(IntWritable key, Iterator<DoubleWritable> values,
         OutputCollector<IntWritable, DoubleWritable> output, Reporter reporter)
@@ -170,19 +177,20 @@ public class MatrixNormMapRed {
       output.collect(key, nValue);
     }
   }
-  
-  /** One Norm Reducer **/
-  public static class MatrixOneNormReducer extends MapReduceBase implements MatrixNormReducer {
+
+  /** One Norm Reducer * */
+  public static class MatrixOneNormReducer extends MapReduceBase implements
+      MatrixNormReducer {
     private double max = 0;
     private Path outDir;
     private JobConf conf;
-    
+
     @Override
     public void configure(JobConf job) {
       outDir = FileOutputFormat.getOutputPath(job);
       conf = job;
     }
-    
+
     @Override
     public void reduce(IntWritable key, Iterator<DoubleWritable> values,
         OutputCollector<IntWritable, DoubleWritable> output, Reporter reporter)
@@ -191,46 +199,50 @@ public class MatrixNormMapRed {
       while (values.hasNext()) {
         colSum += values.next().get();
       }
-      
+
       max = Math.max(Math.abs(colSum), max);
     }
-    
+
     @Override
     public void close() throws IOException {
       // write output to a file
       Path outFile = new Path(outDir, "reduce-out");
       FileSystem fileSys = FileSystem.get(conf);
       SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
-          outFile, IntWritable.class, DoubleWritable.class, CompressionType.NONE);
+          outFile, IntWritable.class, DoubleWritable.class,
+          CompressionType.NONE);
       writer.append(new IntWritable(-1), new DoubleWritable(max));
       writer.close();
     }
   }
-  
-  ///
-  /// Frobenius Norm
-  ///
-  
+
+  // /
+  // / Frobenius Norm
+  // /
+
   /** Frobenius Norm Mapper */
-  public static class MatrixFrobeniusNormMapper extends MapReduceBase implements MatrixNormMapper {
+  public static class MatrixFrobeniusNormMapper extends MapReduceBase implements
+      MatrixNormMapper {
     @Override
     public void map(IntWritable key, MapWritable value,
         OutputCollector<IntWritable, DoubleWritable> output, Reporter reporter)
         throws IOException {
       double rowSqrtSum = 0;
-      for(Map.Entry<Writable, Writable> e : value.entrySet()) {
-        double cellValue = ((DoubleEntry)e.getValue()).getValue();
-        rowSqrtSum += ( cellValue * cellValue );
+      for (Map.Entry<Writable, Writable> e : value.entrySet()) {
+        double cellValue = ((DoubleEntry) e.getValue()).getValue();
+        rowSqrtSum += (cellValue * cellValue);
       }
-      
+
       nValue.set(rowSqrtSum);
       output.collect(nKey, nValue);
     }
   }
 
   /** Frobenius Norm Combiner */
-  public static class MatrixFrobeniusNormCombiner extends MapReduceBase implements MatrixNormReducer {
+  public static class MatrixFrobeniusNormCombiner extends MapReduceBase
+      implements MatrixNormReducer {
     private double sqrtSum = 0;
+
     @Override
     public void reduce(IntWritable key, Iterator<DoubleWritable> values,
         OutputCollector<IntWritable, DoubleWritable> output, Reporter reporter)
@@ -238,17 +250,19 @@ public class MatrixNormMapRed {
       while (values.hasNext()) {
         sqrtSum += values.next().get();
       }
-      // Note: Tricky here. As we known, we collect each row's sum with key(-1). 
-      //       the reduce will just iterate through one key (-1)
-      //       so we collect the max sum-value here      
+      // Note: Tricky here. As we known, we collect each row's sum with key(-1).
+      // the reduce will just iterate through one key (-1)
+      // so we collect the max sum-value here
       nValue.set(sqrtSum);
       output.collect(nKey, nValue);
     }
   }
-  
+
   /** Frobenius Norm Reducer */
-  public static class MatrixFrobeniusNormReducer extends MapReduceBase implements MatrixNormReducer {
+  public static class MatrixFrobeniusNormReducer extends MapReduceBase
+      implements MatrixNormReducer {
     private double sqrtSum = 0;
+
     @Override
     public void reduce(IntWritable key, Iterator<DoubleWritable> values,
         OutputCollector<IntWritable, DoubleWritable> output, Reporter reporter)
@@ -257,39 +271,42 @@ public class MatrixNormMapRed {
         sqrtSum += values.next().get();
       }
 
-      // Note: Tricky here. As we known, we collect each row's sum with key(-1). 
-      //       the reduce will just iterate through one key (-1)
-      //       so we collect the max sum-value here
+      // Note: Tricky here. As we known, we collect each row's sum with key(-1).
+      // the reduce will just iterate through one key (-1)
+      // so we collect the max sum-value here
       nValue.set(Math.sqrt(sqrtSum));
       output.collect(nKey, nValue);
     }
   }
-  
-  ///
-  /// MaxValue Norm
-  /// 
-  
-  /** MaxValue Norm Mapper **/
-  public static class MatrixMaxValueNormMapper extends MapReduceBase implements MatrixNormMapper {
+
+  // /
+  // / MaxValue Norm
+  // /
+
+  /** MaxValue Norm Mapper * */
+  public static class MatrixMaxValueNormMapper extends MapReduceBase implements
+      MatrixNormMapper {
     @Override
     public void map(IntWritable key, MapWritable value,
         OutputCollector<IntWritable, DoubleWritable> output, Reporter reporter)
         throws IOException {
       double max = 0;
-      for(Map.Entry<Writable, Writable> e : value.entrySet()) {
-        double cellValue = Math.abs(((DoubleEntry)e.getValue()).getValue());
+      for (Map.Entry<Writable, Writable> e : value.entrySet()) {
+        double cellValue = Math.abs(((DoubleEntry) e.getValue()).getValue());
         max = cellValue > max ? cellValue : max;
       }
-      
+
       nValue.set(max);
       output.collect(nKey, nValue);
     }
-    
+
   }
-  
+
   /** MaxValue Norm Reducer */
-  public static class MatrixMaxValueNormReducer extends MapReduceBase implements MatrixNormReducer {
+  public static class MatrixMaxValueNormReducer extends MapReduceBase implements
+      MatrixNormReducer {
     private double max = 0;
+
     @Override
     public void reduce(IntWritable key, Iterator<DoubleWritable> values,
         OutputCollector<IntWritable, DoubleWritable> output, Reporter reporter)
@@ -298,9 +315,9 @@ public class MatrixNormMapRed {
         max = Math.max(values.next().get(), max);
       }
 
-      // Note: Tricky here. As we known, we collect each row's sum with key(-1). 
-      //       the reduce will just iterate through one key (-1)
-      //       so we collect the max sum-value here
+      // Note: Tricky here. As we known, we collect each row's sum with key(-1).
+      // the reduce will just iterate through one key (-1)
+      // so we collect the max sum-value here
       nValue.set(max);
       output.collect(nKey, nValue);
     }

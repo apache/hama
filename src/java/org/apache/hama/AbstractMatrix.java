@@ -354,24 +354,6 @@ public abstract class AbstractMatrix implements Matrix {
     table.commit(update.getBatchUpdate());
   }
   
-  public void increaseRows() throws IOException {
-    int nValue = this.getRows() + 1;
-    try {
-      this.setDimension(nValue, this.getColumns());
-    } catch (NullPointerException ne) {
-      // If there is no metadata of dimension, nothing to do.
-    }
-  }
-  
-  public void increaseColumns() throws IOException {
-    int nValue = this.getColumns() + 1;
-    try {
-      this.setDimension(this.getRows(), nValue);
-    } catch (NullPointerException ne) {
-      // If there is no metadata of dimension, nothing to do.
-    }
-  }
-  
   /** {@inheritDoc} */
   public void add(int i, int j, double value) throws IOException {
     VectorUpdate update = new VectorUpdate(i);
@@ -532,9 +514,9 @@ public abstract class AbstractMatrix implements Matrix {
   public Matrix transpose() throws IOException {
     Matrix result;
     if(this.getType().equals("SparseMatrix")) {
-      result = new SparseMatrix(config);
+      result = new SparseMatrix(config, this.getRows(), this.getColumns());
     } else {
-      result = new DenseMatrix(config);
+      result = new DenseMatrix(config, this.getRows(), this.getColumns());
     }
     
     JobConf jobConf = new JobConf(config);
@@ -549,7 +531,6 @@ public abstract class AbstractMatrix implements Matrix {
         TransposeReduce.class, jobConf);
 
     JobManager.execute(jobConf);
-    result.setDimension(this.getRows(), this.getColumns());
     return result;
   }
   

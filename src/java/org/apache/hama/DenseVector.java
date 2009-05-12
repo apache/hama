@@ -68,7 +68,7 @@ public class DenseVector extends AbstractVector implements Vector {
 
     this.entries.put(new IntWritable(index), new DoubleEntry(value));
   }
-  
+
   /**
    * Sets the vector
    * 
