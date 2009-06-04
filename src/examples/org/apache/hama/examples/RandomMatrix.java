@@ -30,7 +30,9 @@ public class RandomMatrix extends AbstractExample {
   public static void main(String[] args) throws IOException {
     if (args.length < 3) {
       System.out
-          .println("rand [-m maps] [-r reduces] <rows> <columns> <sparse | dense> <matrix_name>");
+          .println("rand [-m maps] [-r reduces] <rows> <columns> <density> <matrix_name>");
+      System.out
+      .println("ex) rand -m 10 -r 10 2000 2000 30% matrixA");
       System.exit(-1);
     } else {
       parseArgs(args);
@@ -38,12 +40,13 @@ public class RandomMatrix extends AbstractExample {
 
     int row = Integer.parseInt(ARGS.get(0));
     int column = Integer.parseInt(ARGS.get(1));
-
+    int percent = Integer.parseInt(ARGS.get(2).substring(0, ARGS.get(2).length()-1));
+    
     Matrix a;
-    if(ARGS.get(2).equals("sparse"))
-      a = SparseMatrix.random_mapred(conf, row, column);
-    else
+    if(percent == 100)
       a = DenseMatrix.random_mapred(conf, row, column);
+    else
+      a = SparseMatrix.random_mapred(conf, row, column, percent);
     
     a.save(ARGS.get(3));
   }

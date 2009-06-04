@@ -19,12 +19,15 @@
  */
 package org.apache.hama.util;
 
+import org.apache.log4j.Logger;
+
 import junit.framework.TestCase;
 
 /**
  * Random variable generation test
  */
 public class TestRandomVariable extends TestCase {
+  static final Logger LOG = Logger.getLogger(TestRandomVariable.class);
   final static int COUNT = 50;
 
   /**
@@ -37,6 +40,13 @@ public class TestRandomVariable extends TestCase {
       double result = RandomVariable.rand();
       assertTrue(result >= 0.0d && result <= 1.0);
     }
+    
+    int nonZero = 0;
+    for (int i = 0; i < COUNT; i++) {
+      if(RandomVariable.rand(70) > 0)
+        nonZero++;
+    }
+    assertTrue((COUNT/2) < nonZero);
   }
 
   /**

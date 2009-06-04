@@ -20,7 +20,6 @@
 package org.apache.hama.mapred;
 
 import java.io.IOException;
-import java.util.Random;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -41,7 +40,7 @@ import org.apache.log4j.Logger;
 public class RandomMatrixMap extends MapReduceBase implements
     Mapper<IntWritable, IntWritable, IntWritable, MapWritable> {
   static final Logger LOG = Logger.getLogger(RandomMatrixMap.class);
-  protected int column;
+  protected int column, density;
   protected String type;
   protected Vector vector = new DenseVector();
 
@@ -53,9 +52,7 @@ public class RandomMatrixMap extends MapReduceBase implements
       ((SparseVector) vector).clear();
       for (int i = key.get(); i <= value.get(); i++) {
         for (int j = 0; j < column; j++) {
-          Random r = new Random(); 
-          if(r.nextInt(2) != 0)
-            ((SparseVector) vector).set(j, RandomVariable.rand());
+            ((SparseVector) vector).set(j, RandomVariable.rand(density));
         }
         output.collect(new IntWritable(i), vector.getEntries());
       }
@@ -71,7 +68,8 @@ public class RandomMatrixMap extends MapReduceBase implements
   }
 
   public void configure(JobConf job) {
-    column = Integer.parseInt(job.get("matrix.column"));
+    column = job.getInt("matrix.column", 0);
+    density = job.getInt("matrix.density", 100);
     type = job.get("matrix.type");
     if (type.equals("SparseMatrix"))
       vector = new SparseVector();

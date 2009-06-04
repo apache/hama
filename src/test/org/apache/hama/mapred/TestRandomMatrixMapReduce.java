@@ -42,7 +42,7 @@ public class TestRandomMatrixMapReduce extends HCluster {
     
     rand.close();
     
-    SparseMatrix rand2 = SparseMatrix.random_mapred(conf, 20, 20);
+    SparseMatrix rand2 = SparseMatrix.random_mapred(conf, 20, 20, 30);
     assertEquals(20, rand2.getRows());
     assertEquals(20, rand2.getColumns());
     boolean zeroAppear = false;
