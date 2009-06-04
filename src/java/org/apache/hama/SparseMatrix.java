@@ -109,7 +109,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     return rand;
   }
   
-  public static SparseMatrix random_mapred(HamaConfiguration conf, int m, int n) throws IOException {
+  public static SparseMatrix random_mapred(HamaConfiguration conf, int m, int n, int percent) throws IOException {
     SparseMatrix rand = new SparseMatrix(conf, m, n);
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
@@ -129,8 +129,9 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     RandomMatrixReduce.initJob(rand.getPath(), RandomMatrixReduce.class,
         jobConf);
     jobConf.setSpeculativeExecution(false);
-    jobConf.set("matrix.column", String.valueOf(n));
+    jobConf.setInt("matrix.column", n);
     jobConf.set("matrix.type", TABLE_PREFIX);
+    jobConf.setInt("matrix.density", percent);
 
     jobConf.setInputFormat(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(jobConf);

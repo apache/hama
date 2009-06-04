@@ -243,9 +243,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     RandomMatrixReduce.initJob(rand.getPath(), RandomMatrixReduce.class,
         jobConf);
     jobConf.setSpeculativeExecution(false);
-    jobConf.set("matrix.column", String.valueOf(n));
+    jobConf.setInt("matrix.column", n);
     jobConf.set("matrix.type", TABLE_PREFIX);
-
+    jobConf.setInt("matrix.density", 100);
+    
     jobConf.setInputFormat(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(jobConf);
     int interval = m / conf.getNumMapTasks();
