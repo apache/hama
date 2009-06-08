@@ -40,7 +40,9 @@ import org.apache.log4j.Logger;
 public class RandomMatrixMap extends MapReduceBase implements
     Mapper<IntWritable, IntWritable, IntWritable, MapWritable> {
   static final Logger LOG = Logger.getLogger(RandomMatrixMap.class);
-  protected int column, density;
+  protected int column;
+  protected double density;
+  protected int minNums;
   protected String type;
   protected Vector vector = new DenseVector();
 
@@ -49,16 +51,16 @@ public class RandomMatrixMap extends MapReduceBase implements
       OutputCollector<IntWritable, MapWritable> output, Reporter report)
       throws IOException {
     if (type.equals("SparseMatrix")) {
-      ((SparseVector) vector).clear();
       for (int i = key.get(); i <= value.get(); i++) {
-        for (int j = 0; j < column; j++) {
-            ((SparseVector) vector).set(j, RandomVariable.rand(density));
+        ((SparseVector) vector).clear();
+        for (int j = 0; j < minNums; j++) {
+          ((SparseVector) vector).set(RandomVariable.randInt(0, column - 1), RandomVariable.rand());
         }
         output.collect(new IntWritable(i), vector.getEntries());
       }
     } else {
-      ((DenseVector) vector).clear();
       for (int i = key.get(); i <= value.get(); i++) {
+        ((DenseVector) vector).clear();
         for (int j = 0; j < column; j++) {
           ((DenseVector) vector).set(j, RandomVariable.rand());
         }
@@ -69,7 +71,13 @@ public class RandomMatrixMap extends MapReduceBase implements
 
   public void configure(JobConf job) {
     column = job.getInt("matrix.column", 0);
-    density = job.getInt("matrix.density", 100);
+    density = Double.parseDouble(job.get("matrix.density"));
+    
+    double vv = (column/100.0) * density;
+    minNums = Math.round((float) vv);
+    if(minNums == 0)
+      minNums = 1;
+    
     type = job.get("matrix.type");
     if (type.equals("SparseMatrix"))
       vector = new SparseVector();

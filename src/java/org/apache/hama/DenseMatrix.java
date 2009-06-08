@@ -245,7 +245,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setSpeculativeExecution(false);
     jobConf.setInt("matrix.column", n);
     jobConf.set("matrix.type", TABLE_PREFIX);
-    jobConf.setInt("matrix.density", 100);
+    jobConf.set("matrix.density", "100");
     
     jobConf.setInputFormat(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(jobConf);

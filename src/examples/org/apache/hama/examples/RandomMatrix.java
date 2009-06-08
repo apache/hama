@@ -32,7 +32,7 @@ public class RandomMatrix extends AbstractExample {
       System.out
           .println("rand [-m maps] [-r reduces] <rows> <columns> <density> <matrix_name>");
       System.out
-      .println("ex) rand -m 10 -r 10 2000 2000 30% matrixA");
+      .println("ex) rand -m 10 -r 10 2000 2000 30.5% matrixA");
       System.exit(-1);
     } else {
       parseArgs(args);
@@ -40,7 +40,7 @@ public class RandomMatrix extends AbstractExample {
 
     int row = Integer.parseInt(ARGS.get(0));
     int column = Integer.parseInt(ARGS.get(1));
-    int percent = Integer.parseInt(ARGS.get(2).substring(0, ARGS.get(2).length()-1));
+    double percent = Double.parseDouble(ARGS.get(2).substring(0, ARGS.get(2).length()-1));
     
     Matrix a;
     if(percent == 100)
