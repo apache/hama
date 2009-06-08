@@ -38,23 +38,6 @@ public class RandomVariable {
   }
 
   /**
-   * Generate a random number
-   * 
-   * @param density percentage of the non-zero
-   * @return a double 0 or between 0 and 1
-   */
-  public static double rand(int density) {
-    int[] prob = new int[100];
-    double x = Math.random();
-    
-    for(int i = 0; i < density; i++) {
-      prob[i] = 1;
-    }
-
-    return (prob[randInt(0, 99)] == 0) ? 0 : x;
-  }
-
-  /**
    * Generate a random integer.
    * 
    * @param i0 min of the random variable.
