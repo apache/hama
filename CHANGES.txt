@@ -38,6 +38,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-187: Add matrix subtraction test case (edwardyoon)
     HAMA-186: Add density option for random matrix (edwardyoon)
     HAMA-171: Implementation of Matrix.Norm (samuel)
     HAMA-178: Add example of norm (edwardyoon)
