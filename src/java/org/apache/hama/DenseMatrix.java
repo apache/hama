@@ -33,26 +33,34 @@ import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hama.algebra.BlockMultiplyMap;
 import org.apache.hama.algebra.BlockMultiplyReduce;
 import org.apache.hama.algebra.DenseMatrixVectorMultMap;
 import org.apache.hama.algebra.DenseMatrixVectorMultReduce;
+import org.apache.hama.algebra.JacobiEigenValue;
 import org.apache.hama.algebra.RowCyclicAdditionMap;
 import org.apache.hama.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
+import org.apache.hama.io.Pair;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.CollectBlocksMapper;
+import org.apache.hama.mapred.DummyMapper;
 import org.apache.hama.mapred.RandomMatrixMap;
 import org.apache.hama.mapred.RandomMatrixReduce;
 import org.apache.hama.mapred.VectorInputFormat;
@@ -665,5 +673,244 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         .getRows(), this.getColumns(), jobConf);
 
     JobManager.execute(jobConf);
+  }
+  
+  /**
+   * Compute all the eigen values.
+   * Note: all the eigen values are collected in the "eival:value" column,
+   * and the eigen vector of a specified eigen value is collected in the
+   * "eivec:" column family in the same row.
+   * 
+   * TODO: we may need to expose the interface to access the eigen values
+   * and vectors
+   * 
+   * @param loops limit the loops of the computation
+   * @throws IOException
+   */
+  public void jacobiEigenValue(int loops) throws IOException {
+    JobConf jobConf = new JobConf(config);
+    
+    /******************************************************************
+     * Initialization
+     * 
+     * A M/R job is used for initialization(such as, preparing a matrx
+     * copy of the original in "eicol:" family.)
+     ******************************************************************/
+    // initialization
+    jobConf.setJobName("JacobiEigen initialization MR job" + getPath());
+    
+    jobConf.setMapperClass(JacobiEigenValue.InitMapper.class);
+    jobConf.setInputFormat(VectorInputFormat.class);
+    jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
+    
+    FileInputFormat.addInputPaths(jobConf, getPath());
+    jobConf.set(JacobiEigenValue.MATRIX, getPath());
+    jobConf.setOutputFormat(NullOutputFormat.class);
+    jobConf.setMapOutputKeyClass(IntWritable.class);
+    jobConf.setMapOutputValueClass(MapWritable.class);
+    
+    JobManager.execute(jobConf);
+    
+    final FileSystem fs = FileSystem.get(jobConf);
+    Pair pivotPair = new Pair();
+    DoubleWritable pivotWritable = new DoubleWritable();
+    VectorUpdate vu ;
+    
+    // loop
+    int size = this.getRows();
+    int state = size;
+    int pivot_row, pivot_col;
+    double pivot;
+    double s, c, t, y;
+    
+    while(state != 0 && loops > 0) {
+      /******************************************************************
+       * Find the pivot and its index(pivot_row, pivot_col) 
+       * 
+       * A M/R job is used to scan all the "eival:ind" to get the max 
+       * absolute value of each row, and do a MAX aggregation of these
+       * max values to get the max value in the matrix.
+       ******************************************************************/
+      jobConf = new JobConf(config);
+      jobConf.setJobName("Find Pivot MR job" + getPath());
+      
+      jobConf.setNumReduceTasks(1);
+      
+      Path outDir = new Path(new Path(getType() + "_TMP_FindPivot_dir_" + System.currentTimeMillis()), "out");
+      if(fs.exists(outDir)) 
+        fs.delete(outDir, true);
+      
+      jobConf.setMapperClass(JacobiEigenValue.PivotMapper.class);
+      jobConf.setInputFormat(JacobiEigenValue.PivotInputFormat.class);
+      jobConf.set(JacobiEigenValue.PivotInputFormat.COLUMN_LIST, JacobiEigenValue.EIIND);
+      FileInputFormat.addInputPaths(jobConf, getPath());
+      jobConf.setMapOutputKeyClass(Pair.class);
+      jobConf.setMapOutputValueClass(DoubleWritable.class);
+      
+      jobConf.setOutputKeyClass(Pair.class);
+      jobConf.setOutputValueClass(DoubleWritable.class);
+      jobConf.setOutputFormat(SequenceFileOutputFormat.class);
+      FileOutputFormat.setOutputPath(jobConf, outDir);
+      
+      // update the out put dir of the job
+      outDir = FileOutputFormat.getOutputPath(jobConf);
+      
+      JobManager.execute(jobConf);
+
+      //read outputs
+      Path inFile = new Path(outDir, "part-00000");
+      SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+      try {
+        reader.next(pivotPair, pivotWritable);
+        pivot_row = pivotPair.getRow();
+        pivot_col = pivotPair.getColumn();
+        pivot = pivotWritable.get();
+      } finally {
+        reader.close();
+      }
+      fs.delete(outDir.getParent(), true);
+      
+      /******************************************************************
+       * Calculation
+       * 
+       * Compute the rotation parameters of next rotation.
+       ******************************************************************/
+      double e1 = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(pivot_row), 
+          Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
+      double e2 = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(pivot_col), 
+          Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
+      
+      y = (e2 - e1) / 2;
+      t = Math.abs(y) + Math.sqrt(pivot * pivot + y * y);
+      s = Math.sqrt(pivot * pivot + t * t);
+      c = t / s;
+      s = pivot / s;
+      t = (pivot * pivot) / t;
+      if(y < 0) {
+        s = -s;
+        t = -t;
+      }
+      
+      /******************************************************************
+       * Upate the pivot and the eigen values indexed by the pivot
+       ******************************************************************/
+      vu = new VectorUpdate(pivot_row);
+      vu.put(JacobiEigenValue.EICOL, pivot_col, 0);
+      table.commit(vu.getBatchUpdate());
+      
+      state = update(pivot_row, -t, state);
+      state = update(pivot_col, t, state);
+      
+      /******************************************************************
+       * Rotation the matrix
+       ******************************************************************/
+      // rotation
+      jobConf = new JobConf(config);
+      jobConf.setJobName("Rotation Matrix MR job" + getPath());
+      
+      jobConf.setInt(JacobiEigenValue.PIVOTROW, pivot_row);
+      jobConf.setInt(JacobiEigenValue.PIVOTCOL, pivot_col);
+      jobConf.set(JacobiEigenValue.PIVOTSIN, String.valueOf(s));
+      jobConf.set(JacobiEigenValue.PIVOTCOS, String.valueOf(c));
+      
+      jobConf.setMapperClass(DummyMapper.class);
+      jobConf.setInputFormat(JacobiEigenValue.RotationInputFormat.class);     
+      jobConf.set(JacobiEigenValue.RotationInputFormat.COLUMN_LIST, JacobiEigenValue.EIIND);
+      FileInputFormat.addInputPaths(jobConf, getPath());
+      jobConf.setMapOutputKeyClass(NullWritable.class);
+      jobConf.setMapOutputValueClass(NullWritable.class);
+      FileInputFormat.addInputPaths(jobConf, getPath());
+      jobConf.setOutputFormat(NullOutputFormat.class);
+      
+      JobManager.execute(jobConf);
+      
+      // rotate eigenvectors
+      LOG.info("rotating eigenvector");
+      for(int i = 0; i < size; i++) {
+        e1 = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(pivot_row), 
+            Bytes.toBytes(JacobiEigenValue.EIVEC + i)).getValue());
+        e2 = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(pivot_col), 
+            Bytes.toBytes(JacobiEigenValue.EIVEC + i)).getValue());
+        
+        vu = new VectorUpdate(pivot_row);
+        vu.put(JacobiEigenValue.EIVEC, i, c * e1 - s * e2);
+        table.commit(vu.getBatchUpdate());
+        
+        vu = new VectorUpdate(pivot_col);
+        vu.put(JacobiEigenValue.EIVEC, i, s * e1 + c * e2);
+        table.commit(vu.getBatchUpdate());
+      }
+      
+      LOG.info("update index...");
+      // update index array
+      maxind(pivot_row, size);
+      maxind(pivot_col, size);
+      
+      loops --;
+    }
+  }
+  
+  void maxind(int row, int size) throws IOException {
+    int m = row + 1;
+    if(row + 2 < size) {
+      double max = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(row), 
+          Bytes.toBytes(JacobiEigenValue.EICOL + m)).getValue());
+      double val;
+      for(int i=row + 2; i<size; i++) {
+        val = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(row), 
+            Bytes.toBytes(JacobiEigenValue.EICOL + i)).getValue());
+        if(Math.abs(val) > Math.abs(max)) {
+          m = i;
+          max = val;
+        }
+      }
+    }
+    
+    VectorUpdate vu = new VectorUpdate(row);
+    vu.put(JacobiEigenValue.EIIND, m);
+    table.commit(vu.getBatchUpdate());
+  }
+  
+  int update(int row, double value, int state) throws IOException {
+    double e = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(row), 
+        Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
+    int changed = BytesUtil.bytesToInt(table.get(BytesUtil.getRowIndex(row), 
+        Bytes.toBytes(JacobiEigenValue.EICHANGED)).getValue());
+    double y = e;
+    e += value;
+    
+    VectorUpdate vu = new VectorUpdate(row);
+    vu.put(JacobiEigenValue.EIVAL, e);
+    if(changed == 1 && (Math.abs(y - e) < .0000001)) { //y == e) {
+      changed = 0;
+      vu.put(JacobiEigenValue.EICHANGED, changed);
+      state --;
+    } else if(changed == 0 && (Math.abs(y - e) > .0000001)) {
+      changed = 1;
+      vu.put(JacobiEigenValue.EICHANGED, changed);
+      state ++;
+    } 
+    table.commit(vu.getBatchUpdate());
+    return state;
+  }
+  
+  // for test
+  boolean verifyEigenValue(double[] e, double[][] E) throws IOException {
+    boolean success = true;
+    double e1, ev;
+    for(int i=0; i<e.length; i++) {
+      e1 = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(i), 
+          Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
+      success &= ((Math.abs(e1 - e[i]) < .0000001));
+      if(!success) return success;
+      
+      for(int j=0; j<E[i].length; j++) {
+        ev = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(i), 
+            Bytes.toBytes(JacobiEigenValue.EIVEC + j)).getValue());
+        success &= ((Math.abs(ev - E[i][j]) < .0000001));
+        if(!success) return success;
+      }
+    }
+    return success;
   }
 }

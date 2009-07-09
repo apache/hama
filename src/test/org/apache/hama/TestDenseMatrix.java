@@ -43,7 +43,7 @@ public class TestDenseMatrix extends TestCase {
   private static Matrix m1;
   private static Matrix m2;
   private static Matrix m3;
-  private static Matrix m4;
+  private static Matrix m4, m5;
   private final static String aliase1 = "matrix_aliase_A";
   private final static String aliase2 = "matrix_aliase_B";
   private static HamaConfiguration conf;
@@ -64,6 +64,7 @@ public class TestDenseMatrix extends TestCase {
         m2 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
         m3 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
         m4 = DenseMatrix.random(hCluster.getConf(), SIZE-2, SIZE-2);
+        m5 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
       }
 
       protected void tearDown() {
@@ -309,7 +310,106 @@ public class TestDenseMatrix extends TestCase {
       i++;
     }
   }
-  
+
+  public void testJacobiEigenValue() throws IOException {
+    // copy Matrix m5 to the array
+    double[][] S = new double[SIZE][SIZE];
+    
+    for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
+        S[i][j] = m5.get(i, j);
+      }
+    }
+    
+    // do m/r jacobi eigen value computation
+    DenseMatrix dm = (DenseMatrix)m5;
+    dm.jacobiEigenValue(3);
+    
+    // do jacobi egien value over S array
+    int i, j, k, l, m, state;
+    double s, c, t, p, y;
+    double e1, e2;
+    // index array
+    int[] ind = new int[SIZE];
+    boolean[] changed = new boolean[SIZE];
+    
+    // output
+    double[] e = new double[SIZE];
+    double[][] E = new double[SIZE][SIZE];
+    
+    // init e & E; ind & changed
+    for(i=0; i<SIZE; i++) {
+      for(j=0; j<SIZE; j++) {
+        E[i][j] = 0;
+      }
+      E[i][i] = 1;
+    }
+    
+    state = SIZE;
+    
+    for(i=0; i<SIZE; i++) {
+      ind[i] = maxind(S, i, SIZE); 
+      e[i] = S[i][i];
+      changed[i] = true;
+    }
+    
+    int loops = 3;
+    // next rotation
+    while(state != 0 && loops > 0) {
+      // find index(k, l) for pivot p
+      m = 0;
+      for(k = 1; k <= SIZE-2; k++) {
+        if(Math.abs(S[m][ind[m]]) < Math.abs(S[k][ind[k]])) {
+          m = k;
+        }
+      }
+      
+      k = m; l = ind[m]; p = S[k][l];
+      
+      // calculate c = cos, s = sin
+      y = (e[l] - e[k]) / 2;
+      t = Math.abs(y) + Math.sqrt(p * p + y * y);
+      s = Math.sqrt(p * p + t * t);
+      c = t / s;
+      s = p / s;
+      t = (p * p) / t;
+      if(y < 0) {
+        s = -s;
+        t = -t;
+      }
+      
+      S[k][l] = 0.0;
+      state = update(e, changed, k, -t, state);
+      state = update(e, changed, l, t, state);
+      
+      for(i = 0; i <= k-1; i++) 
+        rotate(S, i, k, i, l, c, s);
+      
+      for(i = l+1; i < SIZE; i++)
+        rotate(S, k, i, l, i, c, s);
+      
+      for(i = k+1; i <= l-1; i++)
+        rotate(S, k, i, i, l, c, s);
+      
+      // rotate eigenvectors
+      for(i = 0; i < SIZE; i++) {
+        e1 = E[k][i];
+        e2 = E[l][i];
+        
+        E[k][i] = c * e1 - s * e2;
+        E[l][i] = s * e1 + c * e2;
+      }
+      
+      ind[k] = maxind(S, k, SIZE);
+      ind[l] = maxind(S, l, SIZE);
+      
+      loops --;
+    }
+    
+    // verify the results
+    assertTrue(dm.verifyEigenValue(e, E));
+  }
+
   public void testEnsureForAddition() {
     try {
       m1.add(m4);
@@ -432,10 +532,41 @@ public class TestDenseMatrix extends TestCase {
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
-        double gap = (c[i][j] - result.get(i, j));
-        assertTrue(gap < 0.000001 && gap > -0.000001);
+        assertTrue((Math.abs(c[i][j] - result.get(i, j)) < .0000001));
       }
     }
   }
+  
+ 
+  //index of largest off-diagonal element in row k
+  int maxind(double[][] S, int row, int size) {
+    int m = row + 1;
+    for(int i=row + 2; i<size; i++) {
+      if(Math.abs(S[row][i]) > Math.abs(S[row][m]))
+        m = i;
+    }
+    return m;
+  }
+  
+  int update(double[] e, boolean[] changed, int row, double value, int state) {
+    double y = e[row];
+    e[row] += value;
+    
+    if(changed[row] && y == e[row]) {
+      changed[row] = false;
+      return state - 1;
+    } else if(!changed[row] && y != e[row]) {
+      changed[row] = true;
+      return state + 1;
+    } else
+      return state;
+  }
+  
+  void rotate(double[][] S, int k, int l, int i, int j, double c, double s) {
+    double s1 = S[k][l], s2 = S[i][j];
+    S[k][l] = c * s1 - s * s2;
+    S[i][j] = s * s1 + c * s2;
+  }
+
 
 }
