@@ -51,6 +51,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hama.algebra.JacobiEigenValue;
 import org.apache.hama.algebra.MatrixNormMapRed;
 import org.apache.hama.algebra.TransposeMap;
 import org.apache.hama.algebra.TransposeReduce;
@@ -145,6 +146,16 @@ public abstract class AbstractMatrix implements Matrix {
       // It's a temporary data.
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
           .toBytes(Constants.BLOCK), 1, CompressionType.NONE, false, false,
+          Integer.MAX_VALUE, HConstants.FOREVER, false));
+      // the following families are used in JacobiEigenValue computation
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
+          .toBytes(JacobiEigenValue.EI), 1, CompressionType.NONE, false, false,
+          Integer.MAX_VALUE, HConstants.FOREVER, false));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
+          .toBytes(JacobiEigenValue.EICOL), 10, CompressionType.NONE, false, false,
+          Integer.MAX_VALUE, HConstants.FOREVER, false));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
+          .toBytes(JacobiEigenValue.EIVEC), 10, CompressionType.NONE, false, false,
           Integer.MAX_VALUE, HConstants.FOREVER, false));
 
       LOG.info("Initializing the matrix storage.");

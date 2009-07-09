@@ -50,6 +50,20 @@ public class VectorUpdate {
     this.batchUpdate.put(BytesUtil.getColumnIndex(j), BytesUtil
         .doubleToBytes(value));
   }
+  
+  /**
+   * Put the value in "cfName+j"
+   * @param cfName
+   * @param j
+   * @param value
+   */
+  public void put(String cfName, int j, double value) {
+    this.batchUpdate.put(Bytes.toBytes(cfName + j), Bytes.toBytes(value));
+  }
+  
+  public void put(String name, double value) {
+    this.batchUpdate.put(Bytes.toBytes(name), Bytes.toBytes(value));
+  }
 
   public void put(int j, String name) {
     this.batchUpdate.put(Bytes.toBytes((Constants.ATTRIBUTE + j)), Bytes
