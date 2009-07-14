@@ -537,7 +537,6 @@ public class TestDenseMatrix extends TestCase {
     }
   }
   
- 
   //index of largest off-diagonal element in row k
   int maxind(double[][] S, int row, int size) {
     int m = row + 1;
@@ -567,6 +566,4 @@ public class TestDenseMatrix extends TestCase {
     S[k][l] = c * s1 - s * s2;
     S[i][j] = s * s1 + c * s2;
   }
-
-
 }
