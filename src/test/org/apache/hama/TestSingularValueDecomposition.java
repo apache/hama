@@ -77,7 +77,7 @@ public class TestSingularValueDecomposition extends TestCase {
       assertTrue(Math.abs(Math.pow(eigenvalue, 0.5) - singularvalues[x]) < .0000001);
     }
     
-    // Therefore, U= AVS'¹=[-0.8944 -0.4472  ; 0.4472 -0.8944]
+    // Therefore, U= AVS'1=[-0.8944 -0.4472; 0.4472 -0.8944]
     // A = USV'=[4 0; 3 -5]
   }
 }
