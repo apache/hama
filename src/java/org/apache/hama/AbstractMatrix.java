@@ -77,7 +77,7 @@ import org.apache.log4j.Logger;
 public abstract class AbstractMatrix implements Matrix {
   static int tryPathLength = Constants.DEFAULT_PATH_LENGTH;
   static final Logger LOG = Logger.getLogger(AbstractMatrix.class);
-  
+
   protected HamaConfiguration config;
   protected HBaseAdmin admin;
   // a matrix just need a table path to point to the table which stores matrix.
@@ -112,7 +112,8 @@ public abstract class AbstractMatrix implements Matrix {
   protected void tryToCreateTable(String table_prefix) throws IOException {
     int tryTimes = Constants.DEFAULT_TRY_TIMES;
     do {
-      matrixPath = table_prefix + "_" + RandomVariable.randMatrixPath(tryPathLength);
+      matrixPath = table_prefix + "_"
+          + RandomVariable.randMatrixPath(tryPathLength);
 
       if (!admin.tableExists(matrixPath)) { // no table 'matrixPath' in hbase.
         tableDesc = new HTableDescriptor(matrixPath);
@@ -131,7 +132,7 @@ public abstract class AbstractMatrix implements Matrix {
     // throw out an IOException to let the user know what happened.
     throw new IOException("Try too many times to create a table in hbase.");
   }
-  
+
   /**
    * Create matrix space
    */
@@ -152,11 +153,11 @@ public abstract class AbstractMatrix implements Matrix {
           .toBytes(JacobiEigenValue.EI), 1, CompressionType.NONE, false, false,
           Integer.MAX_VALUE, HConstants.FOREVER, false));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(JacobiEigenValue.EICOL), 10, CompressionType.NONE, false, false,
-          Integer.MAX_VALUE, HConstants.FOREVER, false));
+          .toBytes(JacobiEigenValue.EICOL), 10, CompressionType.NONE, false,
+          false, Integer.MAX_VALUE, HConstants.FOREVER, false));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(JacobiEigenValue.EIVEC), 10, CompressionType.NONE, false, false,
-          Integer.MAX_VALUE, HConstants.FOREVER, false));
+          .toBytes(JacobiEigenValue.EIVEC), 10, CompressionType.NONE, false,
+          false, Integer.MAX_VALUE, HConstants.FOREVER, false));
 
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
@@ -188,20 +189,22 @@ public abstract class AbstractMatrix implements Matrix {
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(1);
-    
+
     final FileSystem fs = FileSystem.get(jobConf);
-    Path outDir = new Path(new Path(getType() + "_TMP_norm1_dir_" + System.currentTimeMillis()), "out");
-    if(fs.exists(outDir)) 
+    Path outDir = new Path(new Path(getType() + "_TMP_norm1_dir_"
+        + System.currentTimeMillis()), "out");
+    if (fs.exists(outDir))
       fs.delete(outDir, true);
-    
-    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(), 
-        MatrixOneNormMapper.class, MatrixOneNormCombiner.class, MatrixOneNormReducer.class, jobConf);
-    
+
+    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(),
+        MatrixOneNormMapper.class, MatrixOneNormCombiner.class,
+        MatrixOneNormReducer.class, jobConf);
+
     // update the out put dir of the job
     outDir = FileOutputFormat.getOutputPath(jobConf);
     JobManager.execute(jobConf);
 
-    //read outputs
+    // read outputs
     Path inFile = new Path(outDir, "reduce-out");
     IntWritable numInside = new IntWritable();
     DoubleWritable max = new DoubleWritable();
@@ -215,27 +218,29 @@ public abstract class AbstractMatrix implements Matrix {
     fs.delete(outDir.getParent(), true);
     return max.get();
   }
-  
+
   protected double getMaxvalue() throws IOException {
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("MaxValue Norm MR job : " + this.getPath());
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(1);
-    
+
     final FileSystem fs = FileSystem.get(jobConf);
-    Path outDir = new Path(new Path(getType() + "_TMP_normMaxValue_dir_" + System.currentTimeMillis()), "out");
-    if(fs.exists(outDir)) 
+    Path outDir = new Path(new Path(getType() + "_TMP_normMaxValue_dir_"
+        + System.currentTimeMillis()), "out");
+    if (fs.exists(outDir))
       fs.delete(outDir, true);
-    
-    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(), 
-        MatrixMaxValueNormMapper.class, MatrixMaxValueNormReducer.class, MatrixMaxValueNormReducer.class, jobConf);
-    
+
+    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(),
+        MatrixMaxValueNormMapper.class, MatrixMaxValueNormReducer.class,
+        MatrixMaxValueNormReducer.class, jobConf);
+
     // update the out put dir of the job
     outDir = FileOutputFormat.getOutputPath(jobConf);
     JobManager.execute(jobConf);
 
-    //read outputs
+    // read outputs
     Path inFile = new Path(outDir, "part-00000");
     IntWritable numInside = new IntWritable();
     DoubleWritable max = new DoubleWritable();
@@ -256,21 +261,23 @@ public abstract class AbstractMatrix implements Matrix {
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(1);
-    
+
     final FileSystem fs = FileSystem.get(jobConf);
-    Path outDir = new Path(new Path(getType() + "_TMP_normInifity_dir_" + System.currentTimeMillis()), "out");
-    if(fs.exists(outDir)) 
+    Path outDir = new Path(new Path(getType() + "_TMP_normInifity_dir_"
+        + System.currentTimeMillis()), "out");
+    if (fs.exists(outDir))
       fs.delete(outDir, true);
-    
-    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(), 
-        MatrixInfinityNormMapper.class, MatrixInfinityNormReducer.class, MatrixInfinityNormReducer.class, jobConf);
-    
+
+    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(),
+        MatrixInfinityNormMapper.class, MatrixInfinityNormReducer.class,
+        MatrixInfinityNormReducer.class, jobConf);
+
     // update the out put dir of the job
     outDir = FileOutputFormat.getOutputPath(jobConf);
-    
+
     JobManager.execute(jobConf);
 
-    //read outputs
+    // read outputs
     Path inFile = new Path(outDir, "part-00000");
     IntWritable numInside = new IntWritable();
     DoubleWritable max = new DoubleWritable();
@@ -291,21 +298,23 @@ public abstract class AbstractMatrix implements Matrix {
 
     jobConf.setNumMapTasks(config.getNumMapTasks());
     jobConf.setNumReduceTasks(1);
-    
+
     final FileSystem fs = FileSystem.get(jobConf);
-    Path outDir = new Path(new Path(getType() + "_TMP_normFrobenius_dir_" + System.currentTimeMillis()), "out");
-    if(fs.exists(outDir)) 
+    Path outDir = new Path(new Path(getType() + "_TMP_normFrobenius_dir_"
+        + System.currentTimeMillis()), "out");
+    if (fs.exists(outDir))
       fs.delete(outDir, true);
-    
-    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(), 
-        MatrixFrobeniusNormMapper.class, MatrixFrobeniusNormCombiner.class, MatrixFrobeniusNormReducer.class, jobConf);
-    
+
+    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(),
+        MatrixFrobeniusNormMapper.class, MatrixFrobeniusNormCombiner.class,
+        MatrixFrobeniusNormReducer.class, jobConf);
+
     // update the out put dir of the job
     outDir = FileOutputFormat.getOutputPath(jobConf);
-    
+
     JobManager.execute(jobConf);
 
-    //read outputs
+    // read outputs
     Path inFile = new Path(outDir, "part-00000");
     IntWritable numInside = new IntWritable();
     DoubleWritable sqrt = new DoubleWritable();
@@ -319,7 +328,7 @@ public abstract class AbstractMatrix implements Matrix {
     fs.delete(outDir.getParent(), true);
     return sqrt.get();
   }
-  
+
   /** {@inheritDoc} */
   public int getRows() throws IOException {
     Cell rows = null;
@@ -355,7 +364,7 @@ public abstract class AbstractMatrix implements Matrix {
     update.put(Constants.ATTRIBUTE + "string", name);
     table.commit(update.getBatchUpdate());
   }
-  
+
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) throws IOException {
     VectorUpdate update = new VectorUpdate(Constants.METADATA);
@@ -364,7 +373,7 @@ public abstract class AbstractMatrix implements Matrix {
 
     table.commit(update.getBatchUpdate());
   }
-  
+
   /** {@inheritDoc} */
   public void add(int i, int j, double value) throws IOException {
     VectorUpdate update = new VectorUpdate(i);
@@ -372,7 +381,7 @@ public abstract class AbstractMatrix implements Matrix {
     table.commit(update.getBatchUpdate());
 
   }
-  
+
   /**
    * Just full scan a table.
    */
@@ -392,9 +401,10 @@ public abstract class AbstractMatrix implements Matrix {
           update.put(e.getKey(), e.getValue().getValue());
         } else {
           String column = new String(e.getKey());
-          if(column.startsWith(Constants.COLUMN)) {
+          if (column.startsWith(Constants.COLUMN)) {
             double currValue = BytesUtil.bytesToDouble(e.getValue().getValue());
-            update.put(e.getKey(), (BytesUtil.doubleToBytes(currValue * alpha.get(0))));
+            update.put(e.getKey(), (BytesUtil.doubleToBytes(currValue
+                * alpha.get(0))));
           } else {
             update.put(e.getKey(), e.getValue().getValue());
           }
@@ -404,7 +414,7 @@ public abstract class AbstractMatrix implements Matrix {
     }
 
     public static void setAlpha(double a) {
-      if(alpha.size() > 0) 
+      if (alpha.size() > 0)
         alpha = new ArrayList<Double>();
       alpha.add(a);
     }
@@ -524,12 +534,12 @@ public abstract class AbstractMatrix implements Matrix {
 
   public Matrix transpose() throws IOException {
     Matrix result;
-    if(this.getType().equals("SparseMatrix")) {
+    if (this.getType().equals("SparseMatrix")) {
       result = new SparseMatrix(config, this.getRows(), this.getColumns());
     } else {
       result = new DenseMatrix(config, this.getRows(), this.getColumns());
     }
-    
+
     JobConf jobConf = new JobConf(config);
     jobConf.setJobName("transpose MR job" + result.getPath());
 
@@ -538,13 +548,12 @@ public abstract class AbstractMatrix implements Matrix {
 
     TransposeMap.initJob(this.getPath(), TransposeMap.class, IntWritable.class,
         MapWritable.class, jobConf);
-    TransposeReduce.initJob(result.getPath(),
-        TransposeReduce.class, jobConf);
+    TransposeReduce.initJob(result.getPath(), TransposeReduce.class, jobConf);
 
     JobManager.execute(jobConf);
     return result;
   }
-  
+
   public boolean save(String aliasename) throws IOException {
     // mark & update the aliase name in "alise:name" meta column.
     // ! one matrix has only one aliasename now.
