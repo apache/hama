@@ -3,6 +3,7 @@ Hama Change Log
 Trunk (unreleased changes)
 
   NEW FEATURES
+  
     HAMA-185: Finds the eigenvalues and eigenvectors 
               associated with the symmetric matrix A (samuel)
     HAMA-171: Find the maximum absolute row sum using MapReduce (edwardyoon)
@@ -39,6 +40,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-189: Update website (edwardyoon)
     HAMA-187: Add matrix subtraction test case (edwardyoon)
     HAMA-186: Add density option for random matrix (edwardyoon)
     HAMA-171: Implementation of Matrix.Norm (samuel)
