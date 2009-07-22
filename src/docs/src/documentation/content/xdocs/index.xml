@@ -34,8 +34,7 @@
       mining, that need the intensive computation power of matrix inversion, e.g., linear 
       regression, PCA, SVM and etc. It will be useful for many scientific applications, 
       e.g., physics computations, linear algebra, computational fluid dynamics, 
-      statistics, graphic rendering and many more.<br/>
-      <img src="./images/block.png" alt="Building Block"></img>
+      statistics, graphic rendering and many more.
       </p>
       
       <ul>
@@ -51,7 +50,7 @@
         <li>Information retrieval 
           <ul>
             <li>Sorting</li> 
-            <li>Finding eigenvalues and eigenvectors</li>
+            <li>Finding <a href="http://wiki.apache.org/hama/EigenValuesAndEigenVectors">eigenvalues and eigenvectors</a></li>
           </ul>
         </li>
       </ul>
