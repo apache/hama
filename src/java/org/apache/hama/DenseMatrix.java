@@ -499,8 +499,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public DenseMatrix mult(Matrix B) throws IOException {
     ensureForMultiplication(B);
-    DenseMatrix result = new DenseMatrix(config, this.getRows(), this
-        .getColumns());
+    int columns = 0;
+    if(B.getColumns() == 1 || this.getColumns() == 1)
+      columns = 1;
+    else
+      columns = this.getColumns();
+    
+    DenseMatrix result = new DenseMatrix(config, this.getRows(), columns);
 
     for (int i = 0; i < this.getRows(); i++) {
       JobConf jobConf = new JobConf(config);
