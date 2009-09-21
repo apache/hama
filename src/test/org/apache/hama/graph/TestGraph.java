@@ -28,8 +28,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import org.apache.hama.HCluster;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.matrix.HCluster;
 import org.apache.log4j.Logger;
 
 public class TestGraph extends TestCase {

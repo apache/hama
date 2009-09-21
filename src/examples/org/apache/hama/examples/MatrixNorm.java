@@ -23,8 +23,8 @@ import java.io.IOException;
 
 import org.apache.hama.HamaAdmin;
 import org.apache.hama.HamaAdminImpl;
-import org.apache.hama.Matrix;
-import org.apache.hama.Matrix.Norm;
+import org.apache.hama.matrix.Matrix;
+import org.apache.hama.matrix.Matrix.Norm;
 
 public class MatrixNorm extends AbstractExample {
   public static void main(String[] args) throws IOException {

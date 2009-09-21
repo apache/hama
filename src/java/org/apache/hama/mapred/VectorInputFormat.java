@@ -37,7 +37,7 @@ import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.DenseVector;
+import org.apache.hama.matrix.DenseVector;
 import org.apache.hama.util.BytesUtil;
 
 public class VectorInputFormat extends HTableInputFormatBase implements

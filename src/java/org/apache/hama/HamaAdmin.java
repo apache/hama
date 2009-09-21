@@ -21,6 +21,8 @@ package org.apache.hama;
 
 import java.io.IOException;
 
+import org.apache.hama.matrix.Matrix;
+
 /**
  * A administration interface to manage the matrix's namespace, and table
  * allocation & garbage collection.

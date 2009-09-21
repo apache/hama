@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hama.Matrix;
+import org.apache.hama.matrix.Matrix;
 
 /**
  * A map/reduce job manager 

@@ -28,9 +28,9 @@ import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.DenseVector;
-import org.apache.hama.SparseVector;
-import org.apache.hama.Vector;
+import org.apache.hama.matrix.DenseVector;
+import org.apache.hama.matrix.SparseVector;
+import org.apache.hama.matrix.Vector;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 

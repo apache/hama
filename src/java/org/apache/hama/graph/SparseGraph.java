@@ -33,8 +33,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.SparseMatrix;
-import org.apache.hama.SparseVector;
+import org.apache.hama.matrix.SparseMatrix;
+import org.apache.hama.matrix.SparseVector;
 
 /**
  * A implementation of a graph that is optimized to store edge sparse graphs

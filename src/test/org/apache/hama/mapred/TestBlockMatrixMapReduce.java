@@ -21,8 +21,8 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
-import org.apache.hama.DenseMatrix;
-import org.apache.hama.HCluster;
+import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.matrix.HCluster;
 import org.apache.log4j.Logger;
 
 public class TestBlockMatrixMapReduce extends HCluster {

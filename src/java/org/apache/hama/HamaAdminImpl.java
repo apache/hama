@@ -30,6 +30,9 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.matrix.Matrix;
+import org.apache.hama.matrix.SparseMatrix;
 import org.apache.log4j.Logger;
 
 /**

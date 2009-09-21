@@ -21,8 +21,8 @@ package org.apache.hama.examples;
 
 import java.io.IOException;
 
-import org.apache.hama.DenseMatrix;
-import org.apache.hama.Matrix;
+import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.matrix.Matrix;
 
 public class MatrixAddition extends AbstractExample {
   public static void main(String[] args) throws IOException {
