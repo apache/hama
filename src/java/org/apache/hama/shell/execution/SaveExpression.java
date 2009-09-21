@@ -18,7 +18,7 @@
 package org.apache.hama.shell.execution;
 
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.Matrix;
+import org.apache.hama.matrix.Matrix;
 import org.apache.hama.shell.HamaShellEnv;
 
 public class SaveExpression extends HamaExpression {

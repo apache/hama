@@ -6,10 +6,10 @@ import java.io.InputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hama.DenseMatrix;
-import org.apache.hama.HCluster;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.Matrix;
+import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.matrix.HCluster;
+import org.apache.hama.matrix.Matrix;
 import org.apache.hama.shell.HamaShellEnv;
 import org.apache.hama.shell.execution.HamaExpression;
 

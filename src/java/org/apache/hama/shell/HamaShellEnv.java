@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.hama.Matrix;
+import org.apache.hama.matrix.Matrix;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 /**

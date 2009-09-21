@@ -30,7 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
-import org.apache.hama.SubMatrix;
+import org.apache.hama.matrix.SubMatrix;
 
 public class BlockWritable implements Writable {
   static final Log LOG = LogFactory.getLog(BlockWritable.class);

@@ -22,8 +22,8 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.DenseVector;
 import org.apache.hama.io.BlockID;
+import org.apache.hama.matrix.DenseVector;
 import org.apache.log4j.Logger;
 
 /**

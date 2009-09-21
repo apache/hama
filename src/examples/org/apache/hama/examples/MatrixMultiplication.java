@@ -21,11 +21,11 @@ package org.apache.hama.examples;
 
 import java.io.IOException;
 
-import org.apache.hama.DenseMatrix;
 import org.apache.hama.HamaAdmin;
 import org.apache.hama.HamaAdminImpl;
-import org.apache.hama.Matrix;
-import org.apache.hama.SparseMatrix;
+import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.matrix.Matrix;
+import org.apache.hama.matrix.SparseMatrix;
 
 public class MatrixMultiplication extends AbstractExample {
   public static void main(String[] args) throws IOException {

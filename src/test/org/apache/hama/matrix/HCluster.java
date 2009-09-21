@@ -1,4 +1,6 @@
-/*
+/**
+ * Copyright 2007 The Apache Software Foundation
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,41 +17,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.shell.execution;
+package org.apache.hama.matrix;
 
-import java.io.IOException;
-
+import org.apache.hadoop.hbase.HBaseClusterTestCase;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.matrix.DenseMatrix;
 
 /**
- * Generate a random matrix.
- * 
- * A = Matrix.Random #mRows #mColumns
- *
+ * Forming up the miniDfs and miniHbase
  */
-public class RandMatrixOperation extends HamaOperation {
+public class HCluster extends HBaseClusterTestCase {
+  protected final HamaConfiguration conf = new HamaConfiguration();
 
-  // rows, columns;
-  int mRows, mColumns;
-  
-  public RandMatrixOperation(HamaConfiguration conf, int rows, int columns) {
-    super(conf);
-    this.mRows = rows;
-    this.mColumns = columns;
+  public void setUp() throws Exception {
+    super.setUp();
   }
   
-  public RandMatrixOperation(HamaConfiguration conf, int rows, int columns, 
-      int map, int reduce) {
-    super(conf, map, reduce);
-    this.mRows = rows;
-    this.mColumns = columns;
+  public HamaConfiguration getConf() {
+    return conf;
   }
-  
-  public Object operate() throws IOException {
-    System.out.println("it is a RandMatrix operation, " +
-    		"[rows="+mRows+"], [columns="+mColumns+"].");
-    return DenseMatrix.random(conf, mRows, mColumns);
-  }
-
 }

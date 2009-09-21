@@ -34,9 +34,9 @@ import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
 import org.apache.hama.Constants;
-import org.apache.hama.SubMatrix;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.BlockWritable;
+import org.apache.hama.matrix.SubMatrix;
 
 public class BlockOutputFormat extends
     FileOutputFormat<BlockID, BlockWritable> {

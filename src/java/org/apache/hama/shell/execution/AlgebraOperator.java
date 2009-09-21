@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.hama.Matrix;
+import org.apache.hama.matrix.Matrix;
 import org.apache.hama.shell.HamaShellEnv;
 
 public class AlgebraOperator {
