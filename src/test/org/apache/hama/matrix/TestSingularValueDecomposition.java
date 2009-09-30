@@ -39,6 +39,7 @@ public class TestSingularValueDecomposition extends TestCase {
   private static HamaConfiguration conf;
 
   // Let's assume the A = [4 0; 3-5]
+  private static double[][] matrixA = {{4, 0}, {3, -5}};
   // A'A = [25 -15; -15 25]
   private static double[][] values = { { 25, -15 }, { -15, 25 } };
   // Then, eigenvalues of A'A are 10, 40 
@@ -56,7 +57,7 @@ public class TestSingularValueDecomposition extends TestCase {
         m1 = new DenseMatrix(conf, 2, 2);
         for (int i = 0; i < 2; i++)
           for (int j = 0; j < 2; j++)
-            m1.set(i, j, values[i][j]);
+            m1.set(i, j, matrixA[i][j]);
       }
 
       protected void tearDown() {
@@ -66,17 +67,29 @@ public class TestSingularValueDecomposition extends TestCase {
     return setup;
   }
 
-  public void testLog() throws IOException {
-    // Find the eigen/singular values and vectors of A'A    
-    m1.jacobiEigenValue(1);
-    HTable table = m1.getHTable();
+  public void testEigenSingularValues() throws IOException {
+    Matrix aT = m1.transpose();
+    DenseMatrix aTa = (DenseMatrix) aT.mult(m1);
     
+    for(int i = 0; i < m1.getRows(); i++) {
+      for(int j = 0; j < m1.getRows(); j++) {
+        assertEquals(aTa.get(i, j), values[i][j]);
+      }
+    }
+    
+    // Find the eigen/singular values and vectors of A'A
+    aTa.jacobiEigenValue(1);
+    HTable table = aTa.getHTable();
+
     for(int x=0; x<2; x++) {
       double eigenvalue = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(x), 
           Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
       assertTrue(Math.abs(eigenvalues[x] - eigenvalue) < .0000001);
       assertTrue(Math.abs(Math.pow(eigenvalue, 0.5) - singularvalues[x]) < .0000001);
     }
+    
+    //TODO: need to compute the inverse of S, S(-1)
+    //TODO: need to find out the V(T)
     
     // Therefore, U= AVS'1=[-0.8944 -0.4472; 0.4472 -0.8944]
     // A = USV'=[4 0; 3 -5]
