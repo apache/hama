@@ -59,7 +59,6 @@ import org.apache.hama.mapred.DummyMapper;
 import org.apache.hama.mapred.RandomMatrixMap;
 import org.apache.hama.mapred.RandomMatrixReduce;
 import org.apache.hama.mapred.VectorInputFormat;
-import org.apache.hama.matrix.Matrix.Norm;
 import org.apache.hama.matrix.algebra.BlockMultiplyMap;
 import org.apache.hama.matrix.algebra.BlockMultiplyReduce;
 import org.apache.hama.matrix.algebra.DenseMatrixVectorMultMap;

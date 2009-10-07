@@ -27,14 +27,14 @@ class MatrixTestCommon {
         colSum[j] += Math.abs(m1.get(i, j));
       }
     }
-    
+
     double max = 0;
-    for (int i=0; i < colSum.length; i++) {
+    for (int i = 0; i < colSum.length; i++) {
       max = Math.max(colSum[i], max);
     }
     return max;
   }
-  
+
   static double verifyNormInfinity(Matrix m1) throws IOException {
     double[] rowSum = new double[m1.getRows()];
     for (int i = 0; i < m1.getRows(); i++) {
@@ -48,7 +48,7 @@ class MatrixTestCommon {
       max = Math.max(rowSum[i], max);
     return max;
   }
-  
+
   static double verifyNormMaxValue(Matrix m1) throws IOException {
     double max = 0;
     for (int i = 0; i < m1.getRows(); i++) {
@@ -56,19 +56,19 @@ class MatrixTestCommon {
         max = Math.max(Math.abs(m1.get(i, j)), max);
       }
     }
-    
+
     return max;
   }
-  
+
   static double verifyNormFrobenius(Matrix m1) throws IOException {
     double sqrtSum = 0;
     for (int i = 0; i < m1.getRows(); i++) {
       for (int j = 0; j < m1.getColumns(); j++) {
         double cellValue = m1.get(i, j);
-        sqrtSum += ( cellValue * cellValue );
+        sqrtSum += (cellValue * cellValue);
       }
-    } 
+    }
     return Math.sqrt(sqrtSum);
   }
-  
+
 }

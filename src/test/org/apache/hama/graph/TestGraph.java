@@ -20,38 +20,32 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
+import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.matrix.HCluster;
 import org.apache.log4j.Logger;
 
-public class TestGraph extends TestCase {
+public class TestGraph extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestGraph.class);
   private static HamaConfiguration conf;
   private static Graph adj;
   private static int[] result = new int[] { 4, 3, 2, 0, 1 };
 
-  public static Test suite() {
-    TestSetup setup = new TestSetup(new TestSuite(TestGraph.class)) {
-      protected void setUp() throws Exception {
-        HCluster hCluster = new HCluster();
-        hCluster.setUp();
 
-        conf = hCluster.getConf();
-        adj = new SparseGraph(conf);
-      }
+  /**
+   * @throws UnsupportedEncodingException
+   */
+  public TestGraph() throws UnsupportedEncodingException {
+    super();
+  }
 
-      protected void tearDown() {
-      }
-    };
-    return setup;
+  public void setUp() throws Exception {
+    super.setUp();
+    conf = getConf();
+    adj = new SparseGraph(conf);
   }
 
   public void testAddEdge() throws IOException {

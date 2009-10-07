@@ -21,12 +21,12 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
+import org.apache.hama.HamaCluster;
 import org.apache.hama.matrix.DenseMatrix;
-import org.apache.hama.matrix.HCluster;
 import org.apache.hama.matrix.SparseMatrix;
 import org.apache.log4j.Logger;
 
-public class TestRandomMatrixMapReduce extends HCluster {
+public class TestRandomMatrixMapReduce extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestRandomMatrixMapReduce.class);
   
   public void testRandomMatrixMapReduce() throws IOException {

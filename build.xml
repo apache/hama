@@ -18,10 +18,10 @@
 -->
 
 <project name="hama" default="jar">
-    <property name="version" value="0.1.0-dev" />
+    <property name="version" value="0.2.0-dev" />
     <property name="Name" value="Hama" />
     <property name="final.name" value="hama-${version}" />
-    <property name="year" value="2008" />
+    <property name="year" value="2009" />
 
     <!-- Load all the default properties, and any the user wants    -->
     <!-- to contribute (without having to type -D or edit this file -->
@@ -78,9 +78,6 @@
     <fileset id="lib.jars" dir="${basedir}" includes="lib/*.jar" />
     <path id="classpath">
         <fileset refid="lib.jars" />
-        <fileset dir="${lib.dir}/jetty-ext/">
-            <include name="*jar" />
-        </fileset>
         <fileset dir="${lib.dir}/findbugs/">
             <include name="*jar" />
         </fileset>

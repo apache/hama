@@ -40,6 +40,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-188: Upgrade dependencies for hadoop/hbase 2.0 (edwardyoon)
     HAMA-192: Refactor top-level package (edwardyoon)
     HAMA-189: Update website (edwardyoon)
     HAMA-187: Add matrix subtraction test case (edwardyoon)

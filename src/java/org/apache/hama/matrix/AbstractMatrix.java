@@ -143,6 +143,18 @@ public abstract class AbstractMatrix implements Matrix {
   protected void create() throws IOException {
     // It should run only when table doesn't exist.
     if (!admin.tableExists(matrixPath)) {
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.COLUMN)));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.ATTRIBUTE)));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.ALIASEFAMILY)));
+      
+      // It's a temporary data.
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
+     // the following families are used in JacobiEigenValue computation
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(JacobiEigenValue.EI)));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(JacobiEigenValue.EICOL)));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(JacobiEigenValue.EIVEC)));
+      
+      /*
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
           .toBytes(Constants.COLUMN), 3, CompressionType.NONE, false, false,
           Integer.MAX_VALUE, HConstants.FOREVER, false));
@@ -162,7 +174,7 @@ public abstract class AbstractMatrix implements Matrix {
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
           .toBytes(JacobiEigenValue.EIVEC), 10, CompressionType.NONE, false,
           false, Integer.MAX_VALUE, HConstants.FOREVER, false));
-
+      */
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
       LOG.info("Create Matrix " + matrixPath);
