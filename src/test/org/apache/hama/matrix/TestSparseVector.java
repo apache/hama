@@ -20,46 +20,40 @@
 package org.apache.hama.matrix;
 
 import java.io.IOException;
-
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hama.HamaCluster;
 import org.apache.hama.util.BytesUtil;
 
-public class TestSparseVector extends TestCase {
+public class TestSparseVector extends HamaCluster {
   final static Log LOG = LogFactory.getLog(TestSparseVector.class.getName());
-  private static SparseMatrix m1;
-  private static SparseVector v1;
-  private static SparseVector v2;
-  private static double[][] values = { { 2, 0, 0, 4 }, { 0, 0, 3, 3 } };
+  private SparseMatrix m1;
+  private SparseVector v1;
+  private SparseVector v2;
+  private double[][] values = { { 2, 0, 0, 4 }, { 0, 0, 3, 3 } };
 
-  public static Test suite() {
-    TestSetup setup = new TestSetup(new TestSuite(TestSparseVector.class)) {
-      protected void setUp() throws Exception {
-        HCluster hCluster = new HCluster();
-        hCluster.setUp();
+  /**
+   * @throws UnsupportedEncodingException
+   */
+  public TestSparseVector() throws UnsupportedEncodingException {
+    super();
+  }
 
-        m1 = new SparseMatrix(hCluster.getConf(), 2, 4);
+  public void setUp() throws Exception {
+    super.setUp();
+    m1 = new SparseMatrix(getConf(), 2, 4);
 
-        for (int i = 0; i < 2; i++)
-          for (int j = 0; j < 4; j++)
-            m1.set(i, j, values[i][j]);
+    for (int i = 0; i < 2; i++)
+      for (int j = 0; j < 4; j++)
+        m1.set(i, j, values[i][j]);
 
-        v1 = m1.getRow(0);
-        v2 = m1.getRow(1);
-      }
-
-      protected void tearDown() {
-        LOG.info("tearDown()");
-      }
-    };
-    return setup;
+    v1 = m1.getRow(0);
+    v2 = m1.getRow(1);
   }
 
   /**
@@ -72,23 +66,28 @@ public class TestSparseVector extends TestCase {
     assertEquals(v2.get(1), 0.0);
 
     HTable table = m1.getHTable();
-    Cell c = table.get(BytesUtil.getRowIndex(0), BytesUtil.getColumnIndex(1));
-    assertTrue(c == null);
+    Get get = new Get(BytesUtil.getRowIndex(0));
+    get.addColumn(BytesUtil.getColumnIndex(1));
+    Result r = table.get(get);
+    assertTrue(r.getCellValue() == null);
+    
+    addTest();
   }
-  
+
   /**
    * Test add()
    */
-  public void testAdd() {
+  public void addTest() {
     v1.add(v2);
-    
-    for(int i = 0; i < values[0].length; i++) {
+
+    for (int i = 0; i < values[0].length; i++) {
       assertEquals(v1.get(i), values[0][i] + values[1][i]);
     }
 
     v1.add(0.5, v2);
-    for(int i = 0; i < values[0].length; i++) {
-      assertEquals(v1.get(i),  (values[0][i] + values[1][i]) + (0.5 * values[1][i]));
+    for (int i = 0; i < values[0].length; i++) {
+      assertEquals(v1.get(i), (values[0][i] + values[1][i])
+          + (0.5 * values[1][i]));
     }
   }
 }

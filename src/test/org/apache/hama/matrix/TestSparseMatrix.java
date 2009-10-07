@@ -20,57 +20,39 @@
 package org.apache.hama.matrix;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
-import org.apache.hama.matrix.Matrix.Norm;
+import org.apache.hama.HamaCluster;
 import org.apache.log4j.Logger;
 
-public class TestSparseMatrix extends TestCase {
+public class TestSparseMatrix extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestSparseMatrix.class);
-  private static int SIZE = 10;
-  private static SparseMatrix m1;
-  private static SparseMatrix m2;
+  private int SIZE = 10;
+  private SparseMatrix m1;
+  private SparseMatrix m2;
 
-  public static Test suite() {
-    TestSetup setup = new TestSetup(new TestSuite(TestSparseMatrix.class)) {
-      protected void setUp() throws Exception {
-        HCluster hCluster = new HCluster();
-        hCluster.setUp();
-
-        m1 = SparseMatrix.random(hCluster.getConf(), SIZE, SIZE);
-        m2 = SparseMatrix.random(hCluster.getConf(), SIZE, SIZE);
-      }
-
-      protected void tearDown() {
-        try {
-          closeTest();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    };
-    return setup;
+  /**
+   * @throws UnsupportedEncodingException
+   */
+  public TestSparseMatrix() throws UnsupportedEncodingException {
+    super();
   }
 
-  public static void closeTest() throws IOException {
-    m1.close();
-    m2.close();
+  public void setUp() throws Exception {
+    super.setUp();
+    m1 = SparseMatrix.random(getConf(), SIZE, SIZE);
+    m2 = SparseMatrix.random(getConf(), SIZE, SIZE);
   }
 
-  public void testTranspose() throws IOException {
-    SparseMatrix trans = (SparseMatrix) m1.transpose();
-    for (int i = 0; i < trans.getRows(); i++) {
-      for (int j = 0; j < trans.getColumns(); j++) {
-        assertEquals(trans.get(i, j), m1.get(j, i));
-      }
-    }
+  public void testMult() throws IOException {
+    assertTrue(m1.getRows() > 0);
+    sparsity();
+    
+    SparseMatrix result = m1.mult(m2);
+    verifyMultResult(m1, m2, result);
   }
-
-  public void testSparsity() throws IOException {
+  
+  public void sparsity() throws IOException {
     boolean appeared = false;
     for (int i = 0; i < m1.getRows(); i++) {
       for (int j = 0; j < m1.getColumns(); j++) {
@@ -80,44 +62,6 @@ public class TestSparseMatrix extends TestCase {
     }
 
     assertTrue(appeared);
-  }
-
-  /**
-   * Test matrices multiplication
-   * 
-   * @throws IOException
-   */
-  public void testMatrixMult() throws IOException {
-    SparseMatrix result = m1.mult(m2);
-    verifyMultResult(m1, m2, result);
-  }
-
-  public void testNorm1() throws IOException {
-    double gap = 0.000001;
-    
-    double norm1 = m1.norm(Norm.One);
-    double verify_norm1 = MatrixTestCommon.verifyNorm1(m1);
-    gap = norm1 - verify_norm1;
-    LOG.info("Norm One : gap " + gap);
-    assertTrue(gap < 0.000001 && gap > -0.000001);
-    
-    double normInfinity = m1.norm(Norm.Infinity);
-    double verify_normInf = MatrixTestCommon.verifyNormInfinity(m1);
-    gap = normInfinity - verify_normInf;
-    LOG.info("Norm Infinity : gap " + gap);
-    assertTrue(gap < 0.000001 && gap > -0.000001);
-    
-    double normMaxValue = m1.norm(Norm.Maxvalue);
-    double verify_normMV = MatrixTestCommon.verifyNormMaxValue(m1);
-    gap = normMaxValue - verify_normMV;
-    LOG.info("Norm MaxValue : gap " + gap);
-    assertTrue(gap < 0.000001 && gap > -0.000001);
-    
-    double normFrobenius = m1.norm(Norm.Frobenius);
-    double verify_normFrobenius = MatrixTestCommon.verifyNormFrobenius(m1);
-    gap = normFrobenius - verify_normFrobenius;
-    LOG.info("Norm Frobenius : gap " + gap);
-    assertTrue(gap < 0.000001 && gap > -0.000001);
   }
 
   /**
@@ -147,5 +91,4 @@ public class TestSparseMatrix extends TestCase {
       }
     }
   }
- 
 }

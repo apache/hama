@@ -27,7 +27,6 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.matrix.Vector.Norm;
 import org.apache.log4j.Logger;
 
 /**

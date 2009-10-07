@@ -21,11 +21,11 @@ package org.apache.hama.mapred;
 
 import java.io.IOException;
 
+import org.apache.hama.HamaCluster;
 import org.apache.hama.matrix.DenseMatrix;
-import org.apache.hama.matrix.HCluster;
 import org.apache.log4j.Logger;
 
-public class TestBlockMatrixMapReduce extends HCluster {
+public class TestBlockMatrixMapReduce extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestBlockMatrixMapReduce.class);
   static final int SIZE = 32;
 

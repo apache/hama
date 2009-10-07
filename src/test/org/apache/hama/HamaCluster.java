@@ -17,22 +17,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.matrix;
+package org.apache.hama;
 
 import org.apache.hadoop.hbase.HBaseClusterTestCase;
-import org.apache.hama.HamaConfiguration;
 
 /**
  * Forming up the miniDfs and miniHbase
  */
-public class HCluster extends HBaseClusterTestCase {
-  protected final HamaConfiguration conf = new HamaConfiguration();
-
+public abstract class HamaCluster extends HBaseClusterTestCase {
+  protected final static HamaConfiguration conf = new HamaConfiguration();
   public void setUp() throws Exception {
     super.setUp();
   }
   
-  public HamaConfiguration getConf() {
+  public static HamaConfiguration getConf() {
     return conf;
   }
 }

@@ -20,56 +20,40 @@
 package org.apache.hama.matrix;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
+import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
 import org.apache.log4j.Logger;
 
-public class TestMatrixVectorMult extends TestCase {
+public class TestMatrixVectorMult extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestMatrixVectorMult.class);
-  private static Matrix m1;
-  private static Matrix m2;
-  private static HamaConfiguration conf;
-  private static double[][] result = { { 5 }, { 11 } };
+  private Matrix m1, m2;
+  private HamaConfiguration conf;
+  private double[][] result = { { 5 }, { 11 } };
 
-  public static Test suite() {
-    TestSetup setup = new TestSetup(new TestSuite(TestMatrixVectorMult.class)) {
-      protected void setUp() throws Exception {
-        HCluster hCluster = new HCluster();
-        hCluster.setUp();
-
-        conf = hCluster.getConf();
-
-        m1 = new DenseMatrix(conf, "A", true);
-        m1.setDimension(2, 2);
-        m1.set(0, 0, 1);
-        m1.set(0, 1, 2);
-        m1.set(1, 0, 3);
-        m1.set(1, 1, 4);
-        m2 = new DenseMatrix(conf, "B", true);
-        m2.setDimension(2, 1);
-        m2.set(0, 0, 1);
-        m2.set(1, 0, 2);
-      }
-
-      protected void tearDown() {
-        try {
-          closeTest();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    };
-    return setup;
+  /**
+   * @throws UnsupportedEncodingException
+   */
+  public TestMatrixVectorMult() throws UnsupportedEncodingException {
+    super();
   }
 
-  public static void closeTest() throws IOException {
-    m1.close();
-    m2.close();
+  public void setUp() throws Exception {
+    super.setUp();
+
+    conf = getConf();
+
+    m1 = new DenseMatrix(conf, "A", true);
+    m1.setDimension(2, 2);
+    m1.set(0, 0, 1);
+    m1.set(0, 1, 2);
+    m1.set(1, 0, 3);
+    m1.set(1, 1, 4);
+    m2 = new DenseMatrix(conf, "B", true);
+    m2.setDimension(2, 1);
+    m2.set(0, 0, 1);
+    m2.set(1, 0, 2);
   }
 
   public void testMatVectorMult() throws IOException {

@@ -20,66 +20,57 @@
 package org.apache.hama.matrix;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
-
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.HamaCluster;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.matrix.DenseMatrix;
-import org.apache.hama.matrix.DenseVector;
-import org.apache.hama.matrix.Vector;
 
-public class TestDenseVector extends TestCase {
+public class TestDenseVector extends HamaCluster {
   final static Log LOG = LogFactory.getLog(TestDenseVector.class.getName());
-  
-  private static final double cosine = 0.6978227007909176;
-  private static final double norm1 = 12.0;
-  private static final double norm2 = 6.782329983125268;
-  private static final double normInf = 5.0;
-  private static final double norm2Robust = 6.782329983125269;
-  private static double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
-  private static DenseMatrix m1;
-  private static DenseVector v1;
-  private static DenseVector v2;
-  private static DenseVector smallSize = new DenseVector();
-  
-  public static Test suite() {
-    TestSetup setup = new TestSetup(new TestSuite(TestDenseVector.class)) {
-      protected void setUp() throws Exception {
-        HCluster hCluster = new HCluster();
-        hCluster.setUp();
 
-        m1 = new DenseMatrix(hCluster.getConf(), 2, 4);
+  private final double cosine = 0.6978227007909176;
+  private final double norm1 = 12.0;
+  private final double norm2 = 6.782329983125268;
+  private final double normInf = 5.0;
+  private final double norm2Robust = 6.782329983125269;
+  private double[][] values = { { 2, 5, 1, 4 }, { 4, 1, 3, 3 } };
+  private DenseMatrix m1;
+  private DenseVector v1;
+  private DenseVector v2;
+  private DenseVector smallSize = new DenseVector();
 
-        for (int i = 0; i < 2; i++)
-          for (int j = 0; j < 4; j++)
-            m1.set(i, j, values[i][j]);
+  /**
+   * @throws UnsupportedEncodingException
+   */
+  public TestDenseVector() throws UnsupportedEncodingException {
+    super();
+  }
 
-        v1 = m1.getRow(0);
-        v2 = m1.getRow(1);
-        smallSize.set(0, 0.5);
-      }
+  public void setUp() throws Exception {
+    super.setUp();
 
-      protected void tearDown() {
-        LOG.info("tearDown()");
-      }
-    };
-    return setup;
+    m1 = new DenseMatrix(getConf(), 2, 4);
+
+    for (int i = 0; i < 2; i++)
+      for (int j = 0; j < 4; j++)
+        m1.set(i, j, values[i][j]);
+
+    v1 = m1.getRow(0);
+    v2 = m1.getRow(1);
+    smallSize.set(0, 0.5);
   }
 
   /**
-   * Test |a| dot |b|
+   * @throws IOException 
    */
-  public void testDot() {
+  public void testDenseVector() throws IOException {
     double cos = v1.dot(v2);
     assertEquals(cos, cosine);
-    
+
     boolean except = false;
     try {
       v1.dot(smallSize);
@@ -88,48 +79,20 @@ public class TestDenseVector extends TestCase {
     }
     
     assertTrue(except);
-  }
-
-  public void testSubVector() {
-    int start = 2;
-    Vector subVector = v1.subVector(start, v1.size() - 1);
-    Iterator<Writable> it = subVector.iterator();
-
-    int i = start;
-    while (it.hasNext()) {
-      assertEquals(v1.get(i), ((DoubleEntry) it.next()).getValue());
-      i++;
-    }
-  }
-
-  /**
-   * Test norm one
-   */
-  public void testNom1() {
+    subVector();
+        
     assertEquals(norm1, v1.norm(Vector.Norm.One));
-  }
-
-  /**
-   * Test norm two
-   */
-  public void testNom2() {
     assertEquals(norm2, v1.norm(Vector.Norm.Two));
+    assertEquals(normInf, v1.norm(Vector.Norm.Infinity));
+    assertEquals(norm2Robust, v1.norm(Vector.Norm.TwoRobust));
+
+    getSetTest();
+    add();
+    scalingTest();
+    setTest();
+    clear();
   }
 
-  /**
-   * Test infinity norm
-   */
-  public void testNormInf() {
-    assertEquals(normInf, v1.norm(Vector.Norm.Infinity));
-  }
-  
-  /**
-   * Test infinity norm
-   */
-  public void testNorm2Robust() {
-    assertEquals(norm2Robust, v1.norm(Vector.Norm.TwoRobust));
-  }
-  
   /**
    * Test scaling
    */
@@ -145,7 +108,7 @@ public class TestDenseVector extends TestCase {
    * Test get/set methods
    * @throws IOException 
    */
-  public void testGetSet() throws IOException {
+  public void getSetTest() throws IOException {
     assertEquals(v1.get(0), values[0][0]);
     boolean ex = false;
     try {
@@ -160,7 +123,7 @@ public class TestDenseVector extends TestCase {
   /**
    * Test add()
    */
-  public void testAdd() {
+  public void add() {
     v1.add(v2);
     int i = 0;
     Iterator<Writable> it = v1.iterator();
@@ -202,9 +165,9 @@ public class TestDenseVector extends TestCase {
     assertTrue(except);
   }
   
-  public void testSet() {
+  public void setTest() {
     v1.set(v2);
-    
+
     for(int i = 0; i < v1.size(); i ++) {
       assertEquals(v2.get(i), v1.get(i));
     }
@@ -219,10 +182,22 @@ public class TestDenseVector extends TestCase {
     assertTrue(except);
   }
   
+  public void subVector() {
+    int start = 2;
+    Vector subVector = v1.subVector(start, v1.size() - 1);
+    Iterator<Writable> it = subVector.iterator();
+
+    int i = start;
+    while (it.hasNext()) {
+      assertEquals(v1.get(i), ((DoubleEntry) it.next()).getValue());
+      i++;
+    }
+  }
+  
   /**
    * Clear test
    */
-  public void testClear() {
+  public void clear() {
     ((DenseVector) v1).clear();
     assertEquals(v1.size(), 0);
   }
