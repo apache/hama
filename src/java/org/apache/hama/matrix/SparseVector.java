@@ -22,7 +22,7 @@ package org.apache.hama.matrix;
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
@@ -43,10 +43,10 @@ public class SparseVector extends AbstractVector implements Vector {
     this.entries = m;
   }
 
-  public SparseVector(RowResult row) {
+  public SparseVector(Result row) {
     this.initMap(row);
   }
-
+  
   @Override
   public Vector add(double alpha, Vector v) {
     if (alpha == 0)

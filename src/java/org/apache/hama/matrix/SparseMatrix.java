@@ -24,7 +24,9 @@ import java.util.Random;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
@@ -51,7 +53,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
   static private final Path TMP_DIR = new Path(SparseMatrix.class
       .getSimpleName()
       + "_TMP_dir");
-  
+
   public SparseMatrix(HamaConfiguration conf, int m, int n) throws IOException {
     setConfiguration(conf);
 
@@ -81,7 +83,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     // we don't know where to call Matrix.close in Add & Mul map/reduce
     // process to decrement the reference. It seems difficulty.
   }
-  
+
   /**
    * Generate matrix with random elements
    * 
@@ -101,8 +103,8 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     for (int i = 0; i < m; i++) {
       vector.clear();
       for (int j = 0; j < n; j++) {
-        Random r = new Random(); 
-        if(r.nextInt(2) != 0)
+        Random r = new Random();
+        if (r.nextInt(2) != 0)
           vector.set(j, RandomVariable.rand());
       }
       rand.setRow(i, vector);
@@ -110,8 +112,9 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
 
     return rand;
   }
-  
-  public static SparseMatrix random_mapred(HamaConfiguration conf, int m, int n, double percent) throws IOException {
+
+  public static SparseMatrix random_mapred(HamaConfiguration conf, int m,
+      int n, double percent) throws IOException {
     SparseMatrix rand = new SparseMatrix(conf, m, n);
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
@@ -163,7 +166,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     fs.delete(TMP_DIR, true);
     return rand;
   }
-  
+
   @Override
   public Matrix add(Matrix B) throws IOException {
     // TODO Auto-generated method stub
@@ -178,11 +181,14 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
 
   @Override
   public double get(int i, int j) throws IOException {
-    if(this.getRows() < i || this.getColumns() < j)
-      throw new ArrayIndexOutOfBoundsException(i +", "+ j);
-    
-    Cell c = table.get(BytesUtil.getRowIndex(i), BytesUtil.getColumnIndex(j));
-    return (c != null) ? BytesUtil.bytesToDouble(c.getValue()) : 0.0;
+    if (this.getRows() < i || this.getColumns() < j)
+      throw new ArrayIndexOutOfBoundsException(i + ", " + j);
+
+    Get get = new Get(BytesUtil.getRowIndex(i));
+    get.addColumn(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.COLUMN_FAMILY),
+        Bytes.toBytes(String.valueOf(j)));
+    return (result != null) ? BytesUtil.bytesToDouble(result) : 0.0;
   }
 
   @Override
@@ -199,18 +205,22 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public SparseVector getRow(int i) throws IOException {
-    return new SparseVector(table.getRow(BytesUtil.getRowIndex(i), new byte[][] { Bytes.toBytes(Constants.COLUMN) }));
+    Get get = new Get(BytesUtil.getRowIndex(i));
+    get.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    Result r = table.get(get);
+    // return new SparseVector(r.getRowResult());
+    return new SparseVector(r);
   }
 
   /** {@inheritDoc} */
   public void set(int i, int j, double value) throws IOException {
-    if(value != 0) {
+    if (value != 0) {
       VectorUpdate update = new VectorUpdate(i);
       update.put(j, value);
-      table.commit(update.getBatchUpdate());
+      table.put(update.getPut());
     }
   }
-  
+
   /**
    * Returns type of matrix
    */
@@ -226,19 +236,22 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public SparseMatrix mult(Matrix B) throws IOException {
-    SparseMatrix result = new SparseMatrix(config, this.getRows(), this.getColumns());
+    SparseMatrix result = new SparseMatrix(config, this.getRows(), this
+        .getColumns());
 
-    for(int i = 0; i < this.getRows(); i++) {
+    for (int i = 0; i < this.getRows(); i++) {
       JobConf jobConf = new JobConf(config);
-      jobConf.setJobName("multiplication MR job : " + result.getPath() + " " + i);
+      jobConf.setJobName("multiplication MR job : " + result.getPath() + " "
+          + i);
 
       jobConf.setNumMapTasks(config.getNumMapTasks());
       jobConf.setNumReduceTasks(config.getNumReduceTasks());
-      
-      SparseMatrixVectorMultMap.initJob(i, this.getPath(), B.getPath(), SparseMatrixVectorMultMap.class,
-          IntWritable.class, MapWritable.class, jobConf);
-      SparseMatrixVectorMultReduce.initJob(result.getPath(), SparseMatrixVectorMultReduce.class,
-          jobConf);
+
+      SparseMatrixVectorMultMap.initJob(i, this.getPath(), B.getPath(),
+          SparseMatrixVectorMultMap.class, IntWritable.class,
+          MapWritable.class, jobConf);
+      SparseMatrixVectorMultReduce.initJob(result.getPath(),
+          SparseMatrixVectorMultReduce.class, jobConf);
       JobManager.execute(jobConf);
     }
 
@@ -272,18 +285,18 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
   @Override
   public void setColumn(int column, Vector vector) throws IOException {
     // TODO Auto-generated method stub
-    
+
   }
 
   @Override
   public void setRow(int row, Vector vector) throws IOException {
-    if(this.getRows() < row)
+    if (this.getRows() < row)
       throw new ArrayIndexOutOfBoundsException(row);
-    
-    if(vector.size() > 0) {  // stores if size > 0
+
+    if (vector.size() > 0) { // stores if size > 0
       VectorUpdate update = new VectorUpdate(row);
       update.putAll(((SparseVector) vector).getEntries());
-      table.commit(update.getBatchUpdate());
+      table.put(update.getPut());
     }
   }
 

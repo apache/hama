@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
@@ -79,9 +80,12 @@ public class TestSingularValueDecomposition extends HamaCluster {
 
     for (int x = 0; x < 2; x++) {
       Get get = new Get(BytesUtil.getRowIndex(x));
-      get.addColumn(Bytes.toBytes(JacobiEigenValue.EIVAL));
-      double eigenvalue = BytesUtil.bytesToDouble(table.get(get).getCellValue()
-          .getValue());
+      get.addColumn(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
+      Result r = table.get(get);
+
+      double eigenvalue = BytesUtil.bytesToDouble(r.getValue(Bytes
+          .toBytes(JacobiEigenValue.EI_COLUMNFAMILY), Bytes
+          .toBytes(JacobiEigenValue.EI_VAL)));
       assertTrue(Math.abs(eigenvalues[x] - eigenvalue) < .0000001);
       assertTrue(Math.abs(Math.pow(eigenvalue, 0.5) - singularvalues[x]) < .0000001);
     }

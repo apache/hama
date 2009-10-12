@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
@@ -33,9 +34,11 @@ import org.apache.hama.util.BytesUtil;
 
 public class VectorUpdate {
   private BatchUpdate batchUpdate;
+  private Put put;
 
   public VectorUpdate(int i) {
     this.batchUpdate = new BatchUpdate(BytesUtil.getRowIndex(i));
+    this.put = new Put(BytesUtil.getRowIndex(i));
   }
 
   public VectorUpdate(String row) {
@@ -49,10 +52,13 @@ public class VectorUpdate {
   public void put(int j, double value) {
     this.batchUpdate.put(BytesUtil.getColumnIndex(j), BytesUtil
         .doubleToBytes(value));
+    this.put.add(Bytes.toBytes(Constants.COLUMN_FAMILY), Bytes.toBytes(String
+        .valueOf(j)), BytesUtil.doubleToBytes(value));
   }
-  
+
   /**
    * Put the value in "cfName+j"
+   * 
    * @param cfName
    * @param j
    * @param value
@@ -60,11 +66,12 @@ public class VectorUpdate {
   public void put(String cfName, int j, double value) {
     this.batchUpdate.put(Bytes.toBytes(cfName + j), Bytes.toBytes(value));
   }
-  
+
   public void put(String name, double value) {
     this.batchUpdate.put(Bytes.toBytes(name), Bytes.toBytes(value));
   }
 
+  @Deprecated
   public void put(int j, String name) {
     this.batchUpdate.put(Bytes.toBytes((Constants.ATTRIBUTE + j)), Bytes
         .toBytes(name));
@@ -72,6 +79,10 @@ public class VectorUpdate {
 
   public void put(String j, String val) {
     this.batchUpdate.put(j, Bytes.toBytes(val));
+  }
+  
+  public void put(String column, String qualifier, String val) {
+    this.put.add(Bytes.toBytes(column), Bytes.toBytes(qualifier), Bytes.toBytes(val));
   }
 
   public void put(String row, int val) {
@@ -93,10 +104,15 @@ public class VectorUpdate {
       put(e.getKey(), e.getValue().getValue());
     }
   }
-  
+
   public void putAll(MapWritable entries) {
     for (Map.Entry<Writable, Writable> e : entries.entrySet()) {
-      put(((IntWritable) e.getKey()).get(), ((DoubleEntry) e.getValue()).getValue());
+      put(((IntWritable) e.getKey()).get(), ((DoubleEntry) e.getValue())
+          .getValue());
     }
+  }
+
+  public Put getPut() {
+    return this.put;
   }
 }

@@ -24,13 +24,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.matrix.Vector.Norm;
 import org.apache.log4j.Logger;
 
 /**
@@ -43,11 +43,15 @@ public class DenseVector extends AbstractVector implements Vector {
     this(new MapWritable());
   }
 
+  public DenseVector(RowResult row) {
+    this.initMap(row);
+  }
+  
   public DenseVector(MapWritable m) {
     this.entries = m;
   }
 
-  public DenseVector(RowResult row) {
+  public DenseVector(Result row) {
     this.initMap(row);
   }
 

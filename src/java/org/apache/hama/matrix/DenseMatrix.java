@@ -28,7 +28,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
@@ -324,11 +326,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     if (this.getRows() < i || this.getColumns() < j)
       throw new ArrayIndexOutOfBoundsException(i + ", " + j);
 
-    Cell c = table.get(BytesUtil.getRowIndex(i), BytesUtil.getColumnIndex(j));
-    if (c == null)
+    Get get = new Get(BytesUtil.getRowIndex(i));
+    get.addColumn(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.COLUMN_FAMILY),
+        Bytes.toBytes(String.valueOf(j)));
+    
+    if (result == null)
       throw new NullPointerException("Unexpected null");
 
-    return BytesUtil.bytesToDouble(c.getValue());
+    return BytesUtil.bytesToDouble(result);
   }
 
   /**
@@ -339,8 +345,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public DenseVector getRow(int i) throws IOException {
-    return new DenseVector(table.getRow(BytesUtil.getRowIndex(i),
-        new byte[][] { Bytes.toBytes(Constants.COLUMN) }));
+    Get get = new Get(BytesUtil.getRowIndex(i));
+    get.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    Result r = table.get(get);
+    return new DenseVector(r);
   }
 
   /**
@@ -371,7 +379,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       throw new ArrayIndexOutOfBoundsException(i + ", " + j);
     VectorUpdate update = new VectorUpdate(i);
     update.put(j, value);
-    table.commit(update.getBatchUpdate());
+    table.put(update.getPut());
   }
 
   /**
@@ -502,11 +510,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public DenseMatrix mult(Matrix B) throws IOException {
     ensureForMultiplication(B);
     int columns = 0;
-    if(B.getColumns() == 1 || this.getColumns() == 1)
+    if (B.getColumns() == 1 || this.getColumns() == 1)
       columns = 1;
     else
       columns = this.getColumns();
-    
+
     DenseMatrix result = new DenseMatrix(config, this.getRows(), columns);
 
     for (int i = 0; i < this.getRows(); i++) {
@@ -783,12 +791,19 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
        * 
        * Compute the rotation parameters of next rotation.
        ************************************************************************/
-      double e1 = BytesUtil.bytesToDouble(table.get(
-          BytesUtil.getRowIndex(pivot_row),
-          Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
-      double e2 = BytesUtil.bytesToDouble(table.get(
-          BytesUtil.getRowIndex(pivot_col),
-          Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
+      Get get = new Get(BytesUtil.getRowIndex(pivot_row));
+      get.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
+      Result r = table.get(get);
+      double e1 = BytesUtil.bytesToDouble(r.getValue(Bytes
+          .toBytes(JacobiEigenValue.EI_COLUMNFAMILY), Bytes
+          .toBytes(JacobiEigenValue.EI_VAL)));
+
+      get = new Get(BytesUtil.getRowIndex(pivot_col));
+      get.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
+      r = table.get(get);
+      double e2 = BytesUtil.bytesToDouble(r.getValue(Bytes
+          .toBytes(JacobiEigenValue.EI_COLUMNFAMILY), Bytes
+          .toBytes(JacobiEigenValue.EI_VAL)));
 
       y = (e2 - e1) / 2;
       t = Math.abs(y) + Math.sqrt(pivot * pivot + y * y);

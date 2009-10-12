@@ -48,9 +48,16 @@ public class JacobiEigenValue {
   /** a matrix copy of the original copy collected in "eicol" family * */
   public static final String EICOL = "eicol:";
   /** a column family collect all values and statuses used during computation * */
+  @Deprecated
   public static final String EI = "eival:";
   /** a column collect all the eigen values * */
+  @Deprecated
   public static final String EIVAL = EI + "value";
+  
+  public static final String EI_COLUMNFAMILY = "eival";
+  public static final String EI_VAL = "value";
+  
+  
   /** a column identify whether the eigen values have been changed * */
   public static final String EICHANGED = EI + "changed";
   /** a column identify the index of the max absolute value each row * */

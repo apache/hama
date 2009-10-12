@@ -55,6 +55,13 @@ public class DoubleEntry implements Writable, Iterable<DoubleEntry> {
     this.timestamps[0] = System.currentTimeMillis();
   }
   
+  public DoubleEntry(byte[] value) {
+    this.values = new byte[1][];
+    this.values[0] = value;
+    this.timestamps = new long[1];
+    this.timestamps[0] = System.currentTimeMillis();
+  }
+  
   /** @return the current VectorEntry's value */
   public double getValue() {
     return BytesUtil.bytesToDouble(this.values[0]);

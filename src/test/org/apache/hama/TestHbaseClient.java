@@ -14,7 +14,6 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
 public class TestHbaseClient extends HBaseClusterTestCase {
-
   private static final byte[] FAMILY = Bytes.toBytes("family");
   private static final byte[] ROW = Bytes.toBytes("row");
   private static final byte[] QUALIFIER = Bytes.toBytes("qualifier");
@@ -58,6 +57,7 @@ public class TestHbaseClient extends HBaseClusterTestCase {
     get.addFamily(FAMILY);
     Result r = table.get(get);
     assertFalse(r.isEmpty());
+    assertEquals(Bytes.toString(VALUE), Bytes.toString(r.getValue(FAMILY, QUALIFIER)));
     System.out.println("Row retrieved successfully");
 
     get = new Get(MISSING_ROW);
