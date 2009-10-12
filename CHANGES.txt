@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
   
+    HAMA-195: Interface of the bsp (hyunsik via edwardyoon)
     HAMA-185: Finds the eigenvalues and eigenvectors 
               associated with the symmetric matrix A (samuel)
     HAMA-171: Find the maximum absolute row sum using MapReduce (edwardyoon)
