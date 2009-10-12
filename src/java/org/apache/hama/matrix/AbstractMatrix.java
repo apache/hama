@@ -27,13 +27,13 @@ import java.util.Map;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.RegionException;
-import org.apache.hadoop.hbase.HColumnDescriptor.CompressionType;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -143,38 +143,24 @@ public abstract class AbstractMatrix implements Matrix {
   protected void create() throws IOException {
     // It should run only when table doesn't exist.
     if (!admin.tableExists(matrixPath)) {
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.COLUMN)));
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.ATTRIBUTE)));
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.ALIASEFAMILY)));
-      
-      // It's a temporary data.
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
-     // the following families are used in JacobiEigenValue computation
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(JacobiEigenValue.EI)));
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(JacobiEigenValue.EICOL)));
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes.toBytes(JacobiEigenValue.EIVEC)));
-      
-      /*
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.COLUMN), 3, CompressionType.NONE, false, false,
-          Integer.MAX_VALUE, HConstants.FOREVER, false));
-      this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
-      this.tableDesc.addFamily(new HColumnDescriptor(Constants.ALIASEFAMILY));
+          .toBytes(Constants.COLUMN)));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
+          .toBytes(Constants.ATTRIBUTE)));
+      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
+          .toBytes(Constants.ALIASEFAMILY)));
+
       // It's a temporary data.
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.BLOCK), 1, CompressionType.NONE, false, false,
-          Integer.MAX_VALUE, HConstants.FOREVER, false));
+          .toBytes(Constants.BLOCK)));
       // the following families are used in JacobiEigenValue computation
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(JacobiEigenValue.EI), 1, CompressionType.NONE, false, false,
-          Integer.MAX_VALUE, HConstants.FOREVER, false));
+          .toBytes(JacobiEigenValue.EI_COLUMNFAMILY)));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(JacobiEigenValue.EICOL), 10, CompressionType.NONE, false,
-          false, Integer.MAX_VALUE, HConstants.FOREVER, false));
+          .toBytes(JacobiEigenValue.EICOL)));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(JacobiEigenValue.EIVEC), 10, CompressionType.NONE, false,
-          false, Integer.MAX_VALUE, HConstants.FOREVER, false));
-      */
+          .toBytes(JacobiEigenValue.EIVEC)));
+
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
       LOG.info("Create Matrix " + matrixPath);
@@ -184,11 +170,17 @@ public abstract class AbstractMatrix implements Matrix {
       table.setAutoFlush(true);
 
       // Record the matrix type in METADATA_TYPE
-      BatchUpdate update = new BatchUpdate(Constants.METADATA);
-      update.put(Constants.METADATA_TYPE, Bytes.toBytes(this.getClass()
+      Put put = new Put(Bytes.toBytes(Constants.METADATA));
+      put.add(Bytes.toBytes(Constants.ATTRIBUTE), Bytes
+          .toBytes(Constants.METADATA_TYPE), Bytes.toBytes(this.getClass()
           .getSimpleName()));
+      table.put(put);
 
-      table.commit(update);
+      /*
+       * BatchUpdate update = new BatchUpdate(Constants.METADATA);
+       * update.put(Constants.METADATA_TYPE, Bytes.toBytes(this.getClass()
+       * .getSimpleName())); table.commit(update);
+       */
 
       // the new matrix's reference is 1.
       setReference(1);
@@ -347,38 +339,62 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public int getRows() throws IOException {
-    Cell rows = null;
-    rows = table.get(Constants.METADATA, Constants.METADATA_ROWS);
-    return (rows != null) ? BytesUtil.bytesToInt(rows.getValue()) : 0;
+    Get get = new Get(Bytes.toBytes(Constants.METADATA));
+    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+        Bytes.toBytes("rows"));
+
+    return (result != null) ? BytesUtil.bytesToInt(result) : 0;
   }
 
   /** {@inheritDoc} */
   public int getColumns() throws IOException {
-    Cell columns = table.get(Constants.METADATA, Constants.METADATA_COLUMNS);
-    return BytesUtil.bytesToInt(columns.getValue());
+    Get get = new Get(Bytes.toBytes(Constants.METADATA));
+    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+        Bytes.toBytes("columns"));
+
+    return BytesUtil.bytesToInt(result);
   }
 
   /** {@inheritDoc} */
   public String getRowLabel(int row) throws IOException {
-    Cell rows = null;
-    rows = table.get(BytesUtil.getRowIndex(row), Bytes
-        .toBytes(Constants.ATTRIBUTE + "string"));
+    Get get = new Get(BytesUtil.getRowIndex(row));
+    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+        Bytes.toBytes("string"));
 
-    return (rows != null) ? Bytes.toString(rows.getValue()) : null;
+    return (result != null) ? Bytes.toString(result) : null;
+  }
+
+  /** {@inheritDoc} */
+  public void setColumnLabel(int column, String name) throws IOException {
+    /*
+     * VectorUpdate update = new VectorUpdate(Constants.CINDEX);
+     * update.put(column, name); table.commit(update.getBatchUpdate());
+     */
+
+    Put put = new Put(Bytes.toBytes(Constants.CINDEX));
+    put.add(Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes(String
+        .valueOf(column)), Bytes.toBytes(name));
+    table.put(put);
   }
 
   /** {@inheritDoc} */
   public String getColumnLabel(int column) throws IOException {
-    Cell rows = null;
-    rows = table.get(Constants.CINDEX, (Constants.ATTRIBUTE + column));
-    return (rows != null) ? Bytes.toString(rows.getValue()) : null;
+    Get get = new Get(Bytes.toBytes(Constants.CINDEX));
+    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+        Bytes.toBytes(String.valueOf(column)));
+
+    return (result != null) ? Bytes.toString(result) : null;
   }
 
   /** {@inheritDoc} */
   public void setRowLabel(int row, String name) throws IOException {
     VectorUpdate update = new VectorUpdate(row);
-    update.put(Constants.ATTRIBUTE + "string", name);
-    table.commit(update.getBatchUpdate());
+    update.put(Constants.ATTRIBUTE, "string", name);
+    table.put(update.getPut());
   }
 
   /** {@inheritDoc} */
@@ -394,7 +410,7 @@ public abstract class AbstractMatrix implements Matrix {
   public void add(int i, int j, double value) throws IOException {
     VectorUpdate update = new VectorUpdate(i);
     update.put(j, value + this.get(i, j));
-    table.commit(update.getBatchUpdate());
+    table.put(update.getPut());
 
   }
 
@@ -476,13 +492,6 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   /** {@inheritDoc} */
-  public void setColumnLabel(int column, String name) throws IOException {
-    VectorUpdate update = new VectorUpdate(Constants.CINDEX);
-    update.put(column, name);
-    table.commit(update.getBatchUpdate());
-  }
-
-  /** {@inheritDoc} */
   public String getPath() {
     return matrixPath;
   }
@@ -496,10 +505,14 @@ public abstract class AbstractMatrix implements Matrix {
 
   protected int incrementAndGetRef() throws IOException {
     int reference = 1;
-    Cell rows = null;
-    rows = table.get(Constants.METADATA, Constants.METADATA_REFERENCE);
-    if (rows != null) {
-      reference = Bytes.toInt(rows.getValue());
+
+    Get get = new Get(Bytes.toBytes(Constants.METADATA));
+    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    byte[] result = table.get(get).getValue(
+        Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("reference"));
+    
+    if (result != null) {
+      reference = Bytes.toInt(result);
       reference++;
     }
     setReference(reference);
@@ -508,10 +521,14 @@ public abstract class AbstractMatrix implements Matrix {
 
   protected int decrementAndGetRef() throws IOException {
     int reference = 0;
-    Cell rows = null;
-    rows = table.get(Constants.METADATA, Constants.METADATA_REFERENCE);
-    if (rows != null) {
-      reference = Bytes.toInt(rows.getValue());
+    
+    Get get = new Get(Bytes.toBytes(Constants.METADATA));
+    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    byte[] result = table.get(get).getValue(
+        Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("reference"));
+    
+    if (result != null) {
+      reference = Bytes.toInt(result);
       if (reference > 0) // reference==0, we need not to decrement it.
         reference--;
     }
@@ -520,9 +537,12 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   protected boolean hasAliaseName() throws IOException {
-    Cell rows = null;
-    rows = table.get(Constants.METADATA, Constants.ALIASENAME);
-    return (rows != null) ? true : false;
+    Get get = new Get(Bytes.toBytes(Constants.METADATA));
+    get.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
+    byte[] result = table.get(get).getValue(
+        Bytes.toBytes(Constants.ALIASEFAMILY), Bytes.toBytes("name"));
+
+    return (result != null) ? true : false;
   }
 
   public void close() throws IOException {
@@ -573,10 +593,12 @@ public abstract class AbstractMatrix implements Matrix {
   public boolean save(String aliasename) throws IOException {
     // mark & update the aliase name in "alise:name" meta column.
     // ! one matrix has only one aliasename now.
-    BatchUpdate update = new BatchUpdate(Constants.METADATA);
-    update.put(Constants.ALIASENAME, Bytes.toBytes(aliasename));
-    update.put(Constants.ATTRIBUTE + "type", Bytes.toBytes(this.getType()));
-    table.commit(update);
+    Put put = new Put(Bytes.toBytes(Constants.METADATA));
+    put.add(Bytes.toBytes(Constants.ALIASEFAMILY), Bytes.toBytes("name"), Bytes
+        .toBytes(aliasename));
+    put.add(Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("type"), Bytes
+        .toBytes(this.getType()));
+    table.put(put);
 
     return hamaAdmin.save(this, aliasename);
   }

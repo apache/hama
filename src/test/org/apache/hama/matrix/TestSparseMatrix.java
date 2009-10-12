@@ -47,9 +47,21 @@ public class TestSparseMatrix extends HamaCluster {
   public void testMult() throws IOException {
     assertTrue(m1.getRows() > 0);
     sparsity();
-    
+    m1.set(0, 0, -8);
+    assertEquals(m1.get(0, 0), -8.0);
+
     SparseMatrix result = m1.mult(m2);
     verifyMultResult(m1, m2, result);
+
+    SparseVector vector = new SparseVector();
+    vector.set(0, 3);
+    vector.set(1, -8);
+    m1.setRow(0, vector);
+    assertEquals(m1.get(0, 0), 3.0);
+    assertEquals(m1.get(0, 1), -8.0);
+    SparseVector vector2 = m1.getRow(0);
+    assertEquals(vector2.get(0), 3.0);
+    assertEquals(vector2.get(1), -8.0);
   }
   
   public void sparsity() throws IOException {

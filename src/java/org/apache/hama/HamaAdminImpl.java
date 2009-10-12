@@ -25,12 +25,11 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.RegionException;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.io.BatchUpdate;
-import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.matrix.DenseMatrix;
 import org.apache.hama.matrix.Matrix;
@@ -95,7 +94,10 @@ public class HamaAdminImpl implements HamaAdmin {
    */
   public String getPath(String name) {
     try {
-      byte[] result = table.get(name, Constants.PATHCOLUMN).getValue();
+      Get get = new Get(Bytes.toBytes(name));
+      get.addFamily(Bytes.toBytes(Constants.PATHCOLUMN));
+      byte[] result = table.get(get).getValue(
+          Bytes.toBytes(Constants.PATHCOLUMN), null);
       return Bytes.toString(result);
     } catch (IOException e) {
       e.printStackTrace();
@@ -105,7 +107,11 @@ public class HamaAdminImpl implements HamaAdmin {
 
   public boolean matrixExists(String matrixName) {
     try {
-      Cell result = table.get(matrixName, Constants.PATHCOLUMN);
+      Get get = new Get(Bytes.toBytes(matrixName));
+      get.addFamily(Bytes.toBytes(Constants.PATHCOLUMN));
+      byte[] result = table.get(get).getValue(
+          Bytes.toBytes(Constants.PATHCOLUMN), null);
+
       return (result == null) ? false : true;
     } catch (IOException e) {
       e.printStackTrace();
@@ -119,11 +125,13 @@ public class HamaAdminImpl implements HamaAdmin {
     // we just store the name -> path(tablename) here.
     // the matrix type is stored in its hbase table. we don't need to store
     // again.
-    BatchUpdate update = new BatchUpdate(aliaseName);
-    update.put(Constants.PATHCOLUMN, Bytes.toBytes(mat.getPath()));
+
+    Put put = new Put(Bytes.toBytes(aliaseName));
+    put.add(Bytes.toBytes(Constants.PATHCOLUMN), null, Bytes.toBytes(mat
+        .getPath()));
 
     try {
-      table.commit(update);
+      table.put(put);
 
       result = true;
     } catch (IOException e) {
@@ -135,22 +143,27 @@ public class HamaAdminImpl implements HamaAdmin {
 
   /** remove the entry of 'matrixName' in admin table. * */
   private void removeEntry(String matrixName) throws IOException {
-    table.deleteAll(matrixName);
+    Delete del = new Delete(Bytes.toBytes(matrixName));
+    table.delete(del);
   }
 
   private int getReference(String tableName) throws IOException {
     HTable matrix = new HTable(conf, tableName);
 
-    Cell rows = null;
-    rows = matrix.get(Constants.METADATA, Constants.METADATA_REFERENCE);
+    Get get = new Get(Bytes.toBytes(Constants.METADATA));
+    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    byte[] result = matrix.get(get).getValue(
+        Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("reference"));
 
-    return (rows == null) ? 0 : Bytes.toInt(rows.getValue());
+    return (result == null) ? 0 : Bytes.toInt(result);
   }
 
   private void clearAliaseInfo(String tableName) throws IOException {
     HTable matrix = new HTable(conf, tableName);
-
-    matrix.deleteAll(Constants.METADATA, Constants.ALIASENAME);
+    Delete del = new Delete(Bytes.toBytes(Constants.METADATA));
+    del.deleteColumns(Bytes.toBytes(Constants.ALIASEFAMILY), Bytes
+        .toBytes("name"));
+    matrix.delete(del);
   }
 
   /**
@@ -199,7 +212,7 @@ public class HamaAdminImpl implements HamaAdmin {
   @Override
   public Matrix getMatrix(String matrixName) throws IOException {
     String path = getPath(matrixName);
-    if(getType(path).equals("SparseMatrix"))
+    if (getType(path).equals("SparseMatrix"))
       return new SparseMatrix(conf, path);
     else
       return new DenseMatrix(conf, path);
@@ -207,9 +220,13 @@ public class HamaAdminImpl implements HamaAdmin {
 
   private String getType(String path) {
     try {
-      HTable matrix = new HTable(conf, path);
-      byte[] result = matrix.get(Constants.METADATA,
-          Constants.ATTRIBUTE + "type").getValue();
+      HTable table = new HTable(conf, path);
+
+      Get get = new Get(Bytes.toBytes(Constants.METADATA));
+      get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+      byte[] result = table.get(get).getValue(
+          Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("type"));
+
       return Bytes.toString(result);
     } catch (IOException e) {
       e.printStackTrace();

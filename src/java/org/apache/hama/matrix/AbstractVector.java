@@ -21,13 +21,17 @@ package org.apache.hama.matrix;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NavigableMap;
 
+import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
@@ -39,6 +43,7 @@ public abstract class AbstractVector {
   static final Logger LOG = Logger.getLogger(AbstractVector.class);
   protected MapWritable entries;
 
+  @Deprecated
   public void initMap(RowResult row) {
     this.entries = new MapWritable();
     for (Map.Entry<byte[], Cell> f : row.entrySet()) {
@@ -46,7 +51,18 @@ public abstract class AbstractVector {
           new DoubleEntry(f.getValue()));
     }
   }
-
+  
+  public void initMap(Result rs) {
+    this.entries = new MapWritable();
+    NavigableMap<byte[], byte[]> map = rs.getFamilyMap(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    for (Map.Entry<byte[], byte[]> e : map.entrySet()) {
+      if(e != null) {
+        this.entries.put(new IntWritable(Integer.valueOf(Bytes.toString(e.getKey()))),
+            new DoubleEntry(e.getValue()));
+      }
+    }
+  }
+  
   /**
    * Returns an Iterator.
    * 
