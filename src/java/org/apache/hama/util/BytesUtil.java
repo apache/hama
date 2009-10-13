@@ -136,10 +136,6 @@ public class BytesUtil {
   public static byte[] getColumnIndex(int integer) {
     return Bytes.toBytes(Constants.COLUMN + String.valueOf(integer));
   }
-  
-  public static byte[] getBlockIndex(int integer) {
-    return Bytes.toBytes(Constants.BLOCK + String.valueOf(integer));
-  }
 
   public static int getBlockIndex(byte[] key) {
     String cKey = new String(key);
