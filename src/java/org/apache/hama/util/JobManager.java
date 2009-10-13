@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.matrix.Matrix;
 
 /**
@@ -50,6 +51,18 @@ public class JobManager {
    */
   public static void execute(JobConf jobConf) throws IOException {
     JobClient.runJob(jobConf);
+  }
+  
+  public static void execute(Job job) throws IOException {
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
   
   public static class MultipleJob extends Thread {

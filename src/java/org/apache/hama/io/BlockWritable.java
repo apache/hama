@@ -87,6 +87,8 @@ public class BlockWritable implements Writable {
 
   public void set(byte[] key, byte[] value) throws IOException {
     int index = 0;
+    LOG.info(new String(key));
+    
     if (new String(key).equals(Constants.BLOCK + "b")) {
       index = 1;
     }

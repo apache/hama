@@ -10,6 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.UnknownScannerException;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
@@ -170,9 +171,11 @@ public class JacobiEigenValue {
       public void init() throws IOException {
         super.init();
 
-        Cell rows = null;
-        rows = htable.get(Constants.METADATA, Constants.METADATA_ROWS);
-        size = (rows != null) ? BytesUtil.bytesToInt(rows.getValue()) : 0;
+        Get get = new Get(Bytes.toBytes(Constants.METADATA));
+        get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+        byte[] result = htable.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE), 
+            Bytes.toBytes("rows"));
+        size = (result != null) ? BytesUtil.bytesToInt(result) : 0;
 
         if (endRow.length == 0) { // the last split, we don't know the end row
           totalRows = 0; // so we just skip it.
@@ -403,9 +406,12 @@ public class JacobiEigenValue {
       public void init() throws IOException {
         super.init();
 
-        Cell rows = null;
-        rows = htable.get(Constants.METADATA, Constants.METADATA_ROWS);
-        size = (rows != null) ? BytesUtil.bytesToInt(rows.getValue()) : 0;
+        Get get = new Get(Bytes.toBytes(Constants.METADATA));
+        get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+        byte[] result = htable.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE), 
+            Bytes.toBytes("rows"));
+        
+        size = (result != null) ? BytesUtil.bytesToInt(result) : 0;
 
         if (endRow.length == 0) { // the last split, we don't know the end row
           totalRows = 0; // so we just skip it.

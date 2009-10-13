@@ -328,9 +328,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     Get get = new Get(BytesUtil.getRowIndex(i));
     get.addColumn(Bytes.toBytes(Constants.COLUMN_FAMILY));
-    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.COLUMN_FAMILY),
+    byte[] result = table.get(get).getValue(
+        Bytes.toBytes(Constants.COLUMN_FAMILY),
         Bytes.toBytes(String.valueOf(j)));
-    
+
     if (result == null)
       throw new NullPointerException("Unexpected null");
 
@@ -376,7 +377,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public void set(int i, int j, double value) throws IOException {
     if (this.getRows() < i || this.getColumns() < j)
-      throw new ArrayIndexOutOfBoundsException(i + ", " + j);
+      throw new ArrayIndexOutOfBoundsException(this.getRows() + ", "
+          + this.getColumns() + ": " + i + ", " + j);
     VectorUpdate update = new VectorUpdate(i);
     update.put(j, value);
     table.put(update.getPut());

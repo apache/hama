@@ -35,14 +35,6 @@ public class Constants {
   /** The attribute column family */
   public final static String ATTRIBUTE = "attribute";
 
-  /** The number of the matrix rows */
-  @Deprecated
-  public final static String METADATA_ROWS = "attribute:rows";
-
-  /** The number of the matrix columns */
-  @Deprecated
-  public final static String METADATA_COLUMNS = "attribute:columns";
-
   /** The type of the matrix */
   public final static String METADATA_TYPE = "type";
   
@@ -59,16 +51,11 @@ public class Constants {
    *          1) if the matrix table is aliased, we should not delete the table.
    *          2) if the matrix table is not aliased, we need to delete the table.
    */
-  @Deprecated
-  public final static String METADATA_REFERENCE = "attribute:reference";
+  public final static String METADATA_REFERENCE = "reference";
   
   /** The aliase names column family */
   public final static String ALIASEFAMILY = "aliase";
   
-  /** The aliase names of the matrix, sperated by "," */
-  @Deprecated
-  public final static String ALIASENAME = "aliase:name";
-
   /** Default columnFamily name */
   @Deprecated
   public final static String COLUMN = "column:";
@@ -97,7 +84,6 @@ public class Constants {
   public static final int DEFAULT_TRY_TIMES = 10000000;
   
   /** block data column */
-  @Deprecated
   public static final String BLOCK = "block:";
   
   public static final Text ROWCOUNT= new Text("row");

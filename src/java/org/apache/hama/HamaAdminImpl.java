@@ -153,7 +153,8 @@ public class HamaAdminImpl implements HamaAdmin {
     Get get = new Get(Bytes.toBytes(Constants.METADATA));
     get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
     byte[] result = matrix.get(get).getValue(
-        Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("reference"));
+        Bytes.toBytes(Constants.ATTRIBUTE),
+        Bytes.toBytes(Constants.METADATA_REFERENCE));
 
     return (result == null) ? 0 : Bytes.toInt(result);
   }

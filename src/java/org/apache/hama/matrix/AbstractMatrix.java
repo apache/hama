@@ -144,7 +144,7 @@ public abstract class AbstractMatrix implements Matrix {
     // It should run only when table doesn't exist.
     if (!admin.tableExists(matrixPath)) {
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.COLUMN)));
+          .toBytes(Constants.COLUMN_FAMILY)));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
           .toBytes(Constants.ATTRIBUTE)));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
@@ -175,12 +175,6 @@ public abstract class AbstractMatrix implements Matrix {
           .toBytes(Constants.METADATA_TYPE), Bytes.toBytes(this.getClass()
           .getSimpleName()));
       table.put(put);
-
-      /*
-       * BatchUpdate update = new BatchUpdate(Constants.METADATA);
-       * update.put(Constants.METADATA_TYPE, Bytes.toBytes(this.getClass()
-       * .getSimpleName())); table.commit(update);
-       */
 
       // the new matrix's reference is 1.
       setReference(1);
@@ -399,11 +393,11 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) throws IOException {
-    VectorUpdate update = new VectorUpdate(Constants.METADATA);
-    update.put(Constants.METADATA_ROWS, rows);
-    update.put(Constants.METADATA_COLUMNS, columns);
-
-    table.commit(update.getBatchUpdate());
+    Put put = new Put(Bytes.toBytes(Constants.METADATA));
+    byte[] family = Bytes.toBytes(Constants.ATTRIBUTE);
+    put.add(family, Bytes.toBytes("rows"), BytesUtil.intToBytes(rows));
+    put.add(family, Bytes.toBytes("columns"), BytesUtil.intToBytes(columns));
+    table.put(put);
   }
 
   /** {@inheritDoc} */
@@ -497,10 +491,10 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   protected void setReference(int reference) throws IOException {
-    BatchUpdate update = new BatchUpdate(Constants.METADATA);
-    update.put(Constants.METADATA_REFERENCE, Bytes.toBytes(reference));
-    table.commit(update);
-
+    Put put = new Put(Bytes.toBytes(Constants.METADATA));
+    put.add(Bytes.toBytes(Constants.ATTRIBUTE), Bytes
+        .toBytes(Constants.METADATA_REFERENCE), Bytes.toBytes(reference));
+    table.put(put);
   }
 
   protected int incrementAndGetRef() throws IOException {
@@ -508,9 +502,9 @@ public abstract class AbstractMatrix implements Matrix {
 
     Get get = new Get(Bytes.toBytes(Constants.METADATA));
     get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-    byte[] result = table.get(get).getValue(
-        Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("reference"));
-    
+    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+        Bytes.toBytes(Constants.METADATA_REFERENCE));
+
     if (result != null) {
       reference = Bytes.toInt(result);
       reference++;
@@ -521,12 +515,12 @@ public abstract class AbstractMatrix implements Matrix {
 
   protected int decrementAndGetRef() throws IOException {
     int reference = 0;
-    
+
     Get get = new Get(Bytes.toBytes(Constants.METADATA));
     get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-    byte[] result = table.get(get).getValue(
-        Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("reference"));
-    
+    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+        Bytes.toBytes(Constants.METADATA_REFERENCE));
+
     if (result != null) {
       reference = Bytes.toInt(result);
       if (reference > 0) // reference==0, we need not to decrement it.
