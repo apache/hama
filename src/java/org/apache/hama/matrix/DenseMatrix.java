@@ -22,6 +22,7 @@ package org.apache.hama.matrix;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NavigableMap;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,6 +32,8 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -371,15 +374,19 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public DenseVector getColumn(int j) throws IOException {
-    byte[] columnKey = BytesUtil.getColumnIndex(j);
-    byte[][] c = { columnKey };
-    Scanner scan = table.getScanner(c, HConstants.EMPTY_START_ROW);
-
+    Scan scan = new Scan();
+    scan.addColumn(Bytes.toBytes(Constants.COLUMN_FAMILY)
+        , Bytes.toBytes(String.valueOf(j)));
+    ResultScanner s = table.getScanner(scan);
+    Result r = null;
+    
     MapWritable trunk = new MapWritable();
-
-    for (RowResult row : scan) {
-      trunk.put(new IntWritable(BytesUtil.bytesToInt(row.getRow())),
-          new DoubleEntry(row.get(columnKey)));
+    while ((r = s.next()) != null) {
+      byte[] value = r.getValue(Bytes.toBytes(Constants.COLUMN_FAMILY)
+          , Bytes.toBytes(String.valueOf(j)));
+      LOG.info(Bytes.toString(r.getRow()));
+      trunk.put(new IntWritable(BytesUtil.getRowIndex(r.getRow())), 
+          new DoubleEntry(value));
     }
 
     return new DenseVector(trunk);
@@ -408,7 +415,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     VectorUpdate update = new VectorUpdate(row);
     update.putAll(vector.getEntries());
-    table.commit(update.getBatchUpdate());
+    table.put(update.getPut());
   }
 
   /**
@@ -427,7 +434,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       double value = ((DoubleEntry) e.getValue()).getValue();
       VectorUpdate update = new VectorUpdate(key);
       update.put(column, value);
-      table.commit(update.getBatchUpdate());
+      table.put(update.getPut());
     }
   }
 
