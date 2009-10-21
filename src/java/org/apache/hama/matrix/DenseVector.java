@@ -313,4 +313,12 @@ public class DenseVector extends AbstractVector implements Vector {
       this.set(i, 0);
     }
   }
+  
+  public String toString() {
+    StringBuilder result = new StringBuilder();
+    for(int i = 0; i < this.size(); i++) {
+      result.append(this.get(i) + " ");
+    }
+    return result.toString();
+  }
 }

@@ -41,6 +41,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-203: Replacement of RandomMatrixMap/Reduce (edwardyoon)
     HAMA-197: Replacement for deprecated API of Hbase (edwardyoon)
     HAMA-188: Upgrade dependencies for hadoop/hbase 2.0 (edwardyoon)
     HAMA-192: Refactor top-level package (edwardyoon)

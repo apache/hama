@@ -32,7 +32,7 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.log4j.Logger;
-
+@Deprecated
 public class RandomMatrixReduce extends MapReduceBase implements
     Reducer<IntWritable, MapWritable, IntWritable, VectorUpdate> {
   static final Logger LOG = Logger.getLogger(RandomMatrixReduce.class);

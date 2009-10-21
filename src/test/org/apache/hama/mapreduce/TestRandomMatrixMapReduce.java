@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.mapred;
+package org.apache.hama.mapreduce;
 
 import java.io.IOException;
 
@@ -36,7 +36,7 @@ public class TestRandomMatrixMapReduce extends HamaCluster {
     
     for(int i = 0; i < 20; i++) {
       for(int j = 0; j < 20; j++) {
-        assertTrue(rand.get(i, j) > -1);
+        assertTrue(rand.get(i, j) > 0);
       }
     }
 

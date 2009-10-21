@@ -37,6 +37,7 @@ import org.apache.log4j.Logger;
 /**
  * Generate matrix with random elements
  */
+@Deprecated
 public class RandomMatrixMap extends MapReduceBase implements
     Mapper<IntWritable, IntWritable, IntWritable, MapWritable> {
   static final Logger LOG = Logger.getLogger(RandomMatrixMap.class);

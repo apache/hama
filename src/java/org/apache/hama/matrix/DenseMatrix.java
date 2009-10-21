@@ -33,7 +33,9 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.io.RowResult;
+import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -42,13 +44,14 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.BlockID;
@@ -58,9 +61,9 @@ import org.apache.hama.io.Pair;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapred.CollectBlocksMapper;
 import org.apache.hama.mapred.DummyMapper;
-import org.apache.hama.mapred.RandomMatrixMap;
-import org.apache.hama.mapred.RandomMatrixReduce;
 import org.apache.hama.mapred.VectorInputFormat;
+import org.apache.hama.mapreduce.RandomMatrixMapper;
+import org.apache.hama.mapreduce.RandomMatrixReducer;
 import org.apache.hama.matrix.algebra.BlockMultiplyMap;
 import org.apache.hama.matrix.algebra.BlockMultiplyReduce;
 import org.apache.hama.matrix.algebra.DenseMatrixVectorMultMap;
@@ -240,29 +243,23 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     LOG.info("Create the " + m + " * " + n + " random matrix : "
         + rand.getPath());
 
-    JobConf jobConf = new JobConf(conf);
-    jobConf.setJobName("random matrix MR job : " + rand.getPath());
-
-    jobConf.setNumMapTasks(conf.getNumMapTasks());
-    jobConf.setNumReduceTasks(conf.getNumReduceTasks());
-
+    Job job = new Job(conf, "random matrix MR job : " + rand.getPath());
     final Path inDir = new Path(TMP_DIR, "in");
-    FileInputFormat.setInputPaths(jobConf, inDir);
-    jobConf.setMapperClass(RandomMatrixMap.class);
-    jobConf.setMapOutputKeyClass(IntWritable.class);
-    jobConf.setMapOutputValueClass(MapWritable.class);
+    FileInputFormat.setInputPaths(job, inDir);
+    job.setMapperClass(RandomMatrixMapper.class);
+    
+    job.setMapOutputKeyClass(IntWritable.class);
+    job.setMapOutputValueClass(MapWritable.class);
+    
+    job.getConfiguration().setInt("matrix.column", n);
+    job.getConfiguration().set("matrix.type", TABLE_PREFIX);
+    job.getConfiguration().set("matrix.density", "100");
 
-    RandomMatrixReduce.initJob(rand.getPath(), RandomMatrixReduce.class,
-        jobConf);
-    jobConf.setSpeculativeExecution(false);
-    jobConf.setInt("matrix.column", n);
-    jobConf.set("matrix.type", TABLE_PREFIX);
-    jobConf.set("matrix.density", "100");
-
-    jobConf.setInputFormat(SequenceFileInputFormat.class);
-    final FileSystem fs = FileSystem.get(jobConf);
+    
+    job.setInputFormatClass(SequenceFileInputFormat.class);
+    final FileSystem fs = FileSystem.get(job.getConfiguration());
     int interval = m / conf.getNumMapTasks();
-
+    
     // generate an input file for each map task
     for (int i = 0; i < conf.getNumMapTasks(); ++i) {
       final Path file = new Path(inDir, "part" + i);
@@ -273,7 +270,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       } else {
         end = new IntWritable(m - 1);
       }
-      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, jobConf,
+      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, job.getConfiguration(),
           file, IntWritable.class, IntWritable.class, CompressionType.NONE);
       try {
         writer.append(start, end);
@@ -283,7 +280,21 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       System.out.println("Wrote input for Map #" + i);
     }
 
-    JobClient.runJob(jobConf);
+    job.setOutputFormatClass(TableOutputFormat.class);
+    job.setReducerClass(RandomMatrixReducer.class);
+    job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, rand.getPath());
+    job.setOutputKeyClass(ImmutableBytesWritable.class);
+    job.setOutputValueClass(Writable.class);
+    
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
     fs.delete(TMP_DIR, true);
     return rand;
   }
@@ -684,7 +695,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setInputFormat(VectorInputFormat.class);
     jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
 
-    FileInputFormat.addInputPaths(jobConf, path);
+    org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, path);
 
     CollectBlocksMapper.initJob(collectionTable, bool, block_size, this
         .getRows(), this.getColumns(), jobConf);
@@ -719,7 +730,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setInputFormat(VectorInputFormat.class);
     jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
 
-    FileInputFormat.addInputPaths(jobConf, getPath());
+    org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, getPath());
     jobConf.set(JacobiEigenValue.MATRIX, getPath());
     jobConf.setOutputFormat(NullOutputFormat.class);
     jobConf.setMapOutputKeyClass(IntWritable.class);
@@ -761,7 +772,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       jobConf.setInputFormat(JacobiEigenValue.PivotInputFormat.class);
       jobConf.set(JacobiEigenValue.PivotInputFormat.COLUMN_LIST,
           JacobiEigenValue.EIIND);
-      FileInputFormat.addInputPaths(jobConf, getPath());
+      org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, getPath());
       jobConf.setMapOutputKeyClass(Pair.class);
       jobConf.setMapOutputValueClass(DoubleWritable.class);
 
@@ -844,10 +855,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       jobConf.setInputFormat(JacobiEigenValue.RotationInputFormat.class);
       jobConf.set(JacobiEigenValue.RotationInputFormat.COLUMN_LIST,
           JacobiEigenValue.EIIND);
-      FileInputFormat.addInputPaths(jobConf, getPath());
+      org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, getPath());
       jobConf.setMapOutputKeyClass(NullWritable.class);
       jobConf.setMapOutputValueClass(NullWritable.class);
-      FileInputFormat.addInputPaths(jobConf, getPath());
+      org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, getPath());
       jobConf.setOutputFormat(NullOutputFormat.class);
 
       JobManager.execute(jobConf);
