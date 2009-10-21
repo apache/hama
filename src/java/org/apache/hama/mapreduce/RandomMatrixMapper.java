@@ -27,8 +27,6 @@ public class RandomMatrixMapper extends
   public void map(IntWritable key, IntWritable value,
       Context context)
       throws IOException, InterruptedException {
-    LOG.info(key.get());
-    LOG.info(value.get());
 
     if (type.equals("SparseMatrix")) {
       for (int i = key.get(); i <= value.get(); i++) {
