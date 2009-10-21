@@ -81,7 +81,11 @@ public class BytesUtil {
    * @return the converted value
    */
   public static int getRowIndex(byte[] bytes) {
-    String rKey = new String(bytes);
+    String rKey = Bytes.toString(bytes); //new String(bytes);
+    // return zero If all zero
+    if(rKey.equals("000000000000000")) {
+      return 0;
+    }
     
     if(rKey.substring(0, 8).equals("00000000")){
       int i = 8;
@@ -111,7 +115,6 @@ public class BytesUtil {
     for (int i = 0; i < zeros; ++i) {
       buf.append("0");
     }
-    
     return Bytes.toBytes(buf.toString() + index);
   }
   

@@ -57,6 +57,7 @@ public class TestDenseMatrix extends HamaCluster {
   }
 
   public void testAddMult() throws IOException {
+
     Matrix m3 = DenseMatrix.random(conf, SIZE, SIZE);
     Matrix m4 = DenseMatrix.random(conf, SIZE - 2, SIZE - 2);
     try {
@@ -81,9 +82,9 @@ public class TestDenseMatrix extends HamaCluster {
     multMatrixAdd(m1, m2, m3);
     matrixMult(m1, m2);
     addAlphaMatrix(m1, m2);
-    
-    getRowColumn();
-    setRowColumn();
+
+    getRowColumnVector();
+    setRowColumnVector();
     setMatrix(m1);
     setAlphaMatrix(m1);
   }
@@ -172,7 +173,7 @@ public class TestDenseMatrix extends HamaCluster {
     }
   }
 
-  public void getRowColumn() throws IOException {
+  public void getRowColumnVector() throws IOException {
     boolean ex = false;
     try {
       m1.get(SIZE + 1, SIZE + 1);
@@ -199,7 +200,7 @@ public class TestDenseMatrix extends HamaCluster {
     assertEquals(m1.getColumnLabel(1), null);
   }
   
-  public void setRowColumn() throws IOException {
+  public void setRowColumnVector() throws IOException {
     Vector v = new DenseVector();
     double[] entries = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
 
