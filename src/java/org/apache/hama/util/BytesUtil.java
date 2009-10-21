@@ -82,6 +82,10 @@ public class BytesUtil {
    */
   public static int getRowIndex(byte[] bytes) {
     String rKey = new String(bytes);
+    // return zero If all zero
+    if(rKey.equals("000000000000000")) {
+      return 0;
+    }
     
     if(rKey.substring(0, 8).equals("00000000")){
       int i = 8;

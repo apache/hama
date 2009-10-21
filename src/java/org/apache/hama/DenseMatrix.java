@@ -356,7 +356,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     MapWritable trunk = new MapWritable();
 
     for (RowResult row : scan) {
-      trunk.put(new IntWritable(BytesUtil.bytesToInt(row.getRow())),
+      trunk.put(new IntWritable(BytesUtil.getRowIndex(row.getRow())),
           new DoubleEntry(row.get(columnKey)));
     }
 
