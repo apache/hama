@@ -48,6 +48,7 @@ public class JacobiEigenValue {
 
   /** a matrix copy of the original copy collected in "eicol" family * */
   public static final String EICOL = "eicol:";
+  public static final String EICOL_FAMILY = "eicol";
   /** a column family collect all values and statuses used during computation * */
   @Deprecated
   public static final String EI = "eival:";
@@ -65,6 +66,7 @@ public class JacobiEigenValue {
   public static final String EIIND = EI + "ind";
   /** a matrix collect all the eigen vectors * */
   public static final String EIVEC = "eivec:";
+  public static final String EIVEC_FAMILY = "eivec";
   public static final String MATRIX = "hama.jacobieigenvalue.matrix";
   /** parameters for pivot * */
   public static final String PIVOTROW = "hama.jacobi.pivot.row";

@@ -84,7 +84,10 @@ public class Constants {
   public static final int DEFAULT_TRY_TIMES = 10000000;
   
   /** block data column */
+  @Deprecated
   public static final String BLOCK = "block:";
+  
+  public static final String BLOCK_FAMILY = "block";
   
   public static final Text ROWCOUNT= new Text("row");
 }

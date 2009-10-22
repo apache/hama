@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,13 +35,10 @@ import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.io.BatchUpdate;
-import org.apache.hadoop.hbase.io.Cell;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.io.RowResult;
-import org.apache.hadoop.hbase.mapred.IdentityTableReduce;
-import org.apache.hadoop.hbase.mapred.TableMap;
-import org.apache.hadoop.hbase.mapred.TableMapReduceUtil;
+import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -48,9 +46,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaAdmin;
 import org.apache.hama.HamaAdminImpl;
@@ -408,35 +404,36 @@ public abstract class AbstractMatrix implements Matrix {
 
   }
 
-  /**
-   * Just full scan a table.
-   */
-  public static class TableReadMapper extends MapReduceBase implements
-      TableMap<ImmutableBytesWritable, BatchUpdate> {
+  public static class ScanMapper extends
+      TableMapper<ImmutableBytesWritable, Put> {
     private static List<Double> alpha = new ArrayList<Double>();
 
-    @SuppressWarnings("unchecked")
-    public void map(ImmutableBytesWritable key, RowResult value,
-        OutputCollector<ImmutableBytesWritable, BatchUpdate> output,
-        @SuppressWarnings("unused")
-        Reporter reporter) throws IOException {
+    public void map(ImmutableBytesWritable key, Result value, Context context)
+        throws IOException, InterruptedException {
+      Put put = new Put(key.get());
 
-      BatchUpdate update = new BatchUpdate(key.get());
-      for (Map.Entry<byte[], Cell> e : value.entrySet()) {
-        if (alpha.size() == 0) {
-          update.put(e.getKey(), e.getValue().getValue());
-        } else {
-          String column = new String(e.getKey());
-          if (column.startsWith(Constants.COLUMN)) {
-            double currValue = BytesUtil.bytesToDouble(e.getValue().getValue());
-            update.put(e.getKey(), (BytesUtil.doubleToBytes(currValue
-                * alpha.get(0))));
+      NavigableMap<byte[], NavigableMap<byte[], byte[]>> map = value
+          .getNoVersionMap();
+      for (Map.Entry<byte[], NavigableMap<byte[], byte[]>> a : map.entrySet()) {
+        byte[] family = a.getKey();
+        for (Map.Entry<byte[], byte[]> b : a.getValue().entrySet()) {
+          byte[] qualifier = b.getKey();
+          byte[] val = b.getValue();
+          if (alpha.size() == 0) {
+            put.add(family, qualifier, val);
           } else {
-            update.put(e.getKey(), e.getValue().getValue());
+            if (Bytes.toString(family).equals(Constants.COLUMN_FAMILY)) {
+              double currVal = BytesUtil.bytesToDouble(val);
+              put.add(family, qualifier, BytesUtil.doubleToBytes(currVal
+                  * alpha.get(0)));
+            } else {
+              put.add(family, qualifier, val);
+            }
           }
         }
       }
-      output.collect(key, update);
+
+      context.write(key, put);
     }
 
     public static void setAlpha(double a) {
@@ -448,40 +445,59 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public Matrix set(Matrix B) throws IOException {
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("set MR job : " + this.getPath());
+    Job job = new Job(config, "set MR job : " + this.getPath());
 
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    Scan scan = new Scan();
+    scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    scan.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    scan.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
+    scan.addFamily(Bytes.toBytes(Constants.BLOCK_FAMILY));
+    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
+    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY));
+    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY));
 
-    TableMapReduceUtil.initTableMapJob(B.getPath(), Constants.COLUMN + " "
-        + Constants.ATTRIBUTE + " " + Constants.ALIASEFAMILY + " "
-        + Constants.BLOCK, TableReadMapper.class, ImmutableBytesWritable.class,
-        BatchUpdate.class, jobConf);
-    TableMapReduceUtil.initTableReduceJob(this.getPath(),
-        IdentityTableReduce.class, jobConf);
-
-    JobManager.execute(jobConf);
+    org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(B
+        .getPath(), scan, ScanMapper.class, ImmutableBytesWritable.class,
+        Put.class, job);
+    org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableReducerJob(
+        this.getPath(),
+        org.apache.hadoop.hbase.mapreduce.IdentityTableReducer.class, job);
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
     return this;
   }
 
   /** {@inheritDoc} */
   public Matrix set(double alpha, Matrix B) throws IOException {
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("set MR job : " + this.getPath());
+    Job job = new Job(config, "set MR job : " + this.getPath());
 
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
-
-    TableReadMapper.setAlpha(alpha);
-    TableMapReduceUtil.initTableMapJob(B.getPath(), Constants.COLUMN + " "
-        + Constants.ATTRIBUTE + " " + Constants.ALIASEFAMILY + " "
-        + Constants.BLOCK, TableReadMapper.class, ImmutableBytesWritable.class,
-        BatchUpdate.class, jobConf);
-    TableMapReduceUtil.initTableReduceJob(this.getPath(),
-        IdentityTableReduce.class, jobConf);
-
-    JobManager.execute(jobConf);
+    Scan scan = new Scan();
+    scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    scan.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    scan.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
+    scan.addFamily(Bytes.toBytes(Constants.BLOCK_FAMILY));
+    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
+    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY));
+    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY));
+    ScanMapper.setAlpha(alpha);
+    org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(B
+        .getPath(), scan, ScanMapper.class, ImmutableBytesWritable.class,
+        Put.class, job);
+    org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableReducerJob(
+        this.getPath(),
+        org.apache.hadoop.hbase.mapreduce.IdentityTableReducer.class, job);
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
     return this;
   }
 
