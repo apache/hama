@@ -85,6 +85,7 @@ public class TestDenseMatrix extends HamaCluster {
 
     getRowColumnVector();
     setRowColumnVector();
+
     setMatrix(m1);
     setAlphaMatrix(m1);
   }
@@ -149,7 +150,7 @@ public class TestDenseMatrix extends HamaCluster {
     Matrix result = m1.add(0.1, m2);
     assertEquals(value, result.get(0, 0));
   }
-  
+
   public void setMatrix(Matrix m1) throws IOException {
     Matrix a = new DenseMatrix(conf, m1.getRows(), m1.getColumns());
     a.set(m1);
