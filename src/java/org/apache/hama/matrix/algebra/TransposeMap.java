@@ -22,45 +22,27 @@ package org.apache.hama.matrix.algebra;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.Constants;
-import org.apache.hama.mapred.VectorInputFormat;
+import org.apache.hama.matrix.DenseVector;
+import org.apache.hama.util.BytesUtil;
 
-public class TransposeMap extends MapReduceBase implements
-    Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
+public class TransposeMap extends TableMapper<IntWritable, MapWritable> {
   private IntWritable nKey = new IntWritable();
-  
-  public static void initJob(String path, Class<TransposeMap> map,
-      Class<IntWritable> outputKeyClass, Class<MapWritable> outputValueClass,
-      JobConf jobConf) {
 
-    jobConf.setMapOutputValueClass(outputValueClass);
-    jobConf.setMapOutputKeyClass(outputKeyClass);
-    jobConf.setMapperClass(map);
+  public void map(ImmutableBytesWritable key, Result value, Context context) 
+  throws IOException, InterruptedException {
+    IntWritable k = new IntWritable(BytesUtil.getRowIndex(key.get()));
 
-    jobConf.setInputFormat(VectorInputFormat.class);
-    FileInputFormat.addInputPaths(jobConf, path);
-    jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
-  }
-
-  @Override
-  public void map(IntWritable key, MapWritable value,
-      OutputCollector<IntWritable, MapWritable> output, Reporter reporter)
-      throws IOException {
-    
-    for(Map.Entry<Writable, Writable> e : value.entrySet()) {
+    for(Map.Entry<Writable, Writable> e : new DenseVector(value).getEntries().entrySet()) {
       MapWritable val = new MapWritable();
       nKey.set(((IntWritable) e.getKey()).get());
-      val.put(key, e.getValue());
-      output.collect(nKey, val);
+      val.put(k, e.getValue());
+      context.write(nKey, val);
       val.clear();
     }
     

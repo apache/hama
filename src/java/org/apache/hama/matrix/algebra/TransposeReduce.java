@@ -20,47 +20,35 @@
 package org.apache.hama.matrix.algebra;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.hadoop.hbase.io.BatchUpdate;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reducer;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.mapred.VectorOutputFormat;
+import org.apache.hama.util.BytesUtil;
 
-public class TransposeReduce  extends MapReduceBase implements
-Reducer<IntWritable, MapWritable, IntWritable, VectorUpdate> {
-
-  public static void initJob(String path, Class<TransposeReduce> reducer,
-      JobConf jobConf) {
-    jobConf.setOutputFormat(VectorOutputFormat.class);
-    jobConf.setReducerClass(reducer);
-    jobConf.set(VectorOutputFormat.OUTPUT_TABLE, path);
-    jobConf.setOutputKeyClass(IntWritable.class);
-    jobConf.setOutputValueClass(BatchUpdate.class);
-  }
+public class TransposeReduce  extends
+    TableReducer<IntWritable, MapWritable, Writable> {
 
   @Override
-  public void reduce(IntWritable key, Iterator<MapWritable> values,
-      OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
-      throws IOException {
+  public void reduce(IntWritable key, Iterable<MapWritable> values,
+      Context context) throws IOException, InterruptedException {
 
     MapWritable sum = new MapWritable();
-    while (values.hasNext()) {
-      for(Map.Entry<Writable, Writable> e: values.next().entrySet()) {
-        sum.put(e.getKey(), e.getValue());  
+    for (MapWritable value : values) {
+      for (Map.Entry<Writable, Writable> e : value.entrySet()) {
+        sum.put(e.getKey(), e.getValue());
       }
     }
-    
+
     VectorUpdate update = new VectorUpdate(key.get());
     update.putAll(sum);
-    output.collect(key, update);
+
+    context.write(new ImmutableBytesWritable(BytesUtil.getRowIndex(key.get())),
+        update.getPut());
   }
+
 }

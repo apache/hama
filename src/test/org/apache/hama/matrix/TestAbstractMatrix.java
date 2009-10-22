@@ -34,7 +34,6 @@ public class TestAbstractMatrix extends HamaCluster {
   public void testTransposeAndNorm() throws IOException {
     testTrans(m1);
     testTrans(m2);
-    
     normTest(m1);
     normTest(m2);
   }

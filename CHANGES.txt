@@ -41,6 +41,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-204: Replacement of TransposeMap/Reduce (edwardyoon)
     HAMA-213: Replacement of TableReadMapper (edwardyoon)
     HAMA-203: Replacement of RandomMatrixMap/Reduce (edwardyoon)
     HAMA-197: Replacement for deprecated API of Hbase (edwardyoon)
