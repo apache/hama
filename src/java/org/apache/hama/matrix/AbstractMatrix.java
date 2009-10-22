@@ -586,17 +586,23 @@ public abstract class AbstractMatrix implements Matrix {
       result = new DenseMatrix(config, this.getRows(), this.getColumns());
     }
 
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("transpose MR job" + result.getPath());
+    Job job = new Job(config, "set MR job : " + this.getPath());
 
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    Scan scan = new Scan();
+    scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(
+        this.getPath(), scan, TransposeMap.class, IntWritable.class,
+        MapWritable.class, job);
+    org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableReducerJob(
+        result.getPath(), TransposeReduce.class, job);
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
 
-    TransposeMap.initJob(this.getPath(), TransposeMap.class, IntWritable.class,
-        MapWritable.class, jobConf);
-    TransposeReduce.initJob(result.getPath(), TransposeReduce.class, jobConf);
-
-    JobManager.execute(jobConf);
     return result;
   }
 
