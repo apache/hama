@@ -29,7 +29,7 @@ public class ExampleDriver {
       pgd.addClass("rand", RandomMatrix.class, "Generate matrix with random elements.");
       pgd.addClass("add", MatrixAddition.class, "Mat-Mat addition.");
       pgd.addClass("mult", MatrixMultiplication.class, "Mat-Mat multiplication.");
-      pgd.addClass("multfiles", FileMatrixBlockMult.class, "file matrices multiplication.");
+      pgd.addClass("similarity", CosineSimilarityMatrix.class, "Cosine Similarity Matrix.");
       pgd.addClass("norm", MatrixNorm.class, "Maximum absolute row sum of matrix");
       pgd.driver(args);
     } catch (Throwable e) {
