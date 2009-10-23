@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HColumnDescriptor;
@@ -405,9 +407,10 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public static class ScanMapper extends
-      TableMapper<ImmutableBytesWritable, Put> {
-    private static List<Double> alpha = new ArrayList<Double>();
-
+      TableMapper<ImmutableBytesWritable, Put> implements Configurable {
+    private static Double alpha = null;
+    private Configuration conf = null;
+    
     public void map(ImmutableBytesWritable key, Result value, Context context)
         throws IOException, InterruptedException {
       Put put = new Put(key.get());
@@ -419,13 +422,12 @@ public abstract class AbstractMatrix implements Matrix {
         for (Map.Entry<byte[], byte[]> b : a.getValue().entrySet()) {
           byte[] qualifier = b.getKey();
           byte[] val = b.getValue();
-          if (alpha.size() == 0) {
+          if (alpha.equals(new Double(1))) {
             put.add(family, qualifier, val);
           } else {
             if (Bytes.toString(family).equals(Constants.COLUMN_FAMILY)) {
               double currVal = BytesUtil.bytesToDouble(val);
-              put.add(family, qualifier, BytesUtil.doubleToBytes(currVal
-                  * alpha.get(0)));
+              put.add(family, qualifier, BytesUtil.doubleToBytes(currVal * alpha));
             } else {
               put.add(family, qualifier, val);
             }
@@ -436,10 +438,16 @@ public abstract class AbstractMatrix implements Matrix {
       context.write(key, put);
     }
 
-    public static void setAlpha(double a) {
-      if (alpha.size() > 0)
-        alpha = new ArrayList<Double>();
-      alpha.add(a);
+    @Override
+    public Configuration getConf() {
+      return conf;
+    }
+
+    @Override
+    public void setConf(Configuration conf) {
+      this.conf = conf;
+      Float f = conf.getFloat("set.alpha", 1);
+      alpha = f.doubleValue();
     }
   }
 
@@ -484,7 +492,9 @@ public abstract class AbstractMatrix implements Matrix {
     scan.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
     scan.addFamily(Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY));
     scan.addFamily(Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY));
-    ScanMapper.setAlpha(alpha);
+    Float f = new Float(alpha);
+    job.getConfiguration().setFloat("set.alpha", f);
+    
     org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(B
         .getPath(), scan, ScanMapper.class, ImmutableBytesWritable.class,
         Put.class, job);
