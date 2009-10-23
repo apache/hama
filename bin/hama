@@ -55,7 +55,6 @@ esac
 if [ $# = 0 ]; then
   echo "Usage: hama <command>"
   echo "where <command> is one of:"
-  echo "  shell            run the HAMA shell"
   echo "  examples         run the HAMA examples"
   echo " or"
   echo "  CLASSNAME        run the class named CLASSNAME"
@@ -179,35 +178,13 @@ fi
 if $cygwin; then
   JAVA_LIBRARY_PATH=`cygpath -p "$JAVA_LIBRARY_PATH"`
 fi
- 
+
 # restore ordinary behaviour
 unset IFS
 
 # figure out which class to run
-if [ "$COMMAND" = "shell" ] ; then
-  if [ "$HAMA_JAR" == "" ] ; then
-    echo 'Can not find the hama jar. Please check that if it is in $HAMA_HOME.'
-    exit -1
-  else
-    if [ "$HAMA_JARS" == "" ] ; then
-      echo 'Hama shell to be excuted needs the hbase & hama jar. Please check that if it is in $HAMA_HOME/lib'
-      exit -1
-    else
-      CLASS="org.apache.hadoop.mapred.JobShell -libjars $HAMA_JARS,$HAMA_JAR $HAMA_JAR" 
-    fi
-  fi
-elif [ "$COMMAND" = "examples" ] ; then
-  if [ "$HAMA_EXAMPLES_JAR" == "" ] ; then
-    echo 'Can not find the hama examples jar. Please check that if it is in $HAMA_HOME.'
-    exit -1
-  else
-    if [ "$HAMA_JARS" == "" ] ; then
-      echo 'Hama examples to be excuted needs the hbase & hama jar. Please check that if it is in $HAMA_HOME/lib'
-      exit -1
-    else
-      CLASS="org.apache.hadoop.mapred.JobShell -libjars $HAMA_JARS,$HAMA_JAR $HAMA_EXAMPLES_JAR" 
-    fi
-  fi
+if [ "$COMMAND" = "examples" ] ; then
+  CLASS="org.apache.hama.examples.ExampleDriver" 
 else
   CLASS=$COMMAND
 fi
