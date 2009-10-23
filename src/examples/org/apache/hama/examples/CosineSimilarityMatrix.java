@@ -14,6 +14,8 @@ import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaAdmin;
+import org.apache.hama.HamaAdminImpl;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.matrix.DenseMatrix;
 import org.apache.hama.matrix.DenseVector;
@@ -74,13 +76,15 @@ public class CosineSimilarityMatrix {
 
   private static Job configureJob(HamaConfiguration conf, String[] args)
       throws IOException {
+    HamaAdmin admin = new HamaAdminImpl(conf);
+    
     Job job = new Job(conf, "set MR job test");
-    job.getConfiguration().set("input.matrix", args[0]);
+    job.getConfiguration().set("input.matrix", admin.getPath(args[0]));
 
     Scan scan = new Scan();
     scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
 
-    TableMapReduceUtil.initTableMapperJob(args[0], scan,
+    TableMapReduceUtil.initTableMapperJob(admin.getPath(args[0]), scan,
         ComputeSimilarityMapper.class, ImmutableBytesWritable.class, Put.class, job);
     TableMapReduceUtil.initTableReducerJob(args[1], IdentityTableReducer.class,
         job);
