@@ -19,6 +19,7 @@
  */
 package org.apache.hama;
 
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.Text;
 
 /**
@@ -33,7 +34,7 @@ public class Constants {
   public final static String CINDEX = "cIndex";
 
   /** The attribute column family */
-  public final static String ATTRIBUTE = "attribute";
+  public static byte[] ATTRIBUTE = Bytes.toBytes("attribute");
 
   /** The type of the matrix */
   public final static String METADATA_TYPE = "type";
@@ -60,7 +61,7 @@ public class Constants {
   @Deprecated
   public final static String COLUMN = "column:";
 
-  public final static String COLUMN_FAMILY = "column";
+  public static byte[] COLUMNFAMILY = Bytes.toBytes("column");
   
   /** Temporary random matrices name prefix */
   public final static String RANDOM = "rand";

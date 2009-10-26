@@ -22,22 +22,17 @@ package org.apache.hama.matrix;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.NavigableMap;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.client.Scanner;
-import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
@@ -47,14 +42,13 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.BlockID;
@@ -250,19 +244,18 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     final Path inDir = new Path(TMP_DIR, "in");
     FileInputFormat.setInputPaths(job, inDir);
     job.setMapperClass(RandomMatrixMapper.class);
-    
+
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(MapWritable.class);
-    
+
     job.getConfiguration().setInt("matrix.column", n);
     job.getConfiguration().set("matrix.type", TABLE_PREFIX);
     job.getConfiguration().set("matrix.density", "100");
 
-    
     job.setInputFormatClass(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(job.getConfiguration());
     int interval = m / conf.getNumMapTasks();
-    
+
     // generate an input file for each map task
     for (int i = 0; i < conf.getNumMapTasks(); ++i) {
       final Path file = new Path(inDir, "part" + i);
@@ -273,8 +266,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       } else {
         end = new IntWritable(m - 1);
       }
-      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, job.getConfiguration(),
-          file, IntWritable.class, IntWritable.class, CompressionType.NONE);
+      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, job
+          .getConfiguration(), file, IntWritable.class, IntWritable.class,
+          CompressionType.NONE);
       try {
         writer.append(start, end);
       } finally {
@@ -288,7 +282,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, rand.getPath());
     job.setOutputKeyClass(ImmutableBytesWritable.class);
     job.setOutputValueClass(Writable.class);
-    
+
     try {
       job.waitForCompletion(true);
     } catch (InterruptedException e) {
@@ -341,9 +335,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       throw new ArrayIndexOutOfBoundsException(i + ", " + j);
 
     Get get = new Get(BytesUtil.getRowIndex(i));
-    get.addColumn(Bytes.toBytes(Constants.COLUMN_FAMILY));
-    byte[] result = table.get(get).getValue(
-        Bytes.toBytes(Constants.COLUMN_FAMILY),
+    get.addColumn(Constants.COLUMNFAMILY);
+    byte[] result = table.get(get).getValue(Constants.COLUMNFAMILY,
         Bytes.toBytes(String.valueOf(j)));
 
     if (result == null)
@@ -361,7 +354,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public DenseVector getRow(int i) throws IOException {
     Get get = new Get(BytesUtil.getRowIndex(i));
-    get.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    get.addFamily(Constants.COLUMNFAMILY);
     Result r = table.get(get);
     return new DenseVector(r);
   }
@@ -375,17 +368,16 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    */
   public DenseVector getColumn(int j) throws IOException {
     Scan scan = new Scan();
-    scan.addColumn(Bytes.toBytes(Constants.COLUMN_FAMILY)
-        , Bytes.toBytes(String.valueOf(j)));
+    scan.addColumn(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j)));
     ResultScanner s = table.getScanner(scan);
     Result r = null;
-    
+
     MapWritable trunk = new MapWritable();
     while ((r = s.next()) != null) {
-      byte[] value = r.getValue(Bytes.toBytes(Constants.COLUMN_FAMILY)
-          , Bytes.toBytes(String.valueOf(j)));
+      byte[] value = r.getValue(Constants.COLUMNFAMILY, Bytes.toBytes(String
+          .valueOf(j)));
       LOG.info(Bytes.toString(r.getRow()));
-      trunk.put(new IntWritable(BytesUtil.getRowIndex(r.getRow())), 
+      trunk.put(new IntWritable(BytesUtil.getRowIndex(r.getRow())),
           new DoubleEntry(value));
     }
 
@@ -655,25 +647,29 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     int columnSize = (j1 - j0) + 1;
     SubMatrix result = new SubMatrix((i1 - i0) + 1, columnSize);
 
-    byte[][] cols = new byte[columnSize][];
+    Scan scan = new Scan();
     for (int j = j0, jj = 0; j <= j1; j++, jj++) {
-      cols[jj] = BytesUtil.getColumnIndex(j);
+      scan.addColumn(Constants.COLUMNFAMILY, Bytes
+          .toBytes(String.valueOf(j)));
     }
+    scan.setStartRow(BytesUtil.getRowIndex(i0));
+    scan.setStopRow(BytesUtil.getRowIndex(i1 + 1));
+    ResultScanner s = table.getScanner(scan);
+    Iterator<Result> it = s.iterator();
 
-    Scanner scan = table.getScanner(cols, BytesUtil.getRowIndex(i0), BytesUtil
-        .getRowIndex(i1 + 1));
-    Iterator<RowResult> it = scan.iterator();
     int i = 0;
-    RowResult rs = null;
+    Result rs = null;
     while (it.hasNext()) {
       rs = it.next();
       for (int j = j0, jj = 0; j <= j1; j++, jj++) {
-        result.set(i, jj, rs.get(BytesUtil.getColumnIndex(j)).getValue());
+        byte[] vv = rs.getValue(Constants.COLUMNFAMILY, Bytes
+            .toBytes(String.valueOf(j)));
+        System.out.println(BytesUtil.bytesToDouble(vv));
+        result.set(i, jj, vv);
       }
       i++;
     }
 
-    scan.close();
     return result;
   }
 
@@ -779,7 +775,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       jobConf.setInputFormat(JacobiEigenValue.PivotInputFormat.class);
       jobConf.set(JacobiEigenValue.PivotInputFormat.COLUMN_LIST,
           JacobiEigenValue.EIIND);
-      org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, getPath());
+      org.apache.hadoop.mapred.FileInputFormat
+          .addInputPaths(jobConf, getPath());
       jobConf.setMapOutputKeyClass(Pair.class);
       jobConf.setMapOutputValueClass(DoubleWritable.class);
 
@@ -862,10 +859,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       jobConf.setInputFormat(JacobiEigenValue.RotationInputFormat.class);
       jobConf.set(JacobiEigenValue.RotationInputFormat.COLUMN_LIST,
           JacobiEigenValue.EIIND);
-      org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, getPath());
+      org.apache.hadoop.mapred.FileInputFormat
+          .addInputPaths(jobConf, getPath());
       jobConf.setMapOutputKeyClass(NullWritable.class);
       jobConf.setMapOutputValueClass(NullWritable.class);
-      org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, getPath());
+      org.apache.hadoop.mapred.FileInputFormat
+          .addInputPaths(jobConf, getPath());
       jobConf.setOutputFormat(NullOutputFormat.class);
 
       JobManager.execute(jobConf);

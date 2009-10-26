@@ -43,18 +43,9 @@ public abstract class AbstractVector {
   static final Logger LOG = Logger.getLogger(AbstractVector.class);
   protected MapWritable entries;
 
-  @Deprecated
-  public void initMap(RowResult row) {
-    this.entries = new MapWritable();
-    for (Map.Entry<byte[], Cell> f : row.entrySet()) {
-      this.entries.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())),
-          new DoubleEntry(f.getValue()));
-    }
-  }
-  
   public void initMap(Result rs) {
     this.entries = new MapWritable();
-    NavigableMap<byte[], byte[]> map = rs.getFamilyMap(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    NavigableMap<byte[], byte[]> map = rs.getFamilyMap(Constants.COLUMNFAMILY);
     for (Map.Entry<byte[], byte[]> e : map.entrySet()) {
       if(e != null) {
         this.entries.put(new IntWritable(Integer.valueOf(Bytes.toString(e.getKey()))),

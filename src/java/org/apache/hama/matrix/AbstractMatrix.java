@@ -141,10 +141,8 @@ public abstract class AbstractMatrix implements Matrix {
   protected void create() throws IOException {
     // It should run only when table doesn't exist.
     if (!admin.tableExists(matrixPath)) {
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.COLUMN_FAMILY)));
-      this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.ATTRIBUTE)));
+      this.tableDesc.addFamily(new HColumnDescriptor(Constants.COLUMNFAMILY));
+      this.tableDesc.addFamily(new HColumnDescriptor(Constants.ATTRIBUTE));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
           .toBytes(Constants.ALIASEFAMILY)));
 
@@ -169,7 +167,7 @@ public abstract class AbstractMatrix implements Matrix {
 
       // Record the matrix type in METADATA_TYPE
       Put put = new Put(Bytes.toBytes(Constants.METADATA));
-      put.add(Bytes.toBytes(Constants.ATTRIBUTE), Bytes
+      put.add(Constants.ATTRIBUTE, Bytes
           .toBytes(Constants.METADATA_TYPE), Bytes.toBytes(this.getClass()
           .getSimpleName()));
       table.put(put);
@@ -332,8 +330,8 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public int getRows() throws IOException {
     Get get = new Get(Bytes.toBytes(Constants.METADATA));
-    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+    get.addFamily(Constants.ATTRIBUTE);
+    byte[] result = table.get(get).getValue(Constants.ATTRIBUTE,
         Bytes.toBytes("rows"));
 
     return (result != null) ? BytesUtil.bytesToInt(result) : 0;
@@ -342,8 +340,8 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public int getColumns() throws IOException {
     Get get = new Get(Bytes.toBytes(Constants.METADATA));
-    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+    get.addFamily(Constants.ATTRIBUTE);
+    byte[] result = table.get(get).getValue(Constants.ATTRIBUTE,
         Bytes.toBytes("columns"));
 
     return BytesUtil.bytesToInt(result);
@@ -352,8 +350,8 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public String getRowLabel(int row) throws IOException {
     Get get = new Get(BytesUtil.getRowIndex(row));
-    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+    get.addFamily(Constants.ATTRIBUTE);
+    byte[] result = table.get(get).getValue(Constants.ATTRIBUTE,
         Bytes.toBytes("string"));
 
     return (result != null) ? Bytes.toString(result) : null;
@@ -361,13 +359,8 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void setColumnLabel(int column, String name) throws IOException {
-    /*
-     * VectorUpdate update = new VectorUpdate(Constants.CINDEX);
-     * update.put(column, name); table.commit(update.getBatchUpdate());
-     */
-
     Put put = new Put(Bytes.toBytes(Constants.CINDEX));
-    put.add(Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes(String
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes(String
         .valueOf(column)), Bytes.toBytes(name));
     table.put(put);
   }
@@ -375,8 +368,8 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public String getColumnLabel(int column) throws IOException {
     Get get = new Get(Bytes.toBytes(Constants.CINDEX));
-    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+    get.addFamily(Constants.ATTRIBUTE);
+    byte[] result = table.get(get).getValue(Constants.ATTRIBUTE,
         Bytes.toBytes(String.valueOf(column)));
 
     return (result != null) ? Bytes.toString(result) : null;
@@ -385,16 +378,15 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public void setRowLabel(int row, String name) throws IOException {
     VectorUpdate update = new VectorUpdate(row);
-    update.put(Constants.ATTRIBUTE, "string", name);
+    update.put(Bytes.toString(Constants.ATTRIBUTE), "string", name);
     table.put(update.getPut());
   }
 
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) throws IOException {
     Put put = new Put(Bytes.toBytes(Constants.METADATA));
-    byte[] family = Bytes.toBytes(Constants.ATTRIBUTE);
-    put.add(family, Bytes.toBytes("rows"), BytesUtil.intToBytes(rows));
-    put.add(family, Bytes.toBytes("columns"), BytesUtil.intToBytes(columns));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("rows"), BytesUtil.intToBytes(rows));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("columns"), BytesUtil.intToBytes(columns));
     table.put(put);
   }
 
@@ -425,7 +417,7 @@ public abstract class AbstractMatrix implements Matrix {
           if (alpha.equals(new Double(1))) {
             put.add(family, qualifier, val);
           } else {
-            if (Bytes.toString(family).equals(Constants.COLUMN_FAMILY)) {
+            if (Bytes.toString(family).equals(Bytes.toString(Constants.COLUMNFAMILY))) {
               double currVal = BytesUtil.bytesToDouble(val);
               put.add(family, qualifier, BytesUtil.doubleToBytes(currVal * alpha));
             } else {
@@ -456,8 +448,8 @@ public abstract class AbstractMatrix implements Matrix {
     Job job = new Job(config, "set MR job : " + this.getPath());
 
     Scan scan = new Scan();
-    scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
-    scan.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    scan.addFamily(Constants.COLUMNFAMILY);
+    scan.addFamily(Constants.ATTRIBUTE);
     scan.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
     scan.addFamily(Bytes.toBytes(Constants.BLOCK_FAMILY));
     scan.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
@@ -485,8 +477,8 @@ public abstract class AbstractMatrix implements Matrix {
     Job job = new Job(config, "set MR job : " + this.getPath());
 
     Scan scan = new Scan();
-    scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
-    scan.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    scan.addFamily(Constants.COLUMNFAMILY);
+    scan.addFamily(Constants.ATTRIBUTE);
     scan.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
     scan.addFamily(Bytes.toBytes(Constants.BLOCK_FAMILY));
     scan.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
@@ -518,7 +510,7 @@ public abstract class AbstractMatrix implements Matrix {
 
   protected void setReference(int reference) throws IOException {
     Put put = new Put(Bytes.toBytes(Constants.METADATA));
-    put.add(Bytes.toBytes(Constants.ATTRIBUTE), Bytes
+    put.add(Constants.ATTRIBUTE, Bytes
         .toBytes(Constants.METADATA_REFERENCE), Bytes.toBytes(reference));
     table.put(put);
   }
@@ -527,8 +519,8 @@ public abstract class AbstractMatrix implements Matrix {
     int reference = 1;
 
     Get get = new Get(Bytes.toBytes(Constants.METADATA));
-    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+    get.addFamily(Constants.ATTRIBUTE);
+    byte[] result = table.get(get).getValue(Constants.ATTRIBUTE,
         Bytes.toBytes(Constants.METADATA_REFERENCE));
 
     if (result != null) {
@@ -543,8 +535,8 @@ public abstract class AbstractMatrix implements Matrix {
     int reference = 0;
 
     Get get = new Get(Bytes.toBytes(Constants.METADATA));
-    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE),
+    get.addFamily(Constants.ATTRIBUTE);
+    byte[] result = table.get(get).getValue(Constants.ATTRIBUTE,
         Bytes.toBytes(Constants.METADATA_REFERENCE));
 
     if (result != null) {
@@ -599,7 +591,7 @@ public abstract class AbstractMatrix implements Matrix {
     Job job = new Job(config, "set MR job : " + this.getPath());
 
     Scan scan = new Scan();
-    scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    scan.addFamily(Constants.COLUMNFAMILY);
     org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(
         this.getPath(), scan, TransposeMap.class, IntWritable.class,
         MapWritable.class, job);
@@ -622,7 +614,7 @@ public abstract class AbstractMatrix implements Matrix {
     Put put = new Put(Bytes.toBytes(Constants.METADATA));
     put.add(Bytes.toBytes(Constants.ALIASEFAMILY), Bytes.toBytes("name"), Bytes
         .toBytes(aliasename));
-    put.add(Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("type"), Bytes
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("type"), Bytes
         .toBytes(this.getType()));
     table.put(put);
 

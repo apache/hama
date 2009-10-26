@@ -151,9 +151,9 @@ public class HamaAdminImpl implements HamaAdmin {
     HTable matrix = new HTable(conf, tableName);
 
     Get get = new Get(Bytes.toBytes(Constants.METADATA));
-    get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+    get.addFamily(Constants.ATTRIBUTE);
     byte[] result = matrix.get(get).getValue(
-        Bytes.toBytes(Constants.ATTRIBUTE),
+        Constants.ATTRIBUTE,
         Bytes.toBytes(Constants.METADATA_REFERENCE));
 
     return (result == null) ? 0 : Bytes.toInt(result);
@@ -224,9 +224,9 @@ public class HamaAdminImpl implements HamaAdmin {
       HTable table = new HTable(conf, path);
 
       Get get = new Get(Bytes.toBytes(Constants.METADATA));
-      get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
+      get.addFamily(Constants.ATTRIBUTE);
       byte[] result = table.get(get).getValue(
-          Bytes.toBytes(Constants.ATTRIBUTE), Bytes.toBytes("type"));
+          Constants.ATTRIBUTE, Bytes.toBytes("type"));
 
       return Bytes.toString(result);
     } catch (IOException e) {

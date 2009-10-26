@@ -52,8 +52,8 @@ public class VectorUpdate {
   public void put(int j, double value) {
     this.batchUpdate.put(BytesUtil.getColumnIndex(j), BytesUtil
         .doubleToBytes(value));
-    this.put.add(Bytes.toBytes(Constants.COLUMN_FAMILY), Bytes.toBytes(String
-        .valueOf(j)), BytesUtil.doubleToBytes(value));
+    this.put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j)),
+        BytesUtil.doubleToBytes(value));
   }
 
   /**
@@ -73,16 +73,18 @@ public class VectorUpdate {
 
   @Deprecated
   public void put(int j, String name) {
-    this.batchUpdate.put(Bytes.toBytes((Constants.ATTRIBUTE + j)), Bytes
+    this.batchUpdate.put(Bytes
+        .toBytes((Bytes.toString(Constants.ATTRIBUTE) + j)), Bytes
         .toBytes(name));
   }
 
   public void put(String j, String val) {
     this.batchUpdate.put(j, Bytes.toBytes(val));
   }
-  
+
   public void put(String column, String qualifier, String val) {
-    this.put.add(Bytes.toBytes(column), Bytes.toBytes(qualifier), Bytes.toBytes(val));
+    this.put.add(Bytes.toBytes(column), Bytes.toBytes(qualifier), Bytes
+        .toBytes(val));
   }
 
   public void put(String row, int val) {

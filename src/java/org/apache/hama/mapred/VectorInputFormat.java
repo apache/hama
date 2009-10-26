@@ -20,10 +20,12 @@
 package org.apache.hama.mapred;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.UnknownScannerException;
+import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.mapred.TableSplit;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -37,7 +39,7 @@ import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.matrix.DenseVector;
+import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.util.BytesUtil;
 
 public class VectorInputFormat extends HTableInputFormatBase implements
@@ -116,7 +118,14 @@ public class VectorInputFormat extends HTableInputFormatBase implements
         byte[] row = result.getRow();
         key.set(BytesUtil.bytesToInt(row));
         lastRow = row;
-        Writables.copyWritable(new DenseVector(result).getEntries(), value);
+        
+        MapWritable mw = new MapWritable();
+        for (Map.Entry<byte[], Cell> f : result.entrySet()) {
+          mw.put(new IntWritable(BytesUtil.getColumnIndex(f.getKey())),
+              new DoubleEntry(f.getValue()));
+        }
+        
+        Writables.copyWritable(mw, value);
         processedRows++;
       }
       return hasMore;

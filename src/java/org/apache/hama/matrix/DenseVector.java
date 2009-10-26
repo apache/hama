@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
@@ -41,10 +40,6 @@ public class DenseVector extends AbstractVector implements Vector {
 
   public DenseVector() {
     this(new MapWritable());
-  }
-
-  public DenseVector(RowResult row) {
-    this.initMap(row);
   }
   
   public DenseVector(MapWritable m) {
