@@ -42,6 +42,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-216: Removing JobManager in util package (edwardyoon)
     HAMA-215: Removing hama shell from version 0.2 (edwardyoon)
     HAMA-204: Replacement of TransposeMap/Reduce (edwardyoon)
     HAMA-213: Replacement of TableReadMapper (edwardyoon)

@@ -47,6 +47,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.Constants;
@@ -69,7 +70,6 @@ import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixOneNormCombiner;
 import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixOneNormMapper;
 import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixOneNormReducer;
 import org.apache.hama.util.BytesUtil;
-import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 
@@ -200,7 +200,7 @@ public abstract class AbstractMatrix implements Matrix {
 
     // update the out put dir of the job
     outDir = FileOutputFormat.getOutputPath(jobConf);
-    JobManager.execute(jobConf);
+    JobClient.runJob(jobConf);
 
     // read outputs
     Path inFile = new Path(outDir, "reduce-out");
@@ -236,7 +236,7 @@ public abstract class AbstractMatrix implements Matrix {
 
     // update the out put dir of the job
     outDir = FileOutputFormat.getOutputPath(jobConf);
-    JobManager.execute(jobConf);
+    JobClient.runJob(jobConf);
 
     // read outputs
     Path inFile = new Path(outDir, "part-00000");
@@ -273,7 +273,7 @@ public abstract class AbstractMatrix implements Matrix {
     // update the out put dir of the job
     outDir = FileOutputFormat.getOutputPath(jobConf);
 
-    JobManager.execute(jobConf);
+    JobClient.runJob(jobConf);
 
     // read outputs
     Path inFile = new Path(outDir, "part-00000");
@@ -310,7 +310,7 @@ public abstract class AbstractMatrix implements Matrix {
     // update the out put dir of the job
     outDir = FileOutputFormat.getOutputPath(jobConf);
 
-    JobManager.execute(jobConf);
+    JobClient.runJob(jobConf);
 
     // read outputs
     Path inFile = new Path(outDir, "part-00000");
