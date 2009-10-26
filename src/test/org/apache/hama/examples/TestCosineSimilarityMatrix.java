@@ -52,7 +52,7 @@ public class TestCosineSimilarityMatrix extends HamaCluster {
     job.getConfiguration().set("input.matrix", m1.getPath());
 
     Scan scan = new Scan();
-    scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    scan.addFamily(Constants.COLUMNFAMILY);
 
     TableMapReduceUtil.initTableMapperJob(m1.getPath(), scan,
         ComputeSimilarity.class, ImmutableBytesWritable.class, Put.class, job);
@@ -87,7 +87,7 @@ public class TestCosineSimilarityMatrix extends HamaCluster {
         if (BytesUtil.getRowIndex(key.get()) == i) {
           dotProduct = 0;
         }
-        put.add(Bytes.toBytes(Constants.COLUMN_FAMILY), Bytes.toBytes(String
+        put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String
             .valueOf(i)), BytesUtil.doubleToBytes(dotProduct));
       }
 

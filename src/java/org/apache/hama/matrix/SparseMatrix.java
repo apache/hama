@@ -125,19 +125,18 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     final Path inDir = new Path(TMP_DIR, "in");
     FileInputFormat.setInputPaths(job, inDir);
     job.setMapperClass(RandomMatrixMapper.class);
-    
+
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(MapWritable.class);
-    
+
     job.getConfiguration().setInt("matrix.column", n);
     job.getConfiguration().set("matrix.type", TABLE_PREFIX);
     job.getConfiguration().set("matrix.density", String.valueOf(percent));
 
-
     job.setInputFormatClass(SequenceFileInputFormat.class);
     final FileSystem fs = FileSystem.get(job.getConfiguration());
     int interval = m / conf.getNumMapTasks();
-    
+
     // generate an input file for each map task
     for (int i = 0; i < conf.getNumMapTasks(); ++i) {
       final Path file = new Path(inDir, "part" + i);
@@ -148,8 +147,9 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
       } else {
         end = new IntWritable(m - 1);
       }
-      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, job.getConfiguration(),
-          file, IntWritable.class, IntWritable.class, CompressionType.NONE);
+      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, job
+          .getConfiguration(), file, IntWritable.class, IntWritable.class,
+          CompressionType.NONE);
       try {
         writer.append(start, end);
       } finally {
@@ -163,7 +163,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, rand.getPath());
     job.setOutputKeyClass(ImmutableBytesWritable.class);
     job.setOutputValueClass(Writable.class);
-    
+
     try {
       job.waitForCompletion(true);
     } catch (InterruptedException e) {
@@ -195,8 +195,8 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
       throw new ArrayIndexOutOfBoundsException(i + ", " + j);
 
     Get get = new Get(BytesUtil.getRowIndex(i));
-    get.addColumn(Bytes.toBytes(Constants.COLUMN_FAMILY));
-    byte[] result = table.get(get).getValue(Bytes.toBytes(Constants.COLUMN_FAMILY),
+    get.addColumn(Constants.COLUMNFAMILY);
+    byte[] result = table.get(get).getValue(Constants.COLUMNFAMILY,
         Bytes.toBytes(String.valueOf(j)));
     return (result != null) ? BytesUtil.bytesToDouble(result) : 0.0;
   }
@@ -216,7 +216,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
    */
   public SparseVector getRow(int i) throws IOException {
     Get get = new Get(BytesUtil.getRowIndex(i));
-    get.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    get.addFamily(Constants.COLUMNFAMILY);
     Result r = table.get(get);
     // return new SparseVector(r.getRowResult());
     return new SparseVector(r);

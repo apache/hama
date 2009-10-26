@@ -49,7 +49,7 @@ public class CosineSimilarityMatrix {
         if (BytesUtil.getRowIndex(key.get()) == i) {
           dotProduct = 0;
         }
-        put.add(Bytes.toBytes(Constants.COLUMN_FAMILY), Bytes.toBytes(String
+        put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String
             .valueOf(i)), BytesUtil.doubleToBytes(dotProduct));
       }
 
@@ -82,7 +82,7 @@ public class CosineSimilarityMatrix {
     job.getConfiguration().set("input.matrix", admin.getPath(args[0]));
 
     Scan scan = new Scan();
-    scan.addFamily(Bytes.toBytes(Constants.COLUMN_FAMILY));
+    scan.addFamily(Constants.COLUMNFAMILY);
 
     TableMapReduceUtil.initTableMapperJob(admin.getPath(args[0]), scan,
         ComputeSimilarityMapper.class, ImmutableBytesWritable.class, Put.class, job);

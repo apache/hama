@@ -174,8 +174,8 @@ public class JacobiEigenValue {
         super.init();
 
         Get get = new Get(Bytes.toBytes(Constants.METADATA));
-        get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-        byte[] result = htable.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE), 
+        get.addFamily(Constants.ATTRIBUTE);
+        byte[] result = htable.get(get).getValue(Constants.ATTRIBUTE, 
             Bytes.toBytes("rows"));
         size = (result != null) ? BytesUtil.bytesToInt(result) : 0;
 
@@ -409,8 +409,8 @@ public class JacobiEigenValue {
         super.init();
 
         Get get = new Get(Bytes.toBytes(Constants.METADATA));
-        get.addFamily(Bytes.toBytes(Constants.ATTRIBUTE));
-        byte[] result = htable.get(get).getValue(Bytes.toBytes(Constants.ATTRIBUTE), 
+        get.addFamily(Constants.ATTRIBUTE);
+        byte[] result = htable.get(get).getValue(Constants.ATTRIBUTE, 
             Bytes.toBytes("rows"));
         
         size = (result != null) ? BytesUtil.bytesToInt(result) : 0;
