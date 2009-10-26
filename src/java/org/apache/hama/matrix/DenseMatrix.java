@@ -43,6 +43,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
@@ -69,7 +70,6 @@ import org.apache.hama.matrix.algebra.JacobiEigenValue;
 import org.apache.hama.matrix.algebra.RowCyclicAdditionMap;
 import org.apache.hama.matrix.algebra.RowCyclicAdditionReduce;
 import org.apache.hama.util.BytesUtil;
-import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
 
 /**
@@ -454,8 +454,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         MapWritable.class, jobConf);
     RowCyclicAdditionReduce.initJob(result.getPath(),
         RowCyclicAdditionReduce.class, jobConf);
-
-    JobManager.execute(jobConf);
+    JobClient.runJob(jobConf);
     return result;
   }
 
@@ -501,7 +500,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     RowCyclicAdditionReduce.initJob(result.getPath(),
         RowCyclicAdditionReduce.class, jobConf);
 
-    JobManager.execute(jobConf);
+    JobClient.runJob(jobConf);
     return result;
   }
 
@@ -542,7 +541,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
           jobConf);
       DenseMatrixVectorMultReduce.initJob(result.getPath(),
           DenseMatrixVectorMultReduce.class, jobConf);
-      JobManager.execute(jobConf);
+      JobClient.runJob(jobConf);
     }
 
     return result;
@@ -582,7 +581,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     BlockMultiplyReduce.initJob(result.getPath(), BlockMultiplyReduce.class,
         jobConf);
 
-    JobManager.execute(jobConf);
+     JobClient.runJob(jobConf);
     hamaAdmin.delete(collectionTable);
     return result;
   }
@@ -703,7 +702,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     CollectBlocksMapper.initJob(collectionTable, bool, block_size, this
         .getRows(), this.getColumns(), jobConf);
 
-    JobManager.execute(jobConf);
+    JobClient.runJob(jobConf);
   }
 
   /**
@@ -739,7 +738,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     jobConf.setMapOutputKeyClass(IntWritable.class);
     jobConf.setMapOutputValueClass(MapWritable.class);
 
-    JobManager.execute(jobConf);
+    JobClient.runJob(jobConf);
 
     final FileSystem fs = FileSystem.get(jobConf);
     Pair pivotPair = new Pair();
@@ -788,7 +787,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       // update the out put dir of the job
       outDir = FileOutputFormat.getOutputPath(jobConf);
 
-      JobManager.execute(jobConf);
+      JobClient.runJob(jobConf);
 
       // read outputs
       Path inFile = new Path(outDir, "part-00000");
@@ -867,7 +866,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
           .addInputPaths(jobConf, getPath());
       jobConf.setOutputFormat(NullOutputFormat.class);
 
-      JobManager.execute(jobConf);
+      JobClient.runJob(jobConf);
 
       // rotate eigenvectors
       LOG.info("rotating eigenvector");

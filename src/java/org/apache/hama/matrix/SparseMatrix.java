@@ -35,6 +35,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -47,7 +48,6 @@ import org.apache.hama.mapreduce.RandomMatrixReducer;
 import org.apache.hama.matrix.algebra.SparseMatrixVectorMultMap;
 import org.apache.hama.matrix.algebra.SparseMatrixVectorMultReduce;
 import org.apache.hama.util.BytesUtil;
-import org.apache.hama.util.JobManager;
 import org.apache.hama.util.RandomVariable;
 
 public class SparseMatrix extends AbstractMatrix implements Matrix {
@@ -262,7 +262,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
           MapWritable.class, jobConf);
       SparseMatrixVectorMultReduce.initJob(result.getPath(),
           SparseMatrixVectorMultReduce.class, jobConf);
-      JobManager.execute(jobConf);
+      JobClient.runJob(jobConf);
     }
 
     return result;
