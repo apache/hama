@@ -70,8 +70,8 @@ import org.apache.hama.matrix.algebra.BlockMultiplyReduce;
 import org.apache.hama.matrix.algebra.DenseMatrixVectorMultMap;
 import org.apache.hama.matrix.algebra.DenseMatrixVectorMultReduce;
 import org.apache.hama.matrix.algebra.JacobiEigenValue;
-import org.apache.hama.matrix.algebra.RowCyclicAdditionMap;
-import org.apache.hama.matrix.algebra.RowCyclicAdditionReduce;
+import org.apache.hama.matrix.algebra.MatrixAdditionMap;
+import org.apache.hama.matrix.algebra.MatrixAdditionReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.RandomVariable;
 
@@ -446,18 +446,27 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     DenseMatrix result = new DenseMatrix(config, this.getRows(), this
         .getColumns());
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("addition MR job" + result.getPath());
+    Job job = new Job(config, "addition MR job" + result.getPath());
 
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
-
-    RowCyclicAdditionMap.initJob(this.getPath(), B.getPath(), Double
-        .toString(alpha), RowCyclicAdditionMap.class, IntWritable.class,
-        MapWritable.class, jobConf);
-    RowCyclicAdditionReduce.initJob(result.getPath(),
-        RowCyclicAdditionReduce.class, jobConf);
-    JobClient.runJob(jobConf);
+    Scan scan = new Scan();
+    scan.addFamily(Constants.COLUMNFAMILY);
+    job.getConfiguration().set(MatrixAdditionMap.MATRIX_SUMMANDS, B.getPath());
+    job.getConfiguration().set(MatrixAdditionMap.MATRIX_ALPHAS, Double
+        .toString(alpha));
+    
+    TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
+        MatrixAdditionMap.class, IntWritable.class,
+        MapWritable.class, job);
+    TableMapReduceUtil.initTableReducerJob(result.getPath(),
+        MatrixAdditionReduce.class, job);
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    
     return result;
   }
 
@@ -480,11 +489,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     DenseMatrix result = new DenseMatrix(config, this.getRows(), this
         .getColumns());
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("addition MR job" + result.getPath());
-
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
 
     StringBuilder summandList = new StringBuilder();
     StringBuilder alphaList = new StringBuilder();
@@ -497,13 +501,26 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     summandList.deleteCharAt(summandList.length() - 1);
     alphaList.deleteCharAt(alphaList.length() - 1);
 
-    RowCyclicAdditionMap.initJob(this.getPath(), summandList.toString(),
-        alphaList.toString(), RowCyclicAdditionMap.class, IntWritable.class,
-        MapWritable.class, jobConf);
-    RowCyclicAdditionReduce.initJob(result.getPath(),
-        RowCyclicAdditionReduce.class, jobConf);
+    Job job = new Job(config, "addition MR job" + result.getPath());
 
-    JobClient.runJob(jobConf);
+    Scan scan = new Scan();
+    scan.addFamily(Constants.COLUMNFAMILY);
+    job.getConfiguration().set(MatrixAdditionMap.MATRIX_SUMMANDS, summandList.toString());
+    job.getConfiguration().set(MatrixAdditionMap.MATRIX_ALPHAS, alphaList.toString());
+    
+    TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
+        MatrixAdditionMap.class, IntWritable.class,
+        MapWritable.class, job);
+    TableMapReduceUtil.initTableReducerJob(result.getPath(),
+        MatrixAdditionReduce.class, job);
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    
     return result;
   }
 

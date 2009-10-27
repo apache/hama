@@ -42,6 +42,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-207: Replacement of Mat-Mat addition Map/Reduce (edwardyoon)
     HAMA-208: Replacement of vector-matrix multiplication Map/Reduce (edwardyoon)
     HAMA-216: Removing JobManager in util package (edwardyoon)
     HAMA-215: Removing hama shell from version 0.2 (edwardyoon)
