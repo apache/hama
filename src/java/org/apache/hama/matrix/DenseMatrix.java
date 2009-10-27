@@ -20,7 +20,9 @@
 package org.apache.hama.matrix;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -33,6 +35,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
@@ -527,23 +530,42 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       columns = this.getColumns();
 
     DenseMatrix result = new DenseMatrix(config, this.getRows(), columns);
-
+    List<Job> jobId = new ArrayList<Job>();
+    
     for (int i = 0; i < this.getRows(); i++) {
-      JobConf jobConf = new JobConf(config);
-      jobConf.setJobName("multiplication MR job : " + result.getPath() + " "
-          + i);
+      Job job = new Job(config, "multiplication MR job : " + result.getPath()
+          + " " + i);
 
-      jobConf.setNumMapTasks(config.getNumMapTasks());
-      jobConf.setNumReduceTasks(config.getNumReduceTasks());
+      Scan scan = new Scan();
+      scan.addFamily(Constants.COLUMNFAMILY);
+      job.getConfiguration().set(DenseMatrixVectorMultMap.MATRIX_A,
+          this.getPath());
+      job.getConfiguration().setInt(DenseMatrixVectorMultMap.ITH_ROW, i);
 
-      DenseMatrixVectorMultMap.initJob(i, this.getPath(), B.getPath(),
-          DenseMatrixVectorMultMap.class, IntWritable.class, MapWritable.class,
-          jobConf);
-      DenseMatrixVectorMultReduce.initJob(result.getPath(),
-          DenseMatrixVectorMultReduce.class, jobConf);
-      JobClient.runJob(jobConf);
+      TableMapReduceUtil.initTableMapperJob(B.getPath(), scan,
+          DenseMatrixVectorMultMap.class, IntWritable.class,
+          MapWritable.class, job);
+      TableMapReduceUtil.initTableReducerJob(result.getPath(),
+          DenseMatrixVectorMultReduce.class, job);
+      try {
+        job.waitForCompletion(false);
+        jobId.add(job);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
     }
 
+    while (checkAllJobs(jobId) == false) {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+    
     return result;
   }
 

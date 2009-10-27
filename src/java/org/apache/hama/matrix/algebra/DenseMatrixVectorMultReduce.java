@@ -20,50 +20,27 @@
 package org.apache.hama.matrix.algebra;
 
 import java.io.IOException;
-import java.util.Iterator;
 
-import org.apache.hadoop.hbase.io.BatchUpdate;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reducer;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.mapred.VectorOutputFormat;
 import org.apache.hama.matrix.DenseVector;
-import org.apache.log4j.Logger;
+import org.apache.hama.util.BytesUtil;
 
-public class DenseMatrixVectorMultReduce extends MapReduceBase implements
-    Reducer<IntWritable, MapWritable, IntWritable, VectorUpdate> {
-  static final Logger LOG = Logger.getLogger(DenseMatrixVectorMultReduce.class);
-  
-  /**
-   * Use this before submitting a TableReduce job. It will appropriately set up
-   * the JobConf.
-   * 
-   * @param table
-   * @param reducer
-   * @param job
-   */
-  public static void initJob(String table,
-      Class<DenseMatrixVectorMultReduce> reducer, JobConf job) {
-    job.setOutputFormat(VectorOutputFormat.class);
-    job.setReducerClass(reducer);
-    job.set(VectorOutputFormat.OUTPUT_TABLE, table);
-    job.setOutputKeyClass(IntWritable.class);
-    job.setOutputValueClass(BatchUpdate.class);
-  }
-  
+public class DenseMatrixVectorMultReduce extends
+    TableReducer<IntWritable, MapWritable, Writable> {
+
   @Override
-  public void reduce(IntWritable key, Iterator<MapWritable> values,
-      OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
-      throws IOException {
+  public void reduce(IntWritable key, Iterable<MapWritable> values,
+      Context context) throws IOException, InterruptedException {
     DenseVector sum = new DenseVector();
-    
-    while (values.hasNext()) {
-      DenseVector nVector = new DenseVector(values.next());
+
+    for (MapWritable value : values) {
+      DenseVector nVector = new DenseVector(value);
+      
       if(sum.size() == 0) {
         sum.zeroFill(nVector.size());
         sum.add(nVector);
@@ -75,7 +52,7 @@ public class DenseMatrixVectorMultReduce extends MapReduceBase implements
     VectorUpdate update = new VectorUpdate(key.get());
     update.putAll(sum.getEntries());
 
-    output.collect(key, update);
+    context.write(new ImmutableBytesWritable(BytesUtil.getRowIndex(key.get())),
+        update.getPut());
   }
-
 }

@@ -20,6 +20,8 @@
 package org.apache.hama.matrix;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -27,7 +29,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
@@ -35,8 +39,6 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
@@ -249,20 +251,40 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     SparseMatrix result = new SparseMatrix(config, this.getRows(), this
         .getColumns());
 
+    List<Job> jobId = new ArrayList<Job>();
+
     for (int i = 0; i < this.getRows(); i++) {
-      JobConf jobConf = new JobConf(config);
-      jobConf.setJobName("multiplication MR job : " + result.getPath() + " "
-          + i);
+      Job job = new Job(config, "multiplication MR job : " + result.getPath()
+          + " " + i);
 
-      jobConf.setNumMapTasks(config.getNumMapTasks());
-      jobConf.setNumReduceTasks(config.getNumReduceTasks());
+      Scan scan = new Scan();
+      scan.addFamily(Constants.COLUMNFAMILY);
+      job.getConfiguration().set(SparseMatrixVectorMultMap.MATRIX_A,
+          this.getPath());
+      job.getConfiguration().setInt(SparseMatrixVectorMultMap.ITH_ROW, i);
 
-      SparseMatrixVectorMultMap.initJob(i, this.getPath(), B.getPath(),
+      TableMapReduceUtil.initTableMapperJob(B.getPath(), scan,
           SparseMatrixVectorMultMap.class, IntWritable.class,
-          MapWritable.class, jobConf);
-      SparseMatrixVectorMultReduce.initJob(result.getPath(),
-          SparseMatrixVectorMultReduce.class, jobConf);
-      JobClient.runJob(jobConf);
+          MapWritable.class, job);
+      TableMapReduceUtil.initTableReducerJob(result.getPath(),
+          SparseMatrixVectorMultReduce.class, job);
+      try {
+        job.waitForCompletion(false);
+        jobId.add(job);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
+    }
+
+    while (checkAllJobs(jobId) == false) {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
     }
 
     return result;

@@ -20,7 +20,7 @@
 package org.apache.hama.matrix;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -608,6 +608,18 @@ public abstract class AbstractMatrix implements Matrix {
     return result;
   }
 
+  public boolean checkAllJobs(List<Job> jobId) throws IOException {
+    Iterator<Job> it = jobId.iterator();
+    boolean allTrue = true;
+    while (it.hasNext()) {
+      if (!it.next().isComplete()) {
+        allTrue = false;
+      }
+    }
+
+    return allTrue;
+  }
+  
   public boolean save(String aliasename) throws IOException {
     // mark & update the aliase name in "alise:name" meta column.
     // ! one matrix has only one aliasename now.

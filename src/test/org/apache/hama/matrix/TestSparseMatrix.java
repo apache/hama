@@ -63,7 +63,7 @@ public class TestSparseMatrix extends HamaCluster {
     assertEquals(vector2.get(0), 3.0);
     assertEquals(vector2.get(1), -8.0);
   }
-  
+
   public void sparsity() throws IOException {
     boolean appeared = false;
     for (int i = 0; i < m1.getRows(); i++) {
