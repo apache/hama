@@ -51,7 +51,6 @@ public class TestAbstractMatrix extends HamaCluster {
     double norm1 = matrix.norm(Norm.One);
     double verify_norm1 = MatrixTestCommon.verifyNorm1(matrix);
     gap = norm1 - verify_norm1;
-    LOG.info(">>>>>> " + gap);
     assertTrue(gap < 0.000001 && gap > -0.000001);
 
     double normInfinity = matrix.norm(Norm.Infinity);

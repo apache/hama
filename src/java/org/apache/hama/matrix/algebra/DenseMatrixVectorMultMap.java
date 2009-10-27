@@ -60,7 +60,7 @@ public class DenseMatrixVectorMultMap extends
     this.conf = conf;
     DenseMatrix matrix_a;
     try {
-      matrix_a = new DenseMatrix(new HamaConfiguration(), conf.get(MATRIX_A,
+      matrix_a = new DenseMatrix(new HamaConfiguration(conf), conf.get(MATRIX_A,
           ""));
       int ithRow = conf.getInt(ITH_ROW, 0);
       nKey.set(ithRow);

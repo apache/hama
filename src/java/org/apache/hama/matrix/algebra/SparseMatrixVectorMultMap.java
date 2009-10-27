@@ -60,7 +60,7 @@ public class SparseMatrixVectorMultMap extends
     this.conf = conf;
     SparseMatrix matrix_a;
     try {
-      matrix_a = new SparseMatrix(new HamaConfiguration(), conf.get(MATRIX_A,
+      matrix_a = new SparseMatrix(new HamaConfiguration(conf), conf.get(MATRIX_A,
           ""));
       int ithRow = conf.getInt(ITH_ROW, 0);
       nKey.set(ithRow);

@@ -65,7 +65,7 @@ public class CosineSimilarityMatrix {
     public void setConf(Configuration conf) {
       this.conf = conf;
       try {
-        matrix = new DenseMatrix(new HamaConfiguration(), conf
+        matrix = new DenseMatrix(new HamaConfiguration(conf), conf
             .get("input.matrix"));
       } catch (IOException e) {
         e.printStackTrace();
