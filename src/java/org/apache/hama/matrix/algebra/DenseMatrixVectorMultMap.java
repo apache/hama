@@ -21,65 +21,53 @@ package org.apache.hama.matrix.algebra;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.mapred.VectorInputFormat;
 import org.apache.hama.matrix.DenseMatrix;
 import org.apache.hama.matrix.DenseVector;
-import org.apache.log4j.Logger;
+import org.apache.hama.util.BytesUtil;
 
-public class DenseMatrixVectorMultMap extends MapReduceBase implements
-    Mapper<IntWritable, MapWritable, IntWritable, MapWritable> {
-  static final Logger LOG = Logger.getLogger(DenseMatrixVectorMultMap.class);
+public class DenseMatrixVectorMultMap extends
+    TableMapper<IntWritable, MapWritable> implements Configurable {
+  private Configuration conf = null;
   protected DenseVector currVector;
   public static final String ITH_ROW = "ith.row";
   public static final String MATRIX_A = "hama.multiplication.matrix.a";
-  public static final String MATRIX_B = "hama.multiplication.matrix.b";
   private IntWritable nKey = new IntWritable();
-  
-  public void configure(JobConf job) {
-    DenseMatrix matrix_a;
-      try {
-        matrix_a = new DenseMatrix(new HamaConfiguration(job), job.get(MATRIX_A, ""));
-        int ithRow = job.getInt(ITH_ROW, 0);
-        nKey.set(ithRow);
-        currVector = matrix_a.getRow(ithRow);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-  }
 
-  public static void initJob(int i, String matrix_a, String matrix_b,
-      Class<DenseMatrixVectorMultMap> map, Class<IntWritable> outputKeyClass,
-      Class<MapWritable> outputValueClass, JobConf jobConf) {
-
-    jobConf.setMapOutputValueClass(outputValueClass);
-    jobConf.setMapOutputKeyClass(outputKeyClass);
-    jobConf.setMapperClass(map);
-    jobConf.setInt(ITH_ROW, i);
-    jobConf.set(MATRIX_A, matrix_a);
-    jobConf.set(MATRIX_B, matrix_b);
-    
-    jobConf.setInputFormat(VectorInputFormat.class);
-    FileInputFormat.addInputPaths(jobConf, matrix_b);
-    jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
+  public void map(ImmutableBytesWritable key, Result value, Context context)
+      throws IOException, InterruptedException {
+    double ithjth = currVector.get(BytesUtil.getRowIndex(key.get()));
+    if (ithjth != 0) {
+      DenseVector scaled = new DenseVector(value).scale(ithjth);
+      context.write(nKey, scaled.getEntries());
+    }
   }
 
   @Override
-  public void map(IntWritable key, MapWritable value,
-      OutputCollector<IntWritable, MapWritable> output, Reporter reporter)
-      throws IOException {
-
-    DenseVector scaled = new DenseVector(value).scale(currVector.get(key.get()));
-    output.collect(nKey, scaled.getEntries());
-    
+  public Configuration getConf() {
+    return conf;
   }
+
+  @Override
+  public void setConf(Configuration conf) {
+    this.conf = conf;
+    DenseMatrix matrix_a;
+    try {
+      matrix_a = new DenseMatrix(new HamaConfiguration(), conf.get(MATRIX_A,
+          ""));
+      int ithRow = conf.getInt(ITH_ROW, 0);
+      nKey.set(ithRow);
+      currVector = matrix_a.getRow(ithRow);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
 }

@@ -20,57 +20,32 @@
 package org.apache.hama.matrix.algebra;
 
 import java.io.IOException;
-import java.util.Iterator;
 
-import org.apache.hadoop.hbase.io.BatchUpdate;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reducer;
-import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.mapred.VectorOutputFormat;
 import org.apache.hama.matrix.SparseVector;
-import org.apache.log4j.Logger;
+import org.apache.hama.util.BytesUtil;
 
-public class SparseMatrixVectorMultReduce extends MapReduceBase implements
-    Reducer<IntWritable, MapWritable, IntWritable, VectorUpdate> {
-  static final Logger LOG = Logger
-      .getLogger(SparseMatrixVectorMultReduce.class);
-
-  /**
-   * Use this before submitting a TableReduce job. It will appropriately set up
-   * the JobConf.
-   * 
-   * @param table
-   * @param reducer
-   * @param job
-   */
-  public static void initJob(String table,
-      Class<SparseMatrixVectorMultReduce> reducer, JobConf job) {
-    job.setOutputFormat(VectorOutputFormat.class);
-    job.setReducerClass(reducer);
-    job.set(VectorOutputFormat.OUTPUT_TABLE, table);
-    job.setOutputKeyClass(IntWritable.class);
-    job.setOutputValueClass(BatchUpdate.class);
-  }
+public class SparseMatrixVectorMultReduce extends
+    TableReducer<IntWritable, MapWritable, Writable> {
 
   @Override
-  public void reduce(IntWritable key, Iterator<MapWritable> values,
-      OutputCollector<IntWritable, VectorUpdate> output, Reporter reporter)
-      throws IOException {
+  public void reduce(IntWritable key, Iterable<MapWritable> values,
+      Context context) throws IOException, InterruptedException {
     SparseVector sum = new SparseVector();
 
-    while (values.hasNext()) {
-      sum.add(new SparseVector(values.next()));
+    for (MapWritable value : values) {
+      sum.add(new SparseVector(value));
     }
-    
+
     VectorUpdate update = new VectorUpdate(key.get());
     update.putAll(sum.getEntries());
 
-    output.collect(key, update);
+    context.write(new ImmutableBytesWritable(BytesUtil.getRowIndex(key.get())),
+        update.getPut());
   }
-
 }
