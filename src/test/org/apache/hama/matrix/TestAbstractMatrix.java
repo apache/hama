@@ -48,6 +48,7 @@ public class TestAbstractMatrix extends HamaCluster {
   }
 
   public void normTest(Matrix matrix) throws IOException {
+
     double norm1 = matrix.norm(Norm.One);
     double verify_norm1 = MatrixTestCommon.verifyNorm1(matrix);
     gap = norm1 - verify_norm1;
@@ -57,15 +58,15 @@ public class TestAbstractMatrix extends HamaCluster {
     double verify_normInf = MatrixTestCommon.verifyNormInfinity(matrix);
     gap = normInfinity - verify_normInf;
     assertTrue(gap < 0.000001 && gap > -0.000001);
-
-    double normMaxValue = matrix.norm(Norm.Maxvalue);
-    double verify_normMV = MatrixTestCommon.verifyNormMaxValue(matrix);
-    gap = normMaxValue - verify_normMV;
-    assertTrue(gap < 0.000001 && gap > -0.000001);
-
+    
     double normFrobenius = matrix.norm(Norm.Frobenius);
     double verify_normFrobenius = MatrixTestCommon.verifyNormFrobenius(matrix);
     gap = normFrobenius - verify_normFrobenius;
+    assertTrue(gap < 0.000001 && gap > -0.000001);
+    
+    double normMaxValue = matrix.norm(Norm.Maxvalue);
+    double verify_normMV = MatrixTestCommon.verifyNormMaxValue(matrix);
+    gap = normMaxValue - verify_normMV;
     assertTrue(gap < 0.000001 && gap > -0.000001);
   }
 }
