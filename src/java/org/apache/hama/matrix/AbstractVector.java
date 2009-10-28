@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.io.Cell;
-import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -33,7 +31,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.io.DoubleEntry;
-import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
 /**

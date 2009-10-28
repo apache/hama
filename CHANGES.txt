@@ -42,6 +42,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-217: Replacement of Block Multiplication Map/Reduce (edwardyoon)
     HAMA-205: Replacement of NormMap/Reduce (edwardyoon)
     HAMA-207: Replacement of Mat-Mat addition Map/Reduce (edwardyoon)
     HAMA-208: Replacement of vector-matrix multiplication Map/Reduce (edwardyoon)

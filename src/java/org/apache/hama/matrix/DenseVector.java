@@ -50,6 +50,11 @@ public class DenseVector extends AbstractVector implements Vector {
     this.initMap(row);
   }
 
+  public DenseVector(int row, Result m) {
+    this.initMap(m);
+    this.entries.put(Constants.ROWCOUNT, new IntWritable(row));
+  }
+  
   public DenseVector(int row, MapWritable m) {
     this.entries = m;
     this.entries.put(Constants.ROWCOUNT, new IntWritable(row));
