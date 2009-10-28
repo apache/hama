@@ -40,35 +40,24 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaAdmin;
 import org.apache.hama.HamaAdminImpl;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.matrix.algebra.JacobiEigenValue;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed;
+import org.apache.hama.matrix.algebra.MatrixNormMapReduce;
 import org.apache.hama.matrix.algebra.TransposeMap;
 import org.apache.hama.matrix.algebra.TransposeReduce;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixFrobeniusNormCombiner;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixFrobeniusNormMapper;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixFrobeniusNormReducer;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixInfinityNormMapper;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixInfinityNormReducer;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixMaxValueNormMapper;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixMaxValueNormReducer;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixOneNormCombiner;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixOneNormMapper;
-import org.apache.hama.matrix.algebra.MatrixNormMapRed.MatrixOneNormReducer;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
@@ -148,7 +137,7 @@ public abstract class AbstractMatrix implements Matrix {
 
       // It's a temporary data.
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.BLOCK)));
+          .toBytes(Constants.BLOCK_FAMILY)));
       // the following families are used in JacobiEigenValue computation
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
           .toBytes(JacobiEigenValue.EI_COLUMNFAMILY)));
@@ -167,9 +156,8 @@ public abstract class AbstractMatrix implements Matrix {
 
       // Record the matrix type in METADATA_TYPE
       Put put = new Put(Bytes.toBytes(Constants.METADATA));
-      put.add(Constants.ATTRIBUTE, Bytes
-          .toBytes(Constants.METADATA_TYPE), Bytes.toBytes(this.getClass()
-          .getSimpleName()));
+      put.add(Constants.ATTRIBUTE, Bytes.toBytes(Constants.METADATA_TYPE),
+          Bytes.toBytes(this.getClass().getSimpleName()));
       table.put(put);
 
       // the new matrix's reference is 1.
@@ -182,149 +170,166 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   protected double getNorm1() throws IOException {
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("norm1 MR job : " + this.getPath());
-
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(1);
-
-    final FileSystem fs = FileSystem.get(jobConf);
+    final FileSystem fs = FileSystem.get(config);
     Path outDir = new Path(new Path(getType() + "_TMP_norm1_dir_"
         + System.currentTimeMillis()), "out");
     if (fs.exists(outDir))
       fs.delete(outDir, true);
 
-    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(),
-        MatrixOneNormMapper.class, MatrixOneNormCombiner.class,
-        MatrixOneNormReducer.class, jobConf);
+    Job job = new Job(config, "norm1 MR job : " + this.getPath());
+    Scan scan = new Scan();
+    scan.addFamily(Constants.COLUMNFAMILY);
 
-    // update the out put dir of the job
-    outDir = FileOutputFormat.getOutputPath(jobConf);
-    JobClient.runJob(jobConf);
+    TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
+        MatrixNormMapReduce.MatrixOneNormMapper.class, IntWritable.class,
+        DoubleWritable.class, job);
 
-    // read outputs
-    Path inFile = new Path(outDir, "reduce-out");
-    IntWritable numInside = new IntWritable();
-    DoubleWritable max = new DoubleWritable();
-    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+    job.setCombinerClass(MatrixNormMapReduce.MatrixOneNormCombiner.class);
+    job.setReducerClass(MatrixNormMapReduce.MatrixOneNormReducer.class);
+    job.setNumReduceTasks(1);
+    job.setOutputFormatClass(SequenceFileOutputFormat.class);
+    job.setOutputKeyClass(IntWritable.class);
+    job.setOutputValueClass(DoubleWritable.class);
+    SequenceFileOutputFormat.setOutputPath(job, outDir);
+
     try {
-      reader.next(numInside, max);
-    } finally {
-      reader.close();
+      job.waitForCompletion(true);
+      System.out.println(job.reduceProgress());
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
     }
 
+    // read outputs
+    double result = readOutput(config, fs, outDir);
     fs.delete(outDir.getParent(), true);
-    return max.get();
+    return result;
   }
 
   protected double getMaxvalue() throws IOException {
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("MaxValue Norm MR job : " + this.getPath());
-
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(1);
-
-    final FileSystem fs = FileSystem.get(jobConf);
+    final FileSystem fs = FileSystem.get(config);
     Path outDir = new Path(new Path(getType() + "_TMP_normMaxValue_dir_"
         + System.currentTimeMillis()), "out");
     if (fs.exists(outDir))
       fs.delete(outDir, true);
 
-    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(),
-        MatrixMaxValueNormMapper.class, MatrixMaxValueNormReducer.class,
-        MatrixMaxValueNormReducer.class, jobConf);
+    Job job = new Job(config, "MaxValue Norm MR job : " + this.getPath());
+    Scan scan = new Scan();
+    scan.addFamily(Constants.COLUMNFAMILY);
 
-    // update the out put dir of the job
-    outDir = FileOutputFormat.getOutputPath(jobConf);
-    JobClient.runJob(jobConf);
+    TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
+        MatrixNormMapReduce.MatrixMaxValueNormMapper.class, IntWritable.class,
+        DoubleWritable.class, job);
 
-    // read outputs
-    Path inFile = new Path(outDir, "part-00000");
-    IntWritable numInside = new IntWritable();
-    DoubleWritable max = new DoubleWritable();
-    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+    job.setCombinerClass(MatrixNormMapReduce.MatrixMaxValueNormReducer.class);
+    job.setReducerClass(MatrixNormMapReduce.MatrixMaxValueNormReducer.class);
+    job.setNumReduceTasks(1);
+    job.setOutputFormatClass(SequenceFileOutputFormat.class);
+    job.setOutputKeyClass(IntWritable.class);
+    job.setOutputValueClass(DoubleWritable.class);
+    SequenceFileOutputFormat.setOutputPath(job, outDir);
+
     try {
-      reader.next(numInside, max);
-    } finally {
-      reader.close();
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
     }
 
+    // read outputs
+    double result = readOutput(config, fs, outDir);
     fs.delete(outDir.getParent(), true);
-    return max.get();
+    return result;
   }
 
   protected double getInfinity() throws IOException {
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("Infinity Norm MR job : " + this.getPath());
-
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(1);
-
-    final FileSystem fs = FileSystem.get(jobConf);
+    final FileSystem fs = FileSystem.get(config);
     Path outDir = new Path(new Path(getType() + "_TMP_normInifity_dir_"
         + System.currentTimeMillis()), "out");
     if (fs.exists(outDir))
       fs.delete(outDir, true);
 
-    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(),
-        MatrixInfinityNormMapper.class, MatrixInfinityNormReducer.class,
-        MatrixInfinityNormReducer.class, jobConf);
+    Job job = new Job(config, "Infinity Norm MR job : " + this.getPath());
+    Scan scan = new Scan();
+    scan.addFamily(Constants.COLUMNFAMILY);
 
-    // update the out put dir of the job
-    outDir = FileOutputFormat.getOutputPath(jobConf);
+    TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
+        MatrixNormMapReduce.MatrixInfinityNormMapper.class, IntWritable.class,
+        DoubleWritable.class, job);
 
-    JobClient.runJob(jobConf);
+    job.setCombinerClass(MatrixNormMapReduce.MatrixInfinityNormReduce.class);
+    job.setReducerClass(MatrixNormMapReduce.MatrixInfinityNormReduce.class);
+    job.setNumReduceTasks(1);
+    job.setOutputFormatClass(SequenceFileOutputFormat.class);
+    job.setOutputKeyClass(IntWritable.class);
+    job.setOutputValueClass(DoubleWritable.class);
+    SequenceFileOutputFormat.setOutputPath(job, outDir);
 
-    // read outputs
-    Path inFile = new Path(outDir, "part-00000");
-    IntWritable numInside = new IntWritable();
-    DoubleWritable max = new DoubleWritable();
-    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
     try {
-      reader.next(numInside, max);
-    } finally {
-      reader.close();
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
     }
 
+    // read outputs
+    double result = readOutput(config, fs, outDir);
     fs.delete(outDir.getParent(), true);
-    return max.get();
+    return result;
   }
 
   protected double getFrobenius() throws IOException {
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("Frobenius Norm MR job : " + this.getPath());
-
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(1);
-
-    final FileSystem fs = FileSystem.get(jobConf);
+    final FileSystem fs = FileSystem.get(config);
     Path outDir = new Path(new Path(getType() + "_TMP_normFrobenius_dir_"
         + System.currentTimeMillis()), "out");
     if (fs.exists(outDir))
       fs.delete(outDir, true);
 
-    MatrixNormMapRed.initJob(this.getPath(), outDir.toString(),
-        MatrixFrobeniusNormMapper.class, MatrixFrobeniusNormCombiner.class,
-        MatrixFrobeniusNormReducer.class, jobConf);
+    Job job = new Job(config, "Frobenius Norm MR job : " + this.getPath());
+    Scan scan = new Scan();
+    scan.addFamily(Constants.COLUMNFAMILY);
 
-    // update the out put dir of the job
-    outDir = FileOutputFormat.getOutputPath(jobConf);
+    TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
+        MatrixNormMapReduce.MatrixFrobeniusNormMapper.class, IntWritable.class,
+        DoubleWritable.class, job);
 
-    JobClient.runJob(jobConf);
+    job.setCombinerClass(MatrixNormMapReduce.MatrixFrobeniusNormCombiner.class);
+    job.setReducerClass(MatrixNormMapReduce.MatrixFrobeniusNormReducer.class);
+    job.setNumReduceTasks(1);
+    job.setOutputFormatClass(SequenceFileOutputFormat.class);
+    job.setOutputKeyClass(IntWritable.class);
+    job.setOutputValueClass(DoubleWritable.class);
+    SequenceFileOutputFormat.setOutputPath(job, outDir);
+
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
 
     // read outputs
-    Path inFile = new Path(outDir, "part-00000");
+    double result = readOutput(config, fs, outDir);
+    fs.delete(outDir.getParent(), true);
+    return result;
+  }
+
+  private double readOutput(HamaConfiguration config, FileSystem fs, Path outDir)
+      throws IOException {
+    Path inFile = new Path(outDir, "part-r-00000");
     IntWritable numInside = new IntWritable();
-    DoubleWritable sqrt = new DoubleWritable();
-    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+    DoubleWritable result = new DoubleWritable();
+    SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, config);
     try {
-      reader.next(numInside, sqrt);
+      reader.next(numInside, result);
     } finally {
       reader.close();
     }
-
-    fs.delete(outDir.getParent(), true);
-    return sqrt.get();
+    return result.get();
   }
 
   /** {@inheritDoc} */
@@ -360,8 +365,8 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public void setColumnLabel(int column, String name) throws IOException {
     Put put = new Put(Bytes.toBytes(Constants.CINDEX));
-    put.add(Constants.ATTRIBUTE, Bytes.toBytes(String
-        .valueOf(column)), Bytes.toBytes(name));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes(String.valueOf(column)), Bytes
+        .toBytes(name));
     table.put(put);
   }
 
@@ -385,8 +390,10 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) throws IOException {
     Put put = new Put(Bytes.toBytes(Constants.METADATA));
-    put.add(Constants.ATTRIBUTE, Bytes.toBytes("rows"), BytesUtil.intToBytes(rows));
-    put.add(Constants.ATTRIBUTE, Bytes.toBytes("columns"), BytesUtil.intToBytes(columns));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("rows"), BytesUtil
+        .intToBytes(rows));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("columns"), BytesUtil
+        .intToBytes(columns));
     table.put(put);
   }
 
@@ -402,7 +409,7 @@ public abstract class AbstractMatrix implements Matrix {
       TableMapper<ImmutableBytesWritable, Put> implements Configurable {
     private static Double alpha = null;
     private Configuration conf = null;
-    
+
     public void map(ImmutableBytesWritable key, Result value, Context context)
         throws IOException, InterruptedException {
       Put put = new Put(key.get());
@@ -417,9 +424,11 @@ public abstract class AbstractMatrix implements Matrix {
           if (alpha.equals(new Double(1))) {
             put.add(family, qualifier, val);
           } else {
-            if (Bytes.toString(family).equals(Bytes.toString(Constants.COLUMNFAMILY))) {
+            if (Bytes.toString(family).equals(
+                Bytes.toString(Constants.COLUMNFAMILY))) {
               double currVal = BytesUtil.bytesToDouble(val);
-              put.add(family, qualifier, BytesUtil.doubleToBytes(currVal * alpha));
+              put.add(family, qualifier, BytesUtil.doubleToBytes(currVal
+                  * alpha));
             } else {
               put.add(family, qualifier, val);
             }
@@ -486,7 +495,7 @@ public abstract class AbstractMatrix implements Matrix {
     scan.addFamily(Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY));
     Float f = new Float(alpha);
     job.getConfiguration().setFloat("set.alpha", f);
-    
+
     org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(B
         .getPath(), scan, ScanMapper.class, ImmutableBytesWritable.class,
         Put.class, job);
@@ -510,8 +519,8 @@ public abstract class AbstractMatrix implements Matrix {
 
   protected void setReference(int reference) throws IOException {
     Put put = new Put(Bytes.toBytes(Constants.METADATA));
-    put.add(Constants.ATTRIBUTE, Bytes
-        .toBytes(Constants.METADATA_REFERENCE), Bytes.toBytes(reference));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes(Constants.METADATA_REFERENCE),
+        Bytes.toBytes(reference));
     table.put(put);
   }
 
@@ -619,15 +628,15 @@ public abstract class AbstractMatrix implements Matrix {
 
     return allTrue;
   }
-  
+
   public boolean save(String aliasename) throws IOException {
     // mark & update the aliase name in "alise:name" meta column.
     // ! one matrix has only one aliasename now.
     Put put = new Put(Bytes.toBytes(Constants.METADATA));
     put.add(Bytes.toBytes(Constants.ALIASEFAMILY), Bytes.toBytes("name"), Bytes
         .toBytes(aliasename));
-    put.add(Constants.ATTRIBUTE, Bytes.toBytes("type"), Bytes
-        .toBytes(this.getType()));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("type"), Bytes.toBytes(this
+        .getType()));
     table.put(put);
 
     return hamaAdmin.save(this, aliasename);

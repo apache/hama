@@ -43,10 +43,12 @@ public class VectorUpdate {
 
   public VectorUpdate(String row) {
     this.batchUpdate = new BatchUpdate(row);
+    this.put = new Put(Bytes.toBytes(row));
   }
 
   public VectorUpdate(byte[] row) {
     this.batchUpdate = new BatchUpdate(row);
+    this.put = new Put(row);
   }
 
   public void put(int j, double value) {
@@ -65,6 +67,7 @@ public class VectorUpdate {
    */
   public void put(String cfName, int j, double value) {
     this.batchUpdate.put(Bytes.toBytes(cfName + j), Bytes.toBytes(value));
+    this.put.add(Bytes.toBytes(cfName), Bytes.toBytes(String.valueOf(j)), Bytes.toBytes(value));
   }
 
   public void put(String name, double value) {
@@ -87,6 +90,11 @@ public class VectorUpdate {
         .toBytes(val));
   }
 
+  public void put(String column, String qualifier, double val) {
+    this.put.add(Bytes.toBytes(column), Bytes.toBytes(qualifier), Bytes
+        .toBytes(val));
+  }
+  
   public void put(String row, int val) {
     this.batchUpdate.put(row, BytesUtil.intToBytes(val));
   }

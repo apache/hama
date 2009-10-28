@@ -62,6 +62,8 @@ public class JacobiEigenValue {
   
   /** a column identify whether the eigen values have been changed * */
   public static final String EICHANGED = EI + "changed";
+  
+  public static final String EICHANGED_STRING = "changed";
   /** a column identify the index of the max absolute value each row * */
   public static final String EIIND = EI + "ind";
   /** a matrix collect all the eigen vectors * */

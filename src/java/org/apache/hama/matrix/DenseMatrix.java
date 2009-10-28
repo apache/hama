@@ -875,8 +875,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
        * Upate the pivot and the eigen values indexed by the pivot
        ************************************************************************/
       vu = new VectorUpdate(pivot_row);
-      vu.put(JacobiEigenValue.EICOL, pivot_col, 0);
-      table.commit(vu.getBatchUpdate());
+      vu.put(JacobiEigenValue.EICOL_FAMILY, pivot_col, 0);
+      table.put(vu.getPut());
 
       state = update(pivot_row, -t, state);
       state = update(pivot_col, t, state);
@@ -910,20 +910,23 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       // rotate eigenvectors
       LOG.info("rotating eigenvector");
       for (int i = 0; i < size; i++) {
-        e1 = BytesUtil.bytesToDouble(table.get(
-            BytesUtil.getRowIndex(pivot_row),
-            Bytes.toBytes(JacobiEigenValue.EIVEC + i)).getValue());
-        e2 = BytesUtil.bytesToDouble(table.get(
-            BytesUtil.getRowIndex(pivot_col),
-            Bytes.toBytes(JacobiEigenValue.EIVEC + i)).getValue());
+        get = new Get(BytesUtil.getRowIndex(pivot_row));
+        e1 = BytesUtil.bytesToDouble(table.get(get).getValue(
+            Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY),
+            Bytes.toBytes(String.valueOf(i))));
+       
+        get = new Get(BytesUtil.getRowIndex(pivot_col));
+        e2 = BytesUtil.bytesToDouble(table.get(get).getValue(
+            Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY),
+            Bytes.toBytes(String.valueOf(i))));
 
         vu = new VectorUpdate(pivot_row);
-        vu.put(JacobiEigenValue.EIVEC, i, c * e1 - s * e2);
-        table.commit(vu.getBatchUpdate());
+        vu.put(JacobiEigenValue.EIVEC_FAMILY, i, c * e1 - s * e2);
+        table.put(vu.getPut());
 
         vu = new VectorUpdate(pivot_col);
-        vu.put(JacobiEigenValue.EIVEC, i, s * e1 + c * e2);
-        table.commit(vu.getBatchUpdate());
+        vu.put(JacobiEigenValue.EIVEC_FAMILY, i, s * e1 + c * e2);
+        table.put(vu.getPut());
       }
 
       LOG.info("update index...");
@@ -937,14 +940,19 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   void maxind(int row, int size) throws IOException {
     int m = row + 1;
+    Get get = null;
     if (row + 2 < size) {
-      double max = BytesUtil.bytesToDouble(table
-          .get(BytesUtil.getRowIndex(row),
-              Bytes.toBytes(JacobiEigenValue.EICOL + m)).getValue());
+      get = new Get(BytesUtil.getRowIndex(row));
+      
+      double max = BytesUtil.bytesToDouble(table.get(get).getValue(
+          Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY), 
+          Bytes.toBytes(String.valueOf(m))));
       double val;
       for (int i = row + 2; i < size; i++) {
-        val = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(row),
-            Bytes.toBytes(JacobiEigenValue.EICOL + i)).getValue());
+        get = new Get(BytesUtil.getRowIndex(row));
+        val = BytesUtil.bytesToDouble(table.get(get).getValue(
+            Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY), 
+            Bytes.toBytes(String.valueOf(i))));
         if (Math.abs(val) > Math.abs(max)) {
           m = i;
           max = val;
@@ -953,30 +961,36 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     }
 
     VectorUpdate vu = new VectorUpdate(row);
-    vu.put(JacobiEigenValue.EIIND, m);
-    table.commit(vu.getBatchUpdate());
+    vu.put(JacobiEigenValue.EI_COLUMNFAMILY, "ind", String.valueOf(m));
+    table.put(vu.getPut());
   }
 
   int update(int row, double value, int state) throws IOException {
-    double e = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(row),
-        Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
-    int changed = BytesUtil.bytesToInt(table.get(BytesUtil.getRowIndex(row),
-        Bytes.toBytes(JacobiEigenValue.EICHANGED)).getValue());
+    Get get = new Get(BytesUtil.getRowIndex(row));
+    double e = BytesUtil.bytesToDouble(table.get(get).getValue(
+        Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY), 
+        Bytes.toBytes(JacobiEigenValue.EI_VAL)));
+    int changed = BytesUtil.bytesToInt(table.get(get).getValue(
+        Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY), 
+        Bytes.toBytes("changed")));
     double y = e;
     e += value;
 
     VectorUpdate vu = new VectorUpdate(row);
-    vu.put(JacobiEigenValue.EIVAL, e);
+    vu.put(JacobiEigenValue.EI_COLUMNFAMILY, JacobiEigenValue.EI_VAL, e);
+    
     if (changed == 1 && (Math.abs(y - e) < .0000001)) { // y == e) {
       changed = 0;
-      vu.put(JacobiEigenValue.EICHANGED, changed);
+      vu.put(JacobiEigenValue.EI_COLUMNFAMILY, JacobiEigenValue.EICHANGED_STRING, String.valueOf(changed));
+      
       state--;
     } else if (changed == 0 && (Math.abs(y - e) > .0000001)) {
       changed = 1;
-      vu.put(JacobiEigenValue.EICHANGED, changed);
+      vu.put(JacobiEigenValue.EI_COLUMNFAMILY, JacobiEigenValue.EICHANGED_STRING, String.valueOf(changed));
+      
       state++;
     }
-    table.commit(vu.getBatchUpdate());
+    table.put(vu.getPut());
     return state;
   }
 
@@ -984,16 +998,21 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   boolean verifyEigenValue(double[] e, double[][] E) throws IOException {
     boolean success = true;
     double e1, ev;
+    Get get = null;
     for (int i = 0; i < e.length; i++) {
-      e1 = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(i),
-          Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
+      get = new Get(BytesUtil.getRowIndex(i));
+      e1 = BytesUtil.bytesToDouble(table.get(get).getValue(
+          Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY),
+          Bytes.toBytes(JacobiEigenValue.EI_VAL)));
       success &= ((Math.abs(e1 - e[i]) < .0000001));
       if (!success)
         return success;
 
       for (int j = 0; j < E[i].length; j++) {
-        ev = BytesUtil.bytesToDouble(table.get(BytesUtil.getRowIndex(i),
-            Bytes.toBytes(JacobiEigenValue.EIVEC + j)).getValue());
+        get = new Get(BytesUtil.getRowIndex(i));
+        ev = BytesUtil.bytesToDouble(table.get(get).getValue(
+            Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY), 
+            Bytes.toBytes(String.valueOf(j))));
         success &= ((Math.abs(ev - E[i][j]) < .0000001));
         if (!success)
           return success;
