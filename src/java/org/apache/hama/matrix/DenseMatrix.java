@@ -38,6 +38,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -56,17 +57,16 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.BlockID;
-import org.apache.hama.io.BlockWritable;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.Pair;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.mapred.CollectBlocksMapper;
 import org.apache.hama.mapred.DummyMapper;
 import org.apache.hama.mapred.VectorInputFormat;
+import org.apache.hama.mapreduce.CollectBlocksMapper;
 import org.apache.hama.mapreduce.RandomMatrixMapper;
 import org.apache.hama.mapreduce.RandomMatrixReducer;
-import org.apache.hama.matrix.algebra.BlockMultiplyMap;
-import org.apache.hama.matrix.algebra.BlockMultiplyReduce;
+import org.apache.hama.matrix.algebra.BlockMultMap;
+import org.apache.hama.matrix.algebra.BlockMultReduce;
 import org.apache.hama.matrix.algebra.DenseMatrixVectorMultMap;
 import org.apache.hama.matrix.algebra.DenseMatrixVectorMultReduce;
 import org.apache.hama.matrix.algebra.JacobiEigenValue;
@@ -451,12 +451,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     Scan scan = new Scan();
     scan.addFamily(Constants.COLUMNFAMILY);
     job.getConfiguration().set(MatrixAdditionMap.MATRIX_SUMMANDS, B.getPath());
-    job.getConfiguration().set(MatrixAdditionMap.MATRIX_ALPHAS, Double
-        .toString(alpha));
-    
+    job.getConfiguration().set(MatrixAdditionMap.MATRIX_ALPHAS,
+        Double.toString(alpha));
+
     TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
-        MatrixAdditionMap.class, IntWritable.class,
-        MapWritable.class, job);
+        MatrixAdditionMap.class, IntWritable.class, MapWritable.class, job);
     TableMapReduceUtil.initTableReducerJob(result.getPath(),
         MatrixAdditionReduce.class, job);
     try {
@@ -466,7 +465,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
-    
+
     return result;
   }
 
@@ -505,12 +504,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     Scan scan = new Scan();
     scan.addFamily(Constants.COLUMNFAMILY);
-    job.getConfiguration().set(MatrixAdditionMap.MATRIX_SUMMANDS, summandList.toString());
-    job.getConfiguration().set(MatrixAdditionMap.MATRIX_ALPHAS, alphaList.toString());
-    
+    job.getConfiguration().set(MatrixAdditionMap.MATRIX_SUMMANDS,
+        summandList.toString());
+    job.getConfiguration().set(MatrixAdditionMap.MATRIX_ALPHAS,
+        alphaList.toString());
+
     TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
-        MatrixAdditionMap.class, IntWritable.class,
-        MapWritable.class, job);
+        MatrixAdditionMap.class, IntWritable.class, MapWritable.class, job);
     TableMapReduceUtil.initTableReducerJob(result.getPath(),
         MatrixAdditionReduce.class, job);
     try {
@@ -520,7 +520,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }
-    
+
     return result;
   }
 
@@ -548,7 +548,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     DenseMatrix result = new DenseMatrix(config, this.getRows(), columns);
     List<Job> jobId = new ArrayList<Job>();
-    
+
     for (int i = 0; i < this.getRows(); i++) {
       Job job = new Job(config, "multiplication MR job : " + result.getPath()
           + " " + i);
@@ -560,8 +560,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       job.getConfiguration().setInt(DenseMatrixVectorMultMap.ITH_ROW, i);
 
       TableMapReduceUtil.initTableMapperJob(B.getPath(), scan,
-          DenseMatrixVectorMultMap.class, IntWritable.class,
-          MapWritable.class, job);
+          DenseMatrixVectorMultMap.class, IntWritable.class, MapWritable.class,
+          job);
       TableMapReduceUtil.initTableReducerJob(result.getPath(),
           DenseMatrixVectorMultReduce.class, job);
       try {
@@ -582,7 +582,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         e.printStackTrace();
       }
     }
-    
+
     return result;
   }
 
@@ -599,7 +599,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     String collectionTable = "collect_" + RandomVariable.randMatrixPath();
     HTableDescriptor desc = new HTableDescriptor(collectionTable);
-    desc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
+    desc
+        .addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK_FAMILY)));
     this.admin.createTable(desc);
     LOG.info("Collect Blocks");
 
@@ -609,18 +610,24 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     DenseMatrix result = new DenseMatrix(config, this.getRows(), this
         .getColumns());
 
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("multiplication MR job : " + result.getPath());
+    Job job = new Job(config, "multiplication MR job : " + result.getPath());
 
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
+    Scan scan = new Scan();
+    scan.addFamily(Bytes.toBytes(Constants.BLOCK_FAMILY));
 
-    BlockMultiplyMap.initJob(collectionTable, BlockMultiplyMap.class,
-        BlockID.class, BlockWritable.class, jobConf);
-    BlockMultiplyReduce.initJob(result.getPath(), BlockMultiplyReduce.class,
-        jobConf);
+    TableMapReduceUtil.initTableMapperJob(collectionTable, scan,
+        BlockMultMap.class, BlockID.class, BytesWritable.class, job);
+    TableMapReduceUtil.initTableReducerJob(result.getPath(),
+        BlockMultReduce.class, job);
 
-     JobClient.runJob(jobConf);
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+
     hamaAdmin.delete(collectionTable);
     return result;
   }
@@ -687,8 +694,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     Scan scan = new Scan();
     for (int j = j0, jj = 0; j <= j1; j++, jj++) {
-      scan.addColumn(Constants.COLUMNFAMILY, Bytes
-          .toBytes(String.valueOf(j)));
+      scan.addColumn(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j)));
     }
     scan.setStartRow(BytesUtil.getRowIndex(i0));
     scan.setStopRow(BytesUtil.getRowIndex(i1 + 1));
@@ -700,8 +706,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     while (it.hasNext()) {
       rs = it.next();
       for (int j = j0, jj = 0; j <= j1; j++, jj++) {
-        byte[] vv = rs.getValue(Constants.COLUMNFAMILY, Bytes
-            .toBytes(String.valueOf(j)));
+        byte[] vv = rs.getValue(Constants.COLUMNFAMILY, Bytes.toBytes(String
+            .valueOf(j)));
         System.out.println(BytesUtil.bytesToDouble(vv));
         result.set(i, jj, vv);
       }
@@ -727,21 +733,32 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       throw new IOException("can't divide.");
 
     int block_size = (int) blocks;
-    JobConf jobConf = new JobConf(config);
-    jobConf.setJobName("Blocking MR job" + getPath());
+    Job job = new Job(config, "Blocking MR job" + getPath());
 
-    jobConf.setNumMapTasks(config.getNumMapTasks());
-    jobConf.setNumReduceTasks(config.getNumReduceTasks());
-    jobConf.setMapperClass(CollectBlocksMapper.class);
-    jobConf.setInputFormat(VectorInputFormat.class);
-    jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
+    Scan scan = new Scan();
+    scan.addFamily(Constants.COLUMNFAMILY);
 
-    org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, path);
+    job.getConfiguration().set(CollectBlocksMapper.BLOCK_SIZE,
+        String.valueOf(block_size));
+    job.getConfiguration().set(CollectBlocksMapper.ROWS,
+        String.valueOf(this.getRows()));
+    job.getConfiguration().set(CollectBlocksMapper.COLUMNS,
+        String.valueOf(this.getColumns()));
+    job.getConfiguration().setBoolean(CollectBlocksMapper.MATRIX_POS, bool);
 
-    CollectBlocksMapper.initJob(collectionTable, bool, block_size, this
-        .getRows(), this.getColumns(), jobConf);
+    TableMapReduceUtil.initTableMapperJob(path, scan,
+        org.apache.hama.mapreduce.CollectBlocksMapper.class, BlockID.class,
+        MapWritable.class, job);
+    TableMapReduceUtil.initTableReducerJob(collectionTable,
+        org.apache.hama.mapreduce.CollectBlocksReducer.class, job);
 
-    JobClient.runJob(jobConf);
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -914,7 +931,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         e1 = BytesUtil.bytesToDouble(table.get(get).getValue(
             Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY),
             Bytes.toBytes(String.valueOf(i))));
-       
+
         get = new Get(BytesUtil.getRowIndex(pivot_col));
         e2 = BytesUtil.bytesToDouble(table.get(get).getValue(
             Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY),
@@ -943,15 +960,15 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     Get get = null;
     if (row + 2 < size) {
       get = new Get(BytesUtil.getRowIndex(row));
-      
+
       double max = BytesUtil.bytesToDouble(table.get(get).getValue(
-          Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY), 
+          Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY),
           Bytes.toBytes(String.valueOf(m))));
       double val;
       for (int i = row + 2; i < size; i++) {
         get = new Get(BytesUtil.getRowIndex(row));
         val = BytesUtil.bytesToDouble(table.get(get).getValue(
-            Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY), 
+            Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY),
             Bytes.toBytes(String.valueOf(i))));
         if (Math.abs(val) > Math.abs(max)) {
           m = i;
@@ -968,26 +985,28 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   int update(int row, double value, int state) throws IOException {
     Get get = new Get(BytesUtil.getRowIndex(row));
     double e = BytesUtil.bytesToDouble(table.get(get).getValue(
-        Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY), 
+        Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY),
         Bytes.toBytes(JacobiEigenValue.EI_VAL)));
     int changed = BytesUtil.bytesToInt(table.get(get).getValue(
-        Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY), 
+        Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY),
         Bytes.toBytes("changed")));
     double y = e;
     e += value;
 
     VectorUpdate vu = new VectorUpdate(row);
     vu.put(JacobiEigenValue.EI_COLUMNFAMILY, JacobiEigenValue.EI_VAL, e);
-    
+
     if (changed == 1 && (Math.abs(y - e) < .0000001)) { // y == e) {
       changed = 0;
-      vu.put(JacobiEigenValue.EI_COLUMNFAMILY, JacobiEigenValue.EICHANGED_STRING, String.valueOf(changed));
-      
+      vu.put(JacobiEigenValue.EI_COLUMNFAMILY,
+          JacobiEigenValue.EICHANGED_STRING, String.valueOf(changed));
+
       state--;
     } else if (changed == 0 && (Math.abs(y - e) > .0000001)) {
       changed = 1;
-      vu.put(JacobiEigenValue.EI_COLUMNFAMILY, JacobiEigenValue.EICHANGED_STRING, String.valueOf(changed));
-      
+      vu.put(JacobiEigenValue.EI_COLUMNFAMILY,
+          JacobiEigenValue.EICHANGED_STRING, String.valueOf(changed));
+
       state++;
     }
     table.put(vu.getPut());
@@ -1011,7 +1030,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       for (int j = 0; j < E[i].length; j++) {
         get = new Get(BytesUtil.getRowIndex(i));
         ev = BytesUtil.bytesToDouble(table.get(get).getValue(
-            Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY), 
+            Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY),
             Bytes.toBytes(String.valueOf(j))));
         success &= ((Math.abs(ev - E[i][j]) < .0000001));
         if (!success)
