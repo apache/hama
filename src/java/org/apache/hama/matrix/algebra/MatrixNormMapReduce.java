@@ -14,6 +14,7 @@ import org.apache.hama.Constants;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
+/** A Catalog class collect all the mr classes to compute the matrix's norm */
 public class MatrixNormMapReduce {
   public final static IntWritable nKey = new IntWritable(-1);
 

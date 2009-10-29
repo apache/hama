@@ -27,6 +27,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.util.BytesUtil;
 
@@ -67,7 +69,7 @@ public class TestSparseVector extends HamaCluster {
 
     HTable table = m1.getHTable();
     Get get = new Get(BytesUtil.getRowIndex(0));
-    get.addColumn(BytesUtil.getColumnIndex(1));
+    get.addColumn(Constants.COLUMNFAMILY, Bytes.toBytes(1));
     Result r = table.get(get);
     assertTrue(r.getCellValue() == null);
     

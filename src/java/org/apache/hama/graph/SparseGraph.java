@@ -121,7 +121,7 @@ public class SparseGraph implements Graph {
     StringBuilder result = new StringBuilder();
 
     try {
-      scan = table.getScanner(new String[] { Constants.COLUMN }, "");
+      scan = table.getScanner(new String[] { "column:" }, "");
       Iterator<RowResult> it = scan.iterator();
       while (it.hasNext()) {
         RowResult rs = it.next();

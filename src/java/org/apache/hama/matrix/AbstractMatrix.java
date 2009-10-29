@@ -54,7 +54,6 @@ import org.apache.hama.HamaAdmin;
 import org.apache.hama.HamaAdminImpl;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.matrix.algebra.JacobiEigenValue;
 import org.apache.hama.matrix.algebra.MatrixNormMapReduce;
 import org.apache.hama.matrix.algebra.TransposeMap;
 import org.apache.hama.matrix.algebra.TransposeReduce;
@@ -137,14 +136,14 @@ public abstract class AbstractMatrix implements Matrix {
 
       // It's a temporary data.
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.BLOCK_FAMILY)));
+          .toBytes(Constants.BLOCK)));
       // the following families are used in JacobiEigenValue computation
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(JacobiEigenValue.EI_COLUMNFAMILY)));
+          .toBytes(Constants.EI)));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(JacobiEigenValue.EICOL)));
+          .toBytes(Constants.EICOL)));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(JacobiEigenValue.EIVEC)));
+          .toBytes(Constants.EIVEC)));
 
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
@@ -460,10 +459,10 @@ public abstract class AbstractMatrix implements Matrix {
     scan.addFamily(Constants.COLUMNFAMILY);
     scan.addFamily(Constants.ATTRIBUTE);
     scan.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
-    scan.addFamily(Bytes.toBytes(Constants.BLOCK_FAMILY));
-    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
-    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY));
-    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY));
+    scan.addFamily(Bytes.toBytes(Constants.BLOCK));
+    scan.addFamily(Bytes.toBytes(Constants.EI));
+    scan.addFamily(Bytes.toBytes(Constants.EICOL));
+    scan.addFamily(Bytes.toBytes(Constants.EIVEC));
 
     org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(B
         .getPath(), scan, ScanMapper.class, ImmutableBytesWritable.class,
@@ -489,10 +488,10 @@ public abstract class AbstractMatrix implements Matrix {
     scan.addFamily(Constants.COLUMNFAMILY);
     scan.addFamily(Constants.ATTRIBUTE);
     scan.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
-    scan.addFamily(Bytes.toBytes(Constants.BLOCK_FAMILY));
-    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
-    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY));
-    scan.addFamily(Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY));
+    scan.addFamily(Bytes.toBytes(Constants.BLOCK));
+    scan.addFamily(Bytes.toBytes(Constants.EI));
+    scan.addFamily(Bytes.toBytes(Constants.EICOL));
+    scan.addFamily(Bytes.toBytes(Constants.EIVEC));
     Float f = new Float(alpha);
     job.getConfiguration().setFloat("set.alpha", f);
 

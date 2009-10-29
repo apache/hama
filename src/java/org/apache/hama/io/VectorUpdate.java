@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -33,56 +32,27 @@ import org.apache.hama.Constants;
 import org.apache.hama.util.BytesUtil;
 
 public class VectorUpdate {
-  private BatchUpdate batchUpdate;
   private Put put;
 
   public VectorUpdate(int i) {
-    this.batchUpdate = new BatchUpdate(BytesUtil.getRowIndex(i));
     this.put = new Put(BytesUtil.getRowIndex(i));
   }
 
   public VectorUpdate(String row) {
-    this.batchUpdate = new BatchUpdate(row);
     this.put = new Put(Bytes.toBytes(row));
   }
 
   public VectorUpdate(byte[] row) {
-    this.batchUpdate = new BatchUpdate(row);
     this.put = new Put(row);
   }
 
   public void put(int j, double value) {
-    this.batchUpdate.put(BytesUtil.getColumnIndex(j), BytesUtil
-        .doubleToBytes(value));
     this.put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j)),
         BytesUtil.doubleToBytes(value));
   }
 
-  /**
-   * Put the value in "cfName+j"
-   * 
-   * @param cfName
-   * @param j
-   * @param value
-   */
   public void put(String cfName, int j, double value) {
-    this.batchUpdate.put(Bytes.toBytes(cfName + j), Bytes.toBytes(value));
     this.put.add(Bytes.toBytes(cfName), Bytes.toBytes(String.valueOf(j)), Bytes.toBytes(value));
-  }
-
-  public void put(String name, double value) {
-    this.batchUpdate.put(Bytes.toBytes(name), Bytes.toBytes(value));
-  }
-
-  @Deprecated
-  public void put(int j, String name) {
-    this.batchUpdate.put(Bytes
-        .toBytes((Bytes.toString(Constants.ATTRIBUTE) + j)), Bytes
-        .toBytes(name));
-  }
-
-  public void put(String j, String val) {
-    this.batchUpdate.put(j, Bytes.toBytes(val));
   }
 
   public void put(String column, String qualifier, String val) {
@@ -93,14 +63,6 @@ public class VectorUpdate {
   public void put(String column, String qualifier, double val) {
     this.put.add(Bytes.toBytes(column), Bytes.toBytes(qualifier), Bytes
         .toBytes(val));
-  }
-  
-  public void put(String row, int val) {
-    this.batchUpdate.put(row, BytesUtil.intToBytes(val));
-  }
-
-  public BatchUpdate getBatchUpdate() {
-    return this.batchUpdate;
   }
 
   public void putAll(Map<Integer, Double> buffer) {
