@@ -21,7 +21,6 @@ package org.apache.hama.matrix;
 
 import java.io.IOException;
 
-
 /**
  * Basic matrix interface.
  */

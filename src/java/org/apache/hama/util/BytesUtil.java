@@ -22,7 +22,6 @@ package org.apache.hama.util;
 import java.nio.ByteBuffer;
 
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hama.Constants;
 import org.apache.log4j.Logger;
 
 /**
