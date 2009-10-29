@@ -23,10 +23,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
 
@@ -188,7 +188,7 @@ public class TestDenseMatrix extends HamaCluster {
     Iterator<Writable> it = v.iterator();
     int x = 0;
     while (it.hasNext()) {
-      assertEquals(m1.get(x, 0), ((DoubleEntry) it.next()).getValue());
+      assertEquals(m1.get(x, 0), ((DoubleWritable) it.next()).get());
       x++;
     }
     
@@ -214,7 +214,7 @@ public class TestDenseMatrix extends HamaCluster {
 
     int i = 0;
     while (it.hasNext()) {
-      assertEquals(entries[i], ((DoubleEntry) it.next()).getValue());
+      assertEquals(entries[i], ((DoubleWritable) it.next()).get());
       i++;
     }
 
@@ -223,7 +223,7 @@ public class TestDenseMatrix extends HamaCluster {
 
     int x = 0;
     while (it2.hasNext()) {
-      assertEquals(entries[x], ((DoubleEntry) it2.next()).getValue());
+      assertEquals(entries[x], ((DoubleWritable) it2.next()).get());
       x++;
     }
   }
