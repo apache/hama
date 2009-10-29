@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
@@ -52,7 +53,8 @@ public class VectorUpdate {
   }
 
   public void put(String cfName, int j, double value) {
-    this.put.add(Bytes.toBytes(cfName), Bytes.toBytes(String.valueOf(j)), Bytes.toBytes(value));
+    this.put.add(Bytes.toBytes(cfName), Bytes.toBytes(String.valueOf(j)), Bytes
+        .toBytes(value));
   }
 
   public void put(String column, String qualifier, String val) {
@@ -71,16 +73,16 @@ public class VectorUpdate {
     }
   }
 
-  public void putAll(Set<Entry<Integer, DoubleEntry>> entrySet) {
-    for (Map.Entry<Integer, DoubleEntry> e : entrySet) {
-      put(e.getKey(), e.getValue().getValue());
+  public void putAll(Set<Entry<Integer, DoubleWritable>> entrySet) {
+    for (Map.Entry<Integer, DoubleWritable> e : entrySet) {
+      put(e.getKey(), e.getValue().get());
     }
   }
 
   public void putAll(MapWritable entries) {
     for (Map.Entry<Writable, Writable> e : entries.entrySet()) {
-      put(((IntWritable) e.getKey()).get(), ((DoubleEntry) e.getValue())
-          .getValue());
+      put(((IntWritable) e.getKey()).get(), ((DoubleWritable) e.getValue())
+          .get());
     }
   }
 

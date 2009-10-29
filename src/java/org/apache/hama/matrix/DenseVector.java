@@ -25,11 +25,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
-import org.apache.hama.io.DoubleEntry;
 import org.apache.log4j.Logger;
 
 /**
@@ -41,7 +41,7 @@ public class DenseVector extends AbstractVector implements Vector {
   public DenseVector() {
     this(new MapWritable());
   }
-  
+
   public DenseVector(MapWritable m) {
     this.entries = m;
   }
@@ -54,7 +54,7 @@ public class DenseVector extends AbstractVector implements Vector {
     this.initMap(m);
     this.entries.put(Constants.ROWCOUNT, new IntWritable(row));
   }
-  
+
   public DenseVector(int row, MapWritable m) {
     this.entries = m;
     this.entries.put(Constants.ROWCOUNT, new IntWritable(row));
@@ -72,7 +72,7 @@ public class DenseVector extends AbstractVector implements Vector {
       this.entries = new MapWritable();
     }
 
-    this.entries.put(new IntWritable(index), new DoubleEntry(value));
+    this.entries.put(new IntWritable(index), new DoubleWritable(value));
   }
 
   /**
@@ -89,20 +89,20 @@ public class DenseVector extends AbstractVector implements Vector {
   public Vector set(double alpha, Vector v) {
     checkComformantSize(v);
     boolean zeroFill = false;
-    if(alpha == 0) 
+    if (alpha == 0)
       zeroFill = true;
-    
+
     for (Map.Entry<Writable, Writable> e : v.getEntries().entrySet()) {
       int key = ((IntWritable) e.getKey()).get();
-      if(zeroFill)
+      if (zeroFill)
         this.set(key, 0);
       else
-        this.set(key, alpha * ((DoubleEntry) e.getValue()).getValue());
+        this.set(key, alpha * ((DoubleWritable) e.getValue()).get());
     }
-    
+
     return this;
   }
-  
+
   public void setRow(int row) {
     this.entries.put(Constants.ROWCOUNT, new IntWritable(row));
   }
@@ -117,15 +117,14 @@ public class DenseVector extends AbstractVector implements Vector {
   public double get(int index) {
     double value;
     try {
-      value = ((DoubleEntry) this.entries.get(new IntWritable(index)))
-          .getValue();
+      value = ((DoubleWritable) this.entries.get(new IntWritable(index))).get();
     } catch (NullPointerException e) {
       throw new NullPointerException("Unexpected null value : " + e.toString());
     }
 
     return value;
   }
-  
+
   public int getRow() {
     return ((IntWritable) this.entries.get(Constants.ROWCOUNT)).get();
   }
@@ -139,7 +138,7 @@ public class DenseVector extends AbstractVector implements Vector {
   public void add(int index, double value) {
     set(index, get(index) + value);
   }
-  
+
   /**
    * x = alpha*v + x
    * 
@@ -185,7 +184,7 @@ public class DenseVector extends AbstractVector implements Vector {
    */
   public double dot(Vector v) {
     checkComformantSize(v);
-    
+
     double cosine = 0.0;
     double q_i, d_i;
     for (int i = 0; i < Math.min(this.size(), v.size()); i++) {
@@ -204,8 +203,8 @@ public class DenseVector extends AbstractVector implements Vector {
    */
   public DenseVector scale(double alpha) {
     for (Map.Entry<Writable, Writable> e : this.entries.entrySet()) {
-      this.entries.put(e.getKey(), new DoubleEntry(((DoubleEntry) e.getValue())
-          .getValue()
+      this.entries.put(e.getKey(), new DoubleWritable(((DoubleWritable) e
+          .getValue()).get()
           * alpha));
     }
     return this;
@@ -309,14 +308,14 @@ public class DenseVector extends AbstractVector implements Vector {
   }
 
   public void zeroFill(int size) {
-    for(int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       this.set(i, 0);
     }
   }
-  
+
   public String toString() {
     StringBuilder result = new StringBuilder();
-    for(int i = 0; i < this.size(); i++) {
+    for (int i = 0; i < this.size(); i++) {
       result.append(this.get(i) + " ");
     }
     return result.toString();

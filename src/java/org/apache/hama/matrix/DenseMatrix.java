@@ -56,7 +56,6 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.BlockID;
-import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.Pair;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapreduce.CollectBlocksMapper;
@@ -382,7 +381,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
           .valueOf(j)));
       LOG.info(Bytes.toString(r.getRow()));
       trunk.put(new IntWritable(BytesUtil.getRowIndex(r.getRow())),
-          new DoubleEntry(value));
+          new DoubleWritable(BytesUtil.bytesToDouble(value)));
     }
 
     return new DenseVector(trunk);
@@ -427,7 +426,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     for (Map.Entry<Writable, Writable> e : vector.getEntries().entrySet()) {
       int key = ((IntWritable) e.getKey()).get();
-      double value = ((DoubleEntry) e.getValue()).getValue();
+      double value = ((DoubleWritable) e.getValue()).get();
       VectorUpdate update = new VectorUpdate(key);
       update.put(column, value);
       table.put(update.getPut());
@@ -860,11 +859,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       }
       fs.delete(outDir.getParent(), true);
 
-      /*************************************************************************
+      /*
        * Calculation
        * 
        * Compute the rotation parameters of next rotation.
-       ************************************************************************/
+       */
       Get get = new Get(BytesUtil.getRowIndex(pivot_row));
       get.addFamily(Bytes.toBytes(Constants.EI));
       Result r = table.get(get);

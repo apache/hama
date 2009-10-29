@@ -23,10 +23,10 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.io.DoubleEntry;
 import org.apache.log4j.Logger;
 
 /**
@@ -46,7 +46,7 @@ public class SparseVector extends AbstractVector implements Vector {
   public SparseVector(Result row) {
     this.initMap(row);
   }
-  
+
   @Override
   public Vector add(double alpha, Vector v) {
     if (alpha == 0)
@@ -55,13 +55,13 @@ public class SparseVector extends AbstractVector implements Vector {
     for (Map.Entry<Writable, Writable> e : v.getEntries().entrySet()) {
       if (this.entries.containsKey(e.getKey())) {
         // add
-        double value = alpha * ((DoubleEntry) e.getValue()).getValue()
+        double value = alpha * ((DoubleWritable) e.getValue()).get()
             + this.get(((IntWritable) e.getKey()).get());
-        this.entries.put(e.getKey(), new DoubleEntry(value));
+        this.entries.put(e.getKey(), new DoubleWritable(value));
       } else {
         // put
-        double value = alpha * ((DoubleEntry) e.getValue()).getValue();
-        this.entries.put(e.getKey(), new DoubleEntry(value));
+        double value = alpha * ((DoubleWritable) e.getValue()).get();
+        this.entries.put(e.getKey(), new DoubleWritable(value));
       }
     }
 
@@ -79,9 +79,9 @@ public class SparseVector extends AbstractVector implements Vector {
     for (Map.Entry<Writable, Writable> e : v2.getEntries().entrySet()) {
       int key = ((IntWritable) e.getKey()).get();
       if (this.entries.containsKey(e.getKey())) {
-        this.add(key, ((DoubleEntry) e.getValue()).getValue());
+        this.add(key, ((DoubleWritable) e.getValue()).get());
       } else {
-        this.set(key, ((DoubleEntry) e.getValue()).getValue());
+        this.set(key, ((DoubleWritable) e.getValue()).get());
       }
     }
 
@@ -108,8 +108,8 @@ public class SparseVector extends AbstractVector implements Vector {
    */
   public SparseVector scale(double alpha) {
     for (Map.Entry<Writable, Writable> e : this.entries.entrySet()) {
-      this.entries.put(e.getKey(), new DoubleEntry(((DoubleEntry) e.getValue())
-          .getValue()
+      this.entries.put(e.getKey(), new DoubleWritable(((DoubleWritable) e
+          .getValue()).get()
           * alpha));
     }
     return this;
@@ -125,8 +125,7 @@ public class SparseVector extends AbstractVector implements Vector {
   public double get(int index) {
     double value;
     try {
-      value = ((DoubleEntry) this.entries.get(new IntWritable(index)))
-          .getValue();
+      value = ((DoubleWritable) this.entries.get(new IntWritable(index))).get();
     } catch (NullPointerException e) { // returns zero if there is no value
       return 0;
     }
@@ -147,7 +146,7 @@ public class SparseVector extends AbstractVector implements Vector {
     }
 
     if (value != 0) // only stores non-zero element
-      this.entries.put(new IntWritable(index), new DoubleEntry(value));
+      this.entries.put(new IntWritable(index), new DoubleWritable(value));
   }
 
   /**

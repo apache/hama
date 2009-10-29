@@ -25,9 +25,9 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaCluster;
-import org.apache.hama.io.DoubleEntry;
 
 public class TestDenseVector extends HamaCluster {
   final static Log LOG = LogFactory.getLog(TestDenseVector.class.getName());
@@ -128,8 +128,8 @@ public class TestDenseVector extends HamaCluster {
     int i = 0;
     Iterator<Writable> it = v1.iterator();
     while (it.hasNext()) {
-      DoubleEntry c = (DoubleEntry) it.next();
-      assertEquals(c.getValue(), values[0][i] + values[1][i]);
+      DoubleWritable c = (DoubleWritable) it.next();
+      assertEquals(c.get(), values[0][i] + values[1][i]);
       i++;
     }
 
@@ -137,8 +137,8 @@ public class TestDenseVector extends HamaCluster {
     int j = 0;
     Iterator<Writable> itt = v1.iterator();
     while (itt.hasNext()) {
-      DoubleEntry c = (DoubleEntry) itt.next();
-      assertEquals(c.getValue(), (values[0][j] + values[1][j]) + (0.5 * values[1][j]));
+      DoubleWritable c = (DoubleWritable) itt.next();
+      assertEquals(c.get(), (values[0][j] + values[1][j]) + (0.5 * values[1][j]));
       j++;
     }
     
@@ -189,7 +189,7 @@ public class TestDenseVector extends HamaCluster {
 
     int i = start;
     while (it.hasNext()) {
-      assertEquals(v1.get(i), ((DoubleEntry) it.next()).getValue());
+      assertEquals(v1.get(i), ((DoubleWritable) it.next()).get());
       i++;
     }
   }

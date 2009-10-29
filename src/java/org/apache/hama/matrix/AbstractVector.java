@@ -25,12 +25,13 @@ import java.util.NavigableMap;
 
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
-import org.apache.hama.io.DoubleEntry;
+import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
 /**
@@ -45,8 +46,8 @@ public abstract class AbstractVector {
     NavigableMap<byte[], byte[]> map = rs.getFamilyMap(Constants.COLUMNFAMILY);
     for (Map.Entry<byte[], byte[]> e : map.entrySet()) {
       if(e != null) {
-        this.entries.put(new IntWritable(Integer.valueOf(Bytes.toString(e.getKey()))),
-            new DoubleEntry(e.getValue()));
+        this.entries.put(new IntWritable(BytesUtil.bytesToInt(e.getKey())),
+            new DoubleWritable(BytesUtil.bytesToDouble(e.getValue())));
       }
     }
   }
