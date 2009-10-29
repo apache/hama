@@ -12,7 +12,7 @@ import org.apache.hama.io.BlockID;
 import org.apache.hama.matrix.SubMatrix;
 
 public class BlockMultMap extends TableMapper<BlockID, BytesWritable> {
-  private byte[] COLUMN = Bytes.toBytes(Constants.BLOCK_FAMILY);
+  private byte[] COLUMN = Bytes.toBytes(Constants.BLOCK);
   
   public void map(ImmutableBytesWritable key, Result value, Context context) 
   throws IOException, InterruptedException {

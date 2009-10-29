@@ -68,7 +68,7 @@ public class CollectBlocksReducer extends
         int seq = (x * mBlockNum) + key.getColumn() + r;
         BlockID bkID = new BlockID(key.getRow(), x, seq);
         Put put = new Put(bkID.getBytes());
-        put.add(Bytes.toBytes(Constants.BLOCK_FAMILY), 
+        put.add(Bytes.toBytes(Constants.BLOCK), 
             Bytes.toBytes("a"), 
             subMatrix.getBytes());
         context.write(new ImmutableBytesWritable(bkID.getBytes()), put);
@@ -79,7 +79,7 @@ public class CollectBlocksReducer extends
             + key.getRow();
         BlockID bkID = new BlockID(x, key.getColumn(), seq);
         Put put = new Put(bkID.getBytes());
-        put.add(Bytes.toBytes(Constants.BLOCK_FAMILY), 
+        put.add(Bytes.toBytes(Constants.BLOCK), 
             Bytes.toBytes("b"), 
             subMatrix.getBytes());
         context.write(new ImmutableBytesWritable(bkID.getBytes()), put);

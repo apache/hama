@@ -58,9 +58,6 @@ public class Constants {
   public final static String ALIASEFAMILY = "aliase";
   
   /** Default columnFamily name */
-  @Deprecated
-  public final static String COLUMN = "column:";
-
   public static byte[] COLUMNFAMILY = Bytes.toBytes("column");
   
   /** Temporary random matrices name prefix */
@@ -85,10 +82,31 @@ public class Constants {
   public static final int DEFAULT_TRY_TIMES = 10000000;
   
   /** block data column */
-  @Deprecated
-  public static final String BLOCK = "block:";
-  
-  public static final String BLOCK_FAMILY = "block";
+  public static final String BLOCK = "block";
   
   public static final Text ROWCOUNT= new Text("row");
+
+  /**
+   * EigenValue Constants
+   */
+  /** a matrix copy of the original copy collected in "eicol" family * */
+  public static final String EICOL = "eicol";
+
+  /** a column family collect all values and statuses used during computation * */
+  public static final String EI = "eival";
+  public static final String EIVAL = "value";
+  public static final String EICHANGED = "changed";
+
+  /** a column identify the index of the max absolute value each row * */
+  public static final String EIIND = "ind";
+
+  /** a matrix collect all the eigen vectors * */
+  public static final String EIVEC = "eivec";
+  public static final String MATRIX = "hama.jacobieigenvalue.matrix";
+
+  /** parameters for pivot * */
+  public static final String PIVOTROW = "hama.jacobi.pivot.row";
+  public static final String PIVOTCOL = "hama.jacobi.pivot.col";
+  public static final String PIVOTSIN = "hama.jacobi.pivot.sin";
+  public static final String PIVOTCOS = "hama.jacobi.pivot.cos";
 }

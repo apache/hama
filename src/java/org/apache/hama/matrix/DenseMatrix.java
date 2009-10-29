@@ -31,10 +31,12 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.IdentityTableReducer;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -46,32 +48,31 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.DoubleEntry;
 import org.apache.hama.io.Pair;
 import org.apache.hama.io.VectorUpdate;
-import org.apache.hama.mapred.DummyMapper;
-import org.apache.hama.mapred.VectorInputFormat;
 import org.apache.hama.mapreduce.CollectBlocksMapper;
+import org.apache.hama.mapreduce.DummyMapper;
+import org.apache.hama.mapreduce.PivotInputFormat;
 import org.apache.hama.mapreduce.RandomMatrixMapper;
 import org.apache.hama.mapreduce.RandomMatrixReducer;
+import org.apache.hama.mapreduce.RotationInputFormat;
 import org.apache.hama.matrix.algebra.BlockMultMap;
 import org.apache.hama.matrix.algebra.BlockMultReduce;
 import org.apache.hama.matrix.algebra.DenseMatrixVectorMultMap;
 import org.apache.hama.matrix.algebra.DenseMatrixVectorMultReduce;
-import org.apache.hama.matrix.algebra.JacobiEigenValue;
+import org.apache.hama.matrix.algebra.JacobiInitMap;
 import org.apache.hama.matrix.algebra.MatrixAdditionMap;
 import org.apache.hama.matrix.algebra.MatrixAdditionReduce;
+import org.apache.hama.matrix.algebra.PivotMap;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.RandomVariable;
 
@@ -600,7 +601,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     String collectionTable = "collect_" + RandomVariable.randMatrixPath();
     HTableDescriptor desc = new HTableDescriptor(collectionTable);
     desc
-        .addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK_FAMILY)));
+        .addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
     this.admin.createTable(desc);
     LOG.info("Collect Blocks");
 
@@ -613,7 +614,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     Job job = new Job(config, "multiplication MR job : " + result.getPath());
 
     Scan scan = new Scan();
-    scan.addFamily(Bytes.toBytes(Constants.BLOCK_FAMILY));
+    scan.addFamily(Bytes.toBytes(Constants.BLOCK));
 
     TableMapReduceUtil.initTableMapperJob(collectionTable, scan,
         BlockMultMap.class, BlockID.class, BytesWritable.class, job);
@@ -773,30 +774,30 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @throws IOException
    */
   public void jacobiEigenValue(int loops) throws IOException {
-    JobConf jobConf = new JobConf(config);
-
-    /***************************************************************************
-     * Initialization
-     * 
-     * A M/R job is used for initialization(such as, preparing a matrx copy of
-     * the original in "eicol:" family.)
-     **************************************************************************/
+    /*
+     * Initialization A M/R job is used for initialization(such as, preparing a
+     * matrx copy of the original in "eicol:" family.)
+     */
     // initialization
-    jobConf.setJobName("JacobiEigen initialization MR job" + getPath());
+    Job job = new Job(config, "JacobiEigen initialization MR job" + getPath());
 
-    jobConf.setMapperClass(JacobiEigenValue.InitMapper.class);
-    jobConf.setInputFormat(VectorInputFormat.class);
-    jobConf.set(VectorInputFormat.COLUMN_LIST, Constants.COLUMN);
+    Scan scan = new Scan();
+    scan.addFamily(Constants.COLUMNFAMILY);
 
-    org.apache.hadoop.mapred.FileInputFormat.addInputPaths(jobConf, getPath());
-    jobConf.set(JacobiEigenValue.MATRIX, getPath());
-    jobConf.setOutputFormat(NullOutputFormat.class);
-    jobConf.setMapOutputKeyClass(IntWritable.class);
-    jobConf.setMapOutputValueClass(MapWritable.class);
+    TableMapReduceUtil.initTableMapperJob(getPath(), scan, JacobiInitMap.class,
+        ImmutableBytesWritable.class, Put.class, job);
+    TableMapReduceUtil.initTableReducerJob(getPath(),
+        IdentityTableReducer.class, job);
 
-    JobClient.runJob(jobConf);
+    try {
+      job.waitForCompletion(true);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
 
-    final FileSystem fs = FileSystem.get(jobConf);
+    final FileSystem fs = FileSystem.get(config);
     Pair pivotPair = new Pair();
     DoubleWritable pivotWritable = new DoubleWritable();
     VectorUpdate vu;
@@ -809,45 +810,46 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     double s, c, t, y;
 
     while (state != 0 && loops > 0) {
-      /*************************************************************************
-       * Find the pivot and its index(pivot_row, pivot_col)
-       * 
-       * A M/R job is used to scan all the "eival:ind" to get the max absolute
-       * value of each row, and do a MAX aggregation of these max values to get
-       * the max value in the matrix.
-       ************************************************************************/
-      jobConf = new JobConf(config);
-      jobConf.setJobName("Find Pivot MR job" + getPath());
-
-      jobConf.setNumReduceTasks(1);
-
+      /*
+       * Find the pivot and its index(pivot_row, pivot_col) A M/R job is used to
+       * scan all the "eival:ind" to get the max absolute value of each row, and
+       * do a MAX aggregation of these max values to get the max value in the
+       * matrix.
+       */
       Path outDir = new Path(new Path(getType() + "_TMP_FindPivot_dir_"
           + System.currentTimeMillis()), "out");
       if (fs.exists(outDir))
         fs.delete(outDir, true);
 
-      jobConf.setMapperClass(JacobiEigenValue.PivotMapper.class);
-      jobConf.setInputFormat(JacobiEigenValue.PivotInputFormat.class);
-      jobConf.set(JacobiEigenValue.PivotInputFormat.COLUMN_LIST,
-          JacobiEigenValue.EIIND);
-      org.apache.hadoop.mapred.FileInputFormat
-          .addInputPaths(jobConf, getPath());
-      jobConf.setMapOutputKeyClass(Pair.class);
-      jobConf.setMapOutputValueClass(DoubleWritable.class);
+      job = new Job(config, "Find Pivot MR job" + getPath());
 
-      jobConf.setOutputKeyClass(Pair.class);
-      jobConf.setOutputValueClass(DoubleWritable.class);
-      jobConf.setOutputFormat(SequenceFileOutputFormat.class);
-      FileOutputFormat.setOutputPath(jobConf, outDir);
+      scan = new Scan();
+      scan.addFamily(Bytes.toBytes(Constants.EI));
 
-      // update the out put dir of the job
-      outDir = FileOutputFormat.getOutputPath(jobConf);
+      job.setInputFormatClass(PivotInputFormat.class);
+      job.setMapOutputKeyClass(Pair.class);
+      job.setMapOutputValueClass(DoubleWritable.class);
+      job.setMapperClass(PivotMap.class);
+      job.getConfiguration().set(PivotInputFormat.INPUT_TABLE, getPath());
+      job.getConfiguration().set(PivotInputFormat.SCAN,
+          PivotInputFormat.convertScanToString(scan));
 
-      JobClient.runJob(jobConf);
+      job.setOutputKeyClass(Pair.class);
+      job.setOutputValueClass(DoubleWritable.class);
+      job.setOutputFormatClass(SequenceFileOutputFormat.class);
+      SequenceFileOutputFormat.setOutputPath(job, outDir);
+
+      try {
+        job.waitForCompletion(true);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
 
       // read outputs
-      Path inFile = new Path(outDir, "part-00000");
-      SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, jobConf);
+      Path inFile = new Path(outDir, "part-r-00000");
+      SequenceFile.Reader reader = new SequenceFile.Reader(fs, inFile, config);
       try {
         reader.next(pivotPair, pivotWritable);
         pivot_row = pivotPair.getRow();
@@ -864,18 +866,18 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
        * Compute the rotation parameters of next rotation.
        ************************************************************************/
       Get get = new Get(BytesUtil.getRowIndex(pivot_row));
-      get.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
+      get.addFamily(Bytes.toBytes(Constants.EI));
       Result r = table.get(get);
       double e1 = BytesUtil.bytesToDouble(r.getValue(Bytes
-          .toBytes(JacobiEigenValue.EI_COLUMNFAMILY), Bytes
-          .toBytes(JacobiEigenValue.EI_VAL)));
+          .toBytes(Constants.EI), Bytes
+          .toBytes(Constants.EIVAL)));
 
       get = new Get(BytesUtil.getRowIndex(pivot_col));
-      get.addFamily(Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY));
+      get.addFamily(Bytes.toBytes(Constants.EI));
       r = table.get(get);
       double e2 = BytesUtil.bytesToDouble(r.getValue(Bytes
-          .toBytes(JacobiEigenValue.EI_COLUMNFAMILY), Bytes
-          .toBytes(JacobiEigenValue.EI_VAL)));
+          .toBytes(Constants.EI), Bytes
+          .toBytes(Constants.EIVAL)));
 
       y = (e2 - e1) / 2;
       t = Math.abs(y) + Math.sqrt(pivot * pivot + y * y);
@@ -888,61 +890,65 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         t = -t;
       }
 
-      /*************************************************************************
+      /*
        * Upate the pivot and the eigen values indexed by the pivot
-       ************************************************************************/
+       */
       vu = new VectorUpdate(pivot_row);
-      vu.put(JacobiEigenValue.EICOL_FAMILY, pivot_col, 0);
+      vu.put(Constants.EICOL, pivot_col, 0);
       table.put(vu.getPut());
 
       state = update(pivot_row, -t, state);
       state = update(pivot_col, t, state);
 
-      /*************************************************************************
+      /*
        * Rotation the matrix
-       ************************************************************************/
-      // rotation
-      jobConf = new JobConf(config);
-      jobConf.setJobName("Rotation Matrix MR job" + getPath());
+       */
+      job = new Job(config, "Rotation Matrix MR job" + getPath());
 
-      jobConf.setInt(JacobiEigenValue.PIVOTROW, pivot_row);
-      jobConf.setInt(JacobiEigenValue.PIVOTCOL, pivot_col);
-      jobConf.set(JacobiEigenValue.PIVOTSIN, String.valueOf(s));
-      jobConf.set(JacobiEigenValue.PIVOTCOS, String.valueOf(c));
+      scan = new Scan();
+      scan.addFamily(Bytes.toBytes(Constants.EI));
 
-      jobConf.setMapperClass(DummyMapper.class);
-      jobConf.setInputFormat(JacobiEigenValue.RotationInputFormat.class);
-      jobConf.set(JacobiEigenValue.RotationInputFormat.COLUMN_LIST,
-          JacobiEigenValue.EIIND);
-      org.apache.hadoop.mapred.FileInputFormat
-          .addInputPaths(jobConf, getPath());
-      jobConf.setMapOutputKeyClass(NullWritable.class);
-      jobConf.setMapOutputValueClass(NullWritable.class);
-      org.apache.hadoop.mapred.FileInputFormat
-          .addInputPaths(jobConf, getPath());
-      jobConf.setOutputFormat(NullOutputFormat.class);
+      job.getConfiguration().setInt(Constants.PIVOTROW, pivot_row);
+      job.getConfiguration().setInt(Constants.PIVOTCOL, pivot_col);
+      job.getConfiguration().set(Constants.PIVOTSIN, String.valueOf(s));
+      job.getConfiguration().set(Constants.PIVOTCOS, String.valueOf(c));
 
-      JobClient.runJob(jobConf);
+      job.setInputFormatClass(RotationInputFormat.class);
+      job.setMapOutputKeyClass(NullWritable.class);
+      job.setMapOutputValueClass(NullWritable.class);
+      job.setMapperClass(DummyMapper.class);
+      job.getConfiguration().set(RotationInputFormat.INPUT_TABLE, getPath());
+      job.getConfiguration().set(RotationInputFormat.SCAN,
+          PivotInputFormat.convertScanToString(scan));
+      job.setOutputFormatClass(NullOutputFormat.class);
+
+      try {
+        job.waitForCompletion(true);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
 
       // rotate eigenvectors
       LOG.info("rotating eigenvector");
       for (int i = 0; i < size; i++) {
         get = new Get(BytesUtil.getRowIndex(pivot_row));
         e1 = BytesUtil.bytesToDouble(table.get(get).getValue(
-            Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY),
+            Bytes.toBytes(Constants.EIVEC),
             Bytes.toBytes(String.valueOf(i))));
 
         get = new Get(BytesUtil.getRowIndex(pivot_col));
         e2 = BytesUtil.bytesToDouble(table.get(get).getValue(
-            Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY),
+            Bytes.toBytes(Constants.EIVEC),
             Bytes.toBytes(String.valueOf(i))));
 
         vu = new VectorUpdate(pivot_row);
-        vu.put(JacobiEigenValue.EIVEC_FAMILY, i, c * e1 - s * e2);
+        vu.put(Constants.EIVEC, i, c * e1 - s * e2);
         table.put(vu.getPut());
 
         vu = new VectorUpdate(pivot_col);
-        vu.put(JacobiEigenValue.EIVEC_FAMILY, i, s * e1 + c * e2);
+        vu.put(Constants.EIVEC, i, s * e1 + c * e2);
         table.put(vu.getPut());
       }
 
@@ -962,13 +968,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       get = new Get(BytesUtil.getRowIndex(row));
 
       double max = BytesUtil.bytesToDouble(table.get(get).getValue(
-          Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY),
+          Bytes.toBytes(Constants.EICOL),
           Bytes.toBytes(String.valueOf(m))));
       double val;
       for (int i = row + 2; i < size; i++) {
         get = new Get(BytesUtil.getRowIndex(row));
         val = BytesUtil.bytesToDouble(table.get(get).getValue(
-            Bytes.toBytes(JacobiEigenValue.EICOL_FAMILY),
+            Bytes.toBytes(Constants.EICOL),
             Bytes.toBytes(String.valueOf(i))));
         if (Math.abs(val) > Math.abs(max)) {
           m = i;
@@ -978,34 +984,34 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     }
 
     VectorUpdate vu = new VectorUpdate(row);
-    vu.put(JacobiEigenValue.EI_COLUMNFAMILY, "ind", String.valueOf(m));
+    vu.put(Constants.EI, "ind", String.valueOf(m));
     table.put(vu.getPut());
   }
 
   int update(int row, double value, int state) throws IOException {
     Get get = new Get(BytesUtil.getRowIndex(row));
     double e = BytesUtil.bytesToDouble(table.get(get).getValue(
-        Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY),
-        Bytes.toBytes(JacobiEigenValue.EI_VAL)));
+        Bytes.toBytes(Constants.EI),
+        Bytes.toBytes(Constants.EIVAL)));
     int changed = BytesUtil.bytesToInt(table.get(get).getValue(
-        Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY),
+        Bytes.toBytes(Constants.EI),
         Bytes.toBytes("changed")));
     double y = e;
     e += value;
 
     VectorUpdate vu = new VectorUpdate(row);
-    vu.put(JacobiEigenValue.EI_COLUMNFAMILY, JacobiEigenValue.EI_VAL, e);
+    vu.put(Constants.EI, Constants.EIVAL, e);
 
     if (changed == 1 && (Math.abs(y - e) < .0000001)) { // y == e) {
       changed = 0;
-      vu.put(JacobiEigenValue.EI_COLUMNFAMILY,
-          JacobiEigenValue.EICHANGED_STRING, String.valueOf(changed));
+      vu.put(Constants.EI,
+          Constants.EICHANGED, String.valueOf(changed));
 
       state--;
     } else if (changed == 0 && (Math.abs(y - e) > .0000001)) {
       changed = 1;
-      vu.put(JacobiEigenValue.EI_COLUMNFAMILY,
-          JacobiEigenValue.EICHANGED_STRING, String.valueOf(changed));
+      vu.put(Constants.EI,
+          Constants.EICHANGED, String.valueOf(changed));
 
       state++;
     }
@@ -1021,8 +1027,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     for (int i = 0; i < e.length; i++) {
       get = new Get(BytesUtil.getRowIndex(i));
       e1 = BytesUtil.bytesToDouble(table.get(get).getValue(
-          Bytes.toBytes(JacobiEigenValue.EI_COLUMNFAMILY),
-          Bytes.toBytes(JacobiEigenValue.EI_VAL)));
+          Bytes.toBytes(Constants.EI),
+          Bytes.toBytes(Constants.EIVAL)));
       success &= ((Math.abs(e1 - e[i]) < .0000001));
       if (!success)
         return success;
@@ -1030,7 +1036,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       for (int j = 0; j < E[i].length; j++) {
         get = new Get(BytesUtil.getRowIndex(i));
         ev = BytesUtil.bytesToDouble(table.get(get).getValue(
-            Bytes.toBytes(JacobiEigenValue.EIVEC_FAMILY),
+            Bytes.toBytes(Constants.EIVEC),
             Bytes.toBytes(String.valueOf(j))));
         success &= ((Math.abs(ev - E[i][j]) < .0000001));
         if (!success)

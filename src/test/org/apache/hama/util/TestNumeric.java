@@ -42,13 +42,4 @@ public class TestNumeric extends TestCase {
     assertEquals(BytesUtil.bytesToDouble(BytesUtil.doubleToBytes(TEST_DOUBLE)),
         TEST_DOUBLE);
   }
-
-  /**
-   * Get the column index from hbase.
-   */
-  public void testGetColumnIndex() {
-    byte[] result = BytesUtil.getColumnIndex(3);
-    assertEquals(Bytes.toString(result), Constants.COLUMN
-        + BytesUtil.getColumnIndex(result));
-  }
 }

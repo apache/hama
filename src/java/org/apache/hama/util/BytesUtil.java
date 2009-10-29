@@ -130,16 +130,6 @@ public class BytesUtil {
         .substring(cKey.indexOf(":") + 1, cKey.length()));
   }
 
-  /**
-   * Gets the column index
-   * 
-   * @param integer
-   * @return the converted value
-   */
-  public static byte[] getColumnIndex(int integer) {
-    return Bytes.toBytes(Constants.COLUMN + String.valueOf(integer));
-  }
-
   public static int getBlockIndex(byte[] key) {
     String cKey = new String(key);
     return Integer.parseInt(cKey
