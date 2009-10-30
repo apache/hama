@@ -48,7 +48,6 @@ public class TestAbstractMatrix extends HamaCluster {
   }
 
   public void normTest(Matrix matrix) throws IOException {
-
     double norm1 = matrix.norm(Norm.One);
     double verify_norm1 = MatrixTestCommon.verifyNorm1(matrix);
     gap = norm1 - verify_norm1;

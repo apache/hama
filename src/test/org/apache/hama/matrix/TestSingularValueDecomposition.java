@@ -84,8 +84,7 @@ public class TestSingularValueDecomposition extends HamaCluster {
       Result r = table.get(get);
 
       double eigenvalue = BytesUtil.bytesToDouble(r.getValue(Bytes
-          .toBytes(Constants.EI), Bytes
-          .toBytes(Constants.EIVAL)));
+          .toBytes(Constants.EI), Bytes.toBytes(Constants.EIVAL)));
       assertTrue(Math.abs(eigenvalues[x] - eigenvalue) < .0000001);
       assertTrue(Math.abs(Math.pow(eigenvalue, 0.5) - singularvalues[x]) < .0000001);
     }

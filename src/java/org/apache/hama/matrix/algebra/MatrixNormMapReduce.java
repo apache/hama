@@ -21,6 +21,7 @@ public class MatrixNormMapReduce {
   /** Infinity Norm */
   public static class MatrixInfinityNormMapper extends
       TableMapper<IntWritable, DoubleWritable> {
+    private DoubleWritable nValue = new DoubleWritable();
 
     @Override
     public void map(ImmutableBytesWritable key, Result value, Context context)
@@ -33,7 +34,8 @@ public class MatrixNormMapReduce {
         rowSum += Math.abs(BytesUtil.bytesToDouble(e.getValue()));
       }
 
-      context.write(MatrixNormMapReduce.nKey, new DoubleWritable(rowSum));
+      nValue.set(rowSum);
+      context.write(MatrixNormMapReduce.nKey, nValue);
     }
   }
 
@@ -44,6 +46,7 @@ public class MatrixNormMapReduce {
       Reducer<IntWritable, DoubleWritable, IntWritable, DoubleWritable> {
     static final Logger LOG = Logger.getLogger(MatrixInfinityNormReduce.class);
     private double max = 0;
+    private DoubleWritable nValue = new DoubleWritable();
 
     public void reduce(IntWritable key, Iterable<DoubleWritable> values,
         Context context) throws IOException, InterruptedException {
@@ -51,13 +54,16 @@ public class MatrixNormMapReduce {
         max = Math.max(val.get(), max);
       }
 
-      context.write(MatrixNormMapReduce.nKey, new DoubleWritable(max));
+      nValue.set(max);
+      context.write(MatrixNormMapReduce.nKey, nValue);
     }
   }
 
   /** One Norm Mapper */
   public static class MatrixOneNormMapper extends
       TableMapper<IntWritable, DoubleWritable> {
+    private IntWritable newkey = new IntWritable();
+    private DoubleWritable nValue = new DoubleWritable();
 
     @Override
     public void map(ImmutableBytesWritable key, Result value, Context context)
@@ -66,8 +72,9 @@ public class MatrixNormMapReduce {
       NavigableMap<byte[], byte[]> v = value
           .getFamilyMap(Constants.COLUMNFAMILY);
       for (Map.Entry<byte[], byte[]> e : v.entrySet()) {
-        context.write(new IntWritable(BytesUtil.bytesToInt(e.getKey())),
-            new DoubleWritable(BytesUtil.bytesToDouble(e.getValue())));
+        newkey.set(BytesUtil.bytesToInt(e.getKey()));
+        nValue.set(BytesUtil.bytesToDouble(e.getValue()));
+        context.write(newkey, nValue);
       }
     }
   }
@@ -75,6 +82,7 @@ public class MatrixNormMapReduce {
   /** One Norm Combiner * */
   public static class MatrixOneNormCombiner extends
       Reducer<IntWritable, DoubleWritable, IntWritable, DoubleWritable> {
+    private DoubleWritable nValue = new DoubleWritable();
 
     @Override
     public void reduce(IntWritable key, Iterable<DoubleWritable> values,
@@ -85,7 +93,8 @@ public class MatrixNormMapReduce {
         partialColSum += val.get();
       }
 
-      context.write(key, new DoubleWritable(partialColSum));
+      nValue.set(partialColSum);
+      context.write(key, nValue);
     }
   }
 
@@ -115,6 +124,7 @@ public class MatrixNormMapReduce {
   /** Frobenius Norm Mapper */
   public static class MatrixFrobeniusNormMapper extends
       TableMapper<IntWritable, DoubleWritable> {
+    private DoubleWritable nValue = new DoubleWritable();
 
     @Override
     public void map(ImmutableBytesWritable key, Result value, Context context)
@@ -128,7 +138,8 @@ public class MatrixNormMapReduce {
         rowSqrtSum += (cellValue * cellValue);
       }
 
-      context.write(MatrixNormMapReduce.nKey, new DoubleWritable(rowSqrtSum));
+      nValue.set(rowSqrtSum);
+      context.write(MatrixNormMapReduce.nKey, nValue);
     }
   }
 
@@ -136,7 +147,8 @@ public class MatrixNormMapReduce {
   public static class MatrixFrobeniusNormCombiner extends
       Reducer<IntWritable, DoubleWritable, IntWritable, DoubleWritable> {
     private double sqrtSum = 0;
-
+    private DoubleWritable nValue = new DoubleWritable();
+    
     @Override
     public void reduce(IntWritable key, Iterable<DoubleWritable> values,
         Context context) throws IOException, InterruptedException {
@@ -144,7 +156,8 @@ public class MatrixNormMapReduce {
         sqrtSum += val.get();
       }
 
-      context.write(MatrixNormMapReduce.nKey, new DoubleWritable(sqrtSum));
+      nValue.set(sqrtSum);
+      context.write(MatrixNormMapReduce.nKey, nValue);
     }
   }
 
@@ -168,7 +181,8 @@ public class MatrixNormMapReduce {
   /** MaxValue Norm Mapper * */
   public static class MatrixMaxValueNormMapper extends
       TableMapper<IntWritable, DoubleWritable> {
-
+    private DoubleWritable nValue = new DoubleWritable();
+    
     @Override
     public void map(ImmutableBytesWritable key, Result value, Context context)
         throws IOException, InterruptedException {
@@ -181,7 +195,8 @@ public class MatrixNormMapReduce {
         max = cellValue > max ? cellValue : max;
       }
 
-      context.write(MatrixNormMapReduce.nKey, new DoubleWritable(max));
+      nValue.set(max);
+      context.write(MatrixNormMapReduce.nKey, nValue);
     }
   }
 
@@ -189,7 +204,8 @@ public class MatrixNormMapReduce {
   public static class MatrixMaxValueNormReducer extends
       Reducer<IntWritable, DoubleWritable, IntWritable, DoubleWritable> {
     private double max = 0;
-
+    private DoubleWritable nValue = new DoubleWritable();
+    
     @Override
     public void reduce(IntWritable key, Iterable<DoubleWritable> values,
         Context context) throws IOException, InterruptedException {
@@ -197,7 +213,8 @@ public class MatrixNormMapReduce {
         max = Math.max(val.get(), max);
       }
 
-      context.write(MatrixNormMapReduce.nKey, new DoubleWritable(max));
+      nValue.set(max);
+      context.write(MatrixNormMapReduce.nKey, nValue);
     }
   }
 }

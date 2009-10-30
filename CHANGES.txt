@@ -42,6 +42,8 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-202: Replacement for deprecated API of Map/Reduce (edwardyoon)
+    HAMA-206: Replacement of JacobiEigenValueMap/Reduce (edwardyoon)
     HAMA-217: Replacement of Block Multiplication Map/Reduce (edwardyoon)
     HAMA-205: Replacement of NormMap/Reduce (edwardyoon)
     HAMA-207: Replacement of Mat-Mat addition Map/Reduce (edwardyoon)
