@@ -21,9 +21,6 @@ package org.apache.hama.util;
 
 import junit.framework.TestCase;
 
-import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hama.Constants;
-
 public class TestNumeric extends TestCase {
   final static int TEST_INT = 3;
   final static double TEST_DOUBLE = 0.4;

@@ -19,7 +19,7 @@ public class CollectBlocksMapper extends TableMapper<BlockID, MapWritable>
   public static final String BLOCK_SIZE = "hama.blocking.size";
   public static final String ROWS = "hama.blocking.rows";
   public static final String COLUMNS = "hama.blocking.columns";
-  public static final String MATRIX_POS = "a.ore.b";
+  public static final String MATRIX_POS = "a.or.b";
 
   private int mBlockNum;
   private int mBlockRowSize;
