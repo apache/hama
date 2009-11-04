@@ -51,6 +51,10 @@ public class MatrixMultiplication extends AbstractExample {
 
     Matrix c;
     if (a.getType().equals("SparseMatrix")) {
+      if (ARGS.size() > 2) {
+        System.out
+            .println("NOTE: You can't use the block algorithm for sparse matrix multiplication.");
+      }
       c = ((SparseMatrix) a).mult(b);
     } else {
       if (ARGS.size() > 2) {
