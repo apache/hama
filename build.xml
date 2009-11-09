@@ -264,7 +264,7 @@
             <fileset dir="${build.classes}" />
             <fileset dir="${src.test}" includes="**/*.properties" />
             <manifest>
-              <attribute name="Main-Class" value="org/apache/hama/Benchmarks" />
+              <attribute name="Main-Class" value="org/apache/hama/Utils" />
             </manifest>
         </jar>
     </target>
