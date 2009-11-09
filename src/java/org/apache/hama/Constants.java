@@ -64,7 +64,7 @@ public class Constants {
   public final static String RANDOM = "rand";
 
   /** Admin table name */
-  public final static String ADMINTABLE = "admin.table";
+  public final static String ADMINTABLE = "hama.admin.table";
 
   /** Matrix path columnFamily */
   public static final String PATHCOLUMN = "path";
