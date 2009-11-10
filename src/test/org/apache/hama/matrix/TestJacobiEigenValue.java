@@ -9,9 +9,16 @@ import org.apache.log4j.Logger;
 
 public class TestJacobiEigenValue extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestDenseMatrix.class);
-  private int SIZE = 10;
+  private int SIZE = 6;
   private Matrix m5;
   private HamaConfiguration conf;
+  /**
+   * The correct EigenValues are {11.099019513612875, 0.9009804864500339,
+   * 0.585786437634226 , 3.4142135624028565, 1.0, 1.0 }
+   */
+  private double[][] A = new double[][] { { 4, 3, 2, 1, 0, 0 },
+      { 3, 4, 3, 2, 0, 0 }, { 2, 3, 4, 3, 0, 0 }, { 1, 2, 3, 4, 0, 0 },
+      { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 1 } };
 
   /**
    * @throws UnsupportedEncodingException
@@ -24,22 +31,24 @@ public class TestJacobiEigenValue extends HamaCluster {
     super.setUp();
 
     conf = getConf();
-    m5 = DenseMatrix.random(conf, SIZE, SIZE);
+    m5 = new DenseMatrix(conf, SIZE, SIZE);
+
+    for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
+        m5.set(i, j, A[i][j]);
+      }
+    }
   }
 
   public void testJacobiEigenValue() throws IOException {
     // copy Matrix m5 to the array
-    double[][] S = new double[SIZE][SIZE];
+    double[][] S = A;
 
     for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
         S[i][j] = m5.get(i, j);
       }
     }
-
-    // do m/r jacobi eigen value computation
-    DenseMatrix dm = (DenseMatrix) m5;
-    dm.jacobiEigenValue(3);
 
     // do jacobi egien value over S array
     int i, j, k, l, m, state;
@@ -69,11 +78,14 @@ public class TestJacobiEigenValue extends HamaCluster {
       changed[i] = true;
     }
 
-    int loops = 3;
+    int loops = 100;
+    int icount = 0;
     // next rotation
-    while (state != 0 && loops > 0) {
+    while (state != 0 && icount < loops) {
+      icount = icount + 1;
       // find index(k, l) for pivot p
       m = 0;
+
       for (k = 1; k <= SIZE - 2; k++) {
         if (Math.abs(S[m][ind[m]]) < Math.abs(S[k][ind[k]])) {
           m = k;
@@ -121,6 +133,14 @@ public class TestJacobiEigenValue extends HamaCluster {
 
       loops--;
     }
+
+    for (int x = 0; x < SIZE; x++) {
+      System.out.println(e[x]);
+    }
+
+    // do m/r jacobi eigen value computation
+    DenseMatrix dm = (DenseMatrix) m5;
+    dm.jacobiEigenValue(100);
 
     // verify the results
     assertTrue(dm.verifyEigenValue(e, E));

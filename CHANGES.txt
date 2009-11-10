@@ -132,6 +132,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
  
+    HAMA-225: Jacobi iteration is in a infinite loop (edwardyoon)
     HAMA-214: Can't run the examples (edwardyoon)
     HAMA-190: Bug in Matrix-Vector multiplication (edwardyoon)
     HAMA-183: When we construct the matrix, 

@@ -708,7 +708,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       for (int j = j0, jj = 0; j <= j1; j++, jj++) {
         byte[] vv = rs.getValue(Constants.COLUMNFAMILY, Bytes.toBytes(String
             .valueOf(j)));
-        System.out.println(BytesUtil.bytesToDouble(vv));
         result.set(i, jj, vv);
       }
       i++;
@@ -769,10 +768,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * TODO: we may need to expose the interface to access the eigen values and
    * vectors
    * 
-   * @param loops limit the loops of the computation
+   * @param imax limit the loops of the computation
    * @throws IOException
    */
-  public void jacobiEigenValue(int loops) throws IOException {
+  public void jacobiEigenValue(int imax) throws IOException {
     /*
      * Initialization A M/R job is used for initialization(such as, preparing a
      * matrx copy of the original in "eicol:" family.)
@@ -808,7 +807,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     double pivot;
     double s, c, t, y;
 
-    while (state != 0 && loops > 0) {
+    int icount = 0;
+    while (state != 0 && icount < imax) {
+      icount = icount + 1;
       /*
        * Find the pivot and its index(pivot_row, pivot_col) A M/R job is used to
        * scan all the "eival:ind" to get the max absolute value of each row, and
@@ -857,8 +858,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       } finally {
         reader.close();
       }
+      fs.delete(outDir, true);
       fs.delete(outDir.getParent(), true);
-
+      
+      if(pivot_row == 0 && pivot_col == 0)
+        break; // stop the iterations
+      
       /*
        * Calculation
        * 
@@ -877,7 +882,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       double e2 = BytesUtil.bytesToDouble(r.getValue(Bytes
           .toBytes(Constants.EI), Bytes
           .toBytes(Constants.EIVAL)));
-
+      
       y = (e2 - e1) / 2;
       t = Math.abs(y) + Math.sqrt(pivot * pivot + y * y);
       s = Math.sqrt(pivot * pivot + t * t);
@@ -955,8 +960,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       // update index array
       maxind(pivot_row, size);
       maxind(pivot_col, size);
-
-      loops--;
     }
   }
 
@@ -997,7 +1000,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
         Bytes.toBytes("changed")));
     double y = e;
     e += value;
-
+    
     VectorUpdate vu = new VectorUpdate(row);
     vu.put(Constants.EI, Constants.EIVAL, e);
 

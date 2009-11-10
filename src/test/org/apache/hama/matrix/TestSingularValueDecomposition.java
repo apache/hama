@@ -75,7 +75,7 @@ public class TestSingularValueDecomposition extends HamaCluster {
     }
 
     // Find the eigen/singular values and vectors of A'A
-    aTa.jacobiEigenValue(1);
+    aTa.jacobiEigenValue(100);
     HTable table = aTa.getHTable();
 
     for (int x = 0; x < 2; x++) {
