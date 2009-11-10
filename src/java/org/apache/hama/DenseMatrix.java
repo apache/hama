@@ -688,10 +688,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * TODO: we may need to expose the interface to access the eigen values and
    * vectors
    * 
-   * @param loops limit the loops of the computation
+   * @param imax limit the loops of the computation
    * @throws IOException
    */
-  public void jacobiEigenValue(int loops) throws IOException {
+  public void jacobiEigenValue(int imax) throws IOException {
     JobConf jobConf = new JobConf(config);
 
     /***************************************************************************
@@ -727,7 +727,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     double pivot;
     double s, c, t, y;
 
-    while (state != 0 && loops > 0) {
+    int icount = 0;
+    while (state != 0  && icount < imax) {
+      icount = icount + 1;
       /*************************************************************************
        * Find the pivot and its index(pivot_row, pivot_col)
        * 
@@ -788,6 +790,9 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
           BytesUtil.getRowIndex(pivot_col),
           Bytes.toBytes(JacobiEigenValue.EIVAL)).getValue());
 
+      if(pivot_row == 0 && pivot_col == 0)
+        break; // stop the iterations
+      
       y = (e2 - e1) / 2;
       t = Math.abs(y) + Math.sqrt(pivot * pivot + y * y);
       s = Math.sqrt(pivot * pivot + t * t);
@@ -856,8 +861,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       // update index array
       maxind(pivot_row, size);
       maxind(pivot_col, size);
-
-      loops--;
     }
   }
 

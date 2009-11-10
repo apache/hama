@@ -1,6 +1,6 @@
 Hama Change Log
 
-Trunk (unreleased changes)
+Hama-0.19.0 (unreleased changes)
 
   NEW FEATURES
   
@@ -115,6 +115,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
 
+    HAMA-225: Jacobi iteration is in a infinite loop (edwardyoon)
     HAMA-190: Bug in Matrix-Vector multiplication (edwardyoon)
     HAMA-183: When we construct the matrix, 
                 dimensions should be defined. (edwardyoon)

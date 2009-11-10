@@ -43,13 +43,21 @@ public class TestDenseMatrix extends TestCase {
   private static Matrix m1;
   private static Matrix m2;
   private static Matrix m3;
-  private static Matrix m4, m5;
+  private static Matrix m4;
   private final static String aliase1 = "matrix_aliase_A";
   private final static String aliase2 = "matrix_aliase_B";
   private static HamaConfiguration conf;
   private static HBaseAdmin admin;
   private static HamaAdmin hamaAdmin;
-
+  private static Matrix m6;
+  /**
+   * The correct EigenValues are {11.099019513612875, 0.9009804864500339,
+   * 0.585786437634226 , 3.4142135624028565, 1.0, 1.0 }
+   */
+  private static double[][] A = new double[][] { { 4, 3, 2, 1, 0, 0 },
+      { 3, 4, 3, 2, 0, 0 }, { 2, 3, 4, 3, 0, 0 }, { 1, 2, 3, 4, 0, 0 },
+      { 0, 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 0, 1 } };
+  
   public static Test suite() {
     TestSetup setup = new TestSetup(new TestSuite(TestDenseMatrix.class)) {
       protected void setUp() throws Exception {
@@ -64,7 +72,13 @@ public class TestDenseMatrix extends TestCase {
         m2 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
         m3 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
         m4 = DenseMatrix.random(hCluster.getConf(), SIZE-2, SIZE-2);
-        m5 = DenseMatrix.random(hCluster.getConf(), SIZE, SIZE);
+        m6 = new DenseMatrix(conf, 6, 6);
+
+        for (int i = 0; i < 6; i++) {
+          for (int j = 0; j < 6; j++) {
+            m6.set(i, j, A[i][j]);
+          }
+        }
       }
 
       protected void tearDown() {
@@ -208,6 +222,7 @@ public class TestDenseMatrix extends TestCase {
    * 
    * @throws IOException
    */
+
   public void testMatrixMult() throws IOException {
     Matrix result = m1.mult(m2);
 
@@ -274,7 +289,7 @@ public class TestDenseMatrix extends TestCase {
     LOG.info("Norm Frobenius : gap " + gap);
     assertTrue(gap < 0.000001 && gap > -0.000001);
   }
-  
+
   public void testSetRow() throws IOException {
     Vector v = new DenseVector();
     double[] entries = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
@@ -312,53 +327,48 @@ public class TestDenseMatrix extends TestCase {
   }
 
   public void testJacobiEigenValue() throws IOException {
-    // copy Matrix m5 to the array
-    double[][] S = new double[SIZE][SIZE];
-    
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        S[i][j] = m5.get(i, j);
-      }
-    }
+    // copy Matrix m6 to the array
+    double[][] S = A;
     
     // do m/r jacobi eigen value computation
-    DenseMatrix dm = (DenseMatrix)m5;
-    dm.jacobiEigenValue(3);
-    
+    DenseMatrix dm = (DenseMatrix)m6;
+    dm.jacobiEigenValue(100);
+
     // do jacobi egien value over S array
     int i, j, k, l, m, state;
     double s, c, t, p, y;
     double e1, e2;
     // index array
-    int[] ind = new int[SIZE];
-    boolean[] changed = new boolean[SIZE];
+    int[] ind = new int[6];
+    boolean[] changed = new boolean[6];
     
     // output
-    double[] e = new double[SIZE];
-    double[][] E = new double[SIZE][SIZE];
+    double[] e = new double[6];
+    double[][] E = new double[6][6];
     
     // init e & E; ind & changed
-    for(i=0; i<SIZE; i++) {
-      for(j=0; j<SIZE; j++) {
+    for(i=0; i<6; i++) {
+      for(j=0; j<6; j++) {
         E[i][j] = 0;
       }
       E[i][i] = 1;
     }
     
-    state = SIZE;
+    state = 6;
     
-    for(i=0; i<SIZE; i++) {
-      ind[i] = maxind(S, i, SIZE); 
+    for(i=0; i<6; i++) {
+      ind[i] = maxind(S, i, 6); 
       e[i] = S[i][i];
       changed[i] = true;
     }
     
-    int loops = 3;
+    int loops = 100;
+    int icount = 0;
     // next rotation
-    while(state != 0 && loops > 0) {
+    while(state != 0 && icount < loops) {
       // find index(k, l) for pivot p
       m = 0;
-      for(k = 1; k <= SIZE-2; k++) {
+      for(k = 1; k <= 6-2; k++) {
         if(Math.abs(S[m][ind[m]]) < Math.abs(S[k][ind[k]])) {
           m = k;
         }
@@ -385,14 +395,14 @@ public class TestDenseMatrix extends TestCase {
       for(i = 0; i <= k-1; i++) 
         rotate(S, i, k, i, l, c, s);
       
-      for(i = l+1; i < SIZE; i++)
+      for(i = l+1; i < 6; i++)
         rotate(S, k, i, l, i, c, s);
       
       for(i = k+1; i <= l-1; i++)
         rotate(S, k, i, i, l, c, s);
       
       // rotate eigenvectors
-      for(i = 0; i < SIZE; i++) {
+      for(i = 0; i < 6; i++) {
         e1 = E[k][i];
         e2 = E[l][i];
         
@@ -400,8 +410,8 @@ public class TestDenseMatrix extends TestCase {
         E[l][i] = s * e1 + c * e2;
       }
       
-      ind[k] = maxind(S, k, SIZE);
-      ind[l] = maxind(S, l, SIZE);
+      ind[k] = maxind(S, k, 6);
+      ind[l] = maxind(S, l, 6);
       
       loops --;
     }
