@@ -21,22 +21,16 @@ package org.apache.hama.util;
 
 import junit.framework.TestCase;
 
+import org.apache.hadoop.hbase.util.Bytes;
+
 public class TestNumeric extends TestCase {
   final static int TEST_INT = 3;
   final static double TEST_DOUBLE = 0.4;
 
   /**
-   * Integer conversion test
-   */
-  public void testInteger() {
-    assertEquals(BytesUtil.bytesToInt(BytesUtil.intToBytes(TEST_INT)), TEST_INT);
-  }
-
-  /**
    * Double conversion test
    */
   public void testDouble() {
-    assertEquals(BytesUtil.bytesToDouble(BytesUtil.doubleToBytes(TEST_DOUBLE)),
-        TEST_DOUBLE);
+    assertEquals(Bytes.toDouble(Bytes.toBytes(TEST_DOUBLE)), TEST_DOUBLE);
   }
 }

@@ -7,6 +7,7 @@ import java.util.NavigableMap;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -31,7 +32,7 @@ public class MatrixNormMapReduce {
       NavigableMap<byte[], byte[]> v = value
           .getFamilyMap(Constants.COLUMNFAMILY);
       for (Map.Entry<byte[], byte[]> e : v.entrySet()) {
-        rowSum += Math.abs(BytesUtil.bytesToDouble(e.getValue()));
+        rowSum += Math.abs(Bytes.toDouble(e.getValue()));
       }
 
       nValue.set(rowSum);
@@ -73,7 +74,7 @@ public class MatrixNormMapReduce {
           .getFamilyMap(Constants.COLUMNFAMILY);
       for (Map.Entry<byte[], byte[]> e : v.entrySet()) {
         newkey.set(BytesUtil.bytesToInt(e.getKey()));
-        nValue.set(BytesUtil.bytesToDouble(e.getValue()));
+        nValue.set(Bytes.toDouble(e.getValue()));
         context.write(newkey, nValue);
       }
     }
@@ -134,7 +135,7 @@ public class MatrixNormMapReduce {
       NavigableMap<byte[], byte[]> v = value
           .getFamilyMap(Constants.COLUMNFAMILY);
       for (Map.Entry<byte[], byte[]> e : v.entrySet()) {
-        double cellValue = BytesUtil.bytesToDouble(e.getValue());
+        double cellValue = Bytes.toDouble(e.getValue());
         rowSqrtSum += (cellValue * cellValue);
       }
 
@@ -191,7 +192,7 @@ public class MatrixNormMapReduce {
       NavigableMap<byte[], byte[]> v = value
           .getFamilyMap(Constants.COLUMNFAMILY);
       for (Map.Entry<byte[], byte[]> e : v.entrySet()) {
-        double cellValue = BytesUtil.bytesToDouble(e.getValue());
+        double cellValue = Bytes.toDouble(e.getValue());
         max = cellValue > max ? cellValue : max;
       }
 

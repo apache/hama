@@ -49,7 +49,7 @@ public class VectorUpdate {
 
   public void put(int j, double value) {
     this.put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j)),
-        BytesUtil.doubleToBytes(value));
+        Bytes.toBytes(value));
   }
 
   public void put(String cfName, int j, double value) {

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -46,7 +47,7 @@ public abstract class AbstractVector {
     for (Map.Entry<byte[], byte[]> e : map.entrySet()) {
       if(e != null) {
         this.entries.put(new IntWritable(BytesUtil.bytesToInt(e.getKey())),
-            new DoubleWritable(BytesUtil.bytesToDouble(e.getValue())));
+            new DoubleWritable(Bytes.toDouble(e.getValue())));
       }
     }
   }

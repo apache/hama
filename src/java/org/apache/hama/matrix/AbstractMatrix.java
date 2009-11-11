@@ -338,7 +338,7 @@ public abstract class AbstractMatrix implements Matrix {
     byte[] result = table.get(get).getValue(Constants.ATTRIBUTE,
         Bytes.toBytes("rows"));
 
-    return (result != null) ? BytesUtil.bytesToInt(result) : 0;
+    return (result != null) ? Bytes.toInt(result) : 0;
   }
 
   /** {@inheritDoc} */
@@ -348,7 +348,7 @@ public abstract class AbstractMatrix implements Matrix {
     byte[] result = table.get(get).getValue(Constants.ATTRIBUTE,
         Bytes.toBytes("columns"));
 
-    return BytesUtil.bytesToInt(result);
+    return Bytes.toInt(result);
   }
 
   /** {@inheritDoc} */
@@ -389,10 +389,9 @@ public abstract class AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public void setDimension(int rows, int columns) throws IOException {
     Put put = new Put(Bytes.toBytes(Constants.METADATA));
-    put.add(Constants.ATTRIBUTE, Bytes.toBytes("rows"), BytesUtil
-        .intToBytes(rows));
-    put.add(Constants.ATTRIBUTE, Bytes.toBytes("columns"), BytesUtil
-        .intToBytes(columns));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("rows"), Bytes.toBytes(rows));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("columns"), Bytes
+        .toBytes(columns));
     table.put(put);
   }
 
@@ -425,9 +424,8 @@ public abstract class AbstractMatrix implements Matrix {
           } else {
             if (Bytes.toString(family).equals(
                 Bytes.toString(Constants.COLUMNFAMILY))) {
-              double currVal = BytesUtil.bytesToDouble(val);
-              put.add(family, qualifier, BytesUtil.doubleToBytes(currVal
-                  * alpha));
+              double currVal = Bytes.toDouble(val);
+              put.add(family, qualifier, Bytes.toBytes(currVal * alpha));
             } else {
               put.add(family, qualifier, val);
             }

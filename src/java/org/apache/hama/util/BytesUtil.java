@@ -19,8 +19,6 @@
  */
 package org.apache.hama.util;
 
-import java.nio.ByteBuffer;
-
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
@@ -40,37 +38,6 @@ public class BytesUtil {
    */
   public static int bytesToInt(byte[] bytes) {
     return Integer.parseInt(Bytes.toString(bytes));
-  }
-
-  /**
-   * Integer to bytes conversion
-   * 
-   * @param integer
-   * @return the converted value
-   */
-  public static byte[] intToBytes(int integer) {
-    return Bytes.toBytes(String.valueOf(integer));
-  }
-
-  /**
-   * Bytes to double conversion
-   * 
-   * @param bytes
-   * @return the converted value
-   */
-  public static double bytesToDouble(byte[] bytes) {
-    return ByteBuffer.wrap(bytes).getDouble();
-  }
-
-  /**
-   * Double to bytes conversion
-   * 
-   * @param value
-   * @return the converted value
-   */
-  public static byte[] doubleToBytes(Double value) {
-    // If HBASE-884 done, we should change it.
-    return ByteBuffer.allocate(SIZEOF_DOUBLE).putDouble(value).array();
   }
 
   /**
@@ -116,22 +83,5 @@ public class BytesUtil {
     }
     return Bytes.toBytes(buf.toString() + index);
   }
-  
-  /**
-   * Gets the column index
-   * 
-   * @param bytes
-   * @return the converted value
-   */
-  public static int getColumnIndex(byte[] bytes) {
-    String cKey = new String(bytes);
-    return Integer.parseInt(cKey
-        .substring(cKey.indexOf(":") + 1, cKey.length()));
-  }
 
-  public static int getBlockIndex(byte[] key) {
-    String cKey = new String(key);
-    return Integer.parseInt(cKey
-        .substring(cKey.indexOf(":") + 1, cKey.length()));
-  }
 }

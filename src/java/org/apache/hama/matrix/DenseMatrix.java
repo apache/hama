@@ -345,7 +345,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     if (result == null)
       throw new NullPointerException("Unexpected null");
 
-    return BytesUtil.bytesToDouble(result);
+    return Bytes.toDouble(result);
   }
 
   /**
@@ -381,7 +381,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
           .valueOf(j)));
       LOG.info(Bytes.toString(r.getRow()));
       trunk.put(new IntWritable(BytesUtil.getRowIndex(r.getRow())),
-          new DoubleWritable(BytesUtil.bytesToDouble(value)));
+          new DoubleWritable(Bytes.toDouble(value)));
     }
 
     return new DenseVector(trunk);
@@ -872,14 +872,14 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       Get get = new Get(BytesUtil.getRowIndex(pivot_row));
       get.addFamily(Bytes.toBytes(Constants.EI));
       Result r = table.get(get);
-      double e1 = BytesUtil.bytesToDouble(r.getValue(Bytes
+      double e1 = Bytes.toDouble(r.getValue(Bytes
           .toBytes(Constants.EI), Bytes
           .toBytes(Constants.EIVAL)));
 
       get = new Get(BytesUtil.getRowIndex(pivot_col));
       get.addFamily(Bytes.toBytes(Constants.EI));
       r = table.get(get);
-      double e2 = BytesUtil.bytesToDouble(r.getValue(Bytes
+      double e2 = Bytes.toDouble(r.getValue(Bytes
           .toBytes(Constants.EI), Bytes
           .toBytes(Constants.EIVAL)));
       
@@ -938,12 +938,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       LOG.info("rotating eigenvector");
       for (int i = 0; i < size; i++) {
         get = new Get(BytesUtil.getRowIndex(pivot_row));
-        e1 = BytesUtil.bytesToDouble(table.get(get).getValue(
+        e1 = Bytes.toDouble(table.get(get).getValue(
             Bytes.toBytes(Constants.EIVEC),
             Bytes.toBytes(String.valueOf(i))));
 
         get = new Get(BytesUtil.getRowIndex(pivot_col));
-        e2 = BytesUtil.bytesToDouble(table.get(get).getValue(
+        e2 = Bytes.toDouble(table.get(get).getValue(
             Bytes.toBytes(Constants.EIVEC),
             Bytes.toBytes(String.valueOf(i))));
 
@@ -969,13 +969,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     if (row + 2 < size) {
       get = new Get(BytesUtil.getRowIndex(row));
 
-      double max = BytesUtil.bytesToDouble(table.get(get).getValue(
+      double max = Bytes.toDouble(table.get(get).getValue(
           Bytes.toBytes(Constants.EICOL),
           Bytes.toBytes(String.valueOf(m))));
       double val;
       for (int i = row + 2; i < size; i++) {
         get = new Get(BytesUtil.getRowIndex(row));
-        val = BytesUtil.bytesToDouble(table.get(get).getValue(
+        val = Bytes.toDouble(table.get(get).getValue(
             Bytes.toBytes(Constants.EICOL),
             Bytes.toBytes(String.valueOf(i))));
         if (Math.abs(val) > Math.abs(max)) {
@@ -992,7 +992,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
   int update(int row, double value, int state) throws IOException {
     Get get = new Get(BytesUtil.getRowIndex(row));
-    double e = BytesUtil.bytesToDouble(table.get(get).getValue(
+    double e = Bytes.toDouble(table.get(get).getValue(
         Bytes.toBytes(Constants.EI),
         Bytes.toBytes(Constants.EIVAL)));
     int changed = BytesUtil.bytesToInt(table.get(get).getValue(
@@ -1028,7 +1028,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     Get get = null;
     for (int i = 0; i < e.length; i++) {
       get = new Get(BytesUtil.getRowIndex(i));
-      e1 = BytesUtil.bytesToDouble(table.get(get).getValue(
+      e1 = Bytes.toDouble(table.get(get).getValue(
           Bytes.toBytes(Constants.EI),
           Bytes.toBytes(Constants.EIVAL)));
       success &= ((Math.abs(e1 - e[i]) < .0000001));
@@ -1037,7 +1037,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
       for (int j = 0; j < E[i].length; j++) {
         get = new Get(BytesUtil.getRowIndex(i));
-        ev = BytesUtil.bytesToDouble(table.get(get).getValue(
+        ev = Bytes.toDouble(table.get(get).getValue(
             Bytes.toBytes(Constants.EIVEC),
             Bytes.toBytes(String.valueOf(j))));
         success &= ((Math.abs(ev - E[i][j]) < .0000001));

@@ -88,7 +88,7 @@ public class TestCosineSimilarityMatrix extends HamaCluster {
           dotProduct = 0;
         }
         put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String
-            .valueOf(i)), BytesUtil.doubleToBytes(dotProduct));
+            .valueOf(i)), Bytes.toBytes(dotProduct));
       }
 
       context.write(key, put);

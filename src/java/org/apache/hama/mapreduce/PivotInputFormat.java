@@ -163,7 +163,7 @@ public class PivotInputFormat extends InputFormat<Pair, DoubleWritable>
 
         byte[] row = vv.getRow();
 
-        int rowId = BytesUtil.bytesToInt(row);
+        int rowId = BytesUtil.getRowIndex(row);
         if (rowId == size - 1) { // skip the last row
           if (mocked) {
             key.set(Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -185,7 +185,7 @@ public class PivotInputFormat extends InputFormat<Pair, DoubleWritable>
             Bytes.toBytes(Constants.EICOL),
             Bytes.toBytes(String.valueOf(colId)));
         if (cell != null) {
-          val = BytesUtil.bytesToDouble(cell);
+          val = Bytes.toDouble(cell);
         }
 
         key.set(rowId, colId);
