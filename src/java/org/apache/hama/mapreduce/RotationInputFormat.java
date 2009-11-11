@@ -95,23 +95,23 @@ public class RotationInputFormat extends
       byte[] result = htable.get(get).getValue(Constants.ATTRIBUTE,
           Bytes.toBytes("rows"));
 
-      size = (result != null) ? BytesUtil.bytesToInt(result) : 0;
+      size = (result != null) ? Bytes.toInt(result) : 0;
 
       if (endRow.length == 0) { // the last split, we don't know the end row
         totalRows = 0; // so we just skip it.
         if (startRow.length == 0)
           startRowId = 0;
         else
-          startRowId = BytesUtil.bytesToInt(startRow);
+          startRowId = BytesUtil.getRowIndex(startRow);
         endRowId = -1;
       } else {
         if (startRow.length == 0) { // the first split, start row is 0
-          totalRows = BytesUtil.bytesToInt(endRow);
+          totalRows = BytesUtil.getRowIndex(endRow);
           startRowId = 0;
           endRowId = totalRows;
         } else {
-          startRowId = BytesUtil.bytesToInt(startRow);
-          endRowId = BytesUtil.bytesToInt(endRow);
+          startRowId = BytesUtil.getRowIndex(startRow);
+          endRowId = BytesUtil.getRowIndex(endRow);
           totalRows = startRowId - endRowId;
         }
       }
@@ -173,13 +173,13 @@ public class RotationInputFormat extends
       boolean hasMore = vv != null && vv.size() > 0;
       if (hasMore) {
         byte[] row = vv.getRow();
-        int rowId = BytesUtil.bytesToInt(row);
+        int rowId = BytesUtil.getRowIndex(row);
         if (rowId < pivotrow) {
           Get get = new Get(BytesUtil.getRowIndex(rowId));
-          s1 = BytesUtil.bytesToDouble(htable.get(get).getValue(
+          s1 = Bytes.toDouble(htable.get(get).getValue(
               Bytes.toBytes(Constants.EICOL),
               Bytes.toBytes(String.valueOf(pivotrow))));
-          s2 = BytesUtil.bytesToDouble(htable.get(get).getValue(
+          s2 = Bytes.toDouble(htable.get(get).getValue(
               Bytes.toBytes(Constants.EICOL),
               Bytes.toBytes(String.valueOf(pivotcol))));
 
@@ -194,12 +194,12 @@ public class RotationInputFormat extends
           return true;
         } else if (rowId < pivotcol) {
           Get get = new Get(BytesUtil.getRowIndex(pivotrow));
-          s1 = BytesUtil.bytesToDouble(htable.get(get).getValue(
+          s1 = Bytes.toDouble(htable.get(get).getValue(
               Bytes.toBytes(Constants.EICOL),
               Bytes.toBytes(String.valueOf(rowId))));
           get = new Get(BytesUtil.getRowIndex(rowId));
 
-          s2 = BytesUtil.bytesToDouble(htable.get(get).getValue(
+          s2 = Bytes.toDouble(htable.get(get).getValue(
               Bytes.toBytes(Constants.EICOL),
               Bytes.toBytes(String.valueOf(pivotcol))));
 
@@ -217,12 +217,12 @@ public class RotationInputFormat extends
           for (int i = pivotcol + 1; i < size; i++) {
             Get get = new Get(BytesUtil.getRowIndex(pivotrow));
 
-            s1 = BytesUtil.bytesToDouble(htable.get(get).getValue(
+            s1 = Bytes.toDouble(htable.get(get).getValue(
                 Bytes.toBytes(Constants.EICOL),
                 Bytes.toBytes(String.valueOf(i))));
 
             get = new Get(BytesUtil.getRowIndex(pivotcol));
-            s2 = BytesUtil.bytesToDouble(htable.get(get).getValue(
+            s2 = Bytes.toDouble(htable.get(get).getValue(
                 Bytes.toBytes(Constants.EICOL),
                 Bytes.toBytes(String.valueOf(i))));
 

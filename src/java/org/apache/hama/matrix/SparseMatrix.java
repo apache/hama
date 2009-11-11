@@ -200,7 +200,7 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
     get.addColumn(Constants.COLUMNFAMILY);
     byte[] result = table.get(get).getValue(Constants.COLUMNFAMILY,
         Bytes.toBytes(String.valueOf(j)));
-    return (result != null) ? BytesUtil.bytesToDouble(result) : 0.0;
+    return (result != null) ? Bytes.toDouble(result) : 0.0;
   }
 
   @Override

@@ -25,7 +25,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.hama.util.BytesUtil;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
 /**
@@ -93,7 +93,7 @@ public class SubMatrix {
    * @param value
    */
   public void set(int row, int column, byte[] value) {
-    matrix[row][column] = BytesUtil.bytesToDouble(value);    
+    matrix[row][column] = Bytes.toDouble(value); 
   }
   
   /**

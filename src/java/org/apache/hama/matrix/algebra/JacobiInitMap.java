@@ -8,6 +8,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
 import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
@@ -42,7 +43,7 @@ public class JacobiInitMap extends TableMapper<ImmutableBytesWritable, Put> {
     NavigableMap<byte[], byte[]> map = value
         .getFamilyMap(Constants.COLUMNFAMILY);
     for (Map.Entry<byte[], byte[]> e : map.entrySet()) {
-      val = BytesUtil.bytesToDouble(e.getValue());
+      val = Bytes.toDouble(e.getValue());
       col = BytesUtil.bytesToInt(e.getKey());
       // copy the original matrix to "EICOL" family
       vu.put(Constants.EICOL, col, val);
