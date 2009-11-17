@@ -82,6 +82,7 @@ public class HamaConfiguration extends HBaseConfiguration {
    * Adds Hama configuration files to a Configuration
    */
   private void addHamaResources() {
+    addResource("hama-default.xml");
     addResource("hama-site.xml");
   }
 }

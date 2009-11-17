@@ -55,6 +55,8 @@ esac
 if [ $# = 0 ]; then
   echo "Usage: hama <command>"
   echo "where <command> is one of:"
+  echo "  master           run the master server"
+  echo "  groomserver      run the groom server"
   echo "  examples         run the HAMA examples"
   echo " or"
   echo "  CLASSNAME        run the class named CLASSNAME"
@@ -76,7 +78,7 @@ if [ "$JAVA_HOME" != "" ]; then
   #echo "run java in $JAVA_HOME"
   JAVA_HOME=$JAVA_HOME
 fi
-  
+
 if [ "$JAVA_HOME" = "" ]; then
   echo "Error: JAVA_HOME is not set."
   exit 1
@@ -184,7 +186,11 @@ unset IFS
 
 # figure out which class to run
 if [ "$COMMAND" = "examples" ] ; then
-  CLASS="org.apache.hama.examples.ExampleDriver" 
+  CLASS="org.apache.hama.examples.ExampleDriver"
+elif [ "$COMMAND" = "master" ] ; then
+  CLASS='org.apache.hama.HamaMaster'
+elif [ "$COMMAND" = "groomserver" ] ; then
+  CLASS='org.apache.hama.graph.GroomServer'
 else
   CLASS=$COMMAND
 fi
