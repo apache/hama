@@ -55,11 +55,19 @@ do
     confdir=$1
     shift
     HAMA_CONF_DIR=$confdir
+  elif [ "--hosts" = "$1" ]
+  then
+    shift
+    hosts=$1
+    shift
+    HAMA_GROOMSERVERS=$hosts
   else
     # Presume we are at end of options and break
     break
   fi
 done
- 
+
 # Allow alternate hama conf dir location.
 HAMA_CONF_DIR="${HAMA_CONF_DIR:-$HAMA_HOME/conf}"
+# List of hama groom servers.
+HAMA_GROOMSERVERS="${HAMA_GROOMSERVERS:-$HAMA_CONF_DIR/groomservers}"

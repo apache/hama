@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Do not modify this file directly.  Instead, copy entries that you -->
+<!-- wish to modify from this file into mapred-site.xml and change them -->
+<!-- there.  If mapred-site.xml does not already exist, create it.      -->
+
+<configuration>
+<property>
+  <name>hama.groomserver.local.dir</name>
+  <value>${hadoop.tmp.dir}/groomserver/local</value>
+</property>
+</configuration>
