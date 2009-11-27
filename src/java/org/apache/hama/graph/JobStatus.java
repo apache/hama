@@ -63,11 +63,11 @@ public class JobStatus implements Writable, Cloneable {
     this(jobid, 0.0f, progress, cleanupProgress, runState);
   }
 
-  public JobStatus(JobID jobid, float setupProgress, float mapProgress,
+  public JobStatus(JobID jobid, float setupProgress, float progress,
       float cleanupProgress, int runState) {
     this.jobid = jobid;
     this.setupProgress = setupProgress;
-    this.progress = mapProgress;
+    this.progress = progress;
     this.cleanupProgress = cleanupProgress;
     this.runState = runState;
   }

@@ -52,13 +52,12 @@ public abstract class ID implements WritableComparable<ID> {
   public boolean equals(Object o) {
     if (this == o)
       return true;
-    if(o == null)
+    if (o == null)
       return false;
     if (o.getClass() == this.getClass()) {
       ID that = (ID) o;
       return this.id == that.id;
-    }
-    else
+    } else
       return false;
   }
 
