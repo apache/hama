@@ -30,7 +30,6 @@ public class CollectBlocksReducer extends
     // the block's base offset in the original matrix
     int colBase = key.getColumn() * mBlockColSize;
     int rowBase = key.getRow() * mBlockRowSize;
-    
 
     // the block's size : rows & columns
     int smRows = mBlockRowSize;
