@@ -214,7 +214,6 @@ public class GroomServer implements Runnable {
     return heartbeatResponse;
   }
 
-  @Override
   public void run() {
     try {
       startCleanupThreads();
