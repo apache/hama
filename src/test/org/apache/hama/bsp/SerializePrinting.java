@@ -56,7 +56,6 @@ public class SerializePrinting extends HamaCluster implements Watcher {
   }
 
   public void testHelloWorld() throws InterruptedException, IOException {
-
     BSPPeerThread thread;
     int[] randomSequence = new int[] { 2, 3, 4, 5, 0, 1, 6, 7, 8, 9 };
     for (int i = 0; i < NUM_PEER; i++) {
@@ -72,7 +71,6 @@ public class SerializePrinting extends HamaCluster implements Watcher {
 
     for (int i = 0; i < NUM_PEER; i++) {
       list.get(i).start();
-      Thread.sleep(1000);
     }
 
     for (int i = 0; i < NUM_PEER; i++) {
