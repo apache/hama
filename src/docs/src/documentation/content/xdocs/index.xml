@@ -67,10 +67,13 @@
     <ul>
       <li><a href="http://wiki.apache.org/hama/GettingStarted">Getting Started</a> with Hama</li>
     </ul>
-    </section>    
+    </section>
     <section>
     <title>Recent News</title>
     <ul>
+      <li>24 January 2010 - We submitted the paper to "USENIX Workshop on Hot Topics in Parallelism (HotPar '10)"</li>
+      <li>11 December 2009 - We'd implemented, introduced the BSP (Bulk Synchronous Parallel) package 
+      [<a href="http://people.apache.org/~edwardyoon/papers/Apache_HAMA_BSP.pdf">pdf</a>]</li>
       <li>20 May 2008 - Hama accepted to Apache Incubator Project.
       <br />&nbsp;&nbsp;
       The Incubator PMC have voted to accept Hama to be

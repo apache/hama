@@ -42,6 +42,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-236: Add recent news on website (edwardyoon)
     HAMA-232: Add file multiplication example (edwardyoon)
     HAMA-226: Add benchmarking tool of eigenvalue operation (edwardyoon)
     HAMA-223: Add simple admin tool for manage the temporary tables (edwardyoon)
