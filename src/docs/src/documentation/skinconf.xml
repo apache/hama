@@ -147,7 +147,6 @@ which will be used to configure the chosen Forrest skin.
     }
     -->
      #footer a { color: black; }
-     NonBorderTable { border-style: hidden } 
   </extra-css>
 
   <colors>

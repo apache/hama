@@ -31,5 +31,6 @@
 
   <tab label="Home" dir="" />  
   <tab label="Wiki" href="http://wiki.apache.org/hama" />
+  <tab label="Blog" href="http://apache-hama.blogspot.com/" />
   
 </tabs>

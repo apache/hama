@@ -23,11 +23,11 @@
   <header>
     <title>Welcome to Hama project</title>
   </header>
-  
   <body>
     <section>
       <title> Introduction </title>
-      <p><strong>Hama</strong> (means a hippopotamus in Korean) is a distributed 
+      <p><img class="logo" width="150" alt="Apache Hama" src="images/hama_paint_logo.png" />
+      <strong>Hama</strong> (means a hippopotamus in Korean) is a distributed 
       scientific package on Hadoop for massive matrix and graph data. It is currently 
       in incubation with Apache. The main goal of Hama is to provide computational 
       tools for data-intensive scientific and industrial areas. It consists of 
