@@ -22,19 +22,19 @@
 # Set environment variables here.
 
 # The java implementation to use.  Required.
-export JAVA_HOME=/usr/java/jdk1.6.0_10
+# export JAVA_HOME=/usr/java/jdk1.6.0_18
 
 # hadoop conf dir. to find the mapreduce cluster.
-export HADOOP_CONF_DIR=/usr/local/src/hadoop-0.20.1/conf
+# export HADOOP_CONF_DIR=/usr/local/src/hadoop-0.20.1/conf
 
 # hbase conf dir. to find the hbase cluster.
-export HBASE_CONF_DIR=/usr/local/src/hbase-0.20.0/conf
+# export HBASE_CONF_DIR=/usr/local/src/hbase-0.20.3/conf
 
 # Extra Java CLASSPATH elements.  Optional.
-export HAMA_CLASSPATH=$HADOOP_CONF_DIR:$HBASE_CONF_DIR
+# export HAMA_CLASSPATH=$HADOOP_CONF_DIR:$HBASE_CONF_DIR
 
 # The maximum amount of heap to use, in MB. Default is 1000.
-export HBASE_HEAPSIZE=1000
+# export HBASE_HEAPSIZE=1000
 
 # Where log files are stored.  $HAMA_HOME/logs by default.
 # export HAMA_LOG_DIR=${HAMA_HOME}/logs

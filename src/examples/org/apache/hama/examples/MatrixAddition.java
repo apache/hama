@@ -21,7 +21,8 @@ package org.apache.hama.examples;
 
 import java.io.IOException;
 
-import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.HamaAdmin;
+import org.apache.hama.HamaAdminImpl;
 import org.apache.hama.matrix.Matrix;
 
 public class MatrixAddition extends AbstractExample {
@@ -37,18 +38,26 @@ public class MatrixAddition extends AbstractExample {
     String matrixA = ARGS.get(0);
     String matrixB = ARGS.get(1);
 
-    DenseMatrix a = new DenseMatrix(conf, matrixA, false);
-    DenseMatrix b = new DenseMatrix(conf, matrixB, false);
+    HamaAdmin admin = new HamaAdminImpl(conf);
+    Matrix a = admin.getMatrix(matrixA);
+    Matrix b = admin.getMatrix(matrixB);
 
     Matrix c;
-    if (ARGS.size() > 2) {
-      System.out.println("C = "+ Double.parseDouble(ARGS.get(2)) +" * B + A");
-      c = a.add(Double.parseDouble(ARGS.get(2)), b);
+    if (a.getType().equals("SparseMatrix")) {
+      System.out
+          .println("The addition of sparse matrices is not implemented yet.");
     } else {
-      System.out.println("C = A + B");
-      c = a.add(b);
+      if (ARGS.size() > 2) {
+        System.out.println("C = " + Double.parseDouble(ARGS.get(2))
+            + " * B + A");
+        c = a.add(Double.parseDouble(ARGS.get(2)), b);
+      } else {
+        System.out.println("C = A + B");
+        c = a.add(b);
+      }
+
+      c.close();
     }
-    
-    c.close();
+
   }
 }
