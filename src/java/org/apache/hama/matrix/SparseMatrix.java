@@ -22,18 +22,21 @@ package org.apache.hama.matrix;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
@@ -44,7 +47,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapreduce.RandomMatrixMapper;
 import org.apache.hama.mapreduce.RandomMatrixReducer;
 import org.apache.hama.matrix.algebra.SparseMatrixVectorMultMap;
@@ -227,9 +229,10 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
   /** {@inheritDoc} */
   public void set(int i, int j, double value) throws IOException {
     if (value != 0) {
-      VectorUpdate update = new VectorUpdate(i);
-      update.put(j, value);
-      table.put(update.getPut());
+      Put put = new Put(BytesUtil.getRowIndex(i));
+      put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j)),
+          Bytes.toBytes(value));
+      table.put(put);
     }
   }
 
@@ -326,9 +329,12 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
       throw new ArrayIndexOutOfBoundsException(row);
 
     if (vector.size() > 0) { // stores if size > 0
-      VectorUpdate update = new VectorUpdate(row);
-      update.putAll(((SparseVector) vector).getEntries());
-      table.put(update.getPut());
+      Put put = new Put(BytesUtil.getRowIndex(row));
+      for (Map.Entry<Writable, Writable> e : ((SparseVector) vector).getEntries().entrySet()) {
+        put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(((IntWritable) e.getKey()).get())),
+            Bytes.toBytes(((DoubleWritable) e.getValue()).get()));
+      }
+      table.put(put);
     }
   }
 

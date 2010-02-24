@@ -53,7 +53,6 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaAdmin;
 import org.apache.hama.HamaAdminImpl;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.matrix.algebra.MatrixNormMapReduce;
 import org.apache.hama.matrix.algebra.TransposeMap;
 import org.apache.hama.matrix.algebra.TransposeReduce;
@@ -381,9 +380,10 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void setRowLabel(int row, String name) throws IOException {
-    VectorUpdate update = new VectorUpdate(row);
-    update.put(Bytes.toString(Constants.ATTRIBUTE), "string", name);
-    table.put(update.getPut());
+    Put put = new Put(BytesUtil.getRowIndex(row));
+    put.add(Constants.ATTRIBUTE, Bytes.toBytes("string"), Bytes
+        .toBytes(name));
+    table.put(put);
   }
 
   /** {@inheritDoc} */
@@ -397,9 +397,10 @@ public abstract class AbstractMatrix implements Matrix {
 
   /** {@inheritDoc} */
   public void add(int i, int j, double value) throws IOException {
-    VectorUpdate update = new VectorUpdate(i);
-    update.put(j, value + this.get(i, j));
-    table.put(update.getPut());
+    Put put = new Put(BytesUtil.getRowIndex(i));
+    put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j)),
+        Bytes.toBytes(value + this.get(i, j)));
+    table.put(put);
 
   }
 
