@@ -2,12 +2,14 @@ package org.apache.hama.matrix.algebra;
 
 import java.io.IOException;
 
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableReducer;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.io.BlockID;
-import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.matrix.SubMatrix;
 import org.apache.hama.util.BytesUtil;
 
@@ -31,13 +33,14 @@ public class BlockMultReduce extends
     int startColumn = key.getColumn() * s.getColumns();
 
     for (int i = 0; i < s.getRows(); i++) {
-      VectorUpdate update = new VectorUpdate(i + startRow);
+      Put put = new Put(BytesUtil.getRowIndex(i + startRow));
       for (int j = 0; j < s.getColumns(); j++) {
-        update.put(j + startColumn, s.get(i, j));
+        put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j + startColumn)),
+            Bytes.toBytes(s.get(i, j)));
       }
 
       context.write(new ImmutableBytesWritable(BytesUtil.getRowIndex(key
-          .getRow())), update.getPut());
+          .getRow())), put);
     }
   }
 }

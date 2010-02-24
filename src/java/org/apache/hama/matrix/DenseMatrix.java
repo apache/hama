@@ -57,7 +57,6 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.io.Pair;
-import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.mapreduce.CollectBlocksMapper;
 import org.apache.hama.mapreduce.DummyMapper;
 import org.apache.hama.mapreduce.PivotInputFormat;
@@ -91,7 +90,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @param m the number of rows.
    * @param n the number of columns.
    * @throws IOException throw the exception to let the user know what happend,
-   *                 if we didn't create the matrix successfully.
+   *           if we didn't create the matrix successfully.
    */
   public DenseMatrix(HamaConfiguration conf, int m, int n) throws IOException {
     setConfiguration(conf);
@@ -107,8 +106,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @param conf configuration object
    * @param matrixName the name of the matrix
    * @param force if force is true, a new matrix will be created no matter
-   *                'matrixName' has aliased to an existed matrix; otherwise,
-   *                just try to load an existed matrix alised 'matrixName'.
+   *          'matrixName' has aliased to an existed matrix; otherwise, just try
+   *          to load an existed matrix alised 'matrixName'.
    * @throws IOException
    */
   public DenseMatrix(HamaConfiguration conf, String matrixName, boolean force)
@@ -153,8 +152,8 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
-   * Load a matrix from an existed matrix table whose tablename is 'matrixpath' !!
-   * It is an internal used for map/reduce.
+   * Load a matrix from an existed matrix table whose tablename is 'matrixpath'
+   * !! It is an internal used for map/reduce.
    * 
    * @param conf configuration object
    * @param matrixpath
@@ -182,7 +181,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
    * @param n the number of columns.
    * @param s fill the matrix with this scalar value.
    * @throws IOException throw the exception to let the user know what happend,
-   *                 if we didn't create the matrix successfully.
+   *           if we didn't create the matrix successfully.
    */
   public DenseMatrix(HamaConfiguration conf, int m, int n, double s)
       throws IOException {
@@ -392,9 +391,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     if (this.getRows() < i || this.getColumns() < j)
       throw new ArrayIndexOutOfBoundsException(this.getRows() + ", "
           + this.getColumns() + ": " + i + ", " + j);
-    VectorUpdate update = new VectorUpdate(i);
-    update.put(j, value);
-    table.put(update.getPut());
+    Put put = new Put(BytesUtil.getRowIndex(i));
+    put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(j)), Bytes
+        .toBytes(value));
+    table.put(put);
   }
 
   /**
@@ -407,10 +407,13 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public void setRow(int row, Vector vector) throws IOException {
     if (this.getRows() < row || this.getColumns() < vector.size())
       throw new ArrayIndexOutOfBoundsException(row);
-
-    VectorUpdate update = new VectorUpdate(row);
-    update.putAll(vector.getEntries());
-    table.put(update.getPut());
+    Put put = new Put(BytesUtil.getRowIndex(row));
+    for (Map.Entry<Writable, Writable> e : vector.getEntries().entrySet()) {
+      put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String
+          .valueOf(((IntWritable) e.getKey()).get())), Bytes
+          .toBytes(((DoubleWritable) e.getValue()).get()));
+    }
+    table.put(put);
   }
 
   /**
@@ -427,9 +430,10 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     for (Map.Entry<Writable, Writable> e : vector.getEntries().entrySet()) {
       int key = ((IntWritable) e.getKey()).get();
       double value = ((DoubleWritable) e.getValue()).get();
-      VectorUpdate update = new VectorUpdate(key);
-      update.put(column, value);
-      table.put(update.getPut());
+      Put put = new Put(BytesUtil.getRowIndex(key));
+      put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(column)),
+          Bytes.toBytes(value));
+      table.put(put);
     }
   }
 
@@ -599,8 +603,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
 
     String collectionTable = "collect_" + RandomVariable.randMatrixPath();
     HTableDescriptor desc = new HTableDescriptor(collectionTable);
-    desc
-        .addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
+    desc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
     this.admin.createTable(desc);
     LOG.info("Collect Blocks");
 
@@ -798,7 +801,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     final FileSystem fs = FileSystem.get(config);
     Pair pivotPair = new Pair();
     DoubleWritable pivotWritable = new DoubleWritable();
-    VectorUpdate vu;
+    Put put;
 
     // loop
     int size = this.getRows();
@@ -860,29 +863,25 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       }
       fs.delete(outDir, true);
       fs.delete(outDir.getParent(), true);
-      
-      if(pivot_row == 0 && pivot_col == 0)
+
+      if (pivot_row == 0 && pivot_col == 0)
         break; // stop the iterations
-      
+
       /*
-       * Calculation
-       * 
-       * Compute the rotation parameters of next rotation.
+       * Calculation Compute the rotation parameters of next rotation.
        */
       Get get = new Get(BytesUtil.getRowIndex(pivot_row));
       get.addFamily(Bytes.toBytes(Constants.EI));
       Result r = table.get(get);
-      double e1 = Bytes.toDouble(r.getValue(Bytes
-          .toBytes(Constants.EI), Bytes
+      double e1 = Bytes.toDouble(r.getValue(Bytes.toBytes(Constants.EI), Bytes
           .toBytes(Constants.EIVAL)));
 
       get = new Get(BytesUtil.getRowIndex(pivot_col));
       get.addFamily(Bytes.toBytes(Constants.EI));
       r = table.get(get);
-      double e2 = Bytes.toDouble(r.getValue(Bytes
-          .toBytes(Constants.EI), Bytes
+      double e2 = Bytes.toDouble(r.getValue(Bytes.toBytes(Constants.EI), Bytes
           .toBytes(Constants.EIVAL)));
-      
+
       y = (e2 - e1) / 2;
       t = Math.abs(y) + Math.sqrt(pivot * pivot + y * y);
       s = Math.sqrt(pivot * pivot + t * t);
@@ -897,10 +896,11 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       /*
        * Upate the pivot and the eigen values indexed by the pivot
        */
-      vu = new VectorUpdate(pivot_row);
-      vu.put(Constants.EICOL, pivot_col, 0);
-      table.put(vu.getPut());
-
+      put = new Put(BytesUtil.getRowIndex(pivot_row));
+      put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String.valueOf(pivot_col)), Bytes
+          .toBytes(0.0));
+      table.put(put);
+      
       state = update(pivot_row, -t, state);
       state = update(pivot_col, t, state);
 
@@ -939,21 +939,21 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       for (int i = 0; i < size; i++) {
         get = new Get(BytesUtil.getRowIndex(pivot_row));
         e1 = Bytes.toDouble(table.get(get).getValue(
-            Bytes.toBytes(Constants.EIVEC),
-            Bytes.toBytes(String.valueOf(i))));
+            Bytes.toBytes(Constants.EIVEC), Bytes.toBytes(String.valueOf(i))));
 
         get = new Get(BytesUtil.getRowIndex(pivot_col));
         e2 = Bytes.toDouble(table.get(get).getValue(
-            Bytes.toBytes(Constants.EIVEC),
-            Bytes.toBytes(String.valueOf(i))));
+            Bytes.toBytes(Constants.EIVEC), Bytes.toBytes(String.valueOf(i))));
 
-        vu = new VectorUpdate(pivot_row);
-        vu.put(Constants.EIVEC, i, c * e1 - s * e2);
-        table.put(vu.getPut());
-
-        vu = new VectorUpdate(pivot_col);
-        vu.put(Constants.EIVEC, i, s * e1 + c * e2);
-        table.put(vu.getPut());
+        put = new Put(BytesUtil.getRowIndex(pivot_row));
+        put.add(Bytes.toBytes(Constants.EIVEC), Bytes.toBytes(String.valueOf(i)), Bytes
+            .toBytes(new Double(c * e1 - s * e2)));
+        table.put(put);
+        
+        put = new Put(BytesUtil.getRowIndex(pivot_col));
+        put.add(Bytes.toBytes(Constants.EIVEC), Bytes.toBytes(String.valueOf(i)), Bytes
+            .toBytes(new Double(s * e1 + c * e2)));
+        table.put(put);
       }
 
       LOG.info("update index...");
@@ -970,14 +970,12 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       get = new Get(BytesUtil.getRowIndex(row));
 
       double max = Bytes.toDouble(table.get(get).getValue(
-          Bytes.toBytes(Constants.EICOL),
-          Bytes.toBytes(String.valueOf(m))));
+          Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String.valueOf(m))));
       double val;
       for (int i = row + 2; i < size; i++) {
         get = new Get(BytesUtil.getRowIndex(row));
         val = Bytes.toDouble(table.get(get).getValue(
-            Bytes.toBytes(Constants.EICOL),
-            Bytes.toBytes(String.valueOf(i))));
+            Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String.valueOf(i))));
         if (Math.abs(val) > Math.abs(max)) {
           m = i;
           max = val;
@@ -985,39 +983,39 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       }
     }
 
-    VectorUpdate vu = new VectorUpdate(row);
-    vu.put(Constants.EI, "ind", String.valueOf(m));
-    table.put(vu.getPut());
+    Put put = new Put(BytesUtil.getRowIndex(row));
+    put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes("ind"), Bytes
+        .toBytes(String.valueOf(m)));
+    table.put(put);
   }
 
   int update(int row, double value, int state) throws IOException {
     Get get = new Get(BytesUtil.getRowIndex(row));
     double e = Bytes.toDouble(table.get(get).getValue(
-        Bytes.toBytes(Constants.EI),
-        Bytes.toBytes(Constants.EIVAL)));
+        Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EIVAL)));
     int changed = BytesUtil.bytesToInt(table.get(get).getValue(
-        Bytes.toBytes(Constants.EI),
-        Bytes.toBytes("changed")));
+        Bytes.toBytes(Constants.EI), Bytes.toBytes("changed")));
     double y = e;
     e += value;
-    
-    VectorUpdate vu = new VectorUpdate(row);
-    vu.put(Constants.EI, Constants.EIVAL, e);
 
+    Put put = new Put(BytesUtil.getRowIndex(row));
+    put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EIVAL), Bytes
+        .toBytes(e));
+    
     if (changed == 1 && (Math.abs(y - e) < .0000001)) { // y == e) {
       changed = 0;
-      vu.put(Constants.EI,
-          Constants.EICHANGED, String.valueOf(changed));
-
+      put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EICHANGED), Bytes
+          .toBytes(String.valueOf(changed)));
+      
       state--;
     } else if (changed == 0 && (Math.abs(y - e) > .0000001)) {
       changed = 1;
-      vu.put(Constants.EI,
-          Constants.EICHANGED, String.valueOf(changed));
-
+      put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EICHANGED), Bytes
+          .toBytes(String.valueOf(changed)));
+      
       state++;
     }
-    table.put(vu.getPut());
+    table.put(put);
     return state;
   }
 
@@ -1028,8 +1026,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     Get get = null;
     for (int i = 0; i < e.length; i++) {
       get = new Get(BytesUtil.getRowIndex(i));
-      e1 = Bytes.toDouble(table.get(get).getValue(
-          Bytes.toBytes(Constants.EI),
+      e1 = Bytes.toDouble(table.get(get).getValue(Bytes.toBytes(Constants.EI),
           Bytes.toBytes(Constants.EIVAL)));
       success &= ((Math.abs(e1 - e[i]) < .0000001));
       if (!success)
@@ -1038,8 +1035,7 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       for (int j = 0; j < E[i].length; j++) {
         get = new Get(BytesUtil.getRowIndex(i));
         ev = Bytes.toDouble(table.get(get).getValue(
-            Bytes.toBytes(Constants.EIVEC),
-            Bytes.toBytes(String.valueOf(j))));
+            Bytes.toBytes(Constants.EIVEC), Bytes.toBytes(String.valueOf(j))));
         success &= ((Math.abs(ev - E[i][j]) < .0000001));
         if (!success)
           return success;

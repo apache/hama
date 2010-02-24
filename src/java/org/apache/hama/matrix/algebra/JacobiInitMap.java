@@ -10,7 +10,6 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
-import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
 
 /**
@@ -32,7 +31,7 @@ public class JacobiInitMap extends TableMapper<ImmutableBytesWritable, Put> {
       throws IOException, InterruptedException {
     int row, col;
     row = BytesUtil.getRowIndex(key.get());
-    VectorUpdate vu = new VectorUpdate(row);
+    Put put = new Put(BytesUtil.getRowIndex(row));
 
     double val;
     double maxVal = Double.MIN_VALUE;
@@ -46,11 +45,15 @@ public class JacobiInitMap extends TableMapper<ImmutableBytesWritable, Put> {
       val = Bytes.toDouble(e.getValue());
       col = BytesUtil.bytesToInt(e.getKey());
       // copy the original matrix to "EICOL" family
-      vu.put(Constants.EICOL, col, val);
+      put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String.valueOf(col)), Bytes
+          .toBytes(val));
       // make the "EIVEC" a dialog matrix
-      vu.put(Constants.EIVEC, col, col == row ? 1 : 0);
+      put.add(Bytes.toBytes(Constants.EIVEC), Bytes.toBytes(String.valueOf(col)), Bytes
+          .toBytes(col == row ? new Double(1) : new Double(0)));
+      
       if (col == row) {
-        vu.put(Constants.EI, Constants.EIVAL, val);
+        put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EIVAL), Bytes
+            .toBytes(val));
       }
       // find the max index
       if (col > row) {
@@ -68,9 +71,12 @@ public class JacobiInitMap extends TableMapper<ImmutableBytesWritable, Put> {
     }
 
     // index array
-    vu.put(Constants.EI, Constants.EIIND, String.valueOf(maxInd));
+    put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EIIND), Bytes
+        .toBytes(String.valueOf(maxInd)));
     // Changed Array set to be true during initialization
-    vu.put(Constants.EI, Constants.EICHANGED, String.valueOf(1));
-    context.write(key, vu.getPut());
+    put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EICHANGED), Bytes
+        .toBytes(String.valueOf(1)));
+    
+    context.write(key, put);
   }
 }

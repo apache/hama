@@ -12,6 +12,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
@@ -25,7 +26,6 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.Constants;
-import org.apache.hama.io.VectorUpdate;
 import org.apache.hama.util.BytesUtil;
 
 public class RotationInputFormat extends
@@ -169,7 +169,8 @@ public class RotationInputFormat extends
       }
 
       double s1, s2;
-      VectorUpdate bu;
+      Put put;
+
       boolean hasMore = vv != null && vv.size() > 0;
       if (hasMore) {
         byte[] row = vv.getRow();
@@ -183,13 +184,15 @@ public class RotationInputFormat extends
               Bytes.toBytes(Constants.EICOL),
               Bytes.toBytes(String.valueOf(pivotcol))));
 
-          bu = new VectorUpdate(rowId);
-          bu.put(Constants.EICOL, pivotrow, pivotcos * s1
-              - pivotsin * s2);
-          bu.put(Constants.EICOL, pivotcol, pivotsin * s1
-              + pivotcos * s2);
+          put = new Put(BytesUtil.getRowIndex(rowId));
+          put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+              .valueOf(pivotrow)), Bytes.toBytes(new Double(pivotcos * s1
+              - pivotsin * s2)));
+          put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+              .valueOf(pivotcol)), Bytes.toBytes(new Double(pivotsin * s1
+              + pivotcos * s2)));
 
-          htable.put(bu.getPut());
+          htable.put(put);
         } else if (rowId == pivotrow) {
           return true;
         } else if (rowId < pivotcol) {
@@ -203,15 +206,17 @@ public class RotationInputFormat extends
               Bytes.toBytes(Constants.EICOL),
               Bytes.toBytes(String.valueOf(pivotcol))));
 
-          bu = new VectorUpdate(rowId);
-          bu.put(Constants.EICOL, pivotcol, pivotsin * s1
-              + pivotcos * s2);
-          htable.put(bu.getPut());
+          put = new Put(BytesUtil.getRowIndex(rowId));
+          put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+              .valueOf(pivotcol)), Bytes.toBytes(new Double(pivotsin * s1
+              + pivotcos * s2)));
+          htable.put(put);
 
-          bu = new VectorUpdate(pivotrow);
-          bu.put(Constants.EICOL, rowId, pivotcos * s1 - pivotsin
-              * s2);
-          htable.put(bu.getPut());
+          put = new Put(BytesUtil.getRowIndex(pivotrow));
+          put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+              .valueOf(rowId)), Bytes.toBytes(new Double(pivotcos * s1
+              - pivotsin * s2)));
+          htable.put(put);
 
         } else if (rowId == pivotcol) {
           for (int i = pivotcol + 1; i < size; i++) {
@@ -226,15 +231,18 @@ public class RotationInputFormat extends
                 Bytes.toBytes(Constants.EICOL),
                 Bytes.toBytes(String.valueOf(i))));
 
-            bu = new VectorUpdate(pivotcol);
-            bu.put(Constants.EICOL, i, pivotsin * s1 + pivotcos
-                * s2);
-            htable.put(bu.getPut());
+            put = new Put(BytesUtil.getRowIndex(pivotcol));
+            put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+                .valueOf(i)), Bytes.toBytes(new Double(pivotsin * s1 + pivotcos
+                * s2)));
+            htable.put(put);
 
-            bu = new VectorUpdate(pivotrow);
-            bu.put(Constants.EICOL, i, pivotcos * s1 - pivotsin
-                * s2);
-            htable.put(bu.getPut());
+            put = new Put(BytesUtil.getRowIndex(pivotrow));
+            put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+                .valueOf(i)), Bytes.toBytes(new Double(pivotcos * s1 - pivotsin
+                * s2)));
+            htable.put(put);
+
           }
         } else { // rowId > pivotcol
           return false;
