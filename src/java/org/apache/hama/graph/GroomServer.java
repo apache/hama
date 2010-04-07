@@ -273,7 +273,7 @@ public class GroomServer implements Runnable {
 
   public static void main(String[] args) {
     StringUtils.startupShutdownMessage(GroomServer.class, args, LOG);
-    if (args.length != 1) {
+    if (args.length != 0) {
       System.out.println("usage: GroomServer");
       System.exit(-1);
     }

@@ -164,7 +164,7 @@ public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
   
   public static void main(String [] args) {
     StringUtils.startupShutdownMessage(HamaMaster.class, args, LOG);
-    if (args.length != 1) {
+    if (args.length != 0) {
       System.out.println("usage: HamaMaster");
       System.exit(-1);
     }
