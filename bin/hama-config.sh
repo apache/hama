@@ -1,28 +1,21 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
 #
-#/**
-# * Copyright 2007 The Apache Software Foundation
-# *
-# * Licensed to the Apache Software Foundation (ASF) under one
-# * or more contributor license agreements.  See the NOTICE file
-# * distributed with this work for additional information
-# * regarding copyright ownership.  The ASF licenses this file
-# * to you under the Apache License, Version 2.0 (the
-# * "License"); you may not use this file except in compliance
-# * with the License.  You may obtain a copy of the License at
-# *
-# *     http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
-# */
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # included in all the hama scripts with source command
 # should not be executable directly
 # also should not be passed any arguments, since we need original $*
-# Modelled after $HBASE_HOME/bin/hbase-config.sh.
 
 # resolve links - $0 may be a softlink
 
@@ -43,31 +36,33 @@ script=`basename "$this"`
 bin=`cd "$bin"; pwd`
 this="$bin/$script"
 
-# the root of the hama installation
+# the root of the Hama installation
 export HAMA_HOME=`dirname "$this"`/..
 
-#check to see if the conf dir or hama home are given as an optional arguments
-while [ $# -gt 1 ]
-do
-  if [ "--config" = "$1" ]
-  then
-    shift
-    confdir=$1
-    shift
-    HAMA_CONF_DIR=$confdir
-  elif [ "--hosts" = "$1" ]
-  then
-    shift
-    hosts=$1
-    shift
-    HAMA_GROOMSERVERS=$hosts
-  else
-    # Presume we are at end of options and break
-    break
-  fi
-done
-
-# Allow alternate hama conf dir location.
+#check to see if the conf dir is given as an optional argument
+if [ $# -gt 1 ]
+then
+    if [ "--config" = "$1" ]
+	  then
+	      shift
+	      confdir=$1
+	      shift
+	      HAMA_CONF_DIR=$confdir
+    fi
+fi
+ 
+# Allow alternate conf dir location.
 HAMA_CONF_DIR="${HAMA_CONF_DIR:-$HAMA_HOME/conf}"
-# List of hama groom servers.
-HAMA_GROOMSERVERS="${HAMA_GROOMSERVERS:-$HAMA_CONF_DIR/groomservers}"
+
+#check to see it is specified whether to use the grooms or the
+# masters file
+if [ $# -gt 1 ]
+then
+    if [ "--hosts" = "$1" ]
+    then
+        shift
+        grooms=$1
+        shift
+        export HAMA_SLAVES="${HAMA_CONF_DIR}/$grooms"
+    fi
+fi

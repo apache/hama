@@ -16,19 +16,14 @@
 # limitations under the License.
 
 
-# Run a Hama command on all slave hosts.
-
-usage="Usage: hama-daemons.sh [--config confdir] [--hosts hostlistfile] [start|stop] command args..."
-
-# if no args specified, show usage
-if [ $# -le 1 ]; then
-  echo $usage
-  exit 1
-fi
+# Start hama map reduce daemons.  Run this on master node.
 
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 
-. $bin/hama-config.sh
+. "$bin"/hama-config.sh
 
-exec "$bin/grooms.sh" --config $HAMA_CONF_DIR cd "$HAMA_HOME" \; "$bin/hama-daemon.sh" --config $HAMA_CONF_DIR "$@"
+# start mapred daemons
+# start jobtracker first to minimize connection errors at startup
+"$bin"/hama-daemon.sh --config $HAMA_CONF_DIR start bspmaster
+"$bin"/hama-daemons.sh --config $HAMA_CONF_DIR start groom

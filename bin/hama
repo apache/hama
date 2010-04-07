@@ -1,49 +1,49 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
+
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
 #
-#/**
-# * Copyright 2007 The Apache Software Foundation
-# *
-# * Licensed to the Apache Software Foundation (ASF) under one
-# * or more contributor license agreements.  See the NOTICE file
-# * distributed with this work for additional information
-# * regarding copyright ownership.  The ASF licenses this file
-# * to you under the Apache License, Version 2.0 (the
-# * "License"); you may not use this file except in compliance
-# * with the License.  You may obtain a copy of the License at
-# *
-# *     http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
-# */
-# 
-# The hama command script.  Based on the hbase command script putting
-# in hama classes, libs and configurations ahead of hbase's.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# TODO: Narrow the amount of duplicated code.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# The Hama command script
 #
-# Environment Variables:
+# Environment Variables
 #
 #   JAVA_HOME        The java implementation to use.  Overrides JAVA_HOME.
 #
-#   HAMA_CLASSPATH   Extra Java CLASSPATH entries.
+#   HAMA_CLASSPATH Extra Java CLASSPATH entries.
 #
-#   HAMA_HEAPSIZE    The maximum amount of heap to use, in MB. 
+#   HAMA_HEAPSIZE  The maximum amount of heap to use, in MB. 
 #                    Default is 1000.
 #
-#   HAMA_CONF_DIR    Alternate conf dir. Default is ${HAMA_HOME}/conf.
+#   HAMA_OPTS      Extra Java runtime options.
 #   
-#   HAMA_JARS        Additional jars to be included for task execution.
+#   HAMA_NAMENODE_OPTS       These options are added to HAMA_OPTS 
+#   HAMA_CLIENT_OPTS         when the respective command is run.
+#   HAMA_{COMMAND}_OPTS etc  HAMA_JT_OPTS applies to JobTracker 
+#                              for e.g.  HAMA_CLIENT_OPTS applies to 
+#                              more than one command (fs, dfs, fsck, 
+#                              dfsadmin etc)  
+#
+#   HAMA_CONF_DIR  Alternate conf dir. Default is ${HAMA_HOME}/conf.
 #
 #   HAMA_ROOT_LOGGER The root appender. Default is INFO,console
 #
+
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 
-# This will set HAMA_HOME, etc.
 . "$bin"/hama-config.sh
 
 cygwin=false
@@ -53,13 +53,14 @@ esac
 
 # if no args specified, show usage
 if [ $# = 0 ]; then
-  echo "Usage: hama <command>"
-  echo "where <command> is one of:"
-  echo "  master           run the master server"
-  echo "  groomserver      run the groom server"
-  echo "  examples         run the HAMA examples"
+  echo "Usage: hama [--config confdir] COMMAND"
+  echo "where COMMAND is one of:"
+  echo "  bspmaster            run the BSP Master node"
+  echo "  groom                run the Groom node"
+  echo "  version              print the version"
+  echo "  jar <jar>            run a jar file"
   echo " or"
-  echo "  CLASSNAME        run the class named CLASSNAME"
+  echo "  CLASSNAME            run the class named CLASSNAME"
   echo "Most commands print help when invoked w/o parameters."
   exit 1
 fi
@@ -68,7 +69,6 @@ fi
 COMMAND=$1
 shift
 
-# Source the hama-env.sh.  Will have JAVA_HOME defined.
 if [ -f "${HAMA_CONF_DIR}/hama-env.sh" ]; then
   . "${HAMA_CONF_DIR}/hama-env.sh"
 fi
@@ -78,7 +78,7 @@ if [ "$JAVA_HOME" != "" ]; then
   #echo "run java in $JAVA_HOME"
   JAVA_HOME=$JAVA_HOME
 fi
-
+  
 if [ "$JAVA_HOME" = "" ]; then
   echo "Error: JAVA_HOME is not set."
   exit 1
@@ -94,66 +94,49 @@ if [ "$HAMA_HEAPSIZE" != "" ]; then
   #echo $JAVA_HEAP_MAX
 fi
 
-# so that filenames w/ spaces are handled correctly in loops below
-IFS=
-
 # CLASSPATH initially contains $HAMA_CONF_DIR
 CLASSPATH="${HAMA_CONF_DIR}"
-
-
 CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 
-# for developers, add hama classes to CLASSPATH
+# for developers, add Hama classes to CLASSPATH
 if [ -d "$HAMA_HOME/build/classes" ]; then
   CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/classes
 fi
-if [ -d "$HAMA_HOME/build/test" ]; then
-  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/test
-fi
-if [ -d "$HAMA_HOME/build/examples" ]; then
+if [ -d "$HAMA_HOME/build/webapps" ]; then
   CLASSPATH=${CLASSPATH}:$HAMA_HOME/build
 fi
+if [ -d "$HAMA_HOME/build/test/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/test/classes
+fi
+if [ -d "$HAMA_HOME/build/tools" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/tools
+fi
 
-# for releases, add hama to CLASSPATH
-for f in $HAMA_HOME/hama*.jar; do
-  if [ -f $f ]; then
-    CLASSPATH=${CLASSPATH}:$f;
-  fi
-  if [[ `echo $f | grep 'examples.jar$'` ]]; then
-    HAMA_EXAMPLES_JAR=$f;
-  else
-    if [[ `echo $f | grep 'test.jar$'` ]]; then
-      HAMA_TEST_JAR=$f;
-    else
-      if [[ `echo $f | grep 'hama*'` ]]; then
-        HAMA_JAR=$f;
-      fi
-    fi
-  fi
+# so that filenames w/ spaces are handled correctly in loops below
+IFS=
+
+# for releases, add core hama jar & webapps to CLASSPATH
+if [ -d "$HAMA_HOME/webapps" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME
+fi
+for f in $HAMA_HOME/hama-*-core.jar; do # TODO - should be changed before initial release
+  CLASSPATH=${CLASSPATH}:$f;
 done
 
-# Add libs to CLASSPATH
+# add libs to CLASSPATH
 for f in $HAMA_HOME/lib/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
-  if [[ `echo $f | grep 'hbase*'` ]]; then
-    if [ "$HAMA_JARS" == "" ] ; then
-      HAMA_JARS=$f;
-    else
-      HAMA_JARS=${HAMA_JARS},$f;
-    fi
-  fi
 done
 
-for f in $HAMA_HOME/lib/jetty-ext/*.jar; do
+for f in $HAMA_HOME/lib/jsp-2.1/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
-for f in $HAMA_HOME/lib/findbugs/*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
+for f in $HAMA_HOME/hama-*-tools.jar; do
+  TOOL_PATH=${TOOL_PATH}:$f;
 done
-
-for f in $HAMA_HOME/lib/findbugs/plugin/*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
+for f in $HAMA_HOME/build/hama-*-tools.jar; do
+  TOOL_PATH=${TOOL_PATH}:$f;
 done
 
 # add user-specified CLASSPATH last
@@ -169,11 +152,34 @@ if [ "$HAMA_LOGFILE" = "" ]; then
   HAMA_LOGFILE='hama.log'
 fi
 
+# default policy file for service-level authorization
+if [ "$HAMA_POLICYFILE" = "" ]; then
+  HAMA_POLICYFILE="hama-policy.xml"
+fi
+
+# restore ordinary behaviour
+unset IFS
+
+# figure out which class to run
+if [ "$COMMAND" = "bspmaster" ] ; then
+  CLASS='org.apache.hama.HamaMaster'
+  BSP_OPTS="$BSP_OPTS $BSP_BSPMASTER_OPTS"
+elif [ "$COMMAND" = "groom" ] ; then
+  CLASS='org.apache.hama.graph.GroomServer'
+  BSP_OPTS="$BSP_OPTS $BSP_GROOMSERVER_OPTS"
+elif [ "$COMMAND" = "version" ] ; then
+  CLASS=org.apache.bsp.util.VersionInfo
+  BSP_OPTS="$BSP_OPTS $BSP_CLIENT_OPTS"
+else
+  CLASS=$COMMAND
+fi
+
 # cygwin path translation
 if $cygwin; then
   CLASSPATH=`cygpath -p -w "$CLASSPATH"`
-  HAMA_HOME=`cygpath -d "$HAMA_HOME"`
-  HAMA_LOG_DIR=`cygpath -d "$HAMA_LOG_DIR"`
+  HAMA_HOME=`cygpath -w "$HAMA_HOME"`
+  HAMA_LOG_DIR=`cygpath -w "$HAMA_LOG_DIR"`
+  TOOL_PATH=`cygpath -p -w "$TOOL_PATH"`
 fi
 
 # cygwin path translation
@@ -181,25 +187,6 @@ if $cygwin; then
   JAVA_LIBRARY_PATH=`cygpath -p "$JAVA_LIBRARY_PATH"`
 fi
 
-# restore ordinary behaviour
-unset IFS
-
-# figure out which class to run
-if [ "$COMMAND" = "examples" ] ; then
-  CLASS="org.apache.hama.examples.ExampleDriver"
-elif [ "$COMMAND" = "master" ] ; then
-  CLASS='org.apache.hama.HamaMaster'
-elif [ "$COMMAND" = "groomserver" ] ; then
-  CLASS='org.apache.hama.graph.GroomServer'
-else
-  CLASS=$COMMAND
-fi
-
-# Have JVM dump heap if we run out of memory.  Files will be 'launch directory'
-# and are named like the following: java_pid21612.hprof. Apparently it doesn't
-# 'cost' to have this flag enabled. Its a 1.6 flag only. See:
-# http://blogs.sun.com/alanb/entry/outofmemoryerror_looks_a_bit_better 
-HAMA_OPTS="$HAMA_OPTS -XX:+HeapDumpOnOutOfMemoryError"
 HAMA_OPTS="$HAMA_OPTS -Dhama.log.dir=$HAMA_LOG_DIR"
 HAMA_OPTS="$HAMA_OPTS -Dhama.log.file=$HAMA_LOGFILE"
 HAMA_OPTS="$HAMA_OPTS -Dhama.home.dir=$HAMA_HOME"
@@ -208,6 +195,7 @@ HAMA_OPTS="$HAMA_OPTS -Dhama.root.logger=${HAMA_ROOT_LOGGER:-INFO,console}"
 if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
   HAMA_OPTS="$HAMA_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi  
+HAMA_OPTS="$HAMA_OPTS -Dhama.policy.file=$HAMA_POLICYFILE"
 
 # run it
 exec "$JAVA" $JAVA_HEAP_MAX $HAMA_OPTS -classpath "$CLASSPATH" $CLASS "$@"
