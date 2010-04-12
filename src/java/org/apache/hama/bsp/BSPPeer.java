@@ -54,6 +54,7 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
   protected final String bindAddress;
   protected final int bindPort;
   protected final String bspRoot;
+  protected final String zookeeperAddr;
 
   protected final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
   protected final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
@@ -65,26 +66,28 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
   public BSPPeer(Configuration conf) throws IOException {
     this.conf = conf;
 
-    serverName = conf.get(PEER_HOST) + conf.get(PEER_PORT, DEFAULT_PEER_HOST);
+    serverName = conf.get(PEER_HOST,DEFAULT_PEER_HOST) +":"+ conf.getInt(PEER_PORT, DEFAULT_PEER_PORT);
     bindAddress = conf.get(PEER_HOST, DEFAULT_PEER_HOST);
-    bindPort = Integer.valueOf(conf.get(PEER_PORT, DEFAULT_PEER_HOST));
+    bindPort = conf.getInt(PEER_PORT, DEFAULT_PEER_PORT);    
     bspRoot = conf.get(ZOOKEEPER_ROOT, DEFAULT_ZOOKEEPER_ROOT);
+    zookeeperAddr = conf.get(ZOOKEEPER_SERVER_ADDRS,"localhost:21810");
 
     reinitialize();
   }
 
   public void reinitialize() {
     try {
+      System.out.println(bindAddress+":"+bindPort);
       server = RPC.getServer(this, bindAddress, bindPort, conf);
-      server.start();
-    } catch (IOException e1) {
-      e1.printStackTrace();
+      server.start();      
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
     try {
-      zk = new ZooKeeper(conf.get(ZOOKEEPER_SERVER_ADDRS), 3000, this);
-    } catch (IOException e1) {
-      e1.printStackTrace();
+      zk = new ZooKeeper(zookeeperAddr, 3000, this);
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
@@ -136,6 +139,7 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
       queue = entry.getValue();
       messages = queue.iterator();
 
+      // TODO - to be improved by collective communication and compression
       while (messages.hasNext()) {
         peer.put(messages.next());
       }
