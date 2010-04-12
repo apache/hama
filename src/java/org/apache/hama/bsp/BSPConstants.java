@@ -40,6 +40,8 @@ public interface BSPConstants {
 
   /** zookeeper server address */
   static final String ZOOKEEPER_SERVER_ADDRS = "zookeeper.server";
+  /** zookeeper default server address */
+  static final String DEFAULT_ZOOKEEPER_SERVER_ADDR = "localhost:21810";
   /** Parameter name for number of times to retry writes to ZooKeeper. */
   static final String ZOOKEEPER_RETRIES = "zookeeper.retries";
   /** Default number of times to retry writes to ZooKeeper. */

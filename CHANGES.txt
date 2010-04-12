@@ -137,6 +137,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
  
+    HAMA-250: Add --no-check-certificate option to 'wget' command lines (edwardyoon)
+    HAMA-242: Wrong assignment of default setting inside BSPPeer constructor (hyunsik)
     HAMA-246: Current shell scripts for bsp daemon have several problems. (hyunsik)
     HAMA-238: Example fail when performing sparse matrices addition (edwardyoon)
     HAMA-225: Jacobi iteration is in a infinite loop (edwardyoon)
