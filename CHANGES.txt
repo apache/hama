@@ -42,6 +42,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-247: Discuss / Refactor HamaMaster and GroomServer (hyunsik)
     HAMA-239: Remove unused class (edwardyoon)
     HAMA-237: Add project blog link on website (edwardyoon)
     HAMA-236: Add recent news on website (edwardyoon)
