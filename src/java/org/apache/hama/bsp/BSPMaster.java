@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama;
+package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -35,18 +35,20 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.graph.JobID;
-import org.apache.hama.graph.JobStatus;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.HeartbeatResponse;
 import org.apache.hama.ipc.InterTrackerProtocol;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 
-public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
+/**
+ * BSPMaster is responsible to control all the bsp peers and to manage bsp jobs. 
+ */
+public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol {
   static{
-    Configuration.addDefaultResource("groomserver-default.xml");
+    Configuration.addDefaultResource("hama-default.xml");
   }
   
-  public static final Log LOG = LogFactory.getLog(HamaMaster.class);
+  public static final Log LOG = LogFactory.getLog(BSPMaster.class);
   
   private HamaConfiguration conf;  
   public static enum State { INITIALIZING, RUNNING }
@@ -71,7 +73,7 @@ public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
   
   private int nextJobId = 1;
   
-  public HamaMaster(HamaConfiguration conf, String identifier) throws IOException, InterruptedException {
+  public BSPMaster(HamaConfiguration conf, String identifier) throws IOException, InterruptedException {
     this.conf = conf;
     
     this.masterIdentifier = identifier;
@@ -99,9 +101,9 @@ public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
         LOG.error("Mkdirs failed to create " + systemDir);
 
       } catch (AccessControlException ace) {
-        LOG.warn("Failed to operate on mapred.system.dir (" + systemDir 
+        LOG.warn("Failed to operate on bspd.system.dir (" + systemDir 
             + ") because of permissions.");
-        LOG.warn("Manually delete the mapred.system.dir (" + systemDir 
+        LOG.warn("Manually delete the bspd.system.dir (" + systemDir 
             + ") and then start the JobTracker.");
         LOG.warn("Bailing out ... ");
         throw ace;
@@ -114,16 +116,16 @@ public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
     // deleteLocalFiles(SUBDIR);
   }
   
-  public static HamaMaster startMaster(HamaConfiguration conf) throws IOException,
+  public static BSPMaster startMaster(HamaConfiguration conf) throws IOException,
   InterruptedException {
     return startTracker(conf, generateNewIdentifier());
   }
   
-  public static HamaMaster startTracker(HamaConfiguration conf, String identifier) 
+  public static BSPMaster startTracker(HamaConfiguration conf, String identifier) 
   throws IOException, InterruptedException {
     
-    HamaMaster result = null;
-    result = new HamaMaster(conf, identifier);
+    BSPMaster result = null;
+    result = new BSPMaster(conf, identifier);
     
     return result;
   }
@@ -145,6 +147,10 @@ public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
     return new SimpleDateFormat("yyyyMMddHHmm");
   }
 
+  /**
+   * 
+   * @return
+   */
   private static String generateNewIdentifier() {
     return getDateFormat().format(new Date());
   }
@@ -163,7 +169,7 @@ public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
   
   
   public static void main(String [] args) {
-    StringUtils.startupShutdownMessage(HamaMaster.class, args, LOG);
+    StringUtils.startupShutdownMessage(BSPMaster.class, args, LOG);
     if (args.length != 0) {
       System.out.println("usage: HamaMaster");
       System.exit(-1);
@@ -171,7 +177,7 @@ public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
       
     try {
       HamaConfiguration conf = new HamaConfiguration();
-      HamaMaster master = startMaster(conf);
+      BSPMaster master = startMaster(conf);
       master.offerService();
     } catch (Throwable e) {
       LOG.fatal(StringUtils.stringifyException(e));
@@ -190,18 +196,28 @@ public class HamaMaster implements JobSubmissionProtocol, InterTrackerProtocol {
     }
   }
 
+  /**
+   * A RPC method for transmitting each peer status from peer to master.
+   */
   @Override
   public HeartbeatResponse heartbeat(short responseId) {
-    LOG.debug(">>> return the heartbeat message.");
+    LOG.debug(">>> return the heartbeat message.");    
     return new HeartbeatResponse((short)1);
   }
-
+  
+  /**
+   * Return system directory to which BSP store control files.
+   */
   @Override
   public String getSystemDir() {
-    Path sysDir = new Path(conf.get("mapred.system.dir", "/tmp/hadoop/mapred/system"));  
+    Path sysDir = new Path(conf.get("bspd.system.dir", "/tmp/hadoop/bsp/system"));  
     return fs.makeQualified(sysDir).toString();
   }
 
+  
+  /**
+   * This method returns new job id. The returned job id increases sequentially.
+   */
   @Override
   public JobID getNewJobId() throws IOException {
     return new JobID(this.masterIdentifier, nextJobId++);    

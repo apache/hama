@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hama.bsp.JobContext;
 
 public abstract class InputFormat<KEYIN, VALUEIN> {
 

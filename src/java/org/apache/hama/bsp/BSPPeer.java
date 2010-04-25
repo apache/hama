@@ -48,7 +48,7 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
   protected InetSocketAddress masterAddr = null;
   protected Server server = null;
   protected ZooKeeper zk = null;
-  protected Integer mutex = 0;
+  protected volatile Integer mutex = 0;
 
   protected final String serverName;
   protected final String bindAddress;

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.graph;
+package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,7 +27,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.HamaMaster;
+import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 
 public class JobClient extends Configured {
@@ -38,10 +38,11 @@ public class JobClient extends Configured {
   }
 
   static {
-    Configuration.addDefaultResource("groomserver-default.xml");
+    Configuration.addDefaultResource("hama-default.xml");
   }
 
-  private JobSubmissionProtocol jobSubmitClient;
+  @SuppressWarnings("unused")
+  private JobSubmissionProtocol jobSubmitClient = null;
 
   public JobClient() {
   }
@@ -53,7 +54,7 @@ public class JobClient extends Configured {
 
   public void init(HamaConfiguration conf) throws IOException {
     String tracker = conf.get("hama.master.address", "local");
-    this.jobSubmitClient = createRPCProxy(HamaMaster.getAddress(conf), conf);
+    this.jobSubmitClient = createRPCProxy(BSPMaster.getAddress(conf), conf);
   }
 
   private JobSubmissionProtocol createRPCProxy(InetSocketAddress addr,

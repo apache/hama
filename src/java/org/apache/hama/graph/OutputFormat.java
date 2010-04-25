@@ -21,6 +21,8 @@ package org.apache.hama.graph;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hama.bsp.JobContext;
+import org.apache.hama.bsp.TaskAttemptContext;
 
 /**
  * <code>OutputFormat</code> describes the output-specification for a Angrapa
