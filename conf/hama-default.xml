@@ -31,7 +31,19 @@
   <property>
     <name>hama.groom.port</name>
     <value>40020</value>
-    <description>The port an groom server binds to.
+    <description>The port an groom server binds to.</description>
+  </property>
+  
+  <property>
+    <name>bspd.system.dir</name>
+    <value>${hadoop.tmp.dir}/bsp/system</value>
+    <description>The shared directory where BSP stores control files.
     </description>
+  </property>
+  
+  <property>
+    <name>bspd.groom.local.dir</name>
+    <value>${hadoop.tmp.dir}/groomserver/local</value>
+    <description>local directory for temporal store</description> 
   </property>
 </configuration>

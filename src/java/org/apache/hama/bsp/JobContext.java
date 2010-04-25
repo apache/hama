@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hama.graph;
+package org.apache.hama.bsp;
 
 import java.io.IOException;
 
@@ -26,6 +26,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.graph.InputFormat;
+import org.apache.hama.graph.OutputFormat;
 
 /**
  * A read-only view of the job that is provided to the tasks while they are

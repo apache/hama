@@ -20,6 +20,9 @@ package org.apache.hama.graph;
 
 import java.io.IOException;
 
+import org.apache.hama.bsp.JobContext;
+import org.apache.hama.bsp.TaskAttemptContext;
+
 /**
  * 
  * @see JobContext

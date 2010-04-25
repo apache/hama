@@ -21,6 +21,7 @@ package org.apache.hama.graph;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hama.bsp.TaskAttemptContext;
 
 /**
  * <code>RecordWriter</code> writes the output &lt;key, value&gt; pairs to an

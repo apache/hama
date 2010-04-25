@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.graph;
+package org.apache.hama.bsp;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,8 +35,6 @@ import org.apache.hadoop.util.DiskChecker;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.HamaMaster;
-import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.ipc.HeartbeatResponse;
 import org.apache.hama.ipc.InterTrackerProtocol;
 
@@ -44,7 +42,7 @@ public class GroomServer implements Runnable {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
 
   static {
-    Configuration.addDefaultResource("groomserver-default.xml");
+    Configuration.addDefaultResource("hama-default.xml");
   }
 
   static enum State {
@@ -62,7 +60,7 @@ public class GroomServer implements Runnable {
 
   InetSocketAddress masterAddr;
   InterTrackerProtocol jobClient;
-  BSPPeer bspPeer;
+  //BSPPeer bspPeer;
 
   short heartbeatResponseId = -1;
   private volatile int heartbeatInterval = 3 * 1000;
@@ -73,10 +71,10 @@ public class GroomServer implements Runnable {
 
   public GroomServer(HamaConfiguration conf) throws IOException {
     this.conf = conf;
-    masterAddr = HamaMaster.getAddress(conf);
+    masterAddr = BSPMaster.getAddress(conf);
 
     FileSystem local = FileSystem.getLocal(conf);
-    this.localDirAllocator = new LocalDirAllocator("hama.groomserver.local.dir");
+    this.localDirAllocator = new LocalDirAllocator("bspd.groom.local.dir");
 
     initialize();
   }
@@ -88,14 +86,14 @@ public class GroomServer implements Runnable {
 
     if (localHostname == null) {
       this.localHostname = DNS.getDefaultHost(conf.get(
-          "hama.groomserver.dns.interface", "default"), conf.get(
-          "hama.groomserver.dns.nameserver", "default"));
+          "bspd.groom.dns.interface", "default"), conf.get(
+          "bspd.groom.dns.nameserver", "default"));
     }
 
-    checkLocalDirs(conf.getStrings("hama.groomserver.local.dir"));
+    checkLocalDirs(conf.getStrings("bspd.groom.local.dir"));
     deleteLocalFiles("groomserver");
 
-    this.groomserverName = "groomserver_" + localHostname;
+    this.groomserverName = "groomd_" + localHostname;
     LOG.info("Starting tracker " + this.groomserverName);
 
     DistributedCache.purgeCache(this.conf);
@@ -127,7 +125,7 @@ public class GroomServer implements Runnable {
   }
 
   public String[] getLocalDirs() {
-    return conf.getStrings("hama.groomserver.local.dir");
+    return conf.getStrings("bspd.groom.local.dir");
   }
 
   public void deleteLocalFiles() throws IOException {
@@ -202,10 +200,6 @@ public class GroomServer implements Runnable {
     }
 
     return State.NORMAL;
-  }
-
-  private class WalkerLauncher extends Thread {
-    // TODO:
   }
 
   private HeartbeatResponse transmitHeartBeat(long now) throws IOException {

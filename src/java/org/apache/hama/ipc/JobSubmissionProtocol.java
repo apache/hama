@@ -21,8 +21,8 @@ package org.apache.hama.ipc;
 
 import java.io.IOException;
 
-import org.apache.hama.graph.JobID;
-import org.apache.hama.graph.JobStatus;
+import org.apache.hama.bsp.JobID;
+import org.apache.hama.bsp.JobStatus;
 
 /**
  * Protocol that a Walker and the central Master use to communicate. This
