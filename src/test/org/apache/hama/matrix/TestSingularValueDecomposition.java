@@ -29,6 +29,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.MatrixMultiplication;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
 
@@ -66,7 +67,7 @@ public class TestSingularValueDecomposition extends HamaCluster {
 
   public void testEigenSingularValues() throws IOException {
     Matrix aT = m1.transpose();
-    DenseMatrix aTa = (DenseMatrix) aT.mult(m1);
+    DenseMatrix aTa = MatrixMultiplication.mult(aT, m1);
 
     for (int i = 0; i < m1.getRows(); i++) {
       for (int j = 0; j < m1.getRows(); j++) {

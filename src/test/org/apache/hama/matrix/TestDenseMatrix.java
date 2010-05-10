@@ -66,13 +66,6 @@ public class TestDenseMatrix extends HamaCluster {
     } catch (IOException e) {
       LOG.info(e.toString());
     }
-
-    try {
-      m1.mult(m4);
-      fail("Matrix-Mult should be failed while A.columns!=B.rows.");
-    } catch (IOException e) {
-      LOG.info(e.toString());
-    }
     
     double origin = m1.get(1, 1);
     m1.add(1, 1, 0.5);
@@ -80,7 +73,6 @@ public class TestDenseMatrix extends HamaCluster {
     
     matrixAdd(m1, m2);
     multMatrixAdd(m1, m2, m3);
-    matrixMult(m1, m2);
     addAlphaMatrix(m1, m2);
 
     getRowColumnVector();
@@ -129,20 +121,6 @@ public class TestDenseMatrix extends HamaCluster {
             + m3.get(i, j));
       }
     }
-  }
-
-  /**
-   * Test matrices multiplication
-   * 
-   * @throws IOException
-   */
-  public void matrixMult(Matrix m1, Matrix m2) throws IOException {
-    Matrix result = m1.mult(m2);
-
-    assertEquals(result.getRows(), SIZE);
-    assertEquals(result.getColumns(), SIZE);
-
-    verifyMultResult(m1, m2, result);
   }
 
   public void addAlphaMatrix(Matrix m1, Matrix m2) throws IOException {
@@ -225,33 +203,6 @@ public class TestDenseMatrix extends HamaCluster {
     while (it2.hasNext()) {
       assertEquals(entries[x], ((DoubleWritable) it2.next()).get());
       x++;
-    }
-  }
-
-  /**
-   * Verifying multiplication result
-   * 
-   * @param m1
-   * @param m2
-   * @param result
-   * @throws IOException
-   */
-  private void verifyMultResult(Matrix m1, Matrix m2, Matrix result)
-      throws IOException {
-    double[][] c = new double[SIZE][SIZE];
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        for (int k = 0; k < SIZE; k++) {
-          c[i][k] += m1.get(i, j) * m2.get(j, k);
-        }
-      }
-    }
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        assertTrue((Math.abs(c[i][j] - result.get(i, j)) < .0000001));
-      }
     }
   }
 }

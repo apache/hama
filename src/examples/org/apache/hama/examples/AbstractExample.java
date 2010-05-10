@@ -25,8 +25,8 @@ import java.util.List;
 import org.apache.hama.HamaConfiguration;
 
 public abstract class AbstractExample {
-  public static final HamaConfiguration conf = new HamaConfiguration();
-  public static List<String> ARGS;
+  protected static final HamaConfiguration conf = new HamaConfiguration();
+  protected static List<String> ARGS;
   
   public static void parseArgs(String[] args) {
     List<String> other_args = new ArrayList<String>();
