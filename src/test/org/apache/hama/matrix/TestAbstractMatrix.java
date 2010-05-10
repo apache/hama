@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.MatrixNorm;
 import org.apache.hama.matrix.Matrix.Norm;
 import org.apache.log4j.Logger;
 
@@ -48,22 +49,22 @@ public class TestAbstractMatrix extends HamaCluster {
   }
 
   public void normTest(Matrix matrix) throws IOException {
-    double norm1 = matrix.norm(Norm.One);
+    double norm1 = MatrixNorm.norm(matrix, Norm.One);
     double verify_norm1 = MatrixTestCommon.verifyNorm1(matrix);
     gap = norm1 - verify_norm1;
     assertTrue(gap < 0.000001 && gap > -0.000001);
 
-    double normInfinity = matrix.norm(Norm.Infinity);
+    double normInfinity = MatrixNorm.norm(matrix, Norm.Infinity);
     double verify_normInf = MatrixTestCommon.verifyNormInfinity(matrix);
     gap = normInfinity - verify_normInf;
     assertTrue(gap < 0.000001 && gap > -0.000001);
     
-    double normFrobenius = matrix.norm(Norm.Frobenius);
+    double normFrobenius = MatrixNorm.norm(matrix, Norm.Frobenius);
     double verify_normFrobenius = MatrixTestCommon.verifyNormFrobenius(matrix);
     gap = normFrobenius - verify_normFrobenius;
     assertTrue(gap < 0.000001 && gap > -0.000001);
     
-    double normMaxValue = matrix.norm(Norm.Maxvalue);
+    double normMaxValue = MatrixNorm.norm(matrix, Norm.Maxvalue);
     double verify_normMV = MatrixTestCommon.verifyNormMaxValue(matrix);
     gap = normMaxValue - verify_normMV;
     assertTrue(gap < 0.000001 && gap > -0.000001);

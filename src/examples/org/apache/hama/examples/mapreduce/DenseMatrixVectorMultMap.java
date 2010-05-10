@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.matrix.algebra;
+package org.apache.hama.examples.mapreduce;
 
 import java.io.IOException;
 

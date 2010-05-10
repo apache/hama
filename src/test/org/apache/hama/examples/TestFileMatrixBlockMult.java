@@ -28,12 +28,12 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.mapreduce.BlockMultMap;
+import org.apache.hama.examples.mapreduce.BlockMultReduce;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.matrix.DenseMatrix;
 import org.apache.hama.matrix.DenseVector;
 import org.apache.hama.matrix.Matrix;
-import org.apache.hama.matrix.algebra.BlockMultMap;
-import org.apache.hama.matrix.algebra.BlockMultReduce;
 import org.apache.hama.util.RandomVariable;
 
 public class TestFileMatrixBlockMult extends HamaCluster {
@@ -162,7 +162,7 @@ public class TestFileMatrixBlockMult extends HamaCluster {
     job.getConfiguration().setBoolean(MyMapper.MATRIX_POS, b);
     
     TableMapReduceUtil.initTableReducerJob(collectionTable,
-        org.apache.hama.mapreduce.CollectBlocksReducer.class, job);
+        org.apache.hama.examples.mapreduce.CollectBlocksReducer.class, job);
 
     try {
       job.waitForCompletion(true);

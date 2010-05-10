@@ -1,6 +1,7 @@
 package org.apache.hama;
 
 import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.examples.*;
 
 public class Benchmarks {
 
@@ -12,7 +13,7 @@ public class Benchmarks {
 
     HamaConfiguration conf = new HamaConfiguration();
     System.out.println("Creating random matrix");
-    DenseMatrix rand = DenseMatrix.random_mapred(conf, Integer
+    DenseMatrix rand = RandomMatrix.random_mapred(conf, Integer
         .parseInt(args[0]), Integer.parseInt(args[0]));
 
     double start = System.currentTimeMillis();

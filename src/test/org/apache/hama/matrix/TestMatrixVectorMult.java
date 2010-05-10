@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
 import org.apache.log4j.Logger;
+import org.apache.hama.examples.MatrixMultiplication;
 
 public class TestMatrixVectorMult extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestMatrixVectorMult.class);
@@ -57,7 +58,7 @@ public class TestMatrixVectorMult extends HamaCluster {
   }
 
   public void testMatVectorMult() throws IOException {
-    DenseMatrix c = (DenseMatrix) m1.mult(m2);
+    DenseMatrix c = MatrixMultiplication.mult(m1, m2);
     assertTrue(m1.getRows() == 2);
 
     for (int i = 0; i < c.getRows(); i++) {

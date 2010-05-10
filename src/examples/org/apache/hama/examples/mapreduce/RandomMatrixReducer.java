@@ -1,4 +1,4 @@
-package org.apache.hama.mapreduce;
+package org.apache.hama.examples.mapreduce;
 
 import java.io.IOException;
 import java.util.Map;

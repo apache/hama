@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.matrix.DenseMatrix;
 import org.apache.log4j.Logger;
+import org.apache.hama.examples.MatrixMultiplication;
 
 public class TestBlockMatrixMapReduce extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestBlockMatrixMapReduce.class);
@@ -39,7 +40,7 @@ public class TestBlockMatrixMapReduce extends HamaCluster {
     DenseMatrix m1 = DenseMatrix.random(conf, SIZE, SIZE);
     DenseMatrix m2 = DenseMatrix.random(conf, SIZE, SIZE);
 
-    DenseMatrix c = (DenseMatrix) m1.mult(m2, 16);
+    DenseMatrix c = MatrixMultiplication.mult(m1, m2, 16);
 
     double[][] mem = new double[SIZE][SIZE];
     for (int i = 0; i < SIZE; i++) {

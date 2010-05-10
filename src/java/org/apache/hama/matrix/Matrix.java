@@ -196,15 +196,6 @@ public interface Matrix {
   public Matrix add(double alpha, Matrix B) throws IOException;
 
   /**
-   * C = A*B
-   * 
-   * @param B
-   * @return C
-   * @throws IOException
-   */
-  public Matrix mult(Matrix B) throws IOException;
-
-  /**
    * C = alpha*A*B + C
    * 
    * @param alpha
@@ -214,15 +205,6 @@ public interface Matrix {
    * @throws IOException
    */
   public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException;
-
-  /**
-   * Computes the given norm of the matrix
-   * 
-   * @param type
-   * @return norm of the matrix
-   * @throws IOException
-   */
-  public double norm(Norm type) throws IOException;
 
   /**
    * Supported matrix-norms.

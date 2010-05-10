@@ -25,30 +25,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.mapreduce.RandomMatrixMapper;
-import org.apache.hama.mapreduce.RandomMatrixReducer;
 import org.apache.hama.matrix.algebra.SparseMatrixVectorMultMap;
 import org.apache.hama.matrix.algebra.SparseMatrixVectorMultReduce;
 import org.apache.hama.util.BytesUtil;
@@ -56,9 +46,6 @@ import org.apache.hama.util.RandomVariable;
 
 public class SparseMatrix extends AbstractMatrix implements Matrix {
   static private final String TABLE_PREFIX = SparseMatrix.class.getSimpleName();
-  static private final Path TMP_DIR = new Path(SparseMatrix.class
-      .getSimpleName()
-      + "_TMP_dir");
 
   public SparseMatrix(HamaConfiguration conf, int m, int n) throws IOException {
     setConfiguration(conf);
@@ -116,68 +103,6 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
       rand.setRow(i, vector);
     }
 
-    return rand;
-  }
-
-  public static SparseMatrix random_mapred(HamaConfiguration conf, int m,
-      int n, double percent) throws IOException {
-    SparseMatrix rand = new SparseMatrix(conf, m, n);
-    LOG.info("Create the " + m + " * " + n + " random matrix : "
-        + rand.getPath());
-
-    Job job = new Job(conf, "random matrix MR job : " + rand.getPath());
-    final Path inDir = new Path(TMP_DIR, "in");
-    FileInputFormat.setInputPaths(job, inDir);
-    job.setMapperClass(RandomMatrixMapper.class);
-
-    job.setMapOutputKeyClass(IntWritable.class);
-    job.setMapOutputValueClass(MapWritable.class);
-
-    job.getConfiguration().setInt("matrix.column", n);
-    job.getConfiguration().set("matrix.type", TABLE_PREFIX);
-    job.getConfiguration().set("matrix.density", String.valueOf(percent));
-
-    job.setInputFormatClass(SequenceFileInputFormat.class);
-    final FileSystem fs = FileSystem.get(job.getConfiguration());
-    int interval = m / conf.getNumMapTasks();
-
-    // generate an input file for each map task
-    for (int i = 0; i < conf.getNumMapTasks(); ++i) {
-      final Path file = new Path(inDir, "part" + i);
-      final IntWritable start = new IntWritable(i * interval);
-      IntWritable end = null;
-      if ((i + 1) != conf.getNumMapTasks()) {
-        end = new IntWritable(((i * interval) + interval) - 1);
-      } else {
-        end = new IntWritable(m - 1);
-      }
-      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, job
-          .getConfiguration(), file, IntWritable.class, IntWritable.class,
-          CompressionType.NONE);
-      try {
-        writer.append(start, end);
-      } finally {
-        writer.close();
-      }
-      System.out.println("Wrote input for Map #" + i);
-    }
-
-    job.setOutputFormatClass(TableOutputFormat.class);
-    job.setReducerClass(RandomMatrixReducer.class);
-    job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, rand.getPath());
-    job.setOutputKeyClass(ImmutableBytesWritable.class);
-    job.setOutputValueClass(Writable.class);
-
-    try {
-      job.waitForCompletion(true);
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    fs.delete(TMP_DIR, true);
     return rand;
   }
 
@@ -297,24 +222,6 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
   public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException {
     // TODO Auto-generated method stub
     return null;
-  }
-
-  /**
-   * Computes the given norm of the matrix
-   * 
-   * @param type
-   * @return norm of the matrix
-   * @throws IOException
-   */
-  public double norm(Norm type) throws IOException {
-    if (type == Norm.One)
-      return getNorm1();
-    else if (type == Norm.Frobenius)
-      return getFrobenius();
-    else if (type == Norm.Infinity)
-      return getInfinity();
-    else
-      return getMaxvalue();
   }
 
   @Override

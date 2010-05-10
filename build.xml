@@ -106,7 +106,7 @@
         <!--Compile whats under src and generated java classes made from jsp-->
         <mkdir dir="${build.src}" />
         <javac encoding="${build.encoding}" 
-                srcdir="${src.dir};${build.src}" includes="**/*.java" 
+                srcdir="${src.dir};${build.src};${src.examples}" includes="**/*.java" 
         	destdir="${build.classes}" debug="${javac.debug}" 
                 deprecation="${javac.deprecation}">
             <classpath refid="classpath" />
@@ -140,7 +140,7 @@
         </jar>
     </target>
 
-    <target name="package" depends="jar,javadoc,compile-test, examples" 
+    <target name="package" depends="jar,javadoc,examples,compile-test" 
     	description="Build distribution">
         <mkdir dir="${dist.dir}" />
         <copy todir="${dist.dir}" includeEmptyDirs="false" flatten="true">
@@ -269,7 +269,7 @@
         </jar>
     </target>
 
-    <target name="test" depends="compile-test, compile">
+    <target name="test" depends="compile, compile-test">
         <junit printsummary="yes" showoutput="${test.output}" haltonfailure="no"
               fork="yes" maxmemory="512m" errorProperty="tests.failed" 
         	     failureProperty="tests.failed" timeout="${test.timeout}">

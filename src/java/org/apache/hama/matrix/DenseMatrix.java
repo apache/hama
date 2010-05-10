@@ -20,15 +20,11 @@
 package org.apache.hama.matrix;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
@@ -38,35 +34,22 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.IdentityTableReducer;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.io.BlockID;
 import org.apache.hama.io.Pair;
-import org.apache.hama.mapreduce.CollectBlocksMapper;
 import org.apache.hama.mapreduce.DummyMapper;
 import org.apache.hama.mapreduce.PivotInputFormat;
-import org.apache.hama.mapreduce.RandomMatrixMapper;
-import org.apache.hama.mapreduce.RandomMatrixReducer;
 import org.apache.hama.mapreduce.RotationInputFormat;
-import org.apache.hama.matrix.algebra.BlockMultMap;
-import org.apache.hama.matrix.algebra.BlockMultReduce;
-import org.apache.hama.matrix.algebra.DenseMatrixVectorMultMap;
-import org.apache.hama.matrix.algebra.DenseMatrixVectorMultReduce;
 import org.apache.hama.matrix.algebra.JacobiInitMap;
 import org.apache.hama.matrix.algebra.MatrixAdditionMap;
 import org.apache.hama.matrix.algebra.MatrixAdditionReduce;
@@ -79,9 +62,6 @@ import org.apache.hama.util.RandomVariable;
  */
 public class DenseMatrix extends AbstractMatrix implements Matrix {
   static private final String TABLE_PREFIX = DenseMatrix.class.getSimpleName();
-  static private final Path TMP_DIR = new Path(DenseMatrix.class
-      .getSimpleName()
-      + "_TMP_dir");
 
   /**
    * Construct a raw matrix. Just create a table in HBase.
@@ -224,77 +204,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       rand.setRow(i, vector);
     }
 
-    return rand;
-  }
-
-  /**
-   * Generate matrix with random elements using Map/Reduce
-   * 
-   * @param conf configuration object
-   * @param m the number of rows.
-   * @param n the number of columns.
-   * @return an m-by-n matrix with uniformly distributed random elements.
-   * @throws IOException
-   */
-  public static DenseMatrix random_mapred(HamaConfiguration conf, int m, int n)
-      throws IOException {
-    DenseMatrix rand = new DenseMatrix(conf, m, n);
-    LOG.info("Create the " + m + " * " + n + " random matrix : "
-        + rand.getPath());
-
-    Job job = new Job(conf, "random matrix MR job : " + rand.getPath());
-    final Path inDir = new Path(TMP_DIR, "in");
-    FileInputFormat.setInputPaths(job, inDir);
-    job.setMapperClass(RandomMatrixMapper.class);
-
-    job.setMapOutputKeyClass(IntWritable.class);
-    job.setMapOutputValueClass(MapWritable.class);
-
-    job.getConfiguration().setInt("matrix.column", n);
-    job.getConfiguration().set("matrix.type", TABLE_PREFIX);
-    job.getConfiguration().set("matrix.density", "100");
-
-    job.setInputFormatClass(SequenceFileInputFormat.class);
-    final FileSystem fs = FileSystem.get(job.getConfiguration());
-    int interval = m / conf.getNumMapTasks();
-
-    // generate an input file for each map task
-    for (int i = 0; i < conf.getNumMapTasks(); ++i) {
-      final Path file = new Path(inDir, "part" + i);
-      final IntWritable start = new IntWritable(i * interval);
-      IntWritable end = null;
-      if ((i + 1) != conf.getNumMapTasks()) {
-        end = new IntWritable(((i * interval) + interval) - 1);
-      } else {
-        end = new IntWritable(m - 1);
-      }
-      final SequenceFile.Writer writer = SequenceFile.createWriter(fs, job
-          .getConfiguration(), file, IntWritable.class, IntWritable.class,
-          CompressionType.NONE);
-      try {
-        writer.append(start, end);
-      } finally {
-        writer.close();
-      }
-      System.out.println("Wrote input for Map #" + i);
-    }
-
-    job.setOutputFormatClass(TableOutputFormat.class);
-    job.setReducerClass(RandomMatrixReducer.class);
-    job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, rand.getPath());
-    job.setOutputKeyClass(ImmutableBytesWritable.class);
-    job.setOutputValueClass(Writable.class);
-
-    try {
-      job.waitForCompletion(true);
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    fs.delete(TMP_DIR, true);
     return rand;
   }
 
@@ -536,112 +445,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   }
 
   /**
-   * C = A*B using iterative method
-   * 
-   * @param B
-   * @return C
-   * @throws IOException
-   */
-  public DenseMatrix mult(Matrix B) throws IOException {
-    ensureForMultiplication(B);
-    int columns = 0;
-    if (B.getColumns() == 1 || this.getColumns() == 1)
-      columns = 1;
-    else
-      columns = this.getColumns();
-
-    DenseMatrix result = new DenseMatrix(config, this.getRows(), columns);
-    List<Job> jobId = new ArrayList<Job>();
-
-    for (int i = 0; i < this.getRows(); i++) {
-      Job job = new Job(config, "multiplication MR job : " + result.getPath()
-          + " " + i);
-
-      Scan scan = new Scan();
-      scan.addFamily(Constants.COLUMNFAMILY);
-      job.getConfiguration().set(DenseMatrixVectorMultMap.MATRIX_A,
-          this.getPath());
-      job.getConfiguration().setInt(DenseMatrixVectorMultMap.ITH_ROW, i);
-
-      TableMapReduceUtil.initTableMapperJob(B.getPath(), scan,
-          DenseMatrixVectorMultMap.class, IntWritable.class, MapWritable.class,
-          job);
-      TableMapReduceUtil.initTableReducerJob(result.getPath(),
-          DenseMatrixVectorMultReduce.class, job);
-      try {
-        job.waitForCompletion(false);
-        jobId.add(job);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      } catch (ClassNotFoundException e) {
-        e.printStackTrace();
-      }
-    }
-
-    while (checkAllJobs(jobId) == false) {
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * C = A * B using Blocking algorithm
-   * 
-   * @param B
-   * @param blocks the number of blocks
-   * @return C
-   * @throws IOException
-   */
-  public DenseMatrix mult(Matrix B, int blocks) throws IOException {
-    ensureForMultiplication(B);
-
-    String collectionTable = "collect_" + RandomVariable.randMatrixPath();
-    HTableDescriptor desc = new HTableDescriptor(collectionTable);
-    desc.addFamily(new HColumnDescriptor(Bytes.toBytes(Constants.BLOCK)));
-    this.admin.createTable(desc);
-    LOG.info("Collect Blocks");
-
-    collectBlocksMapRed(this.getPath(), collectionTable, blocks, true);
-    collectBlocksMapRed(B.getPath(), collectionTable, blocks, false);
-
-    DenseMatrix result = new DenseMatrix(config, this.getRows(), this
-        .getColumns());
-
-    Job job = new Job(config, "multiplication MR job : " + result.getPath());
-
-    Scan scan = new Scan();
-    scan.addFamily(Bytes.toBytes(Constants.BLOCK));
-
-    TableMapReduceUtil.initTableMapperJob(collectionTable, scan,
-        BlockMultMap.class, BlockID.class, BytesWritable.class, job);
-    TableMapReduceUtil.initTableReducerJob(result.getPath(),
-        BlockMultReduce.class, job);
-
-    try {
-      job.waitForCompletion(true);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-
-    hamaAdmin.delete(collectionTable);
-    return result;
-  }
-
-  private void ensureForMultiplication(Matrix m) throws IOException {
-    if (getColumns() != m.getRows()) {
-      throw new IOException("A's columns should equal with B's rows while A*B.");
-    }
-  }
-
-  /**
    * C = alpha*A*B + C
    * 
    * @param alpha
@@ -653,24 +456,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
   public Matrix multAdd(double alpha, Matrix B, Matrix C) throws IOException {
     // TODO Auto-generated method stub
     return null;
-  }
-
-  /**
-   * Computes the given norm of the matrix
-   * 
-   * @param type
-   * @return norm of the matrix
-   * @throws IOException
-   */
-  public double norm(Norm type) throws IOException {
-    if (type == Norm.One)
-      return getNorm1();
-    else if (type == Norm.Frobenius)
-      return getFrobenius();
-    else if (type == Norm.Infinity)
-      return getInfinity();
-    else
-      return getMaxvalue();
   }
 
   /**
@@ -719,49 +504,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
     return result;
   }
 
-  /**
-   * Collect Blocks
-   * 
-   * @param path a input path
-   * @param collectionTable the collection table
-   * @param blockNum the number of blocks
-   * @param bool
-   * @throws IOException
-   */
-  public void collectBlocksMapRed(String path, String collectionTable,
-      int blockNum, boolean bool) throws IOException {
-    double blocks = Math.pow(blockNum, 0.5);
-    if (!String.valueOf(blocks).endsWith(".0"))
-      throw new IOException("can't divide.");
-
-    int block_size = (int) blocks;
-    Job job = new Job(config, "Blocking MR job" + getPath());
-
-    Scan scan = new Scan();
-    scan.addFamily(Constants.COLUMNFAMILY);
-
-    job.getConfiguration().set(CollectBlocksMapper.BLOCK_SIZE,
-        String.valueOf(block_size));
-    job.getConfiguration().set(CollectBlocksMapper.ROWS,
-        String.valueOf(this.getRows()));
-    job.getConfiguration().set(CollectBlocksMapper.COLUMNS,
-        String.valueOf(this.getColumns()));
-    job.getConfiguration().setBoolean(CollectBlocksMapper.MATRIX_POS, bool);
-
-    TableMapReduceUtil.initTableMapperJob(path, scan,
-        org.apache.hama.mapreduce.CollectBlocksMapper.class, BlockID.class,
-        MapWritable.class, job);
-    TableMapReduceUtil.initTableReducerJob(collectionTable,
-        org.apache.hama.mapreduce.CollectBlocksReducer.class, job);
-
-    try {
-      job.waitForCompletion(true);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-  }
 
   /**
    * Compute all the eigen values. Note: all the eigen values are collected in
