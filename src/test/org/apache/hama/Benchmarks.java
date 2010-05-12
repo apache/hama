@@ -17,7 +17,7 @@ public class Benchmarks {
         .parseInt(args[0]), Integer.parseInt(args[0]));
 
     double start = System.currentTimeMillis();
-    rand.jacobiEigenValue(Integer.parseInt(args[1]));
+    JacobiEigen.jacobiEigenValue(rand, Integer.parseInt(args[1]));
     double end = System.currentTimeMillis();
     System.out.println("Runtime: " + ((end - start)) * 1000 + " sec");
   }

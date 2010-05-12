@@ -1,4 +1,4 @@
-package org.apache.hama.mapreduce;
+package org.apache.hama.examples.mapreduce;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.Constants;
+import org.apache.hama.examples.JacobiEigen;
 import org.apache.hama.io.Pair;
 import org.apache.hama.util.BytesUtil;
 
@@ -175,14 +175,14 @@ public class PivotInputFormat extends InputFormat<Pair, DoubleWritable>
         }
 
         byte[] col = vv.getValue(Bytes
-            .toBytes(Constants.EI), Bytes
-            .toBytes(Constants.EIIND));
+            .toBytes(JacobiEigen.EI), Bytes
+            .toBytes(JacobiEigen.EIIND));
         int colId = BytesUtil.bytesToInt(col);
         double val = 0;
 
         Get get = new Get(BytesUtil.getRowIndex(rowId));
         byte[] cell = htable.get(get).getValue(
-            Bytes.toBytes(Constants.EICOL),
+            Bytes.toBytes(JacobiEigen.EICOL),
             Bytes.toBytes(String.valueOf(colId)));
         if (cell != null) {
           val = Bytes.toDouble(cell);
