@@ -71,6 +71,13 @@ public abstract class AbstractMatrix implements Matrix {
 
   protected boolean closed = true;
 
+  /** a matrix copy of the original copy collected in "eicol" family * */
+  public static final String EICOL = "eicol";
+  /** a column family collect all values and statuses used during computation * */
+  public static final String EI = "eival";
+  /** a matrix collect all the eigen vectors * */
+  public static final String EIVEC = "eivec";
+  
   /**
    * Sets the job configuration
    * 
@@ -131,11 +138,11 @@ public abstract class AbstractMatrix implements Matrix {
           .toBytes(Constants.BLOCK)));
       // the following families are used in JacobiEigenValue computation
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.EI)));
+          .toBytes(EI)));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.EICOL)));
+          .toBytes(EICOL)));
       this.tableDesc.addFamily(new HColumnDescriptor(Bytes
-          .toBytes(Constants.EIVEC)));
+          .toBytes(EIVEC)));
 
       LOG.info("Initializing the matrix storage.");
       this.admin.createTable(this.tableDesc);
@@ -289,9 +296,9 @@ public abstract class AbstractMatrix implements Matrix {
     scan.addFamily(Constants.ATTRIBUTE);
     scan.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
     scan.addFamily(Bytes.toBytes(Constants.BLOCK));
-    scan.addFamily(Bytes.toBytes(Constants.EI));
-    scan.addFamily(Bytes.toBytes(Constants.EICOL));
-    scan.addFamily(Bytes.toBytes(Constants.EIVEC));
+    scan.addFamily(Bytes.toBytes(EI));
+    scan.addFamily(Bytes.toBytes(EICOL));
+    scan.addFamily(Bytes.toBytes(EIVEC));
 
     org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(B
         .getPath(), scan, ScanMapper.class, ImmutableBytesWritable.class,
@@ -318,9 +325,9 @@ public abstract class AbstractMatrix implements Matrix {
     scan.addFamily(Constants.ATTRIBUTE);
     scan.addFamily(Bytes.toBytes(Constants.ALIASEFAMILY));
     scan.addFamily(Bytes.toBytes(Constants.BLOCK));
-    scan.addFamily(Bytes.toBytes(Constants.EI));
-    scan.addFamily(Bytes.toBytes(Constants.EICOL));
-    scan.addFamily(Bytes.toBytes(Constants.EIVEC));
+    scan.addFamily(Bytes.toBytes(EI));
+    scan.addFamily(Bytes.toBytes(EICOL));
+    scan.addFamily(Bytes.toBytes(EIVEC));
     Float f = new Float(alpha);
     job.getConfiguration().setFloat("set.alpha", f);
 

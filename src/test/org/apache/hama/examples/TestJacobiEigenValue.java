@@ -1,10 +1,14 @@
-package org.apache.hama.matrix;
+package org.apache.hama.examples;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.JacobiEigen;
+import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.matrix.Matrix;
+import org.apache.hama.matrix.TestDenseMatrix;
 import org.apache.log4j.Logger;
 
 public class TestJacobiEigenValue extends HamaCluster {
@@ -140,10 +144,10 @@ public class TestJacobiEigenValue extends HamaCluster {
 
     // do m/r jacobi eigen value computation
     DenseMatrix dm = (DenseMatrix) m5;
-    dm.jacobiEigenValue(100);
+    JacobiEigen.jacobiEigenValue(dm, 100);
 
     // verify the results
-    assertTrue(dm.verifyEigenValue(e, E));
+    assertTrue(JacobiEigen.verifyEigenValue(e, E));
   }
 
   // index of largest off-diagonal element in row k

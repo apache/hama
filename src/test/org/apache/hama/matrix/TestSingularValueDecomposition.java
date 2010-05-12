@@ -29,6 +29,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.JacobiEigen;
 import org.apache.hama.examples.MatrixMultiplication;
 import org.apache.hama.util.BytesUtil;
 import org.apache.log4j.Logger;
@@ -76,16 +77,16 @@ public class TestSingularValueDecomposition extends HamaCluster {
     }
 
     // Find the eigen/singular values and vectors of A'A
-    aTa.jacobiEigenValue(100);
+    JacobiEigen.jacobiEigenValue(aTa, 100);
     HTable table = aTa.getHTable();
 
     for (int x = 0; x < 2; x++) {
       Get get = new Get(BytesUtil.getRowIndex(x));
-      get.addColumn(Bytes.toBytes(Constants.EI));
+      get.addColumn(Bytes.toBytes(JacobiEigen.EI));
       Result r = table.get(get);
 
       double eigenvalue = Bytes.toDouble(r.getValue(Bytes
-          .toBytes(Constants.EI), Bytes.toBytes(Constants.EIVAL)));
+          .toBytes(JacobiEigen.EI), Bytes.toBytes(JacobiEigen.EIVAL)));
       assertTrue(Math.abs(eigenvalues[x] - eigenvalue) < .0000001);
       assertTrue(Math.abs(Math.pow(eigenvalue, 0.5) - singularvalues[x]) < .0000001);
     }

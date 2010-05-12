@@ -22,11 +22,10 @@ package org.apache.hama.mapreduce;
 import java.io.IOException;
 
 import org.apache.hama.HamaCluster;
+import org.apache.hama.examples.RandomMatrix;
 import org.apache.hama.matrix.DenseMatrix;
 import org.apache.hama.matrix.SparseMatrix;
 import org.apache.log4j.Logger;
-import org.apache.hama.examples.mapreduce.*;
-import org.apache.hama.examples.*;
 
 public class TestRandomMatrixMapReduce extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestRandomMatrixMapReduce.class);
@@ -35,7 +34,7 @@ public class TestRandomMatrixMapReduce extends HamaCluster {
     DenseMatrix rand = RandomMatrix.random_mapred(conf, 20, 20);
     assertEquals(20, rand.getRows());
     assertEquals(20, rand.getColumns());
-    
+
     for(int i = 0; i < 20; i++) {
       for(int j = 0; j < 20; j++) {
         assertTrue(rand.get(i, j) > 0);

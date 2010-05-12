@@ -1,4 +1,4 @@
-package org.apache.hama.matrix.algebra;
+package org.apache.hama.examples.mapreduce;
 
 import java.io.IOException;
 import java.util.Map;
@@ -10,6 +10,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.Constants;
+import org.apache.hama.examples.JacobiEigen;
 import org.apache.hama.util.BytesUtil;
 
 /**
@@ -45,14 +46,14 @@ public class JacobiInitMap extends TableMapper<ImmutableBytesWritable, Put> {
       val = Bytes.toDouble(e.getValue());
       col = BytesUtil.bytesToInt(e.getKey());
       // copy the original matrix to "EICOL" family
-      put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String.valueOf(col)), Bytes
+      put.add(Bytes.toBytes(JacobiEigen.EICOL), Bytes.toBytes(String.valueOf(col)), Bytes
           .toBytes(val));
       // make the "EIVEC" a dialog matrix
-      put.add(Bytes.toBytes(Constants.EIVEC), Bytes.toBytes(String.valueOf(col)), Bytes
+      put.add(Bytes.toBytes(JacobiEigen.EIVEC), Bytes.toBytes(String.valueOf(col)), Bytes
           .toBytes(col == row ? new Double(1) : new Double(0)));
       
       if (col == row) {
-        put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EIVAL), Bytes
+        put.add(Bytes.toBytes(JacobiEigen.EI), Bytes.toBytes(JacobiEigen.EIVAL), Bytes
             .toBytes(val));
       }
       // find the max index
@@ -71,10 +72,10 @@ public class JacobiInitMap extends TableMapper<ImmutableBytesWritable, Put> {
     }
 
     // index array
-    put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EIIND), Bytes
+    put.add(Bytes.toBytes(JacobiEigen.EI), Bytes.toBytes(JacobiEigen.EIIND), Bytes
         .toBytes(String.valueOf(maxInd)));
     // Changed Array set to be true during initialization
-    put.add(Bytes.toBytes(Constants.EI), Bytes.toBytes(Constants.EICHANGED), Bytes
+    put.add(Bytes.toBytes(JacobiEigen.EI), Bytes.toBytes(JacobiEigen.EICHANGED), Bytes
         .toBytes(String.valueOf(1)));
     
     context.write(key, put);

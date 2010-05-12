@@ -1,4 +1,4 @@
-package org.apache.hama.mapreduce;
+package org.apache.hama.examples.mapreduce;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,6 +26,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.Constants;
+import org.apache.hama.examples.JacobiEigen;
 import org.apache.hama.util.BytesUtil;
 
 public class RotationInputFormat extends
@@ -178,17 +179,17 @@ public class RotationInputFormat extends
         if (rowId < pivotrow) {
           Get get = new Get(BytesUtil.getRowIndex(rowId));
           s1 = Bytes.toDouble(htable.get(get).getValue(
-              Bytes.toBytes(Constants.EICOL),
+              Bytes.toBytes(JacobiEigen.EICOL),
               Bytes.toBytes(String.valueOf(pivotrow))));
           s2 = Bytes.toDouble(htable.get(get).getValue(
-              Bytes.toBytes(Constants.EICOL),
+              Bytes.toBytes(JacobiEigen.EICOL),
               Bytes.toBytes(String.valueOf(pivotcol))));
 
           put = new Put(BytesUtil.getRowIndex(rowId));
-          put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+          put.add(Bytes.toBytes(JacobiEigen.EICOL), Bytes.toBytes(String
               .valueOf(pivotrow)), Bytes.toBytes(new Double(pivotcos * s1
               - pivotsin * s2)));
-          put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+          put.add(Bytes.toBytes(JacobiEigen.EICOL), Bytes.toBytes(String
               .valueOf(pivotcol)), Bytes.toBytes(new Double(pivotsin * s1
               + pivotcos * s2)));
 
@@ -198,22 +199,22 @@ public class RotationInputFormat extends
         } else if (rowId < pivotcol) {
           Get get = new Get(BytesUtil.getRowIndex(pivotrow));
           s1 = Bytes.toDouble(htable.get(get).getValue(
-              Bytes.toBytes(Constants.EICOL),
+              Bytes.toBytes(JacobiEigen.EICOL),
               Bytes.toBytes(String.valueOf(rowId))));
           get = new Get(BytesUtil.getRowIndex(rowId));
 
           s2 = Bytes.toDouble(htable.get(get).getValue(
-              Bytes.toBytes(Constants.EICOL),
+              Bytes.toBytes(JacobiEigen.EICOL),
               Bytes.toBytes(String.valueOf(pivotcol))));
 
           put = new Put(BytesUtil.getRowIndex(rowId));
-          put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+          put.add(Bytes.toBytes(JacobiEigen.EICOL), Bytes.toBytes(String
               .valueOf(pivotcol)), Bytes.toBytes(new Double(pivotsin * s1
               + pivotcos * s2)));
           htable.put(put);
 
           put = new Put(BytesUtil.getRowIndex(pivotrow));
-          put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
+          put.add(Bytes.toBytes(JacobiEigen.EICOL), Bytes.toBytes(String
               .valueOf(rowId)), Bytes.toBytes(new Double(pivotcos * s1
               - pivotsin * s2)));
           htable.put(put);
@@ -223,24 +224,24 @@ public class RotationInputFormat extends
             Get get = new Get(BytesUtil.getRowIndex(pivotrow));
 
             s1 = Bytes.toDouble(htable.get(get).getValue(
-                Bytes.toBytes(Constants.EICOL),
+                Bytes.toBytes(JacobiEigen.EICOL),
                 Bytes.toBytes(String.valueOf(i))));
 
             get = new Get(BytesUtil.getRowIndex(pivotcol));
             s2 = Bytes.toDouble(htable.get(get).getValue(
-                Bytes.toBytes(Constants.EICOL),
+                Bytes.toBytes(JacobiEigen.EICOL),
                 Bytes.toBytes(String.valueOf(i))));
 
+            double pivotC = (pivotsin * s1 + pivotcos * s2);
             put = new Put(BytesUtil.getRowIndex(pivotcol));
-            put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
-                .valueOf(i)), Bytes.toBytes(new Double(pivotsin * s1 + pivotcos
-                * s2)));
+            put.add(Bytes.toBytes(JacobiEigen.EICOL), Bytes.toBytes(String
+                .valueOf(i)), Bytes.toBytes(pivotC));
             htable.put(put);
 
+            double pivotV = (pivotcos * s1 - pivotsin * s2);
             put = new Put(BytesUtil.getRowIndex(pivotrow));
-            put.add(Bytes.toBytes(Constants.EICOL), Bytes.toBytes(String
-                .valueOf(i)), Bytes.toBytes(new Double(pivotcos * s1 - pivotsin
-                * s2)));
+            put.add(Bytes.toBytes(JacobiEigen.EICOL), Bytes.toBytes(String
+                .valueOf(i)), Bytes.toBytes(pivotV));
             htable.put(put);
 
           }
@@ -330,10 +331,10 @@ public class RotationInputFormat extends
 
   @Override
   public void setConf(Configuration conf) {
-    pivot_row = conf.getInt(Constants.PIVOTROW, -1);
-    pivot_col = conf.getInt(Constants.PIVOTCOL, -1);
-    pivot_sin = Double.parseDouble(conf.get(Constants.PIVOTSIN));
-    pivot_cos = Double.parseDouble(conf.get(Constants.PIVOTCOS));
+    pivot_row = conf.getInt(JacobiEigen.PIVOTROW, -1);
+    pivot_col = conf.getInt(JacobiEigen.PIVOTCOL, -1);
+    pivot_sin = Double.parseDouble(conf.get(JacobiEigen.PIVOTSIN));
+    pivot_cos = Double.parseDouble(conf.get(JacobiEigen.PIVOTCOS));
 
     this.conf = conf;
     String tableName = conf.get(INPUT_TABLE);
