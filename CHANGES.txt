@@ -139,6 +139,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
  
+    HAMA-260: Current version command of script is linked unknown class (edwardyoon)
     HAMA-250: Add --no-check-certificate option to 'wget' command lines (edwardyoon)
     HAMA-242: Wrong assignment of default setting inside BSPPeer constructor (hyunsik)
     HAMA-246: Current shell scripts for bsp daemon have several problems. (hyunsik)

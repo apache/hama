@@ -168,7 +168,7 @@ elif [ "$COMMAND" = "groom" ] ; then
   CLASS='org.apache.hama.bsp.GroomServer'
   BSP_OPTS="$BSP_OPTS $BSP_GROOMSERVER_OPTS"
 elif [ "$COMMAND" = "version" ] ; then
-  CLASS=org.apache.bsp.util.VersionInfo
+  CLASS=org.apache.hama.util.VersionInfo
   BSP_OPTS="$BSP_OPTS $BSP_CLIENT_OPTS"
 else
   CLASS=$COMMAND
