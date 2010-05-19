@@ -42,6 +42,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-261: Remove meaningless unit tests (edwardyoon)
     HAMA-253: Change the blog link url (edwardyoon)
     HAMA-247: Discuss / Refactor HamaMaster and GroomServer (hyunsik)
     HAMA-239: Remove unused class (edwardyoon)
