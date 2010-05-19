@@ -17,45 +17,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.mapreduce;
+package org.apache.hama.examples;
 
 import java.io.IOException;
 
 import org.apache.hama.HamaCluster;
+import org.apache.hama.examples.RandomMatrix;
 import org.apache.hama.matrix.DenseMatrix;
+import org.apache.hama.matrix.SparseMatrix;
 import org.apache.log4j.Logger;
-import org.apache.hama.examples.MatrixMultiplication;
 
-public class TestBlockMatrixMapReduce extends HamaCluster {
-  static final Logger LOG = Logger.getLogger(TestBlockMatrixMapReduce.class);
-  static final int SIZE = 32;
+public class TestRandomMatrixMapReduce extends HamaCluster {
+  static final Logger LOG = Logger.getLogger(TestRandomMatrixMapReduce.class);
+  
+  public void testRandomMatrixMapReduce() throws IOException {
+    DenseMatrix rand = RandomMatrix.random_mapred(conf, 20, 20);
+    assertEquals(20, rand.getRows());
+    assertEquals(20, rand.getColumns());
 
-  /** constructor */
-  public TestBlockMatrixMapReduce() {
-    super();
-  }
-
-  public void testBlockMatrixMapReduce() throws IOException,
-      ClassNotFoundException {
-    DenseMatrix m1 = DenseMatrix.random(conf, SIZE, SIZE);
-    DenseMatrix m2 = DenseMatrix.random(conf, SIZE, SIZE);
-
-    DenseMatrix c = MatrixMultiplication.mult(m1, m2, 16);
-
-    double[][] mem = new double[SIZE][SIZE];
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        for (int k = 0; k < SIZE; k++) {
-          mem[i][k] += m1.get(i, j) * m2.get(j, k);
-        }
+    for(int i = 0; i < 20; i++) {
+      for(int j = 0; j < 20; j++) {
+        assertTrue(rand.get(i, j) > 0);
       }
     }
 
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        double gap = (mem[i][j] - c.get(i, j));
-        assertTrue(gap < 0.000001 || gap < -0.000001);
+    rand.close();
+    
+    SparseMatrix rand2 = RandomMatrix.random_mapred(conf, 20, 20, 30);
+    assertEquals(20, rand2.getRows());
+    assertEquals(20, rand2.getColumns());
+    boolean zeroAppear = false;
+    for(int i = 0; i < 20; i++) {
+      for(int j = 0; j < 20; j++) {
+        if(rand2.get(i, j) == 0.0)
+          zeroAppear = true;
       }
     }
+    assertTrue(zeroAppear);
+    rand2.close();
   }
 }
