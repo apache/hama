@@ -1,6 +1,4 @@
 /**
- * Copyright 2007 The Apache Software Foundation
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,15 +19,15 @@ package org.apache.hama.bsp;
 
 import java.io.Closeable;
 import java.io.IOException;
-
 import java.net.InetSocketAddress;
 
+import org.apache.hama.Constants;
 import org.apache.zookeeper.KeeperException;
 
 /**
  * 
  */
-public interface DefaultBSPPeer extends Closeable, BSPConstants {
+public interface DefaultBSPPeer extends Closeable, Constants {
 
   /**
    * Send a data with a tag to another BSPSlave corresponding to hostname.

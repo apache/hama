@@ -17,49 +17,38 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.util.Progressable;
-
 /**
- * The context for task attempts.
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} 
+ * to the {@link org.apache.hama.bsp.GroomServer} to commit the output
+ * of the task.
+ * 
  */
-public class TaskAttemptContext extends BSPJobContext implements Progressable {
-  private final TaskAttemptID taskId;
-  private String status = "";
-
-  public TaskAttemptContext(Configuration conf, TaskAttemptID taskId) {
-    super(conf, taskId.getJobID());
+class CommitTaskAction extends GroomServerAction {
+  private TaskAttemptID taskId;
+  
+  public CommitTaskAction() {
+    super(ActionType.COMMIT_TASK);
+    taskId = new TaskAttemptID();
+  }
+  
+  public CommitTaskAction(TaskAttemptID taskId) {
+    super(ActionType.COMMIT_TASK);
     this.taskId = taskId;
   }
-
-  /**
-   * Get the unique name for this task attempt.
-   */
-  public TaskAttemptID getTaskAttemptID() {
+  
+  public TaskAttemptID getTaskID() {
     return taskId;
   }
-
-  /**
-   * Set the current status of the task to the given string.
-   */
-  public void setStatus(String msg) throws IOException {
-    status = msg;
+  
+  public void write(DataOutput out) throws IOException {
+    taskId.write(out);
   }
 
-  /**
-   * Get the last set status message.
-   * 
-   * @return the current status message
-   */
-  public String getStatus() {
-    return status;
-  }
-
-  /**
-   * Report progress. The subtypes actually do work in this method.
-   */
-  public void progress() {
+  public void readFields(DataInput in) throws IOException {
+    taskId.readFields(in);
   }
 }

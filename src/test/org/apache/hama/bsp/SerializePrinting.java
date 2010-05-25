@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -37,14 +38,14 @@ public class SerializePrinting extends HamaCluster implements Watcher {
     Stat s = null;
     if (zk != null) {
       try {
-        s = zk.exists(BSPConstants.DEFAULT_ZOOKEEPER_ROOT, false);
+        s = zk.exists(Constants.DEFAULT_ZOOKEEPER_ROOT, false);
       } catch (Exception e) {
         LOG.error(s);
       }
 
       if (s == null) {
         try {
-          zk.create(BSPConstants.DEFAULT_ZOOKEEPER_ROOT, new byte[0],
+          zk.create(Constants.DEFAULT_ZOOKEEPER_ROOT, new byte[0],
               Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         } catch (KeeperException e) {
           LOG.error(e);
@@ -60,10 +61,10 @@ public class SerializePrinting extends HamaCluster implements Watcher {
     int[] randomSequence = new int[] { 2, 3, 4, 5, 0, 1, 6, 7, 8, 9 };
     for (int i = 0; i < NUM_PEER; i++) {
       conf.set("bsp.peers.num", String.valueOf(NUM_PEER));
-      conf.set(BSPConstants.PEER_HOST, "localhost");
-      conf.set(BSPConstants.PEER_PORT, String
+      conf.set(Constants.PEER_HOST, "localhost");
+      conf.set(Constants.PEER_PORT, String
           .valueOf(30000 + randomSequence[i]));
-      conf.set(BSPConstants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");
+      conf.set(Constants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");
       thread = new BSPPeerThread(conf, randomSequence[i]);
       System.out.println(randomSequence[i] + ", " + thread.getName());
       list.add(thread);

@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.bsp;
 
 import java.io.DataInput;
@@ -43,7 +42,7 @@ public class TaskAttemptID extends ID {
     taskId = new TaskID();
   }
 
-  public JobID getJobID() {
+  public BSPJobID getJobID() {
     return taskId.getJobID();
   }
 

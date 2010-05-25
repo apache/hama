@@ -25,7 +25,7 @@ import java.text.NumberFormat;
 
 import org.apache.hadoop.io.Text;
 
-public class JobID extends ID implements Comparable<ID> {
+public class BSPJobID extends ID implements Comparable<ID> {
   protected static final String JOB = "job";
   private final Text jtIdentifier;
 
@@ -35,12 +35,12 @@ public class JobID extends ID implements Comparable<ID> {
     idFormat.setMinimumIntegerDigits(4);
   }
 
-  public JobID(String jtIdentifier, int id) {
+  public BSPJobID(String jtIdentifier, int id) {
     super(id);
     this.jtIdentifier = new Text(jtIdentifier);
   }
 
-  public JobID() {
+  public BSPJobID() {
     jtIdentifier = new Text();
   }
 
@@ -53,13 +53,13 @@ public class JobID extends ID implements Comparable<ID> {
     if (!super.equals(o))
       return false;
 
-    JobID that = (JobID) o;
+    BSPJobID that = (BSPJobID) o;
     return this.jtIdentifier.equals(that.jtIdentifier);
   }
 
   @Override
   public int compareTo(ID o) {
-    JobID that = (JobID) o;
+    BSPJobID that = (BSPJobID) o;
     int jtComp = this.jtIdentifier.compareTo(that.jtIdentifier);
     if (jtComp == 0) {
       return this.id - that.id;
@@ -97,14 +97,14 @@ public class JobID extends ID implements Comparable<ID> {
     jtIdentifier.write(out);
   }
 
-  public static JobID forName(String str) throws IllegalArgumentException {
+  public static BSPJobID forName(String str) throws IllegalArgumentException {
     if (str == null)
       return null;
     try {
       String[] parts = str.split("_");
       if (parts.length == 3) {
         if (parts[0].equals(JOB)) {
-          return new JobID(parts[1], Integer.parseInt(parts[2]));
+          return new BSPJobID(parts[1], Integer.parseInt(parts[2]));
         }
       }
     } catch (Exception ex) {

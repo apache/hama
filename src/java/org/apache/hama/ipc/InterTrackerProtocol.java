@@ -1,6 +1,4 @@
 /**
- * Copyright 2008 The Apache Software Foundation
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,8 +17,15 @@
  */
 package org.apache.hama.ipc;
 
+import java.io.IOException;
+
+import org.apache.hama.bsp.GroomServerStatus;
+import org.apache.hama.bsp.HeartbeatResponse;
+
 public interface InterTrackerProtocol extends HamaRPCProtocolVersion {
-  public HeartbeatResponse heartbeat(short responseId);
+  public HeartbeatResponse heartbeat(GroomServerStatus status, 
+      boolean restarted, boolean initialContact, boolean acceptNewTasks,
+      short responseId) throws IOException;
 
   public String getSystemDir();
 }

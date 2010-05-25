@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -60,14 +61,14 @@ public class BSPPeerTest extends HamaCluster implements Watcher {
     Stat s = null;
     if (zk != null) {
       try {
-        s = zk.exists(BSPConstants.DEFAULT_ZOOKEEPER_ROOT, false);
+        s = zk.exists(Constants.DEFAULT_ZOOKEEPER_ROOT, false);
       } catch (Exception e) {
         LOG.error(s);
       }
 
       if (s == null) {
         try {
-          zk.create(BSPConstants.DEFAULT_ZOOKEEPER_ROOT, new byte[0],
+          zk.create(Constants.DEFAULT_ZOOKEEPER_ROOT, new byte[0],
               Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         } catch (KeeperException e) {
           LOG.error(e);
@@ -155,9 +156,9 @@ public class BSPPeerTest extends HamaCluster implements Watcher {
     BSPPeerThread thread;
     for (int i = 0; i < NUM_PEER; i++) {
       conf.set("bsp.peers.num", String.valueOf(NUM_PEER));
-      conf.set(BSPConstants.PEER_HOST, "localhost");
-      conf.set(BSPConstants.PEER_PORT, String.valueOf(30000 + i));
-      conf.set(BSPConstants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");
+      conf.set(Constants.PEER_HOST, "localhost");
+      conf.set(Constants.PEER_PORT, String.valueOf(30000 + i));
+      conf.set(Constants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");
       thread = new BSPPeerThread(conf);
       list.add(thread);
     }
@@ -178,25 +179,25 @@ public class BSPPeerTest extends HamaCluster implements Watcher {
     Configuration conf = new Configuration();    
     BSPPeer peer = new BSPPeer(conf);
     
-    System.out.println(peer.bindAddress+" = "+BSPConstants.DEFAULT_PEER_HOST);
-    System.out.println(peer.bindPort+" = "+BSPConstants.DEFAULT_PEER_PORT);
-    assertEquals(peer.bindAddress,BSPConstants.DEFAULT_PEER_HOST);
-    assertEquals(peer.bindPort,BSPConstants.DEFAULT_PEER_PORT);
-    assertEquals(peer.zookeeperAddr,BSPConstants.DEFAULT_ZOOKEEPER_SERVER_ADDR);
+    System.out.println(peer.bindAddress+" = "+Constants.DEFAULT_PEER_HOST);
+    System.out.println(peer.bindPort+" = "+Constants.DEFAULT_PEER_PORT);
+    assertEquals(peer.bindAddress,Constants.DEFAULT_PEER_HOST);
+    assertEquals(peer.bindPort,Constants.DEFAULT_PEER_PORT);
+    assertEquals(peer.zookeeperAddr,Constants.DEFAULT_ZOOKEEPER_SERVER_ADDR);
     
     int peerPort;
     int zkPort;
     conf = new Configuration();
-    conf.set(BSPConstants.PEER_HOST, "localhost");
+    conf.set(Constants.PEER_HOST, "localhost");
     do{      
       peerPort = r.nextInt(Short.MAX_VALUE);
     } while(peerPort == 0);    
-    conf.setInt(BSPConstants.PEER_PORT, peerPort);
+    conf.setInt(Constants.PEER_PORT, peerPort);
     
     do{      
       zkPort = r.nextInt(Short.MAX_VALUE);
     } while(zkPort == peerPort || zkPort == 0);    
-    conf.set(BSPConstants.ZOOKEEPER_SERVER_ADDRS, "localhost:"+zkPort);
+    conf.set(Constants.ZOOKEEPER_SERVER_ADDRS, "localhost:"+zkPort);
     peer = new BSPPeer(conf);
     assertEquals(peer.bindAddress,"localhost");
     assertEquals(peer.bindPort,peerPort);

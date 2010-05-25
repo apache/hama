@@ -15,14 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ipc;
+package org.apache.hama.bsp;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
- * There is one version id for all the RPC interfaces. If any interface is
- * changed, the versionID must be changed here.
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
+ * {@link org.apache.hama.bsp.GroomServer} to kill the task of a job and cleanup
+ * resources.
+ * 
  */
-public interface HamaRPCProtocolVersion extends VersionedProtocol {
-  public static final long versionID = 0L;
+class KillJobAction extends GroomServerAction {
+  final BSPJobID jobId;
+
+  public KillJobAction() {
+    super(ActionType.KILL_JOB);
+    jobId = new BSPJobID();
+  }
+
+  public KillJobAction(BSPJobID jobId) {
+    super(ActionType.KILL_JOB);
+    this.jobId = jobId;
+  }
+
+  public BSPJobID getJobID() {
+    return jobId;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    jobId.write(out);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    jobId.readFields(in);
+  }
+
 }
