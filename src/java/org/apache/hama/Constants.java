@@ -25,8 +25,52 @@ import org.apache.hadoop.io.Text;
 /**
  * Some constants used in the Hama
  */
-public class Constants {
+public interface Constants {
 
+  ///////////////////////////////////////
+  // Constants for BSP Package
+  ///////////////////////////////////////
+  /** default host address */
+  public  static final String PEER_HOST = "bsp.peer.hostname";
+  /** default host address */
+  public static final String DEFAULT_PEER_HOST = "0.0.0.0";
+
+  public static final String PEER_PORT = "bsp.peer.port";
+  /** Default port region server listens on. */
+  public static final int DEFAULT_PEER_PORT = 61000;
+
+  public static final long ATLEAST_WAIT_TIME = 100;
+
+  /** zookeeper root */
+  public static final String ZOOKEEPER_ROOT = "bsp.zookeeper.root";
+  /** zookeeper default root */
+  public static final String DEFAULT_ZOOKEEPER_ROOT = "/bsp";
+
+  /** zookeeper server address */
+  public static final String ZOOKEEPER_SERVER_ADDRS = "zookeeper.server";
+  /** zookeeper default server address */
+  static final String DEFAULT_ZOOKEEPER_SERVER_ADDR = "localhost:21810";
+  /** Parameter name for number of times to retry writes to ZooKeeper. */
+  public static final String ZOOKEEPER_RETRIES = "zookeeper.retries";
+  /** Default number of times to retry writes to ZooKeeper. */
+  public static final int DEFAULT_ZOOKEEPER_RETRIES = 5;
+  /** Parameter name for ZooKeeper pause between retries. In milliseconds. */
+  public static final String ZOOKEEPER_PAUSE = "zookeeper.pause";
+  /** Default ZooKeeper pause value. In milliseconds. */
+  public static final int DEFAULT_ZOOKEEPER_PAUSE = 2 * 1000;
+
+  ///////////////////////////////////////
+  // Constants for Matrix Package
+  ///////////////////////////////////////
+  /**
+   * An empty instance.
+   */
+  public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+  
+  /**
+   * Hbase Structure for matrices 
+   */
+  
   /** Meta-columnFamily to store the matrix-info */
   public final static String METADATA = "metadata";
 

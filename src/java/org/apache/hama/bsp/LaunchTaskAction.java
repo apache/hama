@@ -15,14 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ipc;
+package org.apache.hama.bsp;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
- * There is one version id for all the RPC interfaces. If any interface is
- * changed, the versionID must be changed here.
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
+ * {@link org.apache.hama.bsp.GroomServer} to launch a new task.
+ * 
  */
-public interface HamaRPCProtocolVersion extends VersionedProtocol {
-  public static final long versionID = 0L;
+class LaunchTaskAction extends GroomServerAction {
+  private Task task;
+
+  public LaunchTaskAction() {
+    super(ActionType.LAUNCH_TASK);
+  }
+
+  public LaunchTaskAction(Task task) {
+    super(ActionType.LAUNCH_TASK);
+    this.task = task;
+  }
+
+  public Task getTask() {
+    return task;
+  }
+
+  public void write(DataOutput out) throws IOException {
+    task.write(out);
+  }
+
+  public void readFields(DataInput in) throws IOException {
+    task = new Task();
+    task.readFields(in);
+  }
+
 }

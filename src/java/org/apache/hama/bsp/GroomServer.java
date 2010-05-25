@@ -19,14 +19,20 @@ package org.apache.hama.bsp;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RemoteException;
@@ -35,71 +41,87 @@ import org.apache.hadoop.util.DiskChecker;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.ipc.HeartbeatResponse;
 import org.apache.hama.ipc.InterTrackerProtocol;
 
 public class GroomServer implements Runnable {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
-
+  
   static {
     Configuration.addDefaultResource("hama-default.xml");
+    Configuration.addDefaultResource("hama-site.xml");
   }
 
+  Configuration conf;
+  // Constants
   static enum State {
     NORMAL, COMPUTE, SYNC, BARRIER, STALE, INTERRUPTED, DENIED
   };
-
-  HamaConfiguration conf;
-
+  
+  // Running States and its related things
   volatile boolean running = true;
   volatile boolean shuttingDown = false;
+  boolean justStarted = true;
   boolean justInited = true;
-
-  String groomserverName;
-  String localHostname;
-
-  InetSocketAddress masterAddr;
-  InterTrackerProtocol jobClient;
-  //BSPPeer bspPeer;
-
+  GroomServerStatus status = null;
   short heartbeatResponseId = -1;
   private volatile int heartbeatInterval = 3 * 1000;
-
-  private LocalDirAllocator localDirAllocator;
+  
+  // Attributes
+  String groomServerName;
+  String localHostname;  
+  InetSocketAddress bspMasterAddr;
+  InterTrackerProtocol jobClient;
+  
+  // Filesystem
+  //private LocalDirAllocator localDirAllocator;
   Path systemDirectory = null;
   FileSystem systemFS = null;
+  
+  // Job
+  boolean acceptNewTasks = true;
+  private int failures;
+  private int maxCurrentTasks;
+  Map<TaskAttemptID, TaskInProgress> tasks = new HashMap<TaskAttemptID, TaskInProgress>();
+  /** Map from taskId -> TaskInProgress. */
+  Map<TaskAttemptID, TaskInProgress> runningTasks = null;
+  Map<BSPJobID, RunningJob> runningJobs = null;
 
-  public GroomServer(HamaConfiguration conf) throws IOException {
+  public GroomServer(Configuration conf) throws IOException {
     this.conf = conf;
-    masterAddr = BSPMaster.getAddress(conf);
+    bspMasterAddr = BSPMaster.getAddress(conf);
 
-    FileSystem local = FileSystem.getLocal(conf);
-    this.localDirAllocator = new LocalDirAllocator("bspd.groom.local.dir");
-
-    initialize();
+    //FileSystem local = FileSystem.getLocal(conf);
+    //this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
   }
 
-  synchronized void initialize() throws IOException {
+  public synchronized void initialize() throws IOException {
     if (this.conf.get("slave.host.name") != null) {
       this.localHostname = conf.get("slave.host.name");
     }
 
     if (localHostname == null) {
       this.localHostname = DNS.getDefaultHost(conf.get(
-          "bspd.groom.dns.interface", "default"), conf.get(
-          "bspd.groom.dns.nameserver", "default"));
+          "bsp.dns.interface", "default"), conf.get(
+          "bsp.dns.nameserver", "default"));
     }
 
-    checkLocalDirs(conf.getStrings("bspd.groom.local.dir"));
+    //check local disk
+    checkLocalDirs(conf.getStrings("bsp.local.dir"));
     deleteLocalFiles("groomserver");
 
-    this.groomserverName = "groomd_" + localHostname;
-    LOG.info("Starting tracker " + this.groomserverName);
+    // Clear out state tables
+    this.tasks.clear();
+    this.runningJobs = new TreeMap<BSPJobID, RunningJob>();    
+    this.runningTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
+    this.acceptNewTasks = true;
+    
+    this.groomServerName = "groomd_" + localHostname;
+    LOG.info("Starting tracker " + this.groomServerName);
 
     DistributedCache.purgeCache(this.conf);
 
     this.jobClient = (InterTrackerProtocol) RPC.waitForProxy(
-        InterTrackerProtocol.class, InterTrackerProtocol.versionID, masterAddr,
+        InterTrackerProtocol.class, InterTrackerProtocol.versionID, bspMasterAddr,
         conf);
     this.running = true;
     // this.bspPeer = new BSPPeer(this.conf);
@@ -109,9 +131,12 @@ public class GroomServer implements Runnable {
       throws DiskErrorException {
     boolean writable = false;
 
+    LOG.info(localDirs);
+    
     if (localDirs != null) {
       for (int i = 0; i < localDirs.length; i++) {
         try {
+          LOG.info(localDirs[i]);
           DiskChecker.checkDir(new File(localDirs[i]));
           writable = true;
         } catch (DiskErrorException e) {
@@ -120,25 +145,29 @@ public class GroomServer implements Runnable {
       }
     }
 
-    if (!writable)
-      throw new DiskErrorException("all local directories are not writable");
+  //  if (!writable)
+      //throw new DiskErrorException("all local directories are not writable");
   }
 
   public String[] getLocalDirs() {
-    return conf.getStrings("bspd.groom.local.dir");
+    return conf.getStrings("bsp.local.dir");
   }
 
   public void deleteLocalFiles() throws IOException {
     String[] localDirs = getLocalDirs();
     for (int i = 0; i < localDirs.length; i++) {
-      FileSystem.getLocal(this.conf).delete(new Path(localDirs[i]));
+      FileSystem.getLocal(this.conf).delete(new Path(localDirs[i]),true);
     }
   }
 
   public void deleteLocalFiles(String subdir) throws IOException {
+    try{ 
     String[] localDirs = getLocalDirs();
     for (int i = 0; i < localDirs.length; i++) {
-      FileSystem.getLocal(this.conf).delete(new Path(localDirs[i], subdir));
+      FileSystem.getLocal(this.conf).delete(new Path(localDirs[i], subdir),true);
+    }
+    } catch (NullPointerException e) {
+      LOG.info(e);
     }
   }
 
@@ -172,14 +201,19 @@ public class GroomServer implements Runnable {
           systemFS = systemDirectory.getFileSystem(conf);
         }
 
-        // Send the heartbeat and process the jobtracker's directives
+        // Send the heartbeat and process the bspmaster's directives
         HeartbeatResponse heartbeatResponse = transmitHeartBeat(now);
-
+        //
+        // The heartbeat got through successfully!
+        //
+        heartbeatResponseId = heartbeatResponse.getResponseId();
+        
         // Note the time when the heartbeat returned, use this to decide when to
         // send the
         // next heartbeat
         lastHeartbeat = System.currentTimeMillis();
-
+        
+        justStarted = false;
         justInited = false;
       } catch (InterruptedException ie) {
         LOG.info("Interrupted. Closing down.");
@@ -203,13 +237,40 @@ public class GroomServer implements Runnable {
   }
 
   private HeartbeatResponse transmitHeartBeat(long now) throws IOException {
+    
+    // 
+    // Check if the last heartbeat got through... 
+    // if so then build the heartbeat information for the BSPMaster;
+    // else resend the previous status information.
+    //
+    if (status == null) {
+      synchronized (this) {
+        status = new GroomServerStatus(groomServerName, localHostname, 
+            cloneAndResetRunningTaskStatuses(), failures, maxCurrentTasks);
+      }
+    } else {
+      LOG.info("Resending 'status' to '" + bspMasterAddr.getHostName() +
+        "' with reponseId '" + heartbeatResponseId+"'");
+    }
+    
+    // TODO - Later, acceptNewTask is to be set by the status of groom server.
     HeartbeatResponse heartbeatResponse = jobClient
-        .heartbeat(heartbeatResponseId);
+        .heartbeat(status,justStarted,justInited,true,heartbeatResponseId);
     return heartbeatResponse;
+  }
+  
+  private synchronized List<TaskStatus> cloneAndResetRunningTaskStatuses() {
+    List<TaskStatus> result = new ArrayList<TaskStatus>(runningTasks.size());
+    for(TaskInProgress tip: runningTasks.values()) {
+      TaskStatus status = tip.getStatus();
+      result.add((TaskStatus)status.clone());      
+    }
+    return result;
   }
 
   public void run() {
     try {
+      initialize();
       startCleanupThreads();
       boolean denied = false;
       while (running && !shuttingDown && !denied) {
@@ -225,7 +286,7 @@ public class GroomServer implements Runnable {
               }
             } catch (Exception e) {
               if (!shuttingDown) {
-                LOG.info("Lost connection to GraphProcessor [" + masterAddr
+                LOG.info("Lost connection to GraphProcessor [" + bspMasterAddr
                     + "].  Retrying...", e);
                 try {
                   Thread.sleep(5000);
@@ -245,7 +306,7 @@ public class GroomServer implements Runnable {
         initialize();
       }
     } catch (IOException ioe) {
-      LOG.error("Got fatal exception while reinitializing TaskTracker: "
+      LOG.error("Got fatal exception while reinitializing GroomServer: "
           + StringUtils.stringifyException(ioe));
       return;
     }
@@ -273,11 +334,95 @@ public class GroomServer implements Runnable {
     }
 
     try {
-      HamaConfiguration conf = new HamaConfiguration();
-      new GroomServer(conf).run();
+      Configuration conf = new HamaConfiguration();
+      conf.set("bsp.master.port", "40000");
+      conf.set("bsp.groom.port", "40020");
+      conf.set("bsp.local.dir", conf.get("hadoop.tmp.dir") + "/bsp/local");
+      conf.set("bsp.system.dir", conf.get("hadoop.tmp.dir") + "/bsp/system");
+      GroomServer groom = GroomServer.constructGroomServer(GroomServer.class, conf);
+      startGroomServer(groom);
     } catch (Throwable e) {
       LOG.fatal(StringUtils.stringifyException(e));
       System.exit(-1);
+    }
+  }
+  
+  public static Thread startGroomServer(final GroomServer hrs) {
+    return startGroomServer(hrs,
+      "regionserver" + hrs.groomServerName);
+  }
+  
+  public static Thread startGroomServer(final GroomServer hrs,
+      final String name) {
+    Thread t = new Thread(hrs);
+    t.setName(name);
+    t.start();
+    return t;
+  }
+  
+  ///////////////////////////////////////////////////////
+  // TaskInProgress maintains all the info for a Task that
+  // lives at this GroomServer.  It maintains the Task object,
+  // its TaskStatus, and the TaskRunner.
+  ///////////////////////////////////////////////////////
+  class TaskInProgress {
+    Task task;
+    volatile boolean done = false;
+    volatile boolean wasKilled = false;
+    private TaskStatus taskStatus;
+    
+    public TaskInProgress(Task task, BSPJobContext job) {
+      this.task = task;      
+    }
+    
+    /**
+     */
+    public Task getTask() {
+      return task;
+    }
+    
+    /**
+     */
+    public synchronized TaskStatus getStatus() {
+      return taskStatus;
+    }
+    
+    /**
+     */
+    public TaskStatus.State getRunState() {
+      return taskStatus.getRunState();
+    }
+    
+    public boolean wasKilled() {
+      return wasKilled;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+      return (obj instanceof TaskInProgress) &&
+        task.getTaskID().equals
+        (((TaskInProgress) obj).getTask().getTaskID());
+    }
+        
+    @Override
+    public int hashCode() {
+      return task.getTaskID().hashCode();
+    }
+  }
+
+  public boolean isRunning() {
+    return running;
+  }
+ 
+  public static GroomServer constructGroomServer(Class<? extends GroomServer> groomServerClass,
+      final Configuration conf2)  {
+    try {
+      Constructor<? extends GroomServer> c =
+        groomServerClass.getConstructor(Configuration.class);
+      return c.newInstance(conf2);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed construction of " +
+        "Master: " + groomServerClass.toString(), e);
     }
   }
 }

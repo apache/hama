@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.bsp;
 
 import java.io.DataInput;
@@ -31,10 +30,10 @@ public class TaskID extends ID {
     idFormat.setMinimumIntegerDigits(6);
   }
 
-  private JobID jobId;
+  private BSPJobID jobId;
   private boolean isMatrixTask;
 
-  public TaskID(JobID jobId, boolean isMatrixTask, int id) {
+  public TaskID(BSPJobID jobId, boolean isMatrixTask, int id) {
     super(id);
     if (jobId == null) {
       throw new IllegalArgumentException("jobId cannot be null");
@@ -44,15 +43,15 @@ public class TaskID extends ID {
   }
 
   public TaskID(String jtIdentifier, int jobId, boolean isGraphTask, int id) {
-    this(new JobID(jtIdentifier, jobId), isGraphTask, id);
+    this(new BSPJobID(jtIdentifier, jobId), isGraphTask, id);
   }
 
   public TaskID() {
-    jobId = new JobID();
+    jobId = new BSPJobID();
   }
 
-  /** Returns the {@link JobID} object that this tip belongs to */
-  public JobID getJobID() {
+  /** Returns the {@link BSPJobID} object that this tip belongs to */
+  public BSPJobID getJobID() {
     return jobId;
   }
 

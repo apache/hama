@@ -15,14 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ipc;
-
-import org.apache.hadoop.ipc.VersionedProtocol;
+package org.apache.hama.bsp;
 
 /**
- * There is one version id for all the RPC interfaces. If any interface is
- * changed, the versionID must be changed here.
+ * {@link JobChangeEvent} is used to capture state changes in a job. A job can
+ * change its state w.r.t priority, progress, run-state etc.
  */
-public interface HamaRPCProtocolVersion extends VersionedProtocol {
-  public static final long versionID = 0L;
+abstract class JobChangeEvent {
+  private JobInProgress jip;
+
+  JobChangeEvent(JobInProgress jip) {
+    this.jip = jip;
+  }
+
+  /**
+   * Get the job object for which the change is reported
+   */
+  JobInProgress getJobInProgress() {
+    return jip;
+  }
 }

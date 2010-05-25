@@ -15,41 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.hama.graph;
+package org.apache.hama.bsp;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hama.bsp.TaskAttemptContext;
-
 /**
- * <code>RecordWriter</code> writes the output &lt;key, value&gt; pairs to an
- * output file.
- * 
- * <p>
- * <code>RecordWriter</code> implementations write the job outputs to the
- * {@link FileSystem}.
- * 
- * @see OutputFormat
+ * A listener for changes in a {@link JobInProgress job}'s lifecycle in the
+ * {@link BSPMaster}.
  */
-public abstract class RecordWriter<K, V> {
-  /**
-   * Writes a key/value pair.
-   * 
-   * @param key the key to write.
-   * @param value the value to write.
-   * @throws IOException
-   */
-  public abstract void write(K key, V value) throws IOException,
-      InterruptedException;
+abstract class JobInProgressListener {
 
   /**
-   * Close this <code>RecordWriter</code> to future operations.
+   * Invoked when a new job has been added to the {@link BSPMaster}.
    * 
-   * @param context the context of the task
+   * @param job The added job.
    * @throws IOException
    */
-  public abstract void close(TaskAttemptContext context) throws IOException,
-      InterruptedException;
+  public abstract void jobAdded(JobInProgress job) throws IOException;
+
+  /**
+   * Invoked when a job has been removed from the {@link BSPMaster}.
+   * 
+   * @param job The removed job.
+   */
+  public abstract void jobRemoved(JobInProgress job);
+
+  /**
+   * Invoked when a job has been updated in the {@link BSPMaster}. This change
+   * in the job is tracker using {@link JobChangeEvent}.
+   * 
+   * @param event the event that tracks the change
+   */
+  public abstract void jobUpdated(JobChangeEvent event);
 }

@@ -15,14 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ipc;
+package org.apache.hama.bsp;
 
-import org.apache.hadoop.ipc.VersionedProtocol;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
- * There is one version id for all the RPC interfaces. If any interface is
- * changed, the versionID must be changed here.
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
+ * {@link org.apache.hama.bsp.GroomServer} to reinitialize itself.
+ * 
  */
-public interface HamaRPCProtocolVersion extends VersionedProtocol {
-  public static final long versionID = 0L;
+class ReinitTrackerAction extends GroomServerAction {
+
+  public ReinitTrackerAction() {
+    super(ActionType.REINIT_GROOM);
+  }
+
+  public void write(DataOutput out) throws IOException {
+  }
+
+  public void readFields(DataInput in) throws IOException {
+  }
+
 }

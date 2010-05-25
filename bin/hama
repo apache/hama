@@ -57,7 +57,7 @@ if [ $# = 0 ]; then
   echo "where COMMAND is one of:"
   echo "  bspmaster            run the BSP Master node"
   echo "  groom                run the Groom node"
-  echo "  version              print the version"
+  echo "  test                 run a bsp example for test"
   echo "  jar <jar>            run a jar file"
   echo " or"
   echo "  CLASSNAME            run the class named CLASSNAME"
@@ -108,9 +108,6 @@ fi
 if [ -d "$HAMA_HOME/build/test/classes" ]; then
   CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/test/classes
 fi
-if [ -d "$HAMA_HOME/build/tools" ]; then
-  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/tools
-fi
 
 # so that filenames w/ spaces are handled correctly in loops below
 IFS=
@@ -119,7 +116,10 @@ IFS=
 if [ -d "$HAMA_HOME/webapps" ]; then
   CLASSPATH=${CLASSPATH}:$HAMA_HOME
 fi
-for f in $HAMA_HOME/hama-*-core.jar; do # TODO - should be changed before initial release
+for f in $HAMA_HOME/hama-*-core.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+for f in $HAMA_HOME/build/hama-*-dev.jar; do # TODO - should be changed before initial release
   CLASSPATH=${CLASSPATH}:$f;
 done
 
@@ -130,13 +130,6 @@ done
 
 for f in $HAMA_HOME/lib/jsp-2.1/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
-done
-
-for f in $HAMA_HOME/hama-*-tools.jar; do
-  TOOL_PATH=${TOOL_PATH}:$f;
-done
-for f in $HAMA_HOME/build/hama-*-tools.jar; do
-  TOOL_PATH=${TOOL_PATH}:$f;
 done
 
 # add user-specified CLASSPATH last
@@ -167,9 +160,9 @@ if [ "$COMMAND" = "bspmaster" ] ; then
 elif [ "$COMMAND" = "groom" ] ; then
   CLASS='org.apache.hama.bsp.GroomServer'
   BSP_OPTS="$BSP_OPTS $BSP_GROOMSERVER_OPTS"
-elif [ "$COMMAND" = "version" ] ; then
-  CLASS=org.apache.hama.util.VersionInfo
-  BSP_OPTS="$BSP_OPTS $BSP_CLIENT_OPTS"
+elif [ "$COMMAND" = "test" ] ; then
+  CLASS=org.apache.hama.bsp.BSPTestDriver
+  BSP_OPTS="$BSP_OPTS"
 else
   CLASS=$COMMAND
 fi

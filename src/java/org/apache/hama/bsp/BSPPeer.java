@@ -1,6 +1,4 @@
 /**
- * Copyright 2007 The Apache Software Foundation
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -33,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
+import org.apache.hama.Constants;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -66,20 +65,23 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
   public BSPPeer(Configuration conf) throws IOException {
     this.conf = conf;
 
-    serverName = conf.get(PEER_HOST,DEFAULT_PEER_HOST) +":"+ conf.getInt(PEER_PORT, DEFAULT_PEER_PORT);
-    bindAddress = conf.get(PEER_HOST, DEFAULT_PEER_HOST);
-    bindPort = conf.getInt(PEER_PORT, DEFAULT_PEER_PORT);    
-    bspRoot = conf.get(ZOOKEEPER_ROOT, DEFAULT_ZOOKEEPER_ROOT);
-    zookeeperAddr = conf.get(ZOOKEEPER_SERVER_ADDRS,"localhost:21810");
+    serverName = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST)
+        + ":" + conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+    bindAddress = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST);
+    bindPort = conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+    bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
+        Constants.DEFAULT_ZOOKEEPER_ROOT);
+    zookeeperAddr = conf.get(Constants.ZOOKEEPER_SERVER_ADDRS,
+        "localhost:21810");
 
     reinitialize();
   }
 
   public void reinitialize() {
     try {
-      System.out.println(bindAddress+":"+bindPort);
+      System.out.println(bindAddress + ":" + bindPort);
       server = RPC.getServer(this, bindAddress, bindPort, conf);
-      server.start();      
+      server.start();
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -98,9 +100,8 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
 
   /*
    * (non-Javadoc)
-   * 
    * @see org.apache.hama.bsp.BSPPeerInterface#send(java.net.InetSocketAddress,
-   *      org.apache.hadoop.io.Writable, org.apache.hadoop.io.Writable)
+   * org.apache.hadoop.io.Writable, org.apache.hadoop.io.Writable)
    */
   @Override
   public void send(InetSocketAddress hostname, BSPMessage msg)
@@ -116,7 +117,6 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
 
   /*
    * (non-Javadoc)
-   * 
    * @see org.apache.hama.bsp.BSPPeerInterface#sync()
    */
   @Override
@@ -145,7 +145,7 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
       }
     }
     enterBarrier();
-    Thread.sleep(ATLEAST_WAIT_TIME); // TODO - This is temporary work because
+    Thread.sleep(Constants.ATLEAST_WAIT_TIME); // TODO - This is temporary work because
     // it can be affected by network condition,
     // the number of peers, and the load of zookeeper.
     // It should fixed to some flawless way.

@@ -1,6 +1,4 @@
 /**
- * Copyright 2008 The Apache Software Foundation
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,53 +15,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ipc;
+package org.apache.hama.bsp;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configurable;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Writable;
 
-public class HeartbeatResponse implements Writable, Configurable {
-  private Configuration conf;
-
-  private short responseId;
-
-  public HeartbeatResponse() {
+/**
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} 
+ * to the {@link org.apache.hama.bsp.GroomServer} to kill a task.
+ * 
+ */
+class KillTaskAction extends GroomServerAction {
+  final TaskAttemptID taskId;
+  
+  public KillTaskAction() {
+    super(ActionType.KILL_TASK);
+    taskId = new TaskAttemptID();
+  }
+  
+  public KillTaskAction(TaskAttemptID taskId) {
+    super(ActionType.KILL_TASK);
+    this.taskId = taskId;
   }
 
-  public HeartbeatResponse(short responseId) {
-    this.responseId = responseId;
+  public TaskAttemptID getTaskID() {
+    return taskId;
   }
-
-  public void setResponseId(short responseId) {
-    this.responseId = responseId;
-  }
-
-  public short getResponseId() {
-    return responseId;
+  
+  @Override
+  public void write(DataOutput out) throws IOException {
+    taskId.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.responseId = in.readShort();
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    out.writeShort(this.responseId);
-  }
-
-  @Override
-  public Configuration getConf() {
-    return this.conf;
-  }
-
-  @Override
-  public void setConf(Configuration conf) {
-    this.conf = conf;
+    taskId.readFields(in);
   }
 }
