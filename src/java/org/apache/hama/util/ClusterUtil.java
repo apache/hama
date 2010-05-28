@@ -70,7 +70,7 @@ public class ClusterUtil {
    * Start the cluster.
    * @param m
    * @param conf 
-   * @param groomServers
+   * @param groomservers
    * @return Address to use contacting master.
    * @throws InterruptedException 
    * @throws IOException 

@@ -372,16 +372,16 @@ public class BSPJobClient extends Configured {
       throw new IOException("Could not launch job");
     }
   }
-  
+
   /**
    * Monitor a job and print status in real-time as progress is made and tasks 
    * fail.
-   * @param conf the job's configuration
-   * @param job the job to track
-   * @return true if the job succeeded
-   * @throws IOException 
-   * @throws IOException if communication to the BSPMaster fails
-   * @throws InterruptedException 
+   * 
+   * @param job
+   * @param info
+   * @return true, if job is successful
+   * @throws IOException
+   * @throws InterruptedException
    */
   public boolean monitorAndPrintJob (BSPJob job, RunningJob info) 
     throws IOException, InterruptedException {
@@ -419,5 +419,16 @@ public class BSPJobClient extends Configured {
   public RunningJob runJob(BSPJob job) throws FileNotFoundException,
   IOException {
     return submitJobInternal(job);    
+  }
+  
+  /**
+   * Get status information about the BSP cluster
+   * 
+   * @throws IOException
+   */
+  public ClusterStatus getClusterStatus() throws IOException {
+    // TODO: 
+    
+    return null;
   }
 }
