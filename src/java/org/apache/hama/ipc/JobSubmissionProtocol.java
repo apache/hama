@@ -33,7 +33,7 @@ public interface JobSubmissionProtocol extends HamaRPCProtocolVersion {
   
   /**
    * Allocate a new id for the job.
-   * @return
+   * @return job id
    * @throws IOException
    */
   public BSPJobID getNewJobId() throws IOException;
@@ -45,7 +45,7 @@ public interface JobSubmissionProtocol extends HamaRPCProtocolVersion {
    * The job files should be submitted in <b>system-dir</b>/<b>jobName</b>.
    *
    * @param jobName
-   * @return
+   * @return jobStatus
    * @throws IOException
    */
   public JobStatus submitJob(BSPJobID jobName) throws IOException;

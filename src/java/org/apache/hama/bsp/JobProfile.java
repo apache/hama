@@ -59,9 +59,7 @@ public class JobProfile implements Writable {
    * @param user userid of the person who submitted the job.
    * @param jobid id of the job.
    * @param jobFile job configuration file.
-   * @param url link to the web-ui for details of the job.
    * @param name user-specified job name.
-   * @param queueName name of the queue to which the job is submitted
    */
   public JobProfile(String user, BSPJobID jobid, String jobFile, String name) {
     this.user = user;
