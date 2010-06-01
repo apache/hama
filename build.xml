@@ -98,7 +98,7 @@
         </copy>
     </target>
 	
-	<!-- ================================================================== -->
+    <!-- ================================================================== -->
     <!-- Java Compiler Compiler, generate Parsers                           -->
     <!-- ================================================================== -->
 
@@ -106,7 +106,7 @@
         <!--Compile whats under src and generated java classes made from jsp-->
         <mkdir dir="${build.src}" />
         <javac encoding="${build.encoding}" 
-                srcdir="${src.dir};${build.src};${src.examples}" includes="**/*.java" 
+         srcdir="${src.dir};${build.src};${src.examples}" includes="**/*.java" 
         	destdir="${build.classes}" debug="${javac.debug}" 
                 deprecation="${javac.deprecation}">
             <classpath refid="classpath" />
@@ -244,7 +244,25 @@
         </javadoc>
     </target>
 
-    <!-- ================================================================== -->
+	  <!-- Javadoc with UML diagrams -->
+    <target name="javadocs" depends="compile">
+      <javadoc sourcepath="${src.dir}" packagenames="org.apache.hama.*" destdir="${build.javadoc}" private="true">
+           <doclet name="org.umlgraph.doclet.UmlGraphDoc" path="${lib.dir}/UmlGraph.jar">
+            <param name="-inferrel"/>
+            <param name="-inferdep"/>
+            <param name="-hide" value="java.*"/>
+            <param name="-collpackages" value="java.util.*"/>
+            <param name="-qualify"/>
+            <param name="-postfixpackage"/>
+            <param name="-nodefontsize" value="9"/>
+            <param name="-nodefontpackagesize" value="7"/>
+            <param name="-link" value="http://java.sun.com/j2se/1.5.0/docs/guide/javadoc/doclet/spec"/>
+            <param name="-link" value="http://java.sun.com/j2se/1.5/docs/api"/>
+        </doclet>
+      </javadoc>
+   </target>
+	
+	<!-- ================================================================== -->
     <!-- Run unit tests                                                     -->
     <!-- ================================================================== -->
     <path id="test.classpath">

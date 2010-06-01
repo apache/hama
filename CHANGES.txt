@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
 
+    HAMA-266: Add Ant target to generate the UML class diagrams (edwardyoon)
     HAMA-209: Add example for Cosine Similarity Matrix (edwardyoon)
     HAMA-195: Interface of the bsp (hyunsik via edwardyoon)
     HAMA-185: Finds the eigenvalues and eigenvectors 

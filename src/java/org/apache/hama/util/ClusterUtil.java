@@ -4,14 +4,13 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.bsp.GroomServer;
+import org.apache.log4j.Logger;
 
 public class ClusterUtil {
-  public static final Log LOG = LogFactory.getLog(ClusterUtil.class);
-
+  static final Logger LOG = Logger.getLogger(ClusterUtil.class);
   /**
    * Data Structure to hold GroomServer Thread and GroomServer instance
    */
