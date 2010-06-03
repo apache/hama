@@ -19,26 +19,43 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.zookeeper.KeeperException;
 
 /**
- * Interface BSP defines the basic operations needed to implement the BSP
- * algorithm.
+ * This class provides an abstract implementation of the BSP interface
  */
-public interface BSPInterface {
+public abstract class BSP extends Thread implements BSPInterface {
+  private BSPPeer peer;
 
   /**
-   * A user defined function for programming in the BSP style.
+   * Constructor for abstract class
    * 
-   * Applications can use the {@link org.apache.hama.bsp.BSPPeer} to handle the
-   * communication and synchronization between processors.
-   * 
-   * @param peer
+   * @param conf
    * @throws IOException
-   * @throws KeeperException
-   * @throws InterruptedException
    */
-  public void bsp(BSPPeer peer) throws IOException, KeeperException,
-      InterruptedException;
+  public BSP(Configuration conf) throws IOException {
+    this.peer = new BSPPeer(conf);
+  }
 
+  /**
+   * A thread's run method.
+   * 
+   * The run method performs the
+   * {@link org.apache.hama.bsp.BSPInterface#bsp(BSPPeer)}
+   */
+  public void run() {
+    try {
+      bsp(peer);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (KeeperException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
 }

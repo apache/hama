@@ -67,10 +67,16 @@ public class BSPJob extends BSPJobContext {
     conf.set("bsp.working.dir", dir.toString());
   }
 
-  public void setWorkClass(Class<? extends Work> cls)
+  /**
+   * Set the BSP algorithm class for the job.
+   * 
+   * @param cls
+   * @throws IllegalStateException
+   */
+  public void setBspClass(Class<? extends BSP> cls)
       throws IllegalStateException {
     ensureState(JobState.DEFINE);
-    conf.setClass(WORK_CLASS_ATTR, cls, Work.class);
+    conf.setClass(WORK_CLASS_ATTR, cls, BSP.class);
   }
 
   public void setJar(String jar) {
@@ -124,10 +130,6 @@ public class BSPJob extends BSPJobContext {
   public void setOutputFormat(Class<? extends OutputFormat> cls) {
     ensureState(JobState.DEFINE);
     conf.setClass(OUTPUT_FORMAT_CLASS_ATTR, cls, OutputFormat.class);    
-  }
-
-  public void setBSPCode(Class<? extends BSPInterface> class1) {
-    // TODO Auto-generated method stub    
   }
 
   public void setUser(String user) {
