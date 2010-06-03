@@ -47,7 +47,7 @@ public class UserInterface extends HamaCluster implements Watcher {
       super(conf);
     }
 
-    public void bsp(BSPPeer peer) throws IOException, KeeperException,
+    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
         InterruptedException {
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {
@@ -63,17 +63,17 @@ public class UserInterface extends HamaCluster implements Watcher {
       byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
-      peer.send(new InetSocketAddress("localhost", 30000), estimate);
-      peer.sync();
+      bspPeer.send(new InetSocketAddress("localhost", 30000), estimate);
+      bspPeer.sync();
 
       double pi = 0.0;
       BSPMessage received;
-      while ((received = peer.getCurrentMessage()) != null) {
+      while ((received = bspPeer.getCurrentMessage()) != null) {
         pi = (pi + Bytes.toDouble(received.getData())) / 2;
       }
 
       if (pi != 0.0)
-        System.out.println(peer.getServerName() + ": " + pi);
+        System.out.println(bspPeer.getServerName() + ": " + pi);
     }
   }
 
