@@ -33,12 +33,12 @@ public interface BSPInterface {
    * Applications can use the {@link org.apache.hama.bsp.BSPPeer} to handle the
    * communication and synchronization between processors.
    * 
-   * @param peer
+   * @param bspPeer
    * @throws IOException
    * @throws KeeperException
    * @throws InterruptedException
    */
-  public void bsp(BSPPeer peer) throws IOException, KeeperException,
+  public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
       InterruptedException;
 
 }
