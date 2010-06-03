@@ -13,8 +13,8 @@ public class BSPTestDriver {
    */
   public static void main(String[] args) throws IOException, InterruptedException {
     BSPJob job = new BSPJob(new HamaConfiguration());
-    job.setJarByClass(Work.class);
-    job.setWorkClass(Work.class);
+    job.setJarByClass(BSP.class);
+    job.setBspClass(BSP.class);
     job.submit();
     Thread.sleep(3000);
 
