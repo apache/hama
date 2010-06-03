@@ -3,7 +3,6 @@ package org.apache.hama.util;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.bsp.GroomServer;

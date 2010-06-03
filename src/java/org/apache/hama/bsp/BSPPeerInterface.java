@@ -17,10 +17,44 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
-public interface BSPPeerInterface extends BSPRPCProtocolVersion {
+import org.apache.hama.Constants;
+import org.apache.zookeeper.KeeperException;
+
+public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Constants {
+
+  /**
+   * Send a data with a tag to another BSPSlave corresponding to hostname.
+   * Messages sent by this method are not guaranteed to be received in a sent
+   * order.
+   * 
+   * @param hostname
+   * @param msg
+   * @throws IOException
+   */
+  public void send(InetSocketAddress hostname, BSPMessage msg)
+      throws IOException;
+
   public void put(BSPMessage msg) throws IOException;
+  
+  /**
+   * @return the current message
+   * @throws IOException
+   */
+  public BSPMessage getCurrentMessage() throws IOException;
 
+  /**
+   * Synchronize all of the data in the local queue to other BSP Peers.
+   * 
+   * @throws InterruptedException
+   * @throws KeeperException
+   */
+  public void sync() throws IOException, KeeperException, InterruptedException;
+  
   public boolean isRunning();
+  
+  public String getServerName();
 }
