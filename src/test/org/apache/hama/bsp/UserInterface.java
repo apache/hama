@@ -73,7 +73,7 @@ public class UserInterface extends HamaCluster implements Watcher {
       }
 
       if (pi != 0.0)
-        System.out.println(pi);
+        System.out.println(peer.getServerName() + ": " + pi);
     }
   }
 

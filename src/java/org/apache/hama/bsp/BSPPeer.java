@@ -39,7 +39,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 
-public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
+public class BSPPeer implements Watcher, BSPPeerInterface {
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
 
   protected Configuration conf;
@@ -79,7 +79,7 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
 
   public void reinitialize() {
     try {
-      System.out.println(bindAddress + ":" + bindPort);
+      LOG.debug("reinitialize(): " + bindAddress + ":" + bindPort);
       server = RPC.getServer(this, bindAddress, bindPort, conf);
       server.start();
     } catch (IOException e) {
@@ -236,5 +236,10 @@ public class BSPPeer implements DefaultBSPPeer, Watcher, BSPPeerInterface {
     }
 
     return peer;
+  }
+
+  @Override
+  public String getServerName() {
+    return this.serverName;
   }
 }
