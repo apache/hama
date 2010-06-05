@@ -86,7 +86,7 @@ public class ClusterStatus implements Writable {
    * @return the number of groom servers in the cluster.
    */
   public int getGroomServers() {
-    return tasks;
+    return numActiveGrooms;
   }
   
   /**
@@ -152,8 +152,10 @@ public class ClusterStatus implements Writable {
     int numGroomNames = in.readInt();
     String name;
     if (numGroomNames > 0) {
-      name = Text.readString(in);
-      activeGrooms.add(name);
+      for(int i=0; i < numGroomNames; i++) {
+        name = Text.readString(in);
+        activeGrooms.add(name);
+      }
     }
     tasks = in.readInt();
     maxTasks = in.readInt();
