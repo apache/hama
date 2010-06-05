@@ -142,7 +142,8 @@ Trunk (unreleased changes)
     HAMA-9: Upgrade dependencies (edwardyoon)
 
   BUG FIXES
- 
+  
+    HAMA-270: wrong sequence of readFields() of ClusterStatus (hyunsik)
     HAMA-260: Current version command of script is linked unknown class (edwardyoon)
     HAMA-250: Add --no-check-certificate option to 'wget' command lines (edwardyoon)
     HAMA-242: Wrong assignment of default setting inside BSPPeer constructor (hyunsik)
