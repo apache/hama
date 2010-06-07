@@ -27,7 +27,6 @@ public class ExampleDriver {
     ProgramDriver pgd = new ProgramDriver();
     try {
       pgd.addClass("rand", RandomMatrix.class, "Generate matrix with random elements.");
-      pgd.addClass("add", MatrixAddition.class, "Mat-Mat Addition.");
       pgd.addClass("mult", MatrixMultiplication.class, "Mat-Mat Multiplication.");
       pgd.addClass("similarity", CosineSimilarityMatrix.class, "Cosine Similarity Matrix.");
       pgd.addClass("norms", MatrixNorm.class, "Matrix Norms.");

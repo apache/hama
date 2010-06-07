@@ -177,25 +177,6 @@ public interface Matrix {
   public void add(int i, int j, double value) throws IOException;
 
   /**
-   * A = B + A
-   * 
-   * @param B
-   * @return A
-   * @throws IOException
-   */
-  public Matrix add(Matrix B) throws IOException;
-
-  /**
-   * A = alpha*B + A
-   * 
-   * @param alpha
-   * @param B
-   * @return A
-   * @throws IOException
-   */
-  public Matrix add(double alpha, Matrix B) throws IOException;
-
-  /**
    * C = alpha*A*B + C
    * 
    * @param alpha
@@ -222,14 +203,6 @@ public interface Matrix {
     /** Largest entry in absolute value.  */
     Maxvalue
   }
-
-  /**
-   * Transposes the matrix. In most cases, the matrix must be square
-   * for this to work.
-   * 
-   * @return the transposed matrix
-   */
-  public Matrix transpose() throws IOException;
   
   /**
    * Save to a table or file

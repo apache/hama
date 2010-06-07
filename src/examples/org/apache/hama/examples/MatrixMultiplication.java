@@ -37,11 +37,14 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaAdmin;
 import org.apache.hama.HamaAdminImpl;
-import org.apache.hama.examples.mapreduce.*;
+import org.apache.hama.examples.mapreduce.BlockMultMap;
+import org.apache.hama.examples.mapreduce.BlockMultReduce;
+import org.apache.hama.examples.mapreduce.CollectBlocksMapper;
+import org.apache.hama.examples.mapreduce.DenseMatrixVectorMultMap;
+import org.apache.hama.examples.mapreduce.DenseMatrixVectorMultReduce;
 import org.apache.hama.io.BlockID;
 import org.apache.hama.matrix.DenseMatrix;
 import org.apache.hama.matrix.Matrix;
-import org.apache.hama.matrix.SparseMatrix;
 import org.apache.hama.util.RandomVariable;
 
 public class MatrixMultiplication extends AbstractExample {
@@ -66,13 +69,11 @@ public class MatrixMultiplication extends AbstractExample {
       System.exit(-1);
     }
 
-    Matrix c;
+    Matrix c = null;
     if (a.getType().equals("SparseMatrix")) {
-      if (ARGS.size() > 2) {
         System.out
-            .println("NOTE: You can't use the block algorithm for sparse matrix multiplication.");
-      }
-      c = ((SparseMatrix) a).mult(b);
+            .println("NOTE: Not implemented M/R based sparse matrix multiplication.");
+        System.exit(-1);
     } else {
       if (ARGS.size() > 2) {
         c = mult(a, b, Integer.parseInt(ARGS.get(2)));

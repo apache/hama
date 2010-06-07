@@ -34,13 +34,9 @@ import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.matrix.algebra.SparseMatrixVectorMultMap;
-import org.apache.hama.matrix.algebra.SparseMatrixVectorMultReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.RandomVariable;
 
@@ -107,18 +103,6 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
   }
 
   @Override
-  public Matrix add(Matrix B) throws IOException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public Matrix add(double alpha, Matrix B) throws IOException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
   public double get(int i, int j) throws IOException {
     if (this.getRows() < i || this.getColumns() < j)
       throw new ArrayIndexOutOfBoundsException(i + ", " + j);
@@ -166,56 +150,6 @@ public class SparseMatrix extends AbstractMatrix implements Matrix {
    */
   public String getType() {
     return this.getClass().getSimpleName();
-  }
-
-  /**
-   * C = A*B using iterative method
-   * 
-   * @param B
-   * @return C
-   * @throws IOException
-   */
-  public SparseMatrix mult(Matrix B) throws IOException {
-    SparseMatrix result = new SparseMatrix(config, this.getRows(), this
-        .getColumns());
-
-    List<Job> jobId = new ArrayList<Job>();
-
-    for (int i = 0; i < this.getRows(); i++) {
-      Job job = new Job(config, "multiplication MR job : " + result.getPath()
-          + " " + i);
-
-      Scan scan = new Scan();
-      scan.addFamily(Constants.COLUMNFAMILY);
-      job.getConfiguration().set(SparseMatrixVectorMultMap.MATRIX_A,
-          this.getPath());
-      job.getConfiguration().setInt(SparseMatrixVectorMultMap.ITH_ROW, i);
-
-      TableMapReduceUtil.initTableMapperJob(B.getPath(), scan,
-          SparseMatrixVectorMultMap.class, IntWritable.class,
-          MapWritable.class, job);
-      TableMapReduceUtil.initTableReducerJob(result.getPath(),
-          SparseMatrixVectorMultReduce.class, job);
-      try {
-        job.waitForCompletion(false);
-        jobId.add(job);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      } catch (ClassNotFoundException e) {
-        e.printStackTrace();
-      }
-    }
-
-    while (checkAllJobs(jobId) == false) {
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-    }
-
-    return result;
   }
 
   @Override
