@@ -29,7 +29,6 @@ public class TestSparseMatrix extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestSparseMatrix.class);
   private int SIZE = 10;
   private SparseMatrix m1;
-  private SparseMatrix m2;
 
   /**
    * @throws UnsupportedEncodingException
@@ -41,7 +40,6 @@ public class TestSparseMatrix extends HamaCluster {
   public void setUp() throws Exception {
     super.setUp();
     m1 = SparseMatrix.random(getConf(), SIZE, SIZE);
-    m2 = SparseMatrix.random(getConf(), SIZE, SIZE);
   }
 
   public void testMult() throws IOException {
@@ -49,9 +47,6 @@ public class TestSparseMatrix extends HamaCluster {
     sparsity();
     m1.set(0, 0, -8);
     assertEquals(m1.get(0, 0), -8.0);
-
-    SparseMatrix result = m1.mult(m2);
-    verifyMultResult(m1, m2, result);
 
     SparseVector vector = new SparseVector();
     vector.set(0, 3);
@@ -74,33 +69,5 @@ public class TestSparseMatrix extends HamaCluster {
     }
 
     assertTrue(appeared);
-  }
-
-  /**
-   * Verifying multiplication result
-   * 
-   * @param m1
-   * @param m2
-   * @param result
-   * @throws IOException
-   */
-  private void verifyMultResult(SparseMatrix m1, SparseMatrix m2,
-      SparseMatrix result) throws IOException {
-    double[][] c = new double[SIZE][SIZE];
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        for (int k = 0; k < SIZE; k++) {
-          c[i][k] += m1.get(i, j) * m2.get(j, k);
-        }
-      }
-    }
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        double gap = (c[i][j] - result.get(i, j));
-        assertTrue(gap < 0.000001 && gap > -0.000001);
-      }
-    }
   }
 }

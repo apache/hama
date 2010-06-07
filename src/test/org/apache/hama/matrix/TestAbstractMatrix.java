@@ -33,19 +33,8 @@ public class TestAbstractMatrix extends HamaCluster {
   }
 
   public void testTransposeAndNorm() throws IOException {
-    testTrans(m1);
-    testTrans(m2);
     normTest(m1);
     normTest(m2);
-  }
-  
-  public void testTrans(Matrix matrix) throws IOException {
-    Matrix trans1 = matrix.transpose();
-    for (int i = 0; i < trans1.getRows(); i++) {
-      for (int j = 0; j < trans1.getColumns(); j++) {
-        assertEquals(trans1.get(i, j), matrix.get(j, i));
-      }
-    }
   }
 
   public void normTest(Matrix matrix) throws IOException {

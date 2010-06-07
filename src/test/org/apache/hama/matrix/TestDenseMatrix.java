@@ -37,7 +37,6 @@ public class TestDenseMatrix extends HamaCluster {
   static final Logger LOG = Logger.getLogger(TestDenseMatrix.class);
   private int SIZE = 10;
   private Matrix m1;
-  private Matrix m2;
   private HamaConfiguration conf;
 
   /**
@@ -53,80 +52,18 @@ public class TestDenseMatrix extends HamaCluster {
     conf = getConf();
 
     m1 = DenseMatrix.random(conf, SIZE, SIZE);
-    m2 = DenseMatrix.random(conf, SIZE, SIZE);
   }
 
   public void testAddMult() throws IOException {
-
-    Matrix m3 = DenseMatrix.random(conf, SIZE, SIZE);
-    Matrix m4 = DenseMatrix.random(conf, SIZE - 2, SIZE - 2);
-    try {
-      m1.add(m4);
-      fail("Matrix-Addition should be failed while rows and columns aren't same.");
-    } catch (IOException e) {
-      LOG.info(e.toString());
-    }
-    
     double origin = m1.get(1, 1);
     m1.add(1, 1, 0.5);
     assertEquals(m1.get(1, 1), origin + 0.5);
     
-    matrixAdd(m1, m2);
-    multMatrixAdd(m1, m2, m3);
-    addAlphaMatrix(m1, m2);
-
     getRowColumnVector();
     setRowColumnVector();
 
     setMatrix(m1);
     setAlphaMatrix(m1);
-  }
-
-  /**
-   * Test matrices addition
-   * 
-   * @throws IOException
-   */
-  public void matrixAdd(Matrix m1, Matrix m2) throws IOException {
-    Matrix result = m1.add(m2);
-
-    assertEquals(result.getRows(), SIZE);
-    assertEquals(result.getColumns(), SIZE);
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        assertEquals(result.get(i, j), m1.get(i, j) + m2.get(i, j));
-      }
-    }
-
-    Matrix subtract = result.add(-1.0, m2);
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        double gap = (subtract.get(i, j) - m1.get(i, j));
-        assertTrue(-0.00001 < gap && gap < 0.00001);
-      }
-    }
-  }
-
-  public void multMatrixAdd(Matrix m1, Matrix m2, Matrix m3) throws IOException {
-    Matrix result = ((DenseMatrix) m1).add(m2, m3);
-
-    assertEquals(result.getRows(), SIZE);
-    assertEquals(result.getColumns(), SIZE);
-
-    for (int i = 0; i < SIZE; i++) {
-      for (int j = 0; j < SIZE; j++) {
-        assertEquals(result.get(i, j), m1.get(i, j) + m2.get(i, j)
-            + m3.get(i, j));
-      }
-    }
-  }
-
-  public void addAlphaMatrix(Matrix m1, Matrix m2) throws IOException {
-    double value = m1.get(0, 0) + (m2.get(0, 0) * 0.1);
-    Matrix result = m1.add(0.1, m2);
-    assertEquals(value, result.get(0, 0));
   }
 
   public void setMatrix(Matrix m1) throws IOException {

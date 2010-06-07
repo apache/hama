@@ -29,17 +29,13 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.matrix.algebra.MatrixAdditionMap;
-import org.apache.hama.matrix.algebra.MatrixAdditionReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.RandomVariable;
 
@@ -329,104 +325,6 @@ public class DenseMatrix extends AbstractMatrix implements Matrix {
       put.add(Constants.COLUMNFAMILY, Bytes.toBytes(String.valueOf(column)),
           Bytes.toBytes(value));
       table.put(put);
-    }
-  }
-
-  /**
-   * C = alpha*B + A
-   * 
-   * @param alpha
-   * @param B
-   * @return C
-   * @throws IOException
-   */
-  public DenseMatrix add(double alpha, Matrix B) throws IOException {
-    ensureForAddition(B);
-
-    DenseMatrix result = new DenseMatrix(config, this.getRows(), this
-        .getColumns());
-    Job job = new Job(config, "addition MR job" + result.getPath());
-
-    Scan scan = new Scan();
-    scan.addFamily(Constants.COLUMNFAMILY);
-    job.getConfiguration().set(MatrixAdditionMap.MATRIX_SUMMANDS, B.getPath());
-    job.getConfiguration().set(MatrixAdditionMap.MATRIX_ALPHAS,
-        Double.toString(alpha));
-
-    TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
-        MatrixAdditionMap.class, IntWritable.class, MapWritable.class, job);
-    TableMapReduceUtil.initTableReducerJob(result.getPath(),
-        MatrixAdditionReduce.class, job);
-    try {
-      job.waitForCompletion(true);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-
-    return result;
-  }
-
-  /**
-   * C = B + A
-   * 
-   * @param B
-   * @return C
-   * @throws IOException
-   */
-  public DenseMatrix add(Matrix B) throws IOException {
-    return add(1.0, B);
-  }
-
-  public DenseMatrix add(Matrix... matrices) throws IOException {
-    // ensure all the matrices are suitable for addition.
-    for (Matrix m : matrices) {
-      ensureForAddition(m);
-    }
-
-    DenseMatrix result = new DenseMatrix(config, this.getRows(), this
-        .getColumns());
-
-    StringBuilder summandList = new StringBuilder();
-    StringBuilder alphaList = new StringBuilder();
-    for (Matrix m : matrices) {
-      summandList.append(m.getPath());
-      summandList.append(",");
-      alphaList.append("1");
-      alphaList.append(",");
-    }
-    summandList.deleteCharAt(summandList.length() - 1);
-    alphaList.deleteCharAt(alphaList.length() - 1);
-
-    Job job = new Job(config, "addition MR job" + result.getPath());
-
-    Scan scan = new Scan();
-    scan.addFamily(Constants.COLUMNFAMILY);
-    job.getConfiguration().set(MatrixAdditionMap.MATRIX_SUMMANDS,
-        summandList.toString());
-    job.getConfiguration().set(MatrixAdditionMap.MATRIX_ALPHAS,
-        alphaList.toString());
-
-    TableMapReduceUtil.initTableMapperJob(this.getPath(), scan,
-        MatrixAdditionMap.class, IntWritable.class, MapWritable.class, job);
-    TableMapReduceUtil.initTableReducerJob(result.getPath(),
-        MatrixAdditionReduce.class, job);
-    try {
-      job.waitForCompletion(true);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-
-    return result;
-  }
-
-  private void ensureForAddition(Matrix m) throws IOException {
-    if (getRows() != m.getRows() || getColumns() != m.getColumns()) {
-      throw new IOException(
-          "Matrices' rows and columns should be same while A+B.");
     }
   }
 

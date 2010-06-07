@@ -40,15 +40,11 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaAdmin;
 import org.apache.hama.HamaAdminImpl;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.matrix.algebra.TransposeMap;
-import org.apache.hama.matrix.algebra.TransposeReduce;
 import org.apache.hama.util.BytesUtil;
 import org.apache.hama.util.RandomVariable;
 import org.apache.log4j.Logger;
@@ -422,34 +418,6 @@ public abstract class AbstractMatrix implements Matrix {
       }
     }
     closed = true;
-  }
-
-  public Matrix transpose() throws IOException {
-    Matrix result;
-    if (this.getType().equals("SparseMatrix")) {
-      result = new SparseMatrix(config, this.getRows(), this.getColumns());
-    } else {
-      result = new DenseMatrix(config, this.getRows(), this.getColumns());
-    }
-
-    Job job = new Job(config, "set MR job : " + this.getPath());
-
-    Scan scan = new Scan();
-    scan.addFamily(Constants.COLUMNFAMILY);
-    org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableMapperJob(
-        this.getPath(), scan, TransposeMap.class, IntWritable.class,
-        MapWritable.class, job);
-    org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil.initTableReducerJob(
-        result.getPath(), TransposeReduce.class, job);
-    try {
-      job.waitForCompletion(true);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-
-    return result;
   }
 
   public boolean checkAllJobs(List<Job> jobId) throws IOException {
