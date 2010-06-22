@@ -8,7 +8,6 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hama.io.BlockID;
 import org.apache.hama.matrix.DenseVector;
 import org.apache.hama.util.BytesUtil;
 

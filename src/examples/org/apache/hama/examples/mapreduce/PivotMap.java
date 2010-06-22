@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hama.io.Pair;
 
 public class PivotMap extends
     Mapper<Pair, DoubleWritable, Pair, DoubleWritable> {

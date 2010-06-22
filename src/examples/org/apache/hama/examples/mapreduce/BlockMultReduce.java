@@ -9,7 +9,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
-import org.apache.hama.io.BlockID;
 import org.apache.hama.matrix.SubMatrix;
 import org.apache.hama.util.BytesUtil;
 

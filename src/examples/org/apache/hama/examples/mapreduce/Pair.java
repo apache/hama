@@ -1,4 +1,4 @@
-package org.apache.hama.io;
+package org.apache.hama.examples.mapreduce;
 
 import java.io.DataInput;
 import java.io.DataOutput;
