@@ -30,7 +30,6 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.examples.JacobiEigen;
-import org.apache.hama.io.Pair;
 import org.apache.hama.util.BytesUtil;
 
 public class PivotInputFormat extends InputFormat<Pair, DoubleWritable>

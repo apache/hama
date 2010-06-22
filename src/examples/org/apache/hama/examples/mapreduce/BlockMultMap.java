@@ -8,7 +8,6 @@ import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hama.Constants;
-import org.apache.hama.io.BlockID;
 import org.apache.hama.matrix.SubMatrix;
 
 public class BlockMultMap extends TableMapper<BlockID, BytesWritable> {
