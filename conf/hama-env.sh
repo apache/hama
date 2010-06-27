@@ -22,7 +22,7 @@
 # Set environment variables here.
 
 # The java implementation to use.  Required.
-# export JAVA_HOME=/usr/java/jdk1.6.0_18
+export JAVA_HOME=/usr/lib/jvm/java-6-sun
 
 # hadoop conf dir. to find the mapreduce cluster.
 # export HADOOP_CONF_DIR=/usr/local/src/hadoop-0.20.1/conf
@@ -38,3 +38,9 @@
 
 # Where log files are stored.  $HAMA_HOME/logs by default.
 # export HAMA_LOG_DIR=${HAMA_HOME}/logs
+
+# Extra ssh options.  Empty by default.
+# export HAMA_SSH_OPTS="-o ConnectTimeout=1 -o SendEnv=HAMA_CONF_DIR"
+
+# Tell Hama whether it should manage it's own instance of Zookeeper or not.
+# export HAMA_MANAGES_ZK=true

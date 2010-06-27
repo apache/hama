@@ -60,6 +60,16 @@ public interface Constants {
   public static final int DEFAULT_ZOOKEEPER_PAUSE = 2 * 1000;
 
   ///////////////////////////////////////
+  // Constants for ZooKeeper
+  ///////////////////////////////////////  
+  static final String ZOOKEEPER_CONFIG_NAME = "zoo.cfg";
+  static final int DEFAULT_ZOOKEPER_CLIENT_PORT = 21810;
+  static final String ZOOKEEPER_QUORUM = "hama.zookeeper.quorum";
+  /** Cluster is in distributed mode or not */
+  static final String CLUSTER_DISTRIBUTED = "hama.cluster.distributed";
+  /** Cluster is fully-distributed */
+  static final String CLUSTER_IS_DISTRIBUTED = "true";
+  ///////////////////////////////////////
   // Constants for Matrix Package
   ///////////////////////////////////////
   /**

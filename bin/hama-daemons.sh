@@ -31,4 +31,15 @@ bin=`cd "$bin"; pwd`
 
 . $bin/hama-config.sh
 
-exec "$bin/grooms.sh" --config $HAMA_CONF_DIR cd "$HAMA_HOME" \; "$bin/hama-daemon.sh" --config $HAMA_CONF_DIR "$@"
+remote_cmd="cd ${HAMA_HOME}; $bin/hama-daemon.sh --config ${HAMA_CONF_DIR} $@"
+args="--config ${HAMA_CONF_DIR} $remote_cmd"
+command=$2
+
+case $command in
+  (zookeeper)
+    exec "$bin/zookeepers.sh" $args
+    ;;
+  (*)
+    exec "$bin/grooms.sh" $args
+    ;;
+esac
