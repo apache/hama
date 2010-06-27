@@ -172,9 +172,6 @@ public class BSPJobClient extends Configured {
   final static FsPermission JOB_DIR_PERMISSION =
     FsPermission.createImmutable((short) 0777); // rwx-rwx-rwx
 
-  public BSPJobClient() {
-  }
-
   public BSPJobClient(Configuration conf) throws IOException {
     setConf(conf);
     init(conf);
@@ -182,8 +179,12 @@ public class BSPJobClient extends Configured {
 
   public void init(Configuration conf) throws IOException {
     // it will be used to determine if the bspmaster is running on local or not. 
-    //String tracker = conf.get("bsp.master.address", "local"); 
-    this.jobSubmitClient = createRPCProxy(BSPMaster.getAddress(conf), conf);
+    String master = conf.get("bsp.master.address", "local");
+    if ("local".equals(master)) {
+      this.jobSubmitClient = new LocalJobRunner(conf);
+    } else {
+      this.jobSubmitClient = createRPCProxy(BSPMaster.getAddress(conf), conf);
+    }
   }
 
   private JobSubmissionProtocol createRPCProxy(InetSocketAddress addr,
@@ -305,7 +306,7 @@ public class BSPJobClient extends Configured {
   
   public 
   RunningJob submitJobInternal(BSPJob job) throws IOException {
-    BSPJobID jobId = jobSubmitClient.getNewJobId();    
+    BSPJobID jobId = jobSubmitClient.getNewJobId();
     Path submitJobDir = new Path(getSystemDir(), jobId.toString());
     Path submitJarFile = new Path(submitJobDir, "job.jar");    
     Path submitJobFile = new Path(submitJobDir, "job.xml");
@@ -365,7 +366,7 @@ public class BSPJobClient extends Configured {
     //
     // Now, actually submit the job (using the submit name)
     //
-    JobStatus status = jobSubmitClient.submitJob(jobId);
+    JobStatus status = jobSubmitClient.submitJob(jobId, submitJobFile.toString());
     if (status != null) {
       return new NetworkedJob(status);
     } else {
@@ -416,9 +417,10 @@ public class BSPJobClient extends Configured {
     return sysDir;
   }
 
-  public RunningJob runJob(BSPJob job) throws FileNotFoundException,
+  public static RunningJob runJob(BSPJob job) throws FileNotFoundException,
   IOException {
-    return submitJobInternal(job);    
+    BSPJobClient jc = new BSPJobClient(job.getConf());
+    return jc.submitJobInternal(job);    
   }
   
   /**

@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
@@ -167,7 +168,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     while (true) {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
-        if (list.size() < Integer.valueOf(conf.get("bsp.peers.num"))) {
+        if (list.size() < conf.getInt("bsp.peers.num", 0)) {
           mutex.wait();
         } else {
           return true;

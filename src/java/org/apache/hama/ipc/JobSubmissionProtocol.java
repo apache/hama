@@ -102,6 +102,9 @@ public interface JobSubmissionProtocol extends HamaRPCProtocolVersion {
    * @param shouldFail if true the task is failed and added to failed tasks list, otherwise
    * it is just killed, w/o affecting job failure status.  
    */ 
-  public boolean killTask(TaskAttemptID taskId, boolean shouldFail) throws IOException;  
+  public boolean killTask(TaskAttemptID taskId, boolean shouldFail) throws IOException;
+
+
+  JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException;
   
 }

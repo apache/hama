@@ -17,27 +17,15 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.IOException;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.zookeeper.KeeperException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * This class provides an abstract implementation of the BSP interface
  */
 public abstract class BSP extends Thread implements BSPInterface {
-  private BSPPeer peer;
-
-  /**
-   * Constructor for abstract class
-   * 
-   * @param conf
-   * @throws IOException
-   */
-  public BSP(Configuration conf) throws IOException {
-    this.peer = new BSPPeer(conf);
-  }
-
+  private static final Log LOG = LogFactory.getLog(BSP.class);
+  
   /**
    * A thread's run method.
    * 
@@ -46,16 +34,9 @@ public abstract class BSP extends Thread implements BSPInterface {
    */
   public void run() {
     try {
-      bsp(peer);
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (KeeperException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      bsp(new BSPPeer(this.getConf()));
+    } catch (Exception e) {
+      LOG.error(e);
     }
   }
 }
