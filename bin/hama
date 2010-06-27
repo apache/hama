@@ -57,6 +57,7 @@ if [ $# = 0 ]; then
   echo "where COMMAND is one of:"
   echo "  bspmaster            run the BSP Master node"
   echo "  groom                run the Groom node"
+  echo "  zookeeper            run a Zookeeper server"
   echo "  jar <jar>            run a jar file"
   echo " or"
   echo "  CLASSNAME            run the class named CLASSNAME"
@@ -159,6 +160,8 @@ if [ "$COMMAND" = "bspmaster" ] ; then
 elif [ "$COMMAND" = "groom" ] ; then
   CLASS='org.apache.hama.bsp.GroomServer'
   BSP_OPTS="$BSP_OPTS $BSP_GROOMSERVER_OPTS"
+elif [ "$COMMAND" = "zookeeper" ] ; then
+  CLASS='org.apache.hama.zookeeper.QuorumPeer'
 elif [ "$COMMAND" = "test" ] ; then
   CLASS=org.apache.hama.bsp.BSPTestDriver
   BSP_OPTS="$BSP_OPTS"

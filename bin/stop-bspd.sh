@@ -25,4 +25,4 @@ bin=`cd "$bin"; pwd`
 
 "$bin"/hama-daemon.sh --config $HAMA_CONF_DIR stop bspmaster
 "$bin"/hama-daemons.sh --config $HAMA_CONF_DIR stop groom
-
+"$bin"/hama-daemons.sh --config "${HAMA_CONF_DIR}" stop zookeeper

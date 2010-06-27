@@ -38,8 +38,8 @@ public abstract class HamaCluster extends HBaseClusterTestCase {
     String[] args = new String[0];
     StringUtils.startupShutdownMessage(LocalBSPCluster.class, args, LOG);
     HamaConfiguration conf = new HamaConfiguration();
-    LocalBSPCluster cluster = new LocalBSPCluster(conf);
-    cluster.startup();
+    //LocalBSPCluster cluster = new LocalBSPCluster(conf);
+    //cluster.startup();
   }
 
   protected static HamaConfiguration getConf() {

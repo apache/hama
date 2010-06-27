@@ -23,27 +23,90 @@
 -->
 <configuration>
   <property>
+    <name>bsp.master.address</name>
+    <value>local</value>
+    <description></description>
+  </property>
+  <property>
     <name>bsp.master.port</name>
     <value>40000</value>
     <description>The port master should bind to.</description>
   </property>
-
   <property>
     <name>bsp.groom.port</name>
     <value>40020</value>
     <description>The port an groom server binds to.</description>
   </property>
-  
   <property>
     <name>bsp.local.dir</name>
     <value>${hadoop.tmp.dir}/bsp/local</value>
     <description>local directory for temporal store</description> 
   </property>
-  
   <property>
     <name>bsp.system.dir</name>
     <value>${hadoop.tmp.dir}/bsp/system</value>
     <description>The shared directory where BSP stores control files.
     </description>
   </property>
+  <property>
+    <name>hama.tmp.dir</name>
+    <value>/tmp/hama-${user.name}</value>
+    <description>Temporary directory on the local filesystem.</description>
+  </property>
+  
+  <!--
+  Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.
+  All properties with an "hama.zookeeper.property." prefix are converted for
+  ZooKeeper's configuration. Hence, if you want to add an option from zoo.cfg,
+  e.g.  "initLimit=10" you would append the following to your configuration:
+    <property>
+      <name>hama.zookeeper.property.initLimit</name>
+      <value>10</value>
+    </property>
+  -->
+  <property>
+    <name>hama.zookeeper.property.initLimit</name>
+    <value>10</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    The number of ticks that the initial synchronization phase can take.
+    </description>
+  </property>
+  <property>
+    <name>hama.zookeeper.property.syncLimit</name>
+    <value>5</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    The number of ticks that can pass between sending a request and getting an
+    acknowledgment.
+    </description>
+  </property>
+  <property>
+    <name>hama.zookeeper.property.dataDir</name>
+    <value>${hama.tmp.dir}/zookeeper</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    The directory where the snapshot is stored.
+    </description>
+  </property>
+  <property>
+    <name>hama.zookeeper.property.clientPort</name>
+    <value>21810</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    The port at which the clients will connect.
+    </description>
+  </property>
+  <property>
+    <name>hama.zookeeper.property.tickTime</name>
+    <value>3000</value>
+    <description></description>
+  </property>
+  <property>
+    <name>hama.zookeeper.property.maxClientCnxns</name>
+    <value>30</value>
+    <description>Property from ZooKeeper's config zoo.cfg.
+    Limit on number of concurrent connections (at the socket level) that a
+    single client, identified by IP address, may make to a single member of
+    the ZooKeeper ensemble. Set high to avoid zk connection issues running
+    standalone and pseudo-distributed.
+    </description>
+  </property>
+  <!-- End of properties that are directly mapped from ZooKeeper's zoo.cfg -->
 </configuration>
