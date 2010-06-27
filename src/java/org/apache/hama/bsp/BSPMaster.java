@@ -591,4 +591,10 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
   public void shutdown() {
     this.interTrackerServer.stop();
   }
+
+  @Override
+  public JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }

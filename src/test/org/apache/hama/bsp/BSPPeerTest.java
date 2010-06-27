@@ -155,7 +155,7 @@ public class BSPPeerTest extends HamaCluster implements Watcher {
 
     BSPPeerThread thread;
     for (int i = 0; i < NUM_PEER; i++) {
-      conf.set("bsp.peers.num", String.valueOf(NUM_PEER));
+      conf.setInt("bsp.peers.num", NUM_PEER);
       conf.set(Constants.PEER_HOST, "localhost");
       conf.set(Constants.PEER_PORT, String.valueOf(30000 + i));
       conf.set(Constants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");

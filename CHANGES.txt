@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
 
+    HAMA-265: Add example Pi estimatior based on BSP (edwardyoon)
     HAMA-266: Add Ant target to generate the UML class diagrams (edwardyoon)
     HAMA-209: Add example for Cosine Similarity Matrix (edwardyoon)
     HAMA-195: Interface of the bsp (hyunsik via edwardyoon)
@@ -42,7 +43,8 @@ Trunk (unreleased changes)
     HAMA-2: The intial donation of Hama from the google project (edwardyoon)
 
   IMPROVEMENTS
-
+    
+    HAMA-271: Add LocalJobRunner (edwardyoon)
     HAMA-264: Moving BlockID, Pair classes to examples package (edwardyoon)
     HAMA-269: Add getter for serverName to BSPPeerInterface (edwardyoon)
     HAMA-257: Design BSP program code interface (edwardyoon)

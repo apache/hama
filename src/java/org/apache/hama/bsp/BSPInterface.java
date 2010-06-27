@@ -19,13 +19,14 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configurable;
 import org.apache.zookeeper.KeeperException;
 
 /**
  * Interface BSP defines the basic operations needed to implement the BSP
  * algorithm.
  */
-public interface BSPInterface {
+public interface BSPInterface extends Configurable {
 
   /**
    * A user defined function for programming in the BSP style.

@@ -24,8 +24,6 @@ import java.net.URLDecoder;
 import java.util.Enumeration;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.InputFormat;
-import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hama.HamaConfiguration;
 
 public class BSPJob extends BSPJobContext {
@@ -49,6 +47,16 @@ public class BSPJob extends BSPJobContext {
   public BSPJob(HamaConfiguration conf) throws IOException {
     super(conf, null);
     jobClient = new BSPJobClient(conf);
+  }
+
+  public BSPJob(BSPJobID jobID, String jobFile) throws IOException {
+     super(new Path(jobFile), jobID);
+  }
+
+  @SuppressWarnings("unchecked")
+  public BSPJob(HamaConfiguration conf, Class exampleClass) throws IOException {
+    this(conf);
+    setJarByClass(exampleClass);
   }
 
   private void ensureState(JobState state) throws IllegalStateException {
@@ -77,6 +85,11 @@ public class BSPJob extends BSPJobContext {
       throws IllegalStateException {
     ensureState(JobState.DEFINE);
     conf.setClass(WORK_CLASS_ATTR, cls, BSP.class);
+  }
+  
+  @SuppressWarnings("unchecked")
+  public Class<? extends BSP> getBspClass() {
+    return (Class<? extends BSP>) conf.getClass(WORK_CLASS_ATTR, BSP.class);
   }
 
   public void setJar(String jar) {
@@ -120,16 +133,6 @@ public class BSPJob extends BSPJobContext {
   
   public void setInputPath(HamaConfiguration conf, Path iNPUTPATH) {
         
-  }
-
-  public void setInputFormat(Class<? extends InputFormat> cls) {
-    ensureState(JobState.DEFINE);
-    conf.setClass(INPUT_FORMAT_CLASS_ATTR, cls, InputFormat.class);
-  }
-
-  public void setOutputFormat(Class<? extends OutputFormat> cls) {
-    ensureState(JobState.DEFINE);
-    conf.setClass(OUTPUT_FORMAT_CLASS_ATTR, cls, OutputFormat.class);    
   }
 
   public void setUser(String user) {
@@ -192,4 +195,9 @@ public class BSPJob extends BSPJobContext {
   public void set(String name, String value) {
     conf.set(name, value);
   }
+
+  public void setNumBspTask(int tasks) {
+    conf.setInt("bsp.peers.num", tasks);
+  }
+
 }

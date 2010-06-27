@@ -60,7 +60,7 @@ public class SerializePrinting extends HamaCluster implements Watcher {
     BSPPeerThread thread;
     int[] randomSequence = new int[] { 2, 3, 4, 5, 0, 1, 6, 7, 8, 9 };
     for (int i = 0; i < NUM_PEER; i++) {
-      conf.set("bsp.peers.num", String.valueOf(NUM_PEER));
+      conf.setInt("bsp.peers.num", NUM_PEER);
       conf.set(Constants.PEER_HOST, "localhost");
       conf.set(Constants.PEER_PORT, String
           .valueOf(30000 + randomSequence[i]));
