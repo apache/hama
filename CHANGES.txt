@@ -45,6 +45,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-277: Add default number of bsp task (edwardyoon)
     HAMA-273: Implement killJob() method for local job (edwardyoon)
     HAMA-271: Add LocalJobRunner (edwardyoon)
     HAMA-264: Moving BlockID, Pair classes to examples package (edwardyoon)
