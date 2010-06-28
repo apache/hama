@@ -45,6 +45,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-273: Implement killJob() method for local job (edwardyoon)
     HAMA-271: Add LocalJobRunner (edwardyoon)
     HAMA-264: Moving BlockID, Pair classes to examples package (edwardyoon)
     HAMA-269: Add getter for serverName to BSPPeerInterface (edwardyoon)

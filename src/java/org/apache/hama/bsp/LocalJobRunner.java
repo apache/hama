@@ -30,7 +30,6 @@ public class LocalJobRunner implements JobSubmissionProtocol {
   private HashMap<String, Job> jobs = new HashMap<String, Job>();
 
   public LocalJobRunner(Configuration conf) throws IOException {
-    // TODO Auto-generated constructor stub
     this.fs = FileSystem.get(conf);
     this.conf = conf;
   }
@@ -49,7 +48,6 @@ public class LocalJobRunner implements JobSubmissionProtocol {
 
   @Override
   public String getFilesystemName() throws IOException {
-    // TODO Auto-generated method stub
     return fs.getUri().toString();
   }
 
@@ -72,15 +70,13 @@ public class LocalJobRunner implements JobSubmissionProtocol {
 
   @Override
   public String getSystemDir() {
-    // TODO Auto-generated method stub
     Path sysDir = new Path(conf.get("bsp.system.dir", "/tmp/hadoop/bsp/system"));
     return fs.makeQualified(sysDir).toString();
   }
 
   @Override
   public void killJob(BSPJobID jobid) throws IOException {
-    // TODO Auto-generated method stub
-
+    jobs.get(jobid.toString()).done();
   }
 
   @Override
@@ -116,12 +112,13 @@ public class LocalJobRunner implements JobSubmissionProtocol {
   /**
    * Local Job
    */
-  private class Job implements Watcher {
+  private class Job extends Thread implements Watcher {
     private JobStatus status = new JobStatus();
     private Configuration conf;
     private int NUM_PEER;
     private BSPJob job;
     private List<BSPRunner> list;
+    private boolean threadDone = false;
 
     public Job(BSPJobID jobID, String jobFile, Configuration conf)
         throws IOException {
@@ -133,7 +130,8 @@ public class LocalJobRunner implements JobSubmissionProtocol {
       LOG.info("Number of BSP tasks: " + NUM_PEER);
       jobs.put(jobID.toString(), this);
 
-      ZooKeeper zk = new ZooKeeper("localhost:21810", 3000, this);
+      ZooKeeper zk = new ZooKeeper(Constants.DEFAULT_ZOOKEEPER_SERVER_ADDR,
+          3000, this);
       Stat s = null;
       if (zk != null) {
         try {
@@ -153,39 +151,41 @@ public class LocalJobRunner implements JobSubmissionProtocol {
           }
         }
       }
+      this.start();
+    }
 
-      list = new ArrayList<BSPRunner>();
-      for (int i = 0; i < NUM_PEER; i++) {
-        this.conf.setInt("bsp.peers.num", NUM_PEER);
-        this.conf.set(Constants.PEER_HOST, "localhost");
-        this.conf.set(Constants.PEER_PORT, String.valueOf(30000 + i));
-        this.conf.set(Constants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");
-        this.conf.setInt("NUM_PEER", NUM_PEER);
-        BSPRunner runner = (BSPRunner) ReflectionUtils.newInstance(
-            BSPRunner.class, this.conf);
-
-        list.add(runner);
-      }
-
-      for (int i = 0; i < NUM_PEER; i++) {
-        list.get(i).start();
-      }
-
-      for (int i = 0; i < NUM_PEER; i++) {
-        try {
-          list.get(i).join();
-        } catch (InterruptedException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
+    public void run() {
+      while (!threadDone) {
+        list = new ArrayList<BSPRunner>();
+        for (int i = 0; i < NUM_PEER; i++) {
+          this.conf.set(Constants.PEER_PORT, String.valueOf(30000 + i));
+          BSPRunner runner = (BSPRunner) ReflectionUtils.newInstance(
+              BSPRunner.class, this.conf);
+          list.add(runner);
         }
-      }
 
+        for (int i = 0; i < NUM_PEER; i++) {
+          list.get(i).start();
+        }
+
+        for (int i = 0; i < NUM_PEER; i++) {
+          try {
+            list.get(i).join();
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
+        done();
+      }
+    }
+
+    public void done() {
+      threadDone = true;
     }
 
     @Override
     public void process(WatchedEvent event) {
       // TODO Auto-generated method stub
-
     }
   }
 }
