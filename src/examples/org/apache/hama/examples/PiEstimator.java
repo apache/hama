@@ -66,7 +66,7 @@ public class PiEstimator {
       }
 
       if (pi != 0.0)
-        System.out.println("Estimated value of PI is " + pi);
+        System.out.println("\nEstimated value of PI is " + pi);
 
     }
 

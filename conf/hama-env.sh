@@ -22,7 +22,7 @@
 # Set environment variables here.
 
 # The java implementation to use.  Required.
-export JAVA_HOME=/usr/lib/jvm/java-6-sun
+# export JAVA_HOME=/usr/java/jdk1.6.0_20
 
 # hadoop conf dir. to find the mapreduce cluster.
 # export HADOOP_CONF_DIR=/usr/local/src/hadoop-0.20.1/conf

@@ -41,6 +41,9 @@ public interface Constants {
 
   public static final long ATLEAST_WAIT_TIME = 100;
 
+  ///////////////////////////////////////
+  // Constants for ZooKeeper
+  ///////////////////////////////////////  
   /** zookeeper root */
   public static final String ZOOKEEPER_ROOT = "bsp.zookeeper.root";
   /** zookeeper default root */
@@ -58,10 +61,7 @@ public interface Constants {
   public static final String ZOOKEEPER_PAUSE = "zookeeper.pause";
   /** Default ZooKeeper pause value. In milliseconds. */
   public static final int DEFAULT_ZOOKEEPER_PAUSE = 2 * 1000;
-
-  ///////////////////////////////////////
-  // Constants for ZooKeeper
-  ///////////////////////////////////////  
+  
   static final String ZOOKEEPER_CONFIG_NAME = "zoo.cfg";
   static final int DEFAULT_ZOOKEPER_CLIENT_PORT = 21810;
   static final String ZOOKEEPER_QUORUM = "hama.zookeeper.quorum";
