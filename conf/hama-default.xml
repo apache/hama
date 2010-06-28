@@ -55,7 +55,14 @@
     <value>/tmp/hama-${user.name}</value>
     <description>Temporary directory on the local filesystem.</description>
   </property>
-  
+  <property>
+    <name>bsp.peers.num</name>
+    <value>3</value>
+    <description>The default number of bsp tasks per job.  Typically set
+    to a prime several times greater than number of available hosts.
+    </description>
+  </property>
+
   <!--
   Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.
   All properties with an "hama.zookeeper.property." prefix are converted for
