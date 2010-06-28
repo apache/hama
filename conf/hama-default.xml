@@ -25,7 +25,9 @@
   <property>
     <name>bsp.master.address</name>
     <value>local</value>
-    <description></description>
+    <description>The address of the bsp master server. Either the
+    literal string "local" or a host:port for distributed mode
+    </description>
   </property>
   <property>
     <name>bsp.master.port</name>
