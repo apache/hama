@@ -1,9 +1,8 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -82,8 +81,8 @@ public class LocalJobRunner implements JobSubmissionProtocol {
   @Override
   public boolean killTask(TaskAttemptID taskId, boolean shouldFail)
       throws IOException {
-    // TODO Auto-generated method stub
-    return false;
+    throw new UnsupportedOperationException("Killing tasks in "
+        + "LocalJobRunner is not supported");
   }
 
   @Override
@@ -117,8 +116,8 @@ public class LocalJobRunner implements JobSubmissionProtocol {
     private Configuration conf;
     private int NUM_PEER;
     private BSPJob job;
-    private List<BSPRunner> list;
     private boolean threadDone = false;
+    private HashMap<String, BSPRunner> tasks = new HashMap<String, BSPRunner>();
 
     public Job(BSPJobID jobID, String jobFile, Configuration conf)
         throws IOException {
@@ -156,23 +155,24 @@ public class LocalJobRunner implements JobSubmissionProtocol {
 
     public void run() {
       while (!threadDone) {
-        list = new ArrayList<BSPRunner>();
+        TaskID tID;
         for (int i = 0; i < NUM_PEER; i++) {
           this.conf.set(Constants.PEER_PORT, String.valueOf(30000 + i));
           BSPRunner runner = (BSPRunner) ReflectionUtils.newInstance(
               BSPRunner.class, this.conf);
-          list.add(runner);
+          tID = new TaskID(job.getJobID(), false, i);
+          tasks.put(tID.toString(), runner);
         }
 
-        for (int i = 0; i < NUM_PEER; i++) {
-          list.get(i).start();
+        for (Map.Entry<String, BSPRunner> e : tasks.entrySet()) {
+          e.getValue().start();
         }
 
-        for (int i = 0; i < NUM_PEER; i++) {
+        for (Map.Entry<String, BSPRunner> e : tasks.entrySet()) {
           try {
-            list.get(i).join();
-          } catch (InterruptedException e) {
-            e.printStackTrace();
+            e.getValue().join();
+          } catch (InterruptedException e1) {
+            e1.printStackTrace();
           }
         }
         done();

@@ -288,10 +288,7 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
 
     try {
       HamaConfiguration conf = new HamaConfiguration();
-      conf.set("bsp.master.port", "40000");
-      conf.set("bsp.groom.port", "40020");
-      conf.set("bsp.local.dir", conf.get("hadoop.tmp.dir") + "/bsp/local");
-      conf.set("bsp.system.dir", conf.get("hadoop.tmp.dir") + "/bsp/system");
+      conf.set("bsp.local.dir", conf.get("hama.tmp.dir") + "/bsp/local");
 
       BSPMaster master = BSPMaster.constructMaster(BSPMaster.class, conf);
       master.start();
