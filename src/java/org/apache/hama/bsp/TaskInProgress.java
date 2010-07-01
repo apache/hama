@@ -17,10 +17,15 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.IOException;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.JobStatus;
+import org.apache.hama.Constants;
 
 /**
  *
@@ -28,7 +33,7 @@ import org.apache.commons.logging.LogFactory;
 class TaskInProgress {
   public static final Log LOG = LogFactory.getLog(TaskInProgress.class);
 
-  private BSPJobContext context;
+  private Configuration conf;
 
   // Constants
   static final int MAX_TASK_EXECS = 1;
@@ -58,7 +63,7 @@ class TaskInProgress {
 
   // Map from task Id -> GroomServer Id, contains tasks that are
   // currently runnings
-  private TreeMap<TaskAttemptID, String> activeTasks = new TreeMap<TaskAttemptID, String>();
+  private TreeMap<String, String> activeTasks = new TreeMap<String, String>();
   // All attempt Ids of this TIP
   // private TreeSet<TaskAttemptID> tasks = new TreeSet<TaskAttemptID>();
   /**
@@ -66,15 +71,45 @@ class TaskInProgress {
    */
   private TreeMap<TaskAttemptID, TaskStatus> taskStatuses = new TreeMap<TaskAttemptID, TaskStatus>();
 
+  private BSPJobID jobId;
+
   public TaskInProgress(BSPJobID jobId, String jobFile, BSPMaster master,
-      BSPJobContext context, JobInProgress job, int partition) {
+      Configuration conf, JobInProgress job, int partition) {
+    this.jobId = jobId;
     this.jobFile = jobFile;
     this.bspMaster = master;
     this.job = job;
-    this.context = context;
+    this.conf = conf;
     this.partition = partition;
+    
+    this.id = new TaskID(jobId, true, partition);
   }
 
+  /**
+   * Return a Task that can be sent to a GroomServer for execution.
+   */
+  public Task getTaskToRun(GroomServerStatus status) throws IOException {
+      Task t = null;
+      
+      String taskid = null;
+      if (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts)) {
+        taskid = new String("task_" + nextTaskId);
+        ++nextTaskId;
+      } else {
+        LOG.warn("Exceeded limit of " + (MAX_TASK_EXECS + maxTaskAttempts) + 
+                " attempts for the tip '" + getTIPId() + "'");
+        return null;
+      }
+
+      //this.conf.set(Constants.PEER_PORT, String.valueOf(30000));
+      t = new BSPTask(jobId.getJtIdentifier(), jobFile, taskid, partition, this.conf);
+      activeTasks.put(taskid, status.getGroomName());
+
+      // Ask JobTracker to note that the task exists
+      bspMaster.createTaskEntry(taskid, status.getGroomName(), this);
+      return t;
+  }
+  
   // //////////////////////////////////
   // Accessors
   // //////////////////////////////////
@@ -122,5 +157,19 @@ class TaskInProgress {
    */
   public synchronized boolean isComplete() {
     return (completes > 0);
+  }
+
+  private TreeSet tasksReportedClosed = new TreeSet();
+  
+  public boolean shouldCloseForClosedJob(String taskid) {
+    TaskStatus ts = (TaskStatus) taskStatuses.get(taskid);
+    if ((ts != null) &&
+        (! tasksReportedClosed.contains(taskid)) &&
+        (job.getStatus().getRunState() != JobStatus.RUNNING)) {
+        tasksReportedClosed.add(taskid);
+        return true;
+    }  else {
+        return false;
+    }
   }
 }

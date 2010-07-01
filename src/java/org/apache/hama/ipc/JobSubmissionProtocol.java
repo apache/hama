@@ -44,11 +44,14 @@ public interface JobSubmissionProtocol extends HamaRPCProtocolVersion {
    * that job. 
    * The job files should be submitted in <b>system-dir</b>/<b>jobName</b>.
    *
-   * @param jobName
+   * @param jobID
+   * @param jobFile
    * @return jobStatus
    * @throws IOException
    */
-  public JobStatus submitJob(BSPJobID jobName) throws IOException;
+  //public JobStatus submitJob(BSPJobID jobName) throws IOException;
+
+  public JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException;
   
   /**
    * Get the current status of the cluster
@@ -104,7 +107,5 @@ public interface JobSubmissionProtocol extends HamaRPCProtocolVersion {
    */ 
   public boolean killTask(TaskAttemptID taskId, boolean shouldFail) throws IOException;
 
-
-  JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException;
   
 }

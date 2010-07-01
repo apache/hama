@@ -27,6 +27,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -86,6 +88,9 @@ public class GroomServer implements Runnable {
   Map<TaskAttemptID, TaskInProgress> runningTasks = null;
   Map<BSPJobID, RunningJob> runningJobs = null;
 
+  private BlockingQueue<GroomServerAction> tasksToCleanup = 
+    new LinkedBlockingQueue<GroomServerAction>();
+  
   public GroomServer(Configuration conf) throws IOException {
     this.conf = conf;
     bspMasterAddr = BSPMaster.getAddress(conf);
@@ -203,6 +208,23 @@ public class GroomServer implements Runnable {
 
         // Send the heartbeat and process the bspmaster's directives
         HeartbeatResponse heartbeatResponse = transmitHeartBeat(now);
+        
+        GroomServerAction[] actions = heartbeatResponse.getActions();
+        LOG.info("Got heartbeatResponse from BSPMaster with responseId: " + 
+            heartbeatResponse.getResponseId() + " and " + 
+            ((actions != null) ? actions.length : 0) + " actions");
+
+        
+        if (actions != null){ 
+          for(GroomServerAction action: actions) {
+            if (action instanceof LaunchTaskAction) {
+              startNewTask((LaunchTaskAction) action);
+            } else {
+              tasksToCleanup.put(action);
+            }
+          }
+        }
+        
         //
         // The heartbeat got through successfully!
         //
@@ -236,8 +258,17 @@ public class GroomServer implements Runnable {
     return State.NORMAL;
   }
 
-  private HeartbeatResponse transmitHeartBeat(long now) throws IOException {
+  private void startNewTask(LaunchTaskAction action) {
+    // TODO Auto-generated method stub
+    Task t = action.getTask();
+    LOG.info("GroomServer: " + t.getJobID() + ", " + t.getJobFile() + ", " + t.getId() + ", " + t.getPartition());
+    LOG.info(t.runner);
+    //t.runner.start();
+    // TODO: execute task
     
+  }
+
+  private HeartbeatResponse transmitHeartBeat(long now) throws IOException {
     // 
     // Check if the last heartbeat got through... 
     // if so then build the heartbeat information for the BSPMaster;
@@ -273,7 +304,9 @@ public class GroomServer implements Runnable {
       initialize();
       startCleanupThreads();
       boolean denied = false;
+      LOG.info("Why? " + running + ", " + shuttingDown + ", " + denied);
       while (running && !shuttingDown && !denied) {
+     
         boolean staleState = false;
         try {
           while (running && !staleState && !shuttingDown && !denied) {
@@ -326,27 +359,6 @@ public class GroomServer implements Runnable {
     RPC.stopProxy(jobClient);
   }
 
-  public static void main(String[] args) {
-    StringUtils.startupShutdownMessage(GroomServer.class, args, LOG);
-    if (args.length != 0) {
-      System.out.println("usage: GroomServer");
-      System.exit(-1);
-    }
-
-    try {
-      Configuration conf = new HamaConfiguration();
-      conf.set("bsp.master.port", "40000");
-      conf.set("bsp.groom.port", "40020");
-      conf.set("bsp.local.dir", conf.get("hadoop.tmp.dir") + "/bsp/local");
-      conf.set("bsp.system.dir", conf.get("hadoop.tmp.dir") + "/bsp/system");
-      GroomServer groom = GroomServer.constructGroomServer(GroomServer.class, conf);
-      startGroomServer(groom);
-    } catch (Throwable e) {
-      LOG.fatal(StringUtils.stringifyException(e));
-      System.exit(-1);
-    }
-  }
-  
   public static Thread startGroomServer(final GroomServer hrs) {
     return startGroomServer(hrs,
       "regionserver" + hrs.groomServerName);
@@ -425,4 +437,25 @@ public class GroomServer implements Runnable {
         "Master: " + groomServerClass.toString(), e);
     }
   }
+
+  public static void main(String[] args) {
+    StringUtils.startupShutdownMessage(GroomServer.class, args, LOG);
+    if (args.length != 0) {
+      System.out.println("usage: GroomServer");
+      System.exit(-1);
+    }
+
+    try {
+      Configuration conf = new HamaConfiguration();
+      conf.addResource(new Path("/home/edward/workspace/hama-trunk/conf/hama-default.xml"));
+      conf.addResource(new Path("/home/edward/workspace/hama-trunk/conf/hama-site.xml"));
+      
+      GroomServer groom = GroomServer.constructGroomServer(GroomServer.class, conf);
+      startGroomServer(groom);
+    } catch (Throwable e) {
+      LOG.fatal(StringUtils.stringifyException(e));
+      System.exit(-1);
+    }
+  }
+  
 }

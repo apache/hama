@@ -58,7 +58,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
   protected final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
   protected final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
-
+  protected int id;
+ 
   /**
    * 
    */
@@ -69,6 +70,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         + ":" + conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
     bindAddress = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST);
     bindPort = conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+    id = conf.getInt(Constants.PEER_ID, 0);
     bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT);
     zookeeperAddr = conf.get(Constants.ZOOKEEPER_SERVER_ADDRS,
@@ -242,4 +244,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public String getServerName() {
     return this.serverName;
   }
+  
+  public int getId() {
+    return this.id;  
+  }
+
 }

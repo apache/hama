@@ -13,7 +13,8 @@ public class BSPRunner extends Thread implements Configurable {
   private BSPPeer bspPeer;
   private Configuration conf;
   private BSP bsp;
-
+  private boolean isDone;
+  
   public void run() {
     try {
       bsp.bsp(bspPeer);
@@ -38,5 +39,9 @@ public class BSPRunner extends Thread implements Configurable {
 
     bsp = (BSP) ReflectionUtils.newInstance(conf.getClass("bsp.work.class",
         BSP.class), conf);
+  }
+  
+  public boolean isDone() {
+    return this.isDone;
   }
 }

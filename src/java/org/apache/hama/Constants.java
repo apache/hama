@@ -139,4 +139,5 @@ public interface Constants {
   public static final String BLOCK = "block";
   
   public static final Text ROWCOUNT= new Text("row");
+  public static final String PEER_ID = "bsp.peer.id";
 }

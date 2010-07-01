@@ -29,7 +29,6 @@ import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.zookeeper.KeeperException;
-import org.mortbay.log.Log;
 
 public class PiEstimator {
 
@@ -54,8 +53,6 @@ public class PiEstimator {
       byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
-      Log.info("Send a message (" + Bytes.toDouble(myData) + ") from "
-          + bspPeer.getServerName() + " to localhost:30000");
       bspPeer.send(new InetSocketAddress("localhost", 30000), estimate);
       bspPeer.sync();
 
@@ -88,7 +85,7 @@ public class PiEstimator {
     HamaConfiguration conf = new HamaConfiguration();
     // Execute locally
     conf.set("bsp.master.address", "local");
-
+    
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
     // Set the job name
     bsp.setJobName("pi estimation example");

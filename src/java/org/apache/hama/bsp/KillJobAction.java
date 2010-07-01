@@ -21,6 +21,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.hadoop.io.Text;
+
 /**
  * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
  * {@link org.apache.hama.bsp.GroomServer} to kill the task of a job and cleanup
@@ -28,30 +30,30 @@ import java.io.IOException;
  * 
  */
 class KillJobAction extends GroomServerAction {
-  final BSPJobID jobId;
+  String jobId;
 
   public KillJobAction() {
     super(ActionType.KILL_JOB);
-    jobId = new BSPJobID();
+    jobId = new String();
   }
 
-  public KillJobAction(BSPJobID jobId) {
+  public KillJobAction(String killJobId) {
     super(ActionType.KILL_JOB);
-    this.jobId = jobId;
+    this.jobId = killJobId;
   }
 
-  public BSPJobID getJobID() {
+  public String getJobID() {
     return jobId;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    jobId.write(out);
+    Text.writeString(out, jobId);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    jobId.readFields(in);
+    jobId = Text.readString(in);
   }
 
 }

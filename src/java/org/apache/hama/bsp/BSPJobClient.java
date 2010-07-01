@@ -19,7 +19,6 @@ package org.apache.hama.bsp;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.security.auth.login.LoginException;
 
@@ -35,7 +34,6 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UnixUserGroupInformation;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 
 public class BSPJobClient extends Configured {
@@ -183,17 +181,12 @@ public class BSPJobClient extends Configured {
     if ("local".equals(master)) {
       this.jobSubmitClient = new LocalJobRunner(conf);
     } else {
-      this.jobSubmitClient = createRPCProxy(BSPMaster.getAddress(conf), conf);
+      this.jobSubmitClient =  (JobSubmissionProtocol) RPC.getProxy(JobSubmissionProtocol.class,
+          JobSubmissionProtocol.versionID, BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(
+              conf, JobSubmissionProtocol.class));
     }
   }
 
-  private JobSubmissionProtocol createRPCProxy(InetSocketAddress addr,
-      Configuration conf) throws IOException {
-    return (JobSubmissionProtocol) RPC.getProxy(JobSubmissionProtocol.class,
-        JobSubmissionProtocol.versionID, addr, conf, NetUtils.getSocketFactory(
-            conf, JobSubmissionProtocol.class));
-  }
-  
   /**
    * Close the <code>JobClient</code>.
    */
@@ -349,7 +342,7 @@ public class BSPJobClient extends Configured {
       job.set("group.name", ugi.getGroupNames()[0]);
     }
     if (job.getWorkingDirectory() == null) {
-      job.setWorkingDirectory(fs.getWorkingDirectory());          
+      job.setWorkingDirectory(fs.getWorkingDirectory());
     }
     
     // Write job file to BSPMaster's fs        

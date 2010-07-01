@@ -21,6 +21,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -28,23 +30,28 @@ import org.apache.hadoop.io.Writable;
 /**
  *
  */
-public class Task implements Writable {
+public class Task extends Thread implements Writable {
+  public static final Log LOG = LogFactory.getLog(Task.class);
   ////////////////////////////////////////////
   // Fields
   ////////////////////////////////////////////
-  private String jobFile;
-  private TaskAttemptID taskId;
-  private int partition;
   
+  protected String jobId;
+  protected String jobFile;
+  protected String taskId;
+  protected int partition;
+  
+  protected BSPRunner runner;
   protected LocalDirAllocator lDirAlloc;
   /**
    * 
    */
   public Task() {
-    taskId = new TaskAttemptID();
+    taskId = new String();
   }
   
-  public Task(String jobFile, TaskAttemptID taskId, int partition) {
+  public Task(String jobId, String jobFile, String taskId, int partition) {
+    this.jobId = jobId;
     this.jobFile = jobFile;
     this.taskId = taskId;
      
@@ -62,7 +69,7 @@ public class Task implements Writable {
     return jobFile; 
   }
   
-  public TaskAttemptID getTaskID() {
+  public String getTaskID() {
     return taskId;
   }
   
@@ -70,8 +77,8 @@ public class Task implements Writable {
    * Get the job name for this task.
    * @return the job name
    */
-  public BSPJobID getJobID() {
-    return taskId.getJobID();
+  public String getJobID() {
+    return jobId;
   }
   
   /**
@@ -92,15 +99,18 @@ public class Task implements Writable {
   ////////////////////////////////////////////
   @Override
   public void write(DataOutput out) throws IOException {
+    Text.writeString(out, jobId);
     Text.writeString(out, jobFile);
-    taskId.write(out);
+    Text.writeString(out, taskId);
     out.writeInt(partition);
   }
   
   @Override
   public void readFields(DataInput in) throws IOException {
+    jobId = Text.readString(in);
     jobFile = Text.readString(in);
-    taskId.readFields(in);
+    taskId = Text.readString(in);
     partition = in.readInt();
   }
+  
 }

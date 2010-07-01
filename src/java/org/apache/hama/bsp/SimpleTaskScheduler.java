@@ -54,13 +54,11 @@ class SimpleTaskScheduler extends TaskScheduler {
   public List<Task> assignTasks(GroomServerStatus groomStatus)
       throws IOException {
     ClusterStatus clusterStatus = groomServerManager.getClusterStatus(false);
-
+    
     final int numGroomServers = clusterStatus.getGroomServers();
     // final int clusterTaskCapacity = clusterStatus.getMaxTasks();
 
-    //
     // Get task counts for the current groom.
-    //
     // final int groomTaskCapacity = groom.getMaxTasks();
     final int groomRunningTasks = groomStatus.countTasks();
 
@@ -73,14 +71,19 @@ class SimpleTaskScheduler extends TaskScheduler {
       // instance to the scheduler.
       synchronized (jobQueue) {
         for (JobInProgress job : jobQueue) {
+          /*
           if (job.getStatus().getRunState() != JobStatus.RUNNING) {
             continue;
           }
+          */
 
           Task t = null;
 
           t = job.obtainNewTask(groomStatus, numGroomServers,
               groomServerManager.getNumberOfUniqueHosts());
+          
+          LOG.info("SimpleTaskScheduler: " + t.getJobID() + ", " + t.getJobFile() + ", " + t.getId() + ", " + t.getPartition());
+          
           if (t != null) {
             assignedTasks.add(t);
             break; // TODO - Now, simple scheduler assigns only one task to
