@@ -9,7 +9,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.ipc.InterTrackerProtocol;
 import org.apache.hama.ipc.JobSubmissionProtocol;
@@ -102,12 +101,6 @@ public class LocalJobRunner implements JobSubmissionProtocol {
     }
   }
 
-  @Override
-  public JobStatus submitJob(BSPJobID jobName) throws IOException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
   /**
    * Local Job
    */
@@ -116,16 +109,17 @@ public class LocalJobRunner implements JobSubmissionProtocol {
     private Configuration conf;
     private int NUM_PEER;
     private BSPJob job;
+    private String jobFile;
     private boolean threadDone = false;
-    private HashMap<String, BSPRunner> tasks = new HashMap<String, BSPRunner>();
+    private HashMap<String, Task> tasks = new HashMap<String, Task>();
 
     public Job(BSPJobID jobID, String jobFile, Configuration conf)
         throws IOException {
       this.conf = conf;
+      this.jobFile = jobFile;
       this.NUM_PEER = conf.getInt("bsp.peers.num", 0);
       LOG.info("LocalJobRunner: " + jobID + ", " + jobFile);
       this.job = new BSPJob(jobID, jobFile);
-      LOG.info("Jar file: " + job.getJar());
       LOG.info("Number of BSP tasks: " + NUM_PEER);
       jobs.put(jobID.toString(), this);
 
@@ -158,17 +152,21 @@ public class LocalJobRunner implements JobSubmissionProtocol {
         TaskID tID;
         for (int i = 0; i < NUM_PEER; i++) {
           this.conf.set(Constants.PEER_PORT, String.valueOf(30000 + i));
-          BSPRunner runner = (BSPRunner) ReflectionUtils.newInstance(
-              BSPRunner.class, this.conf);
+          this.conf.setInt(Constants.PEER_ID, i);
           tID = new TaskID(job.getJobID(), false, i);
-          tasks.put(tID.toString(), runner);
+
+          Task bspRunner = new BSPTask(job.getJobID().getJtIdentifier(), jobFile, tID.toString(), i, this.conf);
+          LOG.info("Adding task '" + tID.toString() + "' for '" + bspRunner.getName() + "'");
+          tasks.put(tID.toString(), bspRunner);
         }
 
-        for (Map.Entry<String, BSPRunner> e : tasks.entrySet()) {
-          e.getValue().start();
+        // Launching tasks
+        for (Map.Entry<String, Task> e : tasks.entrySet()) {
+          e.getValue().runner.start();
         }
 
-        for (Map.Entry<String, BSPRunner> e : tasks.entrySet()) {
+        // Barrier
+        for (Map.Entry<String, Task> e : tasks.entrySet()) {
           try {
             e.getValue().join();
           } catch (InterruptedException e1) {

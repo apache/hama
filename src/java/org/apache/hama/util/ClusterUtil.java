@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.bsp.GroomServer;
 import org.apache.log4j.Logger;
@@ -76,7 +77,7 @@ public class ClusterUtil {
   public static String startup(final BSPMaster m,
       final List<ClusterUtil.GroomServerThread> groomservers, Configuration conf) throws IOException, InterruptedException {
     if (m != null) {
-      m.start();
+      m.startMaster((HamaConfiguration) conf);
     }
 
     if (groomservers != null) {

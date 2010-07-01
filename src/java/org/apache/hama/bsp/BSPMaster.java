@@ -25,9 +25,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,7 +54,7 @@ import org.apache.hama.ipc.JobSubmissionProtocol;
  * BSPMaster is responsible to control all the groom servers and to manage bsp
  * jobs.
  */
-public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTrackerProtocol,
+public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     GroomServerManager {
 
   static {
@@ -67,14 +72,15 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
   }
 
   private static final int FS_ACCESS_RETRY_PERIOD = 10000;
-
+  public static final long GROOMSERVER_EXPIRY_INTERVAL = 10 * 60 * 1000;
+  
   // States
   State state = State.INITIALIZING;
 
   // Attributes
   String masterIdentifier;
   private Server interTrackerServer;
-  
+
   // Filesystem
   static final String SUBDIR = "bspMaster";
   FileSystem fs = null;
@@ -100,10 +106,81 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
   private Map<BSPJobID, JobInProgress> jobs = new TreeMap<BSPJobID, JobInProgress>();
   private TaskScheduler taskScheduler;
 
-  /*
-   * private final List<JobInProgressListener> jobInProgressListeners = new
-   * CopyOnWriteArrayList<JobInProgressListener>();
-   */
+  ExpireLaunchingTasks expireLaunchingTasks = new ExpireLaunchingTasks();
+  Thread expireLaunchingTaskThread = new Thread(expireLaunchingTasks,
+      "expireLaunchingTasks");
+
+  private class ExpireLaunchingTasks implements Runnable {
+    private volatile boolean shouldRun = true;
+    private Map<String, Long> launchingTasks = new LinkedHashMap<String, Long>();
+
+    @Override
+    public void run() {
+      while (shouldRun) {
+        long now = System.currentTimeMillis();
+        
+        synchronized (BSPMaster.this) {
+          synchronized (launchingTasks) {
+            Iterator<Entry<String, Long>> itr = launchingTasks
+                .entrySet().iterator();
+            while (itr.hasNext()) {
+              Map.Entry<String, Long> pair = itr.next();
+              String taskId = pair.getKey(); 
+              long age = now - ((Long) pair.getValue()).longValue();
+              LOG.debug(taskId + " is " + age + " ms debug.");
+              
+              LOG.info(taskId);
+              if (age > GROOMSERVER_EXPIRY_INTERVAL) {
+                LOG.info("Launching task " + taskId + " timed out.");
+                TaskInProgress tip = null;
+                tip = (TaskInProgress) taskidToTIPMap.get(taskId);
+                if (tip != null) {
+                  JobInProgress job = tip.getJob();
+                  String groomName = getAssignedTracker(taskId);
+                  GroomServerStatus trackerStatus = 
+                    getGroomServer(groomName);
+                  // This might happen when the tasktracker has already
+                  // expired and this thread tries to call failedtask
+                  // again. expire tasktracker should have called failed
+                  // task!
+                  if (trackerStatus != null) {
+                    /*
+                    job.failedTask(tip, taskId, "Error launching task", 
+                                   tip.isMapTask()? TaskStatus.Phase.MAP:
+                                     TaskStatus.Phase.STARTING,
+                                   trackerStatus.getHost(), trackerName,
+                                   myMetrics);
+                  */
+                  }
+                }
+                itr.remove();
+              } else {
+                // the tasks are sorted by start time, so once we find
+                // one that we want to keep, we are done for this cycle.
+                break;
+              }
+              
+            }
+          }
+        }
+      }
+    }
+
+    private String getAssignedTracker(String taskId) {
+      return taskidToTrackerMap.get(taskId);
+    }
+
+    public void addNewTask(String string) {
+      synchronized (launchingTasks) {
+        launchingTasks.put(string, new Long(System.currentTimeMillis()));
+      }
+    }
+    
+    public void stop() {
+      shouldRun = false;
+    }
+
+  }
 
   /**
    * Start the BSPMaster process, listen on the indicated hostname/port
@@ -116,6 +193,7 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
       InterruptedException {
     this.conf = conf;
     this.masterIdentifier = identifier;
+    //expireLaunchingTaskThread.start();
 
     // Create the scheduler
     Class<? extends TaskScheduler> schedulerClass = conf.getClass(
@@ -228,8 +306,8 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
     return conf.getLocalPath("bsp.local.dir", pathString);
   }
 
-  public BSPMaster startMaster() throws IOException,
-      InterruptedException {
+  public static BSPMaster startMaster(HamaConfiguration conf)
+      throws IOException, InterruptedException {
     return startTracker(conf, generateNewIdentifier());
   }
 
@@ -238,6 +316,7 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
 
     BSPMaster result = null;
     result = new BSPMaster(conf, identifier);
+    result.taskScheduler.setGroomServerManager(result);
 
     return result;
   }
@@ -279,37 +358,6 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
     LOG.info("Stopped interTrackerServer");
   }
 
-  public static void main(String[] args) {
-    StringUtils.startupShutdownMessage(BSPMaster.class, args, LOG);
-    if (args.length != 0) {
-      System.out.println("usage: HamaMaster");
-      System.exit(-1);
-    }
-
-    try {
-      HamaConfiguration conf = new HamaConfiguration();
-      conf.set("bsp.local.dir", conf.get("hama.tmp.dir") + "/bsp/local");
-
-      BSPMaster master = BSPMaster.constructMaster(BSPMaster.class, conf);
-      master.start();
-    } catch (Throwable e) {
-      LOG.fatal(StringUtils.stringifyException(e));
-      System.exit(-1);
-    }
-  }
-
-  public void run() {
-    try {
-      offerService();
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } 
-  }
-  
   // //////////////////////////////////////////////////
   // GroomServerManager
   // //////////////////////////////////////////////////
@@ -330,8 +378,7 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
 
   @Override
   public JobInProgress getJob(BSPJobID jobid) {
-    // TODO Auto-generated method stub
-    return null;
+    return jobs.get(jobid);
   }
 
   @Override
@@ -343,13 +390,12 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
   @Override
   public int getNumberOfUniqueHosts() {
     // TODO Auto-generated method stub
-    return 0;
+    return 1;
   }
 
   @Override
   public Collection<GroomServerStatus> grooms() {
-    // TODO Auto-generated method stub
-    return null;
+    return groomServers.values();
   }
 
   @Override
@@ -387,11 +433,6 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
   public HeartbeatResponse heartbeat(GroomServerStatus status,
       boolean restarted, boolean initialContact, boolean acceptNewTasks,
       short responseId) throws IOException {
-    LOG.debug(">>> Received the heartbeat message from ");
-    LOG.debug(">>> " + status.groomName + "(" + status.getHost() + ")");
-    LOG.debug(">>> restarted:" + restarted + ",first:" + initialContact);
-    LOG.debug(">>> maxTaskCapacity:" + status.getMaxTasks() + ",taskCapacity:"
-        + status.getTaskReports().size());
 
     // First check if the last heartbeat response got through
     String groomName = status.getGroomName();
@@ -412,7 +453,7 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
     }
 
     HeartbeatResponse response = new HeartbeatResponse(newResponseId, null);
-    // List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
+    List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
 
     // Check for new tasks to be executed on the groom server
     if (acceptNewTasks) {
@@ -420,17 +461,100 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
       if (groomStatus == null) {
         LOG.warn("Unknown task tracker polling; ignoring: " + groomName);
       } else {
-        // TODO - assignTasks should be implemented
-        /*
-         * List<Task> tasks = taskScheduler.assignTasks(groomStatus); for(Task
-         * task : tasks) { if(tasks != null) { LOG.debug(groomName +
-         * "-> LaunchTask: " + task.getTaskID()); actions.add(new
-         * LaunchTaskAction(task)); } }
-         */
+        LOG.info(groomStatus);
+        List<Task> tasks = taskScheduler.assignTasks(groomStatus);
+        for (Task task : tasks) {
+          if (tasks != null) {
+            expireLaunchingTasks.addNewTask(task.getTaskID());
+            actions.add(new LaunchTaskAction(task));
+          }
+        }
       }
     }
 
+    // Check for tasks to be killed
+    List<GroomServerAction> killTasksList = getTasksToKill(groomName);
+    if (killTasksList != null) {
+      actions.addAll(killTasksList);
+    }
+
+    response.setActions(actions.toArray(new GroomServerAction[actions.size()]));
+
+    groomToHeartbeatResponseMap.put(groomName, response);
+    removeMarkedTasks(groomName);
+    
     return response;
+  }
+
+
+  // (trackerID -> TreeSet of completed taskids running at that tracker)
+  TreeMap<String, Set<String>> trackerToMarkedTasksMap = new TreeMap<String, Set<String>>();
+  
+  private void removeMarkedTasks(String groomName) {
+    // Purge all the 'marked' tasks which were running at taskTracker
+    TreeSet<String> markedTaskSet = 
+      (TreeSet<String>) trackerToMarkedTasksMap.get(groomName);
+    if (markedTaskSet != null) {
+      for (String taskid : markedTaskSet) {
+        removeTaskEntry(taskid);
+        LOG.info("Removed completed task '" + taskid + "' from '" + 
+            groomName + "'");
+      }
+      // Clear 
+      trackerToMarkedTasksMap.remove(groomName);
+    }
+  }
+
+  private void removeTaskEntry(String taskid) {
+    // taskid --> tracker
+    String tracker = taskidToTrackerMap.remove(taskid);
+
+    // tracker --> taskid
+    if (tracker != null) {
+        TreeSet trackerSet = (TreeSet) trackerToTaskMap.get(tracker);
+        if (trackerSet != null) {
+            trackerSet.remove(taskid);
+        }
+    }
+
+    // taskid --> TIP
+    taskidToTIPMap.remove(taskid);
+    
+    LOG.debug("Removing task '" + taskid + "'");
+  }
+
+  private List<GroomServerAction> getTasksToKill(String groomName) {
+    Set<String> taskIds = (TreeSet<String>) trackerToTaskMap.get(groomName);
+    if (taskIds != null) {
+        List<GroomServerAction> killList = new ArrayList<GroomServerAction>();
+        Set<String> killJobIds = new TreeSet<String>(); 
+        for (String killTaskId : taskIds ) {
+            TaskInProgress tip = (TaskInProgress) taskidToTIPMap.get(killTaskId);
+            if (tip.shouldCloseForClosedJob(killTaskId)) {
+                // 
+                // This is how the JobTracker ends a task at the TaskTracker.
+                // It may be successfully completed, or may be killed in
+                // mid-execution.
+                //
+                if (tip.getJob().getStatus().getRunState() == JobStatus.RUNNING) {
+                    killList.add(new KillTaskAction(killTaskId));
+                    LOG.debug(groomName + " -> KillTaskAction: " + killTaskId);
+                } else {
+                    String killJobId = tip.getJob().getStatus().getJobID().getJtIdentifier(); 
+                    killJobIds.add(killJobId);
+                }
+            }
+        }
+        
+        for (String killJobId : killJobIds) {
+            killList.add(new KillJobAction(killJobId));
+            LOG.debug(groomName + " -> KillJobAction: " + killJobId);
+        }
+
+        return killList;
+    }
+    return null;
+
   }
 
   /**
@@ -463,17 +587,15 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
   }
 
   @Override
-  public JobStatus submitJob(BSPJobID jobId) throws IOException {
-    LOG.info("Submitted a job (" + jobId + ")");
-    if (jobs.containsKey(jobId)) {
+  public JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException {
+    if (jobs.containsKey(jobID)) {
       // job already running, don't start twice
-      LOG.info("The job (" + jobId + ") is already subbmitted");
-      return jobs.get(jobId).getStatus();
+      LOG.info("The job (" + jobID + ") is already subbmitted");
+      return jobs.get(jobID).getStatus();
     }
 
-    JobInProgress job = new JobInProgress(jobId, this, this.conf);
-
-    return addJob(jobId, job);
+    JobInProgress job = new JobInProgress(jobID, this, this.conf);
+    return addJob(jobID, job);
   }
 
   @Override
@@ -502,7 +624,6 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
       jobs.put(job.getProfile().getJobID(), job);
       taskScheduler.addJob(job);
     }
-
     return job.getStatus();
   }
 
@@ -589,9 +710,56 @@ public class BSPMaster extends Thread implements JobSubmissionProtocol, InterTra
     this.interTrackerServer.stop();
   }
 
-  @Override
-  public JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException {
-    // TODO Auto-generated method stub
-    return null;
+  TreeMap<String, String> taskidToTrackerMap = new TreeMap<String, String>();
+  TreeMap<String, TreeSet<String>> trackerToTaskMap = new TreeMap<String, TreeSet<String>>();
+  Map<String, TaskInProgress> taskidToTIPMap = new TreeMap<String, TaskInProgress>();
+  
+  public void createTaskEntry(String taskid, String groomServer,
+      TaskInProgress taskInProgress) {
+    LOG.info("Adding task '" + taskid + "' to tip " + taskInProgress.getTIPId() + ", for tracker '" + groomServer + "'");
+    /*
+    // taskid --> groom
+    taskidToTrackerMap.put(taskid, groomServer);
+    // groom --> taskid
+    TreeSet<String> taskset = null;
+    if(trackerToTaskMap.entrySet().size() > 0) {
+      taskset = trackerToTaskMap.get(groomServer);
+      LOG.info(taskset.size());
+      LOG.info(taskset.size());
+      LOG.info(taskset.size());
+    }
+    
+    if (taskset == null) {
+        taskset = new TreeSet<String>();
+        trackerToTaskMap.put(groomServer, taskset);
+    }
+    taskset.add(taskid);
+    taskidToTIPMap.put(taskid, taskInProgress);
+    
+    LOG.info("" + taskidToTrackerMap);
+    LOG.info("" + taskidToTIPMap);
+    */
+  }
+
+  public static void main(String[] args) {
+    StringUtils.startupShutdownMessage(BSPMaster.class, args, LOG);
+    if (args.length != 0) {
+      System.out.println("usage: HamaMaster");
+      System.exit(-1);
+    }
+
+    try {
+      HamaConfiguration conf = new HamaConfiguration();
+      conf.addResource(new Path(
+          "/home/edward/workspace/hama-trunk/conf/hama-default.xml"));
+      conf.addResource(new Path(
+          "/home/edward/workspace/hama-trunk/conf/hama-site.xml"));
+
+      BSPMaster master = startMaster(conf);
+      master.offerService();
+    } catch (Throwable e) {
+      LOG.fatal(StringUtils.stringifyException(e));
+      System.exit(-1);
+    }
   }
 }

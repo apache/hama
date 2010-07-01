@@ -144,7 +144,7 @@ public class GroomServerStatus implements Writable {
     Text.writeString(out, host);
     out.writeInt(failures);
     out.writeInt(maxTasks);
-    out.writeInt(taskReports.size());    
+    out.writeInt(taskReports.size());
     for(TaskStatus taskStatus : taskReports) {
       taskStatus.write(out);
     }

@@ -45,6 +45,7 @@ class JobInProgress {
 
   static final Log LOG = LogFactory.getLog(JobInProgress.class);
 
+  Configuration conf;
   JobProfile profile;
   JobStatus status;
   Path jobFile = null;
@@ -62,6 +63,7 @@ class JobInProgress {
 
   public JobInProgress(BSPJobID jobId, BSPMaster master, Configuration conf)
       throws IOException {
+    this.conf = conf;
     this.jobId = jobId;
 
     this.master = master;
@@ -80,10 +82,10 @@ class JobInProgress {
     fs.copyToLocalFile(jobFile, localJobFile);
     BSPJobContext job = new BSPJobContext(localJobFile, jobId);
 
-    System.out.println("user:" + job.getUser());
-    System.out.println("jobId:" + jobId);
-    System.out.println("jobFile:" + jobFile.toString());
-    System.out.println("jobName:" + job.getJobName());
+    LOG.info("user:" + job.getUser());
+    LOG.info("jobId:" + jobId);
+    LOG.info("jobFile:" + jobFile.toString());
+    LOG.info("jobName:" + job.getJobName());
 
     this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
         .getJobName());
@@ -135,7 +137,16 @@ class JobInProgress {
   // ///////////////////////////////////////////////////
   public synchronized Task obtainNewTask(GroomServerStatus status,
       int clusterSize, int numUniqueHosts) {
+    Task result = null;
+    try {
+      result = new TaskInProgress(getJobID(), this.jobFile.toString(), this.master, null, this,
+          numUniqueHosts).getTaskToRun(status);
+      LOG.info("JobInProgress: " + result.getJobID() + ", " + result.getJobFile() + ", " + result.getId() + ", " + result.getPartition());
+      
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
 
-    return null;
+    return result;
   }
 }
