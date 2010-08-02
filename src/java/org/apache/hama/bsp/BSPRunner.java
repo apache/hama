@@ -1,7 +1,5 @@
 package org.apache.hama.bsp;
 
-import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configurable;
@@ -10,12 +8,11 @@ import org.apache.hadoop.util.ReflectionUtils;
 
 public class BSPRunner extends Thread implements Configurable {
   private static final Log LOG = LogFactory.getLog(BSPRunner.class);
-  private BSPPeer bspPeer;
   private Configuration conf;
   private BSP bsp;
   private boolean isDone;
   
-  public void run() {
+  public void run(BSPPeer bspPeer) {
     try {
       bsp.bsp(bspPeer);
     } catch (Exception e) {
@@ -31,11 +28,6 @@ public class BSPRunner extends Thread implements Configurable {
   @Override
   public void setConf(Configuration conf) {
     this.conf = conf;
-    try {
-      this.bspPeer = new BSPPeer(conf);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
 
     bsp = (BSP) ReflectionUtils.newInstance(conf.getClass("bsp.work.class",
         BSP.class), conf);

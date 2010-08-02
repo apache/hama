@@ -82,7 +82,7 @@ class SimpleTaskScheduler extends TaskScheduler {
           t = job.obtainNewTask(groomStatus, numGroomServers,
               groomServerManager.getNumberOfUniqueHosts());
           
-          LOG.info("SimpleTaskScheduler: " + t.getJobID() + ", " + t.getJobFile() + ", " + t.getId() + ", " + t.getPartition());
+          //LOG.info("SimpleTaskScheduler: " + t.getJobID() + ", " + t.getJobFile() + ", " + t.getId() + ", " + t.getPartition());
           
           if (t != null) {
             assignedTasks.add(t);
