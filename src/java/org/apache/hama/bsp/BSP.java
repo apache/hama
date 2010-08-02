@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class BSP extends Thread implements BSPInterface {
   private static final Log LOG = LogFactory.getLog(BSP.class);
+  private BSPPeer bspPeer;
   
   /**
    * A thread's run method.
@@ -34,9 +35,13 @@ public abstract class BSP extends Thread implements BSPInterface {
    */
   public void run() {
     try {
-      bsp(new BSPPeer(this.getConf()));
+      bsp(bspPeer);
     } catch (Exception e) {
       LOG.error(e);
     }
+  }
+
+  public void setPeer(BSPPeer bspServer) {
+    this.bspPeer = bspServer;
   }
 }

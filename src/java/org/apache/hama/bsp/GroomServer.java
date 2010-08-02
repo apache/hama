@@ -40,13 +40,17 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.util.DiskChecker;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.InterTrackerProtocol;
 
 public class GroomServer implements Runnable {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
+  private BSPPeer bspPeer;
+  private Task task;
   
   static {
     Configuration.addDefaultResource("hama-default.xml");
@@ -92,9 +96,14 @@ public class GroomServer implements Runnable {
     new LinkedBlockingQueue<GroomServerAction>();
   
   public GroomServer(Configuration conf) throws IOException {
+    LOG.info("groom start");
     this.conf = conf;
-    bspMasterAddr = BSPMaster.getAddress(conf);
-
+    String mode = conf.get("bsp.master.address");
+    if(!mode.equals("local")) {
+      bspMasterAddr = BSPMaster.getAddress(conf);
+    }
+    bspPeer = new BSPPeer(conf);
+    
     //FileSystem local = FileSystem.getLocal(conf);
     //this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
   }
@@ -214,7 +223,6 @@ public class GroomServer implements Runnable {
             heartbeatResponse.getResponseId() + " and " + 
             ((actions != null) ? actions.length : 0) + " actions");
 
-        
         if (actions != null){ 
           for(GroomServerAction action: actions) {
             if (action instanceof LaunchTaskAction) {
@@ -260,9 +268,10 @@ public class GroomServer implements Runnable {
 
   private void startNewTask(LaunchTaskAction action) {
     // TODO Auto-generated method stub
-    Task t = action.getTask();
-    LOG.info("GroomServer: " + t.getJobID() + ", " + t.getJobFile() + ", " + t.getId() + ", " + t.getPartition());
-    LOG.info(t.runner);
+    task = action.getTask();
+    this.launchTask();
+    //LOG.info("GroomServer: " + t.getJobID() + ", " + t.getJobFile() + ", " + t.getId() + ", " + t.getPartition());
+    //LOG.info(t.runner);
     //t.runner.start();
     // TODO: execute task
     
@@ -352,7 +361,7 @@ public class GroomServer implements Runnable {
 
   public synchronized void close() throws IOException {
     this.running = false;
-
+    bspPeer.close();
     cleanupStorage();
 
     // shutdown RPC connections
@@ -450,6 +459,7 @@ public class GroomServer implements Runnable {
       conf.addResource(new Path("/home/edward/workspace/hama-trunk/conf/hama-default.xml"));
       conf.addResource(new Path("/home/edward/workspace/hama-trunk/conf/hama-site.xml"));
       
+      conf.set(Constants.PEER_PORT, String.valueOf(30000));
       GroomServer groom = GroomServer.constructGroomServer(GroomServer.class, conf);
       startGroomServer(groom);
     } catch (Throwable e) {
@@ -457,5 +467,30 @@ public class GroomServer implements Runnable {
       System.exit(-1);
     }
   }
-  
+
+  public void assignTask(Task task) {
+    this.task = task;
+  }
+
+  public void launchTask() {
+    Configuration jobConf = new Configuration();
+    jobConf.addResource(new Path(task.getJobFile().replace("file:", "")));
+    BSP bsp = (BSP) ReflectionUtils.newInstance(jobConf.getClass("bsp.work.class",
+        BSP.class), conf);
+    bsp.setPeer(bspPeer);
+    bsp.start();
+    while(!bsp.isAlive()) {
+      LOG.info("i'm done. ");
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+  }
+
+  public String getServerName() {
+    return bspPeer.getServerName();
+  }
 }

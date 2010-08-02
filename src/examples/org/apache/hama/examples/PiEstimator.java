@@ -20,6 +20,8 @@ package org.apache.hama.examples;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hama.HamaConfiguration;
@@ -33,6 +35,7 @@ import org.apache.zookeeper.KeeperException;
 public class PiEstimator {
 
   public static class MyEstimator extends BSP {
+    public static final Log LOG = LogFactory.getLog(MyEstimator.class);
     private Configuration conf;
     private static final int iterations = 10000;
     
@@ -53,18 +56,22 @@ public class PiEstimator {
       byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
+      LOG.info("Sent message to localhost:30000: " + Bytes.toDouble(myData));
       bspPeer.send(new InetSocketAddress("localhost", 30000), estimate);
+      LOG.info("Enter the barrier");
       bspPeer.sync();
 
       double pi = 0.0;
       BSPMessage received;
       while ((received = bspPeer.getCurrentMessage()) != null) {
+        LOG.info("Receives messages:" + Bytes.toDouble(received.getData()));
         pi = (pi + Bytes.toDouble(received.getData())) / 2;
       }
 
-      if (pi != 0.0)
+      if (pi != 0.0) {
+        LOG.info("\nEstimated value of PI is " + pi);
         System.out.println("\nEstimated value of PI is " + pi);
-
+      }
     }
 
     @Override
@@ -84,14 +91,15 @@ public class PiEstimator {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
     // Execute locally
-    conf.set("bsp.master.address", "local");
+    //conf.set("bsp.master.address", "local");
+    conf.set("bsp.master.address", "localhost:40000");
     
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
     // Set the job name
     bsp.setJobName("pi estimation example");
     bsp.setBspClass(MyEstimator.class);
 
-    bsp.setNumBspTask(10);
+    bsp.setNumBspTask(1);
     BSPJobClient.runJob(bsp);
   }
 }

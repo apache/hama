@@ -156,7 +156,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
-    LOG.debug("[" + serverName + "] enter the enterbarrier");
+    LOG.info("[" + serverName + "] enter the enterbarrier");
     try {
       zk.create(bspRoot + "/" + serverName, new byte[0], Ids.OPEN_ACL_UNSAFE,
           CreateMode.EPHEMERAL);
@@ -165,13 +165,17 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-
+    LOG.info("enterbarrier done 0");
     while (true) {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
+        LOG.info(list.size() + ", " + conf.getInt("bsp.peers.num", 0));
+        
         if (list.size() < conf.getInt("bsp.peers.num", 0)) {
+          LOG.info("enterbarrier done 1");
           mutex.wait();
         } else {
+          LOG.info("enterbarrier done 2");
           return true;
         }
       }

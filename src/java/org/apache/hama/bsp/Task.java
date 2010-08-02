@@ -30,7 +30,7 @@ import org.apache.hadoop.io.Writable;
 /**
  *
  */
-public class Task extends Thread implements Writable {
+public class Task implements Writable {
   public static final Log LOG = LogFactory.getLog(Task.class);
   ////////////////////////////////////////////
   // Fields
@@ -41,11 +41,8 @@ public class Task extends Thread implements Writable {
   protected String taskId;
   protected int partition;
   
-  protected BSPRunner runner;
   protected LocalDirAllocator lDirAlloc;
-  /**
-   * 
-   */
+
   public Task() {
     taskId = new String();
   }
@@ -54,7 +51,6 @@ public class Task extends Thread implements Writable {
     this.jobId = jobId;
     this.jobFile = jobFile;
     this.taskId = taskId;
-     
     this.partition = partition;
   }
   
