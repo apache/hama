@@ -162,8 +162,8 @@ elif [ "$COMMAND" = "groom" ] ; then
   BSP_OPTS="$BSP_OPTS $BSP_GROOMSERVER_OPTS"
 elif [ "$COMMAND" = "zookeeper" ] ; then
   CLASS='org.apache.hama.zookeeper.QuorumPeer'
-elif [ "$COMMAND" = "test" ] ; then
-  CLASS=org.apache.hama.bsp.BSPTestDriver
+elif [ "$COMMAND" = "jar" ] ; then
+  CLASS=org.apache.hama.util.RunJar
   BSP_OPTS="$BSP_OPTS"
 else
   CLASS=$COMMAND

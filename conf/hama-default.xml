@@ -57,7 +57,7 @@
   </property>
   <property>
     <name>bsp.peers.num</name>
-    <value>3</value>
+    <value>2</value>
     <description>The default number of bsp tasks per job.  Typically set
     to a prime several times greater than number of available hosts.
     </description>
@@ -117,5 +117,18 @@
     standalone and pseudo-distributed.
     </description>
   </property>
+  
+  <property>
+    <name>hama.zookeeper.quorum</name>
+    <value>localhost</value>
+    <description>Comma separated list of servers in the ZooKeeper Quorum.
+    For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
+    By default this is set to localhost for local and pseudo-distributed modes
+    of operation. For a fully-distributed setup, this should be set to a full
+    list of ZooKeeper quorum servers. If HBASE_MANAGES_ZK is set in hbase-env.sh
+    this is the list of servers which we will start/stop ZooKeeper on.
+    </description>
+  </property>
+  
   <!-- End of properties that are directly mapped from ZooKeeper's zoo.cfg -->
 </configuration>

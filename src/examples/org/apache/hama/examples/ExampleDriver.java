@@ -26,6 +26,7 @@ public class ExampleDriver {
   public static void main(String[] args) {
     ProgramDriver pgd = new ProgramDriver();
     try {
+      pgd.addClass("pi", PiEstimator.class, "Pi Estimator");
       pgd.addClass("rand", RandomMatrix.class, "Generate matrix with random elements.");
       pgd.addClass("mult", MatrixMultiplication.class, "Mat-Mat Multiplication.");
       pgd.addClass("similarity", CosineSimilarityMatrix.class, "Cosine Similarity Matrix.");

@@ -92,8 +92,8 @@ public class PiEstimator {
     HamaConfiguration conf = new HamaConfiguration();
     // Execute locally
     //conf.set("bsp.master.address", "local");
-    conf.set("bsp.master.address", "localhost:40000");
-    
+    conf.set("bsp.master.address", "slave.udanax.org:40000");
+
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
     // Set the job name
     bsp.setJobName("pi estimation example");

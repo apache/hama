@@ -312,16 +312,21 @@ public class BSPJobClient extends Configured {
     
     // Create a number of filenames in the BSPMaster's fs namespace
     FileSystem fs = getFs();
-    LOG.debug("default FileSystem: " + fs.getUri());
+    LOG.info("default FileSystem: " + fs.getUri());
     fs.delete(submitJobDir, true);
     submitJobDir = fs.makeQualified(submitJobDir);
     submitJobDir = new Path(submitJobDir.toUri().getPath());
+    LOG.info("BSPJobClient.job dir: " + submitJobDir);
     FsPermission bspSysPerms = new FsPermission(JOB_DIR_PERMISSION);
     FileSystem.mkdirs(fs, submitJobDir, bspSysPerms);
+    fs.mkdirs(submitJobDir);
+    LOG.info("job dir is exist?: " + fs.isDirectory(submitJobDir));
     short replication = (short)job.getInt("bsp.submit.replication", 10);
     
     String originalJarPath = job.getJar();
 
+    LOG.info("BSPJobClient.originalJarPath: " + originalJarPath);
+    
     if (originalJarPath != null) { // copy jar to BSPMaster's fs
       // use jar name if job is not named. 
       if ("".equals(job.getJobName())){
@@ -329,6 +334,9 @@ public class BSPJobClient extends Configured {
       }
       job.setJar(submitJarFile.toString());
       fs.copyFromLocalFile(new Path(originalJarPath), submitJarFile);
+      LOG.info("BSPJobClient copy to: " + submitJarFile);
+      LOG.info("BSPJobClient jar file: " + fs.isFile(submitJarFile));
+      
       fs.setReplication(submitJarFile, replication);
       fs.setPermission(submitJarFile, new FsPermission(JOB_FILE_PERMISSION));
     } else {
@@ -345,6 +353,7 @@ public class BSPJobClient extends Configured {
       job.setWorkingDirectory(fs.getWorkingDirectory());
     }
     
+    LOG.info("Write job file: " + submitJobFile);
     // Write job file to BSPMaster's fs        
     FSDataOutputStream out = 
       FileSystem.create(fs, submitJobFile,
@@ -355,6 +364,8 @@ public class BSPJobClient extends Configured {
     } finally {
       out.close();
     }
+    
+    LOG.info("BSPJobClient job file: " + fs.isFile(submitJobFile));
     
     //
     // Now, actually submit the job (using the submit name)
