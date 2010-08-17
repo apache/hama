@@ -110,6 +110,7 @@ public class BSPJob extends BSPJobContext {
     try {
       for (Enumeration itr = loader.getResources(class_file); itr
           .hasMoreElements();) {
+
         URL url = (URL) itr.nextElement();
         if ("jar".equals(url.getProtocol())) {
           String toReturn = url.getPath();

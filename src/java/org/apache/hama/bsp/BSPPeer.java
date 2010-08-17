@@ -73,8 +73,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     id = conf.getInt(Constants.PEER_ID, 0);
     bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT);
-    zookeeperAddr = conf.get(Constants.ZOOKEEPER_SERVER_ADDRS,
-        "localhost:21810");
+    zookeeperAddr = "slave.udanax.org:21810"; // TODO: it should be configured at hama-site.xml
 
     reinitialize();
   }

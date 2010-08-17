@@ -323,6 +323,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
   public static InetSocketAddress getAddress(Configuration conf) {
     String hamaMasterStr = conf.get("bsp.master.address", "localhost:40000");
+    System.out.println(">>>> " + hamaMasterStr);
     return NetUtils.createSocketAddr(hamaMasterStr);
   }
 
