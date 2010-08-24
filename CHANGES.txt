@@ -150,6 +150,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-280: Fix warnings (Filipe Manana via edwardyoon)
     HAMA-270: wrong sequence of readFields() of ClusterStatus (hyunsik)
     HAMA-260: Current version command of script is linked unknown class (edwardyoon)
     HAMA-250: Add --no-check-certificate option to 'wget' command lines (edwardyoon)
