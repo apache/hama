@@ -56,12 +56,6 @@ import org.apache.hama.ipc.JobSubmissionProtocol;
  */
 public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     GroomServerManager {
-
-  static {
-    Configuration.addDefaultResource("hama-default.xml");
-    Configuration.addDefaultResource("hama-site.xml");
-  }
-
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
 
   private Configuration conf;
@@ -751,11 +745,6 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
     try {
       HamaConfiguration conf = new HamaConfiguration();
-      conf.addResource(new Path(
-          "/home/edward/workspace/hama-trunk/conf/hama-default.xml"));
-      conf.addResource(new Path(
-          "/home/edward/workspace/hama-trunk/conf/hama-site.xml"));
-
       BSPMaster master = startMaster(conf);
       master.offerService();
     } catch (Throwable e) {

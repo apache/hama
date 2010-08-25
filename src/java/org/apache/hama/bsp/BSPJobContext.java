@@ -30,11 +30,6 @@ import org.apache.hama.HamaConfiguration;
  * running.
  */
 public class BSPJobContext {
-  static{
-    Configuration.addDefaultResource("hama-default.xml");
-    Configuration.addDefaultResource("hama-site.xml");
-  }
-  
   // Put all of the attribute names in here so that BSPJob and JobContext are
   // consistent.  
   protected static final String WORK_CLASS_ATTR = "bsp.work.class";

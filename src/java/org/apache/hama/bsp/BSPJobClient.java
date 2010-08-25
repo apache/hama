@@ -41,11 +41,6 @@ public class BSPJobClient extends Configured {
   public static enum TaskStatusFilter { NONE, KILLED, FAILED, SUCCEEDED, ALL }
   private static final long MAX_JOBPROFILE_AGE = 1000 * 2;
 
-  static {
-    Configuration.addDefaultResource("hama-default.xml");
-    Configuration.addDefaultResource("hama-site.xml");
-  }
-
   class NetworkedJob implements RunningJob {
     JobProfile profile;
     JobStatus status;
