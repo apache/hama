@@ -19,7 +19,6 @@ package org.apache.hama.bsp;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -39,13 +38,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RemoteException;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.util.DiskChecker;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
-import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.InterTrackerProtocol;
 
@@ -53,11 +49,6 @@ public class GroomServer implements Runnable {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
   private static BSPPeer bspPeer;
   private Task task;
-
-  static {
-    Configuration.addDefaultResource("hama-default.xml");
-    Configuration.addDefaultResource("hama-site.xml");
-  }
 
   Configuration conf;
 
@@ -457,10 +448,6 @@ public class GroomServer implements Runnable {
 
     try {
       Configuration conf = new HamaConfiguration();
-      conf.addResource(new Path(
-          "/home/edward/workspace/hama-trunk/conf/hama-default.xml"));
-      conf.addResource(new Path(
-          "/home/edward/workspace/hama-trunk/conf/hama-site.xml"));
 
       // conf.set(Constants.PEER_PORT, String.valueOf(30000));
       GroomServer groom = GroomServer.constructGroomServer(GroomServer.class,
@@ -478,15 +465,7 @@ public class GroomServer implements Runnable {
 
   public void launchTask() {
     // TODO: task localizing and execute them.
-    
-    try {
-      LOG.info(">>>>>>>>>>>>> " + systemFS.isFile(new Path(task.getJobFile())));
-      //LOG.info("bsp.work.class: " + conf.getClass("bsp.work.class", BSP.class));
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    
+
     /*
      * try { jobConf.addResource(new Path(task.getJobFile().replace("file:",
      * ""))); LOG.info("Job File>>>>> " + task.getJobFile().replace("file:",
