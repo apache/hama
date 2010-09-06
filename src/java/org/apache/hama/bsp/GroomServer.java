@@ -289,7 +289,7 @@ public class GroomServer implements Runnable {
 
     // TODO - Later, acceptNewTask is to be set by the status of groom server.
     HeartbeatResponse heartbeatResponse = jobClient.heartbeat(status,
-        justStarted, justInited, true, heartbeatResponseId);
+        justStarted, justInited, acceptNewTasks, heartbeatResponseId);
     return heartbeatResponse;
   }
 
@@ -307,7 +307,6 @@ public class GroomServer implements Runnable {
       initialize();
       startCleanupThreads();
       boolean denied = false;
-      LOG.info("Why? " + running + ", " + shuttingDown + ", " + denied);
       while (running && !shuttingDown && !denied) {
 
         boolean staleState = false;
@@ -464,16 +463,27 @@ public class GroomServer implements Runnable {
   }
 
   public void launchTask() {
-    // TODO: task localizing and execute them.
+    // until job is completed, don't accept new task
+    acceptNewTasks = false;
 
+    // TODO: check the job file and task localizing and execute them.
+    LOG.info("Launch a task");
+    
+    LOG.info("JobFile: " + task.getJobFile());
+    LOG.info("Job Partition: " + task.getPartition());
+    
     /*
-     * try { jobConf.addResource(new Path(task.getJobFile().replace("file:",
-     * ""))); LOG.info("Job File>>>>> " + task.getJobFile().replace("file:",
-     * "")); BSP bsp = (BSP)
-     * ReflectionUtils.newInstance(jobConf.getClass("bsp.work.class",
-     * BSP.class), conf); bsp.setPeer(bspPeer); bsp.start(); } catch (Exception
-     * e) { System.exit(-1); }
-     */
+    try {
+      BSPJob jobConf = new BSPJob();
+      jobConf.addResource(new Path(task.getJobFile().replace("file:", "")));
+      LOG.info("Job File>>>>> " + task.getJobFile().replace("file:", ""));
+      BSP bsp = (BSP) ReflectionUtils.newInstance(jobConf.getClass("bsp.work.class", BSP.class), conf);
+      bsp.setPeer(bspPeer);
+      bsp.start();
+    } catch (Exception e) {
+      System.exit(-1);
+    }
+    */
   }
 
   public String getServerName() {
