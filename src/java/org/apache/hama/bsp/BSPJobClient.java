@@ -203,68 +203,6 @@ public class BSPJobClient extends Configured {
     return fs;
   }
   
-  /* see if two file systems are the same or not
-  *
-  */ /*
- private boolean compareFs(FileSystem srcFs, FileSystem destFs) {
-   URI srcUri = srcFs.getUri();
-   URI dstUri = destFs.getUri();
-   if (srcUri.getScheme() == null) {
-     return false;
-   }
-   if (!srcUri.getScheme().equals(dstUri.getScheme())) {
-     return false;
-   }
-   String srcHost = srcUri.getHost();    
-   String dstHost = dstUri.getHost();
-   if ((srcHost != null) && (dstHost != null)) {
-     try {
-       srcHost = InetAddress.getByName(srcHost).getCanonicalHostName();
-       dstHost = InetAddress.getByName(dstHost).getCanonicalHostName();
-     } catch(UnknownHostException ue) {
-       return false;
-     }
-     if (!srcHost.equals(dstHost)) {
-       return false;
-     }
-   }
-   else if (srcHost == null && dstHost != null) {
-     return false;
-   }
-   else if (srcHost != null && dstHost == null) {
-     return false;
-   }
-   //check for ports
-   if (srcUri.getPort() != dstUri.getPort()) {
-     return false;
-   }
-   return true;
- } */
-  
-  //copies a file to the bspmaster filesystem and returns the path where it
-  // was copied to
- /*
-  private Path copyRemoteFiles(FileSystem jtFs, Path parentDir, Path originalPath, 
-                               BSPJobContext job, short replication) throws IOException {
-    //check if we do not need to copy the files
-    // is jt using the same file system.
-    // just checking for uri strings... doing no dns lookups 
-    // to see if the filesystems are the same. This is not optimal.
-    // but avoids name resolution.
-    
-    FileSystem remoteFs = null;
-    remoteFs = originalPath.getFileSystem(job.getConf());
-    if (compareFs(remoteFs, jtFs)) {
-      return originalPath;
-    }
-    // this might have name collisions. copy will throw an exception
-    //parse the original path to create new path
-    Path newPath = new Path(parentDir, originalPath.getName());
-    FileUtil.copy(remoteFs, originalPath, jtFs, newPath, false, job.getConf());
-    jtFs.setReplication(newPath, replication);
-    return newPath;
-  }*/
-  
   private UnixUserGroupInformation getUGI(Configuration conf) throws IOException {
     UnixUserGroupInformation ugi = null;
     try {
@@ -307,21 +245,16 @@ public class BSPJobClient extends Configured {
     
     // Create a number of filenames in the BSPMaster's fs namespace
     FileSystem fs = getFs();
-    LOG.info("default FileSystem: " + fs.getUri());
     fs.delete(submitJobDir, true);
     submitJobDir = fs.makeQualified(submitJobDir);
     submitJobDir = new Path(submitJobDir.toUri().getPath());
-    LOG.info("BSPJobClient.job dir: " + submitJobDir);
     FsPermission bspSysPerms = new FsPermission(JOB_DIR_PERMISSION);
     FileSystem.mkdirs(fs, submitJobDir, bspSysPerms);
     fs.mkdirs(submitJobDir);
-    LOG.info("job dir is exist?: " + fs.isDirectory(submitJobDir));
     short replication = (short)job.getInt("bsp.submit.replication", 10);
     
     String originalJarPath = job.getJar();
 
-    LOG.info("BSPJobClient.originalJarPath: " + originalJarPath);
-    
     if (originalJarPath != null) { // copy jar to BSPMaster's fs
       // use jar name if job is not named. 
       if ("".equals(job.getJobName())){
@@ -329,8 +262,6 @@ public class BSPJobClient extends Configured {
       }
       job.setJar(submitJarFile.toString());
       fs.copyFromLocalFile(new Path(originalJarPath), submitJarFile);
-      LOG.info("BSPJobClient copy to: " + submitJarFile);
-      LOG.info("BSPJobClient jar file: " + fs.isFile(submitJarFile));
       
       fs.setReplication(submitJarFile, replication);
       fs.setPermission(submitJarFile, new FsPermission(JOB_FILE_PERMISSION));
@@ -348,7 +279,6 @@ public class BSPJobClient extends Configured {
       job.setWorkingDirectory(fs.getWorkingDirectory());
     }
     
-    LOG.info("Write job file: " + submitJobFile);
     // Write job file to BSPMaster's fs        
     FSDataOutputStream out = 
       FileSystem.create(fs, submitJobFile,
@@ -359,8 +289,6 @@ public class BSPJobClient extends Configured {
     } finally {
       out.close();
     }
-    
-    LOG.info("BSPJobClient job file: " + fs.isFile(submitJobFile));
     
     //
     // Now, actually submit the job (using the submit name)

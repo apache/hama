@@ -49,14 +49,13 @@ public class SerializePrinting {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
     // Execute locally
-    conf.set("bsp.master.address", "local");
+    // conf.set("bsp.master.address", "local");
 
     BSPJob bsp = new BSPJob(conf, SerializePrinting.class);
     // Set the job name
     bsp.setJobName("serialize printing");
     bsp.setBspClass(HelloBSP.class);
 
-    bsp.setNumBspTask(5);
     BSPJobClient.runJob(bsp);
   }
 }

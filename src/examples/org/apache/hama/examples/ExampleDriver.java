@@ -27,10 +27,15 @@ public class ExampleDriver {
     ProgramDriver pgd = new ProgramDriver();
     try {
       pgd.addClass("pi", PiEstimator.class, "Pi Estimator");
+      
+      /*
+      pgd.addClass("sprint", SerializePrinting.class, "Serialize Printing");
       pgd.addClass("rand", RandomMatrix.class, "Generate matrix with random elements.");
       pgd.addClass("mult", MatrixMultiplication.class, "Mat-Mat Multiplication.");
       pgd.addClass("similarity", CosineSimilarityMatrix.class, "Cosine Similarity Matrix.");
       pgd.addClass("norms", MatrixNorm.class, "Matrix Norms.");
+      */
+      
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();

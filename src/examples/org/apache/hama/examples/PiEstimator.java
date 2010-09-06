@@ -33,7 +33,6 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.zookeeper.KeeperException;
 
 public class PiEstimator {
-
   public static class MyEstimator extends BSP {
     public static final Log LOG = LogFactory.getLog(MyEstimator.class);
     private Configuration conf;
@@ -56,9 +55,7 @@ public class PiEstimator {
       byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
-      LOG.info("Sent message to localhost:30000: " + Bytes.toDouble(myData));
-      bspPeer.send(new InetSocketAddress("localhost", 30000), estimate);
-      LOG.info("Enter the barrier");
+      bspPeer.send(new InetSocketAddress("slave.udanax.org", 61000), estimate);
       bspPeer.sync();
 
       double pi = 0.0;
@@ -70,7 +67,6 @@ public class PiEstimator {
 
       if (pi != 0.0) {
         LOG.info("\nEstimated value of PI is " + pi);
-        System.out.println("\nEstimated value of PI is " + pi);
       }
     }
 
@@ -92,14 +88,12 @@ public class PiEstimator {
     HamaConfiguration conf = new HamaConfiguration();
     // Execute locally
     //conf.set("bsp.master.address", "local");
-    conf.set("bsp.master.address", "slave.udanax.org:40000");
 
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
     // Set the job name
     bsp.setJobName("pi estimation example");
     bsp.setBspClass(MyEstimator.class);
 
-    bsp.setNumBspTask(2);
     BSPJobClient.runJob(bsp);
   }
 }

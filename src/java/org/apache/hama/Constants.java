@@ -63,6 +63,7 @@ public interface Constants {
   public static final int DEFAULT_ZOOKEEPER_PAUSE = 2 * 1000;
   
   static final String ZOOKEEPER_CONFIG_NAME = "zoo.cfg";
+  static final String ZOOKEPER_CLIENT_PORT = "zookeeper.client.port";
   static final int DEFAULT_ZOOKEPER_CLIENT_PORT = 21810;
   static final String ZOOKEEPER_QUORUM = "hama.zookeeper.quorum";
   /** Cluster is in distributed mode or not */
