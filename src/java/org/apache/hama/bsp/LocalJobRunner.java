@@ -160,7 +160,7 @@ public class LocalJobRunner implements JobSubmissionProtocol {
             LOG.info("Adding task '" + tID.toString() + "' for '" + servers.getServerName() + "'");
             
             // TODO not yet implemented
-            servers.launchTask();
+            //servers.launchTask();
             
           } catch (IOException e) {
             e.printStackTrace();

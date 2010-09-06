@@ -82,11 +82,6 @@ class JobInProgress {
     fs.copyToLocalFile(jobFile, localJobFile);
     BSPJobContext job = new BSPJobContext(localJobFile, jobId);
 
-    LOG.info("user:" + job.getUser());
-    LOG.info("jobId:" + jobId);
-    LOG.info("jobFile:" + jobFile.toString());
-    LOG.info("jobName:" + job.getJobName());
-
     this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
         .getJobName());
 

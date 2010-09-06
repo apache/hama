@@ -59,7 +59,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
   protected final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
   protected int id;
- 
+
   /**
    * 
    */
@@ -73,7 +73,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     id = conf.getInt(Constants.PEER_ID, 0);
     bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT);
-    zookeeperAddr = "slave.udanax.org:21810"; // TODO: it should be configured at hama-site.xml
+    zookeeperAddr = conf.get(Constants.ZOOKEEPER_QUORUM)
+        + ":"
+        + conf.getInt(Constants.ZOOKEPER_CLIENT_PORT,
+            Constants.DEFAULT_ZOOKEPER_CLIENT_PORT);
 
     reinitialize();
   }
@@ -146,7 +149,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       }
     }
     enterBarrier();
-    Thread.sleep(Constants.ATLEAST_WAIT_TIME); // TODO - This is temporary work because
+    Thread.sleep(Constants.ATLEAST_WAIT_TIME); // TODO - This is temporary work
+                                               // because
     // it can be affected by network condition,
     // the number of peers, and the load of zookeeper.
     // It should fixed to some flawless way.
@@ -169,7 +173,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
         LOG.info(list.size() + ", " + conf.getInt("bsp.peers.num", 0));
-        
+
         if (list.size() < conf.getInt("bsp.peers.num", 0)) {
           LOG.info("enterbarrier done 1");
           mutex.wait();
@@ -247,9 +251,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public String getServerName() {
     return this.serverName;
   }
-  
+
   public int getId() {
-    return this.id;  
+    return this.id;
   }
 
 }

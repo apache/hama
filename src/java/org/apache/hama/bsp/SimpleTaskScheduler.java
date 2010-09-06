@@ -71,6 +71,7 @@ class SimpleTaskScheduler extends TaskScheduler {
       // instance to the scheduler.
       synchronized (jobQueue) {
         for (JobInProgress job : jobQueue) {
+          
           /*
           if (job.getStatus().getRunState() != JobStatus.RUNNING) {
             continue;
@@ -81,8 +82,6 @@ class SimpleTaskScheduler extends TaskScheduler {
 
           t = job.obtainNewTask(groomStatus, numGroomServers,
               groomServerManager.getNumberOfUniqueHosts());
-          
-          //LOG.info("SimpleTaskScheduler: " + t.getJobID() + ", " + t.getJobFile() + ", " + t.getId() + ", " + t.getPartition());
           
           if (t != null) {
             assignedTasks.add(t);
