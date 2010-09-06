@@ -456,7 +456,6 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
       if (groomStatus == null) {
         LOG.warn("Unknown task tracker polling; ignoring: " + groomName);
       } else {
-        LOG.info(groomStatus);
         List<Task> tasks = taskScheduler.assignTasks(groomStatus);
         for (Task task : tasks) {
           if (tasks != null) {
