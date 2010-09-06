@@ -272,7 +272,7 @@ public class GroomServer implements Runnable {
         // TODO: when job failed.
       }
     }
-    //this.launchTask();
+
   }
 
   private HeartbeatResponse transmitHeartBeat(long now) throws IOException {
@@ -396,9 +396,10 @@ public class GroomServer implements Runnable {
       acceptNewTasks = false;
 
       try {
-        // TODO: move this code to TaskRunnable
+        // TODO: need to move this code to TaskRunner
         Path localJobFile = new Path(task.getJobFile().replace(systemFS.getUri().toString(), ""));
         String localJarFile = localJobFile.toString().replace(".xml", ".jar");
+        LOG.debug("localJobFile: "+ localJobFile);
         
         systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
         systemFS.copyToLocalFile(new Path(task.getJobFile().replace(".xml", ".jar")), new Path(localJarFile));
@@ -416,9 +417,7 @@ public class GroomServer implements Runnable {
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
-      
-      done = true;
-      acceptNewTasks = true;
+
       // TODO: report the task status
     }
 

@@ -136,8 +136,6 @@ class JobInProgress {
     try {
       result = new TaskInProgress(getJobID(), this.jobFile.toString(), this.master, null, this,
           numUniqueHosts).getTaskToRun(status);
-      //LOG.info("JobInProgress: " + result.getJobID() + ", " + result.getJobFile() + ", " + result.getId() + ", " + result.getPartition());
-      
     } catch (IOException e) {
       e.printStackTrace();
     }
