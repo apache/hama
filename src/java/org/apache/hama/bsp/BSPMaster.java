@@ -25,14 +25,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -99,80 +96,6 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   private int totalTaskCapacity;
   private Map<BSPJobID, JobInProgress> jobs = new TreeMap<BSPJobID, JobInProgress>();
   private TaskScheduler taskScheduler;
-
-  ExpireLaunchingTasks expireLaunchingTasks = new ExpireLaunchingTasks();
-  Thread expireLaunchingTaskThread = new Thread(expireLaunchingTasks,
-      "expireLaunchingTasks");
-
-  private class ExpireLaunchingTasks implements Runnable {
-    private volatile boolean shouldRun = true;
-    private Map<String, Long> launchingTasks = new LinkedHashMap<String, Long>();
-
-    @Override
-    public void run() {
-      while (shouldRun) {
-        long now = System.currentTimeMillis();
-
-        synchronized (BSPMaster.this) {
-          synchronized (launchingTasks) {
-            Iterator<Entry<String, Long>> itr = launchingTasks.entrySet()
-                .iterator();
-            while (itr.hasNext()) {
-              Map.Entry<String, Long> pair = itr.next();
-              String taskId = pair.getKey();
-              long age = now - ((Long) pair.getValue()).longValue();
-              LOG.debug(taskId + " is " + age + " ms debug.");
-
-              LOG.info(taskId);
-              if (age > GROOMSERVER_EXPIRY_INTERVAL) {
-                LOG.info("Launching task " + taskId + " timed out.");
-                TaskInProgress tip = null;
-                tip = (TaskInProgress) taskidToTIPMap.get(taskId);
-                if (tip != null) {
-                  JobInProgress job = tip.getJob();
-                  String groomName = getAssignedTracker(taskId);
-                  GroomServerStatus trackerStatus = getGroomServer(groomName);
-                  // This might happen when the tasktracker has already
-                  // expired and this thread tries to call failedtask
-                  // again. expire tasktracker should have called failed
-                  // task!
-                  if (trackerStatus != null) {
-                    /*
-                     * job.failedTask(tip, taskId, "Error launching task",
-                     * tip.isMapTask()? TaskStatus.Phase.MAP:
-                     * TaskStatus.Phase.STARTING, trackerStatus.getHost(),
-                     * trackerName, myMetrics);
-                     */
-                  }
-                }
-                itr.remove();
-              } else {
-                // the tasks are sorted by start time, so once we find
-                // one that we want to keep, we are done for this cycle.
-                break;
-              }
-
-            }
-          }
-        }
-      }
-    }
-
-    private String getAssignedTracker(String taskId) {
-      return taskidToTrackerMap.get(taskId);
-    }
-
-    public void addNewTask(String string) {
-      synchronized (launchingTasks) {
-        launchingTasks.put(string, new Long(System.currentTimeMillis()));
-      }
-    }
-
-    public void stop() {
-      shouldRun = false;
-    }
-
-  }
 
   /**
    * Start the BSPMaster process, listen on the indicated hostname/port
@@ -454,9 +377,9 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
         LOG.warn("Unknown task tracker polling; ignoring: " + groomName);
       } else {
         List<Task> tasks = taskScheduler.assignTasks(groomStatus);
+        LOG.debug("BSPMaster.heartbeat.taskSize: " + tasks.size());
         for (Task task : tasks) {
           if (tasks != null) {
-            expireLaunchingTasks.addNewTask(task.getTaskID());
             actions.add(new LaunchTaskAction(task));
           }
         }
@@ -709,6 +632,21 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
       TaskInProgress taskInProgress) {
     LOG.info("Adding task '" + taskid + "' to tip " + taskInProgress.getTIPId()
         + ", for tracker '" + groomServer + "'");
+    /*
+    // taskid --> tracker
+    taskidToTrackerMap.put(taskid, taskTracker);
+
+    // tracker --> taskid
+    TreeSet taskset = (TreeSet) trackerToTaskMap.get(taskTracker);
+    if (taskset == null) {
+        taskset = new TreeSet();
+        trackerToTaskMap.put(taskTracker, taskset);
+    }
+    taskset.add(taskid);
+
+    // taskid --> TIP
+    taskidToTIPMap.put(taskid, tip);
+    */
   }
 
   public static void main(String[] args) {

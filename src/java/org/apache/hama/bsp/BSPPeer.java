@@ -38,6 +38,7 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.data.Stat;
 
 public class BSPPeer implements Watcher, BSPPeerInterface {
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
@@ -48,7 +49,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected Server server = null;
   protected ZooKeeper zk = null;
   protected volatile Integer mutex = 0;
-
+  
   protected final String serverName;
   protected final String bindAddress;
   protected final int bindPort;
@@ -95,6 +96,27 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     } catch (IOException e) {
       e.printStackTrace();
     }
+    
+    Stat s = null;
+    if (zk != null) {
+      try {
+        s = zk.exists(Constants.DEFAULT_ZOOKEEPER_ROOT, false);
+      } catch (Exception e) {
+        LOG.error(s);
+      }
+
+      if (s == null) {
+        try {
+          zk.create(Constants.DEFAULT_ZOOKEEPER_ROOT, new byte[0],
+              Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        } catch (KeeperException e) {
+          LOG.error(e);
+        } catch (InterruptedException e) {
+          LOG.error(e);
+        }
+      }
+    }      
+    
   }
 
   @Override
@@ -155,11 +177,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     // the number of peers, and the load of zookeeper.
     // It should fixed to some flawless way.
     leaveBarrier();
-
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
-    LOG.info("[" + serverName + "] enter the enterbarrier");
+    LOG.debug("[" + serverName + "] enter the enterbarrier");
     try {
       zk.create(bspRoot + "/" + serverName, new byte[0], Ids.OPEN_ACL_UNSAFE,
           CreateMode.EPHEMERAL);
@@ -168,17 +189,14 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    LOG.info("enterbarrier done 0");
+
     while (true) {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
-        LOG.info(list.size() + ", " + conf.getInt("bsp.peers.num", 0));
 
         if (list.size() < conf.getInt("bsp.peers.num", 0)) {
-          LOG.info("enterbarrier done 1");
           mutex.wait();
         } else {
-          LOG.info("enterbarrier done 2");
           return true;
         }
       }
