@@ -237,6 +237,8 @@ public class BSPJobClient extends Configured {
     Path submitJarFile = new Path(submitJobDir, "job.jar");    
     Path submitJobFile = new Path(submitJobDir, "job.xml");
     
+    LOG.debug("BSPJobClient.submitJobDir: " + submitJobDir);
+    
     /*
      * set this user's id in job configuration, so later job files can be
      * accessed using this user's id
