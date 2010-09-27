@@ -267,7 +267,7 @@ public class BSPJobClient extends Configured {
       fs.setPermission(submitJarFile, new FsPermission(JOB_FILE_PERMISSION));
     } else {
       LOG.warn("No job jar file set.  User classes may not be found. "+
-               "See BSPJobConf#setJar(String) or check Your jar file.");
+               "See BSPJob#setJar(String) or check Your jar file.");
     }
     
     // Set the user's name and working directory
