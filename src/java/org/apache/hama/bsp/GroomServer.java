@@ -391,23 +391,32 @@ public class GroomServer implements Runnable {
       this.task = task;
     }
 
+    static final String SUBDIR = "groomServer";
+    
     public void launchTask() {
       // until job is completed, don't accept new task
       acceptNewTasks = false;
 
       try {
         // TODO: need to move this code to TaskRunner
-        Path localJobFile = new Path(task.getJobFile().replace(systemFS.getUri().toString(), ""));
-        String localJarFile = localJobFile.toString().replace(".xml", ".jar");
+        task.getJobFile();
+        conf.addResource(task.getJobFile());
+        BSPJob defaultJobConf = new BSPJob((HamaConfiguration) conf);
+
+        Path localJobFile =
+          defaultJobConf.getLocalPath(SUBDIR+"/"+task.getTaskID()+"/"+"job.xml");
+        Path localJarFile =
+          defaultJobConf.getLocalPath(SUBDIR+"/"+task.getTaskID()+"/"+"job.jar");
+        
         LOG.debug("localJobFile: "+ localJobFile);
         
         systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
-        systemFS.copyToLocalFile(new Path(task.getJobFile().replace(".xml", ".jar")), new Path(localJarFile));
+        systemFS.copyToLocalFile(new Path(task.getJobFile().replace(".xml", ".jar")), localJarFile);
 
         HamaConfiguration conf = new HamaConfiguration();
         conf.addResource(localJobFile);
         BSPJob jobConf = new BSPJob(conf, task.getJobID());
-        jobConf.setJar(localJarFile);
+        jobConf.setJar(localJarFile.toString());
         
         BSP bsp = (BSP) ReflectionUtils.newInstance(jobConf.getBspClass(), conf);
         bsp.setPeer(bspPeer);

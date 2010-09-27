@@ -237,16 +237,10 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   }
 
   public static InetSocketAddress getAddress(Configuration conf) {
-    String hamaMasterStr = conf.get("bsp.master.address", "localhost:40000");
-    return NetUtils.createSocketAddr(hamaMasterStr);
-  }
+    String hamaMasterStr = conf.get("bsp.master.address", "localhost");
+    int defaultPort = conf.getInt("bsp.master.port", 40000);
 
-  public int getPort() {
-    return this.conf.getInt("bsp.master.port", 0);
-  }
-
-  public Configuration getConf() {
-    return this.conf;
+   return NetUtils.createSocketAddr(hamaMasterStr, defaultPort);
   }
 
   private static SimpleDateFormat getDateFormat() {

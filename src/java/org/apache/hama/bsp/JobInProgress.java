@@ -76,6 +76,10 @@ class JobInProgress {
         + ".xml");
     this.localJarFile = master.getLocalPath(BSPMaster.SUBDIR + "/" + jobId
         + ".jar");
+    
+    LOG.debug("JobInProgress.localJobFile: " + this.localJobFile);
+    LOG.debug("JobInProgress.localJarFile: " + this.localJarFile);
+    
     Path jobDir = master.getSystemDirectoryForJob(jobId);
     FileSystem fs = jobDir.getFileSystem(conf);
     jobFile = new Path(jobDir, "job.xml");
