@@ -370,10 +370,10 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
       if (groomStatus == null) {
         LOG.warn("Unknown task tracker polling; ignoring: " + groomName);
       } else {
-        List<Task> tasks = taskScheduler.assignTasks(groomStatus);
-        LOG.debug("BSPMaster.heartbeat.taskSize: " + tasks.size());
-        for (Task task : tasks) {
-          if (tasks != null) {
+        List<Task> taskList = taskScheduler.assignTasks(groomStatus);
+        LOG.debug("BSPMaster.heartbeat.taskSize: " + taskList.size());
+        for (Task task : taskList) {
+          if (task != null) {
             actions.add(new LaunchTaskAction(task));
           }
         }

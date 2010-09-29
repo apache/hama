@@ -153,6 +153,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-288: Typo might lead to null tasks getting assigned 
+                       to groom servers (Filipe Manana via edwardyoon)
     HAMA-280: Fix warnings (Filipe Manana via edwardyoon)
     HAMA-270: wrong sequence of readFields() of ClusterStatus (hyunsik)
     HAMA-260: Current version command of script is linked unknown class (edwardyoon)
