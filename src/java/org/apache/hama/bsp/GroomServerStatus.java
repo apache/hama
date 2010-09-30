@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
@@ -33,7 +35,8 @@ import org.apache.hadoop.io.WritableFactory;
  *
  */
 public class GroomServerStatus implements Writable {
-
+  public static final Log LOG = LogFactory.getLog(GroomServerStatus.class);
+  
   static {
     WritableFactories.setFactory
       (GroomServerStatus.class,
@@ -58,7 +61,6 @@ public class GroomServerStatus implements Writable {
       List<TaskStatus> taskReports, int failures, int maxTasks) {
     this.groomName = groomName;
     this.host = host;
-    
     this.taskReports = new ArrayList<TaskStatus>(taskReports);
     this.failures = failures;
     this.maxTasks = maxTasks;
@@ -132,6 +134,7 @@ public class GroomServerStatus implements Writable {
     for (int i = 0; i < numTasks; i++) {
       status = new TaskStatus();
       status.readFields(in);
+      taskReports.add(status);
     }   
   }
 
@@ -148,6 +151,10 @@ public class GroomServerStatus implements Writable {
     for(TaskStatus taskStatus : taskReports) {
       taskStatus.write(out);
     }
+  }
+
+  public Iterator<TaskStatus> taskReports() {
+    return taskReports.iterator();
   }
 
 }
