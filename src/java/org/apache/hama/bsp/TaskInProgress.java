@@ -68,7 +68,7 @@ class TaskInProgress {
   /**
    * Map from taskId -> TaskStatus
    */
-  private TreeMap<TaskAttemptID, TaskStatus> taskStatuses = new TreeMap<TaskAttemptID, TaskStatus>();
+  private TreeMap<String, TaskStatus> taskStatuses = new TreeMap<String, TaskStatus>();
 
   private BSPJobID jobId;
 
@@ -92,7 +92,7 @@ class TaskInProgress {
       
       String taskid = null;
       if (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts)) {
-        taskid = new String("task_" + nextTaskId);
+        taskid = new String("task_" + status.getGroomName() + "_" + nextTaskId);
         ++nextTaskId;
       } else {
         LOG.warn("Exceeded limit of " + (MAX_TASK_EXECS + maxTaskAttempts) + 
@@ -100,8 +100,7 @@ class TaskInProgress {
         return null;
       }
 
-      //this.conf.set(Constants.PEER_PORT, String.valueOf(30000));
-      t = new BSPTask(jobId.getJtIdentifier(), jobFile, taskid, partition, this.conf);
+      t = new BSPTask(jobId, jobFile, taskid, partition, this.conf);
       activeTasks.put(taskid, status.getGroomName());
 
       // Ask JobTracker to note that the task exists
@@ -127,9 +126,13 @@ class TaskInProgress {
   }
 
   public TaskID getTIPId() {
-    return this.id;
+    return id;
   }
 
+  public TreeMap<String, String> getTasks() {
+    return activeTasks;
+  }
+  
   /**
    * Is the Task associated with taskid is the first attempt of the tip?
    * 
@@ -170,5 +173,24 @@ class TaskInProgress {
     }  else {
         return false;
     }
+  }
+
+  public void completed(String taskid) {
+    LOG.info("Task '" + taskid + "' has completed.");
+    TaskStatus status = (TaskStatus) taskStatuses.get(taskid);
+    status.setRunState(TaskStatus.State.SUCCEEDED);
+    activeTasks.remove(taskid);
+
+    //
+    // Now that the TIP is complete, the other speculative 
+    // subtasks will be closed when the owning tasktracker 
+    // reports in and calls shouldClose() on this object.
+    //
+
+    this.completes++;
+  }
+
+  public void updateStatus(TaskStatus status) {
+    taskStatuses.put(status.getTaskId(), status);
   }
 }

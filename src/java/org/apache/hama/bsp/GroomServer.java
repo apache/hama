@@ -82,10 +82,10 @@ public class GroomServer implements Runnable {
   // Job
   boolean acceptNewTasks = true;
   private int failures;
-  private int maxCurrentTasks;
+  private int maxCurrentTasks = 1;
   Map<TaskAttemptID, TaskInProgress> tasks = new HashMap<TaskAttemptID, TaskInProgress>();
   /** Map from taskId -> TaskInProgress. */
-  Map<TaskAttemptID, TaskInProgress> runningTasks = null;
+  Map<String, TaskInProgress> runningTasks = null;
   Map<BSPJobID, RunningJob> runningJobs = null;
 
   private BlockingQueue<GroomServerAction> tasksToCleanup = new LinkedBlockingQueue<GroomServerAction>();
@@ -120,7 +120,7 @@ public class GroomServer implements Runnable {
     // Clear out state tables
     this.tasks.clear();
     this.runningJobs = new TreeMap<BSPJobID, RunningJob>();
-    this.runningTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
+    this.runningTasks = new LinkedHashMap<String, TaskInProgress>();
     this.acceptNewTasks = true;
 
     this.groomServerName = "groomd_" + localHostname;
@@ -221,6 +221,8 @@ public class GroomServer implements Runnable {
             + ((actions != null) ? actions.length : 0) + " actions");
 
         if (actions != null) {
+          acceptNewTasks = false;
+          
           for (GroomServerAction action : actions) {
             if (action instanceof LaunchTaskAction) {
               startNewTask((LaunchTaskAction) action);
@@ -264,9 +266,10 @@ public class GroomServer implements Runnable {
   }
 
   private void startNewTask(LaunchTaskAction action) {
-    TaskInProgress tip = new TaskInProgress(action.getTask());
+    TaskInProgress tip = new TaskInProgress(action.getTask(), this.groomServerName);
     synchronized (tip) {
       try {
+        runningTasks.put(action.getTask().getTaskID(), tip);
         tip.launchTask();
       } catch (Throwable ie) {
         // TODO: when job failed.
@@ -293,7 +296,21 @@ public class GroomServer implements Runnable {
 
     // TODO - Later, acceptNewTask is to be set by the status of groom server.
     HeartbeatResponse heartbeatResponse = jobClient.heartbeat(status,
-        justStarted, justInited, acceptNewTasks, heartbeatResponseId);
+        justStarted, justInited, acceptNewTasks, heartbeatResponseId, status.getTaskReports().size());
+      
+    
+    synchronized (this) {
+      for (TaskStatus taskStatus : status.getTaskReports()) {
+        if(taskStatus.getRunState() != TaskStatus.State.RUNNING) {
+          LOG.debug("Removing task from runningTasks: " + taskStatus.getTaskId());
+          runningTasks.remove(taskStatus.getTaskId());
+        }
+      }
+    }
+      
+    // Force a rebuild of 'status' on the next iteration
+    status = null;
+    
     return heartbeatResponse;
   }
 
@@ -387,18 +404,19 @@ public class GroomServer implements Runnable {
     volatile boolean wasKilled = false;
     private TaskStatus taskStatus;
 
-    public TaskInProgress(Task task) {
+    public TaskInProgress(Task task, String groomServer) {
       this.task = task;
+      this.taskStatus = new TaskStatus(task.getTaskID(), 0, TaskStatus.State.UNASSIGNED, "running", groomServer, TaskStatus.Phase.STARTING);
     }
 
     static final String SUBDIR = "groomServer";
     
     public void launchTask() {
-      // until job is completed, don't accept new task
-      acceptNewTasks = false;
-
+      taskStatus.setRunState(TaskStatus.State.RUNNING);
+      
       try {
         // TODO: need to move this code to TaskRunner
+        
         task.getJobFile();
         conf.addResource(task.getJobFile());
         BSPJob defaultJobConf = new BSPJob((HamaConfiguration) conf);
@@ -408,14 +426,12 @@ public class GroomServer implements Runnable {
         Path localJarFile =
           defaultJobConf.getLocalPath(SUBDIR+"/"+task.getTaskID()+"/"+"job.jar");
         
-        LOG.debug("localJobFile: "+ localJobFile);
-        
         systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
         systemFS.copyToLocalFile(new Path(task.getJobFile().replace(".xml", ".jar")), localJarFile);
 
         HamaConfiguration conf = new HamaConfiguration();
         conf.addResource(localJobFile);
-        BSPJob jobConf = new BSPJob(conf, task.getJobID());
+        BSPJob jobConf = new BSPJob(conf, task.getJobID().toString());
         jobConf.setJar(localJarFile.toString());
         
         BSP bsp = (BSP) ReflectionUtils.newInstance(jobConf.getBspClass(), conf);
@@ -425,9 +441,24 @@ public class GroomServer implements Runnable {
       } catch (IOException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
+      } finally {
+        
+        while (true) {
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          
+          // If local/outgoing queues are empty, task is done.
+          if(bspPeer.localQueue.size() == 0 && bspPeer.outgoingQueues.size() == 0) {
+            taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+            acceptNewTasks = true;
+            break;
+          }
+        }
       }
 
-      // TODO: report the task status
     }
 
     /**

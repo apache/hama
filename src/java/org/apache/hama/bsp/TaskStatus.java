@@ -27,7 +27,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
-class TaskStatus implements Writable {
+class TaskStatus implements Writable, Cloneable {
   static final Log LOG = LogFactory.getLog(TaskStatus.class);
 
   // enumeration for reporting current phase of a task.
@@ -40,7 +40,7 @@ class TaskStatus implements Writable {
     RUNNING, SUCCEEDED, FAILED, UNASSIGNED, KILLED, COMMIT_PENDING, FAILED_UNCLEAN, KILLED_UNCLEAN
   }
 
-  private final TaskAttemptID taskId;
+  private String taskId;
   private float progress;
   private volatile State runState;
   private String stateString;
@@ -55,10 +55,10 @@ class TaskStatus implements Writable {
    * 
    */
   public TaskStatus() {
-    taskId = new TaskAttemptID();
+    taskId = new String();
   }
 
-  public TaskStatus(TaskAttemptID taskId, float progress, State runState,
+  public TaskStatus(String taskId, float progress, State runState,
       String stateString, String groomServer, Phase phase) {
     this.taskId = taskId;
     this.progress = progress;
@@ -72,7 +72,7 @@ class TaskStatus implements Writable {
   // Accessors and Modifiers
   // //////////////////////////////////////////////////
 
-  public TaskAttemptID getTaskId() {
+  public String getTaskId() {
     return taskId;
   }
 
@@ -225,7 +225,7 @@ class TaskStatus implements Writable {
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.taskId.readFields(in);
+    this.taskId = Text.readString(in);
     this.progress = in.readFloat();
     this.runState = WritableUtils.readEnum(in, State.class);
     this.stateString = Text.readString(in);
@@ -236,7 +236,7 @@ class TaskStatus implements Writable {
 
   @Override
   public void write(DataOutput out) throws IOException {
-    taskId.write(out);
+    Text.writeString(out, taskId);
     out.writeFloat(progress);
     WritableUtils.writeEnum(out, runState);
     Text.writeString(out, stateString);

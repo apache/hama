@@ -7,7 +7,7 @@ public class BSPTask extends Task {
   private BSP bsp;
   private Configuration conf;
   
-  public BSPTask(String jobId, String jobFile, String taskid, int partition, Configuration conf) {
+  public BSPTask(BSPJobID jobId, String jobFile, String taskid, int partition, Configuration conf) {
     this.jobId = jobId;
     this.jobFile = jobFile;
     this.taskId = taskid;

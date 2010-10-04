@@ -25,7 +25,7 @@ import org.apache.hama.bsp.HeartbeatResponse;
 public interface InterTrackerProtocol extends HamaRPCProtocolVersion {
   public HeartbeatResponse heartbeat(GroomServerStatus status, 
       boolean restarted, boolean initialContact, boolean acceptNewTasks,
-      short responseId) throws IOException;
+      short responseId, int reportSize) throws IOException;
 
   public String getSystemDir();
 }

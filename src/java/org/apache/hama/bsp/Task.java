@@ -36,7 +36,7 @@ public class Task implements Writable {
   // Fields
   ////////////////////////////////////////////
   
-  protected String jobId;
+  protected BSPJobID jobId;
   protected String jobFile;
   protected String taskId;
   protected int partition;
@@ -44,10 +44,11 @@ public class Task implements Writable {
   protected LocalDirAllocator lDirAlloc;
 
   public Task() {
+    jobId = new BSPJobID();
     taskId = new String();
   }
   
-  public Task(String jobId, String jobFile, String taskId, int partition) {
+  public Task(BSPJobID jobId, String jobFile, String taskId, int partition) {
     this.jobId = jobId;
     this.jobFile = jobFile;
     this.taskId = taskId;
@@ -73,7 +74,7 @@ public class Task implements Writable {
    * Get the job name for this task.
    * @return the job name
    */
-  public String getJobID() {
+  public BSPJobID getJobID() {
     return jobId;
   }
   
@@ -95,7 +96,7 @@ public class Task implements Writable {
   ////////////////////////////////////////////
   @Override
   public void write(DataOutput out) throws IOException {
-    Text.writeString(out, jobId);
+    jobId.write(out);
     Text.writeString(out, jobFile);
     Text.writeString(out, taskId);
     out.writeInt(partition);
@@ -103,7 +104,7 @@ public class Task implements Writable {
   
   @Override
   public void readFields(DataInput in) throws IOException {
-    jobId = Text.readString(in);
+    jobId.readFields(in);
     jobFile = Text.readString(in);
     taskId = Text.readString(in);
     partition = in.readInt();

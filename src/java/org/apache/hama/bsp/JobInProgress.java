@@ -18,11 +18,14 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 
 /*************************************************************
@@ -51,6 +54,7 @@ class JobInProgress {
   Path jobFile = null;
   Path localJobFile = null;
   Path localJarFile = null;
+  private LocalFileSystem localFs;
 
   long startTime;
   long launchTime;
@@ -58,13 +62,16 @@ class JobInProgress {
 
   // private LocalFileSystem localFs;
   private BSPJobID jobId;
-
   final BSPMaster master;
+  List<TaskInProgress> tasks;
 
   public JobInProgress(BSPJobID jobId, BSPMaster master, Configuration conf)
       throws IOException {
     this.conf = conf;
     this.jobId = jobId;
+
+    this.tasks = new ArrayList<TaskInProgress>();
+    this.localFs = (LocalFileSystem) FileSystem.getNamed("local", conf);
 
     this.master = master;
     this.status = new JobStatus(jobId, 0.0f, 0.0f, JobStatus.PREP);
@@ -76,10 +83,7 @@ class JobInProgress {
         + ".xml");
     this.localJarFile = master.getLocalPath(BSPMaster.SUBDIR + "/" + jobId
         + ".jar");
-    
-    LOG.debug("JobInProgress.localJobFile: " + this.localJobFile);
-    LOG.debug("JobInProgress.localJarFile: " + this.localJarFile);
-    
+
     Path jobDir = master.getSystemDirectoryForJob(jobId);
     FileSystem fs = jobDir.getFileSystem(conf);
     jobFile = new Path(jobDir, "job.xml");
@@ -93,6 +97,7 @@ class JobInProgress {
     if (jarFile != null) {
       fs.copyToLocalFile(new Path(jarFile), localJarFile);
     }
+    
   }
 
   // ///////////////////////////////////////////////////
@@ -136,14 +141,83 @@ class JobInProgress {
   // ///////////////////////////////////////////////////
   public synchronized Task obtainNewTask(GroomServerStatus status,
       int clusterSize, int numUniqueHosts) {
+    LOG.debug("clusterSize: " + clusterSize);
+    
     Task result = null;
     try {
-      result = new TaskInProgress(getJobID(), this.jobFile.toString(), this.master, null, this,
-          numUniqueHosts).getTaskToRun(status);
+      TaskInProgress tip = new TaskInProgress(getJobID(), this.jobFile
+          .toString(), this.master, this.conf, this, numUniqueHosts);
+      tasks.add(tip);
+      result = tip.getTaskToRun(status);
     } catch (IOException e) {
       e.printStackTrace();
     }
 
     return result;
+  }
+
+  public void completedTask(TaskInProgress tip, TaskStatus status) {
+    String taskid = status.getTaskId();
+    updateTaskStatus(tip, status);
+    LOG.info("Taskid '" + taskid + "' has finished successfully.");
+    tip.completed(taskid);
+
+    //
+    // If all tasks are complete, then the job is done!
+    //
+
+    boolean allDone = true;
+    for (TaskInProgress taskInProgress : tasks) {
+      if (!taskInProgress.isComplete()) {
+        allDone = false;
+        break;
+      }
+    }
+
+    this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f,
+        JobStatus.RUNNING);
+    
+    if(allDone) {
+      LOG.debug("Job successfully done.");
+      
+      this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f,
+          JobStatus.SUCCEEDED);
+      garbageCollect();        
+    }
+  }
+
+  public void updateTaskStatus(TaskInProgress tip, TaskStatus status) {
+    tip.updateStatus(status); // update tip
+  }
+
+  public void kill() {
+    // TODO Auto-generated method stub
+
+  }
+
+  /**
+   * The job is dead. We're now GC'ing it, getting rid of the job from all
+   * tables. Be sure to remove all of this job's tasks from the various tables.
+   */
+  synchronized void garbageCollect() {
+    try {
+      // Definitely remove the local-disk copy of the job file
+      if (localJobFile != null) {
+        localFs.delete(localJobFile, true);
+        localJobFile = null;
+      }
+      if (localJarFile != null) {
+        localFs.delete(localJarFile, true);
+        localJarFile = null;
+      }
+
+      // JobClient always creates a new directory with job files
+      // so we remove that directory to cleanup
+      FileSystem fs = FileSystem.get(conf);
+      fs.delete(new Path(profile.getJobFile()).getParent(), true);
+
+    } catch (IOException e) {
+      LOG.info("Error cleaning up " + profile.getJobID() + ": " + e);
+    }
   }
 }

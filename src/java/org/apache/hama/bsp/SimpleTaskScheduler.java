@@ -39,7 +39,7 @@ class SimpleTaskScheduler extends TaskScheduler {
         + (jobQueue.size() + 1) + ")");
     jobQueue.add(job);
   }
-  
+
   // removes job
   public void removeJob(JobInProgress job) {
     jobQueue.remove(job);
@@ -77,23 +77,26 @@ class SimpleTaskScheduler extends TaskScheduler {
       synchronized (jobQueue) {
         for (JobInProgress job : jobQueue) {
 
-          /*
-           * if (job.getStatus().getRunState() != JobStatus.RUNNING) { continue;
-           * }
-           */
+          if (!job.getStatus().isJobComplete() && job.getStatus().getRunState() != JobStatus.RUNNING) {
+            /*
+             * if (job.getStatus().getRunState() != JobStatus.RUNNING) {
+             * continue; }
+             */
 
-          Task t = null;
+            Task t = null;
 
-          t = job.obtainNewTask(groomStatus, numGroomServers,
-              groomServerManager.getNumberOfUniqueHosts());
+            t = job.obtainNewTask(groomStatus, numGroomServers,
+                groomServerManager.getNumberOfUniqueHosts());
 
-          if (t != null) {
-            assignedTasks.add(t);
-            break; // TODO - Now, simple scheduler assigns only one task to
-            // each groom. Later, it will be improved for scheduler to
-            // assign one or more tasks to each groom according to
-            // its capacity.
+            if (t != null) {
+              assignedTasks.add(t);
+              break; // TODO - Now, simple scheduler assigns only one task to
+              // each groom. Later, it will be improved for scheduler to
+              // assign one or more tasks to each groom according to
+              // its capacity.
+            }
           }
+          
         }
       }
     }
