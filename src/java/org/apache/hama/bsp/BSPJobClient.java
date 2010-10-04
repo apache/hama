@@ -38,32 +38,37 @@ import org.apache.hama.ipc.JobSubmissionProtocol;
 
 public class BSPJobClient extends Configured {
   private static final Log LOG = LogFactory.getLog(BSPJobClient.class);
-  public static enum TaskStatusFilter { NONE, KILLED, FAILED, SUCCEEDED, ALL }
+
+  public static enum TaskStatusFilter {
+    NONE, KILLED, FAILED, SUCCEEDED, ALL
+  }
+
   private static final long MAX_JOBPROFILE_AGE = 1000 * 2;
 
   class NetworkedJob implements RunningJob {
     JobProfile profile;
     JobStatus status;
     long statustime;
-    
+
     public NetworkedJob(JobStatus job) throws IOException {
       this.status = job;
       this.profile = jobSubmitClient.getJobProfile(job.getJobID());
       this.statustime = System.currentTimeMillis();
     }
-    
+
     /**
-     * Some methods rely on having a recent job profile object.  Refresh
-     * it, if necessary
+     * Some methods rely on having a recent job profile object. Refresh it, if
+     * necessary
      */
     synchronized void ensureFreshStatus() throws IOException {
       if (System.currentTimeMillis() - statustime > MAX_JOBPROFILE_AGE) {
         updateStatus();
       }
     }
-    
-    /** Some methods need to update status immediately. So, refresh
-     * immediately
+
+    /**
+     * Some methods need to update status immediately. So, refresh immediately
+     * 
      * @throws IOException
      */
     synchronized void updateStatus() throws IOException {
@@ -71,15 +76,17 @@ public class BSPJobClient extends Configured {
       this.statustime = System.currentTimeMillis();
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
      * @see org.apache.hama.bsp.RunningJob#getID()
      */
     @Override
-    public BSPJobID getID() {      
+    public BSPJobID getID() {
       return profile.getJobID();
     }
-    
-    /* (non-Javadoc)
+
+    /*
+     * (non-Javadoc)
      * @see org.apache.hama.bsp.RunningJob#getJobName()
      */
     @Override
@@ -87,30 +94,30 @@ public class BSPJobClient extends Configured {
       return profile.getJobName();
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
      * @see org.apache.hama.bsp.RunningJob#getJobFile()
      */
     @Override
     public String getJobFile() {
       return profile.getJobFile();
     }
-    
+
     @Override
     public float progress() throws IOException {
       ensureFreshStatus();
       return status.progress();
     }
-    
+
     /**
      * Returns immediately whether the whole job is done yet or not.
      */
     public synchronized boolean isComplete() throws IOException {
       updateStatus();
-      return (status.getRunState() == JobStatus.SUCCEEDED ||
-              status.getRunState() == JobStatus.FAILED ||
-              status.getRunState() == JobStatus.KILLED);
+      return (status.getRunState() == JobStatus.SUCCEEDED
+          || status.getRunState() == JobStatus.FAILED || status.getRunState() == JobStatus.KILLED);
     }
-    
+
     /**
      * True iff job completed successfully.
      */
@@ -118,7 +125,7 @@ public class BSPJobClient extends Configured {
       updateStatus();
       return status.getRunState() == JobStatus.SUCCEEDED;
     }
-    
+
     /**
      * Blocks until the job is finished
      */
@@ -138,7 +145,7 @@ public class BSPJobClient extends Configured {
       updateStatus();
       return status.getRunState();
     }
-    
+
     /**
      * Tells the service to terminate the current job.
      */
@@ -149,21 +156,21 @@ public class BSPJobClient extends Configured {
     @Override
     public void killTask(TaskAttemptID taskId, boolean shouldFail)
         throws IOException {
-      jobSubmitClient.killTask(taskId, shouldFail);      
-    }    
+      jobSubmitClient.killTask(taskId, shouldFail);
+    }
   }
-  
+
   private JobSubmissionProtocol jobSubmitClient = null;
   private Path sysDir = null;
   private FileSystem fs = null;
-  
+
   // job files are world-wide readable and owner writable
-  final private static FsPermission JOB_FILE_PERMISSION = 
-    FsPermission.createImmutable((short) 0644); // rw-r--r--
+  final private static FsPermission JOB_FILE_PERMISSION = FsPermission
+      .createImmutable((short) 0644); // rw-r--r--
 
   // job submission directory is world readable/writable/executable
-  final static FsPermission JOB_DIR_PERMISSION =
-    FsPermission.createImmutable((short) 0777); // rwx-rwx-rwx
+  final static FsPermission JOB_DIR_PERMISSION = FsPermission
+      .createImmutable((short) 0777); // rwx-rwx-rwx
 
   public BSPJobClient(Configuration conf) throws IOException {
     setConf(conf);
@@ -171,27 +178,28 @@ public class BSPJobClient extends Configured {
   }
 
   public void init(Configuration conf) throws IOException {
-    // it will be used to determine if the bspmaster is running on local or not. 
+    // it will be used to determine if the bspmaster is running on local or not.
     String master = conf.get("bsp.master.address", "local");
     if ("local".equals(master)) {
       this.jobSubmitClient = new LocalJobRunner(conf);
     } else {
-      this.jobSubmitClient =  (JobSubmissionProtocol) RPC.getProxy(JobSubmissionProtocol.class,
-          JobSubmissionProtocol.versionID, BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(
-              conf, JobSubmissionProtocol.class));
+      this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
+          JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
+          BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(conf,
+              JobSubmissionProtocol.class));
     }
   }
 
   /**
    * Close the <code>JobClient</code>.
    */
-  public synchronized void close() throws IOException {    
-      RPC.stopProxy(jobSubmitClient);
+  public synchronized void close() throws IOException {
+    RPC.stopProxy(jobSubmitClient);
   }
-  
+
   /**
-   * Get a filesystem handle.  We need this to prepare jobs
-   * for submission to the BSP system.
+   * Get a filesystem handle. We need this to prepare jobs for submission to the
+   * BSP system.
    * 
    * @return the filesystem handle.
    */
@@ -202,22 +210,22 @@ public class BSPJobClient extends Configured {
     }
     return fs;
   }
-  
-  private UnixUserGroupInformation getUGI(Configuration conf) throws IOException {
+
+  private UnixUserGroupInformation getUGI(Configuration conf)
+      throws IOException {
     UnixUserGroupInformation ugi = null;
     try {
       ugi = UnixUserGroupInformation.login(conf, true);
     } catch (LoginException e) {
-      throw (IOException)(new IOException(
+      throw (IOException) (new IOException(
           "Failed to get the current user's information.").initCause(e));
     }
     return ugi;
   }
-  
+
   /**
-   * Submit a job to the BSP system.
-   * This returns a handle to the {@link RunningJob} which can be used to track
-   * the running-job.
+   * Submit a job to the BSP system. This returns a handle to the
+   * {@link RunningJob} which can be used to track the running-job.
    * 
    * @param job the job configuration.
    * @return a handle to the {@link RunningJob} which can be used to track the
@@ -226,25 +234,24 @@ public class BSPJobClient extends Configured {
    * @throws IOException
    */
   public RunningJob submitJob(BSPJob job) throws FileNotFoundException,
-                                                  IOException {    
-      return submitJobInternal(job);    
+      IOException {
+    return submitJobInternal(job);
   }
-  
-  public 
-  RunningJob submitJobInternal(BSPJob job) throws IOException {
+
+  public RunningJob submitJobInternal(BSPJob job) throws IOException {
     BSPJobID jobId = jobSubmitClient.getNewJobId();
     Path submitJobDir = new Path(getSystemDir(), jobId.toString());
-    Path submitJarFile = new Path(submitJobDir, "job.jar");    
+    Path submitJarFile = new Path(submitJobDir, "job.jar");
     Path submitJobFile = new Path(submitJobDir, "job.xml");
-    
+
     LOG.debug("BSPJobClient.submitJobDir: " + submitJobDir);
-    
+
     /*
      * set this user's id in job configuration, so later job files can be
      * accessed using this user's id
      */
     UnixUserGroupInformation ugi = getUGI(job.getConf());
-    
+
     // Create a number of filenames in the BSPMaster's fs namespace
     FileSystem fs = getFs();
     fs.delete(submitJobDir, true);
@@ -253,25 +260,25 @@ public class BSPJobClient extends Configured {
     FsPermission bspSysPerms = new FsPermission(JOB_DIR_PERMISSION);
     FileSystem.mkdirs(fs, submitJobDir, bspSysPerms);
     fs.mkdirs(submitJobDir);
-    short replication = (short)job.getInt("bsp.submit.replication", 10);
-    
+    short replication = (short) job.getInt("bsp.submit.replication", 10);
+
     String originalJarPath = job.getJar();
 
     if (originalJarPath != null) { // copy jar to BSPMaster's fs
-      // use jar name if job is not named. 
-      if ("".equals(job.getJobName())){
+      // use jar name if job is not named.
+      if ("".equals(job.getJobName())) {
         job.setJobName(new Path(originalJarPath).getName());
       }
       job.setJar(submitJarFile.toString());
       fs.copyFromLocalFile(new Path(originalJarPath), submitJarFile);
-      
+
       fs.setReplication(submitJarFile, replication);
       fs.setPermission(submitJarFile, new FsPermission(JOB_FILE_PERMISSION));
     } else {
-      LOG.warn("No job jar file set.  User classes may not be found. "+
-               "See BSPJob#setJar(String) or check Your jar file.");
+      LOG.warn("No job jar file set.  User classes may not be found. "
+          + "See BSPJob#setJar(String) or check Your jar file.");
     }
-    
+
     // Set the user's name and working directory
     job.setUser(ugi.getUserName());
     if (ugi.getGroupNames().length > 0) {
@@ -280,22 +287,22 @@ public class BSPJobClient extends Configured {
     if (job.getWorkingDirectory() == null) {
       job.setWorkingDirectory(fs.getWorkingDirectory());
     }
-    
-    // Write job file to BSPMaster's fs        
-    FSDataOutputStream out = 
-      FileSystem.create(fs, submitJobFile,
-                        new FsPermission(JOB_FILE_PERMISSION));
-    
+
+    // Write job file to BSPMaster's fs
+    FSDataOutputStream out = FileSystem.create(fs, submitJobFile,
+        new FsPermission(JOB_FILE_PERMISSION));
+
     try {
       job.writeXml(out);
     } finally {
       out.close();
     }
-    
+
     //
     // Now, actually submit the job (using the submit name)
     //
-    JobStatus status = jobSubmitClient.submitJob(jobId, submitJobFile.toString());
+    JobStatus status = jobSubmitClient.submitJob(jobId, submitJobFile
+        .toString());
     if (status != null) {
       return new NetworkedJob(status);
     } else {
@@ -304,7 +311,7 @@ public class BSPJobClient extends Configured {
   }
 
   /**
-   * Monitor a job and print status in real-time as progress is made and tasks 
+   * Monitor a job and print status in real-time as progress is made and tasks
    * fail.
    * 
    * @param job
@@ -313,29 +320,30 @@ public class BSPJobClient extends Configured {
    * @throws IOException
    * @throws InterruptedException
    */
-  public boolean monitorAndPrintJob (BSPJob job, RunningJob info) 
-    throws IOException, InterruptedException {
-    
+  public boolean monitorAndPrintJob(BSPJob job, RunningJob info)
+      throws IOException, InterruptedException {
+
     String lastReport = null;
     BSPJobID jobId = job.getJobID();
     LOG.info("Running job: " + jobId);
-    
+
     while (!job.isComplete()) {
       Thread.sleep(1000);
       String report = " bsp " + StringUtils.formatPercent(job.progress(), 0);
-      
+
       if (!report.equals(lastReport)) {
         LOG.info(report);
         lastReport = report;
-      }      
+      }
     }
-    
+
     LOG.info("Job complete: " + jobId);
     return job.isSuccessful();
   }
-  
+
   /**
-   * Grab the bspmaster system directory path where job-specific files are to be placed.
+   * Grab the bspmaster system directory path where job-specific files are to be
+   * placed.
    * 
    * @return the system directory where job-specific files are to be placed.
    */
@@ -346,20 +354,33 @@ public class BSPJobClient extends Configured {
     return sysDir;
   }
 
-  public static RunningJob runJob(BSPJob job) throws FileNotFoundException,
-  IOException {
+  public static void runJob(BSPJob job) throws FileNotFoundException,
+      IOException {
     BSPJobClient jc = new BSPJobClient(job.getConf());
-    return jc.submitJobInternal(job);    
+    RunningJob running = jc.submitJobInternal(job);
+    String jobId = running.getID().toString();
+    LOG.info("Running job: " + jobId);
+
+    while (true) {
+      if (running.isComplete()) {
+        LOG.info("Job complete: " + jobId);
+        break;
+      }
+    }
+
+    // TODO if error found, kill job
+    //running.killJob();
+    jc.close();
   }
-  
+
   /**
    * Get status information about the BSP cluster
    * 
    * @throws IOException
    */
   public ClusterStatus getClusterStatus() throws IOException {
-    // TODO: 
-    
+    // TODO:
+
     return null;
   }
 }

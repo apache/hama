@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -240,7 +241,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     String hamaMasterStr = conf.get("bsp.master.address", "localhost");
     int defaultPort = conf.getInt("bsp.master.port", 40000);
 
-   return NetUtils.createSocketAddr(hamaMasterStr, defaultPort);
+    return NetUtils.createSocketAddr(hamaMasterStr, defaultPort);
   }
 
   private static SimpleDateFormat getDateFormat() {
@@ -341,7 +342,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   @Override
   public HeartbeatResponse heartbeat(GroomServerStatus status,
       boolean restarted, boolean initialContact, boolean acceptNewTasks,
-      short responseId) throws IOException {
+      short responseId, int reportSize) throws IOException {
 
     // First check if the last heartbeat response got through
     String groomName = status.getGroomName();
@@ -364,6 +365,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     HeartbeatResponse response = new HeartbeatResponse(newResponseId, null);
     List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
 
+    updateTaskStatuses(status);
+
     // Check for new tasks to be executed on the groom server
     if (acceptNewTasks) {
       GroomServerStatus groomStatus = getGroomServer(groomName);
@@ -371,19 +374,19 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
         LOG.warn("Unknown task tracker polling; ignoring: " + groomName);
       } else {
         List<Task> taskList = taskScheduler.assignTasks(groomStatus);
-        LOG.debug("BSPMaster.heartbeat.taskSize: " + taskList.size());
+
         for (Task task : taskList) {
           if (task != null) {
-            actions.add(new LaunchTaskAction(task));
+
+            if (!jobs.get(task.getJobID()).getStatus().isJobComplete()) {
+              if (jobs.get(task.getJobID()).getStatus().getRunState() != JobStatus.RUNNING) {
+                actions.add(new LaunchTaskAction(task));
+              }
+            }
+
           }
         }
       }
-    }
-
-    // Check for tasks to be killed
-    List<GroomServerAction> killTasksList = getTasksToKill(groomName);
-    if (killTasksList != null) {
-      actions.addAll(killTasksList);
     }
 
     response.setActions(actions.toArray(new GroomServerAction[actions.size()]));
@@ -392,6 +395,31 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     removeMarkedTasks(groomName);
 
     return response;
+  }
+
+  void updateTaskStatuses(GroomServerStatus status) {
+    for (Iterator<TaskStatus> it = status.taskReports(); it.hasNext();) {
+      TaskStatus report = it.next();
+      report.setGroomServer(status.getGroomName());
+      String taskId = report.getTaskId();
+      TaskInProgress tip = (TaskInProgress) taskidToTIPMap.get(taskId);
+
+      if (tip == null) {
+        LOG.info("Serious problem.  While updating status, cannot find taskid "
+            + report.getTaskId());
+      } else {
+        JobInProgress job = tip.getJob();
+
+        if (report.getRunState() == TaskStatus.State.SUCCEEDED) {
+          job.completedTask(tip, report);
+        } else if (report.getRunState() == TaskStatus.State.FAILED) {
+          // Tell the job to fail the relevant task
+        } else {
+          job.updateTaskStatus(tip, report);
+        }
+      }
+
+    }
   }
 
   // (trackerID -> TreeSet of completed taskids running at that tracker)
@@ -593,6 +621,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
   private synchronized void killJob(JobInProgress job) {
     LOG.info("Killing job " + job.getJobID());
+    job.kill();
   }
 
   @Override
@@ -626,21 +655,20 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
       TaskInProgress taskInProgress) {
     LOG.info("Adding task '" + taskid + "' to tip " + taskInProgress.getTIPId()
         + ", for tracker '" + groomServer + "'");
-    /*
+
     // taskid --> tracker
-    taskidToTrackerMap.put(taskid, taskTracker);
+    taskidToTrackerMap.put(taskid, groomServer);
 
     // tracker --> taskid
-    TreeSet taskset = (TreeSet) trackerToTaskMap.get(taskTracker);
+    TreeSet taskset = (TreeSet) trackerToTaskMap.get(groomServer);
     if (taskset == null) {
-        taskset = new TreeSet();
-        trackerToTaskMap.put(taskTracker, taskset);
+      taskset = new TreeSet();
+      trackerToTaskMap.put(groomServer, taskset);
     }
     taskset.add(taskid);
 
     // taskid --> TIP
-    taskidToTIPMap.put(taskid, tip);
-    */
+    taskidToTIPMap.put(taskid, taskInProgress);
   }
 
   public static void main(String[] args) {

@@ -46,6 +46,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-286: Task progress should be monitored (eddieyoon)
     HAMA-287: BSPMaster should use the bsp.master.port config property
                        when creating its InetSocketAddr instance (Filipe Manana via edwardyoon)
     HAMA-283: Removing duplicate code (Filipe Manana via edwardyoon)
@@ -153,6 +154,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-291: bsp.groom.port is unnused and superseeded 
+                       by bsp.peer.port (Filipe Manana via edwardyoon)
     HAMA-288: Typo might lead to null tasks getting assigned 
                        to groom servers (Filipe Manana via edwardyoon)
     HAMA-280: Fix warnings (Filipe Manana via edwardyoon)

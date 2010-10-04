@@ -170,6 +170,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         peer.put(messages.next());
       }
     }
+    
+    // Should we clearing outgoingQueues?
+    this.outgoingQueues.clear();
+    
     enterBarrier();
     Thread.sleep(Constants.ATLEAST_WAIT_TIME); // TODO - This is temporary work
                                                // because
@@ -228,7 +232,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   @Override
   public void close() throws IOException {
-
+    server.stop();
   }
 
   @Override
