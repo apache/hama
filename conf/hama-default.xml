@@ -36,8 +36,8 @@
     <description>The port master should bind to.</description>
   </property>
   <property>
-    <name>bsp.groom.port</name>
-    <value>40020</value>
+    <name>bsp.peer.port</name>
+     <value>61000</value>
     <description>The port an groom server binds to.</description>
   </property>
   <property>

@@ -36,7 +36,7 @@ public class LocalBSPCluster {
       final Class<? extends BSPMaster> masterClass,
       final Class<? extends GroomServer> groomServerClass) throws IOException, InterruptedException {
     conf.set("bsp.master.port", "40000");
-    conf.set("bsp.groom.port", "40020");
+    conf.set("bsp.peer.port", "61000");
     conf.set("bsp.local.dir", conf.get("hadoop.tmp.dir") + "/bsp/local");
     conf.set("bsp.system.dir", conf.get("hadoop.tmp.dir") + "/bsp/system");
     this.conf = conf;
