@@ -671,21 +671,4 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     // taskid --> TIP
     taskidToTIPMap.put(taskid, taskInProgress);
   }
-
-  public static void main(String[] args) {
-    StringUtils.startupShutdownMessage(BSPMaster.class, args, LOG);
-    if (args.length != 0) {
-      System.out.println("usage: HamaMaster");
-      System.exit(-1);
-    }
-
-    try {
-      HamaConfiguration conf = new HamaConfiguration();
-      BSPMaster master = startMaster(conf);
-      master.offerService();
-    } catch (Throwable e) {
-      LOG.fatal(StringUtils.stringifyException(e));
-      System.exit(-1);
-    }
-  }
 }

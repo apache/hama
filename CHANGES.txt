@@ -46,9 +46,11 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-293: Add starter classes for ZooKeeper, BSPMaster
+                and GroomServer (Filipe Manana via edwardyoon)
     HAMA-286: Task progress should be monitored (eddieyoon)
     HAMA-287: BSPMaster should use the bsp.master.port config property
-                       when creating its InetSocketAddr instance (Filipe Manana via edwardyoon)
+                when creating its InetSocketAddr instance (Filipe Manana via edwardyoon)
     HAMA-283: Removing duplicate code (Filipe Manana via edwardyoon)
     HAMA-277: Add default number of bsp task (edwardyoon)
     HAMA-273: Implement killJob() method for local job (edwardyoon)
