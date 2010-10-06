@@ -7,8 +7,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.util.ClusterUtil;
 
@@ -45,7 +45,7 @@ public class LocalBSPCluster {
     this.master = BSPMaster.constructMaster(masterClass, conf);
     this.groomThreads = new CopyOnWriteArrayList<ClusterUtil.GroomServerThread>();
     this.groomServerClass = (Class<? extends GroomServer>) conf.getClass(
-        HConstants.REGION_SERVER_IMPL, groomServerClass);
+        Constants.GROOM_SERVER_IMPL, groomServerClass);
     for (int i = 0; i < noGroomServers; i++) {
       addGroomServer(i);
     }
@@ -55,7 +55,7 @@ public class LocalBSPCluster {
   private static Class<? extends GroomServer> getGroomServerImplementation(
       final Configuration conf) {
     return (Class<? extends GroomServer>) conf.getClass(
-        HConstants.REGION_SERVER_IMPL, GroomServer.class);
+        Constants.GROOM_SERVER_IMPL, GroomServer.class);
   }
 
   public ClusterUtil.GroomServerThread addGroomServer(final int index)

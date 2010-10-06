@@ -43,7 +43,6 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.InterTrackerProtocol;
 import org.apache.hama.ipc.JobSubmissionProtocol;
@@ -56,7 +55,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     GroomServerManager {
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
 
-  private Configuration conf;
+  private HamaConfiguration conf;
 
   // Constants
   public static enum State {
@@ -101,11 +100,11 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   /**
    * Start the BSPMaster process, listen on the indicated hostname/port
    */
-  public BSPMaster(Configuration conf) throws IOException, InterruptedException {
+  public BSPMaster(HamaConfiguration conf) throws IOException, InterruptedException {
     this(conf, generateNewIdentifier());
   }
 
-  BSPMaster(Configuration conf, String identifier) throws IOException,
+  BSPMaster(HamaConfiguration conf, String identifier) throws IOException,
       InterruptedException {
     this.conf = conf;
     this.masterIdentifier = identifier;
@@ -227,7 +226,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     return startTracker(conf, generateNewIdentifier());
   }
 
-  public static BSPMaster startTracker(Configuration conf, String identifier)
+  public static BSPMaster startTracker(HamaConfiguration conf, String identifier)
       throws IOException, InterruptedException {
 
     BSPMaster result = null;

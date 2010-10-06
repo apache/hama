@@ -19,16 +19,17 @@
  */
 package org.apache.hama;
 
+import junit.framework.TestCase;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.hbase.HBaseClusterTestCase;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.bsp.LocalBSPCluster;
 
 /**
  * Forming up the miniDfs and miniHbase
  */
-public abstract class HamaCluster extends HBaseClusterTestCase {
+public abstract class HamaCluster extends TestCase {
   public static final Log LOG = LogFactory.getLog(HamaCluster.class);
   protected final static HamaConfiguration conf = new HamaConfiguration();
 
