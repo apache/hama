@@ -413,7 +413,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
         if (report.getRunState() == TaskStatus.State.SUCCEEDED) {
           job.completedTask(tip, report);
         } else if (report.getRunState() == TaskStatus.State.FAILED) {
-          // Tell the job to fail the relevant task
+          // TODO Tell the job to fail the relevant task
+          
         } else {
           job.updateTaskStatus(tip, report);
         }
