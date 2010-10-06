@@ -46,6 +46,8 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-294: Change log level of "Got heartbeatResponse.." messages
+                to debug (edwardyoon)
     HAMA-256: Removing M/R and HBase based implementations (edwardyoon)
     HAMA-293: Add starter classes for ZooKeeper, BSPMaster
                 and GroomServer (Filipe Manana via edwardyoon)

@@ -216,7 +216,7 @@ public class GroomServer implements Runnable {
         HeartbeatResponse heartbeatResponse = transmitHeartBeat(now);
 
         GroomServerAction[] actions = heartbeatResponse.getActions();
-        LOG.info("Got heartbeatResponse from BSPMaster with responseId: "
+        LOG.debug("Got heartbeatResponse from BSPMaster with responseId: "
             + heartbeatResponse.getResponseId() + " and "
             + ((actions != null) ? actions.length : 0) + " actions");
 
