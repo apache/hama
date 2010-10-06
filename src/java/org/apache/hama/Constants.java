@@ -37,8 +37,13 @@ public interface Constants {
   public static final int DEFAULT_PEER_PORT = 61000;
 
   public static final long ATLEAST_WAIT_TIME = 100;
-
   public static final String PEER_ID = "bsp.peer.id";
+  
+  /** Parameter name for what groom server implementation to use. */
+  public static final String GROOM_SERVER_IMPL= "hama.groomserver.impl";
+  
+  /** When we encode strings, we always specify UTF8 encoding */
+  static final String UTF8_ENCODING = "UTF-8";
   
   ///////////////////////////////////////
   // Constants for ZooKeeper
@@ -70,4 +75,11 @@ public interface Constants {
   /** Cluster is fully-distributed */
   static final String CLUSTER_IS_DISTRIBUTED = "true";
 
+
+  // Other constants
+
+  /**
+   * An empty instance.
+   */
+  static final byte [] EMPTY_BYTE_ARRAY = new byte [0];
 }

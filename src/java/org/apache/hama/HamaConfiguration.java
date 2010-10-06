@@ -22,12 +22,11 @@ package org.apache.hama;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 
 /**
  * Adds Hama configuration files to a Configuration
  */
-public class HamaConfiguration extends HBaseConfiguration {
+public class HamaConfiguration extends Configuration {
   /** constructor */
   public HamaConfiguration() {
     super();

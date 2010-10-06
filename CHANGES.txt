@@ -46,6 +46,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-295: Removing HBase dependency (edwardyoon)
     HAMA-294: Change log level of "Got heartbeatResponse.." messages
                 to debug (edwardyoon)
     HAMA-256: Removing M/R and HBase based implementations (edwardyoon)
