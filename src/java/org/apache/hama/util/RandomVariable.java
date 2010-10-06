@@ -19,8 +19,6 @@
  */
 package org.apache.hama.util;
 
-import org.apache.hama.Constants;
-
 /**
  * The RandomVaraibale Class provides static methods for generating random
  * numbers.
@@ -48,32 +46,6 @@ public class RandomVariable {
     double x = rand();
     int i = i0 + (int) Math.floor((i1 - i0 + 1) * x);
     return i;
-  }
-
-  /**
-   * Generate a random matrix Path(tablename) with a default length.
-   * @return random matrix name
-   */
-  public static String randMatrixPath() {
-    return randString(Constants.RANDOM, 5);
-  }
-  
-  /**
-   * Generate a random matrix Path(tablename) with a given length.
-   * @param length the matrix path's length
-   * @return random matrix name
-   */
-  public static String randMatrixPath(int length) {
-    return randString(Constants.RANDOM, length);
-  }
-  
-  /**
-   * Generate a random aliase name.
-   * 
-   * @return random aliase name
-   */
-  public static String randAliaseName() {
-    return randString(Constants.RANDOMALIASE, 5);
   }
   
   /**

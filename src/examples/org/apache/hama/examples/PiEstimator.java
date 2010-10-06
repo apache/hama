@@ -55,7 +55,7 @@ public class PiEstimator {
       byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
-      bspPeer.send(new InetSocketAddress("slave.udanax.org", 61000), estimate);
+      bspPeer.send(new InetSocketAddress("localhost", 61000), estimate);
       bspPeer.sync();
 
       double pi = 0.0;
