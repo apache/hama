@@ -17,14 +17,10 @@
  */
 package org.apache.hama.bsp;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 /**
  * This class provides an abstract implementation of the BSP interface
  */
 public abstract class BSP extends Thread implements BSPInterface {
-  private static final Log LOG = LogFactory.getLog(BSP.class);
   private BSPPeer bspPeer;
   
   /**
@@ -33,14 +29,10 @@ public abstract class BSP extends Thread implements BSPInterface {
    * The run method performs the
    * {@link org.apache.hama.bsp.BSPInterface#bsp(BSPPeer)}
    */
-  public void run() {
-    try {
-      bsp(bspPeer);
-    } catch (Exception e) {
-      LOG.error(e);
-    }
+  public void runBSP() throws Exception {
+    bsp(bspPeer);
   }
-
+  
   public void setPeer(BSPPeer bspServer) {
     this.bspPeer = bspServer;
   }

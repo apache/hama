@@ -436,7 +436,12 @@ public class GroomServer implements Runnable {
         
         BSP bsp = (BSP) ReflectionUtils.newInstance(jobConf.getBspClass(), conf);
         bsp.setPeer(bspPeer);
-        bsp.start();
+        try {
+          bsp.runBSP();
+        } catch (Exception e) {
+          e.printStackTrace();
+          taskStatus.setRunState(TaskStatus.State.FAILED);
+        }
         
       } catch (IOException e) {
         // TODO Auto-generated catch block

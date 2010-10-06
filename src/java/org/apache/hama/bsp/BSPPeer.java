@@ -198,6 +198,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
 
+        // TODO it must be same with the number of slave nodes, at this time. 
         if (list.size() < conf.getInt("bsp.peers.num", 0)) {
           mutex.wait();
         } else {
