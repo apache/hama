@@ -517,24 +517,6 @@ public class GroomServer implements Runnable {
     }
   }
 
-  public static void main(String[] args) {
-    StringUtils.startupShutdownMessage(GroomServer.class, args, LOG);
-    if (args.length != 0) {
-      System.out.println("usage: GroomServer");
-      System.exit(-1);
-    }
-
-    try {
-      Configuration conf = new HamaConfiguration();
-      GroomServer groom = GroomServer.constructGroomServer(GroomServer.class,
-          conf);
-      startGroomServer(groom);
-    } catch (Throwable e) {
-      LOG.fatal(StringUtils.stringifyException(e));
-      System.exit(-1);
-    }
-  }
-
   public void assignTask(Task task) {
     this.task = task;
   }

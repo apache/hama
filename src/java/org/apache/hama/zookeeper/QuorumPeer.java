@@ -40,10 +40,10 @@ public class QuorumPeer implements Constants {
 
   /**
    * Parse ZooKeeper configuration from Hama XML config and run a QuorumPeer.
-   * @param args String[] of command line arguments. Not used.
+   * @param baseConf Hadoop Configuration.
    */
-  public static void main(String[] args) {
-    Configuration conf = new HamaConfiguration();
+  public static void run(Configuration baseConf) {
+    Configuration conf = new HamaConfiguration(baseConf);
     try {
       Properties zkProperties = makeZKProps(conf);
       writeMyID(zkProperties);
