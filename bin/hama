@@ -155,13 +155,13 @@ unset IFS
 
 # figure out which class to run
 if [ "$COMMAND" = "bspmaster" ] ; then
-  CLASS='org.apache.hama.bsp.BSPMaster'
+  CLASS='org.apache.hama.BSPMasterRunner'
   BSP_OPTS="$BSP_OPTS $BSP_BSPMASTER_OPTS"
 elif [ "$COMMAND" = "groom" ] ; then
-  CLASS='org.apache.hama.bsp.GroomServer'
+  CLASS='org.apache.hama.GroomServerRunner'
   BSP_OPTS="$BSP_OPTS $BSP_GROOMSERVER_OPTS"
 elif [ "$COMMAND" = "zookeeper" ] ; then
-  CLASS='org.apache.hama.zookeeper.QuorumPeer'
+  CLASS='org.apache.hama.ZooKeeperRunner'
 elif [ "$COMMAND" = "jar" ] ; then
   CLASS=org.apache.hama.util.RunJar
   BSP_OPTS="$BSP_OPTS"

@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
-import org.mortbay.log.Log;
 
 /**
  * Used by a {@link BSPMaster} to schedule {@link Task}s on {@link GroomServer}
@@ -44,7 +43,6 @@ abstract class TaskScheduler implements Configurable {
 
   public synchronized void setGroomServerManager(
       GroomServerManager groomServerManager) {
-    Log.info("TaskScheduler.setGroomServermanager()");
     this.groomServerManager = groomServerManager;
   }
 
