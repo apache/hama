@@ -90,6 +90,7 @@ class TaskInProgress {
   public Task getTaskToRun(GroomServerStatus status) throws IOException {
       Task t = null;
       
+      // TODO use the TaskID, instead of String. 
       String taskid = null;
       if (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts)) {
         taskid = new String("task_" + status.getGroomName() + "_" + nextTaskId);
