@@ -46,6 +46,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-297: Add missing Apache License header to source files. (edwardyoon)
     HAMA-268: Implement BSPMaster's all methods extended 
                 from JobSubmissionProtocol (hyunsik via edwardyoon)
     HAMA-295: Removing HBase dependency (edwardyoon)
@@ -162,6 +163,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-296: Fix warning about deprecated method (edwardyoon)
     HAMA-291: bsp.groom.port is unnused and superseeded 
                        by bsp.peer.port (Filipe Manana via edwardyoon)
     HAMA-288: Typo might lead to null tasks getting assigned 
