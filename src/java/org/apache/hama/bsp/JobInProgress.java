@@ -71,13 +71,12 @@ class JobInProgress {
     this.jobId = jobId;
 
     this.tasks = new ArrayList<TaskInProgress>();
-    this.localFs = (LocalFileSystem) FileSystem.getNamed("local", conf);
+    this.localFs = FileSystem.getLocal(conf);
 
     this.master = master;
     this.status = new JobStatus(jobId, 0.0f, 0.0f, JobStatus.PREP);
     this.startTime = System.currentTimeMillis();
     status.setStartTime(startTime);
-    // this.localFs = FileSystem.getLocal(conf);
 
     this.localJobFile = master.getLocalPath(BSPMaster.SUBDIR + "/" + jobId
         + ".xml");
