@@ -100,7 +100,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   /**
    * Start the BSPMaster process, listen on the indicated hostname/port
    */
-  public BSPMaster(HamaConfiguration conf) throws IOException, InterruptedException {
+  public BSPMaster(HamaConfiguration conf) throws IOException,
+      InterruptedException {
     this(conf, generateNewIdentifier());
   }
 
@@ -413,7 +414,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
           job.completedTask(tip, report);
         } else if (report.getRunState() == TaskStatus.State.FAILED) {
           // TODO Tell the job to fail the relevant task
-          
+
         } else {
           job.updateTaskStatus(tip, report);
         }
@@ -564,8 +565,34 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   }
 
   @Override
+  public JobStatus[] jobsToComplete() throws IOException {
+    return getJobStatus(jobs.values(), true);
+  }
+
+  @Override
   public JobStatus[] getAllJobs() throws IOException {
-    return null;
+    return getJobStatus(jobs.values(), false);
+  }
+
+  private synchronized JobStatus[] getJobStatus(Collection<JobInProgress> jips,
+      boolean toComplete) {
+    if (jips == null) {
+      return new JobStatus[] {};
+    }
+    List<JobStatus> jobStatusList = new ArrayList<JobStatus>();
+    for (JobInProgress jip : jips) {
+      JobStatus status = jip.getStatus();
+      if (toComplete) {
+        if (status.getRunState() == JobStatus.RUNNING
+            || status.getRunState() == JobStatus.PREP) {
+          jobStatusList.add(status);
+        }
+      } else {
+        jobStatusList.add(status);
+      }
+    }
+
+    return jobStatusList.toArray(new JobStatus[jobStatusList.size()]);
   }
 
   @Override

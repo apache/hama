@@ -30,7 +30,7 @@ public class LocalJobRunner implements JobSubmissionProtocol {
     this.fs = FileSystem.get(conf);
     this.conf = conf;
   }
-
+  
   @Override
   public JobStatus[] getAllJobs() throws IOException {
     // TODO Auto-generated method stub
@@ -179,5 +179,11 @@ public class LocalJobRunner implements JobSubmissionProtocol {
     public void process(WatchedEvent event) {
       // TODO Auto-generated method stub
     }
+  }
+
+  @Override
+  public JobStatus[] jobsToComplete() throws IOException {
+    // TODO Auto-generated method stub
+    return null;
   }
 }
