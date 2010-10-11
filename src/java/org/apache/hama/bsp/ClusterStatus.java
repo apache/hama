@@ -50,7 +50,7 @@ import org.apache.hadoop.io.WritableUtils;
  * </ol></p>
  * 
  * <p>Clients can query for the latest <code>ClusterStatus</code>, via 
- * {@link BSPJobClient#getClusterStatus()}.</p>
+ * {@link BSPJobClient#getClusterStatus(boolean)}.</p>
  * 
  * @see BSPMaster
  */

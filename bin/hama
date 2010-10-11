@@ -58,6 +58,7 @@ if [ $# = 0 ]; then
   echo "  bspmaster            run the BSP Master node"
   echo "  groom                run the Groom node"
   echo "  zookeeper            run a Zookeeper server"
+  echo "  job                  manipulate BSP jobs"
   echo "  jar <jar>            run a jar file"
   echo " or"
   echo "  CLASSNAME            run the class named CLASSNAME"
@@ -162,6 +163,8 @@ elif [ "$COMMAND" = "groom" ] ; then
   BSP_OPTS="$BSP_OPTS $BSP_GROOMSERVER_OPTS"
 elif [ "$COMMAND" = "zookeeper" ] ; then
   CLASS='org.apache.hama.ZooKeeperRunner'
+elif [ "$COMMAND" = "job" ] ; then
+  CLASS='org.apache.hama.bsp.BSPJobClient'
 elif [ "$COMMAND" = "jar" ] ; then
   CLASS=org.apache.hama.util.RunJar
   BSP_OPTS="$BSP_OPTS"
