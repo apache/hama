@@ -47,6 +47,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-299: Remove unused field 'task' from GroomServer (edwardyoon)
     HAMA-297: Add missing Apache License header to source files. (edwardyoon)
     HAMA-268: Implement BSPMaster's all methods extended 
                 from JobSubmissionProtocol (hyunsik via edwardyoon)
@@ -164,6 +165,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-303: slave.host.name is superceded by bsp.peer.hostname 
+                (Filipe Manana via edwardyoon)
     HAMA-296: Fix warning about deprecated method (edwardyoon)
     HAMA-291: bsp.groom.port is unnused and superseeded 
                        by bsp.peer.port (Filipe Manana via edwardyoon)
