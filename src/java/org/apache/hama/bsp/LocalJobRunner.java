@@ -173,11 +173,8 @@ public class LocalJobRunner implements JobSubmissionProtocol {
           try {
             GroomServer servers = new GroomServer(conf);
             Task task = new BSPTask(job.getJobID(), jobFile, tID.toString(), i, this.conf);
-            servers.assignTask(task);
-            LOG.info("Adding task '" + tID.toString() + "' for '" + servers.getServerName() + "'");
             
             // TODO not yet implemented
-            //servers.launchTask();
             
           } catch (IOException e) {
             e.printStackTrace();

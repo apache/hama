@@ -50,7 +50,6 @@ import org.apache.hama.ipc.InterTrackerProtocol;
 public class GroomServer implements Runnable {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
   private static BSPPeer bspPeer;
-  private Task task;
 
   Configuration conf;
 
@@ -515,10 +514,6 @@ public class GroomServer implements Runnable {
       throw new RuntimeException("Failed construction of " + "Master: "
           + groomServerClass.toString(), e);
     }
-  }
-
-  public void assignTask(Task task) {
-    this.task = task;
   }
 
   public String getServerName() {
