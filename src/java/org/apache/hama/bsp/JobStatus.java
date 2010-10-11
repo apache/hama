@@ -50,6 +50,7 @@ public class JobStatus implements Writable, Cloneable {
   private int runState;
   private long startTime;
   private String schedulingInfo = "NA";
+  private String user;
 
   public JobStatus() {
   }
@@ -114,6 +115,20 @@ public class JobStatus implements Writable, Cloneable {
 
   synchronized public long getStartTime() {
     return startTime;
+  }
+
+  /**
+   * @param user The username of the job
+   */
+  synchronized void setUsername(String userName) {
+    this.user = userName;
+  }
+
+  /**
+   * @return the username of the job
+   */
+  public synchronized String getUsername() {
+    return this.user;
   }
 
   @Override

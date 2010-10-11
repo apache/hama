@@ -571,6 +571,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
   @Override
   public JobStatus[] getAllJobs() throws IOException {
+    LOG.debug("returns all jobs: " + jobs.size());
     return getJobStatus(jobs.values(), false);
   }
 
