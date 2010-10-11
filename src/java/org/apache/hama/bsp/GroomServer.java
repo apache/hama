@@ -104,8 +104,8 @@ public class GroomServer implements Runnable {
   }
 
   public synchronized void initialize() throws IOException {
-    if (this.conf.get("slave.host.name") != null) {
-      this.localHostname = conf.get("slave.host.name");
+    if (this.conf.get(Constants.PEER_HOST) != null) {
+      this.localHostname = conf.get(Constants.PEER_HOST);
     }
 
     if (localHostname == null) {
