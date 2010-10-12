@@ -19,35 +19,21 @@
  */
 package org.apache.hama;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.bsp.LocalBSPCluster;
 
 /**
- * Forming up the miniDfs and miniHbase
+ * Forming up the miniDfs and miniZooKeeper
  */
-public abstract class HamaCluster extends TestCase {
+public abstract class HamaCluster extends HamaClusterTestCase {
   public static final Log LOG = LogFactory.getLog(HamaCluster.class);
   protected final static HamaConfiguration conf = new HamaConfiguration();
 
   protected void setUp() throws Exception {
     super.setUp();
-    
-    String[] args = new String[0];
-    StringUtils.startupShutdownMessage(LocalBSPCluster.class, args, LOG);
-    HamaConfiguration conf = new HamaConfiguration();
-    //LocalBSPCluster cluster = new LocalBSPCluster(conf);
-    //cluster.startup();
   }
 
   protected static HamaConfiguration getConf() {
     return conf;
-  }
-  
-  protected void setMiniBSPCluster() {
-    // TODO Auto-generated method stub    
   }
 }

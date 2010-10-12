@@ -7,10 +7,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import junit.framework.TestCase;
+
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
-
-import junit.framework.TestCase;
+import org.apache.hama.bsp.BSPMaster;
+import org.apache.hama.bsp.ClusterStatus;
 
 public class TestClusterStatus extends TestCase {
   Random rnd = new Random();

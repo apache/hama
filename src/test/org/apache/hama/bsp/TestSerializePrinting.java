@@ -20,14 +20,14 @@ import org.apache.zookeeper.data.Stat;
 /**
  * Serialize Printing of Hello World
  */
-public class SerializePrinting extends HamaCluster implements Watcher {
-  private Log LOG = LogFactory.getLog(SerializePrinting.class);
+public class TestSerializePrinting extends HamaCluster implements Watcher {
+  private Log LOG = LogFactory.getLog(TestSerializePrinting.class);
   private int NUM_PEER = 10;
   List<BSPPeerThread> list = new ArrayList<BSPPeerThread>(NUM_PEER);
   List<String> echo = new ArrayList<String>();
   Configuration conf;
 
-  public SerializePrinting() {
+  public TestSerializePrinting() {
     this.conf = getConf();
   }
 
@@ -84,6 +84,8 @@ public class SerializePrinting extends HamaCluster implements Watcher {
     private int myId;
 
     public BSPPeerThread(Configuration conf, int myId) throws IOException {
+      conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
+      
       this.peer = new BSPPeer(conf);
       this.myId = myId;
     }
