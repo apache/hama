@@ -44,7 +44,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
     // need to edit the config to add the ZooKeeper servers.
     this.zooKeeperCluster = new MiniZooKeeperCluster();
     int clientPort = this.zooKeeperCluster.startup(testDir);
-    conf.set("hbase.zookeeper.property.clientPort", Integer.toString(clientPort));
+    conf.set("hama.zookeeper.property.clientPort", Integer.toString(clientPort));
 
     // start the mini cluster
     this.cluster = new MiniBSPCluster(conf, groomServers);

@@ -153,7 +153,7 @@ public class QuorumPeer implements Constants {
   /**
    * Make a Properties object holding ZooKeeper config equivalent to zoo.cfg.
    * If there is a zoo.cfg in the classpath, simply read it in. Otherwise parse
-   * the corresponding config options from the HBase XML configs and generate
+   * the corresponding config options from the Hama XML configs and generate
    * the appropriate ZooKeeper properties.
    * @param conf Configuration to read from.
    * @return Properties holding mappings representing ZooKeeper zoo.cfg file.
@@ -172,10 +172,10 @@ public class QuorumPeer implements Constants {
       }
     }
 
-    // Otherwise, use the configuration options from HBase's XML files.
+    // Otherwise, use the configuration options from Hama's XML files.
     Properties zkProperties = new Properties();
 
-    // Directly map all of the hbase.zookeeper.property.KEY properties.
+    // Directly map all of the hama.zookeeper.property.KEY properties.
     for (Entry<String, String> entry : conf) {
       String key = entry.getKey();
       if (key.startsWith(ZK_CFG_PROPERTY)) {
@@ -210,9 +210,9 @@ public class QuorumPeer implements Constants {
   }
 
   /**
-   * Parse ZooKeeper's zoo.cfg, injecting HBase Configuration variables in.
+   * Parse ZooKeeper's zoo.cfg, injecting Hama Configuration variables in.
    * This method is used for testing so we can pass our own InputStream.
-   * @param conf HBaseConfiguration to use for injecting variables.
+   * @param conf Configuration to use for injecting variables.
    * @param inputStream InputStream to read from.
    * @return Properties parsed from config stream with variables substituted.
    * @throws IOException if anything goes wrong parsing config
@@ -248,7 +248,7 @@ public class QuorumPeer implements Constants {
         }
         if (substituteValue == null) {
           String msg = "variable " + variable + " not set in system property "
-                     + "or hbase configs";
+                     + "or hama configs";
           LOG.fatal(msg);
           throw new IOException(msg);
         }
@@ -258,7 +258,7 @@ public class QuorumPeer implements Constants {
         varEnd += VARIABLE_END_LENGTH;
         varStart = value.indexOf(VARIABLE_START, varEnd);
       }
-      // Special case for 'hbase.cluster.distributed' property being 'true'
+      // Special case for 'hama.cluster.distributed' property being 'true'
       if (key.startsWith("server.")) {
         if (conf.get(CLUSTER_DISTRIBUTED).equals(CLUSTER_IS_DISTRIBUTED) &&
             value.startsWith("localhost")) {
