@@ -341,7 +341,7 @@ public class GroomServer implements Runnable {
               }
             } catch (Exception e) {
               if (!shuttingDown) {
-                LOG.info("Lost connection to GraphProcessor [" + bspMasterAddr
+                LOG.info("Lost connection to BSP Master [" + bspMasterAddr
                     + "].  Retrying...", e);
                 try {
                   Thread.sleep(5000);
