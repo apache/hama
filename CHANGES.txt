@@ -168,6 +168,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-305: Redundant use of synchronize keyword (Filipe Manana via edward)
     HAMA-301: Fix unit test fail bug (edwardyoon)
     HAMA-303: slave.host.name is superceded by bsp.peer.hostname 
                 (Filipe Manana via edwardyoon)
