@@ -274,15 +274,16 @@ public class GroomServer implements Runnable {
 
   private void startNewTask(LaunchTaskAction action) {
     TaskInProgress tip = new TaskInProgress(action.getTask(), this.groomServerName);
-    synchronized (tip) {
-      try {
-        runningTasks.put(action.getTask().getTaskID(), tip);
-        tip.launchTask();
-      } catch (Throwable ie) {
-        // TODO: when job failed.
-      }
+
+    synchronized (this) {
+      runningTasks.put(action.getTask().getTaskID(), tip);
     }
 
+    try {
+      tip.launchTask();
+    } catch (Throwable ie) {
+      // TODO: when job failed.
+    }
   }
 
   private HeartbeatResponse transmitHeartBeat(long now) throws IOException {
