@@ -65,16 +65,16 @@ public class ClusterStatus implements Writable {
   /**
    * 
    */
-  ClusterStatus() {}
+  public ClusterStatus() {}
     
-  ClusterStatus(int grooms, int tasks, int maxTasks, BSPMaster.State state) {
+  public ClusterStatus(int grooms, int tasks, int maxTasks, BSPMaster.State state) {
     this.numActiveGrooms = grooms;
     this.tasks = tasks;
     this.maxTasks = maxTasks;
     this.state = state;
   }
   
-  ClusterStatus(Collection<String> activeGrooms, int tasks, int maxTasks,
+  public ClusterStatus(Collection<String> activeGrooms, int tasks, int maxTasks,
       BSPMaster.State state) {
     this(activeGrooms.size(), tasks, maxTasks, state);
     this.activeGrooms = activeGrooms;
