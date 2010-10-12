@@ -18,7 +18,6 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,15 +28,19 @@ import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
 
 public class PiEstimator {
+  private static String MASTER_TASK = "master.task.";
+
   public static class MyEstimator extends BSP {
     public static final Log LOG = LogFactory.getLog(MyEstimator.class);
     private Configuration conf;
+    private String masterTask;
     private static final int iterations = 10000;
-    
+
     @Override
     public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
         InterruptedException {
@@ -55,7 +58,7 @@ public class PiEstimator {
       byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
-      bspPeer.send(new InetSocketAddress("localhost", 61000), estimate);
+      bspPeer.send(bspPeer.getAddress(masterTask), estimate);
       bspPeer.sync();
 
       double pi = 0.0;
@@ -78,8 +81,9 @@ public class PiEstimator {
     @Override
     public void setConf(Configuration conf) {
       this.conf = conf;
+      this.masterTask = conf.get(MASTER_TASK);
     }
-    
+
   }
 
   public static void main(String[] args) throws InterruptedException,
@@ -87,12 +91,20 @@ public class PiEstimator {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
     // Execute locally
-    //conf.set("bsp.master.address", "local");
+    // conf.set("bsp.master.address", "local");
 
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
     // Set the job name
     bsp.setJobName("pi estimation example");
     bsp.setBspClass(MyEstimator.class);
+
+    BSPJobClient jobClient = new BSPJobClient(conf);
+    ClusterStatus cluster = jobClient.getClusterStatus(true);
+    // Choose one as a master
+    for (String name : cluster.getActiveGroomNames()) {
+      conf.set(MASTER_TASK, name);
+      break;
+    }
 
     BSPJobClient.runJob(bsp);
   }

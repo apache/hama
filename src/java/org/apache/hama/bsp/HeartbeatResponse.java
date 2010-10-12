@@ -20,6 +20,8 @@ package org.apache.hama.bsp;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -30,12 +32,15 @@ public class HeartbeatResponse implements Writable, Configurable {
   private Configuration conf;
   short responseId;
   private GroomServerAction [] actions; 
+  private Map<String, String> groomServers;
 
   public HeartbeatResponse() {}
   
-  public HeartbeatResponse(short responseId, GroomServerAction [] actions) {
+  public HeartbeatResponse(short responseId, GroomServerAction [] actions,
+      Map<String, String> groomServers) {
     this.responseId = responseId;
     this.actions = actions;
+    this.groomServers = groomServers;
   }
 
   public void setResponseId(short responseId) {
@@ -54,6 +59,14 @@ public class HeartbeatResponse implements Writable, Configurable {
     return actions;
   }
 
+  public void setGroomServers(Map<String, String> groomServers) {
+    this.groomServers = groomServers;
+  }
+
+  public Map<String, String> getGroomServers() {
+    return groomServers;
+  }
+
   @Override
   public void readFields(DataInput in) throws IOException {
     this.responseId = in.readShort();
@@ -69,6 +82,14 @@ public class HeartbeatResponse implements Writable, Configurable {
     } else {
       actions = null;
     }
+
+    String[] groomServerNames = WritableUtils.readCompressedStringArray(in);
+    String[] groomServerAddresses = WritableUtils.readCompressedStringArray(in);
+    groomServers = new HashMap<String, String>(groomServerNames.length);
+
+    for (int i = 0; i < groomServerNames.length; i++) {
+      groomServers.put(groomServerNames[i], groomServerAddresses[i]);
+    }
   }
 
   @Override
@@ -83,6 +104,10 @@ public class HeartbeatResponse implements Writable, Configurable {
         action.write(out);
       }
     }
+    String[] groomServerNames = groomServers.keySet().toArray(new String[0]);
+    WritableUtils.writeCompressedStringArray(out, groomServerNames);
+    String[] groomServerAddresses = groomServers.values().toArray(new String[0]);
+    WritableUtils.writeCompressedStringArray(out, groomServerAddresses);
   }
 
   @Override
