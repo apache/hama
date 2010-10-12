@@ -70,6 +70,11 @@ public class GroomServerStatus implements Writable {
     return groomName;
   }
   
+  /**
+   * The host (and port) from where the groom server can be reached.
+   *
+   * @return The groom server address in the format hostname:port
+   */
   public String getHost() {
     return host;
   }

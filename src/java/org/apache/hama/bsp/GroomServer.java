@@ -122,7 +122,10 @@ public class GroomServer implements Runnable {
     this.runningTasks = new LinkedHashMap<String, TaskInProgress>();
     this.acceptNewTasks = true;
 
-    this.groomServerName = "groomd_" + localHostname;
+    this.conf.set(Constants.PEER_HOST, localHostname);
+    bspPeer = new BSPPeer(conf);
+
+    this.groomServerName = "groomd_" + bspPeer.getServerName().replace(':', '_');
     LOG.info("Starting groom: " + this.groomServerName);
 
     DistributedCache.purgeCache(this.conf);
@@ -131,9 +134,6 @@ public class GroomServer implements Runnable {
         InterTrackerProtocol.class, InterTrackerProtocol.versionID,
         bspMasterAddr, conf);
     this.running = true;
-    
-    this.conf.set(Constants.PEER_HOST, localHostname);
-    bspPeer = new BSPPeer(conf);
   }
 
   private static void checkLocalDirs(String[] localDirs)
@@ -214,6 +214,14 @@ public class GroomServer implements Runnable {
         // Send the heartbeat and process the bspmaster's directives
         HeartbeatResponse heartbeatResponse = transmitHeartBeat(now);
 
+        if (acceptNewTasks) {
+          bspPeer.setPeers(heartbeatResponse.getGroomServers());
+        }
+
+        for (Map.Entry<String, String> peer : bspPeer.getAllPeers().entrySet()) {
+          LOG.debug("Remote peer, host:port is " + peer.getKey());
+        }
+
         GroomServerAction[] actions = heartbeatResponse.getActions();
         LOG.debug("Got heartbeatResponse from BSPMaster with responseId: "
             + heartbeatResponse.getResponseId() + " and "
@@ -285,7 +293,7 @@ public class GroomServer implements Runnable {
     //
     if (status == null) {
       synchronized (this) {
-        status = new GroomServerStatus(groomServerName, localHostname,
+        status = new GroomServerStatus(groomServerName, bspPeer.getServerName(),
             cloneAndResetRunningTaskStatuses(), failures, maxCurrentTasks);
       }
     } else {

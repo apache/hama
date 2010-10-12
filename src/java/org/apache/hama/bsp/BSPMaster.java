@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -87,6 +88,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   // (groom name --> last sent HeartBeatResponse)
   Map<String, HeartbeatResponse> groomToHeartbeatResponseMap = new TreeMap<String, HeartbeatResponse>();
   private HashMap<String, GroomServerStatus> groomServers = new HashMap<String, GroomServerStatus>();
+  // maps groom server names to hosts (hostname:port)
+  private HashMap<String, String> groomServerHosts = new HashMap<String, String>();
 
   // Jobs' Meta Data
   private int nextJobId = 1;
@@ -359,10 +362,11 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
         groomToHeartbeatResponseMap.remove(groomName);
       }
       return new HeartbeatResponse(newResponseId,
-          new GroomServerAction[] { new ReinitTrackerAction() });
+          new GroomServerAction[] { new ReinitTrackerAction() },
+          Collections.<String, String>emptyMap());
     }
 
-    HeartbeatResponse response = new HeartbeatResponse(newResponseId, null);
+    HeartbeatResponse response = new HeartbeatResponse(newResponseId, null, groomServerHosts);
     List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
 
     updateTaskStatuses(status);
@@ -507,6 +511,10 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
         groomServers.put(groomName, groomStatus);
       } else { // TODO - to be improved to update status.
       }
+    }
+
+    if (initialContact) {
+      groomServerHosts.put(groomStatus.getGroomName(), groomStatus.getHost());
     }
 
     return true;

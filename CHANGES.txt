@@ -4,7 +4,10 @@ Trunk (unreleased changes)
 
   NEW FEATURES
 
-    HAMA-267: Add command-line interface for job management (hyunsik via edwardyoon)
+    HAMA-304: Allow BSP peers to get a list of all other peers 
+                executing tasks of the same job (Filipe Manana via edwardyoon)
+    HAMA-267: Add command-line interface for job management
+                (hyunsik via edwardyoon)
     HAMA-279: Add "serialize printing" to examples (edwardyoon)
     HAMA-272: Hama/Zookeeper Integration (edwardyoon)
     HAMA-265: Add example Pi estimatior based on BSP (edwardyoon)
@@ -58,8 +61,8 @@ Trunk (unreleased changes)
     HAMA-293: Add starter classes for ZooKeeper, BSPMaster
                 and GroomServer (Filipe Manana via edwardyoon)
     HAMA-286: Task progress should be monitored (eddieyoon)
-    HAMA-287: BSPMaster should use the bsp.master.port config property
-                when creating its InetSocketAddr instance (Filipe Manana via edwardyoon)
+    HAMA-287: BSPMaster should use the bsp.master.port property when creating
+                its InetSocketAddr instance (Filipe Manana via edwardyoon)
     HAMA-283: Removing duplicate code (Filipe Manana via edwardyoon)
     HAMA-277: Add default number of bsp task (edwardyoon)
     HAMA-273: Implement killJob() method for local job (edwardyoon)
@@ -81,7 +84,7 @@ Trunk (unreleased changes)
     HAMA-217: Replacement of Block Multiplication Map/Reduce (edwardyoon)
     HAMA-205: Replacement of NormMap/Reduce (edwardyoon)
     HAMA-207: Replacement of Mat-Mat addition Map/Reduce (edwardyoon)
-    HAMA-208: Replacement of vector-matrix multiplication Map/Reduce (edwardyoon)
+    HAMA-208: Replacement of vector-matrix multiplication MapReduce (edwardyoon)
     HAMA-216: Removing JobManager in util package (edwardyoon)
     HAMA-215: Removing hama shell from version 0.2 (edwardyoon)
     HAMA-204: Replacement of TransposeMap/Reduce (edwardyoon)
@@ -174,10 +177,14 @@ Trunk (unreleased changes)
                        to groom servers (Filipe Manana via edwardyoon)
     HAMA-280: Fix warnings (Filipe Manana via edwardyoon)
     HAMA-270: wrong sequence of readFields() of ClusterStatus (hyunsik)
-    HAMA-260: Current version command of script is linked unknown class (edwardyoon)
-    HAMA-250: Add --no-check-certificate option to 'wget' command lines (edwardyoon)
-    HAMA-242: Wrong assignment of default setting inside BSPPeer constructor (hyunsik)
-    HAMA-246: Current shell scripts for bsp daemon have several problems. (hyunsik)
+    HAMA-260: Current version command of script is linked unknown class 
+                (edwardyoon)
+    HAMA-250: Add --no-check-certificate option to 'wget' command lines 
+                (edwardyoon)
+    HAMA-242: Wrong assignment of default setting inside BSPPeer constructor 
+                (hyunsik)
+    HAMA-246: Current shell scripts for bsp daemon have several problems. 
+                (hyunsik)
     HAMA-238: Example fail when performing sparse matrices addition (edwardyoon)
     HAMA-225: Jacobi iteration is in a infinite loop (edwardyoon)
     HAMA-214: Can't run the examples (edwardyoon)

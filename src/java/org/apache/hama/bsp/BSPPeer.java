@@ -19,6 +19,7 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected Server server = null;
   protected ZooKeeper zk = null;
   protected volatile Integer mutex = 0;
-  
+
   protected final String serverName;
   protected final String bindAddress;
   protected final int bindPort;
@@ -60,6 +61,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
   protected final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
   protected int id;
+  protected Map<String, String> allPeers = new HashMap<String, String>();
+  protected InetSocketAddress peerAddress;
 
   /**
    * 
@@ -78,6 +81,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         + ":"
         + conf.getInt(Constants.ZOOKEPER_CLIENT_PORT,
             Constants.DEFAULT_ZOOKEPER_CLIENT_PORT);
+    peerAddress = new InetSocketAddress(bindAddress, bindPort);
 
     reinitialize();
   }
@@ -96,7 +100,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    
+
     Stat s = null;
     if (zk != null) {
       try {
@@ -115,8 +119,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
           LOG.error(e);
         }
       }
-    }      
-    
+    }
+
   }
 
   @Override
@@ -170,13 +174,13 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         peer.put(messages.next());
       }
     }
-    
+
     // Should we clearing outgoingQueues?
     this.outgoingQueues.clear();
-    
+
     enterBarrier();
     Thread.sleep(Constants.ATLEAST_WAIT_TIME); // TODO - This is temporary work
-                                               // because
+    // because
     // it can be affected by network condition,
     // the number of peers, and the load of zookeeper.
     // It should fixed to some flawless way.
@@ -198,7 +202,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
 
-        // TODO it must be same with the number of slave nodes, at this time. 
+        // TODO it must be same with the number of slave nodes, at this time.
         if (list.size() < conf.getInt("bsp.peers.num", 0)) {
           mutex.wait();
         } else {
@@ -277,6 +281,37 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   public int getId() {
     return this.id;
+  }
+
+  /**
+   * @return The address of this peer.
+   */
+  public InetSocketAddress getAddress() {
+    return peerAddress;
+  }
+
+  public InetSocketAddress getAddress(String hostname) {
+    String peerAddr = allPeers.get(hostname);
+    String[] peerAddrParts = peerAddr.split(":");
+    return new InetSocketAddress(peerAddrParts[0], Integer
+        .parseInt(peerAddrParts[1]));
+  }
+
+  /**
+   * @return all the other peers executing tasks from the same job.
+   */
+  public Map<String, String> getAllPeers() {
+    return allPeers;
+  }
+
+  /**
+   * To be invoked by the Groom Server with a list of peers received from an
+   * heartbeat response (BSPMaster).
+   * 
+   * @param allPeers
+   */
+  void setPeers(Map<String, String> allPeers) {
+    this.allPeers = allPeers;
   }
 
 }
