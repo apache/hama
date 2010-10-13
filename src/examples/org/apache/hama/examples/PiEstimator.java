@@ -65,7 +65,7 @@ public class PiEstimator {
       BSPMessage received;
       while ((received = bspPeer.getCurrentMessage()) != null) {
         LOG.info("Receives messages:" + Bytes.toDouble(received.getData()));
-        pi = (pi + Bytes.toDouble(received.getData())) / 2;
+        pi = (pi + Bytes.toDouble(received.getData())) / bspPeer.getAllPeers().size();
       }
 
       if (pi != 0.0) {
