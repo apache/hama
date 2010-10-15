@@ -50,6 +50,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-309: Add unit tests for Bytes utilities (edwardyoon)
     HAMA-299: Remove unused field 'task' from GroomServer (edwardyoon)
     HAMA-297: Add missing Apache License header to source files. (edwardyoon)
     HAMA-268: Implement BSPMaster's all methods extended 

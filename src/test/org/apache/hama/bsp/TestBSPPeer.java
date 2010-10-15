@@ -43,7 +43,7 @@ import org.apache.zookeeper.data.Stat;
 public class TestBSPPeer extends HamaCluster implements Watcher {
   private Log LOG = LogFactory.getLog(TestBSPPeer.class);
 
-  private static final int NUM_PEER = 35;
+  private static final int NUM_PEER = 20;
   private static final int ROUND = 3;
   private static final int PAYLOAD = 1024; // 1kb in default
   List<BSPPeerThread> list = new ArrayList<BSPPeerThread>(NUM_PEER);
