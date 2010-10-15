@@ -51,7 +51,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected ZooKeeper zk = null;
   protected volatile Integer mutex = 0;
 
-  protected final String serverName;
+  protected final String peerAddr;
   protected final String bindAddress;
   protected final int bindPort;
   protected final String bspRoot;
@@ -60,7 +60,6 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
   protected final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
   protected final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
-  protected int id;
   protected Map<String, String> allPeers = new HashMap<String, String>();
   protected InetSocketAddress peerAddress;
 
@@ -70,11 +69,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public BSPPeer(Configuration conf) throws IOException {
     this.conf = conf;
 
-    serverName = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST)
+    peerAddr = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST)
         + ":" + conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
     bindAddress = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST);
     bindPort = conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
-    id = conf.getInt(Constants.PEER_ID, 0);
     bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT);
     zookeeperAddr = conf.get(Constants.ZOOKEEPER_QUORUM)
@@ -188,9 +186,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
-    LOG.debug("[" + serverName + "] enter the enterbarrier");
+    LOG.debug("[" + peerAddr + "] enter the enterbarrier");
     try {
-      zk.create(bspRoot + "/" + serverName, new byte[0], Ids.OPEN_ACL_UNSAFE,
+      zk.create(bspRoot + "/" + peerAddr, new byte[0], Ids.OPEN_ACL_UNSAFE,
           CreateMode.EPHEMERAL);
     } catch (KeeperException e) {
       e.printStackTrace();
@@ -213,7 +211,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   protected boolean leaveBarrier() throws KeeperException, InterruptedException {
-    zk.delete(bspRoot + "/" + serverName, 0);
+    zk.delete(bspRoot + "/" + peerAddr, 0);
 
     while (true) {
       synchronized (mutex) {
@@ -221,7 +219,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         if (list.size() > 0) {
           mutex.wait();
         } else {
-          LOG.debug("[" + serverName + "] leave from the leaveBarrier");
+          LOG.debug("[" + peerAddr + "] leave from the leaveBarrier");
           return true;
         }
       }
@@ -274,13 +272,11 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     return peer;
   }
 
-  @Override
-  public String getServerName() {
-    return this.serverName;
-  }
-
-  public int getId() {
-    return this.id;
+  /**
+   * @return the string as host:port of this Peer 
+   */
+  public String getHostName() {
+    return this.peerAddr;
   }
 
   /**

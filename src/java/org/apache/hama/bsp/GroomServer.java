@@ -125,7 +125,7 @@ public class GroomServer implements Runnable {
     this.conf.set(Constants.PEER_HOST, localHostname);
     bspPeer = new BSPPeer(conf);
 
-    this.groomServerName = "groomd_" + bspPeer.getServerName().replace(':', '_');
+    this.groomServerName = "groomd_" + bspPeer.getHostName().replace(':', '_');
     LOG.info("Starting groom: " + this.groomServerName);
 
     DistributedCache.purgeCache(this.conf);
@@ -294,7 +294,7 @@ public class GroomServer implements Runnable {
     //
     if (status == null) {
       synchronized (this) {
-        status = new GroomServerStatus(groomServerName, bspPeer.getServerName(),
+        status = new GroomServerStatus(groomServerName, bspPeer.getHostName(),
             cloneAndResetRunningTaskStatuses(), failures, maxCurrentTasks);
       }
     } else {
@@ -526,6 +526,6 @@ public class GroomServer implements Runnable {
   }
 
   public String getServerName() {
-    return bspPeer.getServerName();
+    return bspPeer.getHostName();
   }
 }
