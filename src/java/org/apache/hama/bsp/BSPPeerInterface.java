@@ -56,5 +56,7 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
   
   public boolean isRunning();
   
-  public String getServerName();
+  public InetSocketAddress getAddress();
+  
+  public String getHostName();
 }

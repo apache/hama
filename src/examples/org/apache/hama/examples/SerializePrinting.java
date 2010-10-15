@@ -18,7 +18,10 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
+import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
@@ -30,6 +33,7 @@ import org.apache.zookeeper.KeeperException;
 public class SerializePrinting {
   
   public static class HelloBSP extends BSP {
+    public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private Configuration conf;
 
     @Override
@@ -37,16 +41,17 @@ public class SerializePrinting {
         InterruptedException {
       int num = Integer.parseInt(conf.get("bsp.peers.num"));
 
-      for (int i = 0; i < num; i++) {
-        if (bspPeer.getId() == i) {
-          System.out.println("Hello BSP from " + i + " of " + num + ": "
-              + bspPeer.getServerName());
+      int i = 0;
+      for(Map.Entry<String, String> e : bspPeer.getAllPeers().entrySet()) {
+        if(bspPeer.getHostName().equals(e.getValue())) {
+          LOG.info("Hello BSP from " + i + " of " + num + ": "
+              + bspPeer.getHostName());
         }
-
-        Thread.sleep(100);
+        
+        Thread.sleep(200);
         bspPeer.sync();
+        i++;
       }
-
     }
 
     @Override
