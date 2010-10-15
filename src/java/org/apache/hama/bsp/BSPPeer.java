@@ -136,7 +136,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   @Override
   public void send(InetSocketAddress hostname, BSPMessage msg)
       throws IOException {
-
+    LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + hostname.getHostName());
     ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(hostname);
     if (queue == null) {
       queue = new ConcurrentLinkedQueue<BSPMessage>();
