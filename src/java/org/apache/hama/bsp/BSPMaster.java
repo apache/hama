@@ -92,7 +92,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   private HashMap<String, String> groomServerHosts = new HashMap<String, String>();
 
   // Jobs' Meta Data
-  private int nextJobId = 1;
+  private Integer nextJobId = Integer.valueOf(1);
   // private long startTime;
   private int totalSubmissions = 0;
   private int totalTasks = 0;
@@ -528,7 +528,12 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
    */
   @Override
   public BSPJobID getNewJobId() throws IOException {
-    return new BSPJobID(this.masterIdentifier, nextJobId++);
+    int id;
+    synchronized (nextJobId) {
+      id = nextJobId;
+      nextJobId = Integer.valueOf(id + 1);
+    }
+    return new BSPJobID(this.masterIdentifier, id);
   }
 
   @Override
