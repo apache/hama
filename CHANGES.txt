@@ -168,6 +168,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-307: BSPMaster - job ID counter is not read and updated atomically
+                      (Filipe Manana via edward)
     HAMA-305: Redundant use of synchronize keyword (Filipe Manana via edward)
     HAMA-301: Fix unit test fail bug (edwardyoon)
     HAMA-303: slave.host.name is superceded by bsp.peer.hostname 
