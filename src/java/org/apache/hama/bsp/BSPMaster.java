@@ -540,7 +540,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   public JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException {
     if (jobs.containsKey(jobID)) {
       // job already running, don't start twice
-      LOG.info("The job (" + jobID + ") is already subbmitted");
+      LOG.info("The job (" + jobID + ") was already submitted");
       return jobs.get(jobID).getStatus();
     }
 
