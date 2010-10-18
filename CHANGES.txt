@@ -50,6 +50,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-311: Add unit tests for IPC package (edwardyoon)
     HAMA-312: Add serialize printing to ExampleDriver (edwardyoon)
     HAMA-309: Add unit tests for Bytes utilities (edwardyoon)
     HAMA-299: Remove unused field 'task' from GroomServer (edwardyoon)

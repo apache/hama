@@ -162,7 +162,7 @@ class TaskInProgress {
     return (completes > 0);
   }
 
-  private TreeSet tasksReportedClosed = new TreeSet();
+  private TreeSet<String> tasksReportedClosed = new TreeSet<String>();
   
   public boolean shouldCloseForClosedJob(String taskid) {
     TaskStatus ts = (TaskStatus) taskStatuses.get(taskid);
