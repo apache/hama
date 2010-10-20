@@ -20,20 +20,5 @@ package org.apache.hama.bsp;
 /**
  * This class provides an abstract implementation of the BSP interface
  */
-public abstract class BSP extends Thread implements BSPInterface {
-  private BSPPeer bspPeer;
-  
-  /**
-   * A thread's run method.
-   * 
-   * The run method performs the
-   * {@link org.apache.hama.bsp.BSPInterface#bsp(BSPPeer)}
-   */
-  public void runBSP() throws Exception {
-    bsp(bspPeer);
-  }
-  
-  public void setPeer(BSPPeer bspServer) {
-    this.bspPeer = bspServer;
-  }
+public abstract class BSP implements BSPInterface {
 }

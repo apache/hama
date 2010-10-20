@@ -101,7 +101,7 @@ class TaskInProgress {
         return null;
       }
 
-      t = new BSPTask(jobId, jobFile, taskid, partition, this.conf);
+      t = new BSPTask(jobId, jobFile, taskid, partition);
       activeTasks.put(taskid, status.getGroomName());
 
       // Ask JobTracker to note that the task exists

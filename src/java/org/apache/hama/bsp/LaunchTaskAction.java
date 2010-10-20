@@ -47,7 +47,7 @@ class LaunchTaskAction extends GroomServerAction {
   }
 
   public void readFields(DataInput in) throws IOException {
-    task = new Task();
+    task = new BSPTask();
     task.readFields(in);
   }
 
