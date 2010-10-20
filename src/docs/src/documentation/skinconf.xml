@@ -73,7 +73,7 @@ which will be used to configure the chosen Forrest skin.
   <group-name>Hama</group-name>
   <group-description></group-description>
   <group-url>index.html</group-url>
-  <group-logo>images/apache-incubator-hama-white.png</group-logo>
+  <group-logo>images/headerlogo.png</group-logo>
   
   <!-- optional host logo (e.g. sourceforge logo)
        default skin: renders it at the bottom-left corner -->
@@ -146,7 +146,12 @@ which will be used to configure the chosen Forrest skin.
       font-family: monospace;
     }
     -->
+    
      #footer a { color: black; }
+     img.logo {
+       float: left;
+       margin-right: 0.5em;
+     }
   </extra-css>
 
   <colors>

@@ -35,8 +35,11 @@
     <section>
     <title>Source Code</title>
     <p>
-    The source files are now stored using Subversion : <br/><br/>
-    svn checkout https://svn.apache.org/repos/asf/incubator/hama/trunk hama-trunk
+    The source files are now stored on Subversion : 
+    <a href="https://svn.apache.org/repos/asf/incubator/hama/trunk">https://svn.apache.org/repos/asf/incubator/hama/trunk</a>
+    <br/>
+    And, git mirros : <a href="git://git.apache.org/hama.git">git://git.apache.org/hama.git</a>
+    [ <a href="http://git.apache.org/hama.git">http</a>, <a href="http://github.com/apache/hama">github</a> ] 
     </p>
     </section>
     <section>
