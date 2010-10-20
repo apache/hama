@@ -54,7 +54,7 @@ public class PiEstimator {
         }
       }
 
-      byte[] tagName = Bytes.toBytes(getName().toString());
+      byte[] tagName = Bytes.toBytes(bspPeer.getHostName());
       byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
       BSPMessage estimate = new BSPMessage(tagName, myData);
 

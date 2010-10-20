@@ -23,14 +23,12 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
-/**
- *
- */
-public class Task implements Writable {
+public abstract class Task implements Writable {
   public static final Log LOG = LogFactory.getLog(Task.class);
   ////////////////////////////////////////////
   // Fields
@@ -109,5 +107,7 @@ public class Task implements Writable {
     taskId = Text.readString(in);
     partition = in.readInt();
   }
+
+  public abstract BSPTaskRunner createRunner(BSPPeer bspPeer, BSPJob jobConf);
   
 }

@@ -23,9 +23,11 @@ import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,7 +42,7 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.util.DiskChecker;
-import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
@@ -50,6 +52,7 @@ import org.apache.hama.ipc.InterTrackerProtocol;
 public class GroomServer implements Runnable {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
   private static BSPPeer bspPeer;
+  static final String SUBDIR = "groomServer";
 
   Configuration conf;
 
@@ -281,9 +284,111 @@ public class GroomServer implements Runnable {
     }
 
     try {
+      localizeJob(tip);
+    } catch (Throwable e) {
+      String msg = ("Error initializing " + tip.getTask().getTaskID() + ":\n" + StringUtils
+          .stringifyException(e));
+      LOG.warn(msg);
+    }
+  }
+
+  private void localizeJob(TaskInProgress tip) throws IOException {
+    Task task = tip.getTask();
+    conf.addResource(task.getJobFile());
+    BSPJob defaultJobConf = new BSPJob((HamaConfiguration) conf);
+
+    Path localJobFile = defaultJobConf.getLocalPath(SUBDIR + "/"
+        + task.getTaskID() + "/" + "job.xml");
+
+    RunningJob rjob = addTaskToJob(task.getJobID(), localJobFile, tip);
+    BSPJob jobConf = null;
+
+    synchronized (rjob) {
+      if (!rjob.localized) {
+        Path localJarFile = defaultJobConf.getLocalPath(SUBDIR + "/"
+            + task.getTaskID() + "/" + "job.jar");
+        systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
+        Path jarFile = new Path(task.getJobFile().replace(".xml", ".jar"));
+
+        HamaConfiguration conf = new HamaConfiguration();
+        conf.addResource(localJobFile);
+        jobConf = new BSPJob(conf, task.getJobID().toString());
+        jobConf.setJar(localJarFile.toString());
+
+        if (jarFile != null) {
+          systemFS.copyToLocalFile(jarFile, localJarFile);
+
+          // also unjar the job.jar files in workdir
+          File workDir = new File(
+              new File(localJobFile.toString()).getParent(), "work");
+          if (!workDir.mkdirs()) {
+            if (!workDir.isDirectory()) {
+              throw new IOException("Mkdirs failed to create "
+                  + workDir.toString());
+            }
+          }
+          RunJar.unJar(new File(localJarFile.toString()), workDir);
+        }
+        rjob.localized = true;
+      }
+    }
+    launchTaskForJob(tip, jobConf);
+  }
+
+  private void launchTaskForJob(TaskInProgress tip, BSPJob jobConf) {
+    try {
+      tip.setJobConf(jobConf);
       tip.launchTask();
     } catch (Throwable ie) {
-      // TODO: when job failed.
+      tip.taskStatus.setRunState(TaskStatus.State.FAILED);
+      String error = StringUtils.stringifyException(ie);
+      LOG.info(error);
+    }
+  }
+
+  private RunningJob addTaskToJob(BSPJobID jobId, Path localJobFile,
+      TaskInProgress tip) {
+    synchronized (runningJobs) {
+      RunningJob rJob = null;
+      if (!runningJobs.containsKey(jobId)) {
+        rJob = new RunningJob(jobId, localJobFile);
+        rJob.localized = false;
+        rJob.tasks = new HashSet<TaskInProgress>();
+        rJob.jobFile = localJobFile;
+        runningJobs.put(jobId, rJob);
+      } else {
+        rJob = runningJobs.get(jobId);
+      }
+      rJob.tasks.add(tip);
+      return rJob;
+    }
+  }
+
+  /**
+   * The datastructure for initializing a job
+   */
+  static class RunningJob {
+    private BSPJobID jobid;
+    private Path jobFile;
+    // keep this for later use
+    Set<TaskInProgress> tasks;
+    boolean localized;
+    boolean keepJobFiles;
+
+    RunningJob(BSPJobID jobid, Path jobFile) {
+      this.jobid = jobid;
+      localized = false;
+      tasks = new HashSet<TaskInProgress>();
+      this.jobFile = jobFile;
+      keepJobFiles = false;
+    }
+
+    Path getJobFile() {
+      return jobFile;
+    }
+
+    BSPJobID getJobId() {
+      return jobid;
     }
   }
 
@@ -410,6 +515,8 @@ public class GroomServer implements Runnable {
   // /////////////////////////////////////////////////////
   class TaskInProgress {
     Task task;
+    BSPJob jobConf;
+    private BSPTaskRunner runner;
     volatile boolean done = false;
     volatile boolean wasKilled = false;
     private TaskStatus taskStatus;
@@ -421,61 +528,29 @@ public class GroomServer implements Runnable {
           TaskStatus.Phase.STARTING);
     }
 
-    static final String SUBDIR = "groomServer";
+    public void setJobConf(BSPJob jobConf) {
+      this.jobConf = jobConf;
+    }
 
-    public void launchTask() {
+    public void launchTask() throws IOException {
       taskStatus.setRunState(TaskStatus.State.RUNNING);
+      this.runner = task.createRunner(bspPeer, this.jobConf);
+      this.runner.start();
 
-      try {
-        // TODO: need to move this code to TaskRunner
-
-        task.getJobFile();
-        conf.addResource(task.getJobFile());
-        BSPJob defaultJobConf = new BSPJob((HamaConfiguration) conf);
-
-        Path localJobFile = defaultJobConf.getLocalPath(SUBDIR + "/"
-            + task.getTaskID() + "/" + "job.xml");
-        Path localJarFile = defaultJobConf.getLocalPath(SUBDIR + "/"
-            + task.getTaskID() + "/" + "job.jar");
-
-        systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
-        systemFS.copyToLocalFile(new Path(task.getJobFile().replace(".xml",
-            ".jar")), localJarFile);
-
-        HamaConfiguration conf = new HamaConfiguration();
-        conf.addResource(localJobFile);
-        BSPJob jobConf = new BSPJob(conf, task.getJobID().toString());
-        jobConf.setJar(localJarFile.toString());
-
-        BSP bsp = (BSP) ReflectionUtils
-            .newInstance(jobConf.getBspClass(), conf);
-        bsp.setPeer(bspPeer);
+      // Check state of Task
+      while (true) {
         try {
-          bsp.runBSP();
-        } catch (Exception e) {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
           e.printStackTrace();
-          taskStatus.setRunState(TaskStatus.State.FAILED);
         }
 
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      } finally {
-
-        while (true) {
-          try {
-            Thread.sleep(1000);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-
-          // If local/outgoing queues are empty, task is done.
-          if (bspPeer.localQueue.size() == 0
-              && bspPeer.outgoingQueues.size() == 0) {
-            taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-            acceptNewTasks = true;
-            break;
-          }
+        // If local/outgoing queues are empty, task is done.
+        if (bspPeer.localQueue.size() == 0
+            && bspPeer.outgoingQueues.size() == 0) {
+          taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+          acceptNewTasks = true;
+          break;
         }
       }
 

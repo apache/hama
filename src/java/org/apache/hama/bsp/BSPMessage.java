@@ -30,6 +30,12 @@ public class BSPMessage implements Writable {
   public BSPMessage() {
   }
 
+  /**
+   * Constructor 
+   * 
+   * @param tag of data
+   * @param data of message
+   */
   public BSPMessage(byte[] tag, byte[] data) {
     this.tag = new byte[tag.length];
     this.data = new byte[data.length];
@@ -37,11 +43,20 @@ public class BSPMessage implements Writable {
     System.arraycopy(data, 0, this.data, 0, data.length);
   }
 
+  /**
+   * BSP messages are typically identified with tags. This allows to get the tag
+   * of data.
+   * 
+   * @return tag of data of BSP message
+   */
   public byte[] getTag() {
     byte[] result = this.tag;
     return result;
   }
 
+  /**
+   * @return data of BSP message
+   */
   public byte[] getData() {
     byte[] result = this.data;
     return result;
