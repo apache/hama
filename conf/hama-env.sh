@@ -27,14 +27,8 @@
 # hadoop conf dir. to find the mapreduce cluster.
 # export HADOOP_CONF_DIR=/usr/local/src/hadoop-0.20.1/conf
 
-# hbase conf dir. to find the hbase cluster.
-# export HBASE_CONF_DIR=/usr/local/src/hbase-0.20.3/conf
-
 # Extra Java CLASSPATH elements.  Optional.
-# export HAMA_CLASSPATH=$HADOOP_CONF_DIR:$HBASE_CONF_DIR
-
-# The maximum amount of heap to use, in MB. Default is 1000.
-# export HBASE_HEAPSIZE=1000
+# export HAMA_CLASSPATH=$HADOOP_CONF_DIR
 
 # Where log files are stored.  $HAMA_HOME/logs by default.
 # export HAMA_LOG_DIR=${HAMA_HOME}/logs
