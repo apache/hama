@@ -172,6 +172,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-317: Remove HBASE_CONF_DIR and HBASE_HEAPSIZE properties (edwardyoon)
     HAMA-315: Uncomment code in checkLocalDirs() (edwardyoon)
     HAMA-314: Remove unnecessary methods from HamaConfiguration (edwardyoon)
     HAMA-307: BSPMaster - job ID counter is not read and updated atomically
