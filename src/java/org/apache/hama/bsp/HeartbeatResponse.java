@@ -20,7 +20,9 @@ package org.apache.hama.bsp;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configurable;
@@ -106,8 +108,12 @@ public class HeartbeatResponse implements Writable, Configurable {
     }
     String[] groomServerNames = groomServers.keySet().toArray(new String[0]);
     WritableUtils.writeCompressedStringArray(out, groomServerNames);
-    String[] groomServerAddresses = groomServers.values().toArray(new String[0]);
-    WritableUtils.writeCompressedStringArray(out, groomServerAddresses);
+
+    List<String> groomServerAddresses = new ArrayList<String>(groomServerNames.length);
+    for (String groomName : groomServerNames) {
+      groomServerAddresses.add(groomServers.get(groomName));
+    }
+    WritableUtils.writeCompressedStringArray(out, groomServerAddresses.toArray(new String[0]));
   }
 
   @Override
