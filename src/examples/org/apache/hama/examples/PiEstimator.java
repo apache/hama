@@ -54,11 +54,11 @@ public class PiEstimator {
         }
       }
 
-      byte[] tagName = Bytes.toBytes(bspPeer.getHostName());
+      byte[] tagName = Bytes.toBytes(bspPeer.getPeerName());
       byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
-      bspPeer.send(bspPeer.getAddress(masterTask), estimate);
+      bspPeer.send(masterTask, estimate);
       bspPeer.sync();
 
       double pi = 0.0;
@@ -105,8 +105,8 @@ public class PiEstimator {
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);
     // Choose one as a master
-    for (String name : cluster.getActiveGroomNames()) {
-      conf.set(MASTER_TASK, name);
+    for (String peerName : cluster.getActiveGroomNames().values()) {
+      conf.set(MASTER_TASK, peerName);
       break;
     }
 

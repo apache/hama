@@ -21,9 +21,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
@@ -57,7 +58,7 @@ import org.apache.hadoop.io.WritableUtils;
 public class ClusterStatus implements Writable {
 
   private int numActiveGrooms;
-  private Collection<String> activeGrooms = new ArrayList<String>();
+  private Map<String, String> activeGrooms = new HashMap<String, String>();
   private int tasks;
   private int maxTasks;
   private BSPMaster.State state;
@@ -74,7 +75,7 @@ public class ClusterStatus implements Writable {
     this.state = state;
   }
   
-  public ClusterStatus(Collection<String> activeGrooms, int tasks, int maxTasks,
+  public ClusterStatus(Map<String, String> activeGrooms, int tasks, int maxTasks,
       BSPMaster.State state) {
     this(activeGrooms.size(), tasks, maxTasks, state);
     this.activeGrooms = activeGrooms;
@@ -90,11 +91,11 @@ public class ClusterStatus implements Writable {
   }
   
   /**
-   * Get the names of groom servers in the cluster.
+   * Get the names of groom servers, and their peers, in the cluster.
    * 
    * @return the active groom servers in the cluster.
    */  
-  public Collection<String> getActiveGroomNames() {
+  public Map<String, String> getActiveGroomNames() {
     return activeGrooms;
   }
   
@@ -131,16 +132,23 @@ public class ClusterStatus implements Writable {
   //////////////////////////////////////////////
   @Override
   public void write(DataOutput out) throws IOException {
-    if(activeGrooms.size() == 0) {
+    if (activeGrooms.isEmpty()) {
       out.writeInt(numActiveGrooms);
-      out.writeInt(0);
+      out.writeBoolean(false);
     } else {
       out.writeInt(activeGrooms.size());
-      out.writeInt(activeGrooms.size());
-      for(String groom: activeGrooms) {
-        Text.writeString(out, groom);
+      out.writeBoolean(true);
+
+      String[] groomNames = activeGrooms.keySet().toArray(new String[0]);
+      List<String> peerNames = new ArrayList<String>();
+
+      for (String groomName : groomNames) {
+        peerNames.add(activeGrooms.get(groomName));
       }
-    }    
+
+      WritableUtils.writeCompressedStringArray(out, groomNames);
+      WritableUtils.writeCompressedStringArray(out, peerNames.toArray(new String[0]));
+    }
     out.writeInt(tasks);
     out.writeInt(maxTasks);
     WritableUtils.writeEnum(out, state);
@@ -149,14 +157,18 @@ public class ClusterStatus implements Writable {
   @Override
   public void readFields(DataInput in) throws IOException {
     numActiveGrooms = in.readInt();
-    int numGroomNames = in.readInt();
-    String name;
-    if (numGroomNames > 0) {
-      for(int i=0; i < numGroomNames; i++) {
-        name = Text.readString(in);
-        activeGrooms.add(name);
+    boolean groomListFollows = in.readBoolean();
+
+    if (groomListFollows) {
+      String[] groomNames = WritableUtils.readCompressedStringArray(in);
+      String[] peerNames = WritableUtils.readCompressedStringArray(in);
+      activeGrooms = new HashMap<String, String>(groomNames.length);
+
+      for (int i = 0; i < groomNames.length; i++) {
+        activeGrooms.put(groomNames[i], peerNames[i]);
       }
     }
+
     tasks = in.readInt();
     maxTasks = in.readInt();
     state = WritableUtils.readEnum(in, BSPMaster.State.class);

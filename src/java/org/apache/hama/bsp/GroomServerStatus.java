@@ -46,7 +46,7 @@ public class GroomServerStatus implements Writable {
   }
   
   String groomName;
-  String host;
+  String peerName;
   int failures;
   List<TaskStatus> taskReports;
   
@@ -57,10 +57,10 @@ public class GroomServerStatus implements Writable {
     taskReports = new ArrayList<TaskStatus>();
   }
   
-  public GroomServerStatus(String groomName, String host, 
+  public GroomServerStatus(String groomName, String peerName,
       List<TaskStatus> taskReports, int failures, int maxTasks) {
     this.groomName = groomName;
-    this.host = host;
+    this.peerName = peerName;
     this.taskReports = new ArrayList<TaskStatus>(taskReports);
     this.failures = failures;
     this.maxTasks = maxTasks;
@@ -75,8 +75,8 @@ public class GroomServerStatus implements Writable {
    *
    * @return The groom server address in the format hostname:port
    */
-  public String getHost() {
-    return host;
+  public String getPeerName() {
+    return peerName;
   }
   
   /**
@@ -129,7 +129,7 @@ public class GroomServerStatus implements Writable {
   @Override
   public void readFields(DataInput in) throws IOException {
     this.groomName = Text.readString(in);
-    this.host = Text.readString(in);
+    this.peerName = Text.readString(in);
     this.failures = in.readInt();
     this.maxTasks = in.readInt();
     taskReports.clear();
@@ -149,7 +149,7 @@ public class GroomServerStatus implements Writable {
   @Override
   public void write(DataOutput out) throws IOException {
     Text.writeString(out, groomName);
-    Text.writeString(out, host);
+    Text.writeString(out, peerName);
     out.writeInt(failures);
     out.writeInt(maxTasks);
     out.writeInt(taskReports.size());
