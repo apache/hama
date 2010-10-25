@@ -172,6 +172,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-319: groom servers Map in HeartbeatResponse not correctly serialized
+                (Filipe Manana)
     HAMA-317: Remove HBASE_CONF_DIR and HBASE_HEAPSIZE properties (edwardyoon)
     HAMA-315: Uncomment code in checkLocalDirs() (edwardyoon)
     HAMA-314: Remove unnecessary methods from HamaConfiguration (edwardyoon)
