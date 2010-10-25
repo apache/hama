@@ -20,6 +20,7 @@ package org.apache.hama.bsp;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 
 import javax.security.auth.login.LoginException;
 
@@ -551,8 +552,8 @@ public class BSPJobClient extends Configured implements Tool {
    */
   private void listActiveTrackers() throws IOException {
     ClusterStatus c = jobSubmitClient.getClusterStatus(true);
-    Collection<String> trackers = c.getActiveGroomNames();
-    for (String trackerName : trackers) {
+    Map<String, String> trackers = c.getActiveGroomNames();
+    for (String trackerName : trackers.keySet()) {
       System.out.println(trackerName);
     }
   }

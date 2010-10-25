@@ -19,11 +19,13 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -51,16 +53,13 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected ZooKeeper zk = null;
   protected volatile Integer mutex = 0;
 
-  protected final String peerAddr;
-  protected final String bindAddress;
-  protected final int bindPort;
   protected final String bspRoot;
   protected final String zookeeperAddr;
 
   protected final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
   protected final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
   protected final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
-  protected Map<String, String> allPeers = new HashMap<String, String>();
+  protected Set<String> allPeerNames = new HashSet<String>();
   protected InetSocketAddress peerAddress;
 
   /**
@@ -69,10 +68,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public BSPPeer(Configuration conf) throws IOException {
     this.conf = conf;
 
-    peerAddr = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST)
-        + ":" + conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
-    bindAddress = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST);
-    bindPort = conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+    String bindAddress = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST);
+    int bindPort = conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
     bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT);
     zookeeperAddr = conf.get(Constants.ZOOKEEPER_QUORUM)
@@ -86,8 +83,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   public void reinitialize() {
     try {
-      LOG.debug("reinitialize(): " + bindAddress + ":" + bindPort);
-      server = RPC.getServer(this, bindAddress, bindPort, conf);
+      LOG.debug("reinitialize(): " + getPeerName());
+      server = RPC.getServer(this, peerAddress.getHostName(), peerAddress.getPort(), conf);
       server.start();
     } catch (IOException e) {
       e.printStackTrace();
@@ -132,13 +129,13 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    * org.apache.hadoop.io.Writable, org.apache.hadoop.io.Writable)
    */
   @Override
-  public void send(InetSocketAddress hostname, BSPMessage msg)
+  public void send(String peerName, BSPMessage msg)
       throws IOException {
-    LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + hostname.getHostName());
-    ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(hostname);
+    LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
+    ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(peerName);
     if (queue == null) {
       queue = new ConcurrentLinkedQueue<BSPMessage>();
-      outgoingQueues.put(hostname, queue);
+      outgoingQueues.put(getAddress(peerName), queue);
     }
     queue.add(msg);
   }
@@ -186,9 +183,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
-    LOG.debug("[" + peerAddr + "] enter the enterbarrier");
+    LOG.debug("[" + getPeerName() + "] enter the enterbarrier");
     try {
-      zk.create(bspRoot + "/" + peerAddr, new byte[0], Ids.OPEN_ACL_UNSAFE,
+      zk.create(bspRoot + "/" + getPeerName(), new byte[0], Ids.OPEN_ACL_UNSAFE,
           CreateMode.EPHEMERAL);
     } catch (KeeperException e) {
       e.printStackTrace();
@@ -211,7 +208,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   protected boolean leaveBarrier() throws KeeperException, InterruptedException {
-    zk.delete(bspRoot + "/" + peerAddr, 0);
+    zk.delete(bspRoot + "/" + getPeerName(), 0);
 
     while (true) {
       synchronized (mutex) {
@@ -219,7 +216,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         if (list.size() > 0) {
           mutex.wait();
         } else {
-          LOG.debug("[" + peerAddr + "] leave from the leaveBarrier");
+          LOG.debug("[" + getPeerName() + "] leave from the leaveBarrier");
           return true;
         }
       }
@@ -236,11 +233,6 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   @Override
   public void close() throws IOException {
     server.stop();
-  }
-
-  @Override
-  public boolean isRunning() {
-    return true;
   }
 
   @Override
@@ -275,29 +267,19 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   /**
    * @return the string as host:port of this Peer 
    */
-  public String getHostName() {
-    return this.peerAddr;
+  public String getPeerName() {
+    return peerAddress.getHostName() + ":" + peerAddress.getPort();
   }
 
-  /**
-   * @return The address of this peer.
-   */
-  public InetSocketAddress getAddress() {
-    return peerAddress;
-  }
-
-  public InetSocketAddress getAddress(String hostname) {
-    String peerAddr = allPeers.get(hostname);
-    String[] peerAddrParts = peerAddr.split(":");
+  private InetSocketAddress getAddress(String peerName) {
+    String[] peerAddrParts = peerName.split(":");
     return new InetSocketAddress(peerAddrParts[0], Integer
         .parseInt(peerAddrParts[1]));
   }
 
-  /**
-   * @return all the other peers executing tasks from the same job.
-   */
-  public Map<String, String> getAllPeers() {
-    return allPeers;
+  @Override
+  public Set<String> getAllPeerNames() {
+    return allPeerNames;
   }
 
   /**
@@ -306,8 +288,13 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    * 
    * @param allPeers
    */
-  void setPeers(Map<String, String> allPeers) {
-    this.allPeers = allPeers;
+  void setAllPeerNames(Collection<String> allPeerNames) {
+    this.allPeerNames = new HashSet<String>(allPeerNames);
+  }
+
+  @Override
+  public int getNumCurrentMessages() {
+    return localQueue.size();
   }
 
 }

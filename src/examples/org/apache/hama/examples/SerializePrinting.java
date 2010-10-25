@@ -18,7 +18,6 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,10 +41,10 @@ public class SerializePrinting {
       int num = Integer.parseInt(conf.get("bsp.peers.num"));
 
       int i = 0;
-      for(Map.Entry<String, String> e : bspPeer.getAllPeers().entrySet()) {
-        if(bspPeer.getHostName().equals(e.getValue())) {
+      for (String otherPeer : bspPeer.getAllPeerNames()) {
+        if (bspPeer.getPeerName().equals(otherPeer)) {
           LOG.info("Hello BSP from " + i + " of " + num + ": "
-              + bspPeer.getHostName());
+              + bspPeer.getPeerName());
         }
         
         Thread.sleep(200);

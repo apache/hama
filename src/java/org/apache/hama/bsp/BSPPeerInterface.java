@@ -19,7 +19,7 @@ package org.apache.hama.bsp;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.InetSocketAddress;
+import java.util.Set;
 
 import org.apache.hama.Constants;
 import org.apache.zookeeper.KeeperException;
@@ -35,28 +35,37 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
    * @param msg
    * @throws IOException
    */
-  public void send(InetSocketAddress hostname, BSPMessage msg)
+  public void send(String peerName, BSPMessage msg)
       throws IOException;
 
   public void put(BSPMessage msg) throws IOException;
   
   /**
-   * @return the current message
+   * @return A message from the peer's received messages queue (a FIFO).
    * @throws IOException
    */
   public BSPMessage getCurrentMessage() throws IOException;
 
   /**
-   * Synchronize all of the data in the local queue to other BSP Peers.
+   * @return The number of messages in the peer's received messages queue.
+   */
+  public int getNumCurrentMessages();
+
+  /**
+   * Sends all the messages in the outgoing message queues to the corresponding remote peers.
    * 
    * @throws InterruptedException
    * @throws KeeperException
    */
   public void sync() throws IOException, KeeperException, InterruptedException;
+
+  /**
+   * @return The name of this peer in the format "hostname:port".
+   */
+  public String getPeerName();
   
-  public boolean isRunning();
-  
-  public InetSocketAddress getAddress();
-  
-  public String getHostName();
+  /**
+   * @return The names of all the peers executing tasks from the same job (including this peer).
+   */
+  public Set<String> getAllPeerNames();
 }

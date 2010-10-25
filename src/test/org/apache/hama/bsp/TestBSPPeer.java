@@ -20,10 +20,11 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -84,6 +85,11 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
 
     public BSPPeerThread(Configuration conf) throws IOException {
       this.peer = new BSPPeer(conf);
+      Set<String> peerNames = new HashSet<String>(NUM_PEER);
+      for (int i = 0; i < NUM_PEER; i++) {
+        peerNames.add("localhost_" + (30000 + i));
+      }
+      peer.setAllPeerNames(peerNames);
     }
 
     @Override
@@ -91,7 +97,6 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       int randomTime;
       byte[] dummyData = new byte[PAYLOAD];
       BSPMessage msg = null;
-      InetSocketAddress addr = null;
 
       for (int i = 0; i < ROUND; i++) {
         randomTime = r.nextInt(MAXIMUM_DURATION) + 5;
@@ -99,9 +104,9 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         for (int j = 0; j < 10; j++) {
           r.nextBytes(dummyData);
           msg = new BSPMessage(Bytes.tail(dummyData, 128), dummyData);
-          addr = new InetSocketAddress("localhost", 30000 + j);
+          String peerName = "localhost_" + (30000 + j);
           try {
-            peer.send(addr, msg);
+            peer.send(peerName, msg);
           } catch (IOException e) {
             LOG.info(e);
           }
@@ -123,6 +128,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
           e.printStackTrace();
         }
 
+        assertEquals(peer.getNumCurrentMessages(), 1);
         verifyPayload();
       }
     }

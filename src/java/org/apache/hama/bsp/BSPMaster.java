@@ -88,8 +88,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   // (groom name --> last sent HeartBeatResponse)
   Map<String, HeartbeatResponse> groomToHeartbeatResponseMap = new TreeMap<String, HeartbeatResponse>();
   private HashMap<String, GroomServerStatus> groomServers = new HashMap<String, GroomServerStatus>();
-  // maps groom server names to hosts (hostname:port)
-  private HashMap<String, String> groomServerHosts = new HashMap<String, String>();
+  // maps groom server names to peer names
+  private HashMap<String, String> groomServerPeers = new HashMap<String, String>();
 
   // Jobs' Meta Data
   private Integer nextJobId = Integer.valueOf(1);
@@ -366,7 +366,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
           Collections.<String, String>emptyMap());
     }
 
-    HeartbeatResponse response = new HeartbeatResponse(newResponseId, null, groomServerHosts);
+    HeartbeatResponse response = new HeartbeatResponse(newResponseId, null, groomServerPeers);
     List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
 
     updateTaskStatuses(status);
@@ -514,7 +514,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     }
 
     if (initialContact) {
-      groomServerHosts.put(groomStatus.getGroomName(), groomStatus.getHost());
+      groomServerPeers.put(groomStatus.getGroomName(), groomStatus.getPeerName());
     }
 
     return true;
@@ -550,15 +550,23 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
   @Override
   public ClusterStatus getClusterStatus(boolean detailed) {
-    synchronized (groomServers) {
+    int numGroomServers;
+    Map<String, String> groomPeersMap = null;
+
+    // give the caller a snapshot of the cluster status
+    synchronized (this) {
+      numGroomServers = groomServerPeers.size();
       if (detailed) {
-        List<String> groomNames = groomServerNames();
-        return new ClusterStatus(groomNames, totalTasks, totalTaskCapacity,
-            state);
-      } else {
-        return new ClusterStatus(groomServers.size(), totalTasks,
-            totalTaskCapacity, state);
+        groomPeersMap = new HashMap<String, String>(groomServerPeers);
       }
+    }
+
+    if (detailed) {
+      return new ClusterStatus(groomPeersMap, totalTasks, totalTaskCapacity,
+          state);
+    } else {
+      return new ClusterStatus(numGroomServers, totalTasks, totalTaskCapacity,
+          state);
     }
   }
 

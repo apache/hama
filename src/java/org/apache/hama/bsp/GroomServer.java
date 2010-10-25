@@ -128,7 +128,7 @@ public class GroomServer implements Runnable {
     this.conf.set(Constants.PEER_HOST, localHostname);
     bspPeer = new BSPPeer(conf);
 
-    this.groomServerName = "groomd_" + bspPeer.getHostName().replace(':', '_');
+    this.groomServerName = "groomd_" + bspPeer.getPeerName().replace(':', '_');
     LOG.info("Starting groom: " + this.groomServerName);
 
     DistributedCache.purgeCache(this.conf);
@@ -218,11 +218,11 @@ public class GroomServer implements Runnable {
         HeartbeatResponse heartbeatResponse = transmitHeartBeat(now);
 
         if (acceptNewTasks) {
-          bspPeer.setPeers(heartbeatResponse.getGroomServers());
+          bspPeer.setAllPeerNames(heartbeatResponse.getGroomServers().values());
         }
 
-        for (Map.Entry<String, String> peer : bspPeer.getAllPeers().entrySet()) {
-          LOG.debug("Remote peer, host:port is " + peer.getKey());
+        for (String peer : bspPeer.getAllPeerNames()) {
+          LOG.debug("Remote peer, host:port is " + peer);
         }
 
         GroomServerAction[] actions = heartbeatResponse.getActions();
@@ -400,7 +400,7 @@ public class GroomServer implements Runnable {
     //
     if (status == null) {
       synchronized (this) {
-        status = new GroomServerStatus(groomServerName, bspPeer.getHostName(),
+        status = new GroomServerStatus(groomServerName, bspPeer.getPeerName(),
             cloneAndResetRunningTaskStatuses(), failures, maxCurrentTasks);
       }
     } else {
@@ -605,9 +605,5 @@ public class GroomServer implements Runnable {
       throw new RuntimeException("Failed construction of " + "Master: "
           + groomServerClass.toString(), e);
     }
-  }
-
-  public String getServerName() {
-    return bspPeer.getHostName();
   }
 }

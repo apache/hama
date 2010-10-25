@@ -172,6 +172,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-316: Renaming and Refactoring methods in BSPPeerInterface (Filipe Manana)
     HAMA-319: groom servers Map in HeartbeatResponse not correctly serialized
                 (Filipe Manana)
     HAMA-317: Remove HBASE_CONF_DIR and HBASE_HEAPSIZE properties (edwardyoon)
