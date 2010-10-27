@@ -87,7 +87,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       this.peer = new BSPPeer(conf);
       Set<String> peerNames = new HashSet<String>(NUM_PEER);
       for (int i = 0; i < NUM_PEER; i++) {
-        peerNames.add("localhost_" + (30000 + i));
+        peerNames.add("localhost:" + (30000 + i));
       }
       peer.setAllPeerNames(peerNames);
     }
@@ -104,7 +104,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         for (int j = 0; j < 10; j++) {
           r.nextBytes(dummyData);
           msg = new BSPMessage(Bytes.tail(dummyData, 128), dummyData);
-          String peerName = "localhost_" + (30000 + j);
+          String peerName = "localhost:" + (30000 + j);
           try {
             peer.send(peerName, msg);
           } catch (IOException e) {
@@ -131,6 +131,8 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         assertEquals(peer.getNumCurrentMessages(), 1);
         verifyPayload();
       }
+      
+      assertEquals(peer.getNumCurrentMessages(), NUM_PEER * ROUND);
     }
 
     private void verifyPayload() {
