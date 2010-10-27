@@ -50,6 +50,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-254: Add news about rid of MapReduce and Hbase (edwardyoon)
     HAMA-320: Add twitter widget to website (edwardyoon)
     HAMA-300: Refactoring launchTask() method in GroomServer (edwardyoon)
     HAMA-311: Add unit tests for IPC package (edwardyoon)
