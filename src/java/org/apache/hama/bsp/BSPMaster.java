@@ -451,7 +451,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
     // tracker --> taskid
     if (tracker != null) {
-      TreeSet trackerSet = (TreeSet) trackerToTaskMap.get(tracker);
+      TreeSet<String> trackerSet = trackerToTaskMap.get(tracker);
       if (trackerSet != null) {
         trackerSet.remove(taskid);
       }
@@ -463,6 +463,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     LOG.debug("Removing task '" + taskid + "'");
   }
 
+  /*
   private List<GroomServerAction> getTasksToKill(String groomName) {
     Set<String> taskIds = (TreeSet<String>) trackerToTaskMap.get(groomName);
     if (taskIds != null) {
@@ -497,7 +498,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     return null;
 
   }
-
+  */
+  
   /**
    * Process incoming heartbeat messages from the groom.
    */
@@ -709,9 +711,9 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     taskidToTrackerMap.put(taskid, groomServer);
 
     // tracker --> taskid
-    TreeSet taskset = (TreeSet) trackerToTaskMap.get(groomServer);
+    TreeSet<String> taskset = trackerToTaskMap.get(groomServer);
     if (taskset == null) {
-      taskset = new TreeSet();
+      taskset = new TreeSet<String>();
       trackerToTaskMap.put(groomServer, taskset);
     }
     taskset.add(taskid);

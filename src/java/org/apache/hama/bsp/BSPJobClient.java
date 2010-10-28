@@ -19,7 +19,6 @@ package org.apache.hama.bsp;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Map;
 
 import javax.security.auth.login.LoginException;
