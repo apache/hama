@@ -31,7 +31,7 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
    * Messages sent by this method are not guaranteed to be received in a sent
    * order.
    * 
-   * @param hostname
+   * @param peerName
    * @param msg
    * @throws IOException
    */
