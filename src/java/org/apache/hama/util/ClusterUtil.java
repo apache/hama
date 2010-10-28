@@ -94,7 +94,7 @@ public class ClusterUtil {
   public static String startup(final BSPMaster m,
       final List<ClusterUtil.GroomServerThread> groomservers, Configuration conf) throws IOException, InterruptedException {
     if (m != null) {
-      m.startMaster((HamaConfiguration) conf);
+      BSPMaster.startMaster((HamaConfiguration) conf);
     }
 
     if (groomservers != null) {
