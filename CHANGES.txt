@@ -175,6 +175,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-324: Removing javadoc warnings and useless libraries (edwardyoon)
     HAMA-322: Make sure failed assertions on test threads are reported
                (Filipe Manana via edwardyoon)  
     HAMA-316: Renaming and Refactoring methods in BSPPeerInterface (Filipe Manana)
