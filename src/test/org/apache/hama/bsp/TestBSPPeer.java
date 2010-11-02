@@ -28,6 +28,9 @@ import java.util.Set;
 
 import junit.framework.AssertionFailedError;
 
+import net.sourceforge.groboutils.junit.v1.MultiThreadedTestRunner;
+import net.sourceforge.groboutils.junit.v1.TestRunnable;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -81,11 +84,10 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
     }
   }
 
-  public class BSPPeerThread extends Thread {
+  public class BSPPeerThread extends TestRunnable {
     private BSPPeer peer;
     private int MAXIMUM_DURATION = 5;
     private int lastTwoDigitsOfPort;
-    private int errorCount = 0;
 
     public BSPPeerThread(Configuration conf) throws IOException {
       lastTwoDigitsOfPort = conf.getInt(Constants.PEER_PORT, 0) - 30000;
@@ -97,7 +99,8 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       peer.setAllPeerNames(peerNames);
     }
 
-    public void run() throws AssertionFailedError {
+    @Override
+    public void runTest() throws AssertionFailedError {
       int randomTime;
       byte[] dummyData = new byte[PAYLOAD];
       BSPMessage msg = null;
@@ -141,28 +144,18 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       LOG.info("[" + peer.getPeerName() + "] verifying " + numMessages
           + " messages");
 
-      try {
-        if (lastTwoDigitsOfPort < 10) {
-          assertEquals(20, numMessages);
-        } else {
-          assertEquals(0, numMessages);
-        }
-      } catch (AssertionFailedError afe) {
-        LOG.error(afe);
-        errorCount++;
+      if (lastTwoDigitsOfPort < 10) {
+        assertEquals(20, numMessages);
+      } else {
+        assertEquals(0, numMessages);
       }
 
       BSPMessage msg = null;
 
       try {
         while ((msg = peer.getCurrentMessage()) != null) {
-          try {
-            assertEquals(Bytes.compareTo(msg.tag, 0, 128, msg.data,
-                msg.data.length - 128, 128), 0);
-          } catch (AssertionFailedError afe) {
-            LOG.error(afe);
-            errorCount++;
-          }
+          assertEquals(Bytes.compareTo(msg.tag, 0, 128, msg.data,
+              msg.data.length - 128, 128), 0);
         }
       } catch (IOException e) {
         LOG.error(e);
@@ -174,37 +167,24 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
     public BSPPeer getBSPPeer() {
       return this.peer;
     }
-
-    public int getErrorCount() {
-      return this.errorCount;
-    }
   }
 
-  public void testSync() throws InterruptedException, IOException {
+  public void testSync() throws Throwable  {
 
-    BSPPeerThread thread;
     conf.setInt("bsp.peers.num", NUM_PEER);
     conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     conf.set(Constants.PEER_HOST, "localhost");
     conf.set(Constants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");
 
+    TestRunnable[] threads = new TestRunnable[NUM_PEER];
+
     for (int i = 0; i < NUM_PEER; i++) {
       conf.set(Constants.PEER_PORT, String.valueOf(30000 + i));
-      thread = new BSPPeerThread(conf);
-      list.add(thread);
+      threads[i] = new BSPPeerThread(conf);
     }
 
-    for (int i = 0; i < NUM_PEER; i++) {
-      list.get(i).start();
-    }
-
-    for (int i = 0; i < NUM_PEER; i++) {
-      list.get(i).join();
-    }
-
-    for (int i = 0; i < NUM_PEER; i++) {
-      assertEquals(list.get(i).getErrorCount(), 0);
-    }
+    MultiThreadedTestRunner mttr = new MultiThreadedTestRunner(threads);
+    mttr.runTestRunnables();
   }
 
   @Override
