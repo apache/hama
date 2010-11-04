@@ -26,6 +26,9 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.bsp.GroomServer;
 
+/**
+ * This class starts and runs the GroomServer 
+ */
 public class GroomServerRunner extends Configured implements Tool {
 
   public static final Log LOG = LogFactory.getLog(GroomServerRunner.class);
