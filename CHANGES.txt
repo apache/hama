@@ -50,6 +50,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-325: Add package.html to each package and few comments (edwardyoon)
     HAMA-322: JUnit test threads with GroboTestingJUnit (Filipe Manana via edwardyoon)
     HAMA-323: Remove generic warnings (edwardyoon)
     HAMA-254: Add news about rid of MapReduce and Hbase (edwardyoon)

@@ -126,7 +126,7 @@
     For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
     By default this is set to localhost for local and pseudo-distributed modes
     of operation. For a fully-distributed setup, this should be set to a full
-    list of ZooKeeper quorum servers. If HBASE_MANAGES_ZK is set in hbase-env.sh
+    list of ZooKeeper quorum servers. If HAMA_MANAGES_ZK is set in hama-env.sh
     this is the list of servers which we will start/stop ZooKeeper on.
     </description>
   </property>
