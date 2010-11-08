@@ -56,6 +56,13 @@ public class BSPTaskRunner extends Thread {
     } catch (InterruptedException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
+    } finally {
+      try {
+        finalize();
+      } catch (Throwable e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
     }
   }
 
