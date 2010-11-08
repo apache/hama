@@ -24,7 +24,41 @@
     <title>Welcome to Hama project</title>
   </header>
   <body>
-
+<script src="http://widgets.twimg.com/j/2/widget.js"></script>
+<script>
+new TWTR.Widget({
+  version: 2,
+  type: 'search',
+  id: 'credit2',
+  search: '\"apache hama\" OR apachehama OR #ApacheHama',
+  interval: 6000,
+  title: 'Recent Tweets About Apache Hama',
+  subject: '#ApacheHama on Twitter',
+  width: 206,
+  height: 280,
+  theme: {
+    shell: {
+      background: '#4a6d8c',
+      color: '#ffffff'
+    },
+    tweets: {
+      background: '#ffffff',
+      color: '#444444',
+      links: '#1985b5'
+    }
+  },
+  features: {
+    scrollbar: false,
+    loop: true,
+    live: true,
+    hashtags: true,
+    timestamp: true,
+    avatars: true,
+    toptweets: true,
+    behavior: 'default'
+  }
+}).render().start();
+</script>
     <section>
     <title>Recent News</title>
     <ul>
@@ -44,9 +78,8 @@
      <section>
       <title> Overview </title>
       <p>
-      <strong>Hama</strong> Apache Hama is a distributed computing framework based on 
-      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations (e.g., matrix, graph, network, ..., etc), 
-      currently being incubated as one of the incubator project by the Apache Software Foundation.
+      <strong>Hama</strong> is a distributed computing framework based on 
+      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations.
       </p>
     </section>
     
