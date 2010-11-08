@@ -545,9 +545,9 @@ public class GroomServer implements Runnable {
           e.printStackTrace();
         }
 
-        // If local/outgoing queues are empty, task is done.
         if (bspPeer.localQueue.size() == 0
-            && bspPeer.outgoingQueues.size() == 0) {
+            && bspPeer.outgoingQueues.size() == 0
+            && !runner.isAlive()) {
           taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
           acceptNewTasks = true;
           break;

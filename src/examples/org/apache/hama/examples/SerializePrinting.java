@@ -34,6 +34,7 @@ public class SerializePrinting {
   public static class HelloBSP extends BSP {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private Configuration conf;
+    private final static int PRINT_INTERVAL = 5000;
 
     @Override
     public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
@@ -47,7 +48,7 @@ public class SerializePrinting {
               + bspPeer.getPeerName());
         }
         
-        Thread.sleep(200);
+        Thread.sleep(PRINT_INTERVAL);
         bspPeer.sync();
         i++;
       }
