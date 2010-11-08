@@ -17,7 +17,119 @@
    limitations under the License.
 -->
 
+<head>
+   <title>Hama</title>
+</head>
 <body>
-The Hama Overview.
+Hama is a distributed computing framework based on BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations.
+
+<h2 id="Requirements">Requirements</h2>
+<ul>
+<li>hadoop-0.20.x for HDFS<span class="anchor" id="line-10"></li>
+<li>Sun Java JDK 1.5.x or higher version</li>
+</ul>
+
+<h2 id="Startup_script">Startup script</h2>
+The <i>$HAMA_HOME/bin</i> directory contains some script used to start up the Hama daemons.
+<ul>
+<li>
+<i>start-bspd.sh</i> - Starts all Hama daemons, the BSPMaster, GroomServers and Zookeeper.
+</li>
+</ul>
+
+<h2 id="Configuration_files">Configuration files</h2>
+
+The <i>$HAMA_HOME/conf</i> directory contains some configuration files for Hama. These are:
+<ul>
+<li>
+<i>hama-env.sh</i> - This file contains some environment variable settings used by Hama. You can use these to affect some aspects of Hama daemon behavior, 
+such as where log files are stored, the maximum amount of heap used etc. The only variable you should need to change in this file is JAVA_HOME, 
+which specifies the path to the Java 1.5.x installation used by Hama.
+</li>
+<li>
+<i>groomservers</i> - This file lists the hosts, one per line, where the GroomServer daemons will run. By default this contains the single entry localhost.</li>
+<li>
+<i>hama-default.xml</i> - This file contains generic default settings for Hama daemons.&nbsp;<strong>Do not modify this file</strong>.
+</li>
+<li>
+<i>hama-site.xml</i> - This file contains site specific settings for all Hama daemons and BSP jobs. 
+This file is empty by default. Settings in this file override those in hama-default.xml. 
+This file should contain settings that must be respected by all servers and clients in a Hama installation.
+</li>
+</ul>
+<div class="line867">
+</div>
+<h2 id="Setting_up_Hama">Setting up Hama</h2>
+This section describes how to get started by setting up a Hama cluster.
+<ul>
+<li>
+<strong>BSPMaster and Zookeeper settings</strong> - Figure out where to run your HDFS namenode and BSPMaster. 
+Set the variable <i>bsp.master.address</i> to the BSPMaster's intended host:port. 
+Set the variable <i>fs.default.name</i> to the HDFS Namenode's intended host:port.
+</li>
+</ul>
+
+An example of a hama-site.xml file:
+<pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
+&lt;!--?xml version="1.0"?--&gt;
+&lt;!--?xml-stylesheet type="text/xsl" href="configuration.xsl"?--&gt;
+&lt;configuration&gt;
+  &lt;property&gt;
+    &lt;name&gt;bsp.master.address&lt;/name&gt;
+    &lt;value&gt;mydomain.com:40000&lt;/value&gt;
+    &lt;description&gt;The address of the bsp master server. Either the
+    literal string "local" or a host:port for distributed mode
+    &lt;/description&gt;
+  &lt;/property&gt;
+  
+  &lt;property&gt;
+    &lt;name&gt;fs.default.name&lt;/name&gt;
+    &lt;value&gt;hdfs://mydomain.com:9000/&lt;/value&gt;
+    &lt;description&gt;
+      The name of the default file system. Either the literal string
+      "local" or a host:port for HDFS.
+    &lt;/description&gt;
+  &lt;/property&gt;
+  
+  &lt;property&gt;
+    &lt;name&gt;hama.zookeeper.quorum&lt;/name&gt;
+    &lt;value&gt;mydomain.com&lt;/value&gt;
+    &lt;description&gt;Comma separated list of servers in the ZooKeeper Quorum.
+    For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
+    By default this is set to localhost for local and pseudo-distributed modes
+    of operation. For a fully-distributed setup, this should be set to a full
+    list of ZooKeeper quorum servers. If HAMA_MANAGES_ZK is set in hama-env.sh
+    this is the list of servers which we will start/stop zookeeper on.
+    &lt;/description&gt;
+  &lt;/property&gt;
+&lt;/configuration&gt;
+</pre>
+
+<h3 id="Starting_a_Hama_cluster">Starting a Hama cluster</h3>
+
+Run the command:
+<pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
+  # $HAMA_HOME/bin/start-bspd.sh
+</pre>
+
+This will startup a BSPMaster, GroomServers and Zookeeper on your machine.
+
+<h3 id="Stopping_a_Hama_cluster">Stopping a Hama cluster</h3>
+
+Run the command:
+<pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
+  # $HAMA_HOME/bin/stop-bspd.sh
+</pre>
+
+to stop all the daemons running on your cluster.
+
+
+<h2 id="Run_the_BSP_Examples">Run the BSP Examples</h2>
+Run the command:
+<pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
+  # $HAMA_HOME/bin/hama jar build/hama-0.2.0-dev-examples.jar pi or test
+</pre>
+
 </body>
 </html>
+
