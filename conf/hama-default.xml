@@ -122,11 +122,11 @@
   <property>
     <name>hama.zookeeper.barriersync</name>
     <value>localhost</value>
-    <description>Comma separated list of servers in the ZooKeeper barriersync.
+    <description>Comma separated list of servers in the ZooKeeper quorum.
     For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
     By default this is set to localhost for local and pseudo-distributed modes
     of operation. For a fully-distributed setup, this should be set to a full
-    list of ZooKeeper barriersync servers. If HAMA_MANAGES_ZK is set in hama-env.sh
+    list of ZooKeeper quorum servers. If HAMA_MANAGES_ZK is set in hama-env.sh
     this is the list of servers which we will start/stop ZooKeeper on.
     </description>
   </property>
