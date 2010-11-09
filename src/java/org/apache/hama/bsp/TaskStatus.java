@@ -45,7 +45,8 @@ class TaskStatus implements Writable, Cloneable {
   private volatile State runState;
   private String stateString;
   private String groomServer;
-
+  private long superstepCount;
+  
   private long startTime;
   private long finishTime;
 
@@ -56,6 +57,7 @@ class TaskStatus implements Writable, Cloneable {
    */
   public TaskStatus() {
     taskId = new String();
+    this.superstepCount = 0;
   }
 
   public TaskStatus(String taskId, float progress, State runState,
@@ -66,6 +68,7 @@ class TaskStatus implements Writable, Cloneable {
     this.stateString = stateString;
     this.groomServer = groomServer;
     this.phase = phase;
+    this.superstepCount = 0;
   }
 
   // //////////////////////////////////////////////////
@@ -208,6 +211,20 @@ class TaskStatus implements Writable, Cloneable {
       this.finishTime = finishTime;
     }
   }
+  
+  /**
+   * @return The number of BSP super steps executed by the task.
+   */
+  public long getSuperstepCount() {
+    return superstepCount;
+  }
+  
+  /**
+   * Increments the number of BSP super steps executed by the task.
+   */
+  public void incrementSuperstepCount() {
+    superstepCount += 1;
+  }
 
   @Override
   public Object clone() {
@@ -232,6 +249,7 @@ class TaskStatus implements Writable, Cloneable {
     this.phase = WritableUtils.readEnum(in, Phase.class);
     this.startTime = in.readLong();
     this.finishTime = in.readLong();
+    this.superstepCount = in.readLong();
   }
 
   @Override
@@ -243,5 +261,6 @@ class TaskStatus implements Writable, Cloneable {
     WritableUtils.writeEnum(out, phase);
     out.writeLong(startTime);
     out.writeLong(finishTime);
+    out.writeLong(superstepCount);
   }
 }

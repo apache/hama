@@ -194,4 +194,8 @@ class TaskInProgress {
   public void updateStatus(TaskStatus status) {
     taskStatuses.put(status.getTaskId(), status);
   }
+  
+  public TaskStatus getTaskStatus(String taskId) {
+    return this.taskStatuses.get(taskId);
+  }
 }
