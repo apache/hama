@@ -130,6 +130,11 @@ public class BSPJobClient extends Configured implements Tool {
       return status.getRunState() == JobStatus.SUCCEEDED;
     }
 
+    public synchronized long getSuperstepCount() throws IOException {
+      ensureFreshStatus();
+      return status.getSuperstepCount();
+    }
+    
     /**
      * Blocks until the job is finished
      */
@@ -385,19 +390,43 @@ public class BSPJobClient extends Configured implements Tool {
       IOException {
     BSPJobClient jc = new BSPJobClient(job.getConf());
     RunningJob running = jc.submitJobInternal(job);
-    String jobId = running.getID().toString();
-    LOG.info("Running job: " + jobId);
+    BSPJobID jobId = running.getID();
+    LOG.info("Running job: " + jobId.toString());
 
     while (true) {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+      }
+
       if (running.isComplete()) {
-        LOG.info("Job complete: " + jobId);
         break;
       }
+
+      running = jc.getJob(jobId);
     }
 
+    LOG.info("Job complete: " + jobId);
+    LOG.info("The total number of supersteps: " + running.getSuperstepCount());
+    
     // TODO if error found, kill job
     // running.killJob();
     jc.close();
+  }
+
+  /**
+   * Get an RunningJob object to track an ongoing job. Returns null if the id
+   * does not correspond to any known job.
+   * 
+   * @throws IOException 
+   */
+  private RunningJob getJob(BSPJobID jobId) throws IOException {
+    JobStatus status = jobSubmitClient.getJobStatus(jobId);
+    if (status != null) {
+      return new NetworkedJob(status);
+    } else {
+      return null;
+    }
   }
 
   /**

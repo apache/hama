@@ -51,7 +51,8 @@ public class JobStatus implements Writable, Cloneable {
   private long startTime;
   private String schedulingInfo = "NA";
   private String user;
-
+  private long superstepCount;
+  
   public JobStatus() {
   }
 
@@ -66,13 +67,19 @@ public class JobStatus implements Writable, Cloneable {
 
   public JobStatus(BSPJobID jobid, float setupProgress, float progress,
       float cleanupProgress, int runState) {
+    this(jobid, 0.0f, progress, cleanupProgress, runState, 0);
+  }
+
+  public JobStatus(BSPJobID jobid, float setupProgress, float progress,
+      float cleanupProgress, int runState, long superstepCount) {
     this.jobid = jobid;
     this.setupProgress = setupProgress;
     this.progress = progress;
     this.cleanupProgress = cleanupProgress;
     this.runState = runState;
+    this.superstepCount = superstepCount;
   }
-
+  
   public BSPJobID getJobID() {
     return jobid;
   }
@@ -109,6 +116,10 @@ public class JobStatus implements Writable, Cloneable {
     this.runState = state;
   }
 
+  public synchronized long getSuperstepCount() {
+    return superstepCount;
+  }
+  
   synchronized void setStartTime(long startTime) {
     this.startTime = startTime;
   }
@@ -160,6 +171,7 @@ public class JobStatus implements Writable, Cloneable {
     out.writeInt(runState);
     out.writeLong(startTime);
     Text.writeString(out, schedulingInfo);
+    out.writeLong(superstepCount);
   }
 
   public synchronized void readFields(DataInput in) throws IOException {
@@ -171,5 +183,7 @@ public class JobStatus implements Writable, Cloneable {
     this.runState = in.readInt();
     this.startTime = in.readLong();
     this.schedulingInfo = Text.readString(in);
+    this.superstepCount = in.readLong();
   }
+
 }

@@ -534,6 +534,7 @@ public class GroomServer implements Runnable {
 
     public void launchTask() throws IOException {
       taskStatus.setRunState(TaskStatus.State.RUNNING);
+      bspPeer.setCurrentTaskStatus(taskStatus);
       this.runner = task.createRunner(bspPeer, this.jobConf);
       this.runner.start();
 

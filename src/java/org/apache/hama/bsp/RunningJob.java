@@ -111,4 +111,6 @@ public interface RunningJob {
    */
   public void killTask(TaskAttemptID taskId, boolean shouldFail)
       throws IOException;
+
+  public long getSuperstepCount() throws IOException;
 }

@@ -61,6 +61,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
   protected Set<String> allPeerNames = new HashSet<String>();
   protected InetSocketAddress peerAddress;
+  protected TaskStatus currentTaskStatus;
 
   /**
    * 
@@ -68,8 +69,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public BSPPeer(Configuration conf) throws IOException {
     this.conf = conf;
 
-    String bindAddress = conf.get(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST);
-    int bindPort = conf.getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+    String bindAddress = conf.get(Constants.PEER_HOST,
+        Constants.DEFAULT_PEER_HOST);
+    int bindPort = conf
+        .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
     bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT);
     zookeeperAddr = conf.get(Constants.ZOOKEEPER_QUORUM)
@@ -84,7 +87,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public void reinitialize() {
     try {
       LOG.debug("reinitialize(): " + getPeerName());
-      server = RPC.getServer(this, peerAddress.getHostName(), peerAddress.getPort(), conf);
+      server = RPC.getServer(this, peerAddress.getHostName(), peerAddress
+          .getPort(), conf);
       server.start();
     } catch (IOException e) {
       e.printStackTrace();
@@ -129,8 +133,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    * org.apache.hadoop.io.Writable, org.apache.hadoop.io.Writable)
    */
   @Override
-  public void send(String peerName, BSPMessage msg)
-      throws IOException {
+  public void send(String peerName, BSPMessage msg) throws IOException {
     LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
     ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(peerName);
     if (queue == null) {
@@ -170,7 +173,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       }
     }
 
-    // Should we clearing outgoingQueues?
+    // Clear outgoing queues.
     this.outgoingQueues.clear();
 
     enterBarrier();
@@ -180,13 +183,14 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     // the number of peers, and the load of zookeeper.
     // It should fixed to some flawless way.
     leaveBarrier();
+    currentTaskStatus.incrementSuperstepCount();
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
     LOG.debug("[" + getPeerName() + "] enter the enterbarrier");
     try {
-      zk.create(bspRoot + "/" + getPeerName(), new byte[0], Ids.OPEN_ACL_UNSAFE,
-          CreateMode.EPHEMERAL);
+      zk.create(bspRoot + "/" + getPeerName(), new byte[0],
+          Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
     } catch (KeeperException e) {
       e.printStackTrace();
     } catch (InterruptedException e) {
@@ -265,7 +269,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   /**
-   * @return the string as host:port of this Peer 
+   * @return the string as host:port of this Peer
    */
   public String getPeerName() {
     return peerAddress.getHostName() + ":" + peerAddress.getPort();
@@ -292,9 +296,26 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     this.allPeerNames = new HashSet<String>(allPeerNames);
   }
 
-  @Override
+  /**
+   * @return the number of messages
+   */
   public int getNumCurrentMessages() {
     return localQueue.size();
   }
 
+  /**
+   * Sets the current status
+   * 
+   * @param currentTaskStatus
+   */
+  public void setCurrentTaskStatus(TaskStatus currentTaskStatus) {
+    this.currentTaskStatus = currentTaskStatus;
+  }
+
+  /**
+   * @return the count of current super-step
+   */
+  public long getSuperstepCount() {
+    return currentTaskStatus.getSuperstepCount();
+  }
 }

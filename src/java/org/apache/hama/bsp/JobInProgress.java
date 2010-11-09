@@ -28,11 +28,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 
-/*************************************************************
+/**
  * JobInProgress maintains all the info for keeping a Job on the straight and
  * narrow. It keeps its JobProfile and its latest JobStatus, plus a set of
- * tables for doing bookkeeping of its Tasks.
- * ***********************************************************
+ * tables for doing bookkeeping of its Tasks.ss
  */
 class JobInProgress {
   /**
@@ -64,6 +63,7 @@ class JobInProgress {
   private BSPJobID jobId;
   final BSPMaster master;
   List<TaskInProgress> tasks;
+  private long superstepCounter;
 
   public JobInProgress(BSPJobID jobId, BSPMaster master, Configuration conf)
       throws IOException {
@@ -77,6 +77,7 @@ class JobInProgress {
     this.status = new JobStatus(jobId, 0.0f, 0.0f, JobStatus.PREP);
     this.startTime = System.currentTimeMillis();
     status.setStartTime(startTime);
+    this.superstepCounter = 0;
 
     this.localJobFile = master.getLocalPath(BSPMaster.SUBDIR + "/" + jobId
         + ".xml");
@@ -96,7 +97,7 @@ class JobInProgress {
     if (jarFile != null) {
       fs.copyToLocalFile(new Path(jarFile), localJarFile);
     }
-    
+
   }
 
   // ///////////////////////////////////////////////////
@@ -141,7 +142,7 @@ class JobInProgress {
   public synchronized Task obtainNewTask(GroomServerStatus status,
       int clusterSize, int numUniqueHosts) {
     LOG.debug("clusterSize: " + clusterSize);
-    
+
     Task result = null;
     try {
       TaskInProgress tip = new TaskInProgress(getJobID(), this.jobFile
@@ -175,18 +176,24 @@ class JobInProgress {
 
     this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f,
         JobStatus.RUNNING);
-    
-    if(allDone) {
+
+    if (allDone) {
       LOG.debug("Job successfully done.");
-      
-      this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f,
-          JobStatus.SUCCEEDED);
-      garbageCollect();        
+
+      this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f, 1.0f,
+          JobStatus.SUCCEEDED, superstepCounter);
+      garbageCollect();
     }
   }
 
-  public void updateTaskStatus(TaskInProgress tip, TaskStatus status) {
-    tip.updateStatus(status); // update tip
+  public synchronized void updateTaskStatus(TaskInProgress tip, TaskStatus taskStatus) {
+    tip.updateStatus(taskStatus); // update tip
+
+    if (superstepCounter < taskStatus.getSuperstepCount()) {
+      superstepCounter = taskStatus.getSuperstepCount();
+      // TODO Later, we have to update JobInProgress status here
+      
+    }
   }
 
   public void kill() {

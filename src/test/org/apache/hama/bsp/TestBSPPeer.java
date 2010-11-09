@@ -27,7 +27,6 @@ import java.util.Random;
 import java.util.Set;
 
 import junit.framework.AssertionFailedError;
-
 import net.sourceforge.groboutils.junit.v1.MultiThreadedTestRunner;
 import net.sourceforge.groboutils.junit.v1.TestRunnable;
 
@@ -97,6 +96,9 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         peerNames.add("localhost:" + (30000 + i));
       }
       peer.setAllPeerNames(peerNames);
+      TaskStatus currentTaskStatus = new TaskStatus("localhost:"
+          + lastTwoDigitsOfPort, 0, null, null, null, null);
+      peer.setCurrentTaskStatus(currentTaskStatus);
     }
 
     @Override
@@ -135,14 +137,16 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
           e.printStackTrace();
         }
 
-        verifyPayload();
+        verifyPayload(i);
       }
     }
 
-    private void verifyPayload() {
+    private void verifyPayload(int round) {
       int numMessages = peer.getNumCurrentMessages();
+      assertEquals(round, ((int) peer.getSuperstepCount() -1 ));
+      
       LOG.info("[" + peer.getPeerName() + "] verifying " + numMessages
-          + " messages");
+          + " messages at " + round + " round");
 
       if (lastTwoDigitsOfPort < 10) {
         assertEquals(20, numMessages);
@@ -169,7 +173,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
     }
   }
 
-  public void testSync() throws Throwable  {
+  public void testSync() throws Throwable {
 
     conf.setInt("bsp.peers.num", NUM_PEER);
     conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");

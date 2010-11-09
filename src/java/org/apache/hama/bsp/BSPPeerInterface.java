@@ -60,6 +60,11 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
   public void sync() throws IOException, KeeperException, InterruptedException;
 
   /**
+   * @return the count of current super-step
+   */
+  public long getSuperstepCount();
+  
+  /**
    * @return The name of this peer in the format "hostname:port".
    */
   public String getPeerName();
