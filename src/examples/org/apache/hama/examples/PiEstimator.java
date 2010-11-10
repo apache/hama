@@ -94,14 +94,13 @@ public class PiEstimator {
       IOException {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
-    // Execute locally
-    // conf.set("bsp.master.address", "local");
 
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
     // Set the job name
     bsp.setJobName("pi estimation example");
     bsp.setBspClass(MyEstimator.class);
-
+    bsp.setNumBspTask(10);
+    
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);
     // Choose one as a master

@@ -32,9 +32,9 @@ import net.sourceforge.groboutils.junit.v1.TestRunnable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -51,7 +51,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
   private static final int ROUND = 3;
   private static final int PAYLOAD = 1024; // 1kb in default
   List<BSPPeerThread> list = new ArrayList<BSPPeerThread>(NUM_PEER);
-  Configuration conf;
+  HamaConfiguration conf;
   private Random r = new Random();
 
   public TestBSPPeer() {
@@ -88,7 +88,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
     private int MAXIMUM_DURATION = 5;
     private int lastTwoDigitsOfPort;
 
-    public BSPPeerThread(Configuration conf) throws IOException {
+    public BSPPeerThread(HamaConfiguration conf) throws IOException {
       lastTwoDigitsOfPort = conf.getInt(Constants.PEER_PORT, 0) - 30000;
       this.peer = new BSPPeer(conf);
       Set<String> peerNames = new HashSet<String>(NUM_PEER);
@@ -99,6 +99,8 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       TaskStatus currentTaskStatus = new TaskStatus("localhost:"
           + lastTwoDigitsOfPort, 0, null, null, null, null);
       peer.setCurrentTaskStatus(currentTaskStatus);
+      BSPJob jobConf = new BSPJob(conf, NUM_PEER);
+      peer.setJobConf((BSPJob) jobConf);
     }
 
     @Override
@@ -165,7 +167,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         LOG.error(e);
       }
 
-      peer.localQueue.clear();
+      peer.clearLocalQueue();
     }
 
     public BSPPeer getBSPPeer() {
@@ -174,12 +176,12 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
   }
 
   public void testSync() throws Throwable {
-
+    
     conf.setInt("bsp.peers.num", NUM_PEER);
     conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     conf.set(Constants.PEER_HOST, "localhost");
     conf.set(Constants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");
-
+    
     TestRunnable[] threads = new TestRunnable[NUM_PEER];
 
     for (int i = 0; i < NUM_PEER; i++) {

@@ -46,25 +46,25 @@ import org.apache.zookeeper.data.Stat;
 public class BSPPeer implements Watcher, BSPPeerInterface {
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
 
-  protected Configuration conf;
+  private Configuration conf;
+  private BSPJob jobConf;
 
-  protected InetSocketAddress masterAddr = null;
-  protected Server server = null;
-  protected ZooKeeper zk = null;
-  protected volatile Integer mutex = 0;
+  private Server server = null;
+  private ZooKeeper zk = null;
+  private volatile Integer mutex = 0;
 
-  protected final String bspRoot;
-  protected final String zookeeperAddr;
+  private final String bspRoot;
+  private final String zookeeperAddr;
 
-  protected final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
-  protected final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
-  protected final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
-  protected Set<String> allPeerNames = new HashSet<String>();
-  protected InetSocketAddress peerAddress;
-  protected TaskStatus currentTaskStatus;
+  private final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
+  private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
+  private final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
+  private Set<String> allPeerNames = new HashSet<String>();
+  private InetSocketAddress peerAddress;
+  private TaskStatus currentTaskStatus;
 
   /**
-   * 
+   * Constructor
    */
   public BSPPeer(Configuration conf) throws IOException {
     this.conf = conf;
@@ -174,7 +174,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     }
 
     // Clear outgoing queues.
-    this.outgoingQueues.clear();
+    clearOutgoingQueues();
 
     enterBarrier();
     Thread.sleep(Constants.ATLEAST_WAIT_TIME); // TODO - This is temporary work
@@ -201,8 +201,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
 
-        // TODO it must be same with the number of slave nodes, at this time.
-        if (list.size() < conf.getInt("bsp.peers.num", 0)) {
+        if (list.size() < jobConf.getNumBspTask()) {
           mutex.wait();
         } else {
           return true;
@@ -317,5 +316,42 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    */
   public long getSuperstepCount() {
     return currentTaskStatus.getSuperstepCount();
+  }
+
+  /**
+   * Sets the job configuration
+   * 
+   * @param jobConf
+   */
+  public void setJobConf(BSPJob jobConf) {
+    this.jobConf = jobConf;
+  }
+
+  /**
+   * @return the size of local queue
+   */
+  public int getLocalQueueSize() {
+    return localQueue.size();
+  }
+
+  /**
+   * @return the size of outgoing queue
+   */
+  public int getOutgoingQueueSize() {
+    return outgoingQueues.size();
+  }
+
+  /**
+   * Clears local queue
+   */
+  public void clearLocalQueue() {
+    this.localQueue.clear();
+  }
+  
+  /**
+   * Clears outgoing queues
+   */
+  public void clearOutgoingQueues() {
+    this.outgoingQueues.clear();
   }
 }

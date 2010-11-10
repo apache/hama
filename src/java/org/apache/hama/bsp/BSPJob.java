@@ -38,20 +38,34 @@ public class BSPJob extends BSPJobContext {
     this(new HamaConfiguration());
   }
 
-  public BSPJob(HamaConfiguration conf, String jobName) throws IOException {
-    this(conf);
-    setJobName(jobName);
-  }
-
   public BSPJob(HamaConfiguration conf) throws IOException {
     super(conf, null);
     jobClient = new BSPJobClient(conf);
+  }
+  
+  public BSPJob(HamaConfiguration conf, String jobName) throws IOException {
+    this(conf);
+    setJobName(jobName);
   }
 
   public BSPJob(BSPJobID jobID, String jobFile) throws IOException {
      super(new Path(jobFile), jobID);
   }
 
+  /**
+   * Only for unit test
+   * 
+   * TODO will be deleted when miniBSPCluster implemented
+   * 
+   * @param conf
+   * @param tasks
+   * @throws IOException
+   */
+  public BSPJob(HamaConfiguration conf, int tasks) throws IOException {
+    super(conf, null);
+    setNumBspTask(tasks);
+  }
+  
   @SuppressWarnings("unchecked")
   public BSPJob(HamaConfiguration conf, Class exampleClass) throws IOException {
     this(conf);
@@ -200,4 +214,7 @@ public class BSPJob extends BSPJobContext {
     conf.setInt("bsp.peers.num", tasks);
   }
 
+  public int getNumBspTask() {
+    return conf.getInt("bsp.peers.num", 1);
+  }
 }
