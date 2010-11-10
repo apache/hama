@@ -50,6 +50,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-321: Allows user to set the number of tasks (edwardyoon) 
     HAMA-282: Add superstep counter (Filipe Manana via edwardyoon)
     HAMA-327: Add overview for javadoc (edwardyoon)
     HAMA-325: Add package.html to each package and few comments (edwardyoon)

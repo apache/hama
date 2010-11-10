@@ -134,7 +134,7 @@ public class BSPJobClient extends Configured implements Tool {
       ensureFreshStatus();
       return status.getSuperstepCount();
     }
-    
+
     /**
      * Blocks until the job is finished
      */
@@ -389,6 +389,15 @@ public class BSPJobClient extends Configured implements Tool {
   public static void runJob(BSPJob job) throws FileNotFoundException,
       IOException {
     BSPJobClient jc = new BSPJobClient(job.getConf());
+
+    // TODO this code must be removed 
+    // when GroomServer supports the multiple tasks.
+    if (job.getNumBspTask() > jc.getClusterStatus(false).getGroomServers()) {
+      // If the number of tasks is greater than the number of GroomServer,
+      // reset the number of tasks as number of GroomServer.
+      job.setNumBspTask(jc.getClusterStatus(false).getGroomServers());
+    }
+
     RunningJob running = jc.submitJobInternal(job);
     BSPJobID jobId = running.getID();
     LOG.info("Running job: " + jobId.toString());
@@ -408,7 +417,7 @@ public class BSPJobClient extends Configured implements Tool {
 
     LOG.info("Job complete: " + jobId);
     LOG.info("The total number of supersteps: " + running.getSuperstepCount());
-    
+
     // TODO if error found, kill job
     // running.killJob();
     jc.close();
@@ -418,7 +427,7 @@ public class BSPJobClient extends Configured implements Tool {
    * Get an RunningJob object to track an ongoing job. Returns null if the id
    * does not correspond to any known job.
    * 
-   * @throws IOException 
+   * @throws IOException
    */
   private RunningJob getJob(BSPJobID jobId) throws IOException {
     JobStatus status = jobSubmitClient.getJobStatus(jobId);

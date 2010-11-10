@@ -534,6 +534,7 @@ public class GroomServer implements Runnable {
 
     public void launchTask() throws IOException {
       taskStatus.setRunState(TaskStatus.State.RUNNING);
+      bspPeer.setJobConf(jobConf);
       bspPeer.setCurrentTaskStatus(taskStatus);
       this.runner = task.createRunner(bspPeer, this.jobConf);
       this.runner.start();
@@ -546,8 +547,8 @@ public class GroomServer implements Runnable {
           e.printStackTrace();
         }
 
-        if (bspPeer.localQueue.size() == 0
-            && bspPeer.outgoingQueues.size() == 0
+        if (bspPeer.getLocalQueueSize() == 0
+            && bspPeer.getOutgoingQueueSize() == 0
             && !runner.isAlive()) {
           taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
           acceptNewTasks = true;
