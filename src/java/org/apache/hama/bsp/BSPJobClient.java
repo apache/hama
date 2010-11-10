@@ -190,16 +190,10 @@ public class BSPJobClient extends Configured implements Tool {
   }
 
   public void init(Configuration conf) throws IOException {
-    // it will be used to determine if the bspmaster is running on local or not.
-    String master = conf.get("bsp.master.address", "local");
-    if ("local".equals(master)) {
-      this.jobSubmitClient = new LocalJobRunner(conf);
-    } else {
-      this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
-          JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
-          BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(conf,
-              JobSubmissionProtocol.class));
-    }
+    this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
+        JobSubmissionProtocol.class, JobSubmissionProtocol.versionID, BSPMaster
+            .getAddress(conf), conf, NetUtils.getSocketFactory(conf,
+            JobSubmissionProtocol.class));
   }
 
   /**
@@ -390,7 +384,7 @@ public class BSPJobClient extends Configured implements Tool {
       IOException {
     BSPJobClient jc = new BSPJobClient(job.getConf());
 
-    // TODO this code must be removed 
+    // TODO this code must be removed
     // when GroomServer supports the multiple tasks.
     if (job.getNumBspTask() > jc.getClusterStatus(false).getGroomServers()) {
       // If the number of tasks is greater than the number of GroomServer,

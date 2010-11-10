@@ -50,6 +50,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-313: Remove LocalJobRunner (edwardyoon)
     HAMA-321: Allows user to set the number of tasks (edwardyoon) 
     HAMA-282: Add superstep counter (Filipe Manana via edwardyoon)
     HAMA-327: Add overview for javadoc (edwardyoon)
