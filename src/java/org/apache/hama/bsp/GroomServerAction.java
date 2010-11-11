@@ -102,7 +102,7 @@ abstract class GroomServerAction implements Writable {
    * Return the {@link ActionType}.
    * @return the {@link ActionType}.
    */
-  ActionType getActionId() {
+  ActionType getActionType() {
     return actionType;
   }
 
