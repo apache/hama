@@ -102,7 +102,7 @@ public class HeartbeatResponse implements Writable, Configurable {
     } else {
       WritableUtils.writeVInt(out, actions.length);
       for(GroomServerAction action: actions) {
-        WritableUtils.writeEnum(out, action.getActionId());
+        WritableUtils.writeEnum(out, action.getActionType());
         action.write(out);
       }
     }
