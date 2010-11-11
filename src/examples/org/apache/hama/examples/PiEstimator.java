@@ -99,10 +99,17 @@ public class PiEstimator {
     // Set the job name
     bsp.setJobName("pi estimation example");
     bsp.setBspClass(MyEstimator.class);
-    bsp.setNumBspTask(1);
     
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);
+    
+    if(args.length > 0) {
+      bsp.setNumBspTask(Integer.parseInt(args[0]));
+    } else {
+      // Set to maximum
+      bsp.setNumBspTask(cluster.getGroomServers());
+    }
+    
     // Choose one as a master
     for (String peerName : cluster.getActiveGroomNames().values()) {
       conf.set(MASTER_TASK, peerName);
