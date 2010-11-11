@@ -26,10 +26,9 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableFactory;
 
-/**************************************************
+/*
  * A JobProfile tracks job's status
- * 
- **************************************************/
+ */
 public class JobProfile implements Writable {
 
   static { // register a ctor
@@ -96,9 +95,6 @@ public class JobProfile implements Writable {
     return name;
   }
 
-  // /////////////////////////////////////
-  // Writable
-  // /////////////////////////////////////
   public void write(DataOutput out) throws IOException {
     jobid.write(out);
     Text.writeString(out, jobFile);

@@ -46,6 +46,7 @@ class JobInProgress {
   }
 
   static final Log LOG = LogFactory.getLog(JobInProgress.class);
+  boolean tasksInited = false;
 
   Configuration conf;
   JobProfile profile;
@@ -62,15 +63,16 @@ class JobInProgress {
   // private LocalFileSystem localFs;
   private BSPJobID jobId;
   final BSPMaster master;
-  List<TaskInProgress> tasks;
+  TaskInProgress tasks[] = new TaskInProgress[0];
   private long superstepCounter;
+
+  int numBSPTasks = 0;
+  int clusterSize;
 
   public JobInProgress(BSPJobID jobId, BSPMaster master, Configuration conf)
       throws IOException {
     this.conf = conf;
     this.jobId = jobId;
-
-    this.tasks = new ArrayList<TaskInProgress>();
     this.localFs = FileSystem.getLocal(conf);
 
     this.master = master;
@@ -88,7 +90,8 @@ class JobInProgress {
     FileSystem fs = jobDir.getFileSystem(conf);
     jobFile = new Path(jobDir, "job.xml");
     fs.copyToLocalFile(jobFile, localJobFile);
-    BSPJobContext job = new BSPJobContext(localJobFile, jobId);
+    BSPJob job = new BSPJob(jobId, localJobFile.toString());
+    this.numBSPTasks = job.getNumBspTask();
 
     this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
         .getJobName());
@@ -100,9 +103,6 @@ class JobInProgress {
 
   }
 
-  // ///////////////////////////////////////////////////
-  // Accessors for the JobInProgress
-  // ///////////////////////////////////////////////////
   public JobProfile getProfile() {
     return profile;
   }
@@ -124,6 +124,13 @@ class JobInProgress {
   }
 
   /**
+   * @return the number of desired tasks.
+   */
+  public int desiredBSPTasks() {
+    return numBSPTasks;
+  }
+
+  /**
    * @return The JobID of this JobInProgress.
    */
   public BSPJobID getJobID() {
@@ -139,16 +146,45 @@ class JobInProgress {
   // ///////////////////////////////////////////////////
   // Create/manage tasks
   // ///////////////////////////////////////////////////
+
+  public synchronized void initTasks() throws IOException {
+    if (tasksInited) {
+      return;
+    }
+
+    // adjust number of map tasks to actual number of splits
+    this.tasks = new TaskInProgress[numBSPTasks];
+    for (int i = 0; i < numBSPTasks; i++) {
+      tasks[i] = new TaskInProgress(getJobID(), this.jobFile.toString(),
+          this.master, this.conf, this, i);
+    }
+
+    // Update job status
+    this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f,
+       JobStatus.RUNNING);
+
+    tasksInited = true;
+    LOG.debug("Job is initialized.");
+  }
+
   public synchronized Task obtainNewTask(GroomServerStatus status,
       int clusterSize, int numUniqueHosts) {
-    LOG.debug("clusterSize: " + clusterSize);
-
+    this.clusterSize = clusterSize;
+    
+    if (this.status.getRunState() != JobStatus.RUNNING) {
+      LOG.info("Cannot create task split for " + profile.getJobID());
+      return null;
+    }
+    
     Task result = null;
     try {
-      TaskInProgress tip = new TaskInProgress(getJobID(), this.jobFile
-          .toString(), this.master, this.conf, this, numUniqueHosts);
-      tasks.add(tip);
-      result = tip.getTaskToRun(status);
+      for (int i = 0; i < tasks.length; i++) {
+        if(!tasks[i].isRunning()) {
+          result = tasks[i].getTaskToRun(status);
+          break;
+        }
+      }
+      
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -156,7 +192,7 @@ class JobInProgress {
     return result;
   }
 
-  public void completedTask(TaskInProgress tip, TaskStatus status) {
+  public synchronized void completedTask(TaskInProgress tip, TaskStatus status) {
     String taskid = status.getTaskId();
     updateTaskStatus(tip, status);
     LOG.info("Taskid '" + taskid + "' has finished successfully.");
@@ -174,9 +210,6 @@ class JobInProgress {
       }
     }
 
-    this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f,
-        JobStatus.RUNNING);
-
     if (allDone) {
       LOG.debug("Job successfully done.");
 
@@ -186,13 +219,14 @@ class JobInProgress {
     }
   }
 
-  public synchronized void updateTaskStatus(TaskInProgress tip, TaskStatus taskStatus) {
+  public synchronized void updateTaskStatus(TaskInProgress tip,
+      TaskStatus taskStatus) {
     tip.updateStatus(taskStatus); // update tip
 
     if (superstepCounter < taskStatus.getSuperstepCount()) {
       superstepCounter = taskStatus.getSuperstepCount();
       // TODO Later, we have to update JobInProgress status here
-      
+
     }
   }
 

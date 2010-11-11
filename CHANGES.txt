@@ -181,6 +181,8 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-330: BSP program doesn't work when the desired tasks smaller than 
+                       cluster size (edwardyoon)
     HAMA-326: GroomServer should wait until a job finishes (edwardyoon)
     HAMA-324: Removing javadoc warnings and useless libraries (edwardyoon)
     HAMA-322: Make sure failed assertions on test threads are reported

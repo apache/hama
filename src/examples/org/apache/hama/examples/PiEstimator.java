@@ -99,7 +99,7 @@ public class PiEstimator {
     // Set the job name
     bsp.setJobName("pi estimation example");
     bsp.setBspClass(MyEstimator.class);
-    bsp.setNumBspTask(10);
+    bsp.setNumBspTask(1);
     
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);

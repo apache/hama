@@ -76,28 +76,24 @@ class SimpleTaskScheduler extends TaskScheduler {
       // instance to the scheduler.
       synchronized (jobQueue) {
         for (JobInProgress job : jobQueue) {
-
-          if (!job.getStatus().isJobComplete() && job.getStatus().getRunState() != JobStatus.RUNNING) {
-            /*
-             * if (job.getStatus().getRunState() != JobStatus.RUNNING) {
-             * continue; }
-             */
-
-            Task t = null;
-
-            t = job.obtainNewTask(groomStatus, numGroomServers,
-                groomServerManager.getNumberOfUniqueHosts());
-
-            if (t != null) {
-              assignedTasks.add(t);
-              break; // TODO - Now, simple scheduler assigns only one task to
-              // each groom. Later, it will be improved for scheduler to
-              // assign one or more tasks to each groom according to
-              // its capacity.
-            }
+          if (job.getStatus().getRunState() != JobStatus.RUNNING) {
+            continue;
           }
-          
+
+          Task t = null;
+
+          t = job.obtainNewTask(groomStatus, numGroomServers,
+              groomServerManager.getNumberOfUniqueHosts());
+
+          if (t != null) {
+            assignedTasks.add(t);
+            break; // TODO - Now, simple scheduler assigns only one task to
+            // each groom. Later, it will be improved for scheduler to
+            // assign one or more tasks to each groom according to
+            // its capacity.
+          }
         }
+
       }
     }
 

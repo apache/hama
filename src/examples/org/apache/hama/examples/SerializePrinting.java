@@ -27,6 +27,7 @@ import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.ClusterStatus;
 import org.apache.zookeeper.KeeperException;
 
 public class SerializePrinting {
@@ -44,7 +45,7 @@ public class SerializePrinting {
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {
         if (bspPeer.getPeerName().equals(otherPeer)) {
-          LOG.info("Hello BSP from " + i + " of " + num + ": "
+          LOG.info("Hello BSP from " + (i + 1) + " of " + num + ": "
               + bspPeer.getPeerName());
         }
         
@@ -75,7 +76,11 @@ public class SerializePrinting {
     // Set the job name
     bsp.setJobName("serialize printing");
     bsp.setBspClass(HelloBSP.class);
-    bsp.setNumBspTask(10);
+    
+    // Set the task size as a number of GroomServer
+    BSPJobClient jobClient = new BSPJobClient(conf);
+    ClusterStatus cluster = jobClient.getClusterStatus(false);
+    bsp.setNumBspTask(cluster.getGroomServers());
     
     BSPJobClient.runJob(bsp);
   }
