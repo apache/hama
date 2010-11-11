@@ -381,13 +381,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
         for (Task task : taskList) {
           if (task != null) {
-
-            if (!jobs.get(task.getJobID()).getStatus().isJobComplete()) {
-              if (jobs.get(task.getJobID()).getStatus().getRunState() != JobStatus.RUNNING) {
                 actions.add(new LaunchTaskAction(task));
-              }
-            }
-
           }
         }
       }
@@ -463,7 +457,6 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     LOG.debug("Removing task '" + taskid + "'");
   }
 
-  /*
   private List<GroomServerAction> getTasksToKill(String groomName) {
     Set<String> taskIds = (TreeSet<String>) trackerToTaskMap.get(groomName);
     if (taskIds != null) {
@@ -498,7 +491,6 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     return null;
 
   }
-  */
   
   /**
    * Process incoming heartbeat messages from the groom.
@@ -584,6 +576,16 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
       jobs.put(job.getProfile().getJobID(), job);
       taskScheduler.addJob(job);
     }
+    
+    
+    // TODO Later, we should use the JobInProgressListener -- edwardyoon
+    try {
+      job.initTasks();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    
     return job.getStatus();
   }
 
