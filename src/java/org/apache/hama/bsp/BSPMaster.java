@@ -233,8 +233,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   public static BSPMaster startTracker(HamaConfiguration conf, String identifier)
       throws IOException, InterruptedException {
 
-    BSPMaster result = null;
-    result = new BSPMaster(conf, identifier);
+    BSPMaster result = new BSPMaster(conf, identifier);
     result.taskScheduler.setGroomServerManager(result);
 
     return result;
@@ -247,16 +246,12 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     return NetUtils.createSocketAddr(hamaMasterStr, defaultPort);
   }
 
-  private static SimpleDateFormat getDateFormat() {
-    return new SimpleDateFormat("yyyyMMddHHmm");
-  }
-
   /**
    * 
    * @return
    */
   private static String generateNewIdentifier() {
-    return getDateFormat().format(new Date());
+    return new SimpleDateFormat("yyyyMMddHHmm").format(new Date());
   }
 
   public void offerService() throws InterruptedException, IOException {
@@ -369,8 +364,6 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     HeartbeatResponse response = new HeartbeatResponse(newResponseId, null, groomServerPeers);
     List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
 
-    updateTaskStatuses(status);
-
     // Check for new tasks to be executed on the groom server
     if (acceptNewTasks) {
       GroomServerStatus groomStatus = getGroomServer(groomName);
@@ -391,7 +384,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
     groomToHeartbeatResponseMap.put(groomName, response);
     removeMarkedTasks(groomName);
-
+    updateTaskStatuses(status);
+    
     return response;
   }
 
