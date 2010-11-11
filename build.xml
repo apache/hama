@@ -67,7 +67,7 @@
 	<property name="javac.deprecation" value="off" />
 	<property name="javac.debug" value="on" />
 
-	<property name="javadoc.link.java" value="http://java.sun.com/javase/6/docs/api/" />
+	<property name="javadoc.link.java" value="http://download.oracle.com/javase/6/docs/api/" />
 	<property name="javadoc.packages" value="org.apache.hama.*" />
 
 	<fileset id="lib.jars" dir="${basedir}" includes="lib/*.jar" />
