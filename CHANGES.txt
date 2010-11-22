@@ -50,6 +50,8 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-332: Renaming some members in BSPMaster 
+                to follow the Hama terminology (Filipe Manana via edwardyoon)
     HAMA-329: Add taskNum argument to pi estimator (edwardyoon)
     HAMA-313: Remove LocalJobRunner (edwardyoon)
     HAMA-321: Allows user to set the number of tasks (edwardyoon) 
