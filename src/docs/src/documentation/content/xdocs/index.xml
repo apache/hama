@@ -62,7 +62,7 @@ new TWTR.Widget({
     <section>
     <title>Recent News</title>
     <ul>
-      <li>Sep 30, 2010 - <a href="http://blogs.apache.org/hama/entry/hama_in_academic_paper">Hama peper</a> has accepted at <a href="http://salsahpc.indiana.edu/CloudCom2010/papers.html">IEEE CloudCom 2010 Workshop</a></li>
+      <li>Sep 30, 2010 - <a href="http://blogs.apache.org/hama/entry/hama_in_academic_paper">Hama paper</a> has accepted at <a href="http://salsahpc.indiana.edu/CloudCom2010/papers.html">IEEE CloudCom 2010 Workshop</a></li>
       <li>Jul 15, 2010 - We got rid of dependencies of MapReduce and HBase [<a href="http://blogs.apache.org/hama/entry/how_will_hama_bsp_different">Read more</a>]</li> 
       <li>Apr 30, 2010 - We're introduced in the <a href="http://www.bsp-worldwide.org/bspww3000.html">BSP Worldwide</a>.</li>
       <li>December 11, 2009 - We made the BSP (Bulk Synchronous Parallel) package 
