@@ -57,7 +57,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
   protected void hamaClusterSetup() throws Exception {
     File testDir = new File(getUnitTestdir(getName()).toString());
 
-    // Note that this is done before we create the MiniHBaseCluster because we
+    // Note that this is done before we create the MiniHamaCluster because we
     // need to edit the config to add the ZooKeeper servers.
     this.zooKeeperCluster = new MiniZooKeeperCluster();
     int clientPort = this.zooKeeperCluster.startup(testDir);
@@ -134,7 +134,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
   /**
    * Use this utility method debugging why cluster won't go down.  On a
    * period it throws a thread dump.  Method ends when all cluster
-   * regionservers and master threads are no long alive.
+   * groomservers and master threads are no long alive.
    */
   public void threadDumpingJoin() {
     if (this.cluster.getGroomServerThreads() != null) {
