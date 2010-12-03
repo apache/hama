@@ -18,8 +18,6 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -161,30 +159,30 @@ class JobInProgress {
 
     // Update job status
     this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f,
-       JobStatus.RUNNING);
+        JobStatus.RUNNING);
 
     tasksInited = true;
     LOG.debug("Job is initialized.");
   }
 
   public synchronized Task obtainNewTask(GroomServerStatus status,
-      int clusterSize, int numUniqueHosts) {
+      int clusterSize) {
     this.clusterSize = clusterSize;
-    
+
     if (this.status.getRunState() != JobStatus.RUNNING) {
       LOG.info("Cannot create task split for " + profile.getJobID());
       return null;
     }
-    
+
     Task result = null;
     try {
       for (int i = 0; i < tasks.length; i++) {
-        if(!tasks[i].isRunning()) {
+        if (!tasks[i].isRunning()) {
           result = tasks[i].getTaskToRun(status);
           break;
         }
       }
-      
+
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -230,8 +228,22 @@ class JobInProgress {
     }
   }
 
-  public void kill() {
-    // TODO Auto-generated method stub
+  public synchronized void kill() {
+    LOG.debug(">> JobInProgress.kill() step.");
+    if (status.getRunState() != JobStatus.FAILED) {
+      this.status = new JobStatus(status.getJobID(), 1.0f, 1.0f, 1.0f,
+          JobStatus.FAILED);
+      this.finishTime = System.currentTimeMillis();
+
+      //
+      // kill all TIPs.
+      //
+      for (int i = 0; i < tasks.length; i++) {
+        tasks[i].kill();
+      }
+
+      garbageCollect();
+    }
 
   }
 

@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -65,7 +66,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
   private static final int FS_ACCESS_RETRY_PERIOD = 10000;
   public static final long GROOMSERVER_EXPIRY_INTERVAL = 10 * 60 * 1000;
-
+  static long JOBINIT_SLEEP_INTERVAL = 2000;
+  
   // States
   State state = State.INITIALIZING;
 
@@ -103,6 +105,9 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   TreeMap<String, String> taskIdToGroomNameMap = new TreeMap<String, String>();
   TreeMap<String, TreeSet<String>> groomNameToTaskIdsMap = new TreeMap<String, TreeSet<String>>();
   Map<String, TaskInProgress> taskIdToTaskInProgressMap = new TreeMap<String, TaskInProgress>();
+
+  Vector<JobInProgress> jobInitQueue = new Vector<JobInProgress>();
+  JobInitThread initJobs = new JobInitThread();
 
   /**
    * Start the BSPMaster process, listen on the indicated hostname/port
@@ -190,6 +195,43 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     return activeGrooms;
   }
 
+  /////////////////////////////////////////////////////////////////
+  //  Used to init new jobs that have just been created
+  /////////////////////////////////////////////////////////////////
+  class JobInitThread implements Runnable {
+    private volatile boolean shouldRun = true;
+    
+      public JobInitThread() {
+      }
+      public void run() {
+          while (shouldRun) {
+              JobInProgress job = null;
+              synchronized (jobInitQueue) {
+                  if (jobInitQueue.size() > 0) {
+                      job = (JobInProgress) jobInitQueue.elementAt(0);
+                      jobInitQueue.remove(job);
+                  } else {
+                      try {
+                          jobInitQueue.wait(JOBINIT_SLEEP_INTERVAL);
+                      } catch (InterruptedException iex) {
+                      }
+                  }
+              }
+              try {
+                  if (job != null) {
+                      job.initTasks();
+                  }
+              } catch (Exception e) {
+                  LOG.warn("job init failed: " + e);
+                  job.kill();
+              }
+          }
+      }
+      public void stopIniter() {
+          shouldRun = false;
+      }
+  }
+  
   // /////////////////////////////////////////////////////////////
   // BSPMaster methods
   // /////////////////////////////////////////////////////////////
@@ -259,6 +301,9 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   }
 
   public void offerService() throws InterruptedException, IOException {
+    new Thread(this.initJobs).start();
+    LOG.info("Starting jobInitThread");
+    
     this.interTrackerServer.start();
 
     synchronized (this) {
@@ -268,57 +313,6 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
     this.interTrackerServer.join();
     LOG.info("Stopped interTrackerServer");
-  }
-
-  // //////////////////////////////////////////////////
-  // GroomServerManager
-  // //////////////////////////////////////////////////
-  @Override
-  public void addJobInProgressListener(JobInProgressListener listener) {
-    // jobInProgressListeners.add(listener);
-  }
-
-  @Override
-  public void removeJobInProgressListener(JobInProgressListener listener) {
-    // jobInProgressListeners.remove(listener);
-  }
-
-  @Override
-  public void failJob(JobInProgress job) {
-    // TODO Auto-generated method stub
-  }
-
-  @Override
-  public JobInProgress getJob(BSPJobID jobid) {
-    return jobs.get(jobid);
-  }
-
-  @Override
-  public int getNextHeartbeatInterval() {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int getNumberOfUniqueHosts() {
-    // TODO Auto-generated method stub
-    return 1;
-  }
-
-  @Override
-  public Collection<GroomServerStatus> grooms() {
-    return groomServers.values();
-  }
-
-  @Override
-  public void initJob(JobInProgress job) {
-    if (null == job) {
-      LOG.info("Init on null job is not valid");
-      return;
-    }
-
-    // JobStatus prevStatus = (JobStatus)job.getStatus().clone();
-    LOG.info("Initializing " + job.getJobID());
   }
 
   // //////////////////////////////////////////////////
@@ -451,7 +445,6 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
     // taskid --> TIP
     taskIdToTaskInProgressMap.remove(taskid);
-
     LOG.debug("Removing task '" + taskid + "'");
   }
 
@@ -571,17 +564,12 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   private synchronized JobStatus addJob(BSPJobID jodId, JobInProgress job) {
     totalSubmissions++;
     synchronized (jobs) {
-      jobs.put(job.getProfile().getJobID(), job);
-      taskScheduler.addJob(job);
-    }
-    
-    
-    // TODO Later, we should use the JobInProgressListener -- edwardyoon
-    try {
-      job.initTasks();
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      synchronized (jobInitQueue) {
+        jobs.put(job.getProfile().getJobID(), job);
+        taskScheduler.addJob(job);
+        jobInitQueue.add(job);
+        jobInitQueue.notifyAll();
+      }
     }
     
     return job.getStatus();

@@ -37,6 +37,7 @@ class TaskInProgress {
   // Constants
   static final int MAX_TASK_EXECS = 1;
   int maxTaskAttempts = 4;
+  private boolean failed = false;
 
   // Job Meta
   private String jobFile = null;
@@ -80,7 +81,7 @@ class TaskInProgress {
     this.job = job;
     this.conf = conf;
     this.partition = partition;
-    
+
     this.id = new TaskID(jobId, true, partition);
   }
 
@@ -88,27 +89,27 @@ class TaskInProgress {
    * Return a Task that can be sent to a GroomServer for execution.
    */
   public Task getTaskToRun(GroomServerStatus status) throws IOException {
-      Task t = null;
-      
-      // TODO use the TaskID, instead of String. 
-      String taskid = null;
-      if (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts)) {
-        taskid = new String("task_" + status.getGroomName() + "_" + nextTaskId);
-        ++nextTaskId;
-      } else {
-        LOG.warn("Exceeded limit of " + (MAX_TASK_EXECS + maxTaskAttempts) + 
-                " attempts for the tip '" + getTIPId() + "'");
-        return null;
-      }
+    Task t = null;
 
-      t = new BSPTask(jobId, jobFile, taskid, partition);
-      activeTasks.put(taskid, status.getGroomName());
+    // TODO use the TaskID, instead of String.
+    String taskid = null;
+    if (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts)) {
+      taskid = new String("task_" + status.getGroomName() + "_" + nextTaskId);
+      ++nextTaskId;
+    } else {
+      LOG.warn("Exceeded limit of " + (MAX_TASK_EXECS + maxTaskAttempts)
+          + " attempts for the tip '" + getTIPId() + "'");
+      return null;
+    }
 
-      // Ask JobTracker to note that the task exists
-      bspMaster.createTaskEntry(taskid, status.getGroomName(), this);
-      return t;
+    t = new BSPTask(jobId, jobFile, taskid, partition);
+    activeTasks.put(taskid, status.getGroomName());
+
+    // Ask JobTracker to note that the task exists
+    bspMaster.createTaskEntry(taskid, status.getGroomName(), this);
+    return t;
   }
-  
+
   // //////////////////////////////////
   // Accessors
   // //////////////////////////////////
@@ -133,7 +134,7 @@ class TaskInProgress {
   public TreeMap<String, String> getTasks() {
     return activeTasks;
   }
-  
+
   /**
    * Is the Task associated with taskid is the first attempt of the tip?
    * 
@@ -163,16 +164,15 @@ class TaskInProgress {
   }
 
   private TreeSet<String> tasksReportedClosed = new TreeSet<String>();
-  
+
   public boolean shouldCloseForClosedJob(String taskid) {
     TaskStatus ts = (TaskStatus) taskStatuses.get(taskid);
-    if ((ts != null) &&
-        (! tasksReportedClosed.contains(taskid)) &&
-        (job.getStatus().getRunState() != JobStatus.RUNNING)) {
-        tasksReportedClosed.add(taskid);
-        return true;
-    }  else {
-        return false;
+    if ((ts != null) && (!tasksReportedClosed.contains(taskid))
+        && (job.getStatus().getRunState() != JobStatus.RUNNING)) {
+      tasksReportedClosed.add(taskid);
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -183,8 +183,8 @@ class TaskInProgress {
     activeTasks.remove(taskid);
 
     //
-    // Now that the TIP is complete, the other speculative 
-    // subtasks will be closed when the owning tasktracker 
+    // Now that the TIP is complete, the other speculative
+    // subtasks will be closed when the owning tasktracker
     // reports in and calls shouldClose() on this object.
     //
 
@@ -194,8 +194,18 @@ class TaskInProgress {
   public void updateStatus(TaskStatus status) {
     taskStatuses.put(status.getTaskId(), status);
   }
-  
+
   public TaskStatus getTaskStatus(String taskId) {
     return this.taskStatuses.get(taskId);
   }
+
+  public void kill() {
+    LOG.debug(">> TaskInProgress.kill() step.");
+    this.failed = true;
+  }
+
+  public boolean isFailed() {
+    return failed;
+  }
+
 }

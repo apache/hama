@@ -460,7 +460,9 @@ public class BSPJobClient extends Configured implements Tool {
     boolean listJobs = false;
     boolean listAllJobs = false;
     boolean listActiveTrackers = false;
-
+    boolean killJob = false;
+    String jobid = null;
+    
     HamaConfiguration conf = new HamaConfiguration(getConf());
     init(conf);
 
@@ -480,8 +482,16 @@ public class BSPJobClient extends Configured implements Tool {
         return exitCode;
       }
       listActiveTrackers = true;
+    } else if ("-kill".equals(cmd)) {
+      if (args.length == 1) {
+        displayUsage(cmd);
+        return exitCode;
+      }
+      killJob = true;
+      jobid = args[1];
     }
 
+    BSPJobClient jc = new BSPJobClient(new HamaConfiguration());
     if (listJobs) {
       listJobs();
       exitCode = 0;
@@ -490,6 +500,15 @@ public class BSPJobClient extends Configured implements Tool {
       exitCode = 0;
     } else if (listActiveTrackers) {
       listActiveTrackers();
+      exitCode = 0;
+    } else if (killJob) {
+      RunningJob job = jc.getJob(new BSPJobID().forName(jobid));
+      if (job == null) {
+          System.out.println("Could not find job " + jobid);
+      } else {
+          job.killJob();
+          System.out.println("Killed job " + jobid);
+      }
       exitCode = 0;
     }
 
