@@ -56,7 +56,7 @@ class SimpleTaskScheduler extends TaskScheduler {
    * GroomServerStatus)
    */
   @Override
-  public List<Task> assignTasks(GroomServerStatus groomStatus)
+  public synchronized List<Task> assignTasks(GroomServerStatus groomStatus)
       throws IOException {
     ClusterStatus clusterStatus = groomServerManager.getClusterStatus(false);
 
@@ -70,7 +70,6 @@ class SimpleTaskScheduler extends TaskScheduler {
     // Assigned tasks
     List<Task> assignedTasks = new ArrayList<Task>();
 
-    // Task task = null;
     if (groomRunningTasks == 0) {
       // TODO - Each time a job is submitted in BSPMaster, add a JobInProgress
       // instance to the scheduler.
@@ -81,9 +80,7 @@ class SimpleTaskScheduler extends TaskScheduler {
           }
 
           Task t = null;
-
-          t = job.obtainNewTask(groomStatus, numGroomServers,
-              groomServerManager.getNumberOfUniqueHosts());
+          t = job.obtainNewTask(groomStatus, numGroomServers);
 
           if (t != null) {
             assignedTasks.add(t);

@@ -66,4 +66,9 @@ public class BSPTaskRunner extends Thread {
     }
   }
 
+  public void kill() {
+    // TODO Auto-generated method stub
+    LOG.debug(">>>> Kill Task Runner");
+  }
+
 }

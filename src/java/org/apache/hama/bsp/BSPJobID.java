@@ -97,7 +97,7 @@ public class BSPJobID extends ID implements Comparable<ID> {
     jtIdentifier.write(out);
   }
 
-  public static BSPJobID forName(String str) throws IllegalArgumentException {
+  public BSPJobID forName(String str) throws IllegalArgumentException {
     if (str == null)
       return null;
     try {

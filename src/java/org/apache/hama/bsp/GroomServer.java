@@ -516,7 +516,7 @@ public class GroomServer implements Runnable {
   class TaskInProgress {
     Task task;
     BSPJob jobConf;
-    private BSPTaskRunner runner;
+    BSPTaskRunner runner;
     volatile boolean done = false;
     volatile boolean wasKilled = false;
     private TaskStatus taskStatus;
@@ -548,14 +548,22 @@ public class GroomServer implements Runnable {
         }
 
         if (bspPeer.getLocalQueueSize() == 0
-            && bspPeer.getOutgoingQueueSize() == 0
-            && !runner.isAlive()) {
+            && bspPeer.getOutgoingQueueSize() == 0 && !runner.isAlive()) {
           taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
           acceptNewTasks = true;
           break;
         }
       }
 
+    }
+
+    /**
+     * This task has run on too long, and should be killed.
+     */
+    public synchronized void killAndCleanup(boolean wasFailure)
+        throws IOException {
+      // TODO 
+      runner.kill();
     }
 
     /**

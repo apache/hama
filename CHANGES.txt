@@ -50,6 +50,8 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-331: Removing JobInProgressListener 
+                       and adding JobInitThread to BSPMaster (edwardyoon)
     HAMA-334: Removing "java5.home" env key from build script. (edwardyoon)
     HAMA-332: Renaming some members in BSPMaster 
                 to follow the Hama terminology (Filipe Manana via edwardyoon)
