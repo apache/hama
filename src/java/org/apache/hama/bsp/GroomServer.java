@@ -511,7 +511,7 @@ public class GroomServer implements Runnable {
   // /////////////////////////////////////////////////////
   // TaskInProgress maintains all the info for a Task that
   // lives at this GroomServer. It maintains the Task object,
-  // its TaskStatus, and the TaskRunner.
+  // its TaskStatus, and the BSPTaskRunner.
   // /////////////////////////////////////////////////////
   class TaskInProgress {
     Task task;
