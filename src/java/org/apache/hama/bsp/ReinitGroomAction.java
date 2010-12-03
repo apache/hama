@@ -26,9 +26,9 @@ import java.io.IOException;
  * {@link org.apache.hama.bsp.GroomServer} to reinitialize itself.
  * 
  */
-class ReinitTrackerAction extends GroomServerAction {
+class ReinitGroomAction extends GroomServerAction {
 
-  public ReinitTrackerAction() {
+  public ReinitGroomAction() {
     super(ActionType.REINIT_GROOM);
   }
 

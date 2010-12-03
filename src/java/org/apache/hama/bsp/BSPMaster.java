@@ -273,10 +273,10 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
   public static BSPMaster startMaster(HamaConfiguration conf)
       throws IOException, InterruptedException {
-    return startTracker(conf, generateNewIdentifier());
+    return startMaster(conf, generateNewIdentifier());
   }
 
-  public static BSPMaster startTracker(HamaConfiguration conf, String identifier)
+  public static BSPMaster startMaster(HamaConfiguration conf, String identifier)
       throws IOException, InterruptedException {
 
     BSPMaster result = new BSPMaster(conf, identifier);
@@ -355,7 +355,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
         groomToHeartbeatResponseMap.remove(groomName);
       }
       return new HeartbeatResponse(newResponseId,
-          new GroomServerAction[] { new ReinitTrackerAction() },
+          new GroomServerAction[] { new ReinitGroomAction() },
           Collections.<String, String>emptyMap());
     }
 
@@ -366,7 +366,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     if (acceptNewTasks) {
       GroomServerStatus groomStatus = getGroomServer(groomName);
       if (groomStatus == null) {
-        LOG.warn("Unknown task tracker polling; ignoring: " + groomName);
+        LOG.warn("Unknown groom server polling; ignoring: " + groomName);
       } else {
         List<Task> taskList = taskScheduler.assignTasks(groomStatus);
 
@@ -432,14 +432,14 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   }
 
   private void removeTaskEntry(String taskid) {
-    // taskid --> tracker
-    String tracker = taskIdToGroomNameMap.remove(taskid);
+    // taskid --> groom
+    String groom = taskIdToGroomNameMap.remove(taskid);
 
-    // tracker --> taskid
-    if (tracker != null) {
-      TreeSet<String> trackerSet = groomNameToTaskIdsMap.get(tracker);
-      if (trackerSet != null) {
-        trackerSet.remove(taskid);
+    // groom --> taskid
+    if (groom != null) {
+      TreeSet<String> groomSet = groomNameToTaskIdsMap.get(groom);
+      if (groomSet != null) {
+        groomSet.remove(taskid);
       }
     }
 
@@ -457,7 +457,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
         TaskInProgress tip = (TaskInProgress) taskIdToTaskInProgressMap.get(killTaskId);
         if (tip.shouldCloseForClosedJob(killTaskId)) {
           // 
-          // This is how the JobTracker ends a task at the TaskTracker.
+          // This is how the BSPMaster ends a task at the GroomServer.
           // It may be successfully completed, or may be killed in
           // mid-execution.
           //
@@ -689,12 +689,12 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   public void createTaskEntry(String taskid, String groomServer,
       TaskInProgress taskInProgress) {
     LOG.info("Adding task '" + taskid + "' to tip " + taskInProgress.getTIPId()
-        + ", for tracker '" + groomServer + "'");
+        + ", for groom '" + groomServer + "'");
 
-    // taskid --> tracker
+    // taskid --> groom
     taskIdToGroomNameMap.put(taskid, groomServer);
 
-    // tracker --> taskid
+    // groom --> taskid
     TreeSet<String> taskset = groomNameToTaskIdsMap.get(groomServer);
     if (taskset == null) {
       taskset = new TreeSet<String>();

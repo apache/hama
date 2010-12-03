@@ -105,7 +105,7 @@ class TaskInProgress {
     t = new BSPTask(jobId, jobFile, taskid, partition);
     activeTasks.put(taskid, status.getGroomName());
 
-    // Ask JobTracker to note that the task exists
+    // Ask BSPMaster to note that the task exists
     bspMaster.createTaskEntry(taskid, status.getGroomName(), this);
     return t;
   }
@@ -184,7 +184,7 @@ class TaskInProgress {
 
     //
     // Now that the TIP is complete, the other speculative
-    // subtasks will be closed when the owning tasktracker
+    // subtasks will be closed when the owning groom server
     // reports in and calls shouldClose() on this object.
     //
 

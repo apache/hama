@@ -459,7 +459,7 @@ public class BSPJobClient extends Configured implements Tool {
     String cmd = args[0];
     boolean listJobs = false;
     boolean listAllJobs = false;
-    boolean listActiveTrackers = false;
+    boolean listActiveGrooms = false;
     boolean killJob = false;
     String jobid = null;
     
@@ -481,7 +481,7 @@ public class BSPJobClient extends Configured implements Tool {
         displayUsage(cmd);
         return exitCode;
       }
-      listActiveTrackers = true;
+      listActiveGrooms = true;
     } else if ("-kill".equals(cmd)) {
       if (args.length == 1) {
         displayUsage(cmd);
@@ -498,8 +498,8 @@ public class BSPJobClient extends Configured implements Tool {
     } else if (listAllJobs) {
       listAllJobs();
       exitCode = 0;
-    } else if (listActiveTrackers) {
-      listActiveTrackers();
+    } else if (listActiveGrooms) {
+      listActiveGrooms();
       exitCode = 0;
     } else if (killJob) {
       RunningJob job = jc.getJob(new BSPJobID().forName(jobid));
@@ -598,13 +598,13 @@ public class BSPJobClient extends Configured implements Tool {
   }
 
   /**
-   * Display the list of active trackers
+   * Display the list of active groom servers
    */
-  private void listActiveTrackers() throws IOException {
+  private void listActiveGrooms() throws IOException {
     ClusterStatus c = jobSubmitClient.getClusterStatus(true);
-    Map<String, String> trackers = c.getActiveGroomNames();
-    for (String trackerName : trackers.keySet()) {
-      System.out.println(trackerName);
+    Map<String, String> grooms = c.getActiveGroomNames();
+    for (String groomName : grooms.keySet()) {
+      System.out.println(groomName);
     }
   }
 
