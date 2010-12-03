@@ -79,7 +79,7 @@ abstract class GroomServerAction implements Writable {
       break;
     case REINIT_GROOM:
       {
-        action = new ReinitTrackerAction();
+        action = new ReinitGroomAction();
       }
       break;
     case COMMIT_TASK:

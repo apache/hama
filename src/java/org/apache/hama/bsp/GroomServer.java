@@ -258,7 +258,7 @@ public class GroomServer implements Runnable {
         LOG.info("Interrupted. Closing down.");
         return State.INTERRUPTED;
       } catch (DiskErrorException de) {
-        String msg = "Exiting task tracker for disk error:\n"
+        String msg = "Exiting groom server for disk error:\n"
             + StringUtils.stringifyException(de);
         LOG.error(msg);
 
