@@ -21,38 +21,35 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.Text;
-
-
 /**
  * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} 
  * to the {@link org.apache.hama.bsp.GroomServer} to kill a task.
  * 
  */
 class KillTaskAction extends GroomServerAction {
-  String taskId;
+  TaskAttemptID taskId;
   
   public KillTaskAction() {
     super(ActionType.KILL_TASK);
-    taskId = new String();
+    taskId = new TaskAttemptID();
   }
   
-  public KillTaskAction(String killTaskId) {
+  public KillTaskAction(TaskAttemptID killTaskId) {
     super(ActionType.KILL_TASK);
     this.taskId = killTaskId;
   }
 
-  public String getTaskID() {
+  public TaskAttemptID getTaskID() {
     return taskId;
   }
   
   @Override
   public void write(DataOutput out) throws IOException {
-    Text.writeString(out, taskId);
+    taskId.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    taskId = Text.readString(in);
+    taskId.readFields(in);
   }
 }

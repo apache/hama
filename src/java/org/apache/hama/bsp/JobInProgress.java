@@ -53,7 +53,9 @@ class JobInProgress {
   Path localJobFile = null;
   Path localJarFile = null;
   private LocalFileSystem localFs;
-
+  // Indicates how many times the job got restarted
+  private int restartCount;
+  
   long startTime;
   long launchTime;
   long finishTime;
@@ -66,7 +68,7 @@ class JobInProgress {
 
   int numBSPTasks = 0;
   int clusterSize;
-
+  
   public JobInProgress(BSPJobID jobId, BSPMaster master, Configuration conf)
       throws IOException {
     this.conf = conf;
@@ -77,8 +79,10 @@ class JobInProgress {
     this.status = new JobStatus(jobId, 0.0f, 0.0f, JobStatus.PREP);
     this.startTime = System.currentTimeMillis();
     status.setStartTime(startTime);
+    
     this.superstepCounter = 0;
-
+    this.restartCount = 0;
+    
     this.localJobFile = master.getLocalPath(BSPMaster.SUBDIR + "/" + jobId
         + ".xml");
     this.localJarFile = master.getLocalPath(BSPMaster.SUBDIR + "/" + jobId
@@ -191,7 +195,7 @@ class JobInProgress {
   }
 
   public synchronized void completedTask(TaskInProgress tip, TaskStatus status) {
-    String taskid = status.getTaskId();
+    TaskAttemptID taskid = status.getTaskId();
     updateTaskStatus(tip, status);
     LOG.info("Taskid '" + taskid + "' has finished successfully.");
     tip.completed(taskid);
@@ -272,4 +276,12 @@ class JobInProgress {
       LOG.info("Error cleaning up " + profile.getJobID() + ": " + e);
     }
   }
+
+  /**
+   * Get the number of times the job has restarted
+   */
+  int getNumRestarts() {
+    return restartCount;
+  }
+  
 }

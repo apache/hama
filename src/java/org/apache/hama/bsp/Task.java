@@ -35,17 +35,17 @@ public abstract class Task implements Writable {
   
   protected BSPJobID jobId;
   protected String jobFile;
-  protected String taskId;
+  protected TaskAttemptID taskId;
   protected int partition;
   
   protected LocalDirAllocator lDirAlloc;
 
   public Task() {
     jobId = new BSPJobID();
-    taskId = new String();
+    taskId = new TaskAttemptID();
   }
   
-  public Task(BSPJobID jobId, String jobFile, String taskId, int partition) {
+  public Task(BSPJobID jobId, String jobFile, TaskAttemptID taskId, int partition) {
     this.jobId = jobId;
     this.jobFile = jobFile;
     this.taskId = taskId;
@@ -63,7 +63,7 @@ public abstract class Task implements Writable {
     return jobFile; 
   }
   
-  public String getTaskID() {
+  public TaskAttemptID getTaskID() {
     return taskId;
   }
   
@@ -95,7 +95,7 @@ public abstract class Task implements Writable {
   public void write(DataOutput out) throws IOException {
     jobId.write(out);
     Text.writeString(out, jobFile);
-    Text.writeString(out, taskId);
+    taskId.write(out);
     out.writeInt(partition);
   }
   
@@ -103,7 +103,7 @@ public abstract class Task implements Writable {
   public void readFields(DataInput in) throws IOException {
     jobId.readFields(in);
     jobFile = Text.readString(in);
-    taskId = Text.readString(in);
+    taskId.readFields(in);
     partition = in.readInt();
   }
 

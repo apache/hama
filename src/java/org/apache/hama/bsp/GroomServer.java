@@ -87,7 +87,7 @@ public class GroomServer implements Runnable {
   private int maxCurrentTasks = 1;
   Map<TaskAttemptID, TaskInProgress> tasks = new HashMap<TaskAttemptID, TaskInProgress>();
   /** Map from taskId -> TaskInProgress. */
-  Map<String, TaskInProgress> runningTasks = null;
+  Map<TaskAttemptID, TaskInProgress> runningTasks = null;
   Map<BSPJobID, RunningJob> runningJobs = null;
 
   private BlockingQueue<GroomServerAction> tasksToCleanup = new LinkedBlockingQueue<GroomServerAction>();
@@ -122,7 +122,7 @@ public class GroomServer implements Runnable {
     // Clear out state tables
     this.tasks.clear();
     this.runningJobs = new TreeMap<BSPJobID, RunningJob>();
-    this.runningTasks = new LinkedHashMap<String, TaskInProgress>();
+    this.runningTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
     this.acceptNewTasks = true;
 
     this.conf.set(Constants.PEER_HOST, localHostname);

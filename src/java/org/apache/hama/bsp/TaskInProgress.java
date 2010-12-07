@@ -38,7 +38,8 @@ class TaskInProgress {
   static final int MAX_TASK_EXECS = 1;
   int maxTaskAttempts = 4;
   private boolean failed = false;
-
+  private static final int NUM_ATTEMPTS_PER_RESTART = 1000;
+  
   // Job Meta
   private String jobFile = null;
   private int partition;
@@ -63,13 +64,13 @@ class TaskInProgress {
 
   // Map from task Id -> GroomServer Id, contains tasks that are
   // currently runnings
-  private TreeMap<String, String> activeTasks = new TreeMap<String, String>();
+  private TreeMap<TaskAttemptID, String> activeTasks = new TreeMap<TaskAttemptID, String>();
   // All attempt Ids of this TIP
   // private TreeSet<TaskAttemptID> tasks = new TreeSet<TaskAttemptID>();
   /**
    * Map from taskId -> TaskStatus
    */
-  private TreeMap<String, TaskStatus> taskStatuses = new TreeMap<String, TaskStatus>();
+  private TreeMap<TaskAttemptID, TaskStatus> taskStatuses = new TreeMap<TaskAttemptID, TaskStatus>();
 
   private BSPJobID jobId;
 
@@ -92,9 +93,12 @@ class TaskInProgress {
     Task t = null;
 
     // TODO use the TaskID, instead of String.
-    String taskid = null;
+    TaskAttemptID taskid = null;
     if (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts)) {
-      taskid = new String("task_" + status.getGroomName() + "_" + nextTaskId);
+      int attemptId = job.getNumRestarts() * NUM_ATTEMPTS_PER_RESTART + nextTaskId;
+      taskid = new TaskAttemptID( id, attemptId);
+      //new String("task_" + status.getGroomName() + "_" + nextTaskId);
+      
       ++nextTaskId;
     } else {
       LOG.warn("Exceeded limit of " + (MAX_TASK_EXECS + maxTaskAttempts)
@@ -131,7 +135,7 @@ class TaskInProgress {
     return id;
   }
 
-  public TreeMap<String, String> getTasks() {
+  public TreeMap<TaskAttemptID, String> getTasks() {
     return activeTasks;
   }
 
@@ -163,9 +167,9 @@ class TaskInProgress {
     return (completes > 0);
   }
 
-  private TreeSet<String> tasksReportedClosed = new TreeSet<String>();
+  private TreeSet<TaskAttemptID> tasksReportedClosed = new TreeSet<TaskAttemptID>();
 
-  public boolean shouldCloseForClosedJob(String taskid) {
+  public boolean shouldCloseForClosedJob(TaskAttemptID taskid) {
     TaskStatus ts = (TaskStatus) taskStatuses.get(taskid);
     if ((ts != null) && (!tasksReportedClosed.contains(taskid))
         && (job.getStatus().getRunState() != JobStatus.RUNNING)) {
@@ -176,8 +180,8 @@ class TaskInProgress {
     }
   }
 
-  public void completed(String taskid) {
-    LOG.info("Task '" + taskid + "' has completed.");
+  public void completed(TaskAttemptID taskid) {
+    LOG.info("Task '" + taskid.getTaskID().toString() + "' has completed.");
     TaskStatus status = (TaskStatus) taskStatuses.get(taskid);
     status.setRunState(TaskStatus.State.SUCCEEDED);
     activeTasks.remove(taskid);
@@ -195,7 +199,7 @@ class TaskInProgress {
     taskStatuses.put(status.getTaskId(), status);
   }
 
-  public TaskStatus getTaskStatus(String taskId) {
+  public TaskStatus getTaskStatus(TaskAttemptID taskId) {
     return this.taskStatuses.get(taskId);
   }
 

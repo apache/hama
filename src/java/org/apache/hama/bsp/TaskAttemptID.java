@@ -21,6 +21,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+/**
+ * TaskAttemptID is a unique identifier for a task attempt.
+ */
 public class TaskAttemptID extends ID {
   protected static final String ATTEMPT = "attempt";
   private TaskID taskId;
