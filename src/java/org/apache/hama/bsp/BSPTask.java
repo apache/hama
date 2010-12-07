@@ -22,7 +22,7 @@ public class BSPTask extends Task {
   public BSPTask() {
   }
 
-  public BSPTask(BSPJobID jobId, String jobFile, String taskid, int partition) {
+  public BSPTask(BSPJobID jobId, String jobFile, TaskAttemptID taskid, int partition) {
     this.jobId = jobId;
     this.jobFile = jobFile;
     this.taskId = taskid;

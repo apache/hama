@@ -40,7 +40,7 @@ class TaskStatus implements Writable, Cloneable {
     RUNNING, SUCCEEDED, FAILED, UNASSIGNED, KILLED, COMMIT_PENDING, FAILED_UNCLEAN, KILLED_UNCLEAN
   }
 
-  private String taskId;
+  private TaskAttemptID taskId;
   private float progress;
   private volatile State runState;
   private String stateString;
@@ -56,11 +56,11 @@ class TaskStatus implements Writable, Cloneable {
    * 
    */
   public TaskStatus() {
-    taskId = new String();
+    taskId = new TaskAttemptID();
     this.superstepCount = 0;
   }
 
-  public TaskStatus(String taskId, float progress, State runState,
+  public TaskStatus(TaskAttemptID taskId, float progress, State runState,
       String stateString, String groomServer, Phase phase) {
     this.taskId = taskId;
     this.progress = progress;
@@ -75,7 +75,7 @@ class TaskStatus implements Writable, Cloneable {
   // Accessors and Modifiers
   // //////////////////////////////////////////////////
 
-  public String getTaskId() {
+  public TaskAttemptID getTaskId() {
     return taskId;
   }
 
@@ -242,7 +242,7 @@ class TaskStatus implements Writable, Cloneable {
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.taskId = Text.readString(in);
+    this.taskId.readFields(in);
     this.progress = in.readFloat();
     this.runState = WritableUtils.readEnum(in, State.class);
     this.stateString = Text.readString(in);
@@ -254,7 +254,7 @@ class TaskStatus implements Writable, Cloneable {
 
   @Override
   public void write(DataOutput out) throws IOException {
-    Text.writeString(out, taskId);
+    taskId.write(out);
     out.writeFloat(progress);
     WritableUtils.writeEnum(out, runState);
     Text.writeString(out, stateString);

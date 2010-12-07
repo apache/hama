@@ -96,8 +96,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         peerNames.add("localhost:" + (30000 + i));
       }
       peer.setAllPeerNames(peerNames);
-      TaskStatus currentTaskStatus = new TaskStatus("localhost:"
-          + lastTwoDigitsOfPort, 0, null, null, null, null);
+      TaskStatus currentTaskStatus = new TaskStatus(new TaskAttemptID(), 0, null, null, null, null);
       peer.setCurrentTaskStatus(currentTaskStatus);
       BSPJob jobConf = new BSPJob(conf, NUM_PEER);
       peer.setJobConf((BSPJob) jobConf);
