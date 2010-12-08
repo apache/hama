@@ -4,6 +4,7 @@ Trunk (unreleased changes)
 
   NEW FEATURES
 
+    HAMA-337: Provide Apache Maven building support (Tommaso Teofili via edwardyoon)
     HAMA-304: Allow BSP peers to get a list of all other peers 
                 executing tasks of the same job (Filipe Manana via edwardyoon)
     HAMA-267: Add command-line interface for job management
