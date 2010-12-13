@@ -47,7 +47,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.ipc.InterTrackerProtocol;
+import org.apache.hama.ipc.InterServerProtocol;
 
 public class GroomServer implements Runnable {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
@@ -74,7 +74,7 @@ public class GroomServer implements Runnable {
   String groomServerName;
   String localHostname;
   InetSocketAddress bspMasterAddr;
-  InterTrackerProtocol jobClient;
+  InterServerProtocol jobClient;
 
   // Filesystem
   // private LocalDirAllocator localDirAllocator;
@@ -133,8 +133,8 @@ public class GroomServer implements Runnable {
 
     DistributedCache.purgeCache(this.conf);
 
-    this.jobClient = (InterTrackerProtocol) RPC.waitForProxy(
-        InterTrackerProtocol.class, InterTrackerProtocol.versionID,
+    this.jobClient = (InterServerProtocol) RPC.waitForProxy(
+        InterServerProtocol.class, InterServerProtocol.versionID,
         bspMasterAddr, conf);
     this.running = true;
   }

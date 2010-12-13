@@ -22,8 +22,12 @@ import java.io.IOException;
 import org.apache.hama.bsp.GroomServerStatus;
 import org.apache.hama.bsp.HeartbeatResponse;
 
-public interface InterTrackerProtocol extends HamaRPCProtocolVersion {
-  public HeartbeatResponse heartbeat(GroomServerStatus status, 
+/**
+ * Protocol that a GroomServer and the central BSPMaster use to communicate. The
+ * BSPMaster is the Server, which implements this protocol.
+ */
+public interface InterServerProtocol extends HamaRPCProtocolVersion {
+  public HeartbeatResponse heartbeat(GroomServerStatus status,
       boolean restarted, boolean initialContact, boolean acceptNewTasks,
       short responseId, int reportSize) throws IOException;
 

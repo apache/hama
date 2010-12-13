@@ -386,7 +386,8 @@ public class BSPJobClient extends Configured implements Tool {
 
     // TODO this code must be removed
     // when GroomServer supports the multiple tasks.
-    if (job.getNumBspTask() > jc.getClusterStatus(false).getGroomServers()) {
+    if (job.getNumBspTask() == 0
+        || job.getNumBspTask() > jc.getClusterStatus(false).getGroomServers()) {
       // If the number of tasks is greater than the number of GroomServer,
       // reset the number of tasks as number of GroomServer.
       job.setNumBspTask(jc.getClusterStatus(false).getGroomServers());
@@ -462,7 +463,7 @@ public class BSPJobClient extends Configured implements Tool {
     boolean listActiveGrooms = false;
     boolean killJob = false;
     String jobid = null;
-    
+
     HamaConfiguration conf = new HamaConfiguration(getConf());
     init(conf);
 
@@ -504,10 +505,10 @@ public class BSPJobClient extends Configured implements Tool {
     } else if (killJob) {
       RunningJob job = jc.getJob(new BSPJobID().forName(jobid));
       if (job == null) {
-          System.out.println("Could not find job " + jobid);
+        System.out.println("Could not find job " + jobid);
       } else {
-          job.killJob();
-          System.out.println("Killed job " + jobid);
+        job.killJob();
+        System.out.println("Killed job " + jobid);
       }
       exitCode = 0;
     }

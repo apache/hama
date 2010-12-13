@@ -46,14 +46,14 @@ import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.ipc.InterTrackerProtocol;
+import org.apache.hama.ipc.InterServerProtocol;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 
 /**
  * BSPMaster is responsible to control all the groom servers and to manage bsp
  * jobs.
  */
-public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
+public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
     GroomServerManager {
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
 
@@ -73,7 +73,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
 
   // Attributes
   String masterIdentifier;
-  private Server interTrackerServer;
+  private Server interServer;
 
   // Filesystem
   static final String SUBDIR = "bspMaster";
@@ -131,7 +131,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
         schedulerClass, conf);
 
     InetSocketAddress addr = getAddress(conf);
-    this.interTrackerServer = RPC.getServer(this, addr.getHostName(), addr
+    this.interServer = RPC.getServer(this, addr.getHostName(), addr
         .getPort(), conf);
 
     while (!Thread.currentThread().isInterrupted()) {
@@ -306,29 +306,29 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
     new Thread(this.initJobs).start();
     LOG.info("Starting jobInitThread");
 
-    this.interTrackerServer.start();
+    this.interServer.start();
 
     synchronized (this) {
       state = State.RUNNING;
     }
     LOG.info("Starting RUNNING");
 
-    this.interTrackerServer.join();
-    LOG.info("Stopped interTrackerServer");
+    this.interServer.join();
+    LOG.info("Stopped interServer");
   }
 
   // //////////////////////////////////////////////////
-  // InterTrackerProtocol
+  // InterServerProtocol
   // //////////////////////////////////////////////////
   @Override
   public long getProtocolVersion(String protocol, long clientVersion)
       throws IOException {
-    if (protocol.equals(InterTrackerProtocol.class.getName())) {
-      return InterTrackerProtocol.versionID;
+    if (protocol.equals(InterServerProtocol.class.getName())) {
+      return InterServerProtocol.versionID;
     } else if (protocol.equals(JobSubmissionProtocol.class.getName())) {
       return JobSubmissionProtocol.versionID;
     } else {
-      throw new IOException("Unknown protocol to job tracker: " + protocol);
+      throw new IOException("Unknown protocol to BSPMaster: " + protocol);
     }
   }
 
@@ -421,7 +421,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   TreeMap<String, TreeSet<TaskAttemptID>> trackerToMarkedTasksMap = new TreeMap<String, TreeSet<TaskAttemptID>>();
 
   private void removeMarkedTasks(String groomName) {
-    // Purge all the 'marked' tasks which were running at taskTracker
+    // Purge all the 'marked' tasks which were running at groomServer
     TreeSet<TaskAttemptID> markedTaskSet = trackerToMarkedTasksMap
         .get(groomName);
     if (markedTaskSet != null) {
@@ -689,7 +689,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterTrackerProtocol,
   }
 
   public void shutdown() {
-    this.interTrackerServer.stop();
+    this.interServer.stop();
   }
 
   public void createTaskEntry(TaskAttemptID taskid, String groomServer,
