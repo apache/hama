@@ -526,9 +526,6 @@ public class BSPJobClient extends Configured implements Tool {
       System.err.println(prefix + "[" + cmd + " <job-file>]");
     } else if ("-status".equals(cmd) || "-kill".equals(cmd)) {
       System.err.println(prefix + "[" + cmd + " <job-id>]");
-    } else if ("-counter".equals(cmd)) {
-      System.err.println(prefix + "[" + cmd
-          + " <job-id> <group-name> <counter-name>]");
     } else if ("-events".equals(cmd)) {
       System.err.println(prefix + "[" + cmd
           + " <job-id> <from-event-#> <#-of-events>]");
@@ -548,7 +545,6 @@ public class BSPJobClient extends Configured implements Tool {
       System.err.printf(prefix + "<command> <args>\n");
       System.err.printf("\t[-submit <job-file>]\n");
       System.err.printf("\t[-status <job-id>]\n");
-      System.err.printf("\t[-counter <job-id> <group-name> <counter-name>]\n");
       System.err.printf("\t[-kill <job-id>]\n");
       System.err.printf("\t[-events <job-id> <from-event-#> <#-of-events>]\n");
       System.err.printf("\t[-history <jobOutputDir>]\n");

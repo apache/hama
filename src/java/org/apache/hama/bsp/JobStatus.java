@@ -18,7 +18,6 @@
 package org.apache.hama.bsp;
 
 import java.io.DataInput;
-
 import java.io.DataOutput;
 import java.io.IOException;
 
@@ -28,7 +27,6 @@ import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableFactory;
 
 public class JobStatus implements Writable, Cloneable {
-
   static {
     WritableFactories.setFactory(JobStatus.class, new WritableFactory() {
       public Writable newInstance() {
@@ -56,21 +54,21 @@ public class JobStatus implements Writable, Cloneable {
   public JobStatus() {
   }
 
-  public JobStatus(BSPJobID jobid, float progress, int runState) {
-    this(jobid, progress, 0.0f, runState);
+  public JobStatus(BSPJobID jobid, String user, float progress, int runState) {
+    this(jobid, user, progress, 0.0f, runState);
   }
 
-  public JobStatus(BSPJobID jobid, float progress, float cleanupProgress,
+  public JobStatus(BSPJobID jobid, String user, float progress, float cleanupProgress,
       int runState) {
-    this(jobid, 0.0f, progress, cleanupProgress, runState);
+    this(jobid, user, 0.0f, progress, cleanupProgress, runState);
   }
 
-  public JobStatus(BSPJobID jobid, float setupProgress, float progress,
+  public JobStatus(BSPJobID jobid, String user, float setupProgress, float progress,
       float cleanupProgress, int runState) {
-    this(jobid, 0.0f, progress, cleanupProgress, runState, 0);
+    this(jobid, user, 0.0f, progress, cleanupProgress, runState, 0);
   }
 
-  public JobStatus(BSPJobID jobid, float setupProgress, float progress,
+  public JobStatus(BSPJobID jobid, String user, float setupProgress, float progress,
       float cleanupProgress, int runState, long superstepCount) {
     this.jobid = jobid;
     this.setupProgress = setupProgress;
@@ -78,6 +76,7 @@ public class JobStatus implements Writable, Cloneable {
     this.cleanupProgress = cleanupProgress;
     this.runState = runState;
     this.superstepCount = superstepCount;
+    this.user = user;
   }
   
   public BSPJobID getJobID() {
@@ -120,26 +119,26 @@ public class JobStatus implements Writable, Cloneable {
     return superstepCount;
   }
   
-  synchronized void setStartTime(long startTime) {
+  public synchronized void setStartTime(long startTime) {
     this.startTime = startTime;
   }
 
-  synchronized public long getStartTime() {
+  public synchronized long getStartTime() {
     return startTime;
   }
 
   /**
    * @param user The username of the job
    */
-  synchronized void setUsername(String userName) {
-    this.user = userName;
+  public synchronized void setUsername(String user) {
+    this.user = user;
   }
 
   /**
    * @return the username of the job
    */
   public synchronized String getUsername() {
-    return this.user;
+    return user;
   }
 
   @Override
@@ -170,6 +169,7 @@ public class JobStatus implements Writable, Cloneable {
     out.writeFloat(cleanupProgress);
     out.writeInt(runState);
     out.writeLong(startTime);
+    Text.writeString(out, user);
     Text.writeString(out, schedulingInfo);
     out.writeLong(superstepCount);
   }
@@ -182,6 +182,7 @@ public class JobStatus implements Writable, Cloneable {
     this.cleanupProgress = in.readFloat();
     this.runState = in.readInt();
     this.startTime = in.readLong();
+    this.user = Text.readString(in);
     this.schedulingInfo = Text.readString(in);
     this.superstepCount = in.readLong();
   }

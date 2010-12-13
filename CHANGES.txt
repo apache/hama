@@ -191,6 +191,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-338: Username and Job-manager states are not collectly displayed (edwardyoon)
     HAMA-330: BSP program doesn't work when the desired tasks smaller than 
                        cluster size (edwardyoon)
     HAMA-326: GroomServer should wait until a job finishes (edwardyoon)
