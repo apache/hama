@@ -187,7 +187,6 @@ public class BSPJob extends BSPJobContext {
   }
 
   public void submit() throws IOException, InterruptedException {
-    System.out.println("Submitted");
     ensureState(JobState.DEFINE);
     info = jobClient.submitJobInternal(this);
     state = JobState.RUNNING;
