@@ -55,7 +55,7 @@ class JobInProgress {
   private LocalFileSystem localFs;
   // Indicates how many times the job got restarted
   private int restartCount;
-  
+
   long startTime;
   long launchTime;
   long finishTime;
@@ -68,7 +68,7 @@ class JobInProgress {
 
   int numBSPTasks = 0;
   int clusterSize;
-  
+
   public JobInProgress(BSPJobID jobId, BSPMaster master, Configuration conf)
       throws IOException {
     this.conf = conf;
@@ -76,13 +76,11 @@ class JobInProgress {
     this.localFs = FileSystem.getLocal(conf);
 
     this.master = master;
-    this.status = new JobStatus(jobId, 0.0f, 0.0f, JobStatus.PREP);
+    this.status = new JobStatus(jobId, null, 0.0f, 0.0f, JobStatus.PREP);
     this.startTime = System.currentTimeMillis();
-    status.setStartTime(startTime);
-    
     this.superstepCounter = 0;
     this.restartCount = 0;
-    
+
     this.localJobFile = master.getLocalPath(BSPMaster.SUBDIR + "/" + jobId
         + ".xml");
     this.localJarFile = master.getLocalPath(BSPMaster.SUBDIR + "/" + jobId
@@ -97,6 +95,9 @@ class JobInProgress {
 
     this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
         .getJobName());
+
+    status.setUsername(job.getUser());
+    status.setStartTime(startTime);
 
     String jarFile = job.getJar();
     if (jarFile != null) {
@@ -162,8 +163,8 @@ class JobInProgress {
     }
 
     // Update job status
-    this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f,
-        JobStatus.RUNNING);
+    this.status = new JobStatus(this.status.getJobID(), this.profile.getUser(),
+        1.0f, 1.0f, JobStatus.RUNNING);
 
     tasksInited = true;
     LOG.debug("Job is initialized.");
@@ -215,8 +216,8 @@ class JobInProgress {
     if (allDone) {
       LOG.debug("Job successfully done.");
 
-      this.status = new JobStatus(this.status.getJobID(), 1.0f, 1.0f, 1.0f,
-          JobStatus.SUCCEEDED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(), this.profile
+          .getUser(), 1.0f, 1.0f, 1.0f, JobStatus.SUCCEEDED, superstepCounter);
       garbageCollect();
     }
   }
@@ -235,8 +236,8 @@ class JobInProgress {
   public synchronized void kill() {
     LOG.debug(">> JobInProgress.kill() step.");
     if (status.getRunState() != JobStatus.FAILED) {
-      this.status = new JobStatus(status.getJobID(), 1.0f, 1.0f, 1.0f,
-          JobStatus.FAILED);
+      this.status = new JobStatus(status.getJobID(), this.profile.getUser(),
+          1.0f, 1.0f, 1.0f, JobStatus.FAILED);
       this.finishTime = System.currentTimeMillis();
 
       //
@@ -283,5 +284,5 @@ class JobInProgress {
   int getNumRestarts() {
     return restartCount;
   }
-  
+
 }

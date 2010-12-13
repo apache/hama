@@ -600,6 +600,11 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
     List<JobStatus> jobStatusList = new ArrayList<JobStatus>();
     for (JobInProgress jip : jips) {
       JobStatus status = jip.getStatus();
+      
+      status.setStartTime(jip.getStartTime());
+      // Sets the user name
+      status.setUsername(jip.getProfile().getUser());
+      
       if (toComplete) {
         if (status.getRunState() == JobStatus.RUNNING
             || status.getRunState() == JobStatus.PREP) {
