@@ -520,17 +520,12 @@ public class BSPJobClient extends Configured implements Tool {
    * Display usage of the command-line tool and terminate execution
    */
   private void displayUsage(String cmd) {
-    String prefix = "Usage: JobClient ";
+    String prefix = "Usage: hama job ";
     String taskStates = "running, completed";
     if ("-submit".equals(cmd)) {
       System.err.println(prefix + "[" + cmd + " <job-file>]");
     } else if ("-status".equals(cmd) || "-kill".equals(cmd)) {
       System.err.println(prefix + "[" + cmd + " <job-id>]");
-    } else if ("-events".equals(cmd)) {
-      System.err.println(prefix + "[" + cmd
-          + " <job-id> <from-event-#> <#-of-events>]");
-    } else if ("-history".equals(cmd)) {
-      System.err.println(prefix + "[" + cmd + " <jobOutputDir>]");
     } else if ("-list".equals(cmd)) {
       System.err.println(prefix + "[" + cmd + " [all]]");
     } else if ("-kill-task".equals(cmd) || "-fail-task".equals(cmd)) {
@@ -539,18 +534,16 @@ public class BSPJobClient extends Configured implements Tool {
       System.err.println(prefix + "[" + cmd + "]");
     } else if ("-list-attempt-ids".equals(cmd)) {
       System.err.println(prefix + "[" + cmd
-          + " <job-id> <task-type> <task-state>]. "
+          + " <job-id> <task-state>]. "
           + "Valid values for <task-state> are " + taskStates);
     } else {
       System.err.printf(prefix + "<command> <args>\n");
       System.err.printf("\t[-submit <job-file>]\n");
       System.err.printf("\t[-status <job-id>]\n");
       System.err.printf("\t[-kill <job-id>]\n");
-      System.err.printf("\t[-events <job-id> <from-event-#> <#-of-events>]\n");
-      System.err.printf("\t[-history <jobOutputDir>]\n");
       System.err.printf("\t[-list [all]]\n");
       System.err.printf("\t[-list-active-grooms]\n");
-      System.err.println("\t[-list-attempt-ids <job-id> <task-type> "
+      System.err.println("\t[-list-attempt-ids <job-id> "
           + "<task-state>]\n");
       System.err.printf("\t[-kill-task <task-id>]\n");
       System.err.printf("\t[-fail-task <task-id>]\n\n");

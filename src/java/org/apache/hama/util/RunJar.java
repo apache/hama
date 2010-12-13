@@ -76,7 +76,7 @@ public class RunJar {
    * it must be provided on the command line.
    */
   public static void main(String[] args) throws Throwable {
-    String usage = "RunJar jarFile [mainClass] args...";
+    String usage = "Usage: hama jar <jar> [mainClass] args...";
 
     if (args.length < 1) {
       System.err.println(usage);
