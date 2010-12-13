@@ -51,6 +51,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
     
+    HAMA-278: Few minor refactoring (edwardyoon)
     HAMA-336: The all taskid variable's type should be declared as a TaskAttemptID
                        (edwardyoon)
     HAMA-331: Removing JobInProgressListener 

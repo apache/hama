@@ -85,7 +85,7 @@ public class BSPJob extends BSPJobContext {
   public void setWorkingDirectory(Path dir) throws IOException {
     ensureState(JobState.DEFINE);
     dir = new Path(getWorkingDirectory(), dir);
-    conf.set("bsp.working.dir", dir.toString());
+    conf.set(WORKING_DIR, dir.toString());
   }
 
   /**
@@ -215,6 +215,6 @@ public class BSPJob extends BSPJobContext {
   }
 
   public int getNumBspTask() {
-    return conf.getInt("bsp.peers.num", 1);
+    return conf.getInt("bsp.peers.num", 0);
   }
 }

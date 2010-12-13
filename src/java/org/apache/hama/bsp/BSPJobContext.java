@@ -35,7 +35,8 @@ public class BSPJobContext {
   protected static final String WORK_CLASS_ATTR = "bsp.work.class";
   protected static final String INPUT_FORMAT_CLASS_ATTR = "bsp.inputformat.class";
   protected static final String OUTPUT_FORMAT_CLASS_ATTR = "bsp.outputformat.class";
-
+  protected static final String WORKING_DIR = "bsp.working.dir";
+  
   protected final Configuration conf;
   private final BSPJobID jobId;
 
@@ -55,14 +56,14 @@ public class BSPJobContext {
   }
 
   public Path getWorkingDirectory() throws IOException {
-    String name = conf.get("bsp.working.dir");
+    String name = conf.get(WORKING_DIR);
 
     if (name != null) {
       return new Path(name);
     } else {
       try {
         Path dir = FileSystem.get(conf).getWorkingDirectory();
-        conf.set("bsp.working.dir", dir.toString());
+        conf.set(WORKING_DIR, dir.toString());
         return dir;
       } catch (IOException e) {
         throw new RuntimeException(e);
