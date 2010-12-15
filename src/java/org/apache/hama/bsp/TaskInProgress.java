@@ -57,7 +57,7 @@ class TaskInProgress {
   int nextTaskId = 0;
 
   // The taskid that took this TIP to SUCCESS
-  // private TaskAttemptID successfulTaskId;
+  private TaskAttemptID successfulTaskId;
 
   // The first taskid of this tip
   private TaskAttemptID firstTaskId;
@@ -164,6 +164,16 @@ class TaskInProgress {
   public synchronized boolean isComplete() {
     return (completes > 0);
   }
+  
+  /**
+   * Is the given taskid the one that took this tip to completion?
+   * 
+   * @param taskid taskid of attempt to check for completion
+   * @return <code>true</code> if taskid is complete, else <code>false</code>
+   */
+  public boolean isComplete(TaskAttemptID taskid) {
+    return (completes > 0 && taskid.equals(getSuccessfulTaskid()));
+  }
 
   private TreeSet<TaskAttemptID> tasksReportedClosed = new TreeSet<TaskAttemptID>();
 
@@ -180,10 +190,14 @@ class TaskInProgress {
 
   public void completed(TaskAttemptID taskid) {
     LOG.info("Task '" + taskid.getTaskID().toString() + "' has completed.");
+    
     TaskStatus status = (TaskStatus) taskStatuses.get(taskid);
     status.setRunState(TaskStatus.State.SUCCEEDED);
     activeTasks.remove(taskid);
 
+    // Note the successful taskid
+    setSuccessfulTaskid(taskid);
+    
     //
     // Now that the TIP is complete, the other speculative
     // subtasks will be closed when the owning groom server
@@ -193,6 +207,14 @@ class TaskInProgress {
     this.completes++;
   }
 
+  private void setSuccessfulTaskid(TaskAttemptID taskid) {
+    this.successfulTaskId = taskid; 
+  }
+
+  private TaskAttemptID getSuccessfulTaskid() {
+    return successfulTaskId;
+  }
+  
   public void updateStatus(TaskStatus status) {
     taskStatuses.put(status.getTaskId(), status);
   }
