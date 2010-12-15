@@ -182,7 +182,7 @@ class JobInProgress {
     Task result = null;
     try {
       for (int i = 0; i < tasks.length; i++) {
-        if (!tasks[i].isRunning()) {
+        if (!tasks[i].isRunning() && !tasks[i].isComplete()) {
           result = tasks[i].getTaskToRun(status);
           break;
         }
