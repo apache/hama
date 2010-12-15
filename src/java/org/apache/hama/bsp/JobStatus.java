@@ -50,6 +50,8 @@ public class JobStatus implements Writable, Cloneable {
   private String schedulingInfo = "NA";
   private String user;
   private long superstepCount;
+
+  private long finishTime;
   
   public JobStatus() {
   }
@@ -127,6 +129,17 @@ public class JobStatus implements Writable, Cloneable {
     return startTime;
   }
 
+  public synchronized void setFinishTime(long finishTime) {
+    this.finishTime = finishTime;
+  }
+  
+  /**
+   * Get the finish time of the job.
+   */
+  public synchronized long getFinishTime() { 
+    return finishTime;
+  }
+  
   /**
    * @param user The username of the job
    */
@@ -169,6 +182,7 @@ public class JobStatus implements Writable, Cloneable {
     out.writeFloat(cleanupProgress);
     out.writeInt(runState);
     out.writeLong(startTime);
+    out.writeLong(finishTime);
     Text.writeString(out, user);
     Text.writeString(out, schedulingInfo);
     out.writeLong(superstepCount);
@@ -182,6 +196,7 @@ public class JobStatus implements Writable, Cloneable {
     this.cleanupProgress = in.readFloat();
     this.runState = in.readInt();
     this.startTime = in.readLong();
+    this.finishTime = in.readLong();
     this.user = Text.readString(in);
     this.schedulingInfo = Text.readString(in);
     this.superstepCount = in.readLong();
