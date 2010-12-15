@@ -22,6 +22,7 @@ package org.apache.hama;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 
 /**
  * Adds Hama configuration files to a Configuration
@@ -33,6 +34,11 @@ public class HamaConfiguration extends Configuration {
     addHamaResources();
   }
 
+  public HamaConfiguration(Path confFile) {
+    super();
+    this.addResource(confFile);
+  }
+  
   /**
    * Create a clone of passed configuration.
    * 

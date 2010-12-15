@@ -20,6 +20,7 @@ package org.apache.hama.bsp;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Random;
 
 import javax.security.auth.login.LoginException;
 
@@ -264,9 +265,13 @@ public class BSPJobClient extends Configured implements Tool {
     return submitJobInternal(job);
   }
 
+  static Random r = new Random();
+
   public RunningJob submitJobInternal(BSPJob job) throws IOException {
     BSPJobID jobId = jobSubmitClient.getNewJobId();
-    Path submitJobDir = new Path(getSystemDir(), jobId.toString());
+
+    Path submitJobDir = new Path(getSystemDir(), "submit_"
+        + Integer.toString(Math.abs(r.nextInt()), 36));
     Path submitJarFile = new Path(submitJobDir, "job.jar");
     Path submitJobFile = new Path(submitJobDir, "job.xml");
 
@@ -462,6 +467,8 @@ public class BSPJobClient extends Configured implements Tool {
     boolean listAllJobs = false;
     boolean listActiveGrooms = false;
     boolean killJob = false;
+    boolean submitJob = false;
+    String submitJobFile = null;
     String jobid = null;
 
     HamaConfiguration conf = new HamaConfiguration(getConf());
@@ -483,6 +490,14 @@ public class BSPJobClient extends Configured implements Tool {
         return exitCode;
       }
       listActiveGrooms = true;
+    } else if ("-submit".equals(cmd)) {
+      if (args.length == 1) {
+        displayUsage(cmd);
+        return exitCode;
+      }
+
+      submitJob = true;
+      submitJobFile = args[1];
     } else if ("-kill".equals(cmd)) {
       if (args.length == 1) {
         displayUsage(cmd);
@@ -502,6 +517,10 @@ public class BSPJobClient extends Configured implements Tool {
     } else if (listActiveGrooms) {
       listActiveGrooms();
       exitCode = 0;
+    } else if (submitJob) {
+      HamaConfiguration tConf = new HamaConfiguration(new Path(submitJobFile));
+      RunningJob job = jc.submitJob(new BSPJob(tConf));
+      System.out.println("Created job " + job.getID().toString());
     } else if (killJob) {
       RunningJob job = jc.getJob(new BSPJobID().forName(jobid));
       if (job == null) {
@@ -533,8 +552,7 @@ public class BSPJobClient extends Configured implements Tool {
     } else if ("-list-active-grooms".equals(cmd)) {
       System.err.println(prefix + "[" + cmd + "]");
     } else if ("-list-attempt-ids".equals(cmd)) {
-      System.err.println(prefix + "[" + cmd
-          + " <job-id> <task-state>]. "
+      System.err.println(prefix + "[" + cmd + " <job-id> <task-state>]. "
           + "Valid values for <task-state> are " + taskStates);
     } else {
       System.err.printf(prefix + "<command> <args>\n");
@@ -543,8 +561,7 @@ public class BSPJobClient extends Configured implements Tool {
       System.err.printf("\t[-kill <job-id>]\n");
       System.err.printf("\t[-list [all]]\n");
       System.err.printf("\t[-list-active-grooms]\n");
-      System.err.println("\t[-list-attempt-ids <job-id> "
-          + "<task-state>]\n");
+      System.err.println("\t[-list-attempt-ids <job-id> " + "<task-state>]\n");
       System.err.printf("\t[-kill-task <task-id>]\n");
       System.err.printf("\t[-fail-task <task-id>]\n\n");
     }
