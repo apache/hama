@@ -214,10 +214,13 @@ class JobInProgress {
     }
 
     if (allDone) {
-      LOG.debug("Job successfully done.");
-
       this.status = new JobStatus(this.status.getJobID(), this.profile
           .getUser(), 1.0f, 1.0f, 1.0f, JobStatus.SUCCEEDED, superstepCounter);
+      this.finishTime = System.currentTimeMillis();
+      this.status.setFinishTime(this.finishTime);
+      
+      LOG.debug("Job successfully done.");
+      
       garbageCollect();
     }
   }
@@ -239,7 +242,7 @@ class JobInProgress {
       this.status = new JobStatus(status.getJobID(), this.profile.getUser(),
           1.0f, 1.0f, 1.0f, JobStatus.FAILED);
       this.finishTime = System.currentTimeMillis();
-
+      this.status.setFinishTime(this.finishTime);
       //
       // kill all TIPs.
       //
