@@ -69,12 +69,12 @@ class JobInProgress {
   int numBSPTasks = 0;
   int clusterSize;
 
-  public JobInProgress(BSPJobID jobId, BSPMaster master, Configuration conf)
+  public JobInProgress(BSPJobID jobId, Path jobFile, BSPMaster master, Configuration conf)
       throws IOException {
     this.conf = conf;
     this.jobId = jobId;
     this.localFs = FileSystem.getLocal(conf);
-
+    this.jobFile = jobFile;
     this.master = master;
     this.status = new JobStatus(jobId, null, 0.0f, 0.0f, JobStatus.PREP);
     this.startTime = System.currentTimeMillis();
@@ -88,7 +88,6 @@ class JobInProgress {
 
     Path jobDir = master.getSystemDirectoryForJob(jobId);
     FileSystem fs = jobDir.getFileSystem(conf);
-    jobFile = new Path(jobDir, "job.xml");
     fs.copyToLocalFile(jobFile, localJobFile);
     BSPJob job = new BSPJob(jobId, localJobFile.toString());
     this.numBSPTasks = job.getNumBspTask();
@@ -155,6 +154,8 @@ class JobInProgress {
       return;
     }
 
+    LOG.debug("numBSPTasks: " + numBSPTasks);
+    
     // adjust number of map tasks to actual number of splits
     this.tasks = new TaskInProgress[numBSPTasks];
     for (int i = 0; i < numBSPTasks; i++) {

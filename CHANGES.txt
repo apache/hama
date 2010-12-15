@@ -50,7 +50,8 @@ Trunk (unreleased changes)
     HAMA-2: The intial donation of Hama from the google project (edwardyoon)
 
   IMPROVEMENTS
-    
+ 
+    HAMA-340: Implementation of job submit command (edwardyoon)   
     HAMA-278: Few minor refactoring (edwardyoon)
     HAMA-336: The all taskid variable's type should be declared as a TaskAttemptID
                        (edwardyoon)

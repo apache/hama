@@ -26,7 +26,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableFactory;
 
-/*
+/**
  * A JobProfile tracks job's status
  */
 public class JobProfile implements Writable {

@@ -535,7 +535,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
       return jobs.get(jobID).getStatus();
     }
 
-    JobInProgress job = new JobInProgress(jobID, this, this.conf);
+    JobInProgress job = new JobInProgress(jobID, new Path(jobFile), this, this.conf);
     return addJob(jobID, job);
   }
 
