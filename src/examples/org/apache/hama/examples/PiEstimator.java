@@ -116,6 +116,9 @@ public class PiEstimator {
       break;
     }
 
+    long startTime = System.currentTimeMillis();
     BSPJobClient.runJob(bsp);
+    System.out.println("Job Finished in "+
+        (double)(System.currentTimeMillis() - startTime)/1000.0 + " seconds");
   }
 }
