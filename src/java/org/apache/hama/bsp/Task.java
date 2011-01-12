@@ -62,6 +62,10 @@ public abstract class Task implements Writable {
   public String getJobFile() { 
     return jobFile; 
   }
+
+  public TaskAttemptID getTaskAttemptId(){
+    return this.taskId;
+  }
   
   public TaskAttemptID getTaskID() {
     return taskId;

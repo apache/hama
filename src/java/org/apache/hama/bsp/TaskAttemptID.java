@@ -48,6 +48,10 @@ public class TaskAttemptID extends ID {
   public BSPJobID getJobID() {
     return taskId.getJobID();
   }
+ 
+  public TaskID getTaskId(){
+    return taskId;
+  }
 
   public TaskID getTaskID() {
     return taskId;

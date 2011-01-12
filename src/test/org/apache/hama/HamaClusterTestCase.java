@@ -20,6 +20,9 @@ package org.apache.hama;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,6 +30,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.util.ClusterUtil;
+import org.apache.hama.bsp.BSPMaster;
+import org.apache.hama.bsp.GroomServer;
 
 public abstract class HamaClusterTestCase extends HamaTestCase {
   public static final Log LOG = LogFactory.getLog(HamaClusterTestCase.class);
@@ -42,13 +48,18 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
   }
 
   public HamaClusterTestCase(int groomServers) {
-    this(groomServers, true);
+    this(groomServers, true, 10);
   }
 
-  public HamaClusterTestCase(int groomServers, boolean startDfs) {
+  public HamaClusterTestCase(int groomServers, boolean startDfs, int threadpool) {
     super();
     this.startDfs = startDfs;
     this.groomServers = groomServers;
+    conf.setInt("bsp.test.threadpool", threadpool);
+  }
+
+  public MiniBSPCluster getCluster(){
+    return this.cluster;
   }
 
   /**
@@ -90,9 +101,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
 
       // start the instance
       hamaClusterSetup();
-
     } catch (Exception e) {
-      LOG.error("Exception in setup!", e);
       if (cluster != null) {
         cluster.shutdown();
       }
@@ -112,6 +121,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
     try {
       if (this.cluster != null) {
         try {
+          
           this.cluster.shutdown();
         } catch (Exception e) {
           LOG.warn("Closing mini dfs", e);

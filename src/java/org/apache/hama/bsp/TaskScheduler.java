@@ -19,7 +19,6 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -65,23 +64,14 @@ abstract class TaskScheduler implements Configurable {
     // do nothing
   }
 
-  public abstract void addJob(JobInProgress job);
+  // public abstract void addJob(JobInProgress job);
 
   /**
    * Returns a collection of jobs in an order which is specific to the
    * particular scheduler.
    * 
-   * @param queueName
-   * @return
+   * @param Queue name.
+   * @return JobInProgress corresponded to the specified queue.
    */
-  public abstract Collection<JobInProgress> getJobs();
-
-  /**
-   * Returns the tasks we'd like the GroomServer to execute right now.
-   * 
-   * @param groomServer The GroomServer for which we're looking for tasks.
-   * @return A list of tasks to run on that GroomServer, possibly empty.
-   */
-  public abstract List<Task> assignTasks(GroomServerStatus groomStatus)
-      throws IOException;
+  public abstract Collection<JobInProgress> getJobs(String queue);
 }

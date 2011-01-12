@@ -39,7 +39,7 @@ class TaskInProgress {
   int maxTaskAttempts = 4;
   private boolean failed = false;
   private static final int NUM_ATTEMPTS_PER_RESTART = 1000;
-  
+
   // Job Meta
   private String jobFile = null;
   private int partition;
@@ -74,6 +74,21 @@ class TaskInProgress {
 
   private BSPJobID jobId;
 
+  /**
+   * Constructor for new nexus between BSPMaster and GroomServer.
+   * 
+   * @param jobId is identification of JobInProgress.
+   * @param jobFile the path of job file
+   * @param partition which partition this TaskInProgress owns.
+   */
+  public TaskInProgress(BSPJobID jobId, String jobFile, int partition) {
+    this.jobId = jobId;
+    this.jobFile = jobFile;
+    this.partition = partition;
+
+    this.id = new TaskID(jobId, true, partition);
+  }
+
   public TaskInProgress(BSPJobID jobId, String jobFile, BSPMaster master,
       Configuration conf, JobInProgress job, int partition) {
     this.jobId = jobId;
@@ -94,9 +109,9 @@ class TaskInProgress {
 
     TaskAttemptID taskid = null;
     if (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts)) {
-      int attemptId = job.getNumRestarts() * NUM_ATTEMPTS_PER_RESTART + nextTaskId;
-      taskid = new TaskAttemptID( id, attemptId);
-      
+      int attemptId = job.getNumRestarts() * NUM_ATTEMPTS_PER_RESTART
+          + nextTaskId;
+      taskid = new TaskAttemptID(id, attemptId);
       ++nextTaskId;
     } else {
       LOG.warn("Exceeded limit of " + (MAX_TASK_EXECS + maxTaskAttempts)
@@ -107,8 +122,6 @@ class TaskInProgress {
     t = new BSPTask(jobId, jobFile, taskid, partition);
     activeTasks.put(taskid, status.getGroomName());
 
-    // Ask BSPMaster to note that the task exists
-    bspMaster.createTaskEntry(taskid, status.getGroomName(), this);
     return t;
   }
 
@@ -131,6 +144,10 @@ class TaskInProgress {
 
   public TaskID getTIPId() {
     return id;
+  }
+
+  public TaskID getTaskId() {
+    return this.id;
   }
 
   public TreeMap<TaskAttemptID, String> getTasks() {
@@ -164,7 +181,7 @@ class TaskInProgress {
   public synchronized boolean isComplete() {
     return (completes > 0);
   }
-  
+
   /**
    * Is the given taskid the one that took this tip to completion?
    * 
@@ -190,14 +207,14 @@ class TaskInProgress {
 
   public void completed(TaskAttemptID taskid) {
     LOG.info("Task '" + taskid.getTaskID().toString() + "' has completed.");
-    
+
     TaskStatus status = (TaskStatus) taskStatuses.get(taskid);
     status.setRunState(TaskStatus.State.SUCCEEDED);
     activeTasks.remove(taskid);
 
     // Note the successful taskid
     setSuccessfulTaskid(taskid);
-    
+
     //
     // Now that the TIP is complete, the other speculative
     // subtasks will be closed when the owning groom server
@@ -208,13 +225,13 @@ class TaskInProgress {
   }
 
   private void setSuccessfulTaskid(TaskAttemptID taskid) {
-    this.successfulTaskId = taskid; 
+    this.successfulTaskId = taskid;
   }
 
   private TaskAttemptID getSuccessfulTaskid() {
     return successfulTaskId;
   }
-  
+
   public void updateStatus(TaskStatus status) {
     taskStatuses.put(status.getTaskId(), status);
   }

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -47,6 +48,7 @@ public class GroomServerStatus implements Writable {
   
   String groomName;
   String peerName;
+  String rpcServer;
   int failures;
   List<TaskStatus> taskReports;
   
@@ -54,18 +56,25 @@ public class GroomServerStatus implements Writable {
   private int maxTasks;
 
   public GroomServerStatus() {
-    taskReports = new ArrayList<TaskStatus>();
+    //taskReports = new ArrayList<TaskStatus>();
+    taskReports = new CopyOnWriteArrayList<TaskStatus>();
   }
   
   public GroomServerStatus(String groomName, String peerName,
       List<TaskStatus> taskReports, int failures, int maxTasks) {
+    this(groomName, peerName, taskReports, failures, maxTasks, "");
+  }
+
+  public GroomServerStatus(String groomName, String peerName,
+      List<TaskStatus> taskReports, int failures, int maxTasks, String rpc) {
     this.groomName = groomName;
     this.peerName = peerName;
     this.taskReports = new ArrayList<TaskStatus>(taskReports);
     this.failures = failures;
     this.maxTasks = maxTasks;
-  }
-  
+    this.rpcServer = rpc;
+  } 
+
   public String getGroomName() {
     return groomName;
   }
@@ -73,10 +82,14 @@ public class GroomServerStatus implements Writable {
   /**
    * The host (and port) from where the groom server can be reached.
    *
-   * @return The groom server address in the format hostname:port
+   * @return The groom server address in the form of "hostname:port"
    */
   public String getPeerName() {
     return peerName;
+  }
+
+  public String getRpcServer(){
+    return rpcServer;
   }
   
   /**
@@ -116,11 +129,56 @@ public class GroomServerStatus implements Writable {
       TaskStatus.State state = ts.getRunState();
       if(state == TaskStatus.State.RUNNING || 
            state == TaskStatus.State.UNASSIGNED) {
-             taskCount++;
+        taskCount++;
       }    
     }    
     
     return taskCount;    
+  }
+
+  /**
+   * For BSPMaster to distinguish between 
+   * different GroomServers, because 
+   * BSPMaster stores using GroomServerStatus
+   * as key.
+   */ 
+  @Override
+  public int hashCode(){
+    int result = 17;
+    result = 37*result + groomName.hashCode();
+    result = 37*result + peerName.hashCode();
+    result = 37*result + rpcServer.hashCode();
+    /*
+    result = 37*result + (int)failures;
+    result = 37*result + taskReports.hashCode();
+    result = 37*result + (int)(lastSeen^(lastSeen>>>32));  
+    result = 37*result + (int)maxTasks; 
+    */
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object o){
+    if (o == this) return true;
+    if (null == o) return false;
+    if (getClass() != o.getClass()) return false;  
+
+    GroomServerStatus s = (GroomServerStatus) o;
+    if(!s.groomName.equals(groomName)) return false;
+    if(!s.peerName.equals(peerName)) return false;
+    if(!s.rpcServer.equals(rpcServer)) return false;
+    /*
+    if(s.failures != failures) return false;
+    if(null == s.taskReports){ 
+      if(null != s.taskReports)
+        return false;
+    }else if(!s.taskReports.equals(taskReports)){
+      return false;
+    }
+    if(s.lastSeen != lastSeen) return false;
+    if(s.maxTasks != maxTasks) return false;
+    */
+    return true;
   }
   
   /* (non-Javadoc)
@@ -130,6 +188,7 @@ public class GroomServerStatus implements Writable {
   public void readFields(DataInput in) throws IOException {
     this.groomName = Text.readString(in);
     this.peerName = Text.readString(in);
+    this.rpcServer = Text.readString(in);
     this.failures = in.readInt();
     this.maxTasks = in.readInt();
     taskReports.clear();
@@ -150,6 +209,7 @@ public class GroomServerStatus implements Writable {
   public void write(DataOutput out) throws IOException {
     Text.writeString(out, groomName);
     Text.writeString(out, peerName);
+    Text.writeString(out, rpcServer);
     out.writeInt(failures);
     out.writeInt(maxTasks);
     out.writeInt(taskReports.size());
@@ -161,5 +221,4 @@ public class GroomServerStatus implements Writable {
   public Iterator<TaskStatus> taskReports() {
     return taskReports.iterator();
   }
-
 }

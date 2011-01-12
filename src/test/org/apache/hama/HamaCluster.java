@@ -29,6 +29,22 @@ public abstract class HamaCluster extends HamaClusterTestCase {
   public static final Log LOG = LogFactory.getLog(HamaCluster.class);
   protected final static HamaConfiguration conf = new HamaConfiguration();
 
+  public HamaCluster(){
+    super();
+  }
+
+  public HamaCluster(int groomServers) {
+    this(groomServers, true, 10);
+  }
+
+  public HamaCluster(int groomServers, int threadpool) {
+    this(groomServers, true, threadpool);
+  }
+
+  public HamaCluster(int groomServers, boolean startDfs, int threadpool) {
+    super(groomServers, startDfs, threadpool);
+  }
+
   protected void setUp() throws Exception {
     super.setUp();
   }

@@ -56,9 +56,12 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   private final String bspRoot;
   private final String zookeeperAddr;
 
-  private final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
-  private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
-  private final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
+  private final Map<InetSocketAddress, BSPPeerInterface> peers = 
+    new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
+  private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = 
+    new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
+  private final ConcurrentLinkedQueue<BSPMessage> localQueue = 
+    new ConcurrentLinkedQueue<BSPMessage>();
   private Set<String> allPeerNames = new HashSet<String>();
   private InetSocketAddress peerAddress;
   private TaskStatus currentTaskStatus;
@@ -68,7 +71,6 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    */
   public BSPPeer(Configuration conf) throws IOException {
     this.conf = conf;
-
     String bindAddress = conf.get(Constants.PEER_HOST,
         Constants.DEFAULT_PEER_HOST);
     int bindPort = conf
@@ -79,6 +81,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         + ":"
         + conf.getInt(Constants.ZOOKEPER_CLIENT_PORT,
             Constants.DEFAULT_ZOOKEPER_CLIENT_PORT);
+    // TODO: may require to dynamic reflect the underlying 
+    //       network e.g. ip address, port.
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
 
     reinitialize();
@@ -90,6 +94,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       server = RPC.getServer(this, peerAddress.getHostName(), peerAddress
           .getPort(), conf);
       server.start();
+      LOG.info(" BSPPeer address:"+peerAddress.getHostName()+" port:"+peerAddress.getPort());
     } catch (IOException e) {
       e.printStackTrace();
     }

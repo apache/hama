@@ -45,6 +45,7 @@ class JobInProgress {
 
   static final Log LOG = LogFactory.getLog(JobInProgress.class);
   boolean tasksInited = false;
+  boolean jobInited = false;
 
   Configuration conf;
   JobProfile profile;
@@ -76,7 +77,7 @@ class JobInProgress {
     this.localFs = FileSystem.getLocal(conf);
     this.jobFile = jobFile;
     this.master = master;
-    this.status = new JobStatus(jobId, null, 0.0f, 0.0f, JobStatus.PREP);
+    this.status = new JobStatus(jobId, null, 0.0f, 0.0f, JobStatus.State.PREP.value());
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -139,6 +140,21 @@ class JobInProgress {
     return jobId;
   }
 
+  public synchronized TaskInProgress findTaskInProgress(TaskID id){
+    if(areTasksInited()){
+      for(TaskInProgress tip: tasks){
+        if(tip.getTaskId().equals(id)){
+          return tip;
+        }
+      }
+    }
+    return null;
+  }
+
+  public synchronized boolean areTasksInited(){
+    return this.tasksInited;
+  }
+
   public String toString() {
     return "jobName:" + profile.getJobName() + "\n" + "submit user:"
         + profile.getUser() + "\n" + "JobId:" + jobId + "\n" + "JobFile:"
@@ -154,7 +170,9 @@ class JobInProgress {
       return;
     }
 
-    LOG.debug("numBSPTasks: " + numBSPTasks);
+    if(LOG.isDebugEnabled()){
+      LOG.debug("numBSPTasks: " + numBSPTasks);
+    }
     
     // adjust number of map tasks to actual number of splits
     this.tasks = new TaskInProgress[numBSPTasks];
@@ -192,7 +210,6 @@ class JobInProgress {
     } catch (IOException e) {
       e.printStackTrace();
     }
-
     return result;
   }
 

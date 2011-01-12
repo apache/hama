@@ -23,6 +23,16 @@ package org.apache.hama;
  * Some constants used in the Hama
  */
 public interface Constants {
+ 
+  public  static final String GROOM_RPC_HOST = "bsp.groom.rpc.hostname";
+
+  public static final String DEFAULT_GROOM_RPC_HOST = "0.0.0.0";
+
+  public static final String GROOM_RPC_PORT = "bsp.groom.rpc.port";
+
+  /** Default port region rpc server listens on. */
+  public static final int DEFAULT_GROOM_RPC_PORT = 50000;
+  
 
   ///////////////////////////////////////
   // Constants for BSP Package
