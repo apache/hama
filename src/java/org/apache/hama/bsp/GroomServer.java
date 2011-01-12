@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.logging.Log;
@@ -40,6 +41,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RemoteException;
+import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.util.DiskChecker;
 import org.apache.hadoop.util.RunJar;
@@ -47,12 +49,16 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.ipc.InterServerProtocol;
+import org.apache.hama.ipc.MasterProtocol;
+import org.apache.hama.ipc.WorkerProtocol;
 
-public class GroomServer implements Runnable {
+public class GroomServer implements Runnable, WorkerProtocol {
+
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
-  private static BSPPeer bspPeer;
+  private BSPPeer bspPeer;
   static final String SUBDIR = "groomServer";
+
+  private volatile static int REPORT_INTERVAL = 60 * 1000;
 
   Configuration conf;
 
@@ -62,19 +68,16 @@ public class GroomServer implements Runnable {
   };
 
   // Running States and its related things
+  volatile boolean initialized = false;
   volatile boolean running = true;
   volatile boolean shuttingDown = false;
-  boolean justStarted = true;
   boolean justInited = true;
   GroomServerStatus status = null;
-  short heartbeatResponseId = -1;
-  private volatile int heartbeatInterval = 3 * 1000;
 
   // Attributes
   String groomServerName;
   String localHostname;
   InetSocketAddress bspMasterAddr;
-  InterServerProtocol jobClient;
 
   // Filesystem
   // private LocalDirAllocator localDirAllocator;
@@ -82,13 +85,20 @@ public class GroomServer implements Runnable {
   FileSystem systemFS = null;
 
   // Job
-  boolean acceptNewTasks = true;
   private int failures;
   private int maxCurrentTasks = 1;
   Map<TaskAttemptID, TaskInProgress> tasks = new HashMap<TaskAttemptID, TaskInProgress>();
   /** Map from taskId -> TaskInProgress. */
   Map<TaskAttemptID, TaskInProgress> runningTasks = null;
   Map<BSPJobID, RunningJob> runningJobs = null;
+
+  // new nexus between GroomServer and BSPMaster
+  // holds/ manage all tasks
+  List<TaskInProgress> tasksList = new CopyOnWriteArrayList<TaskInProgress>();
+
+  private String rpcServer;
+  private Server workerServer;
+  MasterProtocol masterClient;
 
   private BlockingQueue<GroomServerAction> tasksToCleanup = new LinkedBlockingQueue<GroomServerAction>();
 
@@ -114,7 +124,6 @@ public class GroomServer implements Runnable {
       this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
           "default"), conf.get("bsp.dns.nameserver", "default"));
     }
-
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
     deleteLocalFiles("groomserver");
@@ -123,20 +132,75 @@ public class GroomServer implements Runnable {
     this.tasks.clear();
     this.runningJobs = new TreeMap<BSPJobID, RunningJob>();
     this.runningTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
-    this.acceptNewTasks = true;
-
     this.conf.set(Constants.PEER_HOST, localHostname);
+    this.conf.set(Constants.GROOM_RPC_HOST, localHostname);
     bspPeer = new BSPPeer(conf);
+
+    int rpcPort = -1;
+    String rpcAddr = null;
+    if (false == this.initialized) {
+      rpcAddr = conf.get(Constants.GROOM_RPC_HOST,
+          Constants.DEFAULT_GROOM_RPC_HOST);
+      rpcPort = conf.getInt(Constants.GROOM_RPC_PORT,
+          Constants.DEFAULT_GROOM_RPC_PORT);
+      if (-1 == rpcPort || null == rpcAddr)
+        throw new IllegalArgumentException("Error rpc address " + rpcAddr
+            + " port" + rpcPort);
+      this.workerServer = RPC.getServer(this, rpcAddr, rpcPort, conf);
+      this.workerServer.start();
+      this.rpcServer = rpcAddr + ":" + rpcPort;
+      LOG.info("Worker rpc server --> " + rpcServer);
+    }
 
     this.groomServerName = "groomd_" + bspPeer.getPeerName().replace(':', '_');
     LOG.info("Starting groom: " + this.groomServerName);
 
     DistributedCache.purgeCache(this.conf);
 
-    this.jobClient = (InterServerProtocol) RPC.waitForProxy(
-        InterServerProtocol.class, InterServerProtocol.versionID,
-        bspMasterAddr, conf);
+    // establish the communication link to bsp master
+    this.masterClient = (MasterProtocol) RPC.waitForProxy(MasterProtocol.class,
+        MasterProtocol.versionID, bspMasterAddr, conf);
+
+    // enroll in bsp master
+    if (-1 == rpcPort || null == rpcAddr)
+      throw new IllegalArgumentException("Error rpc address " + rpcAddr
+          + " port" + rpcPort);
+    if (!this.masterClient.register(new GroomServerStatus(groomServerName,
+        bspPeer.getPeerName(), cloneAndResetRunningTaskStatuses(), failures,
+        maxCurrentTasks, this.rpcServer))) {
+      LOG.error("There is a problem in establishing communication"
+          + " link with BSPMaster");
+      throw new IOException("There is a problem in establishing"
+          + " communication link with BSPMaster.");
+    }
     this.running = true;
+    this.initialized = true;
+  }
+
+  @Override
+  public void dispatch(Directive directive) throws IOException {
+    // update tasks status
+    GroomServerAction[] actions = directive.getActions();
+    bspPeer.setAllPeerNames(directive.getGroomServerPeers().values());
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Got Response from BSPMaster with "
+          + ((actions != null) ? actions.length : 0) + " actions");
+    }
+    // perform actions
+    if (actions != null) {
+      for (GroomServerAction action : actions) {
+        if (action instanceof LaunchTaskAction) {
+          startNewTask((LaunchTaskAction) action);
+        } else {
+          try {
+            tasksToCleanup.put(action);
+          } catch (InterruptedException e) {
+            LOG.error("Fail to move action to cleanup list.");
+            e.printStackTrace();
+          }
+        }
+      }
+    }
   }
 
   private static void checkLocalDirs(String[] localDirs)
@@ -193,70 +257,19 @@ public class GroomServer implements Runnable {
   }
 
   public State offerService() throws Exception {
-    long lastHeartbeat = 0;
 
     while (running && !shuttingDown) {
       try {
-        long now = System.currentTimeMillis();
-
-        long waitTime = heartbeatInterval - (now - lastHeartbeat);
-        if (waitTime > 0) {
-          // sleeps for the wait time
-          Thread.sleep(waitTime);
-        }
-
         if (justInited) {
-          String dir = jobClient.getSystemDir();
+          String dir = masterClient.getSystemDir();
           if (dir == null) {
-            throw new IOException("Failed to get system directory");
+            LOG.error("Fail to get system directory.");
+            throw new IOException("Fail to get system directory.");
           }
           systemDirectory = new Path(dir);
           systemFS = systemDirectory.getFileSystem(conf);
         }
-
-        // Send the heartbeat and process the bspmaster's directives
-        HeartbeatResponse heartbeatResponse = transmitHeartBeat(now);
-
-        if (acceptNewTasks) {
-          bspPeer.setAllPeerNames(heartbeatResponse.getGroomServers().values());
-        }
-
-        for (String peer : bspPeer.getAllPeerNames()) {
-          LOG.debug("Remote peer, host:port is " + peer);
-        }
-
-        GroomServerAction[] actions = heartbeatResponse.getActions();
-        LOG.debug("Got heartbeatResponse from BSPMaster with responseId: "
-            + heartbeatResponse.getResponseId() + " and "
-            + ((actions != null) ? actions.length : 0) + " actions");
-
-        if (actions != null) {
-          acceptNewTasks = false;
-
-          for (GroomServerAction action : actions) {
-            if (action instanceof LaunchTaskAction) {
-              startNewTask((LaunchTaskAction) action);
-            } else {
-              tasksToCleanup.put(action);
-            }
-          }
-        }
-
-        //
-        // The heartbeat got through successfully!
-        //
-        heartbeatResponseId = heartbeatResponse.getResponseId();
-
-        // Note the time when the heartbeat returned, use this to decide when to
-        // send the
-        // next heartbeat
-        lastHeartbeat = System.currentTimeMillis();
-
-        justStarted = false;
         justInited = false;
-      } catch (InterruptedException ie) {
-        LOG.info("Interrupted. Closing down.");
-        return State.INTERRUPTED;
       } catch (DiskErrorException de) {
         String msg = "Exiting groom server for disk error:\n"
             + StringUtils.stringifyException(de);
@@ -271,7 +284,6 @@ public class GroomServer implements Runnable {
         LOG.error(msg);
       }
     }
-
     return State.NORMAL;
   }
 
@@ -296,7 +308,6 @@ public class GroomServer implements Runnable {
     Task task = tip.getTask();
     conf.addResource(task.getJobFile());
     BSPJob defaultJobConf = new BSPJob((HamaConfiguration) conf);
-
     Path localJobFile = defaultJobConf.getLocalPath(SUBDIR + "/"
         + task.getTaskID() + "/" + "job.xml");
 
@@ -392,43 +403,6 @@ public class GroomServer implements Runnable {
     }
   }
 
-  private HeartbeatResponse transmitHeartBeat(long now) throws IOException {
-    // 
-    // Check if the last heartbeat got through...
-    // if so then build the heartbeat information for the BSPMaster;
-    // else resend the previous status information.
-    //
-    if (status == null) {
-      synchronized (this) {
-        status = new GroomServerStatus(groomServerName, bspPeer.getPeerName(),
-            cloneAndResetRunningTaskStatuses(), failures, maxCurrentTasks);
-      }
-    } else {
-      LOG.info("Resending 'status' to '" + bspMasterAddr.getHostName()
-          + "' with reponseId '" + heartbeatResponseId + "'");
-    }
-
-    // TODO - Later, acceptNewTask is to be set by the status of groom server.
-    HeartbeatResponse heartbeatResponse = jobClient.heartbeat(status,
-        justStarted, justInited, acceptNewTasks, heartbeatResponseId, status
-            .getTaskReports().size());
-
-    synchronized (this) {
-      for (TaskStatus taskStatus : status.getTaskReports()) {
-        if (taskStatus.getRunState() != TaskStatus.State.RUNNING) {
-          LOG.debug("Removing task from runningTasks: "
-              + taskStatus.getTaskId());
-          runningTasks.remove(taskStatus.getTaskId());
-        }
-      }
-    }
-
-    // Force a rebuild of 'status' on the next iteration
-    status = null;
-
-    return heartbeatResponse;
-  }
-
   private synchronized List<TaskStatus> cloneAndResetRunningTaskStatuses() {
     List<TaskStatus> result = new ArrayList<TaskStatus>(runningTasks.size());
     for (TaskInProgress tip : runningTasks.values()) {
@@ -469,7 +443,6 @@ public class GroomServer implements Runnable {
         } finally {
           // close();
         }
-
         if (shuttingDown) {
           return;
         }
@@ -490,11 +463,11 @@ public class GroomServer implements Runnable {
 
   public synchronized void close() throws IOException {
     this.running = false;
+    this.initialized = false;
     bspPeer.close();
     cleanupStorage();
-
-    // shutdown RPC connections
-    RPC.stopProxy(jobClient);
+    this.workerServer.stop();
+    RPC.stopProxy(masterClient);
   }
 
   public static Thread startGroomServer(final GroomServer hrs) {
@@ -523,7 +496,7 @@ public class GroomServer implements Runnable {
 
     public TaskInProgress(Task task, String groomServer) {
       this.task = task;
-      this.taskStatus = new TaskStatus(task.getTaskID(), 0,
+      this.taskStatus = new TaskStatus(task.getJobID(), task.getTaskID(), 0,
           TaskStatus.State.UNASSIGNED, "running", groomServer,
           TaskStatus.Phase.STARTING);
     }
@@ -539,7 +512,7 @@ public class GroomServer implements Runnable {
       this.runner = task.createRunner(bspPeer, this.jobConf);
       this.runner.start();
 
-      // Check state of Task
+      // Check state of a Task
       while (true) {
         try {
           Thread.sleep(1000);
@@ -550,7 +523,7 @@ public class GroomServer implements Runnable {
         if (bspPeer.getLocalQueueSize() == 0
             && bspPeer.getOutgoingQueueSize() == 0 && !runner.isAlive()) {
           taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-          acceptNewTasks = true;
+          doReport();
           break;
         }
       }
@@ -558,11 +531,42 @@ public class GroomServer implements Runnable {
     }
 
     /**
+     * Update and report refresh status back to BSPMaster.
+     */
+    private void doReport() {
+      GroomServerStatus gss = new GroomServerStatus(groomServerName, bspPeer
+          .getPeerName(), updateTaskStatus(), failures, maxCurrentTasks,
+          rpcServer);
+      try {
+        boolean ret = masterClient.report(new Directive(gss));
+        if (!ret) {
+          LOG.warn("Fail to renew BSPMaster's GroomServerStatus. "
+              + " groom name: " + gss.getGroomName() + " peer name:"
+              + gss.getPeerName() + " rpc server:" + rpcServer);
+        }
+      } catch (IOException ioe) {
+        LOG.error("Fail to communicate with BSPMaster for reporting.", ioe);
+      }
+    }
+
+    private List<TaskStatus> updateTaskStatus() {
+      List<TaskStatus> tlist = new ArrayList<TaskStatus>();
+      for (TaskInProgress tip : runningTasks.values()) {
+        TaskStatus stus = tip.getStatus();
+        stus.setProgress(1f);
+        stus.setRunState(TaskStatus.State.SUCCEEDED);
+        stus.setPhase(TaskStatus.Phase.CLEANUP);
+        tlist.add((TaskStatus) stus.clone());
+      }
+      return tlist;
+    }
+
+    /**
      * This task has run on too long, and should be killed.
      */
     public synchronized void killAndCleanup(boolean wasFailure)
         throws IOException {
-      // TODO 
+      // TODO
       runner.kill();
     }
 
@@ -616,4 +620,26 @@ public class GroomServer implements Runnable {
           + groomServerClass.toString(), e);
     }
   }
+
+  @Override
+  public long getProtocolVersion(String protocol, long clientVersion)
+      throws IOException {
+    if (protocol.equals(WorkerProtocol.class.getName())) {
+      return WorkerProtocol.versionID;
+    } else {
+      throw new IOException("Unknown protocol to GroomServer: " + protocol);
+    }
+  }
+
+  /**
+   * GroomServer address information.
+   * 
+   * @return bsp peer information in the form of "address:port".
+   */
+  public String getBspPeerName() {
+    if (null != this.bspPeer)
+      return this.bspPeer.getPeerName();
+    return null;
+  }
+
 }

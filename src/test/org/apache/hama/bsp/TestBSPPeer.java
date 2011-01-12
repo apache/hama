@@ -47,7 +47,7 @@ import org.apache.zookeeper.data.Stat;
 public class TestBSPPeer extends HamaCluster implements Watcher {
   private Log LOG = LogFactory.getLog(TestBSPPeer.class);
 
-  private static final int NUM_PEER = 20;
+  private static final int NUM_PEER = 10;
   private static final int ROUND = 3;
   private static final int PAYLOAD = 1024; // 1kb in default
   List<BSPPeerThread> list = new ArrayList<BSPPeerThread>(NUM_PEER);
@@ -96,7 +96,8 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         peerNames.add("localhost:" + (30000 + i));
       }
       peer.setAllPeerNames(peerNames);
-      TaskStatus currentTaskStatus = new TaskStatus(new TaskAttemptID(), 0, null, null, null, null);
+      TaskStatus currentTaskStatus = new TaskStatus(new BSPJobID(), 
+          new TaskAttemptID(), 0, null, null, null, null);
       peer.setCurrentTaskStatus(currentTaskStatus);
       BSPJob jobConf = new BSPJob(conf, NUM_PEER);
       peer.setJobConf((BSPJob) jobConf);
@@ -150,7 +151,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
           + " messages at " + round + " round");
 
       if (lastTwoDigitsOfPort < 10) {
-        assertEquals(20, numMessages);
+        assertEquals(10, numMessages);
       } else {
         assertEquals(0, numMessages);
       }

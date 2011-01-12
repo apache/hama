@@ -27,12 +27,28 @@ import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableFactory;
 
 public class JobStatus implements Writable, Cloneable {
+
   static {
     WritableFactories.setFactory(JobStatus.class, new WritableFactory() {
       public Writable newInstance() {
         return new JobStatus();
       }
     });
+  }
+
+  public static enum State{
+    RUNNING(1),
+    SUCCEEDED(2),
+    FAILED(3),
+    PREP(4),
+    KILLED(5);
+    int s;
+    State(int s){
+      this.s = s;
+    }
+    public int value(){
+      return this.s;
+    }
   }
 
   public static final int RUNNING = 1;
@@ -45,6 +61,7 @@ public class JobStatus implements Writable, Cloneable {
   private float progress;
   private float cleanupProgress;
   private float setupProgress;
+  private volatile State state;// runState in enum
   private int runState;
   private long startTime;
   private String schedulingInfo = "NA";
@@ -77,6 +94,7 @@ public class JobStatus implements Writable, Cloneable {
     this.progress = progress;
     this.cleanupProgress = cleanupProgress;
     this.runState = runState;
+    this.state = State.values()[runState-1];
     this.superstepCount = superstepCount;
     this.user = user;
   }
@@ -107,6 +125,14 @@ public class JobStatus implements Writable, Cloneable {
 
   synchronized void setSetupProgress(float p) {
     this.setupProgress = (float) Math.min(1.0, Math.max(0.0, p));
+  }
+
+  public JobStatus.State getState(){
+    return this.state;
+  }
+
+  public void setState(JobStatus.State state){
+    this.state = state;
   }
 
   public synchronized int getRunState() {

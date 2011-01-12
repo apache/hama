@@ -17,11 +17,14 @@
  */
 package org.apache.hama.bsp;
 
+import java.util.Collection;
+import java.util.Map;
+
+import org.apache.hama.ipc.WorkerProtocol;
 
 /**
- * Manages information about the {@link GroomServer}s running on a cluster.
- * This interface exits primarily to test the {@link BSPMaster}, and is not
- * intended to be implemented by users.
+ * Manages information about the {@link GroomServer}s in the cluster 
+ * environment. This interface is not intended to be implemented by users.
  */
 interface GroomServerManager {
 
@@ -30,6 +33,47 @@ interface GroomServerManager {
    * @param detailed if true then report groom names as well
    * @return summary of the state of the cluster
    */
-  public ClusterStatus getClusterStatus(boolean detailed);
-  
+  ClusterStatus getClusterStatus(boolean detailed);
+
+  /**
+   * Find WorkerProtocol with corresponded groom server status
+   * 
+   * @param groomId The identification value of GroomServer 
+   * @return GroomServerStatus 
+   */
+  WorkerProtocol findGroomServer(GroomServerStatus status);
+
+  /**
+   * Find the collection of groom servers.
+   * 
+   * @return Collection of groom servers list.
+   */
+  Collection<WorkerProtocol> findGroomServers();
+
+  /**
+   * Collection of GroomServerStatus as the key set.
+   *
+   * @return Collection of GroomServerStatus.
+   */
+  Collection<GroomServerStatus> groomServerStatusKeySet();
+
+  /**
+   * Registers a JobInProgressListener to GroomServerManager. Therefore,
+   * adding a JobInProgress will trigger the jobAdded function.
+   * @param the JobInProgressListener listener to be added.
+   */
+  void addJobInProgressListener(JobInProgressListener listener);
+
+  /**
+   * Unregisters a JobInProgressListener to GroomServerManager. Therefore,
+   * the remove of a JobInProgress will trigger the jobRemoved action.
+   * @param the JobInProgressListener to be removed.
+   */
+  void removeJobInProgressListener(JobInProgressListener listener);
+
+  /**
+   * Current GroomServer Peers.
+   * @return GroomName and PeerName(host:port) in pair. 
+   */
+  Map<String, String> currentGroomServerPeers();
 }

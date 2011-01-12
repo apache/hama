@@ -17,83 +17,163 @@
  */
 package org.apache.hama.bsp;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hama.ipc.WorkerProtocol;
 
 class SimpleTaskScheduler extends TaskScheduler {
+
   private static final Log LOG = LogFactory.getLog(SimpleTaskScheduler.class);
-  List<JobInProgress> jobQueue;
 
-  public SimpleTaskScheduler() {
-    jobQueue = new ArrayList<JobInProgress>();
+  public static final String WAIT_QUEUE = "waitQueue";
+  public static final String PROCESSING_QUEUE = "processingQueue";
+  public static final String FINISHED_QUEUE = "finishedQueue";
+
+  private QueueManager queueManager;
+  private volatile boolean initialized;
+  private JobListener jobListener;
+  private JobProcessor jobProcessor;
+
+  private class JobListener extends JobInProgressListener {
+    @Override
+    public void jobAdded(JobInProgress job) throws IOException {
+      queueManager.initJob(job); // init task
+      queueManager.addJob(WAIT_QUEUE, job);
+    }
+
+    @Override
+    public void jobRemoved(JobInProgress job) throws IOException {
+      // queueManager.removeJob(WAIT_QUEUE, job);
+      queueManager.moveJob(PROCESSING_QUEUE, FINISHED_QUEUE, job);
+    }
   }
 
-  @Override
-  public void addJob(JobInProgress job) {
-    LOG.debug("Added a job (" + job + ") to scheduler (remaining jobs: "
-        + (jobQueue.size() + 1) + ")");
-    jobQueue.add(job);
-  }
+  private class JobProcessor extends Thread implements Schedulable {
+    JobProcessor() {
+      super("JobProcess");
+    }
 
-  // removes job
-  public void removeJob(JobInProgress job) {
-    jobQueue.remove(job);
-  }
-
-  @Override
-  public Collection<JobInProgress> getJobs() {
-    return jobQueue;
-  }
-
-  /*
-   * (non-Javadoc)
-   * @seeorg.apache.hama.bsp.TaskScheduler#assignTasks(org.apache.hama.bsp.
-   * GroomServerStatus)
-   */
-  @Override
-  public synchronized List<Task> assignTasks(GroomServerStatus groomStatus)
-      throws IOException {
-    ClusterStatus clusterStatus = groomServerManager.getClusterStatus(false);
-
-    final int numGroomServers = clusterStatus.getGroomServers();
-    // final int clusterTaskCapacity = clusterStatus.getMaxTasks();
-
-    // Get task counts for the current groom.
-    // final int groomTaskCapacity = groom.getMaxTasks();
-    final int groomRunningTasks = groomStatus.countTasks();
-
-    // Assigned tasks
-    List<Task> assignedTasks = new ArrayList<Task>();
-
-    if (groomRunningTasks == 0) {
-      // TODO - Each time a job is submitted in BSPMaster, add a JobInProgress
-      // instance to the scheduler.
-      synchronized (jobQueue) {
-        for (JobInProgress job : jobQueue) {
-          if (job.getStatus().getRunState() != JobStatus.RUNNING) {
-            continue;
-          }
-
-          Task t = null;
-          t = job.obtainNewTask(groomStatus, numGroomServers);
-
-          if (t != null) {
-            assignedTasks.add(t);
-            break; // TODO - Now, simple scheduler assigns only one task to
-            // each groom. Later, it will be improved for scheduler to
-            // assign one or more tasks to each groom according to
-            // its capacity.
-          }
+    /**
+     * Main logic scheduling task to GroomServer(s). Also, it will move
+     * JobInProgress from Wait Queue to Processing Queue.
+     */
+    public void run() {
+      if (false == initialized) {
+        throw new IllegalStateException("SimpleTaskScheduler initialization"
+            + " is not yet finished!");
+      }
+      while (initialized) {
+        Queue<JobInProgress> queue = queueManager.findQueue(WAIT_QUEUE);
+        if (null == queue) {
+          LOG.error(WAIT_QUEUE + " does not exist.");
+          throw new NullPointerException(WAIT_QUEUE + " does not exist.");
         }
-
+        // move a job from the wait queue to the processing queue
+        JobInProgress j = queue.removeJob();
+        queueManager.addJob(PROCESSING_QUEUE, j);
+        // schedule
+        Collection<GroomServerStatus> glist = groomServerManager
+            .groomServerStatusKeySet();
+        schedule(j, (GroomServerStatus[]) glist
+            .toArray(new GroomServerStatus[glist.size()]));
       }
     }
 
-    return assignedTasks;
+    /**
+     * Schedule job to designated GroomServer(s) immediately.
+     * 
+     * @param Targeted GroomServer(s).
+     * @param Job to be scheduled.
+     */
+    @Override
+    public void schedule(JobInProgress job, GroomServerStatus... statuses) {
+      ClusterStatus clusterStatus = groomServerManager.getClusterStatus(false);
+      final int numGroomServers = clusterStatus.getGroomServers();
+      final ScheduledExecutorService sched = Executors
+          .newScheduledThreadPool(statuses.length + 5);
+      for (GroomServerStatus status : statuses) {
+        sched
+            .schedule(new TaskWorker(status, numGroomServers, job), 0, SECONDS);
+      }// for
+    }
+  }
+
+  private class TaskWorker implements Runnable {
+    private final GroomServerStatus stus;
+    private final int groomNum;
+    private final JobInProgress jip;
+
+    TaskWorker(final GroomServerStatus stus, final int num,
+        final JobInProgress jip) {
+      this.stus = stus;
+      this.groomNum = num;
+      this.jip = jip;
+      if (null == this.stus)
+        throw new NullPointerException("Target groom server is not "
+            + "specified.");
+      if (-1 == this.groomNum)
+        throw new IllegalArgumentException("Groom number is not specified.");
+      if (null == this.jip)
+        throw new NullPointerException("No job is specified.");
+    }
+
+    public void run() {
+      // obtain tasks
+      Task t = jip.obtainNewTask(this.stus, groomNum);
+      // assembly into actions
+      // List<Task> tasks = new ArrayList<Task>();
+      if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
+        WorkerProtocol worker = groomServerManager.findGroomServer(this.stus);
+        try {
+          // dispatch() to the groom server
+          Directive d1 = new Directive(groomServerManager
+              .currentGroomServerPeers(),
+              new GroomServerAction[] { new LaunchTaskAction(t) });
+          worker.dispatch(d1);
+        } catch (IOException ioe) {
+          LOG.error("Fail to dispatch tasks to GroomServer "
+              + this.stus.getGroomName(), ioe);
+        }
+      } else {
+        LOG.warn("Currently master only shcedules job in running state. "
+            + "This may be refined in the future. JobId:" + jip.getJobID());
+      }
+    }
+  }
+
+  public SimpleTaskScheduler() {
+    this.jobListener = new JobListener();
+    this.jobProcessor = new JobProcessor();
+  }
+
+  @Override
+  public void start() {
+    this.queueManager = new QueueManager(getConf()); // TODO: need factory?
+    this.queueManager.createFCFSQueue(WAIT_QUEUE);
+    this.queueManager.createFCFSQueue(PROCESSING_QUEUE);
+    this.queueManager.createFCFSQueue(FINISHED_QUEUE);
+    groomServerManager.addJobInProgressListener(this.jobListener);
+    this.initialized = true;
+    this.jobProcessor.start();
+  }
+
+  @Override
+  public void terminate() {
+    this.initialized = false;
+    if (null != this.jobListener)
+      groomServerManager.removeJobInProgressListener(this.jobListener);
+  }
+
+  @Override
+  public Collection<JobInProgress> getJobs(String queue) {
+    return (queueManager.findQueue(queue)).jobs();
+    // return jobQueue;
   }
 }

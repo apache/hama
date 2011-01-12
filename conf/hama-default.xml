@@ -41,6 +41,11 @@
     <description>The port an groom server binds to.</description>
   </property>
   <property>
+    <name>bsp.groom.rpc.port</name>
+     <value>50000</value>
+    <description>The port an groom rpc binds to.</description>
+  </property>
+  <property>
     <name>bsp.local.dir</name>
     <value>${hadoop.tmp.dir}/bsp/local</value>
     <description>local directory for temporal store</description> 

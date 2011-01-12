@@ -42,14 +42,14 @@ public class BSPJob extends BSPJobContext {
     super(conf, null);
     jobClient = new BSPJobClient(conf);
   }
-  
+
   public BSPJob(HamaConfiguration conf, String jobName) throws IOException {
     this(conf);
     setJobName(jobName);
   }
 
   public BSPJob(BSPJobID jobID, String jobFile) throws IOException {
-     super(new Path(jobFile), jobID);
+    super(new Path(jobFile), jobID);
   }
 
   /**
@@ -65,7 +65,7 @@ public class BSPJob extends BSPJobContext {
     super(conf, null);
     setNumBspTask(tasks);
   }
-  
+
   @SuppressWarnings("unchecked")
   public BSPJob(HamaConfiguration conf, Class exampleClass) throws IOException {
     this(conf);
@@ -78,10 +78,10 @@ public class BSPJob extends BSPJobContext {
           + " instead of " + state);
     }
   }
-  
-  ///////////////////////////////////////
+
+  // /////////////////////////////////////
   // Setter for Job Submission
-  ///////////////////////////////////////
+  // /////////////////////////////////////
   public void setWorkingDirectory(Path dir) throws IOException {
     ensureState(JobState.DEFINE);
     dir = new Path(getWorkingDirectory(), dir);
@@ -99,7 +99,7 @@ public class BSPJob extends BSPJobContext {
     ensureState(JobState.DEFINE);
     conf.setClass(WORK_CLASS_ATTR, cls, BSP.class);
   }
-  
+
   @SuppressWarnings("unchecked")
   public Class<? extends BSP> getBspClass() {
     return (Class<? extends BSP>) conf.getClass(WORK_CLASS_ATTR, BSP.class);
@@ -115,7 +115,7 @@ public class BSPJob extends BSPJobContext {
       conf.set("bsp.jar", jar);
     }
   }
-  
+
   @SuppressWarnings("unchecked")
   private static String findContainingJar(Class my_class) {
     ClassLoader loader = my_class.getClassLoader();
@@ -144,18 +144,18 @@ public class BSPJob extends BSPJobContext {
     ensureState(JobState.DEFINE);
     conf.set("bsp.job.name", name);
   }
-  
+
   public void setInputPath(HamaConfiguration conf, Path iNPUTPATH) {
-        
+
   }
 
   public void setUser(String user) {
     conf.set("user.name", user);
   }
-  
-  ///////////////////////////////////////
+
+  // /////////////////////////////////////
   // Methods for Job Control
-  ///////////////////////////////////////
+  // /////////////////////////////////////
   public float progress() throws IOException {
     ensureState(JobState.RUNNING);
     return info.progress();

@@ -257,6 +257,10 @@
 	<!-- Run unit tests                                                     -->
 	<!-- ================================================================== -->
 	<path id="test.classpath">
+		<fileset dir="${lib.dir}/jsp-2.1/">
+			<include name="*.jar" />
+		</fileset>
+		<pathelement location="${conf.dir}" />
 		<pathelement location="${src.test}" />
 		<pathelement location="${build.test}" />
 		<path refid="classpath" />
@@ -281,8 +285,11 @@
 		<junit printsummary="yes" showoutput="${test.output}" haltonfailure="no" fork="yes" maxmemory="512m" errorProperty="tests.failed" failureProperty="tests.failed" timeout="${test.timeout}">
 			<classpath refid="test.classpath" />
 			<formatter type="${test.junit.output.format}" />
-			<batchtest todir="${build.report.tests}">
+			<batchtest todir="${build.report.tests}" unless="testcase">
 				<fileset dir="${src.test}" includes="**/Test*.java" excludes="**/${test.exclude}.java" />
+			</batchtest>
+			<batchtest todir="${build.report.tests}" if="testcase">
+				<fileset dir="${src.test}" includes="**/${testcase}.java" excludes="**/${test.exclude}.java" />
 			</batchtest>
 		</junit>
 		<fail if="tests.failed">Tests failed!</fail>

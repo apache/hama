@@ -51,6 +51,8 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
  
+    HAMA-346: Modify MniCluster so that developers can benefit when testing using Junit
+                       (ChiaHung Lin via edwardyoon)
     HAMA-340: Implementation of job submit command (edwardyoon)   
     HAMA-278: Few minor refactoring (edwardyoon)
     HAMA-336: The all taskid variable's type should be declared as a TaskAttemptID

@@ -40,13 +40,14 @@ class TaskStatus implements Writable, Cloneable {
     RUNNING, SUCCEEDED, FAILED, UNASSIGNED, KILLED, COMMIT_PENDING, FAILED_UNCLEAN, KILLED_UNCLEAN
   }
 
+  private BSPJobID jobId;
   private TaskAttemptID taskId;
   private float progress;
   private volatile State runState;
   private String stateString;
   private String groomServer;
   private long superstepCount;
-  
+
   private long startTime;
   private long finishTime;
 
@@ -56,12 +57,14 @@ class TaskStatus implements Writable, Cloneable {
    * 
    */
   public TaskStatus() {
+    jobId = new BSPJobID();
     taskId = new TaskAttemptID();
     this.superstepCount = 0;
   }
 
-  public TaskStatus(TaskAttemptID taskId, float progress, State runState,
-      String stateString, String groomServer, Phase phase) {
+  public TaskStatus(BSPJobID jobId, TaskAttemptID taskId, float progress,
+      State runState, String stateString, String groomServer, Phase phase) {
+    this.jobId = jobId;
     this.taskId = taskId;
     this.progress = progress;
     this.runState = runState;
@@ -74,6 +77,10 @@ class TaskStatus implements Writable, Cloneable {
   // //////////////////////////////////////////////////
   // Accessors and Modifiers
   // //////////////////////////////////////////////////
+
+  public BSPJobID getJobId() {
+    return jobId;
+  }
 
   public TaskAttemptID getTaskId() {
     return taskId;
@@ -211,14 +218,14 @@ class TaskStatus implements Writable, Cloneable {
       this.finishTime = finishTime;
     }
   }
-  
+
   /**
    * @return The number of BSP super steps executed by the task.
    */
   public long getSuperstepCount() {
     return superstepCount;
   }
-  
+
   /**
    * Increments the number of BSP super steps executed by the task.
    */
@@ -242,6 +249,7 @@ class TaskStatus implements Writable, Cloneable {
 
   @Override
   public void readFields(DataInput in) throws IOException {
+    this.jobId.readFields(in);
     this.taskId.readFields(in);
     this.progress = in.readFloat();
     this.runState = WritableUtils.readEnum(in, State.class);
@@ -254,6 +262,7 @@ class TaskStatus implements Writable, Cloneable {
 
   @Override
   public void write(DataOutput out) throws IOException {
+    jobId.write(out);
     taskId.write(out);
     out.writeFloat(progress);
     WritableUtils.writeEnum(out, runState);

@@ -23,16 +23,14 @@ import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,14 +44,15 @@ import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.ipc.InterServerProtocol;
 import org.apache.hama.ipc.JobSubmissionProtocol;
+import org.apache.hama.ipc.MasterProtocol;
+import org.apache.hama.ipc.WorkerProtocol;
 
 /**
  * BSPMaster is responsible to control all the groom servers and to manage bsp
  * jobs.
  */
-public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
+public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // InterServerProtocol,
     GroomServerManager {
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
 
@@ -73,7 +72,8 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
 
   // Attributes
   String masterIdentifier;
-  private Server interServer;
+  // private Server interServer;
+  private Server masterServer;
 
   // Filesystem
   static final String SUBDIR = "bspMaster";
@@ -86,28 +86,21 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
   final static FsPermission SYSTEM_FILE_PERMISSION = FsPermission
       .createImmutable((short) 0700); // rwx------
 
-  // Groom Servers
-  // (groom name --> last sent HeartBeatResponse)
-  Map<String, HeartbeatResponse> groomToHeartbeatResponseMap = new TreeMap<String, HeartbeatResponse>();
-  private HashMap<String, GroomServerStatus> groomServers = new HashMap<String, GroomServerStatus>();
-  // maps groom server names to peer names
-  private HashMap<String, String> groomServerPeers = new HashMap<String, String>();
-
   // Jobs' Meta Data
   private Integer nextJobId = Integer.valueOf(1);
   // private long startTime;
-  private int totalSubmissions = 0;
-  private int totalTasks = 0;
-  private int totalTaskCapacity;
+  private int totalSubmissions = 0; // how many jobs has been submitted by
+  // clients
+  private int totalTasks = 0; // currnetly running tasks
+  private int totalTaskCapacity; // max tasks that groom server can run
+
   private Map<BSPJobID, JobInProgress> jobs = new TreeMap<BSPJobID, JobInProgress>();
   private TaskScheduler taskScheduler;
 
-  TreeMap<TaskAttemptID, String> taskIdToGroomNameMap = new TreeMap<TaskAttemptID, String>();
-  TreeMap<String, TreeSet<TaskAttemptID>> groomNameToTaskIdsMap = new TreeMap<String, TreeSet<TaskAttemptID>>();
-  Map<TaskAttemptID, TaskInProgress> taskIdToTaskInProgressMap = new TreeMap<TaskAttemptID, TaskInProgress>();
+  // GroomServers cache
+  protected ConcurrentMap<GroomServerStatus, WorkerProtocol> groomServers = new ConcurrentHashMap<GroomServerStatus, WorkerProtocol>();
 
-  Vector<JobInProgress> jobInitQueue = new Vector<JobInProgress>();
-  JobInitThread initJobs = new JobInitThread();
+  private final List<JobInProgressListener> jobInProgressListeners = new CopyOnWriteArrayList<JobInProgressListener>();
 
   /**
    * Start the BSPMaster process, listen on the indicated hostname/port
@@ -123,16 +116,17 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
     this.masterIdentifier = identifier;
     // expireLaunchingTaskThread.start();
 
-    // Create the scheduler
+    // Create the scheduler and init scheduler services
     Class<? extends TaskScheduler> schedulerClass = conf.getClass(
         "bsp.master.taskscheduler", SimpleTaskScheduler.class,
         TaskScheduler.class);
     this.taskScheduler = (TaskScheduler) ReflectionUtils.newInstance(
         schedulerClass, conf);
 
-    InetSocketAddress addr = getAddress(conf);
-    this.interServer = RPC.getServer(this, addr.getHostName(), addr
-        .getPort(), conf);
+    String host = getAddress(conf).getHostName();
+    int port = getAddress(conf).getPort();
+    LOG.info("RPC BSPMaster: host " + host + " port " + port);
+    this.masterServer = RPC.getServer(this, host, port, conf);
 
     while (!Thread.currentThread().isInterrupted()) {
       try {
@@ -175,63 +169,125 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
     deleteLocalFiles(SUBDIR);
   }
 
-  // /////////////////////////////////////////////////////
-  // Accessors for objects that want info on jobs, tasks,
-  // grooms, etc.
-  // /////////////////////////////////////////////////////
-  public GroomServerStatus getGroomServer(String groomID) {
-    synchronized (groomServers) {
-      return groomServers.get(groomID);
+  /**
+   * A GroomServer registers with its status to BSPMaster when startup, which
+   * will update GroomServers cache.
+   * 
+   * @param status to be updated in cache.
+   * @return true if registering successfully; false if fail.
+   */
+  @Override
+  public boolean register(GroomServerStatus status) throws IOException {
+    if (null == status) {
+      LOG.error("No groom server status.");
+      throw new NullPointerException("No groom server status.");
     }
-  }
-
-  public List<String> groomServerNames() {
-    List<String> activeGrooms = new ArrayList<String>();
-    synchronized (groomServers) {
-      for (GroomServerStatus status : groomServers.values()) {
-        activeGrooms.add(status.getGroomName());
+    Throwable e = null;
+    try {
+      WorkerProtocol wc = (WorkerProtocol) RPC.waitForProxy(
+          WorkerProtocol.class, WorkerProtocol.versionID,
+          resolveWorkerAddress(status.getRpcServer()), this.conf);
+      if (null == wc) {
+        LOG
+            .warn("Fail to create Worker client at host "
+                + status.getPeerName());
+        return false;
       }
+      // TODO: need to check if peer name has changed
+      groomServers.putIfAbsent(status, wc);
+    } catch (UnsupportedOperationException u) {
+      e = u;
+    } catch (ClassCastException c) {
+      e = c;
+    } catch (NullPointerException n) {
+      e = n;
+    } catch (IllegalArgumentException i) {
+      e = i;
+    } catch (Exception ex) {
+      e = ex;
     }
-    return activeGrooms;
+
+    if (null != e) {
+      LOG.error("Fail to register GroomServer " + status.getGroomName(), e);
+      return false;
+    }
+
+    return true;
   }
 
-  // ///////////////////////////////////////////////////////////////
-  // Used to init new jobs that have just been created
-  // ///////////////////////////////////////////////////////////////
-  class JobInitThread implements Runnable {
-    private volatile boolean shouldRun = true;
+  private static InetSocketAddress resolveWorkerAddress(String data) {
+    return new InetSocketAddress(data.split(":")[0], Integer.parseInt(data
+        .split(":")[1]));
+  }
 
-    public JobInitThread() {
+  private void updateGroomServersKey(GroomServerStatus old,
+      GroomServerStatus newKey) {
+    synchronized (groomServers) {
+      WorkerProtocol worker = groomServers.remove(old);
+      groomServers.put(newKey, worker);
     }
+  }
 
-    public void run() {
-      while (shouldRun) {
-        JobInProgress job = null;
-        synchronized (jobInitQueue) {
-          if (jobInitQueue.size() > 0) {
-            job = (JobInProgress) jobInitQueue.elementAt(0);
-            jobInitQueue.remove(job);
-          } else {
-            try {
-              jobInitQueue.wait(JOBINIT_SLEEP_INTERVAL);
-            } catch (InterruptedException iex) {
+  @Override
+  public boolean report(Directive directive) throws IOException {
+    // check returned directive type if equals response
+    if (directive.getType().value() != Directive.Type.Response.value()) {
+      throw new IllegalStateException("GroomServer should report()"
+          + " with Response. Current report type:" + directive.getType());
+    }
+    // update GroomServerStatus hold in groomServers cache.
+    GroomServerStatus fstus = directive.getStatus();
+    // groomServers cache contains groom server status reported back
+    if (groomServers.containsKey(fstus)) {
+      GroomServerStatus ustus = null;
+      for (GroomServerStatus old : groomServers.keySet()) {
+        if (old.equals(fstus)) {
+          ustus = fstus;
+          updateGroomServersKey(old, ustus);
+          break;
+        }
+      }// for
+      if (null != ustus) {
+        List<TaskStatus> tlist = ustus.getTaskReports();
+        for (TaskStatus ts : tlist) {
+          JobInProgress jip = whichJob(ts.getJobId());
+          // TODO: need for each tip execute completed?
+          // each tip already maintain a data structure, checking
+          // if task status is completed
+          TaskInProgress tip = jip.findTaskInProgress(((TaskAttemptID) ts
+              .getTaskId()).getTaskID());
+          jip.completedTask(tip, ts);
+          LOG.info("JobInProgress id:" + jip.getJobID() + " status:"
+              + jip.getStatus());
+          if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
+            for (JobInProgressListener listener : jobInProgressListeners) {
+              try {
+                listener.jobRemoved(jip);
+              } catch (IOException ioe) {
+                LOG.error("Fail to alter scheduler a job is moved.", ioe);
+              }
             }
           }
         }
-        try {
-          if (job != null) {
-            job.initTasks();
-          }
-        } catch (Exception e) {
-          LOG.warn("job init failed: " + e);
-          job.kill();
-        }
+      } else {
+        throw new RuntimeException("BSPMaster contains GroomServerSatus, "
+            + "but fail to retrieve it.");
+      }
+    } else {
+      throw new RuntimeException("GroomServer not found."
+          + fstus.getGroomName());
+    }
+    return true;
+  }
+
+  private JobInProgress whichJob(BSPJobID id) {
+    for (JobInProgress job : taskScheduler
+        .getJobs(SimpleTaskScheduler.PROCESSING_QUEUE)) {
+      if (job.getJobID().equals(id)) {
+        return job;
       }
     }
-
-    public void stopIniter() {
-      shouldRun = false;
-    }
+    return null;
   }
 
   // /////////////////////////////////////////////////////////////
@@ -283,6 +339,7 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
 
     BSPMaster result = new BSPMaster(conf, identifier);
     result.taskScheduler.setGroomServerManager(result);
+    result.taskScheduler.start();
 
     return result;
   }
@@ -295,26 +352,27 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
   }
 
   /**
+   * BSPMaster identifier
    * 
-   * @return
+   * @return String BSPMaster identification number
    */
   private static String generateNewIdentifier() {
     return new SimpleDateFormat("yyyyMMddHHmm").format(new Date());
   }
 
   public void offerService() throws InterruptedException, IOException {
-    new Thread(this.initJobs).start();
-    LOG.info("Starting jobInitThread");
-
-    this.interServer.start();
+    // this.interServer.start();
+    this.masterServer.start();
 
     synchronized (this) {
       state = State.RUNNING;
     }
     LOG.info("Starting RUNNING");
 
-    this.interServer.join();
-    LOG.info("Stopped interServer");
+    // this.interServer.join();
+    this.masterServer.join();
+
+    LOG.info("Stopped RPC Master server.");
   }
 
   // //////////////////////////////////////////////////
@@ -323,192 +381,13 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
   @Override
   public long getProtocolVersion(String protocol, long clientVersion)
       throws IOException {
-    if (protocol.equals(InterServerProtocol.class.getName())) {
-      return InterServerProtocol.versionID;
+    if (protocol.equals(MasterProtocol.class.getName())) {
+      return MasterProtocol.versionID;
     } else if (protocol.equals(JobSubmissionProtocol.class.getName())) {
       return JobSubmissionProtocol.versionID;
     } else {
       throw new IOException("Unknown protocol to BSPMaster: " + protocol);
     }
-  }
-
-  /**
-   * A RPC method for transmitting each peer status from peer to master.
-   * 
-   * @throws IOException
-   */
-  @Override
-  public HeartbeatResponse heartbeat(GroomServerStatus status,
-      boolean restarted, boolean initialContact, boolean acceptNewTasks,
-      short responseId, int reportSize) throws IOException {
-
-    // First check if the last heartbeat response got through
-    String groomName = status.getGroomName();
-    long now = System.currentTimeMillis();
-
-    HeartbeatResponse prevHeartbeatResponse = groomToHeartbeatResponseMap
-        .get(groomName);
-
-    // Process this heartbeat
-    short newResponseId = (short) (responseId + 1);
-    status.setLastSeen(now);
-    if (!processHeartbeat(status, initialContact)) {
-      if (prevHeartbeatResponse != null) {
-        groomToHeartbeatResponseMap.remove(groomName);
-      }
-      return new HeartbeatResponse(newResponseId,
-          new GroomServerAction[] { new ReinitGroomAction() }, Collections
-              .<String, String> emptyMap());
-    }
-
-    HeartbeatResponse response = new HeartbeatResponse(newResponseId, null,
-        groomServerPeers);
-    List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
-
-    // Check for new tasks to be executed on the groom server
-    if (acceptNewTasks) {
-      GroomServerStatus groomStatus = getGroomServer(groomName);
-      if (groomStatus == null) {
-        LOG.warn("Unknown groom server polling; ignoring: " + groomName);
-      } else {
-        List<Task> taskList = taskScheduler.assignTasks(groomStatus);
-
-        for (Task task : taskList) {
-          if (task != null) {
-            actions.add(new LaunchTaskAction(task));
-          }
-        }
-      }
-    }
-
-    response.setActions(actions.toArray(new GroomServerAction[actions.size()]));
-
-    groomToHeartbeatResponseMap.put(groomName, response);
-    removeMarkedTasks(groomName);
-    updateTaskStatuses(status);
-
-    return response;
-  }
-
-  void updateTaskStatuses(GroomServerStatus status) {
-    for (Iterator<TaskStatus> it = status.taskReports(); it.hasNext();) {
-      TaskStatus report = it.next();
-      report.setGroomServer(status.getGroomName());
-      TaskAttemptID taskId = report.getTaskId();
-      TaskInProgress tip = (TaskInProgress) taskIdToTaskInProgressMap
-          .get(taskId);
-
-      if (tip == null) {
-        LOG.info("Serious problem.  While updating status, cannot find taskid "
-            + report.getTaskId());
-      } else {
-        JobInProgress job = tip.getJob();
-
-        if (report.getRunState() == TaskStatus.State.SUCCEEDED) {
-          job.completedTask(tip, report);
-        } else if (report.getRunState() == TaskStatus.State.FAILED) {
-          // TODO Tell the job to fail the relevant task
-
-        } else {
-          job.updateTaskStatus(tip, report);
-        }
-      }
-
-    }
-  }
-
-  // (trackerID -> TreeSet of completed taskids running at that tracker)
-  TreeMap<String, TreeSet<TaskAttemptID>> trackerToMarkedTasksMap = new TreeMap<String, TreeSet<TaskAttemptID>>();
-
-  private void removeMarkedTasks(String groomName) {
-    // Purge all the 'marked' tasks which were running at groomServer
-    TreeSet<TaskAttemptID> markedTaskSet = trackerToMarkedTasksMap
-        .get(groomName);
-    if (markedTaskSet != null) {
-      for (TaskAttemptID taskid : markedTaskSet) {
-        removeTaskEntry(taskid);
-        LOG.info("Removed completed task '" + taskid + "' from '" + groomName
-            + "'");
-      }
-      // Clear
-      trackerToMarkedTasksMap.remove(groomName);
-    }
-  }
-
-  private void removeTaskEntry(TaskAttemptID taskid) {
-    // taskid --> groom
-    String groom = taskIdToGroomNameMap.remove(taskid);
-
-    // groom --> taskid
-    if (groom != null) {
-      TreeSet<TaskAttemptID> groomSet = groomNameToTaskIdsMap.get(groom);
-      if (groomSet != null) {
-        groomSet.remove(taskid);
-      }
-    }
-
-    // taskid --> TIP
-    taskIdToTaskInProgressMap.remove(taskid);
-    LOG.debug("Removing task '" + taskid + "'");
-  }
-
-  private List<GroomServerAction> getTasksToKill(String groomName) {
-    Set<TaskAttemptID> taskIds = groomNameToTaskIdsMap.get(groomName);
-    if (taskIds != null) {
-      List<GroomServerAction> killList = new ArrayList<GroomServerAction>();
-      Set<String> killJobIds = new TreeSet<String>();
-      for (TaskAttemptID killTaskId : taskIds) {
-        TaskInProgress tip = (TaskInProgress) taskIdToTaskInProgressMap
-            .get(killTaskId);
-        if (tip.shouldCloseForClosedJob(killTaskId)) {
-          // 
-          // This is how the BSPMaster ends a task at the GroomServer.
-          // It may be successfully completed, or may be killed in
-          // mid-execution.
-          //
-          if (tip.getJob().getStatus().getRunState() == JobStatus.RUNNING) {
-            killList.add(new KillTaskAction(killTaskId));
-            LOG.debug(groomName + " -> KillTaskAction: " + killTaskId);
-          } else {
-            String killJobId = tip.getJob().getStatus().getJobID()
-                .getJtIdentifier();
-            killJobIds.add(killJobId);
-          }
-        }
-      }
-
-      for (String killJobId : killJobIds) {
-        killList.add(new KillJobAction(killJobId));
-        LOG.debug(groomName + " -> KillJobAction: " + killJobId);
-      }
-
-      return killList;
-    }
-    return null;
-
-  }
-
-  /**
-   * Process incoming heartbeat messages from the groom.
-   */
-  private synchronized boolean processHeartbeat(GroomServerStatus groomStatus,
-      boolean initialContact) {
-    String groomName = groomStatus.getGroomName();
-
-    synchronized (groomServers) {
-      GroomServerStatus oldStatus = groomServers.get(groomName);
-      if (oldStatus == null) {
-        groomServers.put(groomName, groomStatus);
-      } else { // TODO - to be improved to update status.
-      }
-    }
-
-    if (initialContact) {
-      groomServerPeers.put(groomStatus.getGroomName(), groomStatus
-          .getPeerName());
-    }
-
-    return true;
   }
 
   // //////////////////////////////////////////////////
@@ -535,23 +414,29 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
       return jobs.get(jobID).getStatus();
     }
 
-    JobInProgress job = new JobInProgress(jobID, new Path(jobFile), this, this.conf);
+    JobInProgress job = new JobInProgress(jobID, new Path(jobFile), this,
+        this.conf);
     return addJob(jobID, job);
   }
 
+  // //////////////////////////////////////////////////
+  // GroomServerManager functions
+  // //////////////////////////////////////////////////
+
   @Override
   public ClusterStatus getClusterStatus(boolean detailed) {
-    int numGroomServers;
     Map<String, String> groomPeersMap = null;
 
     // give the caller a snapshot of the cluster status
-    synchronized (this) {
-      numGroomServers = groomServerPeers.size();
-      if (detailed) {
-        groomPeersMap = new HashMap<String, String>(groomServerPeers);
+    int numGroomServers = groomServers.size();
+    if (detailed) {
+      groomPeersMap = new HashMap<String, String>();
+      for (Map.Entry<GroomServerStatus, WorkerProtocol> entry : groomServers
+          .entrySet()) {
+        GroomServerStatus s = entry.getKey();
+        groomPeersMap.put(s.getGroomName(), s.getPeerName());
       }
     }
-
     if (detailed) {
       return new ClusterStatus(groomPeersMap, totalTasks, totalTaskCapacity,
           state);
@@ -561,23 +446,58 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
     }
   }
 
+  @Override
+  public WorkerProtocol findGroomServer(GroomServerStatus status) {
+    return groomServers.get(status);
+  }
+
+  @Override
+  public Collection<WorkerProtocol> findGroomServers() {
+    return groomServers.values();
+  }
+
+  @Override
+  public Collection<GroomServerStatus> groomServerStatusKeySet() {
+    return groomServers.keySet();
+  }
+
+  @Override
+  public void addJobInProgressListener(JobInProgressListener listener) {
+    jobInProgressListeners.add(listener);
+  }
+
+  @Override
+  public void removeJobInProgressListener(JobInProgressListener listener) {
+    jobInProgressListeners.remove(listener);
+  }
+
+  @Override
+  public Map<String, String> currentGroomServerPeers() {
+    Map<String, String> tmp = new HashMap<String, String>();
+    for (GroomServerStatus status : groomServers.keySet()) {
+      tmp.put(status.getGroomName(), status.getPeerName());
+    }
+    return tmp;
+  }
+
   /**
    * Adds a job to the bsp master. Make sure that the checks are inplace before
    * adding a job. This is the core job submission logic
    * 
    * @param jobId The id for the job submitted which needs to be added
    */
-  private synchronized JobStatus addJob(BSPJobID jodId, JobInProgress job) {
+  private synchronized JobStatus addJob(BSPJobID jobId, JobInProgress job) {
     totalSubmissions++;
     synchronized (jobs) {
-      synchronized (jobInitQueue) {
-        jobs.put(job.getProfile().getJobID(), job);
-        taskScheduler.addJob(job);
-        jobInitQueue.add(job);
-        jobInitQueue.notifyAll();
+      jobs.put(job.getProfile().getJobID(), job);
+      for (JobInProgressListener listener : jobInProgressListeners) {
+        try {
+          listener.jobAdded(job);
+        } catch (IOException ioe) {
+          LOG.error("Fail to alter Scheduler a job is added.", ioe);
+        }
       }
     }
-
     return job.getStatus();
   }
 
@@ -600,11 +520,11 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
     List<JobStatus> jobStatusList = new ArrayList<JobStatus>();
     for (JobInProgress jip : jips) {
       JobStatus status = jip.getStatus();
-      
+
       status.setStartTime(jip.getStartTime());
       // Sets the user name
       status.setUsername(jip.getProfile().getUser());
-      
+
       if (toComplete) {
         if (status.getRunState() == JobStatus.RUNNING
             || status.getRunState() == JobStatus.PREP) {
@@ -694,26 +614,10 @@ public class BSPMaster implements JobSubmissionProtocol, InterServerProtocol,
   }
 
   public void shutdown() {
-    this.interServer.stop();
+    this.masterServer.stop();
   }
 
-  public void createTaskEntry(TaskAttemptID taskid, String groomServer,
-      TaskInProgress taskInProgress) {
-    LOG.info("Adding task '" + taskid + "' to tip " + taskInProgress.getTIPId()
-        + ", for groom '" + groomServer + "'");
-
-    // taskid --> groom
-    taskIdToGroomNameMap.put(taskid, groomServer);
-
-    // groom --> taskid
-    TreeSet<TaskAttemptID> taskset = groomNameToTaskIdsMap.get(groomServer);
-    if (taskset == null) {
-      taskset = new TreeSet<TaskAttemptID>();
-      groomNameToTaskIdsMap.put(groomServer, taskset);
-    }
-    taskset.add(taskid);
-
-    // taskid --> TIP
-    taskIdToTaskInProgressMap.put(taskid, taskInProgress);
+  public BSPMaster.State currentState() {
+    return this.state;
   }
 }
