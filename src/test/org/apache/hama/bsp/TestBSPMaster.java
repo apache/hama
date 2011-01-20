@@ -94,6 +94,7 @@ public class TestBSPMaster extends HamaCluster {
     final ScheduledExecutorService sched = getCluster().getScheduler();
     LOG.info("Start submiting job ...");
 
+    /*
     // client submit job 
     Client c = new Client();
     sched.schedule(c, 0, SECONDS);
@@ -120,6 +121,7 @@ public class TestBSPMaster extends HamaCluster {
                    r.getNumber() + ": " + r.getPeer());
     }
     LOG.info("Finish executing test nexus method.");
+    */
   }
 
   public void tearDown() throws Exception{

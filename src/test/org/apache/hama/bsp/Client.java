@@ -77,8 +77,7 @@ class Client implements Runnable{
   public static class HelloBSP extends BSP {
     private Configuration conf;
 
-    @Override
-    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+    public void bsp(BSPPeerProtocol bspPeer) throws IOException, KeeperException,
         InterruptedException {
       int cnt = 0;
       Result r = null;

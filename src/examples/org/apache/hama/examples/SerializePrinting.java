@@ -26,7 +26,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
-import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.BSPPeerProtocol;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.zookeeper.KeeperException;
 
@@ -37,8 +37,7 @@ public class SerializePrinting {
     private Configuration conf;
     private final static int PRINT_INTERVAL = 5000;
 
-    @Override
-    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+    public void bsp(BSPPeerProtocol bspPeer) throws IOException, KeeperException,
         InterruptedException {
       int num = Integer.parseInt(conf.get("bsp.peers.num"));
 
@@ -55,12 +54,10 @@ public class SerializePrinting {
       }
     }
 
-    @Override
     public Configuration getConf() {
       return conf;
     }
 
-    @Override
     public void setConf(Configuration conf) {
       this.conf = conf;
     }
