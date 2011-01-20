@@ -19,7 +19,6 @@ package org.apache.hama.bsp;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Set;
 
 import org.apache.hama.Constants;
 import org.apache.zookeeper.KeeperException;
@@ -72,5 +71,5 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
   /**
    * @return The names of all the peers executing tasks from the same job (including this peer).
    */
-  public Set<String> getAllPeerNames();
+  public String[] getAllPeerNames();
 }

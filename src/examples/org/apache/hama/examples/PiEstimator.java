@@ -27,8 +27,8 @@ import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPMessage;
-import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ClusterStatus;
+import org.apache.hama.bsp.BSPPeerProtocol;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
 
@@ -41,8 +41,7 @@ public class PiEstimator {
     private String masterTask;
     private static final int iterations = 10000;
 
-    @Override
-    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+    public void bsp(BSPPeerProtocol bspPeer) throws IOException, KeeperException,
         InterruptedException {
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {
@@ -77,12 +76,10 @@ public class PiEstimator {
       }
     }
 
-    @Override
     public Configuration getConf() {
       return conf;
     }
 
-    @Override
     public void setConf(Configuration conf) {
       this.conf = conf;
       this.masterTask = conf.get(MASTER_TASK);

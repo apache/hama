@@ -24,8 +24,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -286,8 +286,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   @Override
-  public Set<String> getAllPeerNames() {
-    return allPeerNames;
+  public String[] getAllPeerNames() {
+    return allPeerNames.toArray(new String[0]);
   }
 
   /**

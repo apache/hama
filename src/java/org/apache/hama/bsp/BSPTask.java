@@ -17,8 +17,14 @@
  */
 package org.apache.hama.bsp;
 
-public class BSPTask extends Task {
+import java.io.IOException;
 
+import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.zookeeper.KeeperException;
+
+public class BSPTask extends Task {
+  private BSPJob conf;
+  
   public BSPTask() {
   }
 
@@ -30,8 +36,39 @@ public class BSPTask extends Task {
   }
 
   @Override
-  public BSPTaskRunner createRunner(BSPPeer bspPeer, BSPJob conf) {
-    return new BSPTaskRunner(this, bspPeer, conf);
+  public BSPTaskRunner createRunner(GroomServer groom) {
+    return new BSPTaskRunner(this, groom, this.conf);
   }
+
+  @Override
+  public void run(BSPJob job, BSPPeerProtocol umbilical)
+      throws IOException {
+    
+    BSP bsp = (BSP) ReflectionUtils.newInstance(job.getConf().getClass(
+        "bsp.work.class", BSP.class), job.getConf());
+
+    try {
+      bsp.bsp(umbilical);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (KeeperException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
+    done(umbilical);
+  }
+  
+  public BSPJob getConf() {
+      return conf;
+    }
+  
+    public void setConf(BSPJob conf) {
+      this.conf = conf;
+    }
 
 }

@@ -17,8 +17,10 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -37,12 +39,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FSError;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.ipc.Server;
+import org.apache.hadoop.metrics.MetricsContext;
+import org.apache.hadoop.metrics.MetricsUtil;
 import org.apache.hadoop.net.DNS;
+import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.DiskChecker;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
@@ -51,8 +57,10 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.ipc.WorkerProtocol;
+import org.apache.log4j.LogManager;
+import org.apache.zookeeper.KeeperException;
 
-public class GroomServer implements Runnable, WorkerProtocol {
+public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
 
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
   private BSPPeer bspPeer;
@@ -99,6 +107,9 @@ public class GroomServer implements Runnable, WorkerProtocol {
   private String rpcServer;
   private Server workerServer;
   MasterProtocol masterClient;
+
+  InetSocketAddress taskReportAddress;
+  Server taskReportServer = null;
 
   private BlockingQueue<GroomServerAction> tasksToCleanup = new LinkedBlockingQueue<GroomServerAction>();
 
@@ -149,8 +160,29 @@ public class GroomServer implements Runnable, WorkerProtocol {
       this.workerServer = RPC.getServer(this, rpcAddr, rpcPort, conf);
       this.workerServer.start();
       this.rpcServer = rpcAddr + ":" + rpcPort;
+
       LOG.info("Worker rpc server --> " + rpcServer);
     }
+
+    String address = NetUtils.getServerAddress(conf,
+        "bsp.groom.report.bindAddress", "bsp.groom.report.port",
+        "bsp.groom.report.address");
+    InetSocketAddress socAddr = NetUtils.createSocketAddr(address);
+    String bindAddress = socAddr.getHostName();
+    int tmpPort = socAddr.getPort();
+
+    // RPC initialization
+    // TODO numHandlers should be a ..
+    this.taskReportServer = RPC.getServer(this, bindAddress, tmpPort, 10,
+        false, this.conf);
+
+    this.taskReportServer.start();
+
+    // get the assigned address
+    this.taskReportAddress = taskReportServer.getListenerAddress();
+    this.conf.set("bsp.groom.report.address", taskReportAddress.getHostName()
+        + ":" + taskReportAddress.getPort());
+    LOG.info("GroomServer up at: " + this.taskReportAddress);
 
     this.groomServerName = "groomd_" + bspPeer.getPeerName().replace(':', '_');
     LOG.info("Starting groom: " + this.groomServerName);
@@ -177,15 +209,18 @@ public class GroomServer implements Runnable, WorkerProtocol {
     this.initialized = true;
   }
 
+  /** Return the port at which the tasktracker bound to */
+  public synchronized InetSocketAddress getTaskTrackerReportAddress() {
+    return taskReportAddress;
+  }
+
   @Override
   public void dispatch(Directive directive) throws IOException {
     // update tasks status
     GroomServerAction[] actions = directive.getActions();
     bspPeer.setAllPeerNames(directive.getGroomServerPeers().values());
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Got Response from BSPMaster with "
-          + ((actions != null) ? actions.length : 0) + " actions");
-    }
+    LOG.debug("Got Response from BSPMaster with "
+        + ((actions != null) ? actions.length : 0) + " actions");
     // perform actions
     if (actions != null) {
       for (GroomServerAction action : actions) {
@@ -216,7 +251,7 @@ public class GroomServer implements Runnable, WorkerProtocol {
           DiskChecker.checkDir(new File(localDirs[i]));
           writable = true;
         } catch (DiskErrorException e) {
-          LOG.warn("Graph Processor local " + e.getMessage());
+          LOG.warn("BSP Processor local " + e.getMessage());
         }
       }
     }
@@ -288,11 +323,19 @@ public class GroomServer implements Runnable, WorkerProtocol {
   }
 
   private void startNewTask(LaunchTaskAction action) {
-    TaskInProgress tip = new TaskInProgress(action.getTask(),
-        this.groomServerName);
+    Task t = action.getTask();
+    BSPJob jobConf = null;
+    try {
+      jobConf = new BSPJob(t.getJobID(), t.getJobFile());
+    } catch (IOException e1) {
+      LOG.error(e1);
+    }
+
+    TaskInProgress tip = new TaskInProgress(t, jobConf, this.groomServerName);
 
     synchronized (this) {
-      runningTasks.put(action.getTask().getTaskID(), tip);
+      tasks.put(t.getTaskID(), tip);
+      runningTasks.put(t.getTaskID(), tip);
     }
 
     try {
@@ -319,11 +362,12 @@ public class GroomServer implements Runnable, WorkerProtocol {
         Path localJarFile = defaultJobConf.getLocalPath(SUBDIR + "/"
             + task.getTaskID() + "/" + "job.jar");
         systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
-        Path jarFile = new Path(task.getJobFile().replace(".xml", ".jar"));
-
+        
         HamaConfiguration conf = new HamaConfiguration();
         conf.addResource(localJobFile);
         jobConf = new BSPJob(conf, task.getJobID().toString());
+        
+        Path jarFile = new Path(jobConf.getJar());
         jobConf.setJar(localJarFile.toString());
 
         if (jarFile != null) {
@@ -343,6 +387,7 @@ public class GroomServer implements Runnable, WorkerProtocol {
         rjob.localized = true;
       }
     }
+
     launchTaskForJob(tip, jobConf);
   }
 
@@ -468,6 +513,11 @@ public class GroomServer implements Runnable, WorkerProtocol {
     cleanupStorage();
     this.workerServer.stop();
     RPC.stopProxy(masterClient);
+
+    if (taskReportServer != null) {
+      taskReportServer.stop();
+      taskReportServer = null;
+    }
   }
 
   public static Thread startGroomServer(final GroomServer hrs) {
@@ -489,27 +539,60 @@ public class GroomServer implements Runnable, WorkerProtocol {
   class TaskInProgress {
     Task task;
     BSPJob jobConf;
+    BSPJob localJobConf;
     BSPTaskRunner runner;
     volatile boolean done = false;
     volatile boolean wasKilled = false;
     private TaskStatus taskStatus;
 
-    public TaskInProgress(Task task, String groomServer) {
+    public TaskInProgress(Task task, BSPJob jobConf, String groomServer) {
       this.task = task;
+      this.jobConf = jobConf;
+      this.localJobConf = null;
       this.taskStatus = new TaskStatus(task.getJobID(), task.getTaskID(), 0,
           TaskStatus.State.UNASSIGNED, "running", groomServer,
           TaskStatus.Phase.STARTING);
     }
 
-    public void setJobConf(BSPJob jobConf) {
+    private void localizeTask(Task task) throws IOException {
+      Path localJobFile = this.jobConf.getLocalPath(SUBDIR + "/"
+          + task.getTaskID() + "/job.xml");
+      Path localJarFile = this.jobConf.getLocalPath(SUBDIR + "/"
+          + task.getTaskID() + "/job.jar");
+
+      String jobFile = task.getJobFile();
+      systemFS.copyToLocalFile(new Path(jobFile), localJobFile);
+      task.setJobFile(localJobFile.toString());
+
+      localJobConf = new BSPJob(task.getJobID(), localJobFile.toString());
+      localJobConf.set("bsp.task.id", task.getTaskID().toString());
+      String jarFile = localJobConf.getJar();
+
+      if (jarFile != null) {
+        systemFS.copyToLocalFile(new Path(jarFile), localJarFile);
+        localJobConf.setJar(localJarFile.toString());
+      }
+
+      LOG.debug("localizeTask : " + localJobConf.getJar());
+      LOG.debug("localizeTask : " + localJobFile.toString());
+
+      task.setConf(localJobConf);
+    }
+
+    public synchronized void setJobConf(BSPJob jobConf) {
       this.jobConf = jobConf;
     }
 
+    public synchronized BSPJob getJobConf() {
+      return localJobConf;
+    }
+
     public void launchTask() throws IOException {
+      localizeTask(task);
       taskStatus.setRunState(TaskStatus.State.RUNNING);
       bspPeer.setJobConf(jobConf);
       bspPeer.setCurrentTaskStatus(taskStatus);
-      this.runner = task.createRunner(bspPeer, this.jobConf);
+      this.runner = task.createRunner(GroomServer.this);
       this.runner.start();
 
       // Check state of a Task
@@ -626,6 +709,8 @@ public class GroomServer implements Runnable, WorkerProtocol {
       throws IOException {
     if (protocol.equals(WorkerProtocol.class.getName())) {
       return WorkerProtocol.versionID;
+    } else if (protocol.equals(BSPPeerProtocol.class.getName())) {
+      return BSPPeerProtocol.versionID;
     } else {
       throw new IOException("Unknown protocol to GroomServer: " + protocol);
     }
@@ -637,9 +722,128 @@ public class GroomServer implements Runnable, WorkerProtocol {
    * @return bsp peer information in the form of "address:port".
    */
   public String getBspPeerName() {
-    if (null != this.bspPeer)
-      return this.bspPeer.getPeerName();
+    if (null != bspPeer)
+      return bspPeer.getPeerName();
     return null;
   }
 
+  /**
+   * The main() for child processes.
+   */
+  public static class Child {
+
+    public static void main(String[] args) throws Throwable {
+      LOG.debug("Child starting");
+
+      HamaConfiguration defaultConf = new HamaConfiguration();
+      // report address
+      String host = args[0];
+      int port = Integer.parseInt(args[1]);
+      InetSocketAddress address = new InetSocketAddress(host, port);
+      TaskAttemptID taskid = TaskAttemptID.forName(args[2]);
+
+      // //////////////////
+      BSPPeerProtocol umbilical = (BSPPeerProtocol) RPC.getProxy(
+          BSPPeerProtocol.class, BSPPeerProtocol.versionID, address,
+          defaultConf);
+
+      Task task = umbilical.getTask(taskid);
+
+      defaultConf.addResource(new Path(task.getJobFile()));
+      BSPJob job = new BSPJob(task.getJobID(), task.getJobFile());
+
+      try {
+        // use job-specified working directory
+        FileSystem.get(job.getConf()).setWorkingDirectory(
+            job.getWorkingDirectory());
+
+        task.run(job, umbilical); // run the task
+      } catch (FSError e) {
+        LOG.fatal("FSError from child", e);
+        umbilical.fsError(taskid, e.getMessage());
+      } catch (Throwable throwable) {
+        LOG.warn("Error running child", throwable);
+        // Report back any failures, for diagnostic purposes
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        throwable.printStackTrace(new PrintStream(baos));
+      } finally {
+        RPC.stopProxy(umbilical);
+        MetricsContext metricsContext = MetricsUtil.getContext("mapred");
+        metricsContext.close();
+        // Shutting down log4j of the child-vm...
+        // This assumes that on return from Task.run()
+        // there is no more logging done.
+        LogManager.shutdown();
+      }
+    }
+  }
+
+  @Override
+  public Task getTask(TaskAttemptID taskid) throws IOException {
+    TaskInProgress tip = tasks.get(taskid);
+    if (tip != null) {
+      return tip.getTask();
+    } else {
+      return null;
+    }
+  }
+
+  @Override
+  public boolean ping(TaskAttemptID taskid) throws IOException {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
+  @Override
+  public void done(TaskAttemptID taskid, boolean shouldBePromoted)
+      throws IOException {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void fsError(TaskAttemptID taskId, String message) throws IOException {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void send(String peerName, BSPMessage msg) throws IOException {
+    bspPeer.send(peerName, msg);
+  }
+
+  @Override
+  public void put(BSPMessage msg) throws IOException {
+    bspPeer.put(msg);
+  }
+
+  @Override
+  public BSPMessage getCurrentMessage() throws IOException {
+    return bspPeer.getCurrentMessage();
+  }
+
+  @Override
+  public int getNumCurrentMessages() {
+    return bspPeer.getNumCurrentMessages();
+  }
+
+  @Override
+  public void sync() throws IOException, KeeperException, InterruptedException {
+    bspPeer.sync();
+  }
+
+  @Override
+  public long getSuperstepCount() {
+    return bspPeer.getSuperstepCount();
+  }
+
+  @Override
+  public String getPeerName() {
+    return bspPeer.getPeerName();
+  }
+
+  @Override
+  public String[] getAllPeerNames() {
+    return bspPeer.getAllPeerNames();
+  }
 }

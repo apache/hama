@@ -49,10 +49,6 @@ public class TaskAttemptID extends ID {
     return taskId.getJobID();
   }
  
-  public TaskID getTaskId(){
-    return taskId;
-  }
-
   public TaskID getTaskID() {
     return taskId;
   }

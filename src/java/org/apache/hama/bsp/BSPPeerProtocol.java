@@ -19,27 +19,30 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configurable;
-import org.apache.zookeeper.KeeperException;
-
 /**
- * Interface BSP defines the basic operations needed to implement the BSP
- * algorithm.
  */
-public interface BSPInterface extends Configurable {
+public interface BSPPeerProtocol extends BSPPeerInterface {
+
+  /** Called when a child task process starts, to get its task. */
+  Task getTask(TaskAttemptID taskid) throws IOException;
 
   /**
-   * A user defined function for programming in the BSP style.
+   * Periodically called by child to check if parent is still alive.
    * 
-   * Applications can use the {@link org.apache.hama.bsp.BSPPeer} to handle the
-   * communication and synchronization between processors.
-   * 
-   * @param bspPeer
-   * @throws IOException
-   * @throws KeeperException
-   * @throws InterruptedException
+   * @return True if the task is known
    */
-  public void bsp(BSPPeerProtocol bspPeer) throws IOException, KeeperException,
-      InterruptedException;
+  boolean ping(TaskAttemptID taskid) throws IOException;
+
+  /**
+   * Report that the task is successfully completed. Failure is assumed if the
+   * task process exits without calling this.
+   * 
+   * @param taskid task's id
+   * @param shouldBePromoted whether to promote the task's output or not
+   */
+  void done(TaskAttemptID taskid, boolean shouldBePromoted) throws IOException;
+
+  /** Report that the task encounted a local filesystem error. */
+  void fsError(TaskAttemptID taskId, String message) throws IOException;
 
 }
