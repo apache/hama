@@ -20,12 +20,12 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -39,8 +39,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 public class BSPPeer implements Watcher, BSPPeerInterface {
@@ -62,7 +62,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
   private final ConcurrentLinkedQueue<BSPMessage> localQueue = 
     new ConcurrentLinkedQueue<BSPMessage>();
-  private Set<String> allPeerNames = new HashSet<String>();
+  private SortedSet<String> allPeerNames = new TreeSet<String>();
   private InetSocketAddress peerAddress;
   private TaskStatus currentTaskStatus;
 
@@ -297,7 +297,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    * @param allPeers
    */
   void setAllPeerNames(Collection<String> allPeerNames) {
-    this.allPeerNames = new HashSet<String>(allPeerNames);
+    this.allPeerNames = new TreeSet<String>(allPeerNames);
   }
 
   /**
