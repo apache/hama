@@ -251,27 +251,21 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
         List<TaskStatus> tlist = ustus.getTaskReports();
         for (TaskStatus ts : tlist) {
           JobInProgress jip = whichJob(ts.getJobId());
-          // TODO: need for each tip execute completed?
-          // each tip already maintain a data structure, checking
-          // if task status is completed
 
-          if (jip != null) { // passes if jip is null
-            TaskInProgress tip = jip.findTaskInProgress(((TaskAttemptID) ts
-                .getTaskId()).getTaskID());
-            jip.completedTask(tip, ts);
-            LOG.info("JobInProgress id:" + jip.getJobID() + " status:"
-                + jip.getStatus());
-            if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
-              for (JobInProgressListener listener : jobInProgressListeners) {
-                try {
-                  listener.jobRemoved(jip);
-                } catch (IOException ioe) {
-                  LOG.error("Fail to alter scheduler a job is moved.", ioe);
-                }
+          TaskInProgress tip = jip.findTaskInProgress(((TaskAttemptID) ts
+              .getTaskId()).getTaskID());
+          jip.completedTask(tip, ts);
+          LOG.info("JobInProgress id:" + jip.getJobID() + " status:"
+              + jip.getStatus());
+          if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
+            for (JobInProgressListener listener : jobInProgressListeners) {
+              try {
+                listener.jobRemoved(jip);
+              } catch (IOException ioe) {
+                LOG.error("Fail to alter scheduler a job is moved.", ioe);
               }
             }
           }
-
         }
       } else {
         throw new RuntimeException("BSPMaster contains GroomServerSatus, "

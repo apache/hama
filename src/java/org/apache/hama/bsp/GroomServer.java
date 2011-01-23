@@ -98,11 +98,12 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   Map<TaskAttemptID, TaskInProgress> tasks = new HashMap<TaskAttemptID, TaskInProgress>();
   /** Map from taskId -> TaskInProgress. */
   Map<TaskAttemptID, TaskInProgress> runningTasks = null;
+  Map<TaskAttemptID, TaskInProgress> finishedTasks = null;
   Map<BSPJobID, RunningJob> runningJobs = null;
 
   // new nexus between GroomServer and BSPMaster
   // holds/ manage all tasks
-  List<TaskInProgress> tasksList = new CopyOnWriteArrayList<TaskInProgress>();
+  //List<TaskInProgress> tasksList = new CopyOnWriteArrayList<TaskInProgress>();
 
   private String rpcServer;
   private Server workerServer;
@@ -143,6 +144,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     this.tasks.clear();
     this.runningJobs = new TreeMap<BSPJobID, RunningJob>();
     this.runningTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
+    this.finishedTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
     this.conf.set(Constants.PEER_HOST, localHostname);
     this.conf.set(Constants.GROOM_RPC_HOST, localHostname);
     bspPeer = new BSPPeer(conf);
@@ -606,7 +608,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
         if (bspPeer.getLocalQueueSize() == 0
             && bspPeer.getOutgoingQueueSize() == 0 && !runner.isAlive()) {
           taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-          doReport();
+          doReport(this.taskStatus);
           break;
         }
       }
@@ -616,9 +618,9 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     /**
      * Update and report refresh status back to BSPMaster.
      */
-    private void doReport() {
+    private void doReport(TaskStatus taskStatus) {
       GroomServerStatus gss = new GroomServerStatus(groomServerName, bspPeer
-          .getPeerName(), updateTaskStatus(), failures, maxCurrentTasks,
+          .getPeerName(), updateTaskStatus(taskStatus), failures, maxCurrentTasks,
           rpcServer);
       try {
         boolean ret = masterClient.report(new Directive(gss));
@@ -632,14 +634,17 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
       }
     }
 
-    private List<TaskStatus> updateTaskStatus() {
+    private List<TaskStatus> updateTaskStatus(TaskStatus taskStatus) {
       List<TaskStatus> tlist = new ArrayList<TaskStatus>();
-      for (TaskInProgress tip : runningTasks.values()) {
-        TaskStatus stus = tip.getStatus();
-        stus.setProgress(1f);
-        stus.setRunState(TaskStatus.State.SUCCEEDED);
-        stus.setPhase(TaskStatus.Phase.CLEANUP);
-        tlist.add((TaskStatus) stus.clone());
+      synchronized(runningTasks){
+        synchronized(finishedTasks){
+          TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
+          taskStatus.setProgress(1f);
+          taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+          taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
+          tlist.add((TaskStatus) taskStatus.clone());
+          finishedTasks.put(taskStatus.getTaskId(), tip);
+        }
       }
       return tlist;
     }
