@@ -195,6 +195,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-350: Add task log appender and Fix log4j rootLogger (edwardyoon)
     HAMA-345: Add execution time calculator to Pi job (edwardyoon)
     HAMA-344: Task successfully finished but system re-attempt (edwardyoon)
     HAMA-343: Fix Maven test fails (Tommaso Teofili via edwardyoon)
