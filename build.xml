@@ -103,13 +103,13 @@
 	<target name="compile" depends="init">
 		<!--Compile whats under src and generated java classes made from jsp-->
 		<mkdir dir="${build.src}" />
-		<javac encoding="${build.encoding}" srcdir="${src.dir};${build.src};${src.examples}" includes="**/*.java" destdir="${build.classes}" debug="${javac.debug}" deprecation="${javac.deprecation}">
+		<javac encoding="${build.encoding}" srcdir="${src.dir};${build.src};${src.examples}" includes="**/*.java" destdir="${build.classes}" debug="${javac.debug}" deprecation="${javac.deprecation}" includeantruntime="false">
 			<classpath refid="classpath" />
 		</javac>
 	</target>
 
 	<target name="compile-examples" depends="compile">
-		<javac encoding="${build.encoding}" srcdir="${src.examples}" includes="**/*.java" destdir="${build.examples}" debug="${javac.debug}" deprecation="${javac.deprecation}">
+		<javac encoding="${build.encoding}" srcdir="${src.examples}" includes="**/*.java" destdir="${build.examples}" debug="${javac.debug}" deprecation="${javac.deprecation}" includeantruntime="false">
 			<classpath refid="classpath" />
 		</javac>
 	</target>
@@ -268,7 +268,7 @@
 	</path>
 
 	<target name="compile-test" depends="compile">
-		<javac encoding="${build.encoding}" srcdir="${src.test}" includes="**/*.java" destdir="${build.test}" debug="${javac.debug}">
+		<javac encoding="${build.encoding}" srcdir="${src.test}" includes="**/*.java" destdir="${build.test}" debug="${javac.debug}" includeantruntime="false">
 			<classpath refid="test.classpath" />
 		</javac>
 		<jar jarfile="${build.dir}/${final.name}-test.jar">
