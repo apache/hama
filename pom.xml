@@ -98,13 +98,6 @@
       <systemPath>${project.basedir}/lib/commons-el-from-jetty-5.1.4.jar</systemPath>
     </dependency>
     <dependency>
-      <groupId>agilejson</groupId>
-      <artifactId>agilejson</artifactId>
-      <version>20090330</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/AgileJSON-2009-03-30.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>commons-httpclient</groupId>
       <artifactId>commons-httpclient</artifactId>
       <version>3.0.1</version>
@@ -187,13 +180,6 @@
       <version>6.1.22</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/jetty-util-6.1.14.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20090211</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/json.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

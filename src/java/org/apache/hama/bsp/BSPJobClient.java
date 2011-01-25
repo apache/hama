@@ -192,9 +192,9 @@ public class BSPJobClient extends Configured implements Tool {
 
   public void init(Configuration conf) throws IOException {
     this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
-        JobSubmissionProtocol.class, JobSubmissionProtocol.versionID, BSPMaster
-            .getAddress(conf), conf, NetUtils.getSocketFactory(conf,
-            JobSubmissionProtocol.class));
+        JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
+        BSPMaster.getAddress(conf), conf,
+        NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
   }
 
   /**
@@ -274,7 +274,6 @@ public class BSPJobClient extends Configured implements Tool {
         + Integer.toString(Math.abs(r.nextInt()), 36));
     Path submitJarFile = new Path(submitJobDir, "job.jar");
     Path submitJobFile = new Path(submitJobDir, "job.xml");
-
     LOG.debug("BSPJobClient.submitJobDir: " + submitJobDir);
 
     /*
@@ -332,8 +331,8 @@ public class BSPJobClient extends Configured implements Tool {
     //
     // Now, actually submit the job (using the submit name)
     //
-    JobStatus status = jobSubmitClient.submitJob(jobId, submitJobFile
-        .toString());
+    JobStatus status = jobSubmitClient.submitJob(jobId,
+        submitJobFile.toString());
     if (status != null) {
       return new NetworkedJob(status);
     } else {

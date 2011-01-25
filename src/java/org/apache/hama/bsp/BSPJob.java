@@ -66,8 +66,7 @@ public class BSPJob extends BSPJobContext {
     setNumBspTask(tasks);
   }
 
-  @SuppressWarnings("unchecked")
-  public BSPJob(HamaConfiguration conf, Class exampleClass) throws IOException {
+  public BSPJob(HamaConfiguration conf, Class<?> exampleClass) throws IOException {
     this(conf);
     setJarByClass(exampleClass);
   }
@@ -116,15 +115,14 @@ public class BSPJob extends BSPJobContext {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private static String findContainingJar(Class my_class) {
+  private static String findContainingJar(Class<?> my_class) {
     ClassLoader loader = my_class.getClassLoader();
     String class_file = my_class.getName().replaceAll("\\.", "/") + ".class";
     try {
-      for (Enumeration itr = loader.getResources(class_file); itr
+      for (Enumeration<URL> itr = loader.getResources(class_file); itr
           .hasMoreElements();) {
 
-        URL url = (URL) itr.nextElement();
+        URL url = itr.nextElement();
         if ("jar".equals(url.getProtocol())) {
           String toReturn = url.getPath();
           if (toReturn.startsWith("file:")) {
