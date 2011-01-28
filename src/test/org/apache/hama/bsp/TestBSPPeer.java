@@ -59,8 +59,6 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
   }
 
   public void setUp() throws Exception {
-    super.setUp();
-
     ZooKeeper zk = new ZooKeeper("localhost:21810", 3000, this);
     Stat s = null;
     if (zk != null) {
@@ -99,7 +97,8 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       TaskStatus currentTaskStatus = new TaskStatus(new BSPJobID(), 
           new TaskAttemptID(), 0, null, null, null, null);
       peer.setCurrentTaskStatus(currentTaskStatus);
-      BSPJob jobConf = new BSPJob(conf, NUM_PEER);
+      BSPJob jobConf = new BSPJob(conf);
+      jobConf.setNumBspTask(NUM_PEER);
       peer.setJobConf((BSPJob) jobConf);
     }
 
