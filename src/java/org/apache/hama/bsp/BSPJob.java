@@ -52,20 +52,6 @@ public class BSPJob extends BSPJobContext {
     super(new Path(jobFile), jobID);
   }
 
-  /**
-   * Only for unit test
-   * 
-   * TODO will be deleted when miniBSPCluster implemented
-   * 
-   * @param conf
-   * @param tasks
-   * @throws IOException
-   */
-  public BSPJob(HamaConfiguration conf, int tasks) throws IOException {
-    super(conf, null);
-    setNumBspTask(tasks);
-  }
-
   public BSPJob(HamaConfiguration conf, Class<?> exampleClass) throws IOException {
     this(conf);
     setJarByClass(exampleClass);
