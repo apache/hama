@@ -59,6 +59,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
   }
 
   public void setUp() throws Exception {
+    super.setUp();
     ZooKeeper zk = new ZooKeeper("localhost:21810", 3000, this);
     Stat s = null;
     if (zk != null) {
