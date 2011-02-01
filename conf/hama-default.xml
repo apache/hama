@@ -69,6 +69,20 @@
     <value>/tmp/hama-${user.name}</value>
     <description>Temporary directory on the local filesystem.</description>
   </property>
+  <property>
+    <name>bsp.child.java.opts</name>
+    <value>-Xmx200m</value>
+    <description>Java opts for the groom server child processes.  
+    The following symbol, if present, will be interpolated: @taskid@ is replaced 
+    by current TaskID. Any other occurrences of '@' will go unchanged.
+    For example, to enable verbose gc logging to a file named for the taskid in
+    /tmp and to set the heap maximum to be a gigabyte, pass a 'value' of:
+          -Xmx1024m -verbose:gc -Xloggc:/tmp/@taskid@.gc
+  
+    The configuration variable bsp.child.ulimit can be used to control the
+    maximum virtual memory of the child processes. 
+    </description>
+  </property>
 
   <!--
   Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.

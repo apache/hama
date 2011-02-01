@@ -51,6 +51,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
  
+    HAMA-348: Remove hard-coded javaOpts (edwardyoon)
     HAMA-347: Add implementation of umbilical interface (edwardyoon)
     HAMA-346: Modify MniCluster so that developers can benefit when testing using Junit
                        (ChiaHung Lin via edwardyoon)
