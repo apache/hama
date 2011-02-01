@@ -94,10 +94,10 @@ public class TaskRunner extends Thread {
       new File(new File(System.getProperty("java.home"), "bin"), "java");
       vargs.add(jvm.toString());
 
-      String javaOpts = handleDeprecatedHeapSize("-Xmx500m", // TODO move to
-                                                             // config file
-          conf.get("bsp.child.heap.size"));
-      javaOpts = replaceAll(javaOpts, "@taskid@", task.getTaskID().toString());
+      // bsp.child.java.opts
+      String javaOpts = conf.getConf().get("bsp.child.java.opts", "-Xmx200m");
+      javaOpts = javaOpts.replace("@taskid@", task.getTaskID().toString());
+      
       String[] javaOptsSplit = javaOpts.split(" ");
       for (int i = 0; i < javaOptsSplit.length; i++) {
         vargs.add(javaOptsSplit[i]);
@@ -119,62 +119,6 @@ public class TaskRunner extends Thread {
     } catch (IOException e) {
       LOG.error(e);
     }
-  }
-
-  /**
-   * Handle deprecated mapred.child.heap.size. If present, interpolate into
-   * mapred.child.java.opts value with warning.
-   * 
-   * @param javaOpts Value of mapred.child.java.opts property.
-   * @param heapSize Value of mapred.child.heap.size property.
-   * @return A <code>javaOpts</code> with <code>heapSize</code> interpolated if
-   *         present.
-   */
-  private String handleDeprecatedHeapSize(String javaOpts, final String heapSize) {
-    if (heapSize == null || heapSize.length() <= 0) {
-      return javaOpts;
-    }
-    final String MX = "-Xmx";
-    int index = javaOpts.indexOf(MX);
-    if (index < 0) {
-      javaOpts = javaOpts + " " + MX + heapSize;
-    } else {
-      int end = javaOpts.indexOf(" ", index + MX.length());
-      javaOpts = javaOpts.substring(0, index + MX.length()) + heapSize
-          + ((end < 0) ? "" : javaOpts.substring(end));
-    }
-    LOG.warn("mapred.child.heap.size is deprecated. Use "
-        + "mapred.child.java.opt instead. Meantime, mapred.child.heap.size "
-        + "is interpolated into mapred.child.java.opt: " + javaOpts);
-    return javaOpts;
-  }
-
-  /**
-   * Replace <code>toFind</code> with <code>replacement</code>. When hadoop
-   * moves to JDK1.5, replace this method with String#replace (Of is
-   * commons-lang available, replace with StringUtils#replace).
-   * 
-   * @param text String to do replacements in.
-   * @param toFind String to find.
-   * @param replacement String to replace <code>toFind</code> with.
-   * @return A String with all instances of <code>toFind</code> replaced by
-   *         <code>replacement</code> (The original <code>text</code> is
-   *         returned if <code>toFind</code> is not found in <code>text<code>).
-   */
-  private static String replaceAll(String text, final String toFind,
-      final String replacement) {
-    if (text == null || toFind == null || replacement == null) {
-      throw new IllegalArgumentException("Text " + text + " or toFind "
-          + toFind + " or replacement " + replacement + " are null.");
-    }
-    int offset = 0;
-    for (int index = text.indexOf(toFind); index >= 0; index = text.indexOf(
-        toFind, offset)) {
-      offset = index + toFind.length();
-      text = text.substring(0, index) + replacement + text.substring(offset);
-
-    }
-    return text;
   }
 
   /**
