@@ -22,18 +22,24 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPMessage;
-import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
 
 public class PiEstimator {
   private static String MASTER_TASK = "master.task.";
+  private static Path TMP_OUTPUT = new Path("/tmp/pi-example/output");
 
   public static class MyEstimator extends BSP {
     public static final Log LOG = LogFactory.getLog(MyEstimator.class);
@@ -41,8 +47,8 @@ public class PiEstimator {
     private String masterTask;
     private static final int iterations = 10000;
 
-    public void bsp(BSPPeerProtocol bspPeer) throws IOException, KeeperException,
-        InterruptedException {
+    public void bsp(BSPPeerProtocol bspPeer) throws IOException,
+        KeeperException, InterruptedException {
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {
         double x = 2.0 * Math.random() - 1.0, y = 2.0 * Math.random() - 1.0;
@@ -64,7 +70,7 @@ public class PiEstimator {
       BSPMessage received;
       while ((received = bspPeer.getCurrentMessage()) != null) {
         LOG.info("Receives messages:" + Bytes.toDouble(received.getData()));
-        if(pi == 0.0) {
+        if (pi == 0.0) {
           pi = Bytes.toDouble(received.getData());
         } else {
           pi = (pi + Bytes.toDouble(received.getData())) / 2;
@@ -72,7 +78,13 @@ public class PiEstimator {
       }
 
       if (pi != 0.0) {
-        LOG.info("\nEstimated value of PI is " + pi);
+        FileSystem fileSys = FileSystem.get(conf);
+
+        SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
+            TMP_OUTPUT, DoubleWritable.class, DoubleWritable.class,
+            CompressionType.NONE);
+        writer.append(new DoubleWritable(pi), new DoubleWritable(0));
+        writer.close();
       }
     }
 
@@ -96,26 +108,41 @@ public class PiEstimator {
     // Set the job name
     bsp.setJobName("pi estimation example");
     bsp.setBspClass(MyEstimator.class);
-    
+
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);
-    
-    if(args.length > 0) {
+
+    if (args.length > 0) {
       bsp.setNumBspTask(Integer.parseInt(args[0]));
     } else {
       // Set to maximum
       bsp.setNumBspTask(cluster.getGroomServers());
     }
-    
+
     // Choose one as a master
     for (String peerName : cluster.getActiveGroomNames().values()) {
       conf.set(MASTER_TASK, peerName);
       break;
     }
 
+    FileSystem fileSys = FileSystem.get(conf);
+    if (fileSys.exists(TMP_OUTPUT)) {
+      fileSys.delete(TMP_OUTPUT, true);
+    }
+
     long startTime = System.currentTimeMillis();
     BSPJobClient.runJob(bsp);
-    System.out.println("Job Finished in "+
-        (double)(System.currentTimeMillis() - startTime)/1000.0 + " seconds");
+    System.out.println("Job Finished in "
+        + (double) (System.currentTimeMillis() - startTime) / 1000.0
+        + " seconds");
+
+    SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, TMP_OUTPUT,
+        conf);
+    DoubleWritable output = new DoubleWritable();
+    DoubleWritable zero = new DoubleWritable();
+    reader.next(output, zero);
+    reader.close();
+
+    System.out.println("Estimated value of PI is " + output);
   }
 }
