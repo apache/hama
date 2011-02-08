@@ -53,8 +53,6 @@ public class SerializePrinting {
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {
         if (bspPeer.getPeerName().equals(otherPeer)) {
-          LOG.info("Hello BSP from " + (i + 1) + " of " + num + ": "
-              + bspPeer.getPeerName());
 
           SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
               new Path(TMP_OUTPUT + i), LongWritable.class, Text.class,
