@@ -18,10 +18,17 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
+import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
@@ -31,23 +38,34 @@ import org.apache.hama.bsp.ClusterStatus;
 import org.apache.zookeeper.KeeperException;
 
 public class SerializePrinting {
-  
+  private static String TMP_OUTPUT = "/tmp/test-example/";
+
   public static class HelloBSP extends BSP {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private Configuration conf;
     private final static int PRINT_INTERVAL = 5000;
 
-    public void bsp(BSPPeerProtocol bspPeer) throws IOException, KeeperException,
-        InterruptedException {
+    public void bsp(BSPPeerProtocol bspPeer) throws IOException,
+        KeeperException, InterruptedException {
       int num = Integer.parseInt(conf.get("bsp.peers.num"));
+      FileSystem fileSys = FileSystem.get(conf);
 
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {
         if (bspPeer.getPeerName().equals(otherPeer)) {
           LOG.info("Hello BSP from " + (i + 1) + " of " + num + ": "
               + bspPeer.getPeerName());
+
+          SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
+              new Path(TMP_OUTPUT + i), LongWritable.class, Text.class,
+              CompressionType.NONE);
+          writer.append(new LongWritable(System.currentTimeMillis()), new Text(
+              "Hello BSP from " + (i + 1) + " of " + num + ": "
+                  + bspPeer.getPeerName()));
+          writer.close();
+
         }
-        
+
         Thread.sleep(PRINT_INTERVAL);
         bspPeer.sync();
         i++;
@@ -73,12 +91,27 @@ public class SerializePrinting {
     // Set the job name
     bsp.setJobName("serialize printing");
     bsp.setBspClass(HelloBSP.class);
-    
+
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(false);
     bsp.setNumBspTask(cluster.getGroomServers());
-    
+
+    FileSystem fileSys = FileSystem.get(conf);
+    if (fileSys.exists(new Path(TMP_OUTPUT))) {
+      fileSys.delete(new Path(TMP_OUTPUT), true);
+    }
     BSPJobClient.runJob(bsp);
+
+    System.out.println("Each task printed the \"Hello World\" as below:");
+    for (int i = 0; i < cluster.getGroomServers(); i++) {
+      SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, new Path(
+          TMP_OUTPUT + i), conf);
+      LongWritable timestamp = new LongWritable();
+      Text message = new Text();
+      reader.next(timestamp, message);
+      System.out.println(new Date(timestamp.get()) + ": " + message);
+      reader.close();
+    }
   }
 }
