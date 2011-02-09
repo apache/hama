@@ -124,7 +124,7 @@ public class BSPJobClient extends Configured implements Tool {
     }
 
     /**
-     * True iff job completed successfully.
+     * True if job completed successfully.
      */
     public synchronized boolean isSuccessful() throws IOException {
       updateStatus();
