@@ -64,12 +64,14 @@ public class PiEstimator {
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
       bspPeer.send(masterTask, estimate);
+      LOG.info("Send message:" + System.currentTimeMillis());
       bspPeer.sync();
 
       double pi = 0.0;
       BSPMessage received;
       while ((received = bspPeer.getCurrentMessage()) != null) {
-        LOG.info("Receives messages:" + Bytes.toDouble(received.getData()));
+        LOG.info("Receive messages:" + Bytes.toDouble(received.getData())
+            + " from " + Bytes.toString(received.getTag()));
         if (pi == 0.0) {
           pi = Bytes.toDouble(received.getData());
         } else {

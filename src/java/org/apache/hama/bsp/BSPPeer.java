@@ -140,12 +140,12 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   @Override
   public void send(String peerName, BSPMessage msg) throws IOException {
     LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
-    ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(peerName);
+    ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(getAddress(peerName));
     if (queue == null) {
       queue = new ConcurrentLinkedQueue<BSPMessage>();
-      outgoingQueues.put(getAddress(peerName), queue);
     }
     queue.add(msg);
+    outgoingQueues.put(getAddress(peerName), queue);
   }
 
   /*
