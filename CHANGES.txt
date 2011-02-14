@@ -197,6 +197,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-352: Can't send one more messages on to same server in bsp() method (edwardyoon)
     HAMA-350: Add task log appender and Fix log4j rootLogger (edwardyoon)
     HAMA-345: Add execution time calculator to Pi job (edwardyoon)
     HAMA-344: Task successfully finished but system re-attempt (edwardyoon)
