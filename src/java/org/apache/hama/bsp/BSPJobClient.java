@@ -354,7 +354,7 @@ public class BSPJobClient extends Configured implements Tool {
       throws IOException, InterruptedException {
 
     String lastReport = null;
-    LOG.info("Running job: " + info.getJobName());
+    LOG.info("Running job: " + info.getID());
 
     while (!job.isComplete()) {
       Thread.sleep(1000);
