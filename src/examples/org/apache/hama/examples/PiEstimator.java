@@ -66,14 +66,14 @@ public class PiEstimator {
       bspPeer.send(masterTask, estimate);
       bspPeer.sync();
 
-      double pi = 0.0;
-      int numPeers = bspPeer.getNumCurrentMessages();
-      BSPMessage received;
-      while ((received = bspPeer.getCurrentMessage()) != null) {
-        pi += Bytes.toDouble(received.getData());
-      }
-
       if (bspPeer.getPeerName().equals(masterTask)) {
+        double pi = 0.0;
+        int numPeers = bspPeer.getNumCurrentMessages();
+        BSPMessage received;
+        while ((received = bspPeer.getCurrentMessage()) != null) {
+          pi += Bytes.toDouble(received.getData());
+        }
+
         pi = pi / numPeers;
         writeResult(pi);
       }
