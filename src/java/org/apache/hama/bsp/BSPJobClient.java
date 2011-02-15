@@ -354,20 +354,19 @@ public class BSPJobClient extends Configured implements Tool {
       throws IOException, InterruptedException {
 
     String lastReport = null;
-    BSPJobID jobId = job.getJobID();
-    LOG.info("Running job: " + jobId);
+    LOG.info("Running job: " + info.getJobName());
 
     while (!job.isComplete()) {
       Thread.sleep(1000);
-      String report = " bsp " + StringUtils.formatPercent(job.progress(), 0);
+      String report = "bsp: " + StringUtils.formatPercent(job.progress(), 0);
 
       if (!report.equals(lastReport)) {
-        LOG.info(report);
+        LOG.debug(report);
         lastReport = report;
       }
     }
 
-    LOG.info("Job complete: " + jobId);
+    LOG.info("The total number of supersteps: " + info.getSuperstepCount());
     return job.isSuccessful();
   }
 

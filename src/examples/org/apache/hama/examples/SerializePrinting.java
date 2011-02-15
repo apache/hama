@@ -44,24 +44,17 @@ public class SerializePrinting {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private Configuration conf;
     private final static int PRINT_INTERVAL = 5000;
+    private FileSystem fileSys;
+    private int num;
 
     public void bsp(BSPPeerProtocol bspPeer) throws IOException,
         KeeperException, InterruptedException {
-      int num = Integer.parseInt(conf.get("bsp.peers.num"));
-      FileSystem fileSys = FileSystem.get(conf);
 
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {
-        if (bspPeer.getPeerName().equals(otherPeer)) {
-
-          SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
-              new Path(TMP_OUTPUT + i), LongWritable.class, Text.class,
-              CompressionType.NONE);
-          writer.append(new LongWritable(System.currentTimeMillis()), new Text(
-              "Hello BSP from " + (i + 1) + " of " + num + ": "
-                  + bspPeer.getPeerName()));
-          writer.close();
-
+        String peerName = bspPeer.getPeerName();
+        if (peerName.equals(otherPeer)) {
+          writeLogToFile(peerName, i);
         }
 
         Thread.sleep(PRINT_INTERVAL);
@@ -70,37 +63,33 @@ public class SerializePrinting {
       }
     }
 
+    private void writeLogToFile(String string, int i) throws IOException {
+      SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
+          new Path(TMP_OUTPUT + i), LongWritable.class, Text.class,
+          CompressionType.NONE);
+      writer.append(new LongWritable(System.currentTimeMillis()), new Text(
+          "Hello BSP from " + (i + 1) + " of " + num + ": " + string));
+      writer.close();
+    }
+
     public Configuration getConf() {
       return conf;
     }
 
     public void setConf(Configuration conf) {
       this.conf = conf;
+      num = Integer.parseInt(conf.get("bsp.peers.num"));
+      try {
+        fileSys = FileSystem.get(conf);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
 
   }
 
-  public static void main(String[] args) throws InterruptedException,
-      IOException {
-    // BSP job configuration
-    HamaConfiguration conf = new HamaConfiguration();
-
-    BSPJob bsp = new BSPJob(conf, SerializePrinting.class);
-    // Set the job name
-    bsp.setJobName("serialize printing");
-    bsp.setBspClass(HelloBSP.class);
-
-    // Set the task size as a number of GroomServer
-    BSPJobClient jobClient = new BSPJobClient(conf);
-    ClusterStatus cluster = jobClient.getClusterStatus(false);
-    bsp.setNumBspTask(cluster.getGroomServers());
-
-    FileSystem fileSys = FileSystem.get(conf);
-    if (fileSys.exists(new Path(TMP_OUTPUT))) {
-      fileSys.delete(new Path(TMP_OUTPUT), true);
-    }
-    BSPJobClient.runJob(bsp);
-
+  private static void printOutput(FileSystem fileSys, ClusterStatus cluster,
+      HamaConfiguration conf) throws IOException {
     System.out.println("Each task printed the \"Hello World\" as below:");
     for (int i = 0; i < cluster.getGroomServers(); i++) {
       SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, new Path(
@@ -112,4 +101,34 @@ public class SerializePrinting {
       reader.close();
     }
   }
+
+  private static void initTempDir(FileSystem fileSys) throws IOException {
+    if (fileSys.exists(new Path(TMP_OUTPUT))) {
+      fileSys.delete(new Path(TMP_OUTPUT), true);
+    }
+  }
+
+  public static void main(String[] args) throws InterruptedException,
+      IOException, ClassNotFoundException {
+    // BSP job configuration
+    HamaConfiguration conf = new HamaConfiguration();
+
+    BSPJob bsp = new BSPJob(conf, SerializePrinting.class);
+    // Set the job name
+    bsp.setJobName("Serialize Printing");
+    bsp.setBspClass(HelloBSP.class);
+
+    // Set the task size as a number of GroomServer
+    BSPJobClient jobClient = new BSPJobClient(conf);
+    ClusterStatus cluster = jobClient.getClusterStatus(false);
+    bsp.setNumBspTask(cluster.getGroomServers());
+
+    FileSystem fileSys = FileSystem.get(conf);
+    initTempDir(fileSys);
+
+    if (bsp.waitForCompletion(true)) {
+      printOutput(fileSys, cluster, conf);
+    }
+  }
+
 }

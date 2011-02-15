@@ -101,14 +101,15 @@ public class PiEstimator {
 
   }
 
+
   public static void main(String[] args) throws InterruptedException,
-      IOException {
+      IOException, ClassNotFoundException {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
 
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
     // Set the job name
-    bsp.setJobName("pi estimation example");
+    bsp.setJobName("Pi Estimation Example");
     bsp.setBspClass(MyEstimator.class);
 
     BSPJobClient jobClient = new BSPJobClient(conf);
@@ -128,23 +129,16 @@ public class PiEstimator {
     }
 
     FileSystem fileSys = FileSystem.get(conf);
-    if (fileSys.exists(TMP_OUTPUT)) {
-      fileSys.delete(TMP_OUTPUT, true);
-    }
+    initTempDir(fileSys);
 
     long startTime = System.currentTimeMillis();
-    BSPJobClient.runJob(bsp);
-    System.out.println("Job Finished in "
-        + (double) (System.currentTimeMillis() - startTime) / 1000.0
-        + " seconds");
 
-    SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, TMP_OUTPUT,
-        conf);
-    DoubleWritable output = new DoubleWritable();
-    DoubleWritable zero = new DoubleWritable();
-    reader.next(output, zero);
-    reader.close();
-
-    System.out.println("Estimated value of PI is " + output);
+    if (bsp.waitForCompletion(true)) {
+      printOutput(fileSys, conf);
+      
+      System.out.println("Job Finished in "
+          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + " seconds");
+    }
   }
 }
