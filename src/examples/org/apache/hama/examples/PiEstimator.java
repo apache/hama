@@ -101,6 +101,23 @@ public class PiEstimator {
 
   }
 
+  private static void initTempDir(FileSystem fileSys) throws IOException {
+    if (fileSys.exists(TMP_OUTPUT)) {
+      fileSys.delete(TMP_OUTPUT, true);
+    }
+  }
+
+  private static void printOutput(FileSystem fileSys, HamaConfiguration conf)
+      throws IOException {
+    SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, TMP_OUTPUT,
+        conf);
+    DoubleWritable output = new DoubleWritable();
+    DoubleWritable zero = new DoubleWritable();
+    reader.next(output, zero);
+    reader.close();
+
+    System.out.println("Estimated value of PI is " + output);
+  }
 
   public static void main(String[] args) throws InterruptedException,
       IOException, ClassNotFoundException {
@@ -135,7 +152,7 @@ public class PiEstimator {
 
     if (bsp.waitForCompletion(true)) {
       printOutput(fileSys, conf);
-      
+
       System.out.println("Job Finished in "
           + (double) (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
