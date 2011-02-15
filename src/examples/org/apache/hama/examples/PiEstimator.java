@@ -64,30 +64,29 @@ public class PiEstimator {
       BSPMessage estimate = new BSPMessage(tagName, myData);
 
       bspPeer.send(masterTask, estimate);
-      LOG.info("Send message:" + System.currentTimeMillis());
       bspPeer.sync();
 
       double pi = 0.0;
+      int numPeers = bspPeer.getNumCurrentMessages();
       BSPMessage received;
       while ((received = bspPeer.getCurrentMessage()) != null) {
-        LOG.info("Receive messages:" + Bytes.toDouble(received.getData())
-            + " from " + Bytes.toString(received.getTag()));
-        if (pi == 0.0) {
-          pi = Bytes.toDouble(received.getData());
-        } else {
-          pi = (pi + Bytes.toDouble(received.getData())) / 2;
-        }
+        pi += Bytes.toDouble(received.getData());
       }
 
-      if (pi != 0.0) {
-        FileSystem fileSys = FileSystem.get(conf);
-
-        SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
-            TMP_OUTPUT, DoubleWritable.class, DoubleWritable.class,
-            CompressionType.NONE);
-        writer.append(new DoubleWritable(pi), new DoubleWritable(0));
-        writer.close();
+      if (bspPeer.getPeerName().equals(masterTask)) {
+        pi = pi / numPeers;
+        writeResult(pi);
       }
+    }
+
+    private void writeResult(double pi) throws IOException {
+      FileSystem fileSys = FileSystem.get(conf);
+
+      SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
+          TMP_OUTPUT, DoubleWritable.class, DoubleWritable.class,
+          CompressionType.NONE);
+      writer.append(new DoubleWritable(pi), new DoubleWritable(0));
+      writer.close();
     }
 
     public Configuration getConf() {
