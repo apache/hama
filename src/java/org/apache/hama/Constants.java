@@ -46,7 +46,6 @@ public interface Constants {
   /** Default port region server listens on. */
   public static final int DEFAULT_PEER_PORT = 61000;
 
-  public static final long ATLEAST_WAIT_TIME = 10;
   public static final String PEER_ID = "bsp.peer.id";
   
   /** Parameter name for what groom server implementation to use. */

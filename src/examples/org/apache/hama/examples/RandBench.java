@@ -30,7 +30,6 @@ import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeerProtocol;
 import org.apache.hama.bsp.ClusterStatus;
-import org.apache.hama.examples.PiEstimator.MyEstimator;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
 
@@ -40,7 +39,7 @@ public class RandBench {
   private static final String N_SUPERSTEPS = "supersteps.num";
 
   public static class RandBSP extends BSP {
-    public static final Log LOG = LogFactory.getLog(MyEstimator.class);
+    public static final Log LOG = LogFactory.getLog(RandBSP.class);
     private Configuration conf;
     private Random r = new Random();
     private int sizeOfMsg;
