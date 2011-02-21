@@ -20,6 +20,8 @@ package org.apache.hama.examples;
 import java.io.IOException;
 import java.util.Random;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
@@ -28,6 +30,7 @@ import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeerProtocol;
 import org.apache.hama.bsp.ClusterStatus;
+import org.apache.hama.examples.PiEstimator.MyEstimator;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
 
@@ -37,6 +40,7 @@ public class RandBench {
   private static final String N_SUPERSTEPS = "supersteps.num";
 
   public static class RandBSP extends BSP {
+    public static final Log LOG = LogFactory.getLog(MyEstimator.class);
     private Configuration conf;
     private Random r = new Random();
     private int sizeOfMsg;
@@ -61,8 +65,11 @@ public class RandBench {
         }
 
         bspPeer.sync();
-        // clear whole queues entries
-        bspPeer.clear();
+
+        BSPMessage received;
+        while ((received = bspPeer.getCurrentMessage()) != null) {
+          LOG.info(Bytes.toString(received.getTag()) + " : " + received.getData().length);
+        }
         
       }
     }
