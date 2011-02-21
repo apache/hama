@@ -140,7 +140,7 @@ public class BSPJob extends BSPJobContext {
   // /////////////////////////////////////
   // Methods for Job Control
   // /////////////////////////////////////
-  public float progress() throws IOException {
+  public long progress() throws IOException {
     ensureState(JobState.RUNNING);
     return info.progress();
   }

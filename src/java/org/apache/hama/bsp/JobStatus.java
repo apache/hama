@@ -21,13 +21,16 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableFactory;
 
 public class JobStatus implements Writable, Cloneable {
-
+  public static final Log LOG = LogFactory.getLog(JobStatus.class);
+  
   static {
     WritableFactories.setFactory(JobStatus.class, new WritableFactory() {
       public Writable newInstance() {
@@ -58,9 +61,9 @@ public class JobStatus implements Writable, Cloneable {
   public static final int KILLED = 5;
 
   private BSPJobID jobid;
-  private float progress;
-  private float cleanupProgress;
-  private float setupProgress;
+  private long progress;
+  private long cleanupProgress;
+  private long setupProgress;
   private volatile State state;// runState in enum
   private int runState;
   private long startTime;
@@ -73,22 +76,22 @@ public class JobStatus implements Writable, Cloneable {
   public JobStatus() {
   }
 
-  public JobStatus(BSPJobID jobid, String user, float progress, int runState) {
-    this(jobid, user, progress, 0.0f, runState);
+  public JobStatus(BSPJobID jobid, String user, long progress, int runState) {
+    this(jobid, user, progress, 0, runState);
   }
 
-  public JobStatus(BSPJobID jobid, String user, float progress, float cleanupProgress,
+  public JobStatus(BSPJobID jobid, String user, long progress, long cleanupProgress,
       int runState) {
-    this(jobid, user, 0.0f, progress, cleanupProgress, runState);
+    this(jobid, user, 0, progress, cleanupProgress, runState);
   }
 
-  public JobStatus(BSPJobID jobid, String user, float setupProgress, float progress,
-      float cleanupProgress, int runState) {
-    this(jobid, user, 0.0f, progress, cleanupProgress, runState, 0);
+  public JobStatus(BSPJobID jobid, String user, long setupProgress, long progress,
+      long cleanupProgress, int runState) {
+    this(jobid, user, 0, progress, cleanupProgress, runState, 0);
   }
 
-  public JobStatus(BSPJobID jobid, String user, float setupProgress, float progress,
-      float cleanupProgress, int runState, long superstepCount) {
+  public JobStatus(BSPJobID jobid, String user, long setupProgress, long progress,
+      long cleanupProgress, int runState, long superstepCount) {
     this.jobid = jobid;
     this.setupProgress = setupProgress;
     this.progress = progress;
@@ -103,28 +106,28 @@ public class JobStatus implements Writable, Cloneable {
     return jobid;
   }
 
-  public synchronized float progress() {
+  public synchronized long progress() {
     return progress;
   }
 
-  synchronized void setprogress(float p) {
-    this.progress = (float) Math.min(1.0, Math.max(0.0, p));
+  synchronized void setprogress(long p) {
+    this.progress = p;
   }
 
-  public synchronized float cleanupProgress() {
+  public synchronized long cleanupProgress() {
     return cleanupProgress;
   }
 
-  synchronized void setCleanupProgress(float p) {
-    this.cleanupProgress = (float) Math.min(1.0, Math.max(0.0, p));
+  synchronized void setCleanupProgress(int p) {
+    this.cleanupProgress = p;
   }
 
-  public synchronized float setupProgress() {
+  public synchronized long setupProgress() {
     return setupProgress;
   }
 
-  synchronized void setSetupProgress(float p) {
-    this.setupProgress = (float) Math.min(1.0, Math.max(0.0, p));
+  synchronized void setSetupProgress(long p) {
+    this.setupProgress = p;
   }
 
   public JobStatus.State getState(){
@@ -203,9 +206,9 @@ public class JobStatus implements Writable, Cloneable {
 
   public synchronized void write(DataOutput out) throws IOException {
     jobid.write(out);
-    out.writeFloat(setupProgress);
-    out.writeFloat(progress);
-    out.writeFloat(cleanupProgress);
+    out.writeLong(setupProgress);
+    out.writeLong(progress);
+    out.writeLong(cleanupProgress);
     out.writeInt(runState);
     out.writeLong(startTime);
     out.writeLong(finishTime);
@@ -217,9 +220,9 @@ public class JobStatus implements Writable, Cloneable {
   public synchronized void readFields(DataInput in) throws IOException {
     this.jobid = new BSPJobID();
     jobid.readFields(in);
-    this.setupProgress = in.readFloat();
-    this.progress = in.readFloat();
-    this.cleanupProgress = in.readFloat();
+    this.setupProgress = in.readLong();
+    this.progress = in.readLong();
+    this.cleanupProgress = in.readLong();
     this.runState = in.readInt();
     this.startTime = in.readLong();
     this.finishTime = in.readLong();

@@ -51,6 +51,7 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
  
+    HAMA-353: Add "random communication benchmark" tool (edwardyoon)
     HAMA-351: Improvement of lack of info- about the output of examples (edwardyoon)
     HAMA-348: Remove hard-coded javaOpts (edwardyoon)
     HAMA-347: Add implementation of umbilical interface (edwardyoon)
