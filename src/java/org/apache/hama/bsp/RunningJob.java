@@ -60,7 +60,7 @@ public interface RunningJob {
    * @return the progress of the job's tasks.
    * @throws IOException
    */
-  public float progress() throws IOException;
+  public long progress() throws IOException;
 
   /**
    * Check if the job is finished or not. This is a non-blocking call.

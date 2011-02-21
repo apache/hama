@@ -72,4 +72,9 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
    * @return The names of all the peers executing tasks from the same job (including this peer).
    */
   public String[] getAllPeerNames();
+  
+  /**
+   * Clears all queues entries.
+   */
+  public void clear();
 }

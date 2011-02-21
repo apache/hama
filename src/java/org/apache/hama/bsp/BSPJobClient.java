@@ -35,7 +35,6 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UnixUserGroupInformation;
-import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.HamaConfiguration;
@@ -109,7 +108,7 @@ public class BSPJobClient extends Configured implements Tool {
     }
 
     @Override
-    public float progress() throws IOException {
+    public long progress() throws IOException {
       ensureFreshStatus();
       return status.progress();
     }
@@ -358,10 +357,11 @@ public class BSPJobClient extends Configured implements Tool {
 
     while (!job.isComplete()) {
       Thread.sleep(1000);
-      String report = "bsp: " + StringUtils.formatPercent(job.progress(), 0);
+      long step = job.progress();
+      String report = "Current supersteps number: " + step;
 
       if (!report.equals(lastReport)) {
-        LOG.debug(report);
+        LOG.info(report);
         lastReport = report;
       }
     }

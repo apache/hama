@@ -238,6 +238,11 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     }
   }
 
+  public void clear() {
+    this.localQueue.clear();
+    this.outgoingQueues.clear();
+  }
+  
   @Override
   public void close() throws IOException {
     server.stop();

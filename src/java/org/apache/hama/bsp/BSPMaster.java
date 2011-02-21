@@ -188,9 +188,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
           WorkerProtocol.class, WorkerProtocol.versionID,
           resolveWorkerAddress(status.getRpcServer()), this.conf);
       if (null == wc) {
-        LOG
-            .warn("Fail to create Worker client at host "
-                + status.getPeerName());
+        LOG.warn("Fail to create Worker client at host " + status.getPeerName());
         return false;
       }
       // TODO: need to check if peer name has changed
@@ -237,6 +235,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
     }
     // update GroomServerStatus hold in groomServers cache.
     GroomServerStatus fstus = directive.getStatus();
+
     // groomServers cache contains groom server status reported back
     if (groomServers.containsKey(fstus)) {
       GroomServerStatus ustus = null;
@@ -247,6 +246,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
           break;
         }
       }// for
+
       if (null != ustus) {
         List<TaskStatus> tlist = ustus.getTaskReports();
         for (TaskStatus ts : tlist) {
@@ -254,9 +254,13 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
 
           TaskInProgress tip = jip.findTaskInProgress(((TaskAttemptID) ts
               .getTaskId()).getTaskID());
-          jip.completedTask(tip, ts);
-          LOG.info("JobInProgress id:" + jip.getJobID() + " status:"
-              + jip.getStatus());
+          
+          if(ts.getRunState() == TaskStatus.State.SUCCEEDED) {
+            jip.completedTask(tip, ts);
+          } else if (ts.getRunState() == TaskStatus.State.RUNNING) {
+            // do nothing
+          }
+          
           if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
             for (JobInProgressListener listener : jobInProgressListeners) {
               try {
@@ -265,6 +269,9 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
                 LOG.error("Fail to alter scheduler a job is moved.", ioe);
               }
             }
+
+          } else if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
+            jip.getStatus().setprogress(ts.getSuperstepCount());
           }
         }
       } else {

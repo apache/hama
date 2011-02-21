@@ -65,7 +65,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   private BSPPeer bspPeer;
   static final String SUBDIR = "groomServer";
 
-  private volatile static int REPORT_INTERVAL = 60 * 1000;
+  private volatile static int REPORT_INTERVAL = 1 * 1000;
 
   Configuration conf;
 
@@ -102,7 +102,8 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
 
   // new nexus between GroomServer and BSPMaster
   // holds/ manage all tasks
-  //List<TaskInProgress> tasksList = new CopyOnWriteArrayList<TaskInProgress>();
+  // List<TaskInProgress> tasksList = new
+  // CopyOnWriteArrayList<TaskInProgress>();
 
   private String rpcServer;
   private Server workerServer;
@@ -132,8 +133,9 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
-          "default"), conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(
+          conf.get("bsp.dns.interface", "default"),
+          conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -165,6 +167,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
       LOG.info("Worker rpc server --> " + rpcServer);
     }
 
+    @SuppressWarnings("deprecation")
     String address = NetUtils.getServerAddress(conf,
         "bsp.groom.report.bindAddress", "bsp.groom.report.port",
         "bsp.groom.report.address");
@@ -293,8 +296,12 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   }
 
   public State offerService() throws Exception {
-
     while (running && !shuttingDown) {
+      try {
+        Thread.sleep(REPORT_INTERVAL);
+      } catch (InterruptedException ie) {
+      }
+      
       try {
         if (justInited) {
           String dir = masterClient.getSystemDir();
@@ -363,11 +370,11 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
         Path localJarFile = defaultJobConf.getLocalPath(SUBDIR + "/"
             + task.getTaskID() + "/" + "job.jar");
         systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
-        
+
         HamaConfiguration conf = new HamaConfiguration();
         conf.addResource(localJobFile);
         jobConf = new BSPJob(conf, task.getJobID().toString());
-        
+
         Path jarFile = new Path(jobConf.getJar());
         jobConf.setJar(localJarFile.toString());
 
@@ -599,7 +606,9 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
       // Check state of a Task
       while (true) {
         try {
-          Thread.sleep(1000);
+          taskStatus.setProgress(bspPeer.getSuperstepCount());
+          doReport(this.taskStatus);
+          Thread.sleep(REPORT_INTERVAL);
         } catch (InterruptedException e) {
           e.printStackTrace();
         }
@@ -607,6 +616,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
         if (bspPeer.getLocalQueueSize() == 0
             && bspPeer.getOutgoingQueueSize() == 0 && !runner.isAlive()) {
           taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+          taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
           doReport(this.taskStatus);
           break;
         }
@@ -618,9 +628,9 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
      * Update and report refresh status back to BSPMaster.
      */
     private void doReport(TaskStatus taskStatus) {
-      GroomServerStatus gss = new GroomServerStatus(groomServerName, bspPeer
-          .getPeerName(), updateTaskStatus(taskStatus), failures, maxCurrentTasks,
-          rpcServer);
+      GroomServerStatus gss = new GroomServerStatus(groomServerName,
+          bspPeer.getPeerName(), updateTaskStatus(taskStatus), failures,
+          maxCurrentTasks, rpcServer);
       try {
         boolean ret = masterClient.report(new Directive(gss));
         if (!ret) {
@@ -635,15 +645,18 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
 
     private List<TaskStatus> updateTaskStatus(TaskStatus taskStatus) {
       List<TaskStatus> tlist = new ArrayList<TaskStatus>();
-      synchronized(runningTasks){
-        synchronized(finishedTasks){
-          TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
-          taskStatus.setProgress(1f);
-          taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-          taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
+      synchronized (runningTasks) {
+
+        if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED) {
+          synchronized (finishedTasks) {
+            TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
+            tlist.add((TaskStatus) taskStatus.clone());
+            finishedTasks.put(taskStatus.getTaskId(), tip);
+          }
+        } else if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
           tlist.add((TaskStatus) taskStatus.clone());
-          finishedTasks.put(taskStatus.getTaskId(), tip);
         }
+
       }
       return tlist;
     }
@@ -849,5 +862,10 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   @Override
   public String[] getAllPeerNames() {
     return bspPeer.getAllPeerNames();
+  }
+
+  @Override
+  public void clear() {
+    bspPeer.clear();
   }
 }

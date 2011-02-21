@@ -77,7 +77,7 @@ class JobInProgress {
     this.localFs = FileSystem.getLocal(conf);
     this.jobFile = jobFile;
     this.master = master;
-    this.status = new JobStatus(jobId, null, 0.0f, 0.0f, JobStatus.State.PREP.value());
+    this.status = new JobStatus(jobId, null, 0L, 0L, JobStatus.State.PREP.value());
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -183,7 +183,7 @@ class JobInProgress {
 
     // Update job status
     this.status = new JobStatus(this.status.getJobID(), this.profile.getUser(),
-        1.0f, 1.0f, JobStatus.RUNNING);
+        0L, 0L, JobStatus.RUNNING);
 
     tasksInited = true;
     LOG.debug("Job is initialized.");
@@ -233,7 +233,7 @@ class JobInProgress {
 
     if (allDone) {
       this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), 1.0f, 1.0f, 1.0f, JobStatus.SUCCEEDED, superstepCounter);
+          .getUser(), superstepCounter, superstepCounter, superstepCounter, JobStatus.SUCCEEDED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
       
@@ -258,7 +258,7 @@ class JobInProgress {
     LOG.debug(">> JobInProgress.kill() step.");
     if (status.getRunState() != JobStatus.FAILED) {
       this.status = new JobStatus(status.getJobID(), this.profile.getUser(),
-          1.0f, 1.0f, 1.0f, JobStatus.FAILED);
+          0L, 0L, 0L, JobStatus.FAILED);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
       //
