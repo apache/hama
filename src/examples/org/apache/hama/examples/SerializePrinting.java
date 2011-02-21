@@ -43,7 +43,7 @@ public class SerializePrinting {
   public static class HelloBSP extends BSP {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private Configuration conf;
-    private final static int PRINT_INTERVAL = 5000;
+    private final static int PRINT_INTERVAL = 1000;
     private FileSystem fileSys;
     private int num;
 
