@@ -154,6 +154,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    */
   @Override
   public void sync() throws IOException, KeeperException, InterruptedException {
+    enterBarrier();
     Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = this.outgoingQueues
         .entrySet().iterator();
     Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> entry;
@@ -181,14 +182,16 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     // Clear outgoing queues.
     clearOutgoingQueues();
 
-    enterBarrier();
-    Thread.sleep(Constants.ATLEAST_WAIT_TIME); // TODO - This is temporary work
+    // TODO - This is temporary work
     // because
     // it can be affected by network condition,
     // the number of peers, and the load of zookeeper.
     // It should fixed to some flawless way.
-    leaveBarrier();
+    
+    Thread.sleep(Constants.ATLEAST_WAIT_TIME); 
+    
     currentTaskStatus.incrementSuperstepCount();
+    leaveBarrier();
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
