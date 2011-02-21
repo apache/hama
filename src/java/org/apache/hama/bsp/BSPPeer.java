@@ -182,14 +182,6 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     // Clear outgoing queues.
     clearOutgoingQueues();
 
-    // TODO - This is temporary work
-    // because
-    // it can be affected by network condition,
-    // the number of peers, and the load of zookeeper.
-    // It should fixed to some flawless way.
-    
-    Thread.sleep(Constants.ATLEAST_WAIT_TIME); 
-    
     currentTaskStatus.incrementSuperstepCount();
     leaveBarrier();
   }
