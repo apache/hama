@@ -61,10 +61,9 @@ public class RandBench {
         }
 
         bspPeer.sync();
-
-        if ((nSupersteps - 1) == i) {
-          bspPeer.clear();
-        }
+        // clear whole queues entries
+        bspPeer.clear();
+        
       }
     }
 
