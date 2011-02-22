@@ -23,7 +23,8 @@ import java.io.IOException;
 import org.apache.hama.Constants;
 import org.apache.zookeeper.KeeperException;
 
-public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Constants {
+public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable,
+    Constants {
 
   /**
    * Send a data with a tag to another BSPSlave corresponding to hostname.
@@ -34,11 +35,16 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
    * @param msg
    * @throws IOException
    */
-  public void send(String peerName, BSPMessage msg)
-      throws IOException;
+  public void send(String peerName, BSPMessage msg) throws IOException;
 
+  /**
+   * Puts a message to local queue.
+   * 
+   * @param msg
+   * @throws IOException
+   */
   public void put(BSPMessage msg) throws IOException;
-  
+
   /**
    * @return A message from the peer's received messages queue (a FIFO).
    * @throws IOException
@@ -51,7 +57,10 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
   public int getNumCurrentMessages();
 
   /**
-   * Sends all the messages in the outgoing message queues to the corresponding remote peers.
+   * Barrier Synchronization.
+   * 
+   * Sends all the messages in the outgoing message queues to the corresponding
+   * remote peers.
    * 
    * @throws InterruptedException
    * @throws KeeperException
@@ -62,17 +71,18 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable, Cons
    * @return the count of current super-step
    */
   public long getSuperstepCount();
-  
+
   /**
    * @return The name of this peer in the format "hostname:port".
    */
   public String getPeerName();
-  
+
   /**
-   * @return The names of all the peers executing tasks from the same job (including this peer).
+   * @return The names of all the peers executing tasks from the same job
+   *         (including this peer).
    */
   public String[] getAllPeerNames();
-  
+
   /**
    * Clears all queues entries.
    */
