@@ -203,6 +203,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
         if (list.size() < jobConf.getNumBspTask()) {
           mutex.wait();
+          Thread.sleep(10);
         } else {
           return true;
         }
@@ -218,6 +219,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         List<String> list = zk.getChildren(bspRoot, true);
         if (list.size() > 0) {
           mutex.wait();
+          Thread.sleep(10);
         } else {
           LOG.debug("[" + getPeerName() + "] leave from the leaveBarrier");
           return true;
