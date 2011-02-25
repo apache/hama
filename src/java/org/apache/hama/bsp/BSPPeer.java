@@ -179,6 +179,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       }
     }
 
+    waitForSync();
+    Thread.sleep(100);
+    
     // Clear outgoing queues.
     clearOutgoingQueues();
 
@@ -210,9 +213,32 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     }
   }
 
+  protected boolean waitForSync() throws KeeperException, InterruptedException {
+    try {
+      zk.create(bspRoot + "/" + getPeerName() + "-data", new byte[0],
+          Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+    } catch (KeeperException e) {
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    while (true) {
+      synchronized (mutex) {
+        List<String> list = zk.getChildren(bspRoot, true);
+        if (list.size() < (jobConf.getNumBspTask() * 2)) {
+          mutex.wait();
+        } else {
+          return true;
+        }
+      }
+    }
+  }
+
   protected boolean leaveBarrier() throws KeeperException, InterruptedException {
     zk.delete(bspRoot + "/" + getPeerName(), 0);
-
+    zk.delete(bspRoot + "/" + getPeerName() + "-data", 0);
+    
     while (true) {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
