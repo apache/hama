@@ -30,6 +30,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
+/**
+ * A HeartbeatReponse class.
+ */
 public class HeartbeatResponse implements Writable, Configurable {
   private Configuration conf;
   short responseId;

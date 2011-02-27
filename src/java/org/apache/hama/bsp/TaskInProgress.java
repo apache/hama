@@ -27,7 +27,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobStatus;
 
 /**
- *
+ *TaskInProgress maintains all the info needed for a Task in the lifetime of
+ * its owning Job.
  */
 class TaskInProgress {
   public static final Log LOG = LogFactory.getLog(TaskInProgress.class);
@@ -86,7 +87,7 @@ class TaskInProgress {
     this.jobFile = jobFile;
     this.partition = partition;
 
-    this.id = new TaskID(jobId, true, partition);
+    this.id = new TaskID(jobId, partition);
   }
 
   public TaskInProgress(BSPJobID jobId, String jobFile, BSPMaster master,
@@ -98,7 +99,7 @@ class TaskInProgress {
     this.conf = conf;
     this.partition = partition;
 
-    this.id = new TaskID(jobId, true, partition);
+    this.id = new TaskID(jobId, partition);
   }
 
   /**

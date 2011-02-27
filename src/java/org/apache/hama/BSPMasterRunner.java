@@ -26,7 +26,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.bsp.BSPMaster;
 
 /**
- * This class starts and runs the BSPMaster
+ * This class starts and runs the BSPMaster.
  */
 public class BSPMasterRunner extends Configured implements Tool {
 

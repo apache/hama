@@ -25,6 +25,11 @@ import java.util.Enumeration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
 
+/**
+ * A BSP job configuration.
+ * 
+ * BSPJob is the primary interface for a user to describe a BSP job to the Hama BSP framework for execution.
+ */
 public class BSPJob extends BSPJobContext {
   public static enum JobState {
     DEFINE, RUNNING

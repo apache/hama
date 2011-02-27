@@ -23,6 +23,9 @@ import java.io.IOException;
 import org.apache.hama.Constants;
 import org.apache.zookeeper.KeeperException;
 
+/**
+ * BSP communication interface.
+ */
 public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable,
     Constants {
 

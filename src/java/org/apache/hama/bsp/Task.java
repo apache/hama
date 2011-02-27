@@ -27,6 +27,9 @@ import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
+/**
+ * Base class for tasks.
+ */
 public abstract class Task implements Writable {
   public static final Log LOG = LogFactory.getLog(Task.class);
   // //////////////////////////////////////////

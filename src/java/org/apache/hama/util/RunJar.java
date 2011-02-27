@@ -37,6 +37,9 @@ import java.util.jar.Manifest;
 
 import org.apache.hadoop.fs.FileUtil;
 
+/**
+ * Run a Hama job jar.
+ */
 public class RunJar {
 
   /** Unpack a jar file into a directory. */

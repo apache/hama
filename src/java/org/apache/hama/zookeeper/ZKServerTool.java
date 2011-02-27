@@ -23,7 +23,11 @@ import java.util.Map.Entry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.HamaConfiguration;
 
+/**
+ * A tool class for Zookeeper use.
+ */
 public class ZKServerTool {
+  
   /**
    * Run the tool.
    * 

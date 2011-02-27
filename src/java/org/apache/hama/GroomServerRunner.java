@@ -27,7 +27,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.bsp.GroomServer;
 
 /**
- * This class starts and runs the GroomServer 
+ * This class starts and runs the GroomServer.
  */
 public class GroomServerRunner extends Configured implements Tool {
 

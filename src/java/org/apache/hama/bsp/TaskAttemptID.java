@@ -36,9 +36,8 @@ public class TaskAttemptID extends ID {
     this.taskId = taskId;
   }
 
-  public TaskAttemptID(String jtIdentifier, int jobId, boolean isMatrixTask,
-      int taskId, int id) {
-    this(new TaskID(jtIdentifier, jobId, isMatrixTask, taskId), id);
+  public TaskAttemptID(String jtIdentifier, int jobId, int taskId, int id) {
+    this(new TaskID(jtIdentifier, jobId, taskId), id);
   }
 
   public TaskAttemptID() {
@@ -48,7 +47,7 @@ public class TaskAttemptID extends ID {
   public BSPJobID getJobID() {
     return taskId.getJobID();
   }
- 
+
   public TaskID getTaskID() {
     return taskId;
   }
@@ -104,19 +103,10 @@ public class TaskAttemptID extends ID {
       return null;
     try {
       String[] parts = str.split(Character.toString(SEPARATOR));
-      if (parts.length == 6) {
+      if (parts.length == 5) {
         if (parts[0].equals(ATTEMPT)) {
-          boolean isMatrixTask = false;
-          if (parts[3].equals("m"))
-            isMatrixTask = true;
-          else if (parts[3].equals("g"))
-            isMatrixTask = false;
-          else
-            throw new Exception();
-
           return new TaskAttemptID(parts[1], Integer.parseInt(parts[2]),
-              isMatrixTask, Integer.parseInt(parts[4]), Integer
-                  .parseInt(parts[5]));
+              Integer.parseInt(parts[3]), Integer.parseInt(parts[4]));
         }
       }
     } catch (Exception ex) {

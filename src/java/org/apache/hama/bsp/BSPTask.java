@@ -22,6 +22,9 @@ import java.io.IOException;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.zookeeper.KeeperException;
 
+/**
+ * Base class for tasks. 
+ */
 public class BSPTask extends Task {
   private BSPJob conf;
   

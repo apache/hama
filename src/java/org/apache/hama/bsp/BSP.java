@@ -18,7 +18,7 @@
 package org.apache.hama.bsp;
 
 /**
- * This class provides an abstract implementation of the BSP interface
+ * This class provides an abstract implementation of the BSP interface.
  */
 public abstract class BSP implements BSPInterface {
 }

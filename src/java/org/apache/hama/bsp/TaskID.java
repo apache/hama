@@ -22,6 +22,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.text.NumberFormat;
 
+/**
+ * TaskID represents the immutable and unique identifier for a BSP Task.
+ */
 public class TaskID extends ID {
   protected static final String TASK = "task";
   protected static final NumberFormat idFormat = NumberFormat.getInstance();
@@ -31,19 +34,17 @@ public class TaskID extends ID {
   }
 
   private BSPJobID jobId;
-  private boolean isMatrixTask;
 
-  public TaskID(BSPJobID jobId, boolean isMatrixTask, int id) {
+  public TaskID(BSPJobID jobId, int id) {
     super(id);
     if (jobId == null) {
       throw new IllegalArgumentException("jobId cannot be null");
     }
     this.jobId = jobId;
-    this.isMatrixTask = isMatrixTask;
   }
 
-  public TaskID(String jtIdentifier, int jobId, boolean isGraphTask, int id) {
-    this(new BSPJobID(jtIdentifier, jobId), isGraphTask, id);
+  public TaskID(String jtIdentifier, int jobId, int id) {
+    this(new BSPJobID(jtIdentifier, jobId), id);
   }
 
   public TaskID() {
@@ -55,18 +56,13 @@ public class TaskID extends ID {
     return jobId;
   }
 
-  public boolean isGraphTask() {
-    return isMatrixTask;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (!super.equals(o))
       return false;
 
     TaskID that = (TaskID) o;
-    return this.isMatrixTask == that.isMatrixTask
-        && this.jobId.equals(that.jobId);
+    return this.jobId.equals(that.jobId);
   }
 
   @Override
@@ -74,10 +70,7 @@ public class TaskID extends ID {
     TaskID that = (TaskID) o;
     int jobComp = this.jobId.compareTo(that.jobId);
     if (jobComp == 0) {
-      if (this.isMatrixTask == that.isMatrixTask) {
-        return this.id - that.id;
-      } else
-        return this.isMatrixTask ? -1 : 1;
+      return this.id - that.id;
     } else {
       return jobComp;
     }
@@ -89,8 +82,8 @@ public class TaskID extends ID {
   }
 
   protected StringBuilder appendTo(StringBuilder builder) {
-    return jobId.appendTo(builder).append(SEPARATOR).append(
-        isMatrixTask ? 'm' : 'g').append(SEPARATOR).append(idFormat.format(id));
+    return jobId.appendTo(builder).append(SEPARATOR)
+        .append(idFormat.format(id));
   }
 
   @Override
@@ -102,14 +95,12 @@ public class TaskID extends ID {
   public void readFields(DataInput in) throws IOException {
     super.readFields(in);
     jobId.readFields(in);
-    isMatrixTask = in.readBoolean();
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     super.write(out);
     jobId.write(out);
-    out.writeBoolean(isMatrixTask);
   }
 
   public static TaskID forName(String str) throws IllegalArgumentException {
@@ -119,15 +110,8 @@ public class TaskID extends ID {
       String[] parts = str.split("_");
       if (parts.length == 5) {
         if (parts[0].equals(TASK)) {
-          boolean isMatrixTask = false;
-          if (parts[3].equals("m"))
-            isMatrixTask = true;
-          else if (parts[3].equals("g"))
-            isMatrixTask = false;
-          else
-            throw new Exception();
-          return new TaskID(parts[1], Integer.parseInt(parts[2]), isMatrixTask,
-              Integer.parseInt(parts[4]));
+          return new TaskID(parts[1], Integer.parseInt(parts[2]), Integer
+              .parseInt(parts[4]));
         }
       }
     } catch (Exception ex) {
