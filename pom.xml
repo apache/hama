@@ -161,13 +161,6 @@
       <systemPath>${project.basedir}/lib/jasper-runtime-5.5.12.jar</systemPath>
     </dependency>
     <dependency>
-      <groupId>net.java.dev</groupId>
-      <artifactId>javacc</artifactId>
-      <version>4.0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/javacc.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>org.mortbay.jetty</groupId>
       <artifactId>jetty</artifactId>
       <version>6.1.22</version>

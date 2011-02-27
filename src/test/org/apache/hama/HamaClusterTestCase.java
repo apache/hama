@@ -20,9 +20,6 @@ package org.apache.hama;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,9 +27,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hama.util.ClusterUtil;
-import org.apache.hama.bsp.BSPMaster;
-import org.apache.hama.bsp.GroomServer;
 
 public abstract class HamaClusterTestCase extends HamaTestCase {
   public static final Log LOG = LogFactory.getLog(HamaClusterTestCase.class);
