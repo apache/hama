@@ -34,6 +34,9 @@ import org.apache.zookeeper.server.NIOServerCnxn;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.persistence.FileTxnLog;
 
+/**
+ * This class starts and runs the MiniZookeeperCluster. 
+ */
 public class MiniZooKeeperCluster {
   private static final Log LOG = LogFactory.getLog(MiniZooKeeperCluster.class);
 

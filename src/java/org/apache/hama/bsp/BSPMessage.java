@@ -23,6 +23,10 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 
+/**
+ * BSPMessage consists of the tag and the arbitrary amount of data to be
+ * communicated.
+ */
 public class BSPMessage implements Writable {
   protected byte[] tag;
   protected byte[] data;
@@ -31,7 +35,7 @@ public class BSPMessage implements Writable {
   }
 
   /**
-   * Constructor 
+   * Constructor
    * 
    * @param tag of data
    * @param data of message

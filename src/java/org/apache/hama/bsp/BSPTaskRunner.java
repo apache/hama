@@ -20,6 +20,9 @@ package org.apache.hama.bsp;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+/**
+ * Base class that runs a task in a separate process.
+ */
 public class BSPTaskRunner extends TaskRunner {
 
   public static final Log LOG = LogFactory.getLog(BSPTaskRunner.class);

@@ -20,6 +20,7 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 
 /**
+ * Protocol that task child process uses to contact its parent process.
  */
 public interface BSPPeerProtocol extends BSPPeerInterface {
 

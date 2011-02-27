@@ -17,6 +17,9 @@
  */
 package org.apache.hama.util;
 
+/**
+ * A version information class.
+ */
 public class VersionInfo {
 
   public static void main(String[] args) {

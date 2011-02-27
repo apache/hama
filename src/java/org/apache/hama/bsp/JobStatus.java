@@ -28,6 +28,9 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableFactory;
 
+/**
+ * Describes the current status of a job.
+ */
 public class JobStatus implements Writable, Cloneable {
   public static final Log LOG = LogFactory.getLog(JobStatus.class);
   

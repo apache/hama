@@ -24,6 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hadoop.conf.Configuration;
 
+/**
+ * A BSPJob Queue Manager. 
+ */
 public class QueueManager{
 
   private ConcurrentMap<String, Queue<JobInProgress>> queues = 

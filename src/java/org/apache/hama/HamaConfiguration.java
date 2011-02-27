@@ -25,7 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 /**
- * Adds Hama configuration files to a Configuration
+ * Adds Hama configuration files to a Configuration.
  */
 public class HamaConfiguration extends Configuration {
   /** constructor */

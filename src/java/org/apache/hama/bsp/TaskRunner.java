@@ -29,6 +29,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.util.RunJar;
 
+/** 
+ * Base class that runs a task in a separate process. 
+ */
 public class TaskRunner extends Thread {
 
   public static final Log LOG = LogFactory.getLog(TaskRunner.class);

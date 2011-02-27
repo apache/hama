@@ -25,7 +25,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.zookeeper.QuorumPeer;
 
 /**
- * This class starts and runs the ZooKeeperServer
+ * This class starts and runs the ZooKeeperServer.
  */
 public class ZooKeeperRunner extends Configured implements Tool {
 

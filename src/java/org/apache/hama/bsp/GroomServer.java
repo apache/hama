@@ -59,6 +59,14 @@ import org.apache.hama.ipc.WorkerProtocol;
 import org.apache.log4j.LogManager;
 import org.apache.zookeeper.KeeperException;
 
+/**
+ * A Groom Server (shortly referred to as groom) is a process that performs bsp
+ * tasks assigned by BSPMaster. Each groom contacts the BSPMaster, and it takes
+ * assigned tasks and reports its status by means of periodical piggybacks with
+ * BSPMaster. Each groom is designed to run with HDFS or other distributed
+ * storages. Basically, a groom server and a data node should be run on one
+ * physical node.
+ */
 public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
 
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
@@ -133,9 +141,8 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(
-          conf.get("bsp.dns.interface", "default"),
-          conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
+          "default"), conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -301,7 +308,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
         Thread.sleep(REPORT_INTERVAL);
       } catch (InterruptedException ie) {
       }
-      
+
       try {
         if (justInited) {
           String dir = masterClient.getSystemDir();
@@ -628,8 +635,8 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
      * Update and report refresh status back to BSPMaster.
      */
     private void doReport(TaskStatus taskStatus) {
-      GroomServerStatus gss = new GroomServerStatus(groomServerName,
-          bspPeer.getPeerName(), updateTaskStatus(taskStatus), failures,
+      GroomServerStatus gss = new GroomServerStatus(groomServerName, bspPeer
+          .getPeerName(), updateTaskStatus(taskStatus), failures,
           maxCurrentTasks, rpcServer);
       try {
         boolean ret = masterClient.report(new Directive(gss));

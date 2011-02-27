@@ -23,6 +23,11 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 
+/**
+ * A general identifier, which internally stores the id as an integer. This is
+ * the super class of {@link BSPJobID}, {@link TaskID} and {@link TaskAttemptID}
+ * .
+ */
 public abstract class ID implements WritableComparable<ID> {
   protected static final char SEPARATOR = '_';
   protected int id;

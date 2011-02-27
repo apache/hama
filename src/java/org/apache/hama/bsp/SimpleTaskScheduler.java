@@ -28,6 +28,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hama.ipc.WorkerProtocol;
 
+/**
+ * A simple task scheduler. 
+ */
 class SimpleTaskScheduler extends TaskScheduler {
 
   private static final Log LOG = LogFactory.getLog(SimpleTaskScheduler.class);

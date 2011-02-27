@@ -19,6 +19,11 @@ package org.apache.hama.bsp;
 
 import java.util.Collection;
 
+/**
+ * Job Queue interface.
+ *  
+ * @param <T>
+ */
 public interface Queue<T>{
 
   /**

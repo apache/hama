@@ -20,7 +20,7 @@
 package org.apache.hama;
 
 /**
- * Some constants used in the Hama
+ * Some constants used in the Hama.
  */
 public interface Constants {
  

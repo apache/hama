@@ -40,6 +40,13 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 
+/**
+ * BSPJobClient is the primary interface for the user-job to interact with the
+ * BSPMaster.
+ * 
+ * BSPJobClient provides facilities to submit jobs, track their progress, access
+ * component-tasks' reports/logs, get the BSP cluster status information etc.
+ */
 public class BSPJobClient extends Configured implements Tool {
   private static final Log LOG = LogFactory.getLog(BSPJobClient.class);
 
@@ -191,9 +198,9 @@ public class BSPJobClient extends Configured implements Tool {
 
   public void init(Configuration conf) throws IOException {
     this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
-        JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
-        BSPMaster.getAddress(conf), conf,
-        NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
+        JobSubmissionProtocol.class, JobSubmissionProtocol.versionID, BSPMaster
+            .getAddress(conf), conf, NetUtils.getSocketFactory(conf,
+            JobSubmissionProtocol.class));
   }
 
   /**
@@ -330,8 +337,8 @@ public class BSPJobClient extends Configured implements Tool {
     //
     // Now, actually submit the job (using the submit name)
     //
-    JobStatus status = jobSubmitClient.submitJob(jobId,
-        submitJobFile.toString());
+    JobStatus status = jobSubmitClient.submitJob(jobId, submitJobFile
+        .toString());
     if (status != null) {
       return new NetworkedJob(status);
     } else {

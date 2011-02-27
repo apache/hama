@@ -42,6 +42,9 @@ import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerMain;
 
+/**
+ * This class starts and runs the QuorumPeers
+ */
 public class QuorumPeer implements Constants {
   private static final Log LOG = LogFactory.getLog(QuorumPeer.class);
 
