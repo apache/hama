@@ -37,9 +37,6 @@
 	<property name="docs.dir" value="${basedir}/docs" />
 	<property name="docs.src" value="${basedir}/src/docs" />
 
-	<!-- javacc properties -->
-	<property name="javacc.home" value="${basedir}/lib" />
-
 	<!-- build properties -->
 
 	<property name="test.output" value="no" />
@@ -216,7 +213,6 @@
 		<fileset file="${lib.dir}/zookeeper*.jar" />
 		<fileset file="${lib.dir}/commons*.jar" />
 		<fileset file="${lib.dir}/log4j*.jar" />
-		<fileset file="${lib.dir}/javacc.jar" />
 		<fileset file="${lib.dir}/junit-3.8.1.jar" />
 	</path>
 
