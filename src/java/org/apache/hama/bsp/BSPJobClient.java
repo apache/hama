@@ -510,6 +510,18 @@ public class BSPJobClient extends Configured implements Tool {
       }
       killJob = true;
       jobid = args[1];
+
+      // TODO Later, below functions should be implemented
+      // with the Fault Tolerant mechanism.
+    } else if ("-list-attempt-ids".equals(cmd)) {
+      System.out.println("This function is not implemented yet.");
+      return exitCode;
+    } else if ("-kill-task".equals(cmd)) {
+      System.out.println("This function is not implemented yet.");
+      return exitCode;
+    } else if ("-fail-task".equals(cmd)) {
+      System.out.println("This function is not implemented yet.");
+      return exitCode;
     }
 
     BSPJobClient jc = new BSPJobClient(new HamaConfiguration());
