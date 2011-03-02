@@ -117,10 +117,7 @@ IFS=
 if [ -d "$HAMA_HOME/webapps" ]; then
   CLASSPATH=${CLASSPATH}:$HAMA_HOME
 fi
-for f in $HAMA_HOME/hama-*-core.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
-done
-for f in $HAMA_HOME/build/hama-*-dev.jar; do # TODO - should be changed before initial release
+for f in $HAMA_HOME/hama-**.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 

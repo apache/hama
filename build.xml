@@ -18,7 +18,7 @@
 -->
 
 <project name="hama" default="jar">
-	<property name="version" value="0.2.0-dev" />
+	<property name="version" value="0.2.0" />
 	<property name="Name" value="Hama" />
 	<property name="final.name" value="hama-${version}" />
 	<property name="year" value="2009" />
@@ -91,6 +91,18 @@
 		<copy todir="${build.lib}">
 			<fileset dir="${lib.dir}" />
 		</copy>
+		
+	    <tempfile property="touch.temp.file" destDir="${java.io.tmpdir}"/>
+	    <touch millis="0" file="${touch.temp.file}">
+	      <fileset dir="${conf.dir}" includes="**/*.template"/>
+	    </touch>
+	    <delete file="${touch.temp.file}"/>
+
+	    <copy todir="${conf.dir}" verbose="true">
+	      <fileset dir="${conf.dir}" includes="**/*.template"/>
+	      <mapper type="glob" from="*.template" to="*"/>
+	    </copy>
+
 	</target>
 
 	<!-- ================================================================== -->
@@ -127,25 +139,51 @@
 
 	<target name="package" depends="jar,javadoc,examples,compile-test" description="Build distribution">
 		<mkdir dir="${dist.dir}" />
+	    <mkdir dir="${dist.dir}/lib"/>
+	    <mkdir dir="${dist.dir}/bin"/>
+	    <mkdir dir="${dist.dir}/docs"/>
+	    <mkdir dir="${dist.dir}/docs/api"/>
+		
 		<copy todir="${dist.dir}" includeEmptyDirs="false" flatten="true">
 			<fileset dir="${build.dir}">
 				<include name="${final.name}.jar" />
+				<include name="${final.name}-examples.jar" />
 				<include name="${final.name}-test.jar" />
 			</fileset>
 		</copy>
-		<mkdir dir="${dist.dir}/lib" />
+		
+	    <copy todir="${dist.dir}/bin">
+	      <fileset dir="bin"/>
+	    </copy>
+		
+	    <copy todir="${dist.dir}/conf">
+	      <fileset dir="${conf.dir}" excludes="**/*.template"/>
+	    </copy>
+		
 		<copy todir="${dist.dir}/lib">
 			<fileset dir="${build.lib}" />
 		</copy>
+		
+	    <copy todir="${dist.dir}/docs">
+	      <fileset dir="${build.docs}"/>
+	    </copy>
+		
 		<copy todir="${dist.dir}">
 			<fileset dir=".">
 				<include name="*.txt" />
 			</fileset>
 		</copy>
+	    <copy todir="${dist.dir}/" file="build.xml"/>
+		
 		<mkdir dir="${dist.dir}/src" />
 		<copy todir="${dist.dir}/src" includeEmptyDirs="true">
 			<fileset dir="src" excludes="**/*.template **/docs/build/**/*" />
 		</copy>
+		
+		
+	    <chmod perm="ugo+x" type="file" parallel="false">
+	        <fileset dir="${dist.dir}/bin"/>
+	    </chmod>
 	</target>
 
 	<!-- ================================================================== -->
