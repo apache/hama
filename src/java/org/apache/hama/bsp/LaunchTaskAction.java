@@ -24,7 +24,6 @@ import java.io.IOException;
 /**
  * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
  * {@link org.apache.hama.bsp.GroomServer} to launch a new task.
- * 
  */
 class LaunchTaskAction extends GroomServerAction {
   private Task task;

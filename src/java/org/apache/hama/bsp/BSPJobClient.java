@@ -363,7 +363,7 @@ public class BSPJobClient extends Configured implements Tool {
     LOG.info("Running job: " + info.getID());
 
     while (!job.isComplete()) {
-      Thread.sleep(1000);
+      Thread.sleep(3000);
       long step = job.progress();
       String report = "Current supersteps number: " + step;
 

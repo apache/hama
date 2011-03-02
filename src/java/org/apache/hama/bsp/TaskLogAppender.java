@@ -23,6 +23,9 @@ import java.util.Queue;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.spi.LoggingEvent;
 
+/**
+ * A simple log4j-appender for the task child's BSP system logs.
+ */
 public class TaskLogAppender extends FileAppender {
   private String taskId; // taskId should be managed as String rather than
                          // TaskID object

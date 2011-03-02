@@ -259,6 +259,9 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
             jip.completedTask(tip, ts);
           } else if (ts.getRunState() == TaskStatus.State.RUNNING) {
             // do nothing
+          } else if (ts.getRunState() == TaskStatus.State.FAILED) {
+            jip.status.setRunState(JobStatus.FAILED);
+            jip.failedTask(tip, ts);
           }
           
           if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
@@ -272,7 +275,16 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
 
           } else if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
             jip.getStatus().setprogress(ts.getSuperstepCount());
+          } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
+            
+            WorkerProtocol worker = findGroomServer(ustus);
+            Directive d1 = new Directive(currentGroomServerPeers(),
+                new GroomServerAction[] { new KillTaskAction(ts.getTaskId()) });
+            
+            worker.dispatch(d1);
+            
           }
+          
         }
       } else {
         throw new RuntimeException("BSPMaster contains GroomServerSatus, "

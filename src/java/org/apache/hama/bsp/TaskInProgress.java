@@ -224,6 +224,14 @@ class TaskInProgress {
 
     this.completes++;
   }
+  
+  public void terminated(TaskAttemptID taskid) {
+    LOG.info("Task '" + taskid.getTaskID().toString() + "' has failed.");
+
+    TaskStatus status = (TaskStatus) taskStatuses.get(taskid);
+    status.setRunState(TaskStatus.State.FAILED);
+    activeTasks.remove(taskid);
+  }
 
   private void setSuccessfulTaskid(TaskAttemptID taskid) {
     this.successfulTaskId = taskid;
@@ -242,7 +250,6 @@ class TaskInProgress {
   }
 
   public void kill() {
-    LOG.debug(">> TaskInProgress.kill() step.");
     this.failed = true;
   }
 

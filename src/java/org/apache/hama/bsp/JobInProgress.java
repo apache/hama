@@ -243,6 +243,36 @@ class JobInProgress {
     }
   }
 
+  public void failedTask(TaskInProgress tip, TaskStatus status) {
+    TaskAttemptID taskid = status.getTaskId();
+    updateTaskStatus(tip, status);
+    LOG.info("Taskid '" + taskid + "' has failed.");
+    tip.terminated(taskid);
+
+    //
+    // If all tasks are complete, then the job is done!
+    //
+
+    boolean allDone = true;
+    for (TaskInProgress taskInProgress : tasks) {
+      if (!taskInProgress.isFailed()) {
+        allDone = false;
+        break;
+      }
+    }
+
+    if (allDone) {
+      this.status = new JobStatus(this.status.getJobID(), this.profile
+          .getUser(), superstepCounter, superstepCounter, superstepCounter, JobStatus.FAILED, superstepCounter);
+      this.finishTime = System.currentTimeMillis();
+      this.status.setFinishTime(this.finishTime);
+      
+      LOG.debug("Job failed.");
+      
+      garbageCollect();
+    }
+  }
+  
   public synchronized void updateTaskStatus(TaskInProgress tip,
       TaskStatus taskStatus) {
     tip.updateStatus(taskStatus); // update tip
@@ -255,10 +285,9 @@ class JobInProgress {
   }
 
   public synchronized void kill() {
-    LOG.debug(">> JobInProgress.kill() step.");
-    if (status.getRunState() != JobStatus.FAILED) {
+    if (status.getRunState() != JobStatus.KILLED) {
       this.status = new JobStatus(status.getJobID(), this.profile.getUser(),
-          0L, 0L, 0L, JobStatus.FAILED);
+          0L, 0L, 0L, JobStatus.KILLED);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
       //

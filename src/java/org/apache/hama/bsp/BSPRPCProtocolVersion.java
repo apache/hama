@@ -22,7 +22,7 @@ package org.apache.hama.bsp;
 import org.apache.hadoop.ipc.VersionedProtocol;
 
 /**
- * 
+ * RPC Protocol version
  */
 public interface BSPRPCProtocolVersion extends VersionedProtocol {
 
