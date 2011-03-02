@@ -30,6 +30,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hama.HamaConfiguration;
 
+/**
+ * A simple logger to handle the task-specific user logs.
+ */
 public class TaskLog {
   private static final Log LOG = LogFactory.getLog(TaskLog.class.getName());
 

@@ -44,7 +44,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 
 /**
- *  
+ * This class represents a BSP peer. 
  */
 public class BSPPeer implements Watcher, BSPPeerInterface {
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
@@ -59,12 +59,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   private final String bspRoot;
   private final String zookeeperAddr;
 
-  private final Map<InetSocketAddress, BSPPeerInterface> peers = 
-    new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
-  private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = 
-    new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
-  private final ConcurrentLinkedQueue<BSPMessage> localQueue = 
-    new ConcurrentLinkedQueue<BSPMessage>();
+  private final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
+  private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
+  private final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
   private SortedSet<String> allPeerNames = new TreeSet<String>();
   private InetSocketAddress peerAddress;
   private TaskStatus currentTaskStatus;
@@ -84,8 +81,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         + ":"
         + conf.getInt(Constants.ZOOKEPER_CLIENT_PORT,
             Constants.DEFAULT_ZOOKEPER_CLIENT_PORT);
-    // TODO: may require to dynamic reflect the underlying 
-    //       network e.g. ip address, port.
+    // TODO: may require to dynamic reflect the underlying
+    // network e.g. ip address, port.
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
 
     reinitialize();
@@ -94,10 +91,11 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public void reinitialize() {
     try {
       LOG.debug("reinitialize(): " + getPeerName());
-      server = RPC.getServer(this, peerAddress.getHostName(), peerAddress
-          .getPort(), conf);
+      server = RPC.getServer(this, peerAddress.getHostName(),
+          peerAddress.getPort(), conf);
       server.start();
-      LOG.info(" BSPPeer address:"+peerAddress.getHostName()+" port:"+peerAddress.getPort());
+      LOG.info(" BSPPeer address:" + peerAddress.getHostName() + " port:"
+          + peerAddress.getPort());
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -143,7 +141,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   @Override
   public void send(String peerName, BSPMessage msg) throws IOException {
     LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
-    ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(getAddress(peerName));
+    ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues
+        .get(getAddress(peerName));
     if (queue == null) {
       queue = new ConcurrentLinkedQueue<BSPMessage>();
     }
@@ -184,7 +183,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
     waitForSync();
     Thread.sleep(100);
-    
+
     // Clear outgoing queues.
     clearOutgoingQueues();
 
@@ -241,7 +240,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected boolean leaveBarrier() throws KeeperException, InterruptedException {
     zk.delete(bspRoot + "/" + getPeerName(), 0);
     zk.delete(bspRoot + "/" + getPeerName() + "-data", 0);
-    
+
     while (true) {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
@@ -266,7 +265,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     this.localQueue.clear();
     this.outgoingQueues.clear();
   }
-  
+
   @Override
   public void close() throws IOException {
     server.stop();
@@ -310,8 +309,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   private InetSocketAddress getAddress(String peerName) {
     String[] peerAddrParts = peerName.split(":");
-    return new InetSocketAddress(peerAddrParts[0], Integer
-        .parseInt(peerAddrParts[1]));
+    return new InetSocketAddress(peerAddrParts[0],
+        Integer.parseInt(peerAddrParts[1]));
   }
 
   @Override
@@ -381,7 +380,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public void clearLocalQueue() {
     this.localQueue.clear();
   }
-  
+
   /**
    * Clears outgoing queues
    */

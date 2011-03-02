@@ -27,7 +27,6 @@ import org.apache.hadoop.io.Text;
  * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
  * {@link org.apache.hama.bsp.GroomServer} to kill the task of a job and cleanup
  * resources.
- * 
  */
 class KillJobAction extends GroomServerAction {
   String jobId;

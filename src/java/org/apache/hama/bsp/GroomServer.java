@@ -49,9 +49,9 @@ import org.apache.hadoop.metrics.MetricsUtil;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.DiskChecker;
-import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.MasterProtocol;
@@ -141,8 +141,9 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
-          "default"), conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(
+          conf.get("bsp.dns.interface", "default"),
+          conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -238,12 +239,17 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
         if (action instanceof LaunchTaskAction) {
           startNewTask((LaunchTaskAction) action);
         } else {
-          try {
-            tasksToCleanup.put(action);
-          } catch (InterruptedException e) {
-            LOG.error("Fail to move action to cleanup list.");
-            e.printStackTrace();
+
+          // TODO Use the cleanup thread
+          // tasksToCleanup.put(action);
+          
+          KillTaskAction killAction = (KillTaskAction) action;
+          if (tasks.containsKey(killAction.getTaskID())) {
+            TaskInProgress tip = tasks.get(killAction.getTaskID());
+            tip.taskStatus.setRunState(TaskStatus.State.FAILED);
+            tip.killAndCleanup(true);
           }
+
         }
       }
     }
@@ -306,6 +312,25 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     while (running && !shuttingDown) {
       try {
         Thread.sleep(REPORT_INTERVAL);
+
+        // Reports to a BSPMaster
+        for (Map.Entry<TaskAttemptID, TaskInProgress> e : runningTasks
+            .entrySet()) {
+          TaskInProgress tip = e.getValue();
+          TaskStatus taskStatus = tip.getStatus();
+          taskStatus.setProgress(bspPeer.getSuperstepCount());
+
+          if (bspPeer.getLocalQueueSize() == 0
+              && bspPeer.getOutgoingQueueSize() == 0 && !tip.runner.isAlive()) {
+            if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
+              taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+            }
+            taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
+          }
+
+          doReport(taskStatus);
+        }
+
       } catch (InterruptedException ie) {
       }
 
@@ -360,6 +385,44 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
           .stringifyException(e));
       LOG.warn(msg);
     }
+  }
+
+  /**
+   * Update and report refresh status back to BSPMaster.
+   */
+  public void doReport(TaskStatus taskStatus) {
+    GroomServerStatus gss = new GroomServerStatus(groomServerName,
+        bspPeer.getPeerName(), updateTaskStatus(taskStatus), failures,
+        maxCurrentTasks, rpcServer);
+    try {
+      boolean ret = masterClient.report(new Directive(gss));
+      if (!ret) {
+        LOG.warn("Fail to renew BSPMaster's GroomServerStatus. "
+            + " groom name: " + gss.getGroomName() + " peer name:"
+            + gss.getPeerName() + " rpc server:" + rpcServer);
+      }
+    } catch (IOException ioe) {
+      LOG.error("Fail to communicate with BSPMaster for reporting.", ioe);
+    }
+  }
+
+  public List<TaskStatus> updateTaskStatus(TaskStatus taskStatus) {
+    List<TaskStatus> tlist = new ArrayList<TaskStatus>();
+    synchronized (runningTasks) {
+
+      if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED
+          || taskStatus.getRunState() == TaskStatus.State.FAILED) {
+        synchronized (finishedTasks) {
+          TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
+          tlist.add((TaskStatus) taskStatus.clone());
+          finishedTasks.put(taskStatus.getTaskId(), tip);
+        }
+      } else if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
+        tlist.add((TaskStatus) taskStatus.clone());
+      }
+
+    }
+    return tlist;
   }
 
   private void localizeJob(TaskInProgress tip) throws IOException {
@@ -609,63 +672,6 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
       bspPeer.setCurrentTaskStatus(taskStatus);
       this.runner = task.createRunner(GroomServer.this);
       this.runner.start();
-
-      // Check state of a Task
-      while (true) {
-        try {
-          taskStatus.setProgress(bspPeer.getSuperstepCount());
-          doReport(this.taskStatus);
-          Thread.sleep(REPORT_INTERVAL);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-
-        if (bspPeer.getLocalQueueSize() == 0
-            && bspPeer.getOutgoingQueueSize() == 0 && !runner.isAlive()) {
-          taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-          taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
-          doReport(this.taskStatus);
-          break;
-        }
-      }
-
-    }
-
-    /**
-     * Update and report refresh status back to BSPMaster.
-     */
-    private void doReport(TaskStatus taskStatus) {
-      GroomServerStatus gss = new GroomServerStatus(groomServerName, bspPeer
-          .getPeerName(), updateTaskStatus(taskStatus), failures,
-          maxCurrentTasks, rpcServer);
-      try {
-        boolean ret = masterClient.report(new Directive(gss));
-        if (!ret) {
-          LOG.warn("Fail to renew BSPMaster's GroomServerStatus. "
-              + " groom name: " + gss.getGroomName() + " peer name:"
-              + gss.getPeerName() + " rpc server:" + rpcServer);
-        }
-      } catch (IOException ioe) {
-        LOG.error("Fail to communicate with BSPMaster for reporting.", ioe);
-      }
-    }
-
-    private List<TaskStatus> updateTaskStatus(TaskStatus taskStatus) {
-      List<TaskStatus> tlist = new ArrayList<TaskStatus>();
-      synchronized (runningTasks) {
-
-        if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED) {
-          synchronized (finishedTasks) {
-            TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
-            tlist.add((TaskStatus) taskStatus.clone());
-            finishedTasks.put(taskStatus.getTaskId(), tip);
-          }
-        } else if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
-          tlist.add((TaskStatus) taskStatus.clone());
-        }
-
-      }
-      return tlist;
     }
 
     /**
@@ -673,7 +679,6 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
      */
     public synchronized void killAndCleanup(boolean wasFailure)
         throws IOException {
-      // TODO
       runner.kill();
     }
 

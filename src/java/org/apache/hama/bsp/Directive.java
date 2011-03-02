@@ -33,7 +33,6 @@ import org.apache.hadoop.io.WritableUtils;
 /**
  * A generic directive from the {@link org.apache.hama.bsp.BSPMaster} to the
  * {@link org.apache.hama.bsp.GroomServer} to take some 'action'.
- * 
  */
 public class Directive implements Writable {
 
