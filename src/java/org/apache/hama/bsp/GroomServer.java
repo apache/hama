@@ -311,11 +311,11 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   public State offerService() throws Exception {
     while (running && !shuttingDown) {
       try {
-        Thread.sleep(REPORT_INTERVAL);
 
         // Reports to a BSPMaster
         for (Map.Entry<TaskAttemptID, TaskInProgress> e : runningTasks
             .entrySet()) {
+          Thread.sleep(REPORT_INTERVAL);
           TaskInProgress tip = e.getValue();
           TaskStatus taskStatus = tip.getStatus();
           taskStatus.setProgress(bspPeer.getSuperstepCount());
@@ -331,6 +331,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
           doReport(taskStatus);
         }
 
+        Thread.sleep(REPORT_INTERVAL);
       } catch (InterruptedException ie) {
       }
 
