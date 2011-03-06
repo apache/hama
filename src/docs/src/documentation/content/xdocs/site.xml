@@ -44,6 +44,10 @@ See http://forrest.apache.org/docs/linking.html for more info.
     -->
   </docs>
 
+  <docs label="Documentation">
+    <r0.2.0 label="Release 0.2.0" href="/docs/r0.2.0/index.html"/>
+  </docs>
+  
   <docs label="Resources">
     <developers label="Developers"     href="developers.html" />
     <issues     label="Issue Tracking" href="issue_tracking.html" />

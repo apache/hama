@@ -1,35 +1,84 @@
-<html>
-
+<?xml version="1.0"?>
 <!--
-   Licensed to the Apache Software Foundation (ASF) under one or more
-   contributor license agreements.  See the NOTICE file distributed with
-   this work for additional information regarding copyright ownership.
-   The ASF licenses this file to You under the Apache License, Version 2.0
-   (the "License"); you may not use this file except in compliance with
-   the License.  You may obtain a copy of the License at
+  Copyright 2002-2004 The Apache Software Foundation
 
-       http://www.apache.org/licenses/LICENSE-2.0
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 -->
 
-<head>
-   <title>Hama</title>
-</head>
-<body>
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V2.0//EN" 
+"http://forrest.apache.org/dtd/document-v20.dtd">
+
+<document>
+  
+  <header>
+    <title>Welcome to Hama project</title>
+  </header>
+  <body>
+<script src="http://widgets.twimg.com/j/2/widget.js"></script>
+<script>
+new TWTR.Widget({
+  version: 2,
+  type: 'search',
+  id: 'credit2',
+  search: '\"apache hama\" OR apachehama OR #ApacheHama',
+  interval: 6000,
+  title: 'Recent Tweets About Apache Hama',
+  subject: '#ApacheHama on Twitter',
+  width: 206,
+  height: 280,
+  theme: {
+    shell: {
+      background: '#4a6d8c',
+      color: '#ffffff'
+    },
+    tweets: {
+      background: '#ffffff',
+      color: '#444444',
+      links: '#1985b5'
+    }
+  },
+  features: {
+    scrollbar: false,
+    loop: true,
+    live: true,
+    hashtags: true,
+    timestamp: true,
+    avatars: true,
+    toptweets: true,
+    behavior: 'default'
+  }
+}).render().start();
+</script>
+    
+    <section>
+    <title>Downloadable User Guide</title>
+    <ul>
+    	<li>Apache Hama (v0.2) : User Guide [<a href="/docs/r0.2.0/ApacheHama-0.2_UserGuide.pdf">pdf</a>]</li>
+    </ul>
+    </section>
+    
+     <section>
+      <title> Getting Started </title>
+
 Hama is a distributed computing framework based on BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations.
 
-<h2 id="Requirements">Requirements</h2>
+<h3 id="Requirements">Requirements</h3>
 <ul>
 <li>hadoop-0.20.x for HDFS</li>
 <li>Sun Java JDK 1.6.x or higher version</li>
 </ul>
 
-<h2 id="Startup_script">Startup script</h2>
+<h3 id="Startup_script">Startup script</h3>
 The <i>$HAMA_HOME/bin</i> directory contains some script used to start up the Hama daemons.
 <ul>
 <li>
@@ -37,7 +86,7 @@ The <i>$HAMA_HOME/bin</i> directory contains some script used to start up the Ha
 </li>
 </ul>
 
-<h2 id="Configuration_files">Configuration files</h2>
+<h3 id="Configuration_files">Configuration files</h3>
 
 The <i>$HAMA_HOME/conf</i> directory contains some configuration files for Hama. These are:
 <ul>
@@ -105,7 +154,7 @@ An example of a hama-site.xml file:
 &lt;/configuration&gt;
 </pre>
 
-<h3 id="Starting_a_Hama_cluster">Starting a Hama cluster</h3>
+<h4 id="Starting_a_Hama_cluster">Starting a Hama cluster</h4>
 
 Run the command:
 <pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
@@ -114,7 +163,7 @@ Run the command:
 
 This will startup a BSPMaster, GroomServers and Zookeeper on your machine.
 
-<h3 id="Stopping_a_Hama_cluster">Stopping a Hama cluster</h3>
+<h4 id="Stopping_a_Hama_cluster">Stopping a Hama cluster</h4>
 
 Run the command:
 <pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
@@ -124,12 +173,13 @@ Run the command:
 to stop all the daemons running on your cluster.
 
 
-<h2 id="Run_the_BSP_Examples">Run the BSP Examples</h2>
+<h3 id="Run_the_BSP_Examples">Run the BSP Examples</h3>
 Run the command:
 <pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
   # $HAMA_HOME/bin/hama jar hama-0.2.0-examples.jar pi or test
 </pre>
 
-</body>
-</html>
-
+    </section>
+    
+  </body>
+</document>
