@@ -54,6 +54,12 @@ fi
 # Allow alternate conf dir location.
 HAMA_CONF_DIR="${HAMA_CONF_DIR:-$HAMA_HOME/conf}"
 
+# Source the hama-env.sh.  
+# Will have JAVA_HOME and HAMA_MANAGES_ZK defined.
+if [ -f "${HAMA_CONF_DIR}/hama-env.sh" ]; then
+  . "${HAMA_CONF_DIR}/hama-env.sh"
+fi
+
 #check to see it is specified whether to use the grooms or the
 # masters file
 if [ $# -gt 1 ]

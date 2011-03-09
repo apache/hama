@@ -200,6 +200,7 @@ Trunk (unreleased changes)
 
   BUG FIXES
   
+    HAMA-360: HAMA_MANAGES_ZK option doesn't work (edwardyoon)
     HAMA-355: Intermittent conflicts of enterBarrier() and leaveBarrier() (edwardyoon)
     HAMA-352: Can't send one more messages on to same server in bsp() method (edwardyoon)
     HAMA-350: Add task log appender and Fix log4j rootLogger (edwardyoon)
