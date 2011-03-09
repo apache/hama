@@ -24,12 +24,12 @@
 #
 # Environment Variables
 #
-#   HAMA_CONF_DIR  Alternate hbase conf dir. Default is ${HBASE_HOME}/conf.
+#   HAMA_CONF_DIR  Alternate hama conf dir. Default is ${HAMA_HOME}/conf.
 #   HAMA_SSH_OPTS Options passed to ssh when running remote commands.
 #
 # Modelled after $HADOOP_HOME/bin/slaves.sh.
 
-usage="Usage: zookeepers [--config <hbase-confdir>] command..."
+usage="Usage: zookeepers [--config <hama-confdir>] command..."
 
 # if no args specified, show usage
 if [ $# -le 0 ]; then
