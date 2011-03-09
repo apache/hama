@@ -198,9 +198,9 @@ public class BSPJobClient extends Configured implements Tool {
 
   public void init(Configuration conf) throws IOException {
     this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
-        JobSubmissionProtocol.class, JobSubmissionProtocol.versionID, BSPMaster
-            .getAddress(conf), conf, NetUtils.getSocketFactory(conf,
-            JobSubmissionProtocol.class));
+        JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
+        BSPMaster.getAddress(conf), conf,
+        NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
   }
 
   /**
@@ -337,8 +337,8 @@ public class BSPJobClient extends Configured implements Tool {
     //
     // Now, actually submit the job (using the submit name)
     //
-    JobStatus status = jobSubmitClient.submitJob(jobId, submitJobFile
-        .toString());
+    JobStatus status = jobSubmitClient.submitJob(jobId,
+        submitJobFile.toString());
     if (status != null) {
       return new NetworkedJob(status);
     } else {
@@ -519,7 +519,7 @@ public class BSPJobClient extends Configured implements Tool {
       }
       jobid = args[1];
       getStatus = true;
-      
+
       // TODO Later, below functions should be implemented
       // with the Fault Tolerant mechanism.
     } else if ("-list-attempt-ids".equals(cmd)) {
@@ -561,28 +561,19 @@ public class BSPJobClient extends Configured implements Tool {
       if (job == null) {
         System.out.println("Could not find job " + jobid);
       } else {
+        JobStatus jobStatus = jobSubmitClient.getJobStatus(job.getID());
         System.out.println("Job name: " + job.getJobName());
-        System.out.println("Job status: " + getStatusString(job.getJobState()));
+        System.out.printf("States are:\n\tRunning : 1\tSucceded : 2"
+            + "\tFailed : 3\tPrep : 4\n");
+        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(),
+            jobStatus.getRunState(), jobStatus.getStartTime(),
+            jobStatus.getUsername());
+
         exitCode = 0;
       }
     }
 
     return 0;
-  }
-
-  private String getStatusString(int jobState) {
-    if(jobState == 1)
-      return "Running";
-    else if (jobState == 2)
-      return "Succeded";
-    else if (jobState == 3)
-      return "Failed";
-    else if (jobState == 4)
-      return "Prepare";
-    else if (jobState == 5)
-      return "Killed";
-    else
-      return "";
   }
 
   /**
