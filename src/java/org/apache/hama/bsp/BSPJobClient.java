@@ -473,6 +473,7 @@ public class BSPJobClient extends Configured implements Tool {
     boolean listActiveGrooms = false;
     boolean killJob = false;
     boolean submitJob = false;
+    boolean getStatus = false;
     String submitJobFile = null;
     String jobid = null;
 
@@ -511,6 +512,14 @@ public class BSPJobClient extends Configured implements Tool {
       killJob = true;
       jobid = args[1];
 
+    } else if ("-status".equals(cmd)) {
+      if (args.length != 2) {
+        displayUsage(cmd);
+        return exitCode;
+      }
+      jobid = args[1];
+      getStatus = true;
+      
       // TODO Later, below functions should be implemented
       // with the Fault Tolerant mechanism.
     } else if ("-list-attempt-ids".equals(cmd)) {
@@ -547,9 +556,33 @@ public class BSPJobClient extends Configured implements Tool {
         System.out.println("Killed job " + jobid);
       }
       exitCode = 0;
+    } else if (getStatus) {
+      RunningJob job = jc.getJob(new BSPJobID().forName(jobid));
+      if (job == null) {
+        System.out.println("Could not find job " + jobid);
+      } else {
+        System.out.println("Job name: " + job.getJobName());
+        System.out.println("Job status: " + getStatusString(job.getJobState()));
+        exitCode = 0;
+      }
     }
 
     return 0;
+  }
+
+  private String getStatusString(int jobState) {
+    if(jobState == 1)
+      return "Running";
+    else if (jobState == 2)
+      return "Succeded";
+    else if (jobState == 3)
+      return "Failed";
+    else if (jobState == 4)
+      return "Prepare";
+    else if (jobState == 5)
+      return "Killed";
+    else
+      return "";
   }
 
   /**
