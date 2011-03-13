@@ -18,42 +18,27 @@
 package org.apache.hama;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
-import org.apache.hadoop.util.ReflectionUtils;
 
 public abstract class HamaClusterTestCase extends HamaTestCase {
   public static final Log LOG = LogFactory.getLog(HamaClusterTestCase.class);
-  public MiniBSPCluster cluster;
   protected MiniDFSCluster dfsCluster;
   protected MiniZooKeeperCluster zooKeeperCluster;
-  protected int groomServers;
   protected boolean startDfs;
 
   /** default constructor */
   public HamaClusterTestCase() {
-    this(1);
+    this(false);
   }
 
-  public HamaClusterTestCase(int groomServers) {
-    this(groomServers, true, 10);
-  }
-
-  public HamaClusterTestCase(int groomServers, boolean startDfs, int threadpool) {
+  public HamaClusterTestCase(boolean startDfs) {
     super();
     this.startDfs = startDfs;
-    this.groomServers = groomServers;
-    conf.setInt("bsp.test.threadpool", threadpool);
-  }
-
-  public MiniBSPCluster getCluster(){
-    return this.cluster;
   }
 
   /**
@@ -67,9 +52,6 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
     this.zooKeeperCluster = new MiniZooKeeperCluster();
     int clientPort = this.zooKeeperCluster.startup(testDir);
     conf.set("hama.zookeeper.property.clientPort", Integer.toString(clientPort));
-
-    // start the mini cluster
-    this.cluster = new MiniBSPCluster(conf, groomServers);
   }
 
   @Override
@@ -96,9 +78,6 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
       // start the instance
       hamaClusterSetup();
     } catch (Exception e) {
-      if (cluster != null) {
-        cluster.shutdown();
-      }
       if (zooKeeperCluster != null) {
         zooKeeperCluster.shutdown();
       }
@@ -113,59 +92,11 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
   protected void tearDown() throws Exception {
     super.tearDown();
     try {
-      if (this.cluster != null) {
-        try {
-          
-          this.cluster.shutdown();
-        } catch (Exception e) {
-          LOG.warn("Closing mini dfs", e);
-        }
-        try {
-          this.zooKeeperCluster.shutdown();
-        } catch (IOException e) {
-          LOG.warn("Shutting down ZooKeeper cluster", e);
-        }
-      }
       if (startDfs) {
         shutdownDfs(dfsCluster);
       }
     } catch (Exception e) {
       LOG.error(e);
-    }
-  }
-
-
-  /**
-   * Use this utility method debugging why cluster won't go down.  On a
-   * period it throws a thread dump.  Method ends when all cluster
-   * groomservers and master threads are no long alive.
-   */
-  public void threadDumpingJoin() {
-    if (this.cluster.getGroomServerThreads() != null) {
-      for(Thread t: this.cluster.getGroomServerThreads()) {
-        threadDumpingJoin(t);
-      }
-    }
-    threadDumpingJoin(this.cluster.getMaster());
-  }
-
-  protected void threadDumpingJoin(final Thread t) {
-    if (t == null) {
-      return;
-    }
-    long startTime = System.currentTimeMillis();
-    while (t.isAlive()) {
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        LOG.info("Continuing...", e);
-      }
-      if (System.currentTimeMillis() - startTime > 60000) {
-        startTime = System.currentTimeMillis();
-        ReflectionUtils.printThreadInfo(new PrintWriter(System.out),
-            "Automatic Stack Trace every 60 seconds waiting on " +
-            t.getName());
-      }
     }
   }
 }

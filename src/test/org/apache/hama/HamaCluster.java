@@ -33,16 +33,8 @@ public abstract class HamaCluster extends HamaClusterTestCase {
     super();
   }
 
-  public HamaCluster(int groomServers) {
-    this(groomServers, true, 10);
-  }
-
-  public HamaCluster(int groomServers, int threadpool) {
-    this(groomServers, true, threadpool);
-  }
-
-  public HamaCluster(int groomServers, boolean startDfs, int threadpool) {
-    super(groomServers, startDfs, threadpool);
+  public HamaCluster(boolean startDfs) {
+    super(startDfs);
   }
 
   protected void setUp() throws Exception {

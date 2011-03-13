@@ -52,6 +52,8 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
  
+    HAMA-365: TestBSPPeer doesn't check if the correct 
+                       number of messages have been received (Miklos Erdelyi via edwardyoon)
     HAMA-298: Implement the kill method for JobInProgress (edwardyoon)
     HAMA-353: Add "random communication benchmark" tool (edwardyoon)
     HAMA-351: Improvement of lack of info- about the output of examples (edwardyoon)
@@ -202,7 +204,7 @@ Trunk (unreleased changes)
   
     HAMA-360: HAMA_MANAGES_ZK option doesn't work (edwardyoon)
     HAMA-355: Intermittent conflicts of enterBarrier() and leaveBarrier() (edwardyoon)
-    HAMA-352: Can't send one more messages on to same server in bsp() method (edwardyoon)
+    HAMA-352: Can't send one more messages on to same server in bsp method (edwardyoon)
     HAMA-350: Add task log appender and Fix log4j rootLogger (edwardyoon)
     HAMA-345: Add execution time calculator to Pi job (edwardyoon)
     HAMA-344: Task successfully finished but system re-attempt (edwardyoon)
