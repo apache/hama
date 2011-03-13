@@ -62,6 +62,11 @@ public class BSPJob extends BSPJobContext {
     setJarByClass(exampleClass);
   }
 
+  public BSPJob(HamaConfiguration conf, int numPeer) {
+    super(conf, null);
+    this.setNumBspTask(numPeer);
+  }
+
   private void ensureState(JobState state) throws IllegalStateException {
     if (state != this.state) {
       throw new IllegalStateException("Job in state " + this.state

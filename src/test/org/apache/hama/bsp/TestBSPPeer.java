@@ -98,8 +98,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       TaskStatus currentTaskStatus = new TaskStatus(new BSPJobID(), 
           new TaskAttemptID(), 0, null, null, null, null);
       peer.setCurrentTaskStatus(currentTaskStatus);
-      BSPJob jobConf = new BSPJob(conf);
-      jobConf.setNumBspTask(NUM_PEER);
+      BSPJob jobConf = new BSPJob(conf, NUM_PEER);
       peer.setJobConf((BSPJob) jobConf);
     }
 
@@ -157,16 +156,19 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       }
 
       BSPMessage msg = null;
-
+      int messageCounter = 0;
+      
       try {
         while ((msg = peer.getCurrentMessage()) != null) {
           assertEquals(Bytes.compareTo(msg.tag, 0, 128, msg.data,
               msg.data.length - 128, 128), 0);
+          ++messageCounter;
         }
       } catch (IOException e) {
         LOG.error(e);
       }
-
+      assertEquals(numMessages, messageCounter);
+      
       peer.clearLocalQueue();
     }
 
