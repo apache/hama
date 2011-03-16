@@ -23,15 +23,15 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
+import org.apache.hama.HamaConfiguration;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**
@@ -42,7 +42,7 @@ public class TestSerializePrinting extends HamaCluster implements Watcher {
   private int NUM_PEER = 10;
   List<BSPPeerThread> list = new ArrayList<BSPPeerThread>(NUM_PEER);
   List<String> echo = new ArrayList<String>();
-  Configuration conf;
+  HamaConfiguration conf;
 
   public TestSerializePrinting() {
     this.conf = getConf();
@@ -100,11 +100,17 @@ public class TestSerializePrinting extends HamaCluster implements Watcher {
     private BSPPeer peer;
     private int myId;
 
-    public BSPPeerThread(Configuration conf, int myId) throws IOException {
+    public BSPPeerThread(HamaConfiguration conf, int myId) throws IOException {
       conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
       
       this.peer = new BSPPeer(conf);
       this.myId = myId;
+      
+      TaskStatus currentTaskStatus = new TaskStatus(new BSPJobID(), 
+          new TaskAttemptID(), 0, null, null, null, null);
+      peer.setCurrentTaskStatus(currentTaskStatus);
+      BSPJob jobConf = new BSPJob(conf, NUM_PEER);
+      peer.setJobConf((BSPJob) jobConf);
     }
 
     @Override
