@@ -79,7 +79,7 @@
 
 	<taskdef name="findbugs" classpathref="classpath" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" />
 
-	<target name="init">
+	<target name="pre-init">
 		<mkdir dir="${build.dir}" />
 		<mkdir dir="${build.classes}" />
 		<mkdir dir="${build.test}" />
@@ -92,18 +92,27 @@
 			<fileset dir="${lib.dir}" />
 		</copy>
 		
-	    <tempfile property="touch.temp.file" destDir="${java.io.tmpdir}"/>
-	    <touch millis="0" file="${touch.temp.file}">
-	      <fileset dir="${conf.dir}" includes="**/*.template"/>
-	    </touch>
-	    <delete file="${touch.temp.file}"/>
-
-	    <copy todir="${conf.dir}" verbose="true">
-	      <fileset dir="${conf.dir}" includes="**/*.template"/>
-	      <mapper type="glob" from="*.template" to="*"/>
-	    </copy>
-
+		<tempfile property="touch.temp.file" destDir="${java.io.tmpdir}"/>
+		<touch millis="0" file="${touch.temp.file}">
+			<fileset dir="${conf.dir}" includes="**/*.template"/>
+		</touch>
+		<delete file="${touch.temp.file}"/>
 	</target>
+
+	<target name="pre-init-reset-conf" unless="to.reset.conf" depends="eval.reset.conf">
+		<copy todir="${conf.dir}" verbose="true">
+			<fileset dir="${conf.dir}" includes="**/*.template"/>
+			<mapper type="glob" from="*.template" to="*"/>
+		</copy>
+	</target>
+
+	<target name="eval.reset.conf" >
+		<condition property="to.reset.conf">
+			<equals arg1="${resetconf}" arg2="false"/>
+		</condition>
+	</target>
+
+	<target name="init" depends="pre-init, pre-init-reset-conf"/>
 
 	<!-- ================================================================== -->
 	<!-- Java Compiler Compiler, generate Parsers                           -->
