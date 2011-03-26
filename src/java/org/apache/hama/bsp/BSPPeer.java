@@ -61,7 +61,12 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   private final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
   private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
-  private final ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
+  private ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
+  private ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration =
+     new ConcurrentLinkedQueue<BSPMessage>();
+  private final Map<String, InetSocketAddress> peerSocketCache =
+     new ConcurrentHashMap<String, InetSocketAddress>();
+
   private SortedSet<String> allPeerNames = new TreeSet<String>();
   private InetSocketAddress peerAddress;
   private TaskStatus currentTaskStatus;
@@ -140,14 +145,26 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    */
   @Override
   public void send(String peerName, BSPMessage msg) throws IOException {
-    LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
-    ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues
-        .get(getAddress(peerName));
-    if (queue == null) {
-      queue = new ConcurrentLinkedQueue<BSPMessage>();
+    if (peerName.equals(getPeerName())) {
+      LOG.debug("Local send bytes (" + msg.getData().toString() + ")");
+      localQueueForNextIteration.add(msg);
+    } else {
+      LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
+      InetSocketAddress targetPeerAddress = null;
+      // Get socket for target peer.
+      if (peerSocketCache.containsKey(peerName)) {
+        targetPeerAddress = peerSocketCache.get(peerName);
+      } else {
+        targetPeerAddress = getAddress(peerName);
+        peerSocketCache.put(peerName, targetPeerAddress);
+      }
+      ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(targetPeerAddress);
+      if (queue == null) {
+        queue = new ConcurrentLinkedQueue<BSPMessage>();
+      }
+      queue.add(msg);
+      outgoingQueues.put(targetPeerAddress, queue);
     }
-    queue.add(msg);
-    outgoingQueues.put(getAddress(peerName), queue);
   }
 
   /*
@@ -189,6 +206,15 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
     currentTaskStatus.incrementSuperstepCount();
     leaveBarrier();
+
+    // Add non-processed messages from this iteration for the next's queue.
+    while (!localQueue.isEmpty()) {
+      BSPMessage message = localQueue.poll();
+      localQueueForNextIteration.add(message);
+    }
+    // Switch local queues.
+    localQueue = localQueueForNextIteration;
+    localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
@@ -273,7 +299,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   @Override
   public void put(BSPMessage msg) throws IOException {
-    this.localQueue.add(msg);
+    this.localQueueForNextIteration.add(msg);
   }
 
   @Override
