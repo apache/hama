@@ -52,6 +52,8 @@ Trunk (unreleased changes)
 
   IMPROVEMENTS
  
+    HAMA-371: Add a parameter to build.xml to allow developers deciding to reset content 
+                       in conf files or not when building artifacts (ChiaHung Lin)
     HAMA-369: Reduce overhead of local communications (Miklos Erdelyi)
     HAMA-366: Remove unnecessary dependencies (Tommaso Teofili)
     HAMA-365: TestBSPPeer doesn't check if the correct 
