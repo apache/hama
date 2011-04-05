@@ -95,7 +95,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         peerNames.add("localhost:" + (30000 + i));
       }
       peer.setAllPeerNames(peerNames);
-      TaskStatus currentTaskStatus = new TaskStatus(new BSPJobID(), 
+      TaskStatus currentTaskStatus = new TaskStatus(new BSPJobID(),
           new TaskAttemptID(), 0, null, null, null, null);
       peer.setCurrentTaskStatus(currentTaskStatus);
       BSPJob jobConf = new BSPJob(conf, NUM_PEER);
@@ -113,7 +113,7 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
 
         for (int j = 0; j < 10; j++) {
           r.nextBytes(dummyData);
-          msg = new BSPMessage(Bytes.tail(dummyData, 128), dummyData);
+          msg = new ByteMessage(Bytes.tail(dummyData, 128), dummyData);
           String peerName = "localhost:" + (30000 + j);
           try {
             peer.send(peerName, msg);
@@ -144,8 +144,8 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
 
     private void verifyPayload(int round) {
       int numMessages = peer.getNumCurrentMessages();
-      assertEquals(round, ((int) peer.getSuperstepCount() -1 ));
-      
+      assertEquals(round, ((int) peer.getSuperstepCount() - 1));
+
       LOG.info("[" + peer.getPeerName() + "] verifying " + numMessages
           + " messages at " + round + " round");
 
@@ -155,20 +155,21 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
         assertEquals(0, numMessages);
       }
 
-      BSPMessage msg = null;
+      ByteMessage msg = null;
       int messageCounter = 0;
-      
+
       try {
-        while ((msg = peer.getCurrentMessage()) != null) {
-          assertEquals(Bytes.compareTo(msg.tag, 0, 128, msg.data,
-              msg.data.length - 128, 128), 0);
+        while ((msg = (ByteMessage) peer.getCurrentMessage()) != null) {
+          assertEquals(
+              Bytes.compareTo(msg.getTag(), 0, 128, msg.getData(),
+                  msg.getData().length - 128, 128), 0);
           ++messageCounter;
         }
       } catch (IOException e) {
         LOG.error(e);
       }
       assertEquals(numMessages, messageCounter);
-      
+
       peer.clearLocalQueue();
     }
 
@@ -178,12 +179,12 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
   }
 
   public void testSync() throws Throwable {
-    
+
     conf.setInt("bsp.peers.num", NUM_PEER);
     conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     conf.set(Constants.PEER_HOST, "localhost");
     conf.set(Constants.ZOOKEEPER_SERVER_ADDRS, "localhost:21810");
-    
+
     TestRunnable[] threads = new TestRunnable[NUM_PEER];
 
     for (int i = 0; i < NUM_PEER; i++) {
