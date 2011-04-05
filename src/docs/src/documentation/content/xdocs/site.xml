@@ -35,13 +35,6 @@ See http://forrest.apache.org/docs/linking.html for more info.
     <overview  label="Overview"           href="index.html" />
     <whoweare  label="Who we are?"        href="who_we_are.html" />
     <privacy   label="Privacy Policy"     href="privacy_policy.html" />
-    <!-- 
-    not yet ready things.
-    
-    <started   label="Getting Started"    href="getting_started.html" />
-    <api       label="API Docs"           href="ext:api/index" />
-    <faq       label="FAQ"                href="ext:faq" />
-    -->
   </docs>
 
   <docs label="Documentation">
