@@ -29,7 +29,7 @@
   <groupId>org.apache.incubator</groupId>
   <artifactId>hama</artifactId>
   <name>Apache Hama POM</name>
-  <version>0.2.0-incubating-SNAPSHOT</version>
+  <version>0.3.0-incubating-SNAPSHOT</version>
   <description>Apache Hama POM</description>
   <url>http://incubator.apache.org/hama</url>
   <packaging>jar</packaging>
