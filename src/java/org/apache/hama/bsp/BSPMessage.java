@@ -17,35 +17,13 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import org.apache.hadoop.io.Writable;
 
 /**
  * BSPMessage consists of the tag and the arbitrary amount of data to be
  * communicated.
  */
-public class BSPMessage implements Writable {
-  protected byte[] tag;
-  protected byte[] data;
-
-  public BSPMessage() {
-  }
-
-  /**
-   * Constructor
-   * 
-   * @param tag of data
-   * @param data of message
-   */
-  public BSPMessage(byte[] tag, byte[] data) {
-    this.tag = new byte[tag.length];
-    this.data = new byte[data.length];
-    System.arraycopy(tag, 0, this.tag, 0, tag.length);
-    System.arraycopy(data, 0, this.data, 0, data.length);
-  }
+public abstract class BSPMessage implements Messagable, Writable {
 
   /**
    * BSP messages are typically identified with tags. This allows to get the tag
@@ -53,32 +31,11 @@ public class BSPMessage implements Writable {
    * 
    * @return tag of data of BSP message
    */
-  public byte[] getTag() {
-    byte[] result = this.tag;
-    return result;
-  }
+  public abstract Object getTag();
 
   /**
    * @return data of BSP message
    */
-  public byte[] getData() {
-    byte[] result = this.data;
-    return result;
-  }
+  public abstract Object getData();
 
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    this.tag = new byte[in.readInt()];
-    in.readFully(tag, 0, this.tag.length);
-    this.data = new byte[in.readInt()];
-    in.readFully(data, 0, this.data.length);
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    out.writeInt(tag.length);
-    out.write(tag);
-    out.writeInt(data.length);
-    out.write(data);
-  }
 }

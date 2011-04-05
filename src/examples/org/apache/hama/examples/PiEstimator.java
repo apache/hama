@@ -31,10 +31,9 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
-import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeerProtocol;
 import org.apache.hama.bsp.ClusterStatus;
-import org.apache.hama.util.Bytes;
+import org.apache.hama.bsp.DoubleMessage;
 import org.apache.zookeeper.KeeperException;
 
 public class PiEstimator {
@@ -59,9 +58,8 @@ public class PiEstimator {
         }
       }
 
-      byte[] tagName = Bytes.toBytes(bspPeer.getPeerName());
-      byte[] myData = Bytes.toBytes(4.0 * (double) in / (double) iterations);
-      BSPMessage estimate = new BSPMessage(tagName, myData);
+      double data = 4.0 * (double) in / (double) iterations;
+      DoubleMessage estimate = new DoubleMessage(bspPeer.getPeerName(), data);
 
       bspPeer.send(masterTask, estimate);
       bspPeer.sync();
@@ -69,9 +67,9 @@ public class PiEstimator {
       if (bspPeer.getPeerName().equals(masterTask)) {
         double pi = 0.0;
         int numPeers = bspPeer.getNumCurrentMessages();
-        BSPMessage received;
-        while ((received = bspPeer.getCurrentMessage()) != null) {
-          pi += Bytes.toDouble(received.getData());
+        DoubleMessage received;
+        while ((received = (DoubleMessage) bspPeer.getCurrentMessage()) != null) {
+          pi += received.getData();
         }
 
         pi = pi / numPeers;

@@ -44,7 +44,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * This class represents a BSP peer. 
+ * This class represents a BSP peer.
  */
 public class BSPPeer implements Watcher, BSPPeerInterface {
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
@@ -62,10 +62,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   private final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
   private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
   private ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
-  private ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration =
-     new ConcurrentLinkedQueue<BSPMessage>();
-  private final Map<String, InetSocketAddress> peerSocketCache =
-     new ConcurrentHashMap<String, InetSocketAddress>();
+  private ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
+  private final Map<String, InetSocketAddress> peerSocketCache = new ConcurrentHashMap<String, InetSocketAddress>();
 
   private SortedSet<String> allPeerNames = new TreeSet<String>();
   private InetSocketAddress peerAddress;
@@ -158,7 +156,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         targetPeerAddress = getAddress(peerName);
         peerSocketCache.put(peerName, targetPeerAddress);
       }
-      ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues.get(targetPeerAddress);
+      ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues
+          .get(targetPeerAddress);
       if (queue == null) {
         queue = new ConcurrentLinkedQueue<BSPMessage>();
       }

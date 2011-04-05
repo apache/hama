@@ -29,6 +29,7 @@ import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.ByteMessage;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
@@ -59,17 +60,18 @@ public class RandBench {
         for (int j = 0; j < nCommunications; j++) {
           String tPeer = peers[r.nextInt(peers.length)];
           String tag = peerName + " to " + tPeer;
-          msg = new BSPMessage(Bytes.toBytes(tag), dummyData);
+          msg = new ByteMessage(Bytes.toBytes(tag), dummyData);
           bspPeer.send(tPeer, msg);
         }
 
         bspPeer.sync();
 
-        BSPMessage received;
-        while ((received = bspPeer.getCurrentMessage()) != null) {
-          LOG.info(Bytes.toString(received.getTag()) + " : " + received.getData().length);
+        ByteMessage received;
+        while ((received = (ByteMessage) bspPeer.getCurrentMessage()) != null) {
+          LOG.info(Bytes.toString(received.getTag()) + " : "
+              + received.getData().length);
         }
-        
+
       }
     }
 
