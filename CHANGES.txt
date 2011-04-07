@@ -1,6 +1,6 @@
 Hama Change Log
 
-Trunk (unreleased changes)
+Release 0.2 - Unreleased
 
   NEW FEATURES
 

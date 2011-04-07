@@ -53,7 +53,6 @@
 	<property name="build.src" value="${build.dir}/src" />
 
 	<property name="build.report" value="${build.dir}/reports" />
-	<property name="build.report.findbugs" value="${build.report}/findbugs" />
 	<property name="build.report.tests" value="${build.report}/tests" />
 
 	<property name="test.build.dir" value="${build.dir}/test" />
@@ -70,21 +69,15 @@
 	<fileset id="lib.jars" dir="${basedir}" includes="lib/*.jar" />
 	<path id="classpath">
 		<fileset refid="lib.jars" />
-		<fileset dir="${lib.dir}/findbugs/">
-			<include name="*.jar" />
-		</fileset>
 		<pathelement location="${build.classes}" />
 		<pathelement location="${conf.dir}" />
 	</path>
-
-	<taskdef name="findbugs" classpathref="classpath" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" />
 
 	<target name="init">
 		<mkdir dir="${build.dir}" />
 		<mkdir dir="${build.classes}" />
 		<mkdir dir="${build.test}" />
 		<mkdir dir="${build.examples}" />
-		<mkdir dir="${build.report.findbugs}" />
 		<mkdir dir="${build.report.tests}" />
 		<!--Copy bin, lib, and conf. too-->
 		<mkdir dir="${build.lib}" />
@@ -325,16 +318,6 @@
 			</batchtest>
 		</junit>
 		<fail if="tests.failed">Tests failed!</fail>
-	</target>
-
-	<target name="findbugs" depends="init, jar">
-		<findbugs home="${lib.dir}/findbugs" output="xml" outputFile="${build.report.findbugs}/hama-findbugs.xml" excludeFilter="${conf.dir}/findbugs-exclude-filter.xml" auxClasspathRef="classpath">
-			<sourcePath path="${src.dir}" />
-			<class location="${build.dir}/${final.name}.jar" />
-		</findbugs>
-	</target>
-
-	<target name="report" depends="findbugs,test">
 	</target>
 
 	<!-- ================================================================== -->
