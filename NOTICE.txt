@@ -4,19 +4,11 @@ Copyright 2008-2011 The Apache Software Foundation
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
-Includes software from other Apache Software Foundation projects,
-including, but not limited to:
-  - Apache Hadoop
-  - Apache Tomcat (lib/servlet-api-2.5-6.1.14.jar)
-  - Apache Zookeeper
-  - Apache Commons 
-  - Apache Log4j
+This product includes UmlGraph http://www.umlgraph.org/
+Copyright (c) 2002-2007, Diomidis Spinellis
 
-This product includes a UmlGraph jar: http://www.umlgraph.org/
-License: The BSD License - (http://www.opensource.org/licenses/bsd-license.html)
+This product includes GroboTestingJUnit http://groboutils.sourceforge.net/
+Copyright (c) 2002-2003, Matt Albrecht
 
-This product includes a JUnit jar: http://junit.sourceforge.net/
-License: Common Public License - v 1.0 (http://junit.sourceforge.net/cpl-v10.html)
-  
-This product includes a GroboTestingJUnit jar: http://groboutils.sourceforge.net/
-License: MIT License - (http://groboutils.sourceforge.net/license.html)
+This product includes JUnit under the Common Public License Version 1.0
+See http://www.junit.org/
