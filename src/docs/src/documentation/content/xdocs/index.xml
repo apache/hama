@@ -24,53 +24,16 @@
     <title>Welcome to Hama project</title>
   </header>
   <body>
-<script src="http://widgets.twimg.com/j/2/widget.js"></script>
-<script>
-new TWTR.Widget({
-  version: 2,
-  type: 'search',
-  id: 'credit2',
-  search: '\"apache hama\" OR apachehama OR #ApacheHama',
-  interval: 6000,
-  title: 'Recent Tweets About Apache Hama',
-  subject: '#ApacheHama on Twitter',
-  width: 206,
-  height: 280,
-  theme: {
-    shell: {
-      background: '#4a6d8c',
-      color: '#ffffff'
-    },
-    tweets: {
-      background: '#ffffff',
-      color: '#444444',
-      links: '#1985b5'
-    }
-  },
-  features: {
-    scrollbar: false,
-    loop: true,
-    live: true,
-    hashtags: true,
-    timestamp: true,
-    avatars: true,
-    toptweets: true,
-    behavior: 'default'
-  }
-}).render().start();
-</script>
+
     <section>
     <title>Recent News</title>
     <ul>
       <li>Sep 30, 2010 - <a href="http://blogs.apache.org/hama/entry/hama_in_academic_paper">Hama paper</a> has accepted at <a href="http://salsahpc.indiana.edu/CloudCom2010/papers.html">IEEE CloudCom 2010 Workshop</a></li>
-      <li>Jul 15, 2010 - We got rid of dependencies of MapReduce and HBase [<a href="http://blogs.apache.org/hama/entry/how_will_hama_bsp_different">Read more</a>]</li> 
       <li>Apr 30, 2010 - We're introduced in the <a href="http://www.bsp-worldwide.org/bspww3000.html">BSP Worldwide</a>.</li>
-      <li>December 11, 2009 - We made the BSP (Bulk Synchronous Parallel) package 
-      [<a href="http://people.apache.org/~edwardyoon/papers/Apache_HAMA_BSP.pdf">pdf</a>]</li>
        <li>August 18, 2008 - Source code is now available in the 
        <a href="./developers.html">Apache SVN repository</a>.
        </li>
-      <li>May 20, 2008 - The Incubator PMC have voted to accept Hama to be a apache incubator project.
+      <li>May 20, 2008 - The Incubator PMC have voted to accept Hama to be a Apache incubator project.
       </li>
     </ul>
     </section>
@@ -79,7 +42,8 @@ new TWTR.Widget({
       <title> Overview </title>
       <p>
       <strong>Hama</strong> is a distributed computing framework based on 
-      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations.
+      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations, 
+      Currently being incubated as one of the incubator project by the Apache Software Foundation.
       </p>
     </section>
     
