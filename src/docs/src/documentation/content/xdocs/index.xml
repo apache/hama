@@ -33,7 +33,7 @@
        <li>August 18, 2008 - Source code is now available in the 
        <a href="./developers.html">Apache SVN repository</a>.
        </li>
-      <li>May 20, 2008 - The Incubator PMC have voted to accept Hama to be a apache incubator project.
+      <li>May 20, 2008 - The Incubator PMC have voted to accept Hama to be a Apache incubator project.
       </li>
     </ul>
     </section>
@@ -42,7 +42,8 @@
       <title> Overview </title>
       <p>
       <strong>Hama</strong> is a distributed computing framework based on 
-      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations.
+      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations, 
+      Currently being incubated as one of the incubator project by the Apache Software Foundation.
       </p>
     </section>
     
