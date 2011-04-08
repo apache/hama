@@ -64,16 +64,16 @@ which will be used to configure the chosen Forrest skin.
   <disable-font-script>true</disable-font-script>
 
   <!-- project logo -->
-  <project-name></project-name>
+  <project-name>Apache Hama</project-name>
   <project-description></project-description>
-  <project-url></project-url>
-  <project-logo></project-logo>
+  <project-url>index.html</project-url>
+  <project-logo>images/hama_paint_logo_120x120.png</project-logo>
 
   <!-- group logo -->
-  <group-name>Hama</group-name>
+  <group-name>Apache Incubator</group-name>
   <group-description></group-description>
-  <group-url>index.html</group-url>
-  <group-logo>images/headerlogo.png</group-logo>
+  <group-url>http://incubator.apache.org/</group-url>
+  <group-logo>images/apache-incubator-logo.png</group-logo>
   
   <!-- optional host logo (e.g. sourceforge logo)
        default skin: renders it at the bottom-left corner -->
