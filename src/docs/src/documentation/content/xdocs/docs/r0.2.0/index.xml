@@ -35,25 +35,30 @@
      <section>
       <title> Getting Started </title>
 
-Hama is a distributed computing framework based on BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations.
+<p>Hama is a distributed computing framework based on BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations.</p>
 
-<h3 id="Requirements">Requirements</h3>
+<section>
+<title>Requirements</title>
 <ul>
 <li>hadoop-0.20.x for HDFS</li>
 <li>Sun Java JDK 1.6.x or higher version</li>
 </ul>
+</section>
 
-<h3 id="Startup_script">Startup script</h3>
-The <i>$HAMA_HOME/bin</i> directory contains some script used to start up the Hama daemons.
+<section>
+<title>Startup script</title>
+<p>The <i>$HAMA_HOME/bin</i> directory contains some script used to start up the Hama daemons.</p>
 <ul>
 <li>
 <i>start-bspd.sh</i> - Starts all Hama daemons, the BSPMaster, GroomServers and Zookeeper.
 </li>
 </ul>
+</section>
 
-<h3 id="Configuration_files">Configuration files</h3>
+<section>
+<title>Configuration files</title>
 
-The <i>$HAMA_HOME/conf</i> directory contains some configuration files for Hama. These are:
+<p>The <i>$HAMA_HOME/conf</i> directory contains some configuration files for Hama. These are:</p>
 <ul>
 <li>
 <i>hama-env.sh</i> - This file contains some environment variable settings used by Hama. You can use these to affect some aspects of Hama daemon behavior, 
@@ -71,10 +76,10 @@ This file is empty by default. Settings in this file override those in hama-defa
 This file should contain settings that must be respected by all servers and clients in a Hama installation.
 </li>
 </ul>
-<div class="line867">
-</div>
-<h2 id="Setting_up_Hama">Setting up Hama</h2>
-This section describes how to get started by setting up a Hama cluster.
+
+<section>
+<title>Setting up Hama</title>
+<p>This section describes how to get started by setting up a Hama cluster.</p>
 <ul>
 <li>
 <strong>BSPMaster and Zookeeper settings</strong> - Figure out where to run your HDFS namenode and BSPMaster. 
@@ -83,7 +88,7 @@ Set the variable <i>fs.default.name</i> to the HDFS Namenode's intended host:por
 </li>
 </ul>
 
-An example of a hama-site.xml file:
+<p>An example of a hama-site.xml file:</p>
 <pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
 &lt;!--?xml version="1.0"?--&gt;
 &lt;!--?xml-stylesheet type="text/xsl" href="configuration.xsl"?--&gt;
@@ -118,32 +123,38 @@ An example of a hama-site.xml file:
   &lt;/property&gt;
 &lt;/configuration&gt;
 </pre>
+</section>
 
-<h4 id="Starting_a_Hama_cluster">Starting a Hama cluster</h4>
+<section>
+<title>Starting a Hama cluster</title>
 
-Run the command:
+<p>Run the command:</p>
 <pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
   # $HAMA_HOME/bin/start-bspd.sh
 </pre>
 
-This will startup a BSPMaster, GroomServers and Zookeeper on your machine.
+<p>This will startup a BSPMaster, GroomServers and Zookeeper on your machine.</p>
+</section>
 
-<h4 id="Stopping_a_Hama_cluster">Stopping a Hama cluster</h4>
+<section>
+<title>Stopping a Hama cluster</title>
 
-Run the command:
+<p>Run the command:</p>
 <pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
   # $HAMA_HOME/bin/stop-bspd.sh
 </pre>
 
-to stop all the daemons running on your cluster.
+<p>to stop all the daemons running on your cluster.</p>
+</section>
+</section>
 
-
-<h3 id="Run_the_BSP_Examples">Run the BSP Examples</h3>
-Run the command:
+<section>
+<title>Run the BSP Examples</title>
+<p>Run the command:</p>
 <pre style="background-color: #f3f5f7; border-bottom-color: rgb(174, 189, 204); border-bottom-style: solid; border-bottom-width: 1pt; border-left-color: rgb(174, 189, 204); border-left-style: solid; border-left-width: 1pt; border-right-color: rgb(174, 189, 204); border-right-style: solid; border-right-width: 1pt; border-top-color: rgb(174, 189, 204); border-top-style: solid; border-top-width: 1pt; font-family: courier, monospace; padding-bottom: 5pt; padding-left: 5pt; padding-right: 5pt; padding-top: 5pt; white-space: pre-wrap; word-wrap: break-word;">
   # $HAMA_HOME/bin/hama jar hama-0.2.0-examples.jar pi or test
 </pre>
-
+</section>
     </section>
     
   </body>
