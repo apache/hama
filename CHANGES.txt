@@ -8,16 +8,8 @@ Release 0.3 - Unreleased
 
   IMPROVEMENTS
 
+    HAMA-380: Send messages in batches to reduce RPC overhead (Miklos Erdelyi via edwardyoon)
     HAMA-362: Re-design a new data structure of BSPMessage (Thomas Jungblut via edwardyoon)   
-
-Release 0.2.1 - Unreleased
-
-  NEW FEATURES
-
-  BUG FIXES
-
-  IMPROVEMENTS
-  
     HAMA-369: Reduce overhead of local communications (Miklos Erdelyi via edwardyoon)
     HAMA-371: Add a parameter to build.xml to allow developers deciding to reset content 
                        in conf files or not when building artifacts (ChiaHung Lin via edwardyoon)

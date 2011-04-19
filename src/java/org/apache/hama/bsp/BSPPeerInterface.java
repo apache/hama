@@ -49,6 +49,14 @@ public interface BSPPeerInterface extends BSPRPCProtocolVersion, Closeable,
   public void put(BSPMessage msg) throws IOException;
 
   /**
+   * Puts a bundle of messages to local queue.
+   * 
+   * @param messages
+   * @throws IOException
+   */
+  public void put(BSPMessageBundle messages) throws IOException;
+
+  /**
    * @return A message from the peer's received messages queue (a FIFO).
    * @throws IOException
    */

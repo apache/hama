@@ -175,26 +175,21 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     enterBarrier();
     Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = this.outgoingQueues
         .entrySet().iterator();
-    Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> entry;
-    ConcurrentLinkedQueue<BSPMessage> queue;
-    BSPPeerInterface peer;
-
-    Iterator<BSPMessage> messages;
 
     while (it.hasNext()) {
-      entry = it.next();
+      Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> entry = it
+          .next();
 
-      peer = peers.get(entry.getKey());
+      BSPPeerInterface peer = peers.get(entry.getKey());
       if (peer == null) {
         peer = getBSPPeerConnection(entry.getKey());
       }
-      queue = entry.getValue();
-      messages = queue.iterator();
-
-      // TODO - to be improved by collective communication and compression
-      while (messages.hasNext()) {
-        peer.put(messages.next());
+      Iterable<BSPMessage> messages = entry.getValue();
+      BSPMessageBundle bundle = new BSPMessageBundle();
+      for (BSPMessage message : messages) {
+        bundle.addMessage(message);
       }
+      peer.put(bundle);
     }
 
     waitForSync();
@@ -299,6 +294,13 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   @Override
   public void put(BSPMessage msg) throws IOException {
     this.localQueueForNextIteration.add(msg);
+  }
+
+  @Override
+  public void put(BSPMessageBundle messages) throws IOException {
+    for (BSPMessage message : messages.getMessages()) {
+      this.localQueueForNextIteration.add(message);
+    }
   }
 
   @Override
