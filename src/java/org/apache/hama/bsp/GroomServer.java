@@ -242,7 +242,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
 
           // TODO Use the cleanup thread
           // tasksToCleanup.put(action);
-          
+
           KillTaskAction killAction = (KillTaskAction) action;
           if (tasks.containsKey(killAction.getTaskID())) {
             TaskInProgress tip = tasks.get(killAction.getTaskID());
@@ -845,6 +845,11 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   @Override
   public void put(BSPMessage msg) throws IOException {
     bspPeer.put(msg);
+  }
+
+  @Override
+  public void put(BSPMessageBundle messages) throws IOException {
+    bspPeer.put(messages);
   }
 
   @Override
