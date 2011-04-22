@@ -8,6 +8,7 @@ Release 0.3 - Unreleased
 
   IMPROVEMENTS
 
+    HAMA-382: Refactor HAMA POM (Tommaso Teofili)
     HAMA-380: Send messages in batches to reduce RPC overhead (Miklos Erdelyi via edwardyoon)
     HAMA-362: Re-design a new data structure of BSPMessage (Thomas Jungblut via edwardyoon)   
     HAMA-369: Reduce overhead of local communications (Miklos Erdelyi via edwardyoon)
