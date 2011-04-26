@@ -4,6 +4,8 @@ Release 0.3 - Unreleased
 
   NEW FEATURES
 
+    HAMA-374: Add LocalBSPRunner (Thomas Jungblut via edwardyoon)
+
   BUG FIXES
 
   IMPROVEMENTS

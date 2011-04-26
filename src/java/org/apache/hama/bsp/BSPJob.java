@@ -28,7 +28,8 @@ import org.apache.hama.HamaConfiguration;
 /**
  * A BSP job configuration.
  * 
- * BSPJob is the primary interface for a user to describe a BSP job to the Hama BSP framework for execution.
+ * BSPJob is the primary interface for a user to describe a BSP job to the Hama
+ * BSP framework for execution.
  */
 public class BSPJob extends BSPJobContext {
   public static enum JobState {
@@ -57,7 +58,8 @@ public class BSPJob extends BSPJobContext {
     super(new Path(jobFile), jobID);
   }
 
-  public BSPJob(HamaConfiguration conf, Class<?> exampleClass) throws IOException {
+  public BSPJob(HamaConfiguration conf, Class<?> exampleClass)
+      throws IOException {
     this(conf);
     setJarByClass(exampleClass);
   }

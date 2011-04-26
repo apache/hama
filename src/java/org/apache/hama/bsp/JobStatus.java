@@ -153,6 +153,10 @@ public class JobStatus implements Writable, Cloneable {
     return superstepCount;
   }
   
+  public synchronized void setSuperstepCount(long superstepCount) {
+    this.superstepCount = superstepCount;
+  }
+  
   public synchronized void setStartTime(long startTime) {
     this.startTime = startTime;
   }
