@@ -197,10 +197,16 @@ public class BSPJobClient extends Configured implements Tool {
   }
 
   public void init(Configuration conf) throws IOException {
-    this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
-        JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
-        BSPMaster.getAddress(conf), conf,
-        NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
+    String masterAdress = conf.get("bsp.master.address");
+    if (masterAdress != null && !masterAdress.equals("local")) {
+      this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
+          JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
+          BSPMaster.getAddress(conf), conf,
+          NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
+    } else {
+      LOG.debug("Using local BSP runner.");
+      this.jobSubmitClient = new LocalBSPRunner(conf);
+    }
   }
 
   /**
