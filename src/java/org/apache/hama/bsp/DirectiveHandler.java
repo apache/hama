@@ -15,24 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ipc;
+package org.apache.hama.bsp;
 
-import java.io.IOException;
-
-import org.apache.hama.bsp.Directive;
-
-/**
- * A protocol for BSPMaster talks to GroomServer. 
- */
-public interface WorkerProtocol extends HamaRPCProtocolVersion {
+public interface DirectiveHandler{
 
   /**
-   * Instruct GroomServer performaning tasks.
-   * 
-   * @param directive instructs a GroomServer performing necessary
-   *        execution.
-   * @throws IOException
+   * Handle directives on demand. 
+   * @param directive to be handled.
    */
-  void dispatch(Directive directive) throws IOException;
-
+  void handle(Directive directive) throws DirectiveException;
 }

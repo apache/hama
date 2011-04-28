@@ -24,66 +24,39 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hama.ipc.WorkerProtocol;
 
-/**
- * A generic directive from the {@link org.apache.hama.bsp.BSPMaster} to the
- * {@link org.apache.hama.bsp.GroomServer} to take some 'action'.
- */
-public class Directive implements Writable{
+public class ReportGroomStatusDirective extends Directive implements Writable {
 
-  protected long timestamp;
-  protected Directive.Type type;
+  public static final Log LOG = LogFactory.getLog(ReportGroomStatusDirective.class);
 
-  public static enum Type {
-    Request(1), Response(2);
-    int t;
+  private GroomServerStatus status;
 
-    Type(int t) {
-      this.t = t;
-    }
-
-    public int value() {
-      return this.t;
-    }
-  };
-
-  public Directive(){}
-
-  public Directive(Directive.Type type) {
-    this.timestamp = System.currentTimeMillis();
-    this.type = type;
+  public ReportGroomStatusDirective(){ super(); }
+  
+  public ReportGroomStatusDirective(GroomServerStatus status) {
+    super(Directive.Type.Response);
+    this.status = status;
   }
 
-  public long getTimestamp() {
-    return this.timestamp;
+  public GroomServerStatus getStatus() {
+    return this.status;
   }
-
-  public Directive.Type getType() {
-    return this.type;
-  }
-
-  /**
-   * Command for BSPMaster or GroomServer to execute.
-  public abstract void execute() throws Exception;
-   */
 
   public void write(DataOutput out) throws IOException {
-    out.writeLong(this.timestamp);
-    out.writeInt(this.type.value());
+    super.write(out);
+    this.status.write(out);
   }
 
   public void readFields(DataInput in) throws IOException {
-    this.timestamp = in.readLong();
-    int t = in.readInt();
-    if (Directive.Type.Request.value() == t) {
-      this.type = Directive.Type.Request;
-    }else{
-      this.type = Directive.Type.Response;
-    }
+    super.readFields(in);
+    this.status = new GroomServerStatus();
+    this.status.readFields(in);
   }
 }

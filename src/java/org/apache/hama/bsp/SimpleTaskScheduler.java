@@ -136,9 +136,9 @@ class SimpleTaskScheduler extends TaskScheduler {
         WorkerProtocol worker = groomServerManager.findGroomServer(this.stus);
         try {
           // dispatch() to the groom server
-          Directive d1 = new Directive(groomServerManager
-              .currentGroomServerPeers(),
-              new GroomServerAction[] { new LaunchTaskAction(t) });
+          Directive d1 = new DispatchTasksDirective(groomServerManager
+              .currentGroomServerPeers(), new GroomServerAction[] { 
+              new LaunchTaskAction(t)});
           worker.dispatch(d1);
         } catch (IOException ioe) {
           LOG.error("Fail to dispatch tasks to GroomServer "
