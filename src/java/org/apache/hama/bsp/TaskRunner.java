@@ -128,7 +128,6 @@ public class TaskRunner extends Thread {
    * Run the child process
    */
   private void runChild(String[] args, File dir) throws IOException {
-    System.out.println("runChild.dir : " + dir);
     this.process = Runtime.getRuntime().exec(args, null, dir);
     try {
       new Thread() {
