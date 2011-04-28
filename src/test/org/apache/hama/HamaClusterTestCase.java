@@ -28,6 +28,7 @@ import org.apache.hadoop.hdfs.MiniDFSCluster;
 public abstract class HamaClusterTestCase extends HamaTestCase {
   public static final Log LOG = LogFactory.getLog(HamaClusterTestCase.class);
   protected MiniDFSCluster dfsCluster;
+  protected MiniBSPCluster bspCluster;
   protected MiniZooKeeperCluster zooKeeperCluster;
   protected boolean startDfs;
 
@@ -52,6 +53,8 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
     this.zooKeeperCluster = new MiniZooKeeperCluster();
     int clientPort = this.zooKeeperCluster.startup(testDir);
     conf.set("hama.zookeeper.property.clientPort", Integer.toString(clientPort));
+    bspCluster = new MiniBSPCluster(this.conf, 2); 
+    bspCluster.startBSPCluster();
   }
 
   @Override
@@ -95,6 +98,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
       if (startDfs) {
         shutdownDfs(dfsCluster);
       }
+      bspCluster.shutdown();
     } catch (Exception e) {
       LOG.error(e);
     }

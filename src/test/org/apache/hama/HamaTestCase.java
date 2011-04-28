@@ -62,6 +62,10 @@ public abstract class HamaTestCase extends TestCase {
   
   private void init() {
     conf = new HamaConfiguration();
+    conf.setStrings("bsp.local.dir", "/tmp/hama-test");
+    conf.set("bsp.master.address", "localhost");
+    conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
+    conf.set("bsp.groom.report.address", "127.0.0.1:0");
   }
 
   /**

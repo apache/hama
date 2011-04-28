@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.logging.Log;
@@ -44,8 +46,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.ipc.Server;
-import org.apache.hadoop.metrics.MetricsContext;
-import org.apache.hadoop.metrics.MetricsUtil;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.DiskChecker;
@@ -93,6 +93,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   String groomServerName;
   String localHostname;
   InetSocketAddress bspMasterAddr;
+  private Instructor instructor;
 
   // Filesystem
   // private LocalDirAllocator localDirAllocator;
@@ -122,15 +123,89 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
 
   private BlockingQueue<GroomServerAction> tasksToCleanup = new LinkedBlockingQueue<GroomServerAction>();
 
+  private class DispatchTasksHandler implements DirectiveHandler {
+
+    public void handle(Directive directive) throws DirectiveException {
+      GroomServerAction[] actions = ((DispatchTasksDirective) directive)
+          .getActions();
+      synchronized (bspPeer) {
+        bspPeer.setAllPeerNames(((DispatchTasksDirective) directive)
+            .getGroomServerPeers().values());
+      }
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Got Response from BSPMaster with "
+            + ((actions != null) ? actions.length : 0) + " actions");
+      }
+      if (actions != null) {
+        for (GroomServerAction action : actions) {
+          if (action instanceof LaunchTaskAction) {
+            startNewTask((LaunchTaskAction) action);
+          } else {
+
+            // TODO Use the cleanup thread
+            // tasksToCleanup.put(action);
+
+            KillTaskAction killAction = (KillTaskAction) action;
+            if (tasks.containsKey(killAction.getTaskID())) {
+              TaskInProgress tip = tasks.get(killAction.getTaskID());
+              tip.taskStatus.setRunState(TaskStatus.State.FAILED);
+              try {
+                tip.killAndCleanup(true);
+              } catch (IOException ioe) {
+                throw new DirectiveException("Error when killing a "
+                    + "TaskInProgress.", ioe);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private class Instructor extends Thread {
+    final BlockingQueue<Directive> buffer = new LinkedBlockingQueue<Directive>();
+    final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
+
+    public void bind(Class<? extends Directive> instruction,
+        DirectiveHandler handler) {
+      handlers.putIfAbsent(instruction, handler);
+    }
+
+    public void put(Directive directive) {
+      try {
+        buffer.put(directive);
+      } catch (InterruptedException ie) {
+        LOG.error("Unable to put directive into queue.", ie);
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    public void run() {
+      while (true) {
+        try {
+          Directive directive = buffer.take();
+          if (directive instanceof DispatchTasksDirective) {
+            ((DirectiveHandler) handlers.get(DispatchTasksDirective.class))
+                .handle(directive);
+          } else {
+            throw new RuntimeException("Directive is not supported."
+                + directive);
+          }
+        } catch (InterruptedException ie) {
+          LOG.error("Unable to retrieve directive from the queue.", ie);
+          Thread.currentThread().interrupt();
+        } catch (Exception e) {
+          LOG.error("Fail to execute directive.", e);
+        }
+      }
+    }
+  }
+
   public GroomServer(Configuration conf) throws IOException {
     LOG.info("groom start");
     this.conf = conf;
 
-    String mode = conf.get("bsp.master.address");
-    if (!mode.equals("local")) {
-      bspMasterAddr = BSPMaster.getAddress(conf);
-    }
-
+    bspMasterAddr = BSPMaster.getAddress(conf);
     // FileSystem local = FileSystem.getLocal(conf);
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
   }
@@ -141,9 +216,8 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(
-          conf.get("bsp.dns.interface", "default"),
-          conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
+          "default"), conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -217,6 +291,11 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
       throw new IOException("There is a problem in establishing"
           + " communication link with BSPMaster.");
     }
+
+    this.instructor = new Instructor();
+    this.instructor.bind(DispatchTasksDirective.class,
+        new DispatchTasksHandler());
+    instructor.start();
     this.running = true;
     this.initialized = true;
   }
@@ -228,31 +307,10 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
 
   @Override
   public void dispatch(Directive directive) throws IOException {
-    // update tasks status
-    GroomServerAction[] actions = directive.getActions();
-    bspPeer.setAllPeerNames(directive.getGroomServerPeers().values());
-    LOG.debug("Got Response from BSPMaster with "
-        + ((actions != null) ? actions.length : 0) + " actions");
-    // perform actions
-    if (actions != null) {
-      for (GroomServerAction action : actions) {
-        if (action instanceof LaunchTaskAction) {
-          startNewTask((LaunchTaskAction) action);
-        } else {
+    if (!instructor.isAlive())
+      throw new IOException();
 
-          // TODO Use the cleanup thread
-          // tasksToCleanup.put(action);
-
-          KillTaskAction killAction = (KillTaskAction) action;
-          if (tasks.containsKey(killAction.getTaskID())) {
-            TaskInProgress tip = tasks.get(killAction.getTaskID());
-            tip.taskStatus.setRunState(TaskStatus.State.FAILED);
-            tip.killAndCleanup(true);
-          }
-
-        }
-      }
-    }
+    instructor.put(directive);
   }
 
   private static void checkLocalDirs(String[] localDirs)
@@ -392,15 +450,16 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
    * Update and report refresh status back to BSPMaster.
    */
   public void doReport(TaskStatus taskStatus) {
-    GroomServerStatus gss = new GroomServerStatus(groomServerName,
+    GroomServerStatus groomStatus = new GroomServerStatus(groomServerName,
         bspPeer.getPeerName(), updateTaskStatus(taskStatus), failures,
         maxCurrentTasks, rpcServer);
     try {
-      boolean ret = masterClient.report(new Directive(gss));
+      boolean ret = masterClient.report(new ReportGroomStatusDirective(
+          groomStatus));
       if (!ret) {
         LOG.warn("Fail to renew BSPMaster's GroomServerStatus. "
-            + " groom name: " + gss.getGroomName() + " peer name:"
-            + gss.getPeerName() + " rpc server:" + rpcServer);
+            + " groom name: " + groomStatus.getGroomName() + " peer name:"
+            + groomStatus.getPeerName() + " rpc server:" + rpcServer);
       }
     } catch (IOException ioe) {
       LOG.error("Fail to communicate with BSPMaster for reporting.", ioe);
@@ -798,8 +857,6 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
         throwable.printStackTrace(new PrintStream(baos));
       } finally {
         RPC.stopProxy(umbilical);
-        MetricsContext metricsContext = MetricsUtil.getContext("mapred");
-        metricsContext.close();
         // Shutting down log4j of the child-vm...
         // This assumes that on return from Task.run()
         // there is no more logging done.

@@ -135,10 +135,23 @@ public class MiniBSPCluster {
     int threadpool = conf.getInt("bsp.test.threadpool", 10);
     LOG.info("Thread pool value "+threadpool);
     scheduler = Executors.newScheduledThreadPool(threadpool);
+  }
 
+  public void startBSPCluster(){
     startMaster();
     startGroomServers();
   }
+
+  public void shutdownBSPCluster(){
+    if(null != this.master && this.master.isRunning())
+      this.master.shutdown();
+    if(0 < groomServerList.size()){
+      for(GroomServerRunner groom: groomServerList){
+        if(groom.isRunning()) groom.shutdown();
+      }
+    }
+  }
+
 
   public void startMaster(){
     if(null == this.scheduler) 
@@ -203,6 +216,7 @@ public class MiniBSPCluster {
   }
 
   public void shutdown() {
+    shutdownBSPCluster();
     scheduler.shutdown();
   }
 

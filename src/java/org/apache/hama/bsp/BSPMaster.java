@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -52,7 +54,7 @@ import org.apache.hama.ipc.WorkerProtocol;
  * BSPMaster is responsible to control all the groom servers and to manage bsp
  * jobs.
  */
-public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // InterServerProtocol,
+public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, 
     GroomServerManager {
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
 
@@ -98,9 +100,114 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
   private TaskScheduler taskScheduler;
 
   // GroomServers cache
-  protected ConcurrentMap<GroomServerStatus, WorkerProtocol> groomServers = new ConcurrentHashMap<GroomServerStatus, WorkerProtocol>();
+  protected ConcurrentMap<GroomServerStatus, WorkerProtocol> groomServers =
+    new ConcurrentHashMap<GroomServerStatus, WorkerProtocol>();
 
-  private final List<JobInProgressListener> jobInProgressListeners = new CopyOnWriteArrayList<JobInProgressListener>();
+  private Instructor instructor;
+
+  private final List<JobInProgressListener> jobInProgressListeners = 
+    new CopyOnWriteArrayList<JobInProgressListener>();
+
+  private class ReportGroomStatusHandler implements DirectiveHandler{
+
+    public void handle(Directive directive) throws DirectiveException{
+      // update GroomServerStatus held in the groomServers cache.
+      GroomServerStatus groomStatus = 
+        ((ReportGroomStatusDirective)directive).getStatus();
+      // groomServers cache contains groom server status reported back
+      if (groomServers.containsKey(groomStatus)) {
+        GroomServerStatus tmpStatus = null;
+        for (GroomServerStatus old : groomServers.keySet()) {
+          if (old.equals(groomStatus)) {
+            tmpStatus = groomStatus;
+            updateGroomServersKey(old, tmpStatus);
+            break;
+          }
+        }// for
+        if (null != tmpStatus) {
+          List<TaskStatus> tlist = tmpStatus.getTaskReports();
+          for (TaskStatus ts : tlist) {
+            JobInProgress jip = whichJob(ts.getJobId());
+            TaskInProgress tip = jip.findTaskInProgress(((TaskAttemptID) ts
+                .getTaskId()).getTaskID());
+
+            if(ts.getRunState() == TaskStatus.State.SUCCEEDED) {
+              jip.completedTask(tip, ts);
+            } else if (ts.getRunState() == TaskStatus.State.RUNNING) {
+              // do nothing
+            } else if (ts.getRunState() == TaskStatus.State.FAILED) {
+              jip.status.setRunState(JobStatus.FAILED);
+              jip.failedTask(tip, ts);
+            }
+            if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
+              for(JobInProgressListener listener: jobInProgressListeners){
+                try {
+                  listener.jobRemoved(jip);
+                } catch (IOException ioe) {
+                  LOG.error("Fail to alter scheduler a job is moved.", ioe);
+                }
+              }
+            } else if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
+              jip.getStatus().setprogress(ts.getSuperstepCount());
+            } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
+              WorkerProtocol worker = findGroomServer(tmpStatus);
+              Directive d1 = new DispatchTasksDirective(currentGroomServerPeers(), 
+                  new GroomServerAction[] {new KillTaskAction(ts.getTaskId()) });
+              try{
+                worker.dispatch(d1);
+              }catch(IOException ioe){
+                throw new DirectiveException("Error when dispatching kill task"+
+                " action.", ioe);
+              }
+            }
+          }
+        } else {
+          throw new RuntimeException("BSPMaster contains GroomServerSatus, "
+              + "but fail to retrieve it.");
+        }
+      } else {
+        throw new RuntimeException("GroomServer not found." + 
+        groomStatus.getGroomName());
+      }
+    }
+  }
+
+  private class Instructor extends Thread{
+    private final BlockingQueue<Directive> buffer = new LinkedBlockingQueue<Directive>();
+    private final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = 
+      new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
+
+    public void bind(Class<? extends Directive> instruction, 
+        DirectiveHandler handler){
+      handlers.putIfAbsent(instruction, handler);
+    }
+
+    public void put(Directive directive){
+      try{
+        buffer.put(directive);
+      }catch(InterruptedException ie){
+        LOG.error("Fail to put directive into queue.", ie); 
+      }
+    }
+
+    public void run(){
+      while(true){
+        try{
+          Directive directive = this.buffer.take(); 
+          if(directive instanceof ReportGroomStatusDirective){
+            ((DirectiveHandler)handlers.get(ReportGroomStatusDirective.class)).handle(directive);
+          }else{
+            throw new RuntimeException("Directive is not supported."+directive);
+          }
+        }catch(InterruptedException ie){
+          LOG.error("Unable to retrieve directive from the queue.", ie);
+          Thread.currentThread().interrupt();
+        }catch(Exception e){
+          LOG.error("Fail to execute directive command.", e);
+        }
+      }
+    }
+  }
 
   /**
    * Start the BSPMaster process, listen on the indicated hostname/port
@@ -114,7 +221,6 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
       InterruptedException {
     this.conf = conf;
     this.masterIdentifier = identifier;
-    // expireLaunchingTaskThread.start();
 
     // Create the scheduler and init scheduler services
     Class<? extends TaskScheduler> schedulerClass = conf.getClass(
@@ -228,72 +334,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
 
   @Override
   public boolean report(Directive directive) throws IOException {
-    // check returned directive type if equals response
-    if (directive.getType().value() != Directive.Type.Response.value()) {
-      throw new IllegalStateException("GroomServer should report()"
-          + " with Response. Current report type:" + directive.getType());
-    }
-    // update GroomServerStatus hold in groomServers cache.
-    GroomServerStatus fstus = directive.getStatus();
-
-    // groomServers cache contains groom server status reported back
-    if (groomServers.containsKey(fstus)) {
-      GroomServerStatus ustus = null;
-      for (GroomServerStatus old : groomServers.keySet()) {
-        if (old.equals(fstus)) {
-          ustus = fstus;
-          updateGroomServersKey(old, ustus);
-          break;
-        }
-      }// for
-
-      if (null != ustus) {
-        List<TaskStatus> tlist = ustus.getTaskReports();
-        for (TaskStatus ts : tlist) {
-          JobInProgress jip = whichJob(ts.getJobId());
-
-          TaskInProgress tip = jip.findTaskInProgress(((TaskAttemptID) ts
-              .getTaskId()).getTaskID());
-          
-          if(ts.getRunState() == TaskStatus.State.SUCCEEDED) {
-            jip.completedTask(tip, ts);
-          } else if (ts.getRunState() == TaskStatus.State.RUNNING) {
-            // do nothing
-          } else if (ts.getRunState() == TaskStatus.State.FAILED) {
-            jip.status.setRunState(JobStatus.FAILED);
-            jip.failedTask(tip, ts);
-          }
-          
-          if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
-            for (JobInProgressListener listener : jobInProgressListeners) {
-              try {
-                listener.jobRemoved(jip);
-              } catch (IOException ioe) {
-                LOG.error("Fail to alter scheduler a job is moved.", ioe);
-              }
-            }
-
-          } else if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
-            jip.getStatus().setprogress(ts.getSuperstepCount());
-          } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
-            
-            WorkerProtocol worker = findGroomServer(ustus);
-            Directive d1 = new Directive(currentGroomServerPeers(),
-                new GroomServerAction[] { new KillTaskAction(ts.getTaskId()) });
-            
-            worker.dispatch(d1);
-            
-          }
-          
-        }
-      } else {
-        throw new RuntimeException("BSPMaster contains GroomServerSatus, "
-            + "but fail to retrieve it.");
-      }
-    } else {
-      throw new RuntimeException("GroomServer not found."
-          + fstus.getGroomName());
-    }
+    instructor.put(directive); 
     return true;
   }
 
@@ -378,15 +419,20 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, // Inte
   }
 
   public void offerService() throws InterruptedException, IOException {
-    // this.interServer.start();
+
     this.masterServer.start();
 
     synchronized (this) {
       state = State.RUNNING;
     }
+    
+    instructor = new Instructor();
+    instructor.bind(ReportGroomStatusDirective.class, 
+      new ReportGroomStatusHandler());
+    instructor.start();
+    
     LOG.info("Starting RUNNING");
 
-    // this.interServer.join();
     this.masterServer.join();
 
     LOG.info("Stopped RPC Master server.");
