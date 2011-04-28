@@ -19,6 +19,11 @@ package org.apache.hama.bsp;
 
 public class DirectiveException extends RuntimeException{
 
+  /**
+   * 
+   */
+  private static final long serialVersionUID = -8052582046894492822L;
+
   public DirectiveException(){ 
     super(); 
   }
