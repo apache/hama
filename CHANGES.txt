@@ -70,7 +70,6 @@ Release 0.2 - Unreleased
 
   IMPROVEMENTS
  
-    HAMA-369: Reduce overhead of local communications (Miklos Erdelyi)
     HAMA-366: Remove unnecessary dependencies (Tommaso Teofili)
     HAMA-365: TestBSPPeer doesn't check if the correct 
                        number of messages have been received (Miklos Erdelyi via edwardyoon)
