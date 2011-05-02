@@ -5,14 +5,14 @@ Release 0.3 - Unreleased
   NEW FEATURES
 
     HAMA-374: Add LocalBSPRunner (Thomas Jungblut via edwardyoon)
-
+    HAMA-380: Add BSPMessageBundle to reduce RPC overhead (Miklos Erdelyi via edwardyoon)
+    
   BUG FIXES
 
   IMPROVEMENTS
 
     HAMA-376: Refactor BSPMaster and GroomServer (ChiaHung Lin via edwardyoon)
     HAMA-382: Refactor HAMA POM (Tommaso Teofili)
-    HAMA-380: Send messages in batches to reduce RPC overhead (Miklos Erdelyi via edwardyoon)
     HAMA-362: Re-design a new data structure of BSPMessage (Thomas Jungblut via edwardyoon)   
     HAMA-369: Reduce overhead of local communications (Miklos Erdelyi via edwardyoon)
     HAMA-371: Add a parameter to build.xml to allow developers deciding to reset content 
