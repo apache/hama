@@ -57,6 +57,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(configuration);
     ClusterStatus cluster = jobClient.getClusterStatus(false);
+    assertEquals(this.numOfGroom, cluster.getMaxTasks());
     bsp.setNumBspTask(cluster.getGroomServers());
     FileSystem fileSys = FileSystem.get(conf);
 

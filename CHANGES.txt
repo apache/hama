@@ -11,6 +11,7 @@ Release 0.3 - Unreleased
 
   IMPROVEMENTS
 
+    HAMA-379: Setting default values to job.setNumBspTask() (Thomas Jungblut via edwardyoon)
     HAMA-376: Refactor BSPMaster and GroomServer (ChiaHung Lin via edwardyoon)
     HAMA-382: Refactor HAMA POM (Tommaso Teofili)
     HAMA-362: Re-design a new data structure of BSPMessage (Thomas Jungblut via edwardyoon)   

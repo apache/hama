@@ -500,6 +500,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
         groomPeersMap.put(s.getGroomName(), s.getPeerName());
       }
     }
+    
+    // TODO currently we only have one task slot per groom server
+    this.totalTaskCapacity = numGroomServers;
+    
     if (detailed) {
       return new ClusterStatus(groomPeersMap, totalTasks, totalTaskCapacity,
           state);

@@ -294,6 +294,18 @@ public class BSPJobClient extends Configured implements Tool {
      */
     UnixUserGroupInformation ugi = getUGI(job.getConf());
 
+    ClusterStatus clusterStatus = getClusterStatus(true);
+
+    // check the number of BSP tasks
+    int tasks = job.getNumBspTask();
+    int maxTasks = clusterStatus.getMaxTasks();
+    
+    if (tasks <= 0 || tasks > maxTasks) {
+      LOG.warn("The number of tasks you've entered was invalid. Using default value of "
+          + maxTasks + "!");
+      job.setNumBspTask(maxTasks);
+    }
+
     // Create a number of filenames in the BSPMaster's fs namespace
     FileSystem fs = getFs();
     fs.delete(submitJobDir, true);
