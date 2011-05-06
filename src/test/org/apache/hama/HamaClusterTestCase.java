@@ -31,6 +31,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
   protected MiniBSPCluster bspCluster;
   protected MiniZooKeeperCluster zooKeeperCluster;
   protected boolean startDfs;
+  protected int numOfGroom = 2;
 
   /** default constructor */
   public HamaClusterTestCase() {
@@ -53,7 +54,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
     this.zooKeeperCluster = new MiniZooKeeperCluster();
     int clientPort = this.zooKeeperCluster.startup(testDir);
     conf.set("hama.zookeeper.property.clientPort", Integer.toString(clientPort));
-    bspCluster = new MiniBSPCluster(this.conf, 2); 
+    bspCluster = new MiniBSPCluster(this.conf, numOfGroom); 
     bspCluster.startBSPCluster();
   }
 

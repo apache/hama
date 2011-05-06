@@ -122,7 +122,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     for (Entry<String, BSPPeerProtocol> entry : localGrooms.entrySet()) {
       map.put(entry.getKey(), entry.getValue().getPeerName());
     }
-    return new ClusterStatus(map, 0, 1, State.RUNNING);
+    return new ClusterStatus(map, threadPoolSize, threadPoolSize, State.RUNNING);
   }
 
   @Override
