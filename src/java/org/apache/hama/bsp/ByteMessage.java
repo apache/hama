@@ -32,22 +32,18 @@ public class ByteMessage extends BSPMessage {
 
   public ByteMessage(byte[] tag, byte[] data) {
     super();
-    this.tag = new byte[tag.length];
-    this.data = new byte[data.length];
-    System.arraycopy(tag, 0, this.tag, 0, tag.length);
-    System.arraycopy(data, 0, this.data, 0, data.length);
+    this.tag = tag;
+    this.data = data;
   }
 
   @Override
   public byte[] getTag() {
-    byte[] result = this.tag;
-    return result;
+    return this.tag;
   }
 
   @Override
   public byte[] getData() {
-    byte[] result = this.data;
-    return result;
+    return this.data;
   }
 
   @Override

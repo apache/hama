@@ -47,7 +47,7 @@ import org.apache.zookeeper.data.Stat;
 public class TestBSPPeer extends HamaCluster implements Watcher {
   private Log LOG = LogFactory.getLog(TestBSPPeer.class);
 
-  private static final int NUM_PEER = 10;
+  private static final int NUM_PEER = 3;
   private static final int ROUND = 3;
   private static final int PAYLOAD = 1024; // 1kb in default
   List<BSPPeerThread> list = new ArrayList<BSPPeerThread>(NUM_PEER);
@@ -105,16 +105,16 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
     @Override
     public void runTest() throws AssertionFailedError {
       int randomTime;
-      byte[] dummyData = new byte[PAYLOAD];
-      BSPMessage msg = null;
 
       for (int i = 0; i < ROUND; i++) {
         randomTime = r.nextInt(MAXIMUM_DURATION) + 5;
 
-        for (int j = 0; j < 10; j++) {
+        for (int j = 0; j < 3; j++) {
+          byte[] dummyData = new byte[PAYLOAD];
           r.nextBytes(dummyData);
-          msg = new ByteMessage(Bytes.tail(dummyData, 128), dummyData);
           String peerName = "localhost:" + (30000 + j);
+          ByteMessage msg = new ByteMessage(Bytes.tail(dummyData, 128),
+              dummyData);
           try {
             peer.send(peerName, msg);
           } catch (IOException e) {
@@ -149,8 +149,8 @@ public class TestBSPPeer extends HamaCluster implements Watcher {
       LOG.info("[" + peer.getPeerName() + "] verifying " + numMessages
           + " messages at " + round + " round");
 
-      if (lastTwoDigitsOfPort < 10) {
-        assertEquals(10, numMessages);
+      if (lastTwoDigitsOfPort < 3) {
+        assertEquals(3, numMessages);
       } else {
         assertEquals(0, numMessages);
       }
