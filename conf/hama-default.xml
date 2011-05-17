@@ -83,7 +83,7 @@
     maximum virtual memory of the child processes. 
     </description>
   </property>
-    <property>
+  <property>
     <name>bsp.local.tasks.maximum</name>
     <value>20</value>
     <description>Number of tasks that run in parallel when in local mode.</description>
