@@ -78,8 +78,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     if (path != null && !path.isEmpty())
       WORKING_DIR = path;
 
-    int overridenSize = conf.getInt("bsp.local.tasks.maximum", 20);
-    threadPoolSize = overridenSize;
+    threadPoolSize = conf.getInt("bsp.local.tasks.maximum", 20);
     threadPool = (ThreadPoolExecutor) Executors
         .newFixedThreadPool(threadPoolSize);
     barrier = new CyclicBarrier(threadPoolSize);
