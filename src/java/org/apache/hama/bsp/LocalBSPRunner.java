@@ -50,7 +50,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   private static final String IDENTIFIER = "localrunner";
   private static String WORKING_DIR = "/user/hama/bsp/";
   protected static volatile ThreadPoolExecutor threadPool;
-  protected static final int threadPoolSize;
+  protected static int threadPoolSize;
   protected static final LinkedList<Future<BSP>> futureList = new LinkedList<Future<BSP>>();
   protected static CyclicBarrier barrier;
 
@@ -70,13 +70,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   protected Configuration conf;
   protected FileSystem fs;
 
-  {
-    for (int i = 0; i < threadPoolSize; i++) {
-      String name = IDENTIFIER + " " + i;
-      localGrooms.put(name, new LocalGroom(name));
-    }
-  }
-
   public LocalBSPRunner(Configuration conf) throws IOException {
     super();
     this.conf = conf;
@@ -84,6 +77,18 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     String path = conf.get("bsp.local.dir");
     if (path != null && !path.isEmpty())
       WORKING_DIR = path;
+
+    int overridenSize = conf.getInt("bsp.local.tasks.maximum", 20);
+    threadPoolSize = overridenSize;
+    threadPool = (ThreadPoolExecutor) Executors
+        .newFixedThreadPool(threadPoolSize);
+    barrier = new CyclicBarrier(threadPoolSize);
+
+    for (int i = 0; i < threadPoolSize; i++) {
+      String name = IDENTIFIER + " " + i;
+      localGrooms.put(name, new LocalGroom(name));
+    }
+
   }
 
   @Override

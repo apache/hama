@@ -83,6 +83,11 @@
     maximum virtual memory of the child processes. 
     </description>
   </property>
+    <property>
+    <name>bsp.local.tasks.maximum</name>
+    <value>20</value>
+    <description>Number of tasks that run in parallel when in local mode.</description>
+  </property>
 
   <!--
   Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.
