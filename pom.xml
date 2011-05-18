@@ -107,13 +107,6 @@
       <version>1.0.4</version>
     </dependency>
     <dependency>
-      <groupId>grobo-testing-junit</groupId>
-      <artifactId>grobo-testing-junit-core</artifactId>
-      <version>1.2.1</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/GroboTestingJUnit-1.2.1-core.jar</systemPath>
-    </dependency>
-    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-core</artifactId>
       <version>0.20.2</version>
@@ -157,11 +150,6 @@
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>
       <version>2.5</version>
-    </dependency>
-    <dependency>
-      <groupId>gr.spinellis</groupId>
-      <artifactId>UmlGraph</artifactId>
-      <version>4.6</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -258,6 +246,34 @@
           <version>${project.version}</version>
         </dependency>
       </dependencies>
+    </profile>
+    <profile>
+    <id>forrest</id>
+    <build> 
+   <plugins>
+     <plugin>
+       <artifactId>maven-antrun-plugin</artifactId>
+         <executions>
+           <execution>
+             <phase>package</phase>
+               <configuration>
+                 <tasks>
+                   <exec dir="${basedir}/src/docs" executable="${forrest.home}/bin/forrest" failonerror="true">
+                   </exec>
+                   <copy todir="${project.build.directory}/site">
+                   <fileset dir="${basedir}/src/docs/build/site/" />
+                   </copy>
+                   <delete dir="${basedir}/src/docs/build/" />
+                 </tasks>
+               </configuration>
+               <goals>
+                 <goal>run</goal>
+               </goals>
+             </execution>
+           </executions>
+         </plugin>
+       </plugins>
+     </build> 
     </profile>
   </profiles>
 </project>
