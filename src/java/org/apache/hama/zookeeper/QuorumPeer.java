@@ -178,6 +178,10 @@ public class QuorumPeer implements Constants {
     // Otherwise, use the configuration options from Hama's XML files.
     Properties zkProperties = new Properties();
 
+    // Set the max session timeout from the provided client-side timeout
+    zkProperties.setProperty("maxSessionTimeout",
+        conf.get("hama.zookeeper.session.timeout", "1200000"));
+    
     // Directly map all of the hama.zookeeper.property.KEY properties.
     for (Entry<String, String> entry : conf) {
       String key = entry.getKey();
