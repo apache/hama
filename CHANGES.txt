@@ -13,6 +13,7 @@ Release 0.3 - Unreleased
     
   IMPROVEMENTS
 
+    HAMA-392: Make zk session-timeout configurable (edwardyoon)
     HAMA-389: Make the thread pool size user configurable (Thomas Jungblut via edwardyoon)
     HAMA-386: Removing 'System.arraycopy(...)' call from ByteMessage (edwardyoon)
     HAMA-379: Setting default values to job.setNumBspTask() (Thomas Jungblut via edwardyoon)
