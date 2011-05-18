@@ -9,6 +9,8 @@ Release 0.3 - Unreleased
     
   BUG FIXES
 
+    HAMA-393: Add environment variable 'HAMA_HEAPSIZE' to hama-env.sh (edwardyoon)
+    
   IMPROVEMENTS
 
     HAMA-389: Make the thread pool size user configurable (Thomas Jungblut via edwardyoon)
