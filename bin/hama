@@ -100,33 +100,23 @@ CLASSPATH="${HAMA_CONF_DIR}"
 CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 
 # for developers, add Hama classes to CLASSPATH
-if [ -d "$HAMA_HOME/build/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/classes
+if [ -d "$HAMA_HOME/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/target/classes
 fi
-if [ -d "$HAMA_HOME/build/webapps" ]; then
-  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build
-fi
-if [ -d "$HAMA_HOME/build/test/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HAMA_HOME/build/test/classes
+if [ -d "$HAMA_HOME/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/target/test-classes
 fi
 
 # so that filenames w/ spaces are handled correctly in loops below
 IFS=
 
-# for releases, add core hama jar & webapps to CLASSPATH
-if [ -d "$HAMA_HOME/webapps" ]; then
-  CLASSPATH=${CLASSPATH}:$HAMA_HOME
-fi
+# for releases, add core hama jar to CLASSPATH
 for f in $HAMA_HOME/hama-**.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
 # add libs to CLASSPATH
 for f in $HAMA_HOME/lib/*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
-done
-
-for f in $HAMA_HOME/lib/jsp-2.1/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
