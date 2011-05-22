@@ -32,6 +32,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -46,6 +48,8 @@ import org.apache.zookeeper.KeeperException;
  * 
  */
 public class LocalBSPRunner implements JobSubmissionProtocol {
+  
+  public static final Log LOG = LogFactory.getLog(LocalBSPRunner.class);
 
   private static final String IDENTIFIER = "localrunner";
   private static String WORKING_DIR = "/user/hama/bsp/";
@@ -197,7 +201,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       try {
         bsp.bsp(groom);
       } catch (Exception e) {
-        e.printStackTrace();
+        LOG.error("Exception during BSP execution!",e);
       }
     }
 
@@ -224,10 +228,10 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         try {
           future.get();
         } catch (InterruptedException e) {
-          e.printStackTrace();
+          LOG.error("Exception during BSP execution!",e);
           success = false;
         } catch (ExecutionException e) {
-          e.printStackTrace();
+          LOG.error("Exception during BSP execution!",e);
           success = false;
         }
       }

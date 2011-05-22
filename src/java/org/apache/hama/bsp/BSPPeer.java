@@ -47,6 +47,7 @@ import org.apache.zookeeper.data.Stat;
  * This class represents a BSP peer.
  */
 public class BSPPeer implements Watcher, BSPPeerInterface {
+  
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
 
   private Configuration conf;
@@ -100,13 +101,13 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       LOG.info(" BSPPeer address:" + peerAddress.getHostName() + " port:"
           + peerAddress.getPort());
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("Exception during reinitialization!", e);
     }
 
     try {
       zk = new ZooKeeper(zookeeperAddr, 3000, this);
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("Exception during reinitialization!", e);
     }
 
     Stat s = null;
@@ -114,7 +115,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       try {
         s = zk.exists(Constants.DEFAULT_ZOOKEEPER_ROOT, false);
       } catch (Exception e) {
-        LOG.error(s);
+        LOG.error(s,e);
       }
 
       if (s == null) {
@@ -217,9 +218,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       zk.create(bspRoot + "/" + getPeerName(), new byte[0],
           Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
     } catch (KeeperException e) {
-      e.printStackTrace();
+      LOG.error("Exception while entering barrier!", e);
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      LOG.error("Exception while entering barrier!", e);
     }
 
     while (true) {
@@ -240,9 +241,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       zk.create(bspRoot + "/" + getPeerName() + "-data", new byte[0],
           Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
     } catch (KeeperException e) {
-      e.printStackTrace();
+      LOG.error("Exception while waiting for barrier sync!", e);
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      LOG.error("Exception while waiting for barrier sync!", e);
     }
 
     while (true) {

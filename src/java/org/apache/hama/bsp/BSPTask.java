@@ -19,6 +19,8 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.zookeeper.KeeperException;
 
@@ -26,6 +28,9 @@ import org.apache.zookeeper.KeeperException;
  * Base class for tasks. 
  */
 public class BSPTask extends Task {
+  
+  public static final Log LOG = LogFactory.getLog(BSPTask.class);
+  
   private BSPJob conf;
   
   public BSPTask() {
@@ -53,14 +58,11 @@ public class BSPTask extends Task {
     try {
       bsp.bsp(umbilical);
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOG.error("Exception during BSP execution!", e);
     } catch (KeeperException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOG.error("Exception during BSP execution!", e);
     } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOG.error("Exception during BSP execution!", e);
     }
 
     done(umbilical);
