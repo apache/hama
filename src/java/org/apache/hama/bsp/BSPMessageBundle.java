@@ -26,6 +26,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 
@@ -35,6 +37,8 @@ import org.apache.hadoop.util.ReflectionUtils;
  * 
  */
 public class BSPMessageBundle implements Writable {
+  
+  public static final Log LOG = LogFactory.getLog(BSPMessageBundle.class);
 
   private HashMap<String, LinkedList<BSPMessage>> messages = new HashMap<String, LinkedList<BSPMessage>>();
   private HashMap<String, Class<? extends BSPMessage>> classCache = new HashMap<String, Class<? extends BSPMessage>>();
@@ -103,7 +107,7 @@ public class BSPMessageBundle implements Writable {
             clazz = (Class<? extends BSPMessage>) Class.forName(className);
             classCache.put(className, clazz);
           } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            LOG.error("Class was not found.",e);
           }
         }
 

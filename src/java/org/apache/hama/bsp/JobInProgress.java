@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.Path;
  * tables for doing bookkeeping of its Tasks.ss
  */
 class JobInProgress {
+  
   /**
    * Used when the a kill is issued to a job which is initializing.
    */
@@ -208,7 +209,7 @@ class JobInProgress {
       }
 
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("Exception while obtaining new task!", e);
     }
     return result;
   }

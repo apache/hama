@@ -71,7 +71,7 @@ public class QuorumPeer implements Constants {
       zkConfig.parseProperties(zkProperties);
       runZKServer(zkConfig);
     } catch (Exception e) {
-      e.printStackTrace();
+      LOG.error("Exception during ZooKeeper startup - exiting...",e);
       System.exit(-1);
     }
   }

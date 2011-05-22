@@ -9,6 +9,7 @@ Release 0.3 - Unreleased
     
   BUG FIXES
 
+    HAMA-391: Refactor Exception.printStackTrace() to LOG.error(Exception) (Thomas Jungblut via edwardyoon)
     HAMA-393: Add environment variable 'HAMA_HEAPSIZE' to hama-env.sh (edwardyoon)
     
   IMPROVEMENTS
