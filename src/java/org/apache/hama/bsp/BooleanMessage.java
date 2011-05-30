@@ -1,6 +1,4 @@
 /**
- * Copyright 2007 The Apache Software Foundation
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,24 +15,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples;
+package org.apache.hama.bsp;
 
-import org.apache.hadoop.util.ProgramDriver;
-import org.apache.hama.examples.sssp.ShortestPaths;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-public class ExampleDriver {
+public class BooleanMessage extends BSPMessage {
 
-  public static void main(String[] args) {
-    ProgramDriver pgd = new ProgramDriver();
-    try {
-      pgd.addClass("pi", PiEstimator.class, "Pi Estimator");
-      pgd.addClass("bench", RandBench.class, "Random Communication Benchmark");
-      pgd.addClass("test", SerializePrinting.class, "Serialize Printing Test");
-      pgd.addClass("sssp", ShortestPaths.class, "Single Source Shortest Path");
+  String tag;
+  boolean data;
 
-      pgd.driver(args);
-    } catch (Throwable e) {
-      e.printStackTrace();
-    }
+  public BooleanMessage() {
+    super();
+  }
+
+  public BooleanMessage(String tag, boolean data) {
+    super();
+    this.tag = tag;
+    this.data = data;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(tag);
+    out.writeBoolean(data);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    tag = in.readUTF();
+    data = in.readBoolean();
+  }
+
+  @Override
+  public String getTag() {
+    return tag;
+  }
+
+  @Override
+  public Boolean getData() {
+    return data;
   }
 }
