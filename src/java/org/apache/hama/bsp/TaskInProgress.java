@@ -94,9 +94,9 @@ class TaskInProgress {
       Configuration conf, JobInProgress job, int partition) {
     this.jobId = jobId;
     this.jobFile = jobFile;
-    this.bspMaster = master;
+    this.setBspMaster(master);
     this.job = job;
-    this.conf = conf;
+    this.setConf(conf);
     this.partition = partition;
 
     this.id = new TaskID(jobId, partition);
@@ -255,6 +255,34 @@ class TaskInProgress {
 
   public boolean isFailed() {
     return failed;
+  }
+
+  /**
+   * @param conf the conf to set
+   */
+  public void setConf(Configuration conf) {
+    this.conf = conf;
+  }
+
+  /**
+   * @return the conf
+   */
+  public Configuration getConf() {
+    return conf;
+  }
+
+  /**
+   * @param bspMaster the bspMaster to set
+   */
+  public void setBspMaster(BSPMaster bspMaster) {
+    this.bspMaster = bspMaster;
+  }
+
+  /**
+   * @return the bspMaster
+   */
+  public BSPMaster getBspMaster() {
+    return bspMaster;
   }
 
 }

@@ -171,7 +171,7 @@ public class MiniBSPCluster {
       try{
         Thread.sleep(1000);
         cnt++;
-        if(10 < cnt){
+        if(100 < cnt){
           fail("Fail to launch BSPMaster.");
         }
       }catch(InterruptedException ie){

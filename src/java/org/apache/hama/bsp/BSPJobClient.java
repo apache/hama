@@ -299,7 +299,7 @@ public class BSPJobClient extends Configured implements Tool {
     // check the number of BSP tasks
     int tasks = job.getNumBspTask();
     int maxTasks = clusterStatus.getMaxTasks();
-    
+
     if (tasks <= 0 || tasks > maxTasks) {
       LOG.warn("The number of tasks you've entered was invalid. Using default value of "
           + maxTasks + "!");
@@ -566,7 +566,7 @@ public class BSPJobClient extends Configured implements Tool {
       RunningJob job = jc.submitJob(new BSPJob(tConf));
       System.out.println("Created job " + job.getID().toString());
     } else if (killJob) {
-      RunningJob job = jc.getJob(new BSPJobID().forName(jobid));
+      RunningJob job = jc.getJob(BSPJobID.forName(jobid));
       if (job == null) {
         System.out.println("Could not find job " + jobid);
       } else {
@@ -575,7 +575,7 @@ public class BSPJobClient extends Configured implements Tool {
       }
       exitCode = 0;
     } else if (getStatus) {
-      RunningJob job = jc.getJob(new BSPJobID().forName(jobid));
+      RunningJob job = jc.getJob(BSPJobID.forName(jobid));
       if (job == null) {
         System.out.println("Could not find job " + jobid);
       } else {

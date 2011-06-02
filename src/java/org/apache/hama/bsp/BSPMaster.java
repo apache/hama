@@ -29,10 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,6 +46,7 @@ import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.http.HttpServer;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.ipc.WorkerProtocol;
@@ -54,7 +55,7 @@ import org.apache.hama.ipc.WorkerProtocol;
  * BSPMaster is responsible to control all the groom servers and to manage bsp
  * jobs.
  */
-public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, 
+public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     GroomServerManager {
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
 
@@ -77,6 +78,17 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   // private Server interServer;
   private Server masterServer;
 
+  // host and port
+  private String host;
+  private int port;
+
+  // startTime
+  private long startTime;
+
+  // HTTP server
+  private HttpServer infoServer;
+  private int infoPort;
+
   // Filesystem
   static final String SUBDIR = "bspMaster";
   FileSystem fs = null;
@@ -90,7 +102,6 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   // Jobs' Meta Data
   private Integer nextJobId = Integer.valueOf(1);
-  // private long startTime;
   private int totalSubmissions = 0; // how many jobs has been submitted by
   // clients
   private int totalTasks = 0; // currnetly running tasks
@@ -100,20 +111,18 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   private TaskScheduler taskScheduler;
 
   // GroomServers cache
-  protected ConcurrentMap<GroomServerStatus, WorkerProtocol> groomServers =
-    new ConcurrentHashMap<GroomServerStatus, WorkerProtocol>();
+  protected ConcurrentMap<GroomServerStatus, WorkerProtocol> groomServers = new ConcurrentHashMap<GroomServerStatus, WorkerProtocol>();
 
   private Instructor instructor;
 
-  private final List<JobInProgressListener> jobInProgressListeners = 
-    new CopyOnWriteArrayList<JobInProgressListener>();
+  private final List<JobInProgressListener> jobInProgressListeners = new CopyOnWriteArrayList<JobInProgressListener>();
 
-  private class ReportGroomStatusHandler implements DirectiveHandler{
+  private class ReportGroomStatusHandler implements DirectiveHandler {
 
-    public void handle(Directive directive) throws DirectiveException{
+    public void handle(Directive directive) throws DirectiveException {
       // update GroomServerStatus held in the groomServers cache.
-      GroomServerStatus groomStatus = 
-        ((ReportGroomStatusDirective)directive).getStatus();
+      GroomServerStatus groomStatus = ((ReportGroomStatusDirective) directive)
+          .getStatus();
       // groomServers cache contains groom server status reported back
       if (groomServers.containsKey(groomStatus)) {
         GroomServerStatus tmpStatus = null;
@@ -131,7 +140,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
             TaskInProgress tip = jip.findTaskInProgress(((TaskAttemptID) ts
                 .getTaskId()).getTaskID());
 
-            if(ts.getRunState() == TaskStatus.State.SUCCEEDED) {
+            if (ts.getRunState() == TaskStatus.State.SUCCEEDED) {
               jip.completedTask(tip, ts);
             } else if (ts.getRunState() == TaskStatus.State.RUNNING) {
               // do nothing
@@ -140,7 +149,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               jip.failedTask(tip, ts);
             }
             if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
-              for(JobInProgressListener listener: jobInProgressListeners){
+              for (JobInProgressListener listener : jobInProgressListeners) {
                 try {
                   listener.jobRemoved(jip);
                 } catch (IOException ioe) {
@@ -151,13 +160,14 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               jip.getStatus().setprogress(ts.getSuperstepCount());
             } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
               WorkerProtocol worker = findGroomServer(tmpStatus);
-              Directive d1 = new DispatchTasksDirective(currentGroomServerPeers(), 
-                  new GroomServerAction[] {new KillTaskAction(ts.getTaskId()) });
-              try{
+              Directive d1 = new DispatchTasksDirective(
+                  currentGroomServerPeers(),
+                  new GroomServerAction[] { new KillTaskAction(ts.getTaskId()) });
+              try {
                 worker.dispatch(d1);
-              }catch(IOException ioe){
-                throw new DirectiveException("Error when dispatching kill task"+
-                " action.", ioe);
+              } catch (IOException ioe) {
+                throw new DirectiveException("Error when dispatching kill task"
+                    + " action.", ioe);
               }
             }
           }
@@ -166,43 +176,44 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               + "but fail to retrieve it.");
         }
       } else {
-        throw new RuntimeException("GroomServer not found." + 
-        groomStatus.getGroomName());
+        throw new RuntimeException("GroomServer not found."
+            + groomStatus.getGroomName());
       }
     }
   }
 
-  private class Instructor extends Thread{
+  private class Instructor extends Thread {
     private final BlockingQueue<Directive> buffer = new LinkedBlockingQueue<Directive>();
-    private final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = 
-      new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
+    private final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
 
-    public void bind(Class<? extends Directive> instruction, 
-        DirectiveHandler handler){
+    public void bind(Class<? extends Directive> instruction,
+        DirectiveHandler handler) {
       handlers.putIfAbsent(instruction, handler);
     }
 
-    public void put(Directive directive){
-      try{
+    public void put(Directive directive) {
+      try {
         buffer.put(directive);
-      }catch(InterruptedException ie){
-        LOG.error("Fail to put directive into queue.", ie); 
+      } catch (InterruptedException ie) {
+        LOG.error("Fail to put directive into queue.", ie);
       }
     }
 
-    public void run(){
-      while(true){
-        try{
-          Directive directive = this.buffer.take(); 
-          if(directive instanceof ReportGroomStatusDirective){
-            ((DirectiveHandler)handlers.get(ReportGroomStatusDirective.class)).handle(directive);
-          }else{
-            throw new RuntimeException("Directive is not supported."+directive);
+    public void run() {
+      while (true) {
+        try {
+          Directive directive = this.buffer.take();
+          if (directive instanceof ReportGroomStatusDirective) {
+            ((DirectiveHandler) handlers.get(ReportGroomStatusDirective.class))
+                .handle(directive);
+          } else {
+            throw new RuntimeException("Directive is not supported."
+                + directive);
           }
-        }catch(InterruptedException ie){
+        } catch (InterruptedException ie) {
           LOG.error("Unable to retrieve directive from the queue.", ie);
           Thread.currentThread().interrupt();
-        }catch(Exception e){
+        } catch (Exception e) {
           LOG.error("Fail to execute directive command.", e);
         }
       }
@@ -229,10 +240,20 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     this.taskScheduler = (TaskScheduler) ReflectionUtils.newInstance(
         schedulerClass, conf);
 
-    String host = getAddress(conf).getHostName();
-    int port = getAddress(conf).getPort();
+    host = getAddress(conf).getHostName();
+    port = getAddress(conf).getPort();
     LOG.info("RPC BSPMaster: host " + host + " port " + port);
+
+    startTime = System.currentTimeMillis();
     this.masterServer = RPC.getServer(this, host, port, conf);
+
+    infoPort = conf.getInt("bsp.http.infoserver.port", 50013);
+
+    infoServer = new HttpServer("bspmaster", host, infoPort, true, conf);
+    infoServer.setAttribute("bsp.master", this);
+
+    // starting webserver
+    infoServer.start();
 
     while (!Thread.currentThread().isInterrupted()) {
       try {
@@ -334,7 +355,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   @Override
   public boolean report(Directive directive) throws IOException {
-    instructor.put(directive); 
+    instructor.put(directive);
     return true;
   }
 
@@ -425,12 +446,12 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     synchronized (this) {
       state = State.RUNNING;
     }
-    
+
     instructor = new Instructor();
-    instructor.bind(ReportGroomStatusDirective.class, 
-      new ReportGroomStatusHandler());
+    instructor.bind(ReportGroomStatusDirective.class,
+        new ReportGroomStatusHandler());
     instructor.start();
-    
+
     LOG.info("Starting RUNNING");
 
     this.masterServer.join();
@@ -500,10 +521,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
         groomPeersMap.put(s.getGroomName(), s.getPeerName());
       }
     }
-    
+
     // TODO currently we only have one task slot per groom server
     this.totalTaskCapacity = numGroomServers;
-    
+
     if (detailed) {
       return new ClusterStatus(groomPeersMap, totalTasks, totalTaskCapacity,
           state);
@@ -545,6 +566,22 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       tmp.put(status.getGroomName(), status.getPeerName());
     }
     return tmp;
+  }
+
+  public String getBSPMasterName() {
+    return host + ":" + port;
+  }
+
+  public long getStartTime() {
+    return startTime;
+  }
+
+  public String getBSPMasterIdentifier() {
+    return masterIdentifier;
+  }
+
+  public int getHttpPort() {
+    return infoPort;
   }
 
   /**
@@ -591,6 +628,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       status.setStartTime(jip.getStartTime());
       // Sets the user name
       status.setUsername(jip.getProfile().getUser());
+      status.setName(jip.getJobName());
 
       if (toComplete) {
         if (status.getRunState() == JobStatus.RUNNING

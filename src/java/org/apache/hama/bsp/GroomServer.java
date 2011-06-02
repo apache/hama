@@ -121,7 +121,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   InetSocketAddress taskReportAddress;
   Server taskReportServer = null;
 
-  private BlockingQueue<GroomServerAction> tasksToCleanup = new LinkedBlockingQueue<GroomServerAction>();
+//  private BlockingQueue<GroomServerAction> tasksToCleanup = new LinkedBlockingQueue<GroomServerAction>();
 
   private class DispatchTasksHandler implements DirectiveHandler {
 

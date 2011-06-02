@@ -32,7 +32,7 @@ import org.apache.hadoop.fs.Path;
  * tables for doing bookkeeping of its Tasks.ss
  */
 class JobInProgress {
-  
+
   /**
    * Used when the a kill is issued to a job which is initializing.
    */
@@ -62,6 +62,8 @@ class JobInProgress {
   long launchTime;
   long finishTime;
 
+  private String jobName;
+
   // private LocalFileSystem localFs;
   private BSPJobID jobId;
   final BSPMaster master;
@@ -71,14 +73,15 @@ class JobInProgress {
   int numBSPTasks = 0;
   int clusterSize;
 
-  public JobInProgress(BSPJobID jobId, Path jobFile, BSPMaster master, Configuration conf)
-      throws IOException {
+  public JobInProgress(BSPJobID jobId, Path jobFile, BSPMaster master,
+      Configuration conf) throws IOException {
     this.conf = conf;
     this.jobId = jobId;
     this.localFs = FileSystem.getLocal(conf);
     this.jobFile = jobFile;
     this.master = master;
-    this.status = new JobStatus(jobId, null, 0L, 0L, JobStatus.State.PREP.value());
+    this.status = new JobStatus(jobId, null, 0L, 0L,
+        JobStatus.State.PREP.value());
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -94,8 +97,10 @@ class JobInProgress {
     BSPJob job = new BSPJob(jobId, localJobFile.toString());
     this.numBSPTasks = job.getNumBspTask();
 
-    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
-        .getJobName());
+    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
+        job.getJobName());
+
+    this.setJobName(job.getJobName());
 
     status.setUsername(job.getUser());
     status.setStartTime(startTime);
@@ -141,10 +146,10 @@ class JobInProgress {
     return jobId;
   }
 
-  public synchronized TaskInProgress findTaskInProgress(TaskID id){
-    if(areTasksInited()){
-      for(TaskInProgress tip: tasks){
-        if(tip.getTaskId().equals(id)){
+  public synchronized TaskInProgress findTaskInProgress(TaskID id) {
+    if (areTasksInited()) {
+      for (TaskInProgress tip : tasks) {
+        if (tip.getTaskId().equals(id)) {
           return tip;
         }
       }
@@ -152,7 +157,7 @@ class JobInProgress {
     return null;
   }
 
-  public synchronized boolean areTasksInited(){
+  public synchronized boolean areTasksInited() {
     return this.tasksInited;
   }
 
@@ -171,10 +176,10 @@ class JobInProgress {
       return;
     }
 
-    if(LOG.isDebugEnabled()){
+    if (LOG.isDebugEnabled()) {
       LOG.debug("numBSPTasks: " + numBSPTasks);
     }
-    
+
     // adjust number of map tasks to actual number of splits
     this.tasks = new TaskInProgress[numBSPTasks];
     for (int i = 0; i < numBSPTasks; i++) {
@@ -233,13 +238,14 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), superstepCounter, superstepCounter, superstepCounter, JobStatus.SUCCEEDED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(),
+          this.profile.getUser(), superstepCounter, superstepCounter,
+          superstepCounter, JobStatus.SUCCEEDED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
-      
+
       LOG.debug("Job successfully done.");
-      
+
       garbageCollect();
     }
   }
@@ -263,17 +269,18 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), superstepCounter, superstepCounter, superstepCounter, JobStatus.FAILED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(),
+          this.profile.getUser(), superstepCounter, superstepCounter,
+          superstepCounter, JobStatus.FAILED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
-      
+
       LOG.debug("Job failed.");
-      
+
       garbageCollect();
     }
   }
-  
+
   public synchronized void updateTaskStatus(TaskInProgress tip,
       TaskStatus taskStatus) {
     tip.updateStatus(taskStatus); // update tip
@@ -334,6 +341,20 @@ class JobInProgress {
    */
   int getNumRestarts() {
     return restartCount;
+  }
+
+  /**
+   * @param jobName the jobName to set
+   */
+  public void setJobName(String jobName) {
+    this.jobName = jobName;
+  }
+
+  /**
+   * @return the jobName
+   */
+  public String getJobName() {
+    return jobName;
   }
 
 }

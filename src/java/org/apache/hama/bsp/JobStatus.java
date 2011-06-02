@@ -33,7 +33,7 @@ import org.apache.hadoop.io.WritableFactory;
  */
 public class JobStatus implements Writable, Cloneable {
   public static final Log LOG = LogFactory.getLog(JobStatus.class);
-  
+
   static {
     WritableFactories.setFactory(JobStatus.class, new WritableFactory() {
       public Writable newInstance() {
@@ -42,19 +42,42 @@ public class JobStatus implements Writable, Cloneable {
     });
   }
 
-  public static enum State{
-    RUNNING(1),
-    SUCCEEDED(2),
-    FAILED(3),
-    PREP(4),
-    KILLED(5);
+  public static enum State {
+    RUNNING(1), SUCCEEDED(2), FAILED(3), PREP(4), KILLED(5);
     int s;
-    State(int s){
+
+    State(int s) {
       this.s = s;
     }
-    public int value(){
+
+    public int value() {
       return this.s;
     }
+
+    @Override
+    public String toString() {
+      String name = null;
+      switch (this) {
+        case RUNNING:
+          name = "RUNNING";
+          break;
+        case SUCCEEDED:
+          name = "SUCCEEDED";
+          break;
+        case FAILED:
+          name = "FAILED";
+          break;
+        case PREP:
+          name = "SETUP";
+          break;
+        case KILLED:
+          name = "KILLED";
+          break;
+      }
+
+      return name;
+    }
+
   }
 
   public static final int RUNNING = 1;
@@ -73,9 +96,10 @@ public class JobStatus implements Writable, Cloneable {
   private String schedulingInfo = "NA";
   private String user;
   private long superstepCount;
+  private String name;
 
   private long finishTime;
-  
+
   public JobStatus() {
   }
 
@@ -83,28 +107,28 @@ public class JobStatus implements Writable, Cloneable {
     this(jobid, user, progress, 0, runState);
   }
 
-  public JobStatus(BSPJobID jobid, String user, long progress, long cleanupProgress,
-      int runState) {
+  public JobStatus(BSPJobID jobid, String user, long progress,
+      long cleanupProgress, int runState) {
     this(jobid, user, 0, progress, cleanupProgress, runState);
   }
 
-  public JobStatus(BSPJobID jobid, String user, long setupProgress, long progress,
-      long cleanupProgress, int runState) {
+  public JobStatus(BSPJobID jobid, String user, long setupProgress,
+      long progress, long cleanupProgress, int runState) {
     this(jobid, user, 0, progress, cleanupProgress, runState, 0);
   }
 
-  public JobStatus(BSPJobID jobid, String user, long setupProgress, long progress,
-      long cleanupProgress, int runState, long superstepCount) {
+  public JobStatus(BSPJobID jobid, String user, long setupProgress,
+      long progress, long cleanupProgress, int runState, long superstepCount) {
     this.jobid = jobid;
     this.setupProgress = setupProgress;
     this.progress = progress;
     this.cleanupProgress = cleanupProgress;
     this.runState = runState;
-    this.state = State.values()[runState-1];
+    this.state = State.values()[runState - 1];
     this.superstepCount = superstepCount;
     this.user = user;
   }
-  
+
   public BSPJobID getJobID() {
     return jobid;
   }
@@ -133,11 +157,11 @@ public class JobStatus implements Writable, Cloneable {
     this.setupProgress = p;
   }
 
-  public JobStatus.State getState(){
+  public JobStatus.State getState() {
     return this.state;
   }
 
-  public void setState(JobStatus.State state){
+  public void setState(JobStatus.State state) {
     this.state = state;
   }
 
@@ -152,11 +176,11 @@ public class JobStatus implements Writable, Cloneable {
   public synchronized long getSuperstepCount() {
     return superstepCount;
   }
-  
+
   public synchronized void setSuperstepCount(long superstepCount) {
     this.superstepCount = superstepCount;
   }
-  
+
   public synchronized void setStartTime(long startTime) {
     this.startTime = startTime;
   }
@@ -168,14 +192,14 @@ public class JobStatus implements Writable, Cloneable {
   public synchronized void setFinishTime(long finishTime) {
     this.finishTime = finishTime;
   }
-  
+
   /**
    * Get the finish time of the job.
    */
-  public synchronized long getFinishTime() { 
+  public synchronized long getFinishTime() {
     return finishTime;
   }
-  
+
   /**
    * @param user The username of the job
    */
@@ -236,6 +260,20 @@ public class JobStatus implements Writable, Cloneable {
     this.user = Text.readString(in);
     this.schedulingInfo = Text.readString(in);
     this.superstepCount = in.readLong();
+  }
+
+  /**
+   * @param name the name to set
+   */
+  public synchronized void setName(String name) {
+    this.name = name;
+  }
+
+  /**
+   * @return the name
+   */
+  public synchronized String getName() {
+    return name;
   }
 
 }
