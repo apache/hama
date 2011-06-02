@@ -32,9 +32,10 @@ See http://forrest.apache.org/docs/linking.html for more info.
 <site label="Hama" href="" xmlns="http://apache.org/forrest/linkmap/1.0">
 
   <docs label="Home"> 
-    <overview  label="Overview"           href="index.html" />
-    <whoweare  label="Who we are?"        href="who_we_are.html" />
-    <privacy   label="Privacy Policy"     href="privacy_policy.html" />
+    <overview  label="Overview"            href="index.html" />
+    <releases label="Downloads"          href="downloads.html" />
+    <whoweare  label="Who we are?"    href="who_we_are.html" />
+    <privacy   label="Privacy Policy"       href="privacy_policy.html" />
   </docs>
 
   <docs label="Documentation">

@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!--
+  Copyright 2002-2004 The Apache Software Foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V2.0//EN" 
+"http://forrest.apache.org/dtd/document-v20.dtd">
+
+<document>
+  
+  <header>
+    <title>Apache Hama Downloads</title>
+  </header>
+  <body>
+
+  <section>
+    <title>Download</title>
+    <p>Use the links below to download Apache Hama releases from one of our mirrors. 
+    You should verify the integrity of the files using the signatures and checksums available from this page.
+    <br/><br/>
+    Apache Hama releases are available under the 
+    <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.
+    See the NOTICE.txt file contained in each release artifact for applicable copyright attribution notices.
+    <br/><br/>
+    <a href="http://www.apache.org/dyn/closer.cgi/incubator/hama">Download a release now!</a>
+    </p>
+  </section>
+    
+  <section>
+    <title>PGP Signatures</title>
+    <p>All of the release distribution package have been digitally signed (using PGP or GPG) by 
+    the Apache Group members that constructed them. There will be an accompanying distribution.asc file 
+    in the same directory as the distribution.
+    The PGP keys can be found in the MIT key repository (hkp://pgp.mit.edu), 
+    the OpenPGP Public Key repository (hkp://subkeys.pgp.net), and within this project's KEYS file, 
+    which is located within each download directory.
+    <br/><br/>
+    Always use the signature files to verify the authenticity of the distribution, e.g.,
+    <pre>  % pgpk -a KEYS
+  % pgpv hama-x.x.x.tar.gz.asc</pre>
+    or,
+    <pre>  % gpg --import KEYS
+  % gpg --verify hama-x.x.x.tar.gz.asc</pre>
+    We offer MD5 hashes as an alternative to validate the integrity of the downloaded files.
+    A unix program called md5 or md5sum is included in many unix distributions.
+    It is also available as part of <a href="http://www.gnu.org/software/coreutils">GNU Core Utilities package</a>.
+    </p>
+  </section>
+  
+  </body>
+  
+</document>
