@@ -75,7 +75,7 @@ public class RunJar {
   }
 
   /**
-   * Run a Hadoop job jar. If the main class is not in the jar's manifest, then
+   * Run a Hama job jar. If the main class is not in the jar's manifest, then
    * it must be provided on the command line.
    */
   public static void main(String[] args) throws Throwable {
