@@ -51,6 +51,12 @@
     <description>local directory for temporal store</description> 
   </property>
   <property>
+    <name>bsp.http.infoserver.port</name>
+    <value>50013</value>
+    <description>The port where the web-interface can be seen.
+    </description>
+  </property>
+  <property>
   <name>bsp.groom.report.address</name>
   <value>127.0.0.1:0</value>
   <description>The interface and port that groom server listens on. 
@@ -122,7 +128,7 @@
     </description>
   </property>
   <property>
-    <name>hama.zookeeper.property.clientPort</name>
+    <name>zookeeper.client.port</name>
     <value>21810</value>
     <description>Property from ZooKeeper's config zoo.cfg.
     The port at which the clients will connect.
