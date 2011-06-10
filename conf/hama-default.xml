@@ -57,13 +57,13 @@
     </description>
   </property>
   <property>
-  <name>bsp.groom.report.address</name>
-  <value>127.0.0.1:0</value>
-  <description>The interface and port that groom server listens on. 
-  Since it is only connected to by the tasks, it uses the local interface.
-  EXPERT ONLY. Should only be changed if your host does not have the loopback 
-  interface.</description>
-</property>
+    <name>bsp.groom.report.address</name>
+    <value>127.0.0.1:0</value>
+    <description>The interface and port that groom server listens on. 
+    Since it is only connected to by the tasks, it uses the local interface.
+    EXPERT ONLY. Should only be changed if your host does not have the loopback 
+    interface.</description>
+  </property>
   <property>
     <name>bsp.system.dir</name>
     <value>${hadoop.tmp.dir}/bsp/system</value>
@@ -84,7 +84,6 @@
     For example, to enable verbose gc logging to a file named for the taskid in
     /tmp and to set the heap maximum to be a gigabyte, pass a 'value' of:
           -Xmx1024m -verbose:gc -Xloggc:/tmp/@taskid@.gc
-  
     The configuration variable bsp.child.ulimit can be used to control the
     maximum virtual memory of the child processes. 
     </description>
@@ -128,7 +127,7 @@
     </description>
   </property>
   <property>
-    <name>zookeeper.client.port</name>
+    <name>hama.zookeeper.property.clientPort</name>
     <value>21810</value>
     <description>Property from ZooKeeper's config zoo.cfg.
     The port at which the clients will connect.
