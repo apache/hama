@@ -30,7 +30,7 @@
 			ClusterStatus status, BSPMaster master) throws IOException {
 	out.print("<center>\n");
     out.print("<table border=\"2\" cellpadding=\"5\" cellspacing=\"2\">\n");
-    out.print("<tr><td align=\"center\" colspan=\"6\"><b>Task Trackers</b></td></tr>\n");
+    out.print("<tr><td align=\"center\" colspan=\"6\"><b>Groom Servers</b></td></tr>\n");
     out.print("<tr><td><b>Name</b></td>" + "<td><b>Host</b></td>"
         + "<td><b># running tasks</b></td></tr>\n");
     for (Map.Entry<String, String> entry : status.getActiveGroomNames()

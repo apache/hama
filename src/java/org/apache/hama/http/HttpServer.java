@@ -62,7 +62,7 @@ import org.mortbay.util.MultiException;
 public class HttpServer {
   public static final Log LOG = LogFactory.getLog(HttpServer.class);
 
-  static final String FILTER_INITIALIZER_PROPERTY = "hadoop.http.filter.initializers";
+  static final String FILTER_INITIALIZER_PROPERTY = "hama.http.filter.initializers";
 
   protected final Server webServer;
   protected final Connector listener;
@@ -140,8 +140,8 @@ public class HttpServer {
    */
   protected void addDefaultApps(ContextHandlerCollection parent,
       final String appDir) throws IOException {
-    // set up the context for "/logs/" if "hadoop.log.dir" property is defined.
-    String logDir = System.getProperty("hadoop.log.dir");
+    // set up the context for "/logs/" if "hama.log.dir" property is defined.
+    String logDir = System.getProperty("hama.log.dir");
     if (logDir != null) {
       Context logContext = new Context(parent, "/logs");
       logContext.setResourceBase(logDir);
