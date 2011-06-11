@@ -25,6 +25,7 @@
   ClusterStatus status = tracker.getClusterStatus(true);
   String trackerName = tracker.getBSPMasterName();
   JobStatus[] runningJobs = tracker.jobsToComplete();
+  JobStatus[] allJobs = tracker.getAllJobs();
 %>
 <%!private static DecimalFormat percentFormat = new DecimalFormat("##0.00");
  
@@ -34,7 +35,7 @@
         .format(((double) (status.getMaxTasks()) / status
             .getGroomServers())) : "-";
     out.print("<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\">\n"
-        + "<tr>" + "<th>Grooms</th><th>BSP Task Capacity</th>"
+        + "<tr>" + "<th>Groom Servers</th><th>BSP Task Capacity</th>"
         + "<th>Avg. Tasks/Node</th>"
         + "<th>Blacklisted Nodes</th></tr>\n");
     out.print("<tr><td><a href=\"machines.jsp?type=active\">"
@@ -68,13 +69,14 @@
   generateSummaryTable(out, status, tracker);
 %>
 <hr />
-<hr>
 
 <h2 id="running_jobs">Running Jobs</h2>
 <%=BSPServletUtil.generateJobTable("Running", runningJobs,
           30, 0)%>
 <hr> 
-
+<h2 id="running_jobs">All Jobs History</h2>
+<%=BSPServletUtil.generateJobTable("All", allJobs,
+          30, 0)%>
 <%
   out.println(BSPServletUtil.htmlFooter());
 %>
