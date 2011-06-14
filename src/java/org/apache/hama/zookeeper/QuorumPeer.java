@@ -120,6 +120,7 @@ public class QuorumPeer implements Constants {
     for (Entry<Object, Object> entry : properties.entrySet()) {
       String key = entry.getKey().toString().trim();
       String value = entry.getValue().toString().trim();
+ 
       if (key.startsWith("server.")) {
         int dot = key.indexOf('.');
         long id = Long.parseLong(key.substring(dot + 1));
@@ -278,5 +279,76 @@ public class QuorumPeer implements Constants {
       properties.setProperty(key, newValue.toString());
     }
     return properties;
+  }
+  
+  /**
+   * Return the ZK Quorum servers string given zk properties returned by
+   * makeZKProps
+   * @param properties
+   * @return Quorum servers String
+   */
+  public static String getZKQuorumServersString(Properties properties) {
+    String clientPort = null;
+    List<String> servers = new ArrayList<String>();
+
+    // The clientPort option may come after the server.X hosts, so we need to
+    // grab everything and then create the final host:port comma separated list.
+    boolean anyValid = false;
+    for (Entry<Object,Object> property : properties.entrySet()) {
+      String key = property.getKey().toString().trim();
+      String value = property.getValue().toString().trim();
+      if (key.equals("clientPort")) {
+        clientPort = value;
+      }
+      else if (key.startsWith("server.")) {
+        String host = value.substring(0, value.indexOf(':'));
+        servers.add(host);
+        try {
+          //noinspection ResultOfMethodCallIgnored
+          InetAddress.getByName(host);
+          anyValid = true;
+        } catch (UnknownHostException e) {
+          LOG.warn(StringUtils.stringifyException(e));
+        }
+      }
+    }
+
+    if (!anyValid) {
+      LOG.error("no valid quorum servers found in " + Constants.ZOOKEEPER_CONFIG_NAME);
+      return null;
+    }
+
+    if (clientPort == null) {
+      LOG.error("no clientPort found in " + Constants.ZOOKEEPER_CONFIG_NAME);
+      return null;
+    }
+
+    if (servers.isEmpty()) {
+      LOG.fatal("No server.X lines found in conf/zoo.cfg. Hama must have a " +
+                "ZooKeeper cluster configured for its operation.");
+      return null;
+    }
+
+    StringBuilder hostPortBuilder = new StringBuilder();
+    for (int i = 0; i < servers.size(); ++i) {
+      String host = servers.get(i);
+      if (i > 0) {
+        hostPortBuilder.append(',');
+      }
+      hostPortBuilder.append(host);
+      hostPortBuilder.append(':');
+      hostPortBuilder.append(clientPort);
+    }
+
+    return hostPortBuilder.toString();
+  }
+  
+  /**
+   * Return the ZK Quorum servers string given the specified configuration.
+   * @param conf
+   * @return Quorum servers
+   */
+  public static String getZKQuorumServersString(Configuration conf) {
+    return getZKQuorumServersString(makeZKProps(conf));
   }
 }
