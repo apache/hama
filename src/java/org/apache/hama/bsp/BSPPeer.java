@@ -35,6 +35,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.Constants;
+import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -47,7 +48,7 @@ import org.apache.zookeeper.data.Stat;
  * This class represents a BSP peer.
  */
 public class BSPPeer implements Watcher, BSPPeerInterface {
-  
+
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
 
   private Configuration conf;
@@ -58,7 +59,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   private volatile Integer mutex = 0;
 
   private final String bspRoot;
-  private final String zookeeperAddr;
+  private final String quorumServers;
 
   private final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
   private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
@@ -81,10 +82,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
     bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT);
-    zookeeperAddr = conf.get(Constants.ZOOKEEPER_QUORUM)
-        + ":"
-        + conf.getInt(Constants.ZOOKEPER_CLIENT_PORT,
-            Constants.DEFAULT_ZOOKEPER_CLIENT_PORT);
+    quorumServers = QuorumPeer.getZKQuorumServersString(conf);
+    LOG.debug("Quorum  " + quorumServers);
+
     // TODO: may require to dynamic reflect the underlying
     // network e.g. ip address, port.
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
@@ -95,8 +95,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public void reinitialize() {
     try {
       LOG.debug("reinitialize(): " + getPeerName());
-      server = RPC.getServer(this, peerAddress.getHostName(),
-          peerAddress.getPort(), conf);
+      server = RPC.getServer(this, peerAddress.getHostName(), peerAddress
+          .getPort(), conf);
       server.start();
       LOG.info(" BSPPeer address:" + peerAddress.getHostName() + " port:"
           + peerAddress.getPort());
@@ -105,7 +105,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     }
 
     try {
-      zk = new ZooKeeper(zookeeperAddr, 3000, this);
+      zk = new ZooKeeper(quorumServers, 3000, this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -115,7 +115,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       try {
         s = zk.exists(Constants.DEFAULT_ZOOKEEPER_ROOT, false);
       } catch (Exception e) {
-        LOG.error(s,e);
+        LOG.error(s, e);
       }
 
       if (s == null) {
@@ -337,8 +337,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   private InetSocketAddress getAddress(String peerName) {
     String[] peerAddrParts = peerName.split(":");
-    return new InetSocketAddress(peerAddrParts[0],
-        Integer.parseInt(peerAddrParts[1]));
+    return new InetSocketAddress(peerAddrParts[0], Integer
+        .parseInt(peerAddrParts[1]));
   }
 
   @Override
