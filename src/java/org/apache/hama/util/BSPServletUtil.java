@@ -46,7 +46,7 @@ public class BSPServletUtil extends ServletUtil {
    * @param jobs vector of jobs to be displayed in table.
    * @param refresh refresh interval to be used in jobdetails page.
    * @param rowId beginning row id to be used in the table.
-   * @return
+   * @return generated HTML
    * @throws IOException
    */
   public static String generateJobTable(String label, JobStatus[] jobs,
