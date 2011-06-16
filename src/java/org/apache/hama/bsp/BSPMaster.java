@@ -247,7 +247,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     startTime = System.currentTimeMillis();
     this.masterServer = RPC.getServer(this, host, port, conf);
 
-    infoPort = conf.getInt("bsp.http.infoserver.port", 50013);
+    infoPort = conf.getInt("bsp.http.infoserver.port", 40013);
 
     infoServer = new HttpServer("bspmaster", host, infoPort, true, conf);
     infoServer.setAttribute("bsp.master", this);

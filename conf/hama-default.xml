@@ -47,7 +47,7 @@
   </property>
   <property>
     <name>bsp.http.infoserver.port</name>
-    <value>50013</value>
+    <value>40013</value>
     <description>The port where the web-interface can be seen.
     </description>
   </property>
