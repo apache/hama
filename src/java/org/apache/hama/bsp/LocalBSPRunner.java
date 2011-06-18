@@ -48,7 +48,7 @@ import org.apache.zookeeper.KeeperException;
  * 
  */
 public class LocalBSPRunner implements JobSubmissionProtocol {
-  
+
   public static final Log LOG = LogFactory.getLog(LocalBSPRunner.class);
 
   private static final String IDENTIFIER = "localrunner";
@@ -201,7 +201,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       try {
         bsp.bsp(groom);
       } catch (Exception e) {
-        LOG.error("Exception during BSP execution!",e);
+        LOG.error("Exception during BSP execution!", e);
       }
     }
 
@@ -228,10 +228,10 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         try {
           future.get();
         } catch (InterruptedException e) {
-          LOG.error("Exception during BSP execution!",e);
+          LOG.error("Exception during BSP execution!", e);
           success = false;
         } catch (ExecutionException e) {
-          LOG.error("Exception during BSP execution!",e);
+          LOG.error("Exception during BSP execution!", e);
           success = false;
         }
       }
@@ -248,7 +248,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   }
 
   class LocalGroom implements BSPPeerProtocol {
-    private static final String FIRST_THREAD_NAME = "pool-1-thread-1";
     private long superStepCount = 0;
     private final ConcurrentLinkedQueue<BSPMessage> localMessageQueue = new ConcurrentLinkedQueue<BSPMessage>();
     // outgoing queue
@@ -316,11 +315,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     private void incrementSuperSteps() {
-      // just let the first thread set the supersteps
-      if (Thread.currentThread().getName().equals(FIRST_THREAD_NAME)) {
-        currentJobStatus.setprogress(superStepCount++);
-        currentJobStatus.setSuperstepCount(currentJobStatus.progress());
-      }
+      currentJobStatus.setprogress(superStepCount++);
+      currentJobStatus.setSuperstepCount(currentJobStatus.progress());
     }
 
     @Override
