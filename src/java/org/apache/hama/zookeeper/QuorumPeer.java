@@ -179,7 +179,7 @@ public class QuorumPeer implements Constants {
 
     // Set the max session timeout from the provided client-side timeout
     zkProperties.setProperty("maxSessionTimeout",
-        conf.get("hama.zookeeper.session.timeout", "1200000"));
+        conf.get(Constants.ZOOKEEPER_SESSION_TIMEOUT, "1200000"));
     
     // Directly map all of the hama.zookeeper.property.KEY properties.
     for (Entry<String, String> entry : conf) {
@@ -196,8 +196,8 @@ public class QuorumPeer implements Constants {
     }
 
     // If clientPort is not set, assign the default
-    if (zkProperties.getProperty(ZOOKEPER_CLIENT_PORT) == null) {
-      zkProperties.put(ZOOKEPER_CLIENT_PORT, DEFAULT_ZOOKEPER_CLIENT_PORT);
+    if (zkProperties.getProperty(ZOOKEEPER_CLIENT_PORT) == null) {
+      zkProperties.put(ZOOKEEPER_CLIENT_PORT, DEFAULT_ZOOKEEPER_CLIENT_PORT);
     }
 
     // Create the server.X properties.

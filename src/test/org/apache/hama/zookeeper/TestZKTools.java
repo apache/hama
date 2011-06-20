@@ -27,7 +27,7 @@ public class TestZKTools extends TestCase {
   public void testZKProps() {
     HamaConfiguration conf = new HamaConfiguration();
     conf.set(Constants.ZOOKEEPER_QUORUM, "test.com:123");
-    conf.set(Constants.ZOOKEPER_CLIENT_PORT, "2222");
+    conf.set(Constants.ZOOKEEPER_CLIENT_PORT, "2222");
 
     assertEquals("test.com:2222", QuorumPeer.getZKQuorumServersString(conf));
   }

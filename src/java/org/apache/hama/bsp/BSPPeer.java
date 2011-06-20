@@ -105,7 +105,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     }
 
     try {
-      zk = new ZooKeeper(quorumServers, 3000, this);
+      zk = new ZooKeeper(quorumServers, conf.getInt(
+          Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
