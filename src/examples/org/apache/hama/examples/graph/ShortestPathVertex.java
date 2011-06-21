@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples.sssp;
+package org.apache.hama.examples.graph;
 
 public final class ShortestPathVertex {
 

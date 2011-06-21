@@ -4,6 +4,7 @@ Release 0.3 - Unreleased
 
   NEW FEATURES
 
+    HAMA-395: Add PageRank example (Thomas Jungblut via edwardyoon)
     HAMA-372: Add Web UI for Job monitoring (Thomas Jungblut via edwardyoon)
     HAMA-359: Add shortest path finding example (Thomas Jungblut via edwardyoon)
     HAMA-374: Add LocalBSPRunner (Thomas Jungblut via edwardyoon)
