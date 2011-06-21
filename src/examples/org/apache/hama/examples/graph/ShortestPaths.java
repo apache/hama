@@ -15,12 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples.sssp;
-
-import static org.apache.hama.examples.sssp.ShortestPathsIOUtils.mapAdjacencyList;
-import static org.apache.hama.examples.sssp.ShortestPathsIOUtils.partition;
-import static org.apache.hama.examples.sssp.ShortestPathsIOUtils.printOutput;
-import static org.apache.hama.examples.sssp.ShortestPathsIOUtils.saveVertexMap;
+package org.apache.hama.examples.graph;
 
 import java.io.IOException;
 import java.util.Deque;
@@ -35,7 +30,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPPeerProtocol;
@@ -45,17 +39,8 @@ import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.examples.RandBench;
 import org.apache.zookeeper.KeeperException;
 
-public class ShortestPaths extends BSP {
-
+public class ShortestPaths extends ShortestPathsBase {
   public static final Log LOG = LogFactory.getLog(ShortestPaths.class);
-
-  public static final String BSP_PEERS = "bsp.peers";
-  public static final String SHORTEST_PATHS_START_VERTEX_ID = "shortest.paths.start.vertex.id";
-  public static final String PARTED = "parted";
-  public static final String IN_PATH = "in.path.";
-  public static final String OUT_PATH = "out.path";
-  public static final String NAME_VALUE_SEPARATOR = ":";
-  public static final String MASTER_TASK = "master.groom";
 
   private Configuration conf;
   private Map<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList = new HashMap<ShortestPathVertex, List<ShortestPathVertex>>();
@@ -174,10 +159,9 @@ public class ShortestPaths extends BSP {
     List<ShortestPathVertex> outgoingEdges = adjacencyList.get(id);
     for (ShortestPathVertex adjacent : outgoingEdges) {
       int mod = Math.abs((adjacent.getId() % peer.getAllPeerNames().length));
-      peer.send(peerNames[mod],
-          new IntegerMessage(adjacent.getName(),
-              id.getCost() == Integer.MAX_VALUE ? id.getCost() : id.getCost()
-                  + adjacent.getWeight()));
+      peer.send(peerNames[mod], new IntegerMessage(adjacent.getName(), id
+          .getCost() == Integer.MAX_VALUE ? id.getCost() : id.getCost()
+          + adjacent.getWeight()));
     }
   }
 
@@ -259,11 +243,12 @@ public class ShortestPaths extends BSP {
     bsp.setNumBspTask(cluster.getGroomServers());
 
     long startTime = System.currentTimeMillis();
-    bsp.waitForCompletion(true);
-    System.out.println("Job Finished in "
-        + (double) (System.currentTimeMillis() - startTime) / 1000.0
-        + " seconds");
-    printOutput(FileSystem.get(conf), conf);
+    if (bsp.waitForCompletion(true)) {
+      System.out.println("Job Finished in "
+          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + " seconds");
+      printOutput(FileSystem.get(conf), conf);
+    }
   }
 
 }

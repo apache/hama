@@ -15,13 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples.sssp;
-
-import static org.apache.hama.examples.sssp.ShortestPaths.BSP_PEERS;
-import static org.apache.hama.examples.sssp.ShortestPaths.IN_PATH;
-import static org.apache.hama.examples.sssp.ShortestPaths.NAME_VALUE_SEPARATOR;
-import static org.apache.hama.examples.sssp.ShortestPaths.OUT_PATH;
-import static org.apache.hama.examples.sssp.ShortestPaths.PARTED;
+package org.apache.hama.examples.graph;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,10 +33,19 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeerProtocol;
 
-class ShortestPathsIOUtils {
-
+public abstract class ShortestPathsBase extends BSP {
+  
+  public static final String BSP_PEERS = "bsp.peers";
+  public static final String SHORTEST_PATHS_START_VERTEX_ID = "shortest.paths.start.vertex.id";
+  public static final String PARTED = "parted";
+  public static final String IN_PATH = "in.path.";
+  public static final String OUT_PATH = "out.path";
+  public static final String NAME_VALUE_SEPARATOR = ":";
+  public static final String MASTER_TASK = "master.groom";
+  
   /**
    * When finished we just writing a sequencefile of the vertex name and the
    * cost.

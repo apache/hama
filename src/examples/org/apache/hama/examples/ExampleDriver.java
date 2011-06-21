@@ -20,7 +20,8 @@
 package org.apache.hama.examples;
 
 import org.apache.hadoop.util.ProgramDriver;
-import org.apache.hama.examples.sssp.ShortestPaths;
+import org.apache.hama.examples.graph.PageRank;
+import org.apache.hama.examples.graph.ShortestPaths;
 
 public class ExampleDriver {
 
@@ -31,7 +32,8 @@ public class ExampleDriver {
       pgd.addClass("bench", RandBench.class, "Random Communication Benchmark");
       pgd.addClass("test", SerializePrinting.class, "Serialize Printing Test");
       pgd.addClass("sssp", ShortestPaths.class, "Single Source Shortest Path");
-
+      pgd.addClass("pagerank", PageRank.class, "PageRank");
+      
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();
