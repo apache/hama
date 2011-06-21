@@ -35,6 +35,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.Constants;
+import org.apache.hama.util.Bytes;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -175,6 +176,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   @Override
   public void sync() throws IOException, KeeperException, InterruptedException {
     enterBarrier();
+    long startTime = System.currentTimeMillis();
     Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = this.outgoingQueues
         .entrySet().iterator();
 
@@ -194,14 +196,16 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       peer.put(bundle);
     }
 
-    waitForSync();
-    Thread.sleep(100);
+    if ((System.currentTimeMillis() - startTime) < 200) {
+      Thread.sleep(200);
+    }
 
+    leaveBarrier();
+    currentTaskStatus.incrementSuperstepCount();
+
+    startTime = System.currentTimeMillis();
     // Clear outgoing queues.
     clearOutgoingQueues();
-
-    currentTaskStatus.incrementSuperstepCount();
-    leaveBarrier();
 
     // Add non-processed messages from this iteration for the next's queue.
     while (!localQueue.isEmpty()) {
@@ -211,18 +215,20 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     // Switch local queues.
     localQueue = localQueueForNextIteration;
     localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
+
+    // TODO: This is a quite tricky solution of HAMA-387.
+    // When zk.getChildren() response is slower than 200 milliseconds,
+    // BSP system will be hanged.
+    if ((System.currentTimeMillis() - startTime) < 200) {
+      Thread.sleep(200); // at least wait
+    }
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
-    LOG.debug("[" + getPeerName() + "] enter the enterbarrier");
-    try {
-      zk.create(bspRoot + "/" + getPeerName(), new byte[0],
-          Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-    } catch (KeeperException e) {
-      LOG.error("Exception while entering barrier!", e);
-    } catch (InterruptedException e) {
-      LOG.error("Exception while entering barrier!", e);
-    }
+    LOG.debug("[" + getPeerName() + "] enter the enterbarrier: "
+        + this.getSuperstepCount());
+    zk.create(bspRoot + "/" + getPeerName(), Bytes.toBytes(this
+        .getSuperstepCount()), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 
     while (true) {
       synchronized (mutex) {
@@ -237,39 +243,15 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     }
   }
 
-  protected boolean waitForSync() throws KeeperException, InterruptedException {
-    try {
-      zk.create(bspRoot + "/" + getPeerName() + "-data", new byte[0],
-          Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-    } catch (KeeperException e) {
-      LOG.error("Exception while waiting for barrier sync!", e);
-    } catch (InterruptedException e) {
-      LOG.error("Exception while waiting for barrier sync!", e);
-    }
-
-    while (true) {
-      synchronized (mutex) {
-        List<String> list = zk.getChildren(bspRoot, true);
-        if (list.size() < (jobConf.getNumBspTask() * 2)) {
-          mutex.wait();
-        } else {
-          return true;
-        }
-      }
-    }
-  }
-
   protected boolean leaveBarrier() throws KeeperException, InterruptedException {
     zk.delete(bspRoot + "/" + getPeerName(), 0);
-    zk.delete(bspRoot + "/" + getPeerName() + "-data", 0);
-
     while (true) {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
+
         if (list.size() > 0) {
           mutex.wait();
         } else {
-          LOG.debug("[" + getPeerName() + "] leave from the leaveBarrier");
           return true;
         }
       }
