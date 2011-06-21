@@ -216,9 +216,11 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     localQueue = localQueueForNextIteration;
     localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
 
-    // TODO: This is a quite tricky solution of HAMA-387.
+    // TODO: This is a quite temporary solution of HAMA-387.
     // When zk.getChildren() response is slower than 200 milliseconds,
     // BSP system will be hanged.
+    
+    // We have to consider another way to avoid this problem. 
     if ((System.currentTimeMillis() - startTime) < 200) {
       Thread.sleep(200); // at least wait
     }
