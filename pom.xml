@@ -97,6 +97,32 @@
     </dependency>
     <dependency>
       <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty-annotations</artifactId>
+      <version>6.1H.22</version>
+      <exclusions>
+        <exclusion>
+          <groupId>geronimo-spec</groupId>
+          <artifactId>geronimo-spec-jta</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.geronimo.specs</groupId>
+          <artifactId>geronimo-annotation_1.0_spec</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mortbay.jetty</groupId>
+      <artifactId>jetty-naming</artifactId>
+      <version>6.1H.22</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.mail</groupId>
+          <artifactId>mail</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mortbay.jetty</groupId>
       <artifactId>jetty-util</artifactId>
       <version>6.1H.22</version>
     </dependency>
@@ -104,17 +130,112 @@
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-core</artifactId>
       <version>0.20.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>ant</groupId>
+          <artifactId>ant</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-el</groupId>
+          <artifactId>commons-el</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-httpclient</groupId>
+          <artifactId>commons-httpclient</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-net</groupId>
+          <artifactId>commons-net</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jdt</groupId>
+          <artifactId>core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>hsqldb</groupId>
+          <artifactId>hsqldb</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>oro</groupId>
+          <artifactId>oro</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>tomcat</groupId>
+          <artifactId>jasper-runtime</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>tomcat</groupId>
+          <artifactId>jasper-compiler</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jets3t</groupId>
+          <artifactId>jets3t</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jsp-api-2.1</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jsp-2.1</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>servlet-api-2.5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>xmlenc</groupId>
+          <artifactId>xmlenc</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.sf.kosmosfs</groupId>
+          <artifactId>kfs</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-test</artifactId>
       <version>0.20.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.ftpserver</groupId>
+          <artifactId>ftplet-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.ftpserver</groupId>
+          <artifactId>ftpserver-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.ftpserver</groupId>
+          <artifactId>ftpserver-deprecated</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.mina</groupId>
+          <artifactId>mina-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>3.8.1</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.5.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
@@ -148,6 +269,10 @@
         <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>jline</groupId>
+          <artifactId>jline</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -202,7 +327,6 @@
                   <outputDirectory>${basedir}/lib</outputDirectory>
                   <overWriteReleases>false</overWriteReleases>
                   <overWriteSnapshots>true</overWriteSnapshots>
-                  <excludeTransitive>true</excludeTransitive>
                 </configuration>
               </execution>
             </executions>
