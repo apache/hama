@@ -17,11 +17,10 @@
  */
 package org.apache.hama.bsp;
 
+/**
+ * A custom exception class for Directive.
+ */
 public class DirectiveException extends RuntimeException{
-
-  /**
-   * 
-   */
   private static final long serialVersionUID = -8052582046894492822L;
 
   public DirectiveException(){ 

@@ -25,8 +25,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 
+/**
+ * Reports status of GroomServer.
+ */
 public class ReportGroomStatusDirective extends Directive implements Writable {
-
   public static final Log LOG = LogFactory.getLog(ReportGroomStatusDirective.class);
 
   private GroomServerStatus status;

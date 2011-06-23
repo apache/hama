@@ -21,6 +21,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+/**
+ * A message that consists of a byte tag and a byte data.
+ */
 public class ByteMessage extends BSPMessage {
 
   private byte[] tag;

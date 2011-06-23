@@ -346,12 +346,12 @@ public class HttpServer {
     }
     if (needClientAuth) {
       // setting up SSL truststore for authenticating clients
-      System.setProperty("javax.net.ssl.trustStore",
-          sslConf.get("ssl.server.truststore.location", ""));
-      System.setProperty("javax.net.ssl.trustStorePassword",
-          sslConf.get("ssl.server.truststore.password", ""));
-      System.setProperty("javax.net.ssl.trustStoreType",
-          sslConf.get("ssl.server.truststore.type", "jks"));
+      System.setProperty("javax.net.ssl.trustStore", sslConf.get(
+          "ssl.server.truststore.location", ""));
+      System.setProperty("javax.net.ssl.trustStorePassword", sslConf.get(
+          "ssl.server.truststore.password", ""));
+      System.setProperty("javax.net.ssl.trustStoreType", sslConf.get(
+          "ssl.server.truststore.type", "jks"));
     }
     SslSocketConnector sslListener = new SslSocketConnector();
     sslListener.setHost(addr.getHostName());

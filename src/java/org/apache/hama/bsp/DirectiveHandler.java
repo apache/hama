@@ -17,6 +17,9 @@
  */
 package org.apache.hama.bsp;
 
+/**
+ * A DirectiveHandler interface.
+ */
 public interface DirectiveHandler{
 
   /**

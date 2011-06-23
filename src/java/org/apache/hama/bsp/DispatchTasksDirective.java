@@ -30,6 +30,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
+/**
+ * Handles the tasks dispatching between the BSPMaster and the GroomServers.
+ */
 public final class DispatchTasksDirective extends Directive implements Writable {
 
   public static final Log LOG = LogFactory.getLog(DispatchTasksDirective.class);
@@ -37,8 +40,10 @@ public final class DispatchTasksDirective extends Directive implements Writable 
   private Map<String, String> groomServerPeers;
   private GroomServerAction[] actions;
 
-  public DispatchTasksDirective(){ super(); }
-  
+  public DispatchTasksDirective() {
+    super();
+  }
+
   public DispatchTasksDirective(Map<String, String> groomServerPeers,
       GroomServerAction[] actions) {
     super(Directive.Type.Request);
@@ -66,8 +71,8 @@ public final class DispatchTasksDirective extends Directive implements Writable 
         action.write(out);
       }
     }
-    String[] groomServerNames = groomServerPeers.keySet().toArray(
-        new String[0]);
+    String[] groomServerNames = groomServerPeers.keySet()
+        .toArray(new String[0]);
     WritableUtils.writeCompressedStringArray(out, groomServerNames);
 
     List<String> groomServerAddresses = new ArrayList<String>(
@@ -96,8 +101,7 @@ public final class DispatchTasksDirective extends Directive implements Writable 
       this.actions = null;
     }
     String[] groomServerNames = WritableUtils.readCompressedStringArray(in);
-    String[] groomServerAddresses = WritableUtils
-        .readCompressedStringArray(in);
+    String[] groomServerAddresses = WritableUtils.readCompressedStringArray(in);
     groomServerPeers = new HashMap<String, String>(groomServerNames.length);
 
     for (int i = 0; i < groomServerNames.length; i++) {
