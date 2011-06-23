@@ -11,7 +11,8 @@ Release 0.3 - Unreleased
     HAMA-380: Add BSPMessageBundle to reduce RPC overhead (Miklos Erdelyi via edwardyoon)
     
   BUG FIXES
-
+ 
+    HAMA-405: Fix NoClassDefFoundErrors (Joseph Boyd via edwardyoon)
     HAMA-404: LocalBSPRunner returns wrong superstep numbers (Thomas Jungblut via edwardyoon)
     HAMA-396: BSPPeer's ZK object should be constructed with listed quorum servers (edwardyoon)
     HAMA-391: Refactor Exception.printStackTrace() to LOG.error(Exception) (Thomas Jungblut via edwardyoon)
