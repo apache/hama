@@ -21,6 +21,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+/**
+ * A message that consists of a int tag and a double data. 
+ */
 public class IntegerDoubleMessage extends BSPMessage {
 
   int tag;

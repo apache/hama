@@ -21,6 +21,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+/**
+ * A message that consists of a string tag and a boolean value. 
+ */
 public class BooleanMessage extends BSPMessage {
 
   String tag;

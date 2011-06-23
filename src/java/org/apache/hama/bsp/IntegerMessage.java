@@ -21,6 +21,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+/**
+ * A message that consists of a string tag and a int data. 
+ */
 public class IntegerMessage extends BSPMessage {
 
   String tag;

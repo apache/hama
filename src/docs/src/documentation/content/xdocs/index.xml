@@ -28,7 +28,7 @@
       <title> Overview </title>
       <p>
       <strong>Hama</strong> is a distributed computing framework based on 
-      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations, 
+      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations, such as Google's Pregel, 
       Currently being incubated as one of the incubator project by the Apache Software Foundation.
       </p>
     </section>
@@ -48,7 +48,8 @@
      <section>
       <title> Getting Involved </title>
       <p>
-      Hama is an open source volunteer project under the Apache Software Foundation. We encourage you to learn about the project and contribute your expertise. Here are some starter links: <br/>
+      Hama is an open source volunteer project under the Apache Software Foundation. We encourage you to learn about the project and contribute your expertise. 
+      Here are some starter links: <br/>
       </p>
       <ul>
         <li>See our <a href="http://wiki.apache.org/hama/HowToContribute">How to Contribute to Hama</a> page</li>
@@ -58,6 +59,16 @@
     
     <section>
     <title>Recent News</title>
+       <section>
+       <title>July 1, 2011: release 0.3.0 available</title>
+       <ul>
+         <li>Added LockBSPRunner</li>
+         <li>Added web UI for BSP cluster and job monitoring</li>
+         <li>Added more practical examples e.g., Shortest Path Problem, PageRank</li>
+         <li>Performance has improved by more than 25% with BSPMessageBundle</li>
+         <li>Switched from Ant to Maven</li>
+       </ul>
+       </section>    
        <section>
        <title>June 2, 2011: release 0.2.0 available</title>
        <ul>
@@ -69,7 +80,7 @@
        <section>
        <title>Apr 30, 2010: Introduced BSP Worldwide</title>
        <p>We're introduced in the <a href="http://www.bsp-worldwide.org/bspww3000.html">BSP Worldwide</a>.</p>
-       </section>     
+       </section>
        <section>
        <title>May 20, 2008: Accept Hama to be a Apache incubator project</title>
        <p>The Incubator PMC have voted to accept Hama to be a Apache incubator project.</p>
