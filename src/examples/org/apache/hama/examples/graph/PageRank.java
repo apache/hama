@@ -153,7 +153,7 @@ public class PageRank extends PageRankBase {
     List<PageRankVertex> outgoingEdges = adjacencyList.get(v);
     for (PageRankVertex adjacent : outgoingEdges) {
       int mod = Math.abs(adjacent.getId() % peerNames.length);
-      // send a message of the tentative pagerank devided by the size of
+      // send a message of the tentative pagerank divided by the size of
       // the outgoing edges to all adjacents
       peer.send(peerNames[mod], new DoubleMessage(adjacent.getUrl(),
           tentativePagerank.get(v) / outgoingEdges.size()));
@@ -164,8 +164,8 @@ public class PageRank extends PageRankBase {
   public void setConf(Configuration conf) {
     this.conf = conf;
     numOfVertices = Integer.parseInt(conf.get("num.vertices"));
-    ALPHA = 0.15 / (double) numOfVertices;
     DAMPING_FACTOR = Double.parseDouble(conf.get("damping.factor"));
+    ALPHA = (1 - DAMPING_FACTOR) / (double) numOfVertices;
     EPSILON = Double.parseDouble(conf.get("epsilon.error"));
     MAX_ITERATIONS = Integer.parseInt(conf.get("max.iterations"));
     peerNames = conf.get(ShortestPaths.BSP_PEERS).split(";");
