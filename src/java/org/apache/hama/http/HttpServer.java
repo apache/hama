@@ -49,7 +49,7 @@ import org.mortbay.jetty.servlet.FilterMapping;
 import org.mortbay.jetty.servlet.ServletHandler;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.jetty.webapp.WebAppContext;
-import org.mortbay.thread.QueuedThreadPool;
+import org.mortbay.thread.BoundedThreadPool;
 import org.mortbay.util.MultiException;
 
 /**
@@ -98,7 +98,7 @@ public class HttpServer {
     listener.setPort(port);
     webServer.addConnector(listener);
 
-    webServer.setThreadPool(new QueuedThreadPool());
+    webServer.setThreadPool(new BoundedThreadPool());
 
     final String appDir = getWebAppsPath();
     ContextHandlerCollection contexts = new ContextHandlerCollection();
@@ -302,7 +302,7 @@ public class HttpServer {
    * Set the min, max number of worker threads (simultaneous connections).
    */
   public void setThreads(int min, int max) {
-    QueuedThreadPool pool = (QueuedThreadPool) webServer.getThreadPool();
+    BoundedThreadPool pool = (BoundedThreadPool) webServer.getThreadPool();
     pool.setMinThreads(min);
     pool.setMaxThreads(max);
   }
