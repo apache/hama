@@ -6,3 +6,6 @@ The Apache Software Foundation (http://www.apache.org/).
 
 This product includes JUnit under the Common Public License Version 1.0
 See http://www.junit.org/
+
+This product includes SLF4J software developed by QOS.ch. 
+Copyright c 2004-2008 QOS.ch. All rights reserved.
