@@ -153,7 +153,7 @@ public class PageRank extends PageRankBase {
     List<PageRankVertex> outgoingEdges = adjacencyList.get(v);
     for (PageRankVertex adjacent : outgoingEdges) {
       int mod = Math.abs(adjacent.getId() % peerNames.length);
-      // send a message of the tentative pagerank devided by the size of
+      // send a message of the tentative pagerank divided by the size of
       // the outgoing edges to all adjacents
       peer.send(peerNames[mod], new DoubleMessage(adjacent.getUrl(),
           tentativePagerank.get(v) / outgoingEdges.size()));
@@ -164,8 +164,8 @@ public class PageRank extends PageRankBase {
   public void setConf(Configuration conf) {
     this.conf = conf;
     numOfVertices = Integer.parseInt(conf.get("num.vertices"));
-    ALPHA = 0.15 / (double) numOfVertices;
     DAMPING_FACTOR = Double.parseDouble(conf.get("damping.factor"));
+    ALPHA = (1 - DAMPING_FACTOR) / (double) numOfVertices;
     EPSILON = Double.parseDouble(conf.get("epsilon.error"));
     MAX_ITERATIONS = Integer.parseInt(conf.get("max.iterations"));
     peerNames = conf.get(ShortestPaths.BSP_PEERS).split(";");
@@ -177,14 +177,17 @@ public class PageRank extends PageRankBase {
   }
 
   public static void printUsage() {
-    LOG.info("PageRank Example:");
-    LOG
-        .info("<damping factor> <epsilon error> <optional: output path> <optional: input path>");
+    System.out.println("PageRank Example:");
+    System.out
+        .println("<damping factor> <epsilon error> <optional: output path> <optional: input path>");
   }
 
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException {
-    printUsage();
+    if (args.length == 0) {
+      printUsage();
+      System.exit(-1);
+    }
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
     // set the defaults
@@ -192,8 +195,8 @@ public class PageRank extends PageRankBase {
     conf.set("epsilon.error", "0.000001");
 
     if (args.length < 2) {
-      LOG.info("You have to provide a damping factor and an error!");
-      LOG.info("Try using 0.85 0.001 as parameter!");
+      System.out.println("You have to provide a damping factor and an error!");
+      System.out.println("Try using 0.85 0.001 as parameter!");
       System.exit(-1);
     } else {
       conf.set("damping.factor", args[0]);
