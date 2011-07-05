@@ -23,6 +23,6 @@ package org.apache.hama.util;
 public class VersionInfo {
 
   public static void main(String[] args) {
-    System.out.println("Apache Hama - 0.3");
+    System.out.println("Apache Hama - 0.4");
   }
 }
