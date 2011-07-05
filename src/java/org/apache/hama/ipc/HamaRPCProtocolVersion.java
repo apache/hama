@@ -24,5 +24,5 @@ import org.apache.hadoop.ipc.VersionedProtocol;
  * changed, the versionID must be changed here.
  */
 public interface HamaRPCProtocolVersion extends VersionedProtocol {
-  public static final long versionID = 0L;
+  public static final long versionID = 1L;
 }
