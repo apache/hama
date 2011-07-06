@@ -9,3 +9,8 @@ See http://www.junit.org/
 
 This product includes SLF4J software developed by QOS.ch. 
 Copyright c 2004-2008 QOS.ch. All rights reserved.
+
+The javax.servlet package used by Jetty is copyright 
+Sun Microsystems, Inc and Apache Software Foundation. It is 
+distributed under the Common Development and Distribution License.
+See https://glassfish.dev.java.net/public/CDDLv1.0.html.
