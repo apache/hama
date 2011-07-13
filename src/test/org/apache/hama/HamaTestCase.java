@@ -64,7 +64,6 @@ public abstract class HamaTestCase extends TestCase {
     conf = new HamaConfiguration();
     conf.setStrings("bsp.local.dir", "/tmp/hama-test");
     conf.set("bsp.master.address", "localhost");
-    conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     conf.set("bsp.groom.report.address", "127.0.0.1:0");
   }
 
@@ -113,7 +112,7 @@ public abstract class HamaTestCase extends TestCase {
 
   protected Path getUnitTestdir(String testName) {
     return new Path(
-        conf.get(TEST_DIRECTORY_KEY, "test/build/data"), testName);
+        conf.get(TEST_DIRECTORY_KEY, "/tmp/hama-test/build/data"), testName);
   }
 
   /**

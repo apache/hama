@@ -34,7 +34,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
-import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.BSPPeer;
 
 public abstract class ShortestPathsBase extends BSP {
   
@@ -54,7 +54,7 @@ public abstract class ShortestPathsBase extends BSP {
    * @param adjacencyList
    * @throws IOException
    */
-  static void saveVertexMap(Configuration conf, BSPPeerProtocol peer,
+  static void saveVertexMap(Configuration conf, BSPPeer peer,
       Map<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList)
       throws IOException {
     Path outPath = new Path(conf.get(OUT_PATH) + Path.SEPARATOR
@@ -106,7 +106,7 @@ public abstract class ShortestPathsBase extends BSP {
    * @param adjacencyList
    * @param vertexLookupMap
    */
-  static void mapAdjacencyList(Configuration conf, BSPPeerProtocol peer,
+  static void mapAdjacencyList(Configuration conf, BSPPeer peer,
       Map<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList,
       Map<String, ShortestPathVertex> vertexLookupMap)
       throws FileNotFoundException, IOException {

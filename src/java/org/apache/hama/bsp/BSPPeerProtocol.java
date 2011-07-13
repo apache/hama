@@ -17,12 +17,16 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.Closeable;
 import java.io.IOException;
+
+import org.apache.hama.Constants;
 
 /**
  * Protocol that task child process uses to contact its parent process.
  */
-public interface BSPPeerProtocol extends BSPPeerInterface {
+public interface BSPPeerProtocol extends BSPRPCProtocolVersion, Closeable,
+    Constants {
 
   /** Called when a child task process starts, to get its task. */
   Task getTask(TaskAttemptID taskid) throws IOException;
@@ -45,5 +49,12 @@ public interface BSPPeerProtocol extends BSPPeerInterface {
 
   /** Report that the task encounted a local filesystem error. */
   void fsError(TaskAttemptID taskId, String message) throws IOException;
+
+  void incrementSuperstepCount(TaskAttemptID taskid) throws IOException;
+
+  /**
+   * @return the all BSPPeer names.
+   */
+  PeerNames getAllPeerNames();
 
 }

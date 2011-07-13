@@ -39,7 +39,6 @@ public interface BSPInterface extends Configurable {
    * @throws KeeperException
    * @throws InterruptedException
    */
-  public void bsp(BSPPeerProtocol bspPeer) throws IOException, KeeperException,
+  public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
       InterruptedException;
-
 }

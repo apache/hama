@@ -48,7 +48,6 @@ import org.apache.zookeeper.KeeperException;
  * 
  */
 public class LocalBSPRunner implements JobSubmissionProtocol {
-
   public static final Log LOG = LogFactory.getLog(LocalBSPRunner.class);
 
   private static final String IDENTIFIER = "localrunner";
@@ -65,7 +64,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         .newFixedThreadPool(threadPoolSize);
   }
 
-  protected HashMap<String, BSPPeerProtocol> localGrooms = new HashMap<String, BSPPeerProtocol>();
+  protected HashMap<String, LocalGroom> localGrooms = new HashMap<String, LocalGroom>();
   protected String jobFile;
   protected String jobName;
 
@@ -115,7 +114,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         JobStatus.RUNNING);
     for (int i = 0; i < threadPoolSize; i++) {
       String name = IDENTIFIER + " " + i;
-      BSPPeerProtocol localGroom = new LocalGroom(name);
+      LocalGroom localGroom = new LocalGroom(name);
       localGrooms.put(name, localGroom);
       futureList.add(threadPool.submit(new BSPRunner(conf, job, ReflectionUtils
           .newInstance(job.getBspClass(), conf), localGroom)));
@@ -127,7 +126,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   @Override
   public ClusterStatus getClusterStatus(boolean detailed) throws IOException {
     Map<String, String> map = new HashMap<String, String>();
-    for (Entry<String, BSPPeerProtocol> entry : localGrooms.entrySet()) {
+    for (Entry<String, LocalGroom> entry : localGrooms.entrySet()) {
       map.put(entry.getKey(), entry.getValue().getPeerName());
     }
     return new ClusterStatus(map, threadPoolSize, threadPoolSize, State.RUNNING);
@@ -185,10 +184,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     Configuration conf;
     BSPJob job;
     BSP bsp;
-    BSPPeerProtocol groom;
+    LocalGroom groom;
 
-    public BSPRunner(Configuration conf, BSPJob job, BSP bsp,
-        BSPPeerProtocol groom) {
+    public BSPRunner(Configuration conf, BSPJob job, BSP bsp, LocalGroom groom) {
       super();
       this.conf = conf;
       this.job = job;
@@ -199,7 +197,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     public void run() {
       bsp.setConf(conf);
       try {
-        bsp.bsp(groom);
+         bsp.bsp(groom);
       } catch (Exception e) {
         LOG.error("Exception during BSP execution!", e);
       }
@@ -247,15 +245,14 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   }
 
-  class LocalGroom implements BSPPeerProtocol {
+  class LocalGroom extends BSPPeer {
     private long superStepCount = 0;
     private final ConcurrentLinkedQueue<BSPMessage> localMessageQueue = new ConcurrentLinkedQueue<BSPMessage>();
     // outgoing queue
     private final Map<String, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<String, ConcurrentLinkedQueue<BSPMessage>>();
     private final String peerName;
 
-    public LocalGroom(String peerName) {
-      super();
+    public LocalGroom(String peerName) throws IOException {
       this.peerName = peerName;
     }
 
@@ -352,33 +349,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public Task getTask(TaskAttemptID taskid) throws IOException {
-      return null;
-    }
-
-    @Override
-    public boolean ping(TaskAttemptID taskid) throws IOException {
-      return true;
-    }
-
-    @Override
-    public void done(TaskAttemptID taskid, boolean shouldBePromoted)
-        throws IOException {
-
-    }
-
-    @Override
-    public void fsError(TaskAttemptID taskId, String message)
-        throws IOException {
-
-    }
-
-    @Override
     public void put(BSPMessageBundle messages) throws IOException {
-      throw new UnsupportedOperationException(
-          "Messagebundle is not supported by local testing");
     }
 
   }
-
 }

@@ -130,6 +130,7 @@ class SimpleTaskScheduler extends TaskScheduler {
     public void run() {
       // obtain tasks
       Task t = jip.obtainNewTask(this.stus, groomNum);
+      
       // assembly into actions
       // List<Task> tasks = new ArrayList<Task>();
       if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
