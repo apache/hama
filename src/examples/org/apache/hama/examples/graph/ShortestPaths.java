@@ -32,7 +32,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
-import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BooleanMessage;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.IntegerMessage;
@@ -48,7 +48,7 @@ public class ShortestPaths extends ShortestPathsBase {
   private String[] peerNames;
 
   @Override
-  public void bsp(BSPPeerProtocol peer) throws IOException, KeeperException,
+  public void bsp(BSPPeer peer) throws IOException, KeeperException,
       InterruptedException {
     LOG.info("Mapping graph into ram...");
     // map our input into ram
@@ -119,7 +119,7 @@ public class ShortestPaths extends ShortestPathsBase {
    * @throws KeeperException
    * @throws InterruptedException
    */
-  private boolean broadcastUpdatesMade(BSPPeerProtocol peer, String master,
+  private boolean broadcastUpdatesMade(BSPPeer peer, String master,
       int updates) throws IOException, KeeperException, InterruptedException {
     peer.send(master, new IntegerMessage(peer.getPeerName(), updates));
     peer.sync();
@@ -154,7 +154,7 @@ public class ShortestPaths extends ShortestPathsBase {
    * @param id The vertex to all adjacent vertices the new cost has to be send.
    * @throws IOException
    */
-  private void sendMessageToNeighbors(BSPPeerProtocol peer,
+  private void sendMessageToNeighbors(BSPPeer peer,
       ShortestPathVertex id) throws IOException {
     List<ShortestPathVertex> outgoingEdges = adjacencyList.get(id);
     for (ShortestPathVertex adjacent : outgoingEdges) {

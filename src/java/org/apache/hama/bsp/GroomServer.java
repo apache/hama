@@ -49,15 +49,14 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.DiskChecker;
+import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.ipc.WorkerProtocol;
 import org.apache.log4j.LogManager;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * A Groom Server (shortly referred to as groom) is a process that performs bsp
@@ -68,9 +67,7 @@ import org.apache.zookeeper.KeeperException;
  * physical node.
  */
 public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
-
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
-  private BSPPeer bspPeer;
   static final String SUBDIR = "groomServer";
 
   private volatile static int REPORT_INTERVAL = 1 * 1000;
@@ -92,6 +89,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   // Attributes
   String groomServerName;
   String localHostname;
+  String groomHostName;
   InetSocketAddress bspMasterAddr;
   private Instructor instructor;
 
@@ -121,21 +119,25 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   InetSocketAddress taskReportAddress;
   Server taskReportServer = null;
 
-//  private BlockingQueue<GroomServerAction> tasksToCleanup = new LinkedBlockingQueue<GroomServerAction>();
+  private PeerNames allPeerNames = null;
+
+  // private BlockingQueue<GroomServerAction> tasksToCleanup = new
+  // LinkedBlockingQueue<GroomServerAction>();
 
   private class DispatchTasksHandler implements DirectiveHandler {
 
     public void handle(Directive directive) throws DirectiveException {
       GroomServerAction[] actions = ((DispatchTasksDirective) directive)
           .getActions();
-      synchronized (bspPeer) {
-        bspPeer.setAllPeerNames(((DispatchTasksDirective) directive)
-            .getGroomServerPeers().values());
-      }
+
+      allPeerNames = new PeerNames(((DispatchTasksDirective) directive)
+          .getGroomServerPeers().values());
+
       if (LOG.isDebugEnabled()) {
         LOG.debug("Got Response from BSPMaster with "
             + ((actions != null) ? actions.length : 0) + " actions");
       }
+
       if (actions != null) {
         for (GroomServerAction action : actions) {
           if (action instanceof LaunchTaskAction) {
@@ -216,8 +218,9 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
-          "default"), conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(
+          conf.get("bsp.dns.interface", "default"),
+          conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -230,7 +233,6 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     this.finishedTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
     this.conf.set(Constants.PEER_HOST, localHostname);
     this.conf.set(Constants.GROOM_RPC_HOST, localHostname);
-    bspPeer = new BSPPeer(conf);
 
     int rpcPort = -1;
     String rpcAddr = null;
@@ -270,8 +272,9 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
         + ":" + taskReportAddress.getPort());
     LOG.info("GroomServer up at: " + this.taskReportAddress);
 
-    this.groomServerName = "groomd_" + bspPeer.getPeerName().replace(':', '_');
-    LOG.info("Starting groom: " + this.groomServerName);
+    this.groomHostName = rpcAddr;
+    this.groomServerName = "groomd_" + this.rpcServer.replace(':', '_');
+    LOG.info("Starting groom: " + this.rpcServer);
 
     DistributedCache.purgeCache(this.conf);
 
@@ -284,7 +287,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
       throw new IllegalArgumentException("Error rpc address " + rpcAddr
           + " port" + rpcPort);
     if (!this.masterClient.register(new GroomServerStatus(groomServerName,
-        bspPeer.getPeerName(), cloneAndResetRunningTaskStatuses(), failures,
+        getBspPeerName(), cloneAndResetRunningTaskStatuses(), failures,
         maxCurrentTasks, this.rpcServer))) {
       LOG.error("There is a problem in establishing communication"
           + " link with BSPMaster");
@@ -376,14 +379,16 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
           Thread.sleep(REPORT_INTERVAL);
           TaskInProgress tip = e.getValue();
           TaskStatus taskStatus = tip.getStatus();
-          taskStatus.setProgress(bspPeer.getSuperstepCount());
 
-          if (bspPeer.getLocalQueueSize() == 0
-              && bspPeer.getOutgoingQueueSize() == 0 && !tip.runner.isAlive()) {
-            if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
-              taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+          if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
+            taskStatus.setProgress(taskStatus.getSuperstepCount());
+
+            if (!tip.runner.isAlive()) {
+              if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
+                taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+              }
+              taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
             }
-            taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
           }
 
           doReport(taskStatus);
@@ -451,7 +456,7 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
    */
   public void doReport(TaskStatus taskStatus) {
     GroomServerStatus groomStatus = new GroomServerStatus(groomServerName,
-        bspPeer.getPeerName(), updateTaskStatus(taskStatus), failures,
+        getBspPeerName(), updateTaskStatus(taskStatus), failures,
         maxCurrentTasks, rpcServer);
     try {
       boolean ret = masterClient.report(new ReportGroomStatusDirective(
@@ -647,7 +652,6 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   public synchronized void close() throws IOException {
     this.running = false;
     this.initialized = false;
-    bspPeer.close();
     cleanupStorage();
     this.workerServer.stop();
     RPC.stopProxy(masterClient);
@@ -728,8 +732,6 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     public void launchTask() throws IOException {
       localizeTask(task);
       taskStatus.setRunState(TaskStatus.State.RUNNING);
-      bspPeer.setJobConf(jobConf);
-      bspPeer.setCurrentTaskStatus(taskStatus);
       this.runner = task.createRunner(GroomServer.this);
       this.runner.start();
     }
@@ -806,14 +808,11 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   }
 
   /**
-   * GroomServer address information.
-   * 
    * @return bsp peer information in the form of "address:port".
    */
   public String getBspPeerName() {
-    if (null != bspPeer)
-      return bspPeer.getPeerName();
-    return null;
+    // TODO Later, peers list should be returned.
+    return this.groomHostName + ":" + Constants.DEFAULT_PEER_PORT;
   }
 
   /**
@@ -841,12 +840,26 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
       defaultConf.addResource(new Path(task.getJobFile()));
       BSPJob job = new BSPJob(task.getJobID(), task.getJobFile());
 
+      defaultConf.set(Constants.PEER_HOST, args[3]);
+      defaultConf.setInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+
+      BSPPeer bspPeer = new BSPPeer(defaultConf, taskid, umbilical);
+      bspPeer.setJobConf(job);
+      bspPeer.setAllPeerNames(umbilical.getAllPeerNames().getAllPeerNames());
+
+      TaskStatus taskStatus = new TaskStatus(task.getJobID(), task.getTaskID(),
+          0, TaskStatus.State.RUNNING, "running", host,
+          TaskStatus.Phase.STARTING);
+
+      bspPeer.setCurrentTaskStatus(taskStatus);
+
       try {
         // use job-specified working directory
         FileSystem.get(job.getConf()).setWorkingDirectory(
             job.getWorkingDirectory());
 
-        task.run(job, umbilical); // run the task
+        task.run(job, bspPeer, umbilical); // run the task
+
       } catch (FSError e) {
         LOG.fatal("FSError from child", e);
         umbilical.fsError(taskid, e.getMessage());
@@ -856,6 +869,8 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         throwable.printStackTrace(new PrintStream(baos));
       } finally {
+        bspPeer.close(); // close peer.
+
         RPC.stopProxy(umbilical);
         // Shutting down log4j of the child-vm...
         // This assumes that on return from Task.run()
@@ -875,6 +890,11 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
     }
   }
 
+  public void incrementSuperstepCount(TaskAttemptID taskid) throws IOException {
+    TaskInProgress tip = tasks.get(taskid);
+    tip.getStatus().incrementSuperstepCount();
+  }
+
   @Override
   public boolean ping(TaskAttemptID taskid) throws IOException {
     // TODO Auto-generated method stub
@@ -885,62 +905,15 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   public void done(TaskAttemptID taskid, boolean shouldBePromoted)
       throws IOException {
     // TODO Auto-generated method stub
-
   }
 
   @Override
   public void fsError(TaskAttemptID taskId, String message) throws IOException {
     // TODO Auto-generated method stub
-
   }
 
   @Override
-  public void send(String peerName, BSPMessage msg) throws IOException {
-    bspPeer.send(peerName, msg);
-  }
-
-  @Override
-  public void put(BSPMessage msg) throws IOException {
-    bspPeer.put(msg);
-  }
-
-  @Override
-  public void put(BSPMessageBundle messages) throws IOException {
-    bspPeer.put(messages);
-  }
-
-  @Override
-  public BSPMessage getCurrentMessage() throws IOException {
-    return bspPeer.getCurrentMessage();
-  }
-
-  @Override
-  public int getNumCurrentMessages() {
-    return bspPeer.getNumCurrentMessages();
-  }
-
-  @Override
-  public void sync() throws IOException, KeeperException, InterruptedException {
-    bspPeer.sync();
-  }
-
-  @Override
-  public long getSuperstepCount() {
-    return bspPeer.getSuperstepCount();
-  }
-
-  @Override
-  public String getPeerName() {
-    return bspPeer.getPeerName();
-  }
-
-  @Override
-  public String[] getAllPeerNames() {
-    return bspPeer.getAllPeerNames();
-  }
-
-  @Override
-  public void clear() {
-    bspPeer.clear();
+  public PeerNames getAllPeerNames() {
+    return allPeerNames;
   }
 }

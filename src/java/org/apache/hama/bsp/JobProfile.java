@@ -31,7 +31,7 @@ import org.apache.hadoop.io.WritableFactory;
  */
 public class JobProfile implements Writable {
 
-  static { // register a ctor
+  static { // register actor
     WritableFactories.setFactory(JobProfile.class, new WritableFactory() {
       public Writable newInstance() {
         return new JobProfile();

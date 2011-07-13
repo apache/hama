@@ -49,14 +49,14 @@ public class BSPTask extends Task {
   }
 
   @Override
-  public void run(BSPJob job, BSPPeerProtocol umbilical)
+  public void run(BSPJob job, BSPPeer bspPeer, BSPPeerProtocol umbilical)
       throws IOException {
     
     BSP bsp = (BSP) ReflectionUtils.newInstance(job.getConf().getClass(
         "bsp.work.class", BSP.class), job.getConf());
 
     try {
-      bsp.bsp(umbilical);
+      bsp.bsp(bspPeer);
     } catch (IOException e) {
       LOG.error("Exception during BSP execution!", e);
     } catch (KeeperException e) {

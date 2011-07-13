@@ -30,7 +30,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
-import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.DoubleMessage;
 import org.apache.zookeeper.KeeperException;
@@ -48,7 +48,7 @@ public class PageRank extends PageRankBase {
   private String[] peerNames;
 
   @Override
-  public void bsp(BSPPeerProtocol peer) throws IOException, KeeperException,
+  public void bsp(BSPPeer peer) throws IOException, KeeperException,
       InterruptedException {
     String master = conf.get(MASTER_TASK);
     // setup the datasets
@@ -109,7 +109,7 @@ public class PageRank extends PageRankBase {
     LOG.info("Finished with iteration " + iteration + "!");
   }
 
-  private double broadcastError(BSPPeerProtocol peer, String master,
+  private double broadcastError(BSPPeer peer, String master,
       double error) throws IOException, KeeperException, InterruptedException {
     peer.send(master, new DoubleMessage("", error));
     peer.sync();
@@ -148,7 +148,7 @@ public class PageRank extends PageRankBase {
     }
   }
 
-  private void sendMessageToNeighbors(BSPPeerProtocol peer, PageRankVertex v)
+  private void sendMessageToNeighbors(BSPPeer peer, PageRankVertex v)
       throws IOException {
     List<PageRankVertex> outgoingEdges = adjacencyList.get(v);
     for (PageRankVertex adjacent : outgoingEdges) {

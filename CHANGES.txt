@@ -1,5 +1,15 @@
 Hama Change Log
 
+Release 0.4 - Unreleased
+
+  NEW FEATURES
+
+  BUG FIXES
+
+  IMPROVEMENTS
+  
+    HAMA-414: Move BSPPeer constructor into child process (edwardyoon)
+    
 Release 0.3 - Unreleased
 
   NEW FEATURES

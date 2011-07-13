@@ -31,7 +31,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
-import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.DoubleMessage;
 import org.apache.zookeeper.KeeperException;
@@ -46,7 +46,7 @@ public class PiEstimator {
     private String masterTask;
     private static final int iterations = 10000;
 
-    public void bsp(BSPPeerProtocol bspPeer) throws IOException,
+    public void bsp(BSPPeer bspPeer) throws IOException,
         KeeperException, InterruptedException {
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {
@@ -133,7 +133,7 @@ public class PiEstimator {
       bsp.setNumBspTask(Integer.parseInt(args[0]));
     } else {
       // Set to maximum
-      bsp.setNumBspTask(cluster.getGroomServers());
+      bsp.setNumBspTask(cluster.getMaxTasks());
     }
 
     // Choose one as a master

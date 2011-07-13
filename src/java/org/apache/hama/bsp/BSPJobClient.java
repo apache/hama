@@ -412,13 +412,9 @@ public class BSPJobClient extends Configured implements Tool {
       IOException {
     BSPJobClient jc = new BSPJobClient(job.getConf());
 
-    // TODO this code must be removed
-    // when GroomServer supports the multiple tasks.
     if (job.getNumBspTask() == 0
-        || job.getNumBspTask() > jc.getClusterStatus(false).getGroomServers()) {
-      // If the number of tasks is greater than the number of GroomServer,
-      // reset the number of tasks as number of GroomServer.
-      job.setNumBspTask(jc.getClusterStatus(false).getGroomServers());
+        || job.getNumBspTask() > jc.getClusterStatus(false).getMaxTasks()) {
+      job.setNumBspTask(jc.getClusterStatus(false).getMaxTasks());
     }
 
     RunningJob running = jc.submitJobInternal(job);

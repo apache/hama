@@ -116,6 +116,7 @@ public class TaskRunner extends Thread {
       vargs.add(addr.getHostName());
       vargs.add(Integer.toString(addr.getPort()));
       vargs.add(task.getTaskID().toString());
+      vargs.add(groomServer.groomHostName);
 
       // Run java
       runChild((String[]) vargs.toArray(new String[0]), workDir);

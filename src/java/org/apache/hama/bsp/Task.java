@@ -121,9 +121,10 @@ public abstract class Task implements Writable {
    * Run this task as a part of the named job. This method is executed in the
    * child process.
    * 
-   * @param umbilical for progress reports
+   * @param bspPeer for communications
+   * @param umbilical for communications with GroomServer
    */
-  public abstract void run(BSPJob job, BSPPeerProtocol umbilical)
+  public abstract void run(BSPJob job, BSPPeer bspPeer, BSPPeerProtocol umbilical)
       throws IOException;
 
   public abstract BSPTaskRunner createRunner(GroomServer groom);

@@ -72,11 +72,29 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   private InetSocketAddress peerAddress;
   private TaskStatus currentTaskStatus;
 
+  private TaskAttemptID taskid;
+  private BSPPeerProtocol umbilical;
+
+  /**
+   * Protected default constructor for LocalBSPRunner.
+   */
+  protected BSPPeer() {
+    bspRoot = null;
+    quorumServers = null;
+  }
+
   /**
    * Constructor
+   * 
+   * @param umbilical
+   * @param taskid
    */
-  public BSPPeer(Configuration conf) throws IOException {
+  public BSPPeer(Configuration conf, TaskAttemptID taskid,
+      BSPPeerProtocol umbilical) throws IOException {
     this.conf = conf;
+    this.taskid = taskid;
+    this.umbilical = umbilical;
+
     String bindAddress = conf.get(Constants.PEER_HOST,
         Constants.DEFAULT_PEER_HOST);
     int bindPort = conf
@@ -89,15 +107,14 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     // TODO: may require to dynamic reflect the underlying
     // network e.g. ip address, port.
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
-
     reinitialize();
   }
 
   public void reinitialize() {
     try {
       LOG.debug("reinitialize(): " + getPeerName());
-      server = RPC.getServer(this, peerAddress.getHostName(), peerAddress
-          .getPort(), conf);
+      server = RPC.getServer(this, peerAddress.getHostName(),
+          peerAddress.getPort(), conf);
       server.start();
       LOG.info(" BSPPeer address:" + peerAddress.getHostName() + " port:"
           + peerAddress.getPort());
@@ -202,7 +219,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
     leaveBarrier();
     currentTaskStatus.incrementSuperstepCount();
-
+    umbilical.incrementSuperstepCount(taskid);
+    
     startTime = System.currentTimeMillis();
     // Clear outgoing queues.
     clearOutgoingQueues();
@@ -219,8 +237,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     // TODO: This is a quite temporary solution of HAMA-387.
     // If zk.getChildren() response is slower than 200 milliseconds,
     // BSP system will be hanged.
-    
-    // We have to consider another way to avoid this problem. 
+
+    // We have to consider another way to avoid this problem.
     if ((System.currentTimeMillis() - startTime) < 200) {
       Thread.sleep(200); // at least wait
     }
@@ -229,8 +247,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
     LOG.debug("[" + getPeerName() + "] enter the enterbarrier: "
         + this.getSuperstepCount());
-    zk.create(bspRoot + "/" + getPeerName(), Bytes.toBytes(this
-        .getSuperstepCount()), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+    zk.create(bspRoot + "/" + getPeerName(),
+        Bytes.toBytes(this.getSuperstepCount()), Ids.OPEN_ACL_UNSAFE,
+        CreateMode.EPHEMERAL);
 
     while (true) {
       synchronized (mutex) {
@@ -322,8 +341,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   private InetSocketAddress getAddress(String peerName) {
     String[] peerAddrParts = peerName.split(":");
-    return new InetSocketAddress(peerAddrParts[0], Integer
-        .parseInt(peerAddrParts[1]));
+    return new InetSocketAddress(peerAddrParts[0],
+        Integer.parseInt(peerAddrParts[1]));
   }
 
   @Override

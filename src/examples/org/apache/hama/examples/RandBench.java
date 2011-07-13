@@ -28,7 +28,7 @@ import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPMessage;
-import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ByteMessage;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.util.Bytes;
@@ -48,7 +48,7 @@ public class RandBench {
     private int nSupersteps;
 
     @Override
-    public void bsp(BSPPeerProtocol bspPeer) throws IOException,
+    public void bsp(BSPPeer bspPeer) throws IOException,
         KeeperException, InterruptedException {
       byte[] dummyData = new byte[sizeOfMsg];
       BSPMessage msg = null;
@@ -111,7 +111,7 @@ public class RandBench {
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(false);
-    bsp.setNumBspTask(cluster.getGroomServers());
+    bsp.setNumBspTask(cluster.getMaxTasks());
 
     long startTime = System.currentTimeMillis();
     bsp.waitForCompletion(true);

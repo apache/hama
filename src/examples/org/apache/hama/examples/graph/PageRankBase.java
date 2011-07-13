@@ -39,7 +39,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
-import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.BSPPeer;
 
 public abstract class PageRankBase extends BSP {
   public static final Log LOG = LogFactory.getLog(PageRankBase.class);
@@ -52,7 +52,7 @@ public abstract class PageRankBase extends BSP {
   protected static double EPSILON = 0.001;
 
   static HashMap<PageRankVertex, List<PageRankVertex>> mapAdjacencyList(
-      Configuration conf, BSPPeerProtocol peer) throws FileNotFoundException,
+      Configuration conf, BSPPeer peer) throws FileNotFoundException,
       IOException {
     FileSystem fs = FileSystem.get(conf);
     HashMap<PageRankVertex, List<PageRankVertex>> adjacencyList = new HashMap<PageRankVertex, List<PageRankVertex>>();
@@ -199,7 +199,7 @@ public abstract class PageRankBase extends BSP {
     return conf;
   }
 
-  static void savePageRankMap(BSPPeerProtocol peer, Configuration conf,
+  static void savePageRankMap(BSPPeer peer, Configuration conf,
       Map<PageRankVertex, Double> tentativePagerank) throws IOException {
     FileSystem fs = FileSystem.get(conf);
     Path outPath = new Path(conf.get("out.path") + Path.SEPARATOR + "temp"

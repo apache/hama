@@ -26,10 +26,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.bsp.BSP;
-import org.apache.hama.bsp.BSPPeerProtocol;
+import org.apache.hama.bsp.BSPPeer;
 import org.apache.zookeeper.KeeperException;
 
 public class ClassSerializePrinting {
@@ -42,7 +42,7 @@ public class ClassSerializePrinting {
     private FileSystem fileSys;
     private int num;
 
-    public void bsp(BSPPeerProtocol bspPeer) throws IOException,
+    public void bsp(BSPPeer bspPeer) throws IOException,
         KeeperException, InterruptedException {
 
       int i = 0;

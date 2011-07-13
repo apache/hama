@@ -62,7 +62,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   private HamaConfiguration conf;
 
   /**
-   *  Constants for BSPMaster's status.
+   * Constants for BSPMaster's status.
    */
   public static enum State {
     INITIALIZING, RUNNING
