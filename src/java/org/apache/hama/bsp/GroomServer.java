@@ -54,8 +54,9 @@ import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.MasterProtocol;
-import org.apache.hama.ipc.WorkerProtocol;
+import org.apache.hama.ipc.GroomProtocol;
 import org.apache.log4j.LogManager;
 
 /**
@@ -66,7 +67,7 @@ import org.apache.log4j.LogManager;
  * storages. Basically, a groom server and a data node should be run on one
  * physical node.
  */
-public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
+public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
   static final String SUBDIR = "groomServer";
 
@@ -798,8 +799,8 @@ public class GroomServer implements Runnable, WorkerProtocol, BSPPeerProtocol {
   @Override
   public long getProtocolVersion(String protocol, long clientVersion)
       throws IOException {
-    if (protocol.equals(WorkerProtocol.class.getName())) {
-      return WorkerProtocol.versionID;
+    if (protocol.equals(GroomProtocol.class.getName())) {
+      return GroomProtocol.versionID;
     } else if (protocol.equals(BSPPeerProtocol.class.getName())) {
       return BSPPeerProtocol.versionID;
     } else {

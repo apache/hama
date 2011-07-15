@@ -20,7 +20,7 @@ package org.apache.hama.bsp;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.hama.ipc.WorkerProtocol;
+import org.apache.hama.ipc.GroomProtocol;
 
 /**
  * Manages information about the {@link GroomServer}s in the cluster 
@@ -41,14 +41,14 @@ interface GroomServerManager {
    * @param groomId The identification value of GroomServer 
    * @return GroomServerStatus 
    */
-  WorkerProtocol findGroomServer(GroomServerStatus status);
+  GroomProtocol findGroomServer(GroomServerStatus status);
 
   /**
    * Find the collection of groom servers.
    * 
    * @return Collection of groom servers list.
    */
-  Collection<WorkerProtocol> findGroomServers();
+  Collection<GroomProtocol> findGroomServers();
 
   /**
    * Collection of GroomServerStatus as the key set.

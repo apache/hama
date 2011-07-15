@@ -24,7 +24,7 @@ import org.apache.hama.bsp.Directive;
 /**
  * A protocol for BSPMaster talks to GroomServer. 
  */
-public interface WorkerProtocol extends HamaRPCProtocolVersion {
+public interface GroomProtocol extends HamaRPCProtocolVersion {
 
   /**
    * Instruct GroomServer performaning tasks.
