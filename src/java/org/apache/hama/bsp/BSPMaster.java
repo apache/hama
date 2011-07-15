@@ -49,7 +49,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.http.HttpServer;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 import org.apache.hama.ipc.MasterProtocol;
-import org.apache.hama.ipc.WorkerProtocol;
+import org.apache.hama.ipc.GroomProtocol;
 
 /**
  * BSPMaster is responsible to control all the groom servers and to manage bsp
@@ -113,7 +113,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   private TaskScheduler taskScheduler;
 
   // GroomServers cache
-  protected ConcurrentMap<GroomServerStatus, WorkerProtocol> groomServers = new ConcurrentHashMap<GroomServerStatus, WorkerProtocol>();
+  protected ConcurrentMap<GroomServerStatus, GroomProtocol> groomServers = new ConcurrentHashMap<GroomServerStatus, GroomProtocol>();
 
   private Instructor instructor;
 
@@ -161,7 +161,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
             } else if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
               jip.getStatus().setprogress(ts.getSuperstepCount());
             } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
-              WorkerProtocol worker = findGroomServer(tmpStatus);
+              GroomProtocol worker = findGroomServer(tmpStatus);
               Directive d1 = new DispatchTasksDirective(
                   currentGroomServerPeers(),
                   new GroomServerAction[] { new KillTaskAction(ts.getTaskId()) });
@@ -313,8 +313,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     }
     Throwable e = null;
     try {
-      WorkerProtocol wc = (WorkerProtocol) RPC.waitForProxy(
-          WorkerProtocol.class, WorkerProtocol.versionID,
+      GroomProtocol wc = (GroomProtocol) RPC.waitForProxy(
+          GroomProtocol.class, GroomProtocol.versionID,
           resolveWorkerAddress(status.getRpcServer()), this.conf);
       if (null == wc) {
         LOG.warn("Fail to create Worker client at host " + status.getPeerName());
@@ -350,7 +350,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   private void updateGroomServersKey(GroomServerStatus old,
       GroomServerStatus newKey) {
     synchronized (groomServers) {
-      WorkerProtocol worker = groomServers.remove(old);
+      GroomProtocol worker = groomServers.remove(old);
       groomServers.put(newKey, worker);
     }
   }
@@ -517,7 +517,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     int numGroomServers = groomServers.size();
     if (detailed) {
       groomPeersMap = new HashMap<String, String>();
-      for (Map.Entry<GroomServerStatus, WorkerProtocol> entry : groomServers
+      for (Map.Entry<GroomServerStatus, GroomProtocol> entry : groomServers
           .entrySet()) {
         GroomServerStatus s = entry.getKey();
         groomPeersMap.put(s.getGroomName(), s.getPeerName());
@@ -537,12 +537,12 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   }
 
   @Override
-  public WorkerProtocol findGroomServer(GroomServerStatus status) {
+  public GroomProtocol findGroomServer(GroomServerStatus status) {
     return groomServers.get(status);
   }
 
   @Override
-  public Collection<WorkerProtocol> findGroomServers() {
+  public Collection<GroomProtocol> findGroomServers() {
     return groomServers.values();
   }
 

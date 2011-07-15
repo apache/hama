@@ -26,7 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hama.ipc.WorkerProtocol;
+import org.apache.hama.ipc.GroomProtocol;
 
 /**
  * A simple task scheduler. 
@@ -134,7 +134,7 @@ class SimpleTaskScheduler extends TaskScheduler {
       // assembly into actions
       // List<Task> tasks = new ArrayList<Task>();
       if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
-        WorkerProtocol worker = groomServerManager.findGroomServer(this.stus);
+        GroomProtocol worker = groomServerManager.findGroomServer(this.stus);
         try {
           // dispatch() to the groom server
           Directive d1 = new DispatchTasksDirective(groomServerManager

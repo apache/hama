@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.zookeeper.KeeperException;
 
 /**

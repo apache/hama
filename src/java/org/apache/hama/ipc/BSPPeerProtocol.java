@@ -15,17 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp;
+package org.apache.hama.ipc;
 
 import java.io.Closeable;
 import java.io.IOException;
 
 import org.apache.hama.Constants;
+import org.apache.hama.bsp.PeerNames;
+import org.apache.hama.bsp.Task;
+import org.apache.hama.bsp.TaskAttemptID;
 
 /**
  * Protocol that task child process uses to contact its parent process.
  */
-public interface BSPPeerProtocol extends BSPRPCProtocolVersion, Closeable,
+public interface BSPPeerProtocol extends HamaRPCProtocolVersion, Closeable,
     Constants {
 
   /** Called when a child task process starts, to get its task. */
