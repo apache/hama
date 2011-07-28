@@ -10,7 +10,7 @@ Release 0.4 - Unreleased
   
     HAMA-414: Move BSPPeer constructor into child process (edwardyoon)
     
-Release 0.3 - Unreleased
+Release 0.3 - July 28, 2011
 
   NEW FEATURES
 
