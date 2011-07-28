@@ -60,7 +60,7 @@
     <section>
     <title>Recent News</title>
        <section>
-       <title>July 1, 2011: release 0.3.0 available</title>
+       <title>July 28, 2011: release 0.3.0 available</title>
        <ul>
          <li>Added LockBSPRunner</li>
          <li>Added web UI for BSP cluster and job monitoring</li>

@@ -1,6 +1,6 @@
 Hama Change Log
 
-Release 0.3 - Unreleased
+Release 0.3 - July 28, 2011
 
   NEW FEATURES
 
