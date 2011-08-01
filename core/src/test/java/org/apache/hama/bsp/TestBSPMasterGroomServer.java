@@ -35,7 +35,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
   private static Log LOG = LogFactory.getLog(TestBSPMasterGroomServer.class);
   private static String TMP_OUTPUT = "/tmp/test-example/";
   private HamaConfiguration configuration;
-  private String TEST_JOB = "src/test/testjar/testjob.jar";
+  private String TEST_JOB = "src/test/java/testjar/testjob.jar";
 
   public TestBSPMasterGroomServer() {
     configuration = new HamaConfiguration();
@@ -55,7 +55,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     BSPJob bsp = new BSPJob(configuration);
     bsp.setJobName("Test Serialize Printing");
     bsp.setBspClass(testjar.ClassSerializePrinting.HelloBSP.class);
-    bsp.setJar(TEST_JOB);
+    bsp.setJar(System.getProperty("user.dir")+"/"+TEST_JOB);
 
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(configuration);

@@ -56,8 +56,8 @@ import org.mortbay.util.MultiException;
  * Create a Jetty embedded server to answer http requests. The primary goal is
  * to serve up status information for the server. There are three contexts:
  * "/logs/" -> points to the log directory "/static/" -> points to common static
- * files (src/webapps/static) "/" -> the jsp server code from
- * (src/webapps/<name>)
+ * files (src/main/webapp/static) "/" -> the jsp server code from
+ * (src/main/webapp/<name>)
  */
 public class HttpServer {
   public static final Log LOG = LogFactory.getLog(HttpServer.class);
@@ -80,7 +80,7 @@ public class HttpServer {
 
   /**
    * Create a status server on the given port. The jsp scripts are taken from
-   * src/webapps/<name>.
+   * src/main/webapp/<name>.
    * 
    * @param name The name of the server
    * @param port The port to use on the server
@@ -286,7 +286,7 @@ public class HttpServer {
     // if (url == null)
     // throw new IOException("webapps not found in CLASSPATH");
     // return url.toString();
-    return "src/webapps";
+    return "src/main/webapp";
   }
 
   /**
