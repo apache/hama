@@ -62,7 +62,7 @@
        <section>
        <title>July 28, 2011: release 0.3.0 available</title>
        <ul>
-         <li>Added LockBSPRunner</li>
+         <li>Added LocalBSPRunner</li>
          <li>Added web UI for BSP cluster and job monitoring</li>
          <li>Added more practical examples e.g., Shortest Path Problem, PageRank</li>
          <li>Performance has improved by more than 25% with BSPMessageBundle</li>
