@@ -1,37 +1,31 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="iso-8859-1"?>
 <!--
-  Copyright 2002-2004 The Apache Software Foundation
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
 
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+     http://www.apache.org/licenses/LICENSE-2.0
 
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
 -->
-
-<!DOCTYPE document PUBLIC "-//APACHE//DTD Documentation V2.0//EN" 
-"http://forrest.apache.org/dtd/document-v20.dtd">
-
-<document>
-  
-  <header>
-    <title>Privacy Policy</title>
-  </header>
-  
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
   <body>
 
-    <section>
-    <title>Privacy Policy</title>
+    <section name="Privacy Policy"></section>
     <p>
       Information about your use of this website is collected using 
       server access logs and a tracking cookie. 
-      The collected information consists of the following:<br/><br/>
+      The collected information consists of the following:
     </p>
     <ul>
        <li>The IP address from which you access the website;</li>
@@ -40,7 +34,7 @@
        <li>The pages you visit; and</li>
        <li>The addresses of pages from where you followed a link to our site.</li>
     </ul>
-    <p><br/><br/>
+    <p>
       Part of this information is gathered using a tracking cookie set by the 
       <a href="http://www.google.com/analytics/">Google Analytics</a> service 
       and handled by Google as described in their 
@@ -55,7 +49,7 @@
       By using this website, you consent to the collection of this data
       in the manner and for the purpose described above.
     </p>
-    </section>
-  </body>
 
+    
+  </body>
 </document>

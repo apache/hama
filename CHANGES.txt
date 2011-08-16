@@ -9,6 +9,7 @@ Release 0.4 - Unreleased
   IMPROVEMENTS
   
     HAMA-414: Move BSPPeer constructor into child process (edwardyoon)
+    HAMA-419: Migrating site from forrest to maven (edwardyoon)
     
 Release 0.3 - July 28, 2011
 

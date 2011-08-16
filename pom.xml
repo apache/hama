@@ -209,17 +209,18 @@
           <forkMode>pertest</forkMode>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>2.1.1</version>
+      </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>site</id>
-      <activation>
-        <activeByDefault>false</activeByDefault>
-      </activation>
-      <modules>
-        <module>site</module>
-      </modules>
-    </profile>
-  </profiles>
+  
+    <distributionManagement>
+      <site>
+        <id>apache.website</id>
+        <url>scpexe://people.apache.org/www/incubator.apache.org/hama</url>
+      </site>
+    </distributionManagement>
 </project>
