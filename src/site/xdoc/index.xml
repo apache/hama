@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <body>
+
+    <section name="Apache Hama"></section>
+       <div align="center"><img src="images/hama_art_arthur_300x220.png"/></div>
+      <p>
+      <strong>Apache Hama</strong> is a distributed computing framework based on 
+      BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations, 
+      e.g., matrix, graph and network algorithms,
+      Currently being incubated as one of the incubator project by the 
+      <a href="http://www.apache.org">Apache Software Foundation</a>.
+      <br/><br/>
+      It was inspired by Google's Pregel, a large-scale graph computing solution, but different in the sense 
+      that it's purely BSP and common model, not just for graph.
+      </p>
+      
+      <table class="green" width="100%" cellspacing="0" cellpadding="5" border="1"> 
+      <tr><td> 
+          <h3 align="center">Recent News</h3>
+          <ul>
+            <li>July 28, 2011: release 0.3.0 available</li>
+            <li>June 2, 2011: release 0.2.0 available</li>
+            <li>Apr 30, 2010: Introduced in the <a href="http://www.bsp-worldwide.org/bspww3000.html">BSP Worldwide</a></li>
+            <li>May 20, 2008: Accept Hama to be a Apache incubator project</li>
+          </ul>
+      </td></tr></table>
+      
+    <subsection name="Getting Started"></subsection>
+      <p>
+      Start by installing Hama on a Hadoop cluster.
+      <br/>
+      </p>
+      <ul>
+        <li><a href="http://wiki.apache.org/hama/">Learn about</a> Hama by reading the documentation.</li>
+        <li><a href="downloads.html">Download</a> Hama from the release page.</li>
+      </ul>
+    <subsection name="Getting Involved"></subsection>
+      <p>
+      Hama is an open source volunteer project under the Apache Software Foundation. We encourage you to learn about the project and contribute your expertise. 
+      Here are some starter links: <br/>
+      </p>
+      <ul>
+        <li>See our <a href="http://wiki.apache.org/hama/HowToContribute">How to Contribute to Hama</a> page</li>
+        <li><a href="http://wiki.apache.org/hama/Jira">Jira usage guidelines</a></li>
+      </ul>
+  </body>
+</document>
