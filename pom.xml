@@ -89,7 +89,7 @@
     <commons-logging.version>1.1.1</commons-logging.version>
     <commons-cli.version>1.2</commons-cli.version>
     <hadoop.version>0.20.2</hadoop.version>
-    <jetty.version>6.1.4</jetty.version>
+    <jetty.version>6.1.14</jetty.version>
     <junit.version>4.8.1</junit.version>
     <slf4j-log4j12.version>1.5.2</slf4j-log4j12.version>
     <servlet-api.version>6.0.32</servlet-api.version>
@@ -176,7 +176,7 @@
         <version>${log4j.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.hadoop</groupId>
+        <groupId>org.apache.zookeeper</groupId>
         <artifactId>zookeeper</artifactId>
         <version>${zookeeper.version}</version>
       </dependency>
