@@ -6,6 +6,8 @@ Release 0.4 - Unreleased
 
   BUG FIXES
 
+    HAMA-421: Maven build issues using proxy (Joe Crobak via edwardyoon)
+
   IMPROVEMENTS
   
     HAMA-414: Move BSPPeer constructor into child process (edwardyoon)
