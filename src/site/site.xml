@@ -21,6 +21,10 @@
     <src>http://incubator.apache.org/hama/images/apache-incubator-hama-white.png</src>
     <href>http://incubator.apache.org/hama/index.html</href>
   </bannerLeft>
+  <bannerRight>
+    <src>http://incubator.apache.org/hama/images/apache-incubator-logo.png</src>
+    <href>http://incubator.apache.org/</href>
+  </bannerRight>
 
   <publishDate position="right"/>
   <version position="right"/>
