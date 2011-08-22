@@ -26,11 +26,8 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
       <p>
       <strong>Apache Hama</strong> is a distributed computing framework based on 
       BSP (Bulk Synchronous Parallel) computing techniques for massive scientific computations, 
-      e.g., matrix, graph and network algorithms,
-      Currently being incubated as one of the incubator project by the 
-      <a href="http://www.apache.org">Apache Software Foundation</a>.
-      <br/><br/>
-      It was inspired by Google's Pregel, a large-scale graph computing solution, but different in the sense 
+      e.g., matrix, graph and network algorithms. 
+      It was inspired by Google's Pregel, but different in the sense 
       that it's purely BSP and common model, not just for graph.
       </p>
       
@@ -63,5 +60,14 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         <li>See our <a href="http://wiki.apache.org/hama/HowToContribute">How to Contribute to Hama</a> page</li>
         <li><a href="http://wiki.apache.org/hama/Jira">Jira usage guidelines</a></li>
       </ul>
+      
+    <subsection name="Disclaimer"></subsection>
+      <p>
+       Apache Hama is an effort undergoing incubation at The Apache Software Foundation (ASF), 
+      sponsored by the Apache Incubator. Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, 
+      communications, and decision making process have stabilized in a manner consistent with other successful ASF projects. 
+      While incubation status is not necessarily a reflection of the completeness or stability of the code, 
+      it does indicate that the project has yet to be fully endorsed by the ASF.
+      </p>
   </body>
 </document>
