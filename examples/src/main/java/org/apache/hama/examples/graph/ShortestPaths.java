@@ -18,6 +18,7 @@
 package org.apache.hama.examples.graph;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -43,17 +44,15 @@ public class ShortestPaths extends ShortestPathsBase {
   public static final Log LOG = LogFactory.getLog(ShortestPaths.class);
 
   private Configuration conf;
-  private Map<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList = new HashMap<ShortestPathVertex, List<ShortestPathVertex>>();
-  private Map<String, ShortestPathVertex> vertexLookupMap = new HashMap<String, ShortestPathVertex>();
+  private final HashMap<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList = new HashMap<ShortestPathVertex, List<ShortestPathVertex>>();
+  private final HashMap<String, ShortestPathVertex> vertexLookupMap = new HashMap<String, ShortestPathVertex>();
   private String[] peerNames;
 
   @Override
   public void bsp(BSPPeer peer) throws IOException, KeeperException,
       InterruptedException {
-    LOG.info("Mapping graph into ram...");
     // map our input into ram
     mapAdjacencyList(conf, peer, adjacencyList, vertexLookupMap);
-    LOG.info("Finished! Starting graph initialization...");
     // parse the configuration to get the peerNames
     parsePeerNames(conf);
     // get our master groom
@@ -67,7 +66,6 @@ public class ShortestPaths extends ShortestPathsBase {
       sendMessageToNeighbors(peer, v);
     }
 
-    LOG.info("Finished! Starting main loop...");
     boolean updated = true;
     while (updated) {
       int updatesMade = 0;
@@ -91,7 +89,6 @@ public class ShortestPaths extends ShortestPathsBase {
         sendMessageToNeighbors(peer, vertex);
       }
     }
-    LOG.info("Finished!");
     // finished, finally save our map to DFS.
     saveVertexMap(conf, peer, adjacencyList);
   }
@@ -119,8 +116,8 @@ public class ShortestPaths extends ShortestPathsBase {
    * @throws KeeperException
    * @throws InterruptedException
    */
-  private boolean broadcastUpdatesMade(BSPPeer peer, String master,
-      int updates) throws IOException, KeeperException, InterruptedException {
+  private boolean broadcastUpdatesMade(BSPPeer peer, String master, int updates)
+      throws IOException, KeeperException, InterruptedException {
     peer.send(master, new IntegerMessage(peer.getPeerName(), updates));
     peer.sync();
     if (peer.getPeerName().equals(master)) {
@@ -128,8 +125,6 @@ public class ShortestPaths extends ShortestPathsBase {
       IntegerMessage message;
       while ((message = (IntegerMessage) peer.getCurrentMessage()) != null) {
         count += message.getData();
-        LOG.info("Received " + message.getData() + " updates from "
-            + message.getTag() + " in SuperStep " + peer.getSuperstepCount());
       }
 
       for (String name : peer.getAllPeerNames()) {
@@ -154,14 +149,15 @@ public class ShortestPaths extends ShortestPathsBase {
    * @param id The vertex to all adjacent vertices the new cost has to be send.
    * @throws IOException
    */
-  private void sendMessageToNeighbors(BSPPeer peer,
-      ShortestPathVertex id) throws IOException {
+  private void sendMessageToNeighbors(BSPPeer peer, ShortestPathVertex id)
+      throws IOException {
     List<ShortestPathVertex> outgoingEdges = adjacencyList.get(id);
     for (ShortestPathVertex adjacent : outgoingEdges) {
       int mod = Math.abs((adjacent.getId() % peer.getAllPeerNames().length));
-      peer.send(peerNames[mod], new IntegerMessage(adjacent.getName(), id
-          .getCost() == Integer.MAX_VALUE ? id.getCost() : id.getCost()
-          + adjacent.getWeight()));
+      peer.send(peerNames[mod],
+          new IntegerMessage(adjacent.getName(),
+              id.getCost() == Integer.MAX_VALUE ? id.getCost() : id.getCost()
+                  + adjacent.getWeight()));
     }
   }
 
@@ -178,11 +174,12 @@ public class ShortestPaths extends ShortestPathsBase {
   public static void printUsage() {
     System.out.println("Single Source Shortest Path Example:");
     System.out
-        .println("<Startvertex name> <optional: output path> <optional: path to own adjacency list sequencefile>");
+        .println("<Startvertex name> <optional: output path> <optional: path to own adjacency list textfile!>");
   }
 
   public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException {
+      InterruptedException, ClassNotFoundException, InstantiationException,
+      IllegalAccessException {
 
     printUsage();
 
@@ -191,7 +188,6 @@ public class ShortestPaths extends ShortestPathsBase {
     conf.set(SHORTEST_PATHS_START_VERTEX_ID, "Frankfurt");
     System.out.println("Setting default start vertex to \"Frankfurt\"!");
     conf.set(OUT_PATH, "sssp/output");
-    boolean skipPartitioning = false;
     Path adjacencyListPath = null;
 
     if (args.length > 0) {
@@ -205,10 +201,6 @@ public class ShortestPaths extends ShortestPathsBase {
 
       if (args.length > 2) {
         adjacencyListPath = new Path(args[2]);
-      }
-
-      if (args.length > 3) {
-        skipPartitioning = Boolean.valueOf(args[3]);
       }
 
     }
@@ -225,19 +217,16 @@ public class ShortestPaths extends ShortestPathsBase {
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);
-    StringBuilder sb = new StringBuilder();
-    for (String peerName : cluster.getActiveGroomNames().values()) {
-      conf.set(MASTER_TASK, peerName);
-      sb.append(peerName);
-      sb.append(";");
-    }
-    LOG.info("Master is: " + conf.get(MASTER_TASK));
-    conf.set(BSP_PEERS, sb.toString());
+
+    Collection<String> activeGrooms = cluster.getActiveGroomNames().values();
+    String[] grooms = activeGrooms.toArray(new String[activeGrooms.size()]);
+
     LOG.info("Starting data partitioning...");
-    if (adjacencyList == null)
-      conf = partition(adjacencyListPath, conf, skipPartitioning);
-    else
-      conf = partition(adjacencyList, conf);
+    if (adjacencyList == null) {
+      conf = (HamaConfiguration) partition(conf, adjacencyListPath, grooms);
+    } else {
+      conf = (HamaConfiguration) partitionExample(conf, adjacencyList, grooms);
+    }
     LOG.info("Finished!");
 
     bsp.setNumBspTask(cluster.getGroomServers());

@@ -31,7 +31,6 @@ public class ShortestPathsGraphLoader {
         "Stuttgart", "Kassel", "Karlsruhe", "Erfurt", "Nuernberg", "Augsburg",
         "Muenchen" };
 
-    int id = 1;
     for (String city : cities) {
       if (city.equals("Frankfurt")) {
         List<ShortestPathVertex> list = new LinkedList<ShortestPathVertex>();
@@ -86,7 +85,6 @@ public class ShortestPathsGraphLoader {
         list.add(new ShortestPathVertex(84, "Augsburg"));
         adjacencyList.put(new ShortestPathVertex(0, city), list);
       }
-      id++;
     }
     return adjacencyList;
   }

@@ -18,6 +18,7 @@
 package org.apache.hama.examples.graph;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -40,11 +41,11 @@ public class PageRank extends PageRankBase {
 
   private Configuration conf;
 
-  private HashMap<PageRankVertex, List<PageRankVertex>> adjacencyList;
-  private final HashMap<String, PageRankVertex> lookupMap = new HashMap<String, PageRankVertex>();
-  private final HashMap<PageRankVertex, Double> tentativePagerank = new HashMap<PageRankVertex, Double>();
+  private final HashMap<Vertex, List<Vertex>> adjacencyList = new HashMap<Vertex, List<Vertex>>();
+  private final HashMap<String, Vertex> lookupMap = new HashMap<String, Vertex>();
+  private final HashMap<Vertex, Double> tentativePagerank = new HashMap<Vertex, Double>();
   // backup of the last pagerank to determine the error
-  private final HashMap<PageRankVertex, Double> lastTentativePagerank = new HashMap<PageRankVertex, Double>();
+  private final HashMap<Vertex, Double> lastTentativePagerank = new HashMap<Vertex, Double>();
   private String[] peerNames;
 
   @Override
@@ -52,12 +53,9 @@ public class PageRank extends PageRankBase {
       InterruptedException {
     String master = conf.get(MASTER_TASK);
     // setup the datasets
-    adjacencyList = PageRankBase.mapAdjacencyList(getConf(), peer);
-    // init the pageranks to 1/n where n is the number of all vertices
-    for (PageRankVertex vertex : adjacencyList.keySet()) {
-      tentativePagerank.put(vertex, Double.valueOf(1.0 / numOfVertices));
-      lookupMap.put(vertex.getUrl(), vertex);
-    }
+    PageRankBase.mapAdjacencyList(getConf(), peer, adjacencyList,
+        tentativePagerank, lookupMap);
+
     // while the error not converges against epsilon do the pagerank stuff
     double error = 1.0;
     int iteration = 0;
@@ -71,10 +69,10 @@ public class PageRank extends PageRankBase {
         // copy the old pagerank to the backup
         copyTentativePageRankToBackup();
         // sum up all incoming messages for a vertex
-        HashMap<PageRankVertex, Double> sumMap = new HashMap<PageRankVertex, Double>();
+        HashMap<Vertex, Double> sumMap = new HashMap<Vertex, Double>();
         DoubleMessage msg = null;
         while ((msg = (DoubleMessage) peer.getCurrentMessage()) != null) {
-          PageRankVertex k = lookupMap.get(msg.getTag());
+          Vertex k = lookupMap.get(msg.getTag());
           if (!sumMap.containsKey(k)) {
             sumMap.put(k, msg.getData());
           } else {
@@ -84,7 +82,7 @@ public class PageRank extends PageRankBase {
         // pregel formula:
         // ALPHA = 0.15 / NumVertices()
         // P(i) = ALPHA + 0.85 * sum
-        for (Entry<PageRankVertex, Double> entry : sumMap.entrySet()) {
+        for (Entry<Vertex, Double> entry : sumMap.entrySet()) {
           tentativePagerank.put(entry.getKey(), ALPHA
               + (entry.getValue() * DAMPING_FACTOR));
         }
@@ -95,7 +93,7 @@ public class PageRank extends PageRankBase {
       }
       // in every step send the tentative pagerank of a vertex to its
       // adjacent vertices
-      for (PageRankVertex vertex : adjacencyList.keySet()) {
+      for (Vertex vertex : adjacencyList.keySet()) {
         sendMessageToNeighbors(peer, vertex);
       }
 
@@ -106,11 +104,10 @@ public class PageRank extends PageRankBase {
     peer.clear();
     // finally save the chunk of pageranks
     PageRankBase.savePageRankMap(peer, conf, lastTentativePagerank);
-    LOG.info("Finished with iteration " + iteration + "!");
   }
 
-  private double broadcastError(BSPPeer peer, String master,
-      double error) throws IOException, KeeperException, InterruptedException {
+  private double broadcastError(BSPPeer peer, String master, double error)
+      throws IOException, KeeperException, InterruptedException {
     peer.send(master, new DoubleMessage("", error));
     peer.sync();
     if (peer.getPeerName().equals(master)) {
@@ -135,7 +132,7 @@ public class PageRank extends PageRankBase {
 
   private double determineError() {
     double error = 0.0;
-    for (Entry<PageRankVertex, Double> entry : tentativePagerank.entrySet()) {
+    for (Entry<Vertex, Double> entry : tentativePagerank.entrySet()) {
       error += Math.abs(lastTentativePagerank.get(entry.getKey())
           - entry.getValue());
     }
@@ -143,19 +140,19 @@ public class PageRank extends PageRankBase {
   }
 
   private void copyTentativePageRankToBackup() {
-    for (Entry<PageRankVertex, Double> entry : tentativePagerank.entrySet()) {
+    for (Entry<Vertex, Double> entry : tentativePagerank.entrySet()) {
       lastTentativePagerank.put(entry.getKey(), entry.getValue());
     }
   }
 
-  private void sendMessageToNeighbors(BSPPeer peer, PageRankVertex v)
+  private void sendMessageToNeighbors(BSPPeer peer, Vertex v)
       throws IOException {
-    List<PageRankVertex> outgoingEdges = adjacencyList.get(v);
-    for (PageRankVertex adjacent : outgoingEdges) {
+    List<Vertex> outgoingEdges = adjacencyList.get(v);
+    for (Vertex adjacent : outgoingEdges) {
       int mod = Math.abs(adjacent.getId() % peerNames.length);
       // send a message of the tentative pagerank divided by the size of
       // the outgoing edges to all adjacents
-      peer.send(peerNames[mod], new DoubleMessage(adjacent.getUrl(),
+      peer.send(peerNames[mod], new DoubleMessage(adjacent.getName(),
           tentativePagerank.get(v) / outgoingEdges.size()));
     }
   }
@@ -183,7 +180,8 @@ public class PageRank extends PageRankBase {
   }
 
   public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException {
+      InterruptedException, ClassNotFoundException, InstantiationException,
+      IllegalAccessException {
     if (args.length == 0) {
       printUsage();
       System.exit(-1);
@@ -220,23 +218,19 @@ public class PageRank extends PageRankBase {
 
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);
-    StringBuilder sb = new StringBuilder();
-    for (String peerName : cluster.getActiveGroomNames().values()) {
-      conf.set(MASTER_TASK, peerName);
-      sb.append(peerName + ";");
-    }
 
-    // put every peer into the configuration
-    conf.set(ShortestPaths.BSP_PEERS, sb.toString());
     // leave the iterations on default
     conf.set("max.iterations", "0");
 
+    Collection<String> activeGrooms = cluster.getActiveGroomNames().values();
+    String[] grooms = activeGrooms.toArray(new String[activeGrooms.size()]);
+
     if (conf.get("in.path") == null) {
-      conf = PageRankBase
-          .partitionExample(new Path(conf.get("out.path")), conf);
+      conf = PageRankBase.partitionExample(new Path(conf.get("out.path")),
+          conf, grooms);
     } else {
-      conf = PageRankBase
-          .partitionTextFile(new Path(conf.get("in.path")), conf);
+      conf = PageRankBase.partitionTextFile(new Path(conf.get("in.path")),
+          conf, grooms);
     }
 
     BSPJob job = new BSPJob(conf);

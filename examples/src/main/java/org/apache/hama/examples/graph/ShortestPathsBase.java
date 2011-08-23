@@ -17,27 +17,35 @@
  */
 package org.apache.hama.examples.graph;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.OutputStreamWriter;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hama.HamaConfiguration;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.examples.graph.partitioning.PartitionableWritable;
+import org.apache.hama.examples.graph.partitioning.ShortestPathVertexPartitioner;
 
 public abstract class ShortestPathsBase extends BSP {
-  
+
+  private static final String SSSP_EXAMPLE_FILE_NAME = "sssp-example";
   public static final String BSP_PEERS = "bsp.peers";
   public static final String SHORTEST_PATHS_START_VERTEX_ID = "shortest.paths.start.vertex.id";
   public static final String PARTED = "parted";
@@ -45,7 +53,9 @@ public abstract class ShortestPathsBase extends BSP {
   public static final String OUT_PATH = "out.path";
   public static final String NAME_VALUE_SEPARATOR = ":";
   public static final String MASTER_TASK = "master.groom";
-  
+
+  private static final ShortestPathVertexPartitioner partitioner = new ShortestPathVertexPartitioner();
+
   /**
    * When finished we just writing a sequencefile of the vertex name and the
    * cost.
@@ -54,7 +64,7 @@ public abstract class ShortestPathsBase extends BSP {
    * @param adjacencyList
    * @throws IOException
    */
-  static void saveVertexMap(Configuration conf, BSPPeer peer,
+  protected final static void saveVertexMap(Configuration conf, BSPPeer peer,
       Map<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList)
       throws IOException {
     Path outPath = new Path(conf.get(OUT_PATH) + Path.SEPARATOR
@@ -76,202 +86,95 @@ public abstract class ShortestPathsBase extends BSP {
    * @param conf
    * @throws IOException
    */
-  static void printOutput(FileSystem fs, Configuration conf) throws IOException {
+  protected final static void printOutput(FileSystem fs, Configuration conf)
+      throws IOException {
     System.out.println("-------------------- RESULTS --------------------");
     FileStatus[] stati = fs.listStatus(new Path(conf.get(OUT_PATH)));
     for (FileStatus status : stati) {
-      Path path = status.getPath();
-      SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-      Text key = new Text();
-      IntWritable value = new IntWritable();
-      while (reader.next(key, value)) {
-        System.out.println(key.toString() + " | " + value.get());
+      if (!status.isDir() && !status.getPath().getName().equals(SSSP_EXAMPLE_FILE_NAME)) {
+        Path path = status.getPath();
+        SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
+        Text key = new Text();
+        IntWritable value = new IntWritable();
+        while (reader.next(key, value)) {
+          System.out.println(key.toString() + " | " + value.get());
+        }
+        reader.close();
       }
-      reader.close();
     }
   }
 
-  /**
-   * 
-   * The adjacencylist contains two text fields on each line. The key component
-   * is the name of a vertex, the value is a ":" separated Text field that
-   * contains the name of the adjacent vertex leftmost and the weight on the
-   * rightmost side.
-   * 
-   * <PRE>
-   *    K               V <br/> 
-   * Vertex[Text]    AdjacentVertex : Weight [Text]
-   * </PRE>
-   * 
-   * @param adjacencyList
-   * @param vertexLookupMap
-   */
-  static void mapAdjacencyList(Configuration conf, BSPPeer peer,
+  protected final static void mapAdjacencyList(Configuration conf,
+      BSPPeer peer,
       Map<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList,
       Map<String, ShortestPathVertex> vertexLookupMap)
       throws FileNotFoundException, IOException {
+
     FileSystem fs = FileSystem.get(conf);
-    Path p = new Path(conf.get(IN_PATH
-        + peer.getPeerName().split(NAME_VALUE_SEPARATOR)[0]));
+    Path p = new Path(conf.get("in.path." + peer.getPeerName().split(":")[0]));
     SequenceFile.Reader reader = new SequenceFile.Reader(fs, p, conf);
-    Text key = new Text(); // name of the vertex
-    Text value = new Text(); // name of the adjacent vertex : weight
+    ObjectWritable key = new ObjectWritable(ShortestPathVertex.class);
+    key.setConf(conf);
+    ArrayWritable value = new ArrayWritable(ShortestPathVertex.class);
     while (reader.next(key, value)) {
-      // a key vertex has weight 0 to itself
-      ShortestPathVertex keyVertex = new ShortestPathVertex(0, key.toString(),
-          Integer.MAX_VALUE);
-      String[] nameWeight = value.toString().split(NAME_VALUE_SEPARATOR);
-      if (!adjacencyList.containsKey(keyVertex)) {
-        LinkedList<ShortestPathVertex> list = new LinkedList<ShortestPathVertex>();
-        list.add(new ShortestPathVertex(Integer.valueOf(nameWeight[1]),
-            nameWeight[0], Integer.MAX_VALUE));
-        adjacencyList.put(keyVertex, list);
-        vertexLookupMap.put(keyVertex.getName(), keyVertex);
-      } else {
-        adjacencyList.get(keyVertex).add(
-            new ShortestPathVertex(Integer.valueOf(nameWeight[1]),
-                nameWeight[0], Integer.MAX_VALUE));
+      ShortestPathVertex realKey = (ShortestPathVertex) key.get();
+      realKey.setCost(Integer.MAX_VALUE);
+      LinkedList<ShortestPathVertex> list = new LinkedList<ShortestPathVertex>();
+      adjacencyList.put(realKey, list);
+      vertexLookupMap.put(realKey.name, realKey);
+
+      for (Writable s : value.get()) {
+        final ShortestPathVertex vertex = (ShortestPathVertex) s;
+        vertex.setCost(Integer.MAX_VALUE);
+        list.add(vertex);
       }
     }
+
     reader.close();
   }
 
-  /**
-   * Partitioning for in memory adjacency lists.
-   * 
-   * @param adjacencyList
-   * @param status
-   * @param conf
-   * @return
-   * @throws IOException
-   */
-  static HamaConfiguration partition(
+  protected final static Configuration partitionExample(Configuration conf,
       Map<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList,
-      HamaConfiguration conf) throws IOException {
+      String[] groomNames) throws IOException, InstantiationException,
+      IllegalAccessException, InterruptedException {
 
-    String[] groomNames = conf.get(BSP_PEERS).split(";");
-
-    int sizeOfCluster = groomNames.length;
-
-    // setup the paths where the grooms can find their input
-    List<Path> partPaths = new ArrayList<Path>(sizeOfCluster);
-    List<SequenceFile.Writer> writers = new ArrayList<SequenceFile.Writer>(
-        sizeOfCluster);
     FileSystem fs = FileSystem.get(conf);
-    Path fileToPartition = new Path(conf.get(OUT_PATH));
-    for (String entry : groomNames) {
-      partPaths.add(new Path(fileToPartition.getParent().toString()
-          + Path.SEPARATOR + PARTED + Path.SEPARATOR
-          + entry.split(NAME_VALUE_SEPARATOR)[0]));
-    }
-    // create a seq writer for that
-    for (Path p : partPaths) {
-      // System.out.println(p.toString());
-      fs.delete(p, true);
-      writers.add(SequenceFile
-          .createWriter(fs, conf, p, Text.class, Text.class));
+    Path input = new Path(conf.get(OUT_PATH), SSSP_EXAMPLE_FILE_NAME);
+    FSDataOutputStream stream = fs.create(input);
+    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream));
+
+    Set<Entry<ShortestPathVertex, List<ShortestPathVertex>>> set = adjacencyList
+        .entrySet();
+
+    for (Entry<ShortestPathVertex, List<ShortestPathVertex>> entry : set) {
+
+      String line = entry.getKey().getName();
+
+      for (ShortestPathVertex v : entry.getValue()) {
+        line += "\t" + v.getName() + ":" + v.getWeight();
+      }
+
+      writer.write(line);
+      writer.newLine();
+
     }
 
-    for (Entry<ShortestPathVertex, List<ShortestPathVertex>> entry : adjacencyList
-        .entrySet()) {
-      // a key vertex has weight 0 to itself
-      ShortestPathVertex keyVertex = entry.getKey();
-      // just mod the id
-      int mod = Math.abs(keyVertex.getId() % sizeOfCluster);
-      // append it to the right sequenceFile
-      for (ShortestPathVertex value : entry.getValue())
-        writers.get(mod)
-            .append(
-                new Text(keyVertex.getName()),
-                new Text(value.getName() + NAME_VALUE_SEPARATOR
-                    + value.getWeight()));
-    }
+    writer.close();
+    fs.close();
 
-    for (SequenceFile.Writer w : writers)
-      w.close();
-
-    for (Path p : partPaths) {
-      conf.set(IN_PATH + p.getName(), p.toString());
-    }
-    return conf;
+    return partition(conf, input, groomNames);
   }
 
-  /**
-   * Partitioning for sequencefile partitioned adjacency lists.
-   * 
-   * The adjacencylist contains two text fields on each line. The key component
-   * is the name of a vertex, the value is a ":" separated Text field that
-   * contains the name of the adjacent vertex leftmost and the weight on the
-   * rightmost side.
-   * 
-   * <PRE>
-   *    K               V <br/> 
-   * Vertex[Text]    AdjacentVertex : Weight [Text]
-   * </PRE>
-   * 
-   * @param fileToPartition
-   * @param status
-   * @param conf
-   * @return
-   * @throws IOException
-   */
-  static HamaConfiguration partition(Path fileToPartition,
-      HamaConfiguration conf, boolean skipPartitioning) throws IOException {
+  protected final static Configuration partition(Configuration conf,
+      Path fileToPartition, String[] groomNames) throws IOException,
+      InstantiationException, IllegalAccessException, InterruptedException {
 
-    String[] groomNames = conf.get(BSP_PEERS).split(";");
-    int sizeOfCluster = groomNames.length;
+    // set the partitioning vertex class
+    conf.setClass("hama.partitioning.vertex.class", ShortestPathVertex.class,
+        PartitionableWritable.class);
 
-    // setup the paths where the grooms can find their input
-    List<Path> partPaths = new ArrayList<Path>(sizeOfCluster);
-    List<SequenceFile.Writer> writers = new ArrayList<SequenceFile.Writer>(
-        sizeOfCluster);
-    FileSystem fs = FileSystem.get(conf);
-    for (String entry : groomNames) {
-      partPaths.add(new Path(fileToPartition.getParent().toString()
-          + Path.SEPARATOR + PARTED + Path.SEPARATOR
-          + entry.split(NAME_VALUE_SEPARATOR)[0]));
-    }
+    return partitioner.partition(conf, fileToPartition, groomNames);
 
-    if (!skipPartitioning) {
-
-      // create a seq writer for that
-      for (Path p : partPaths) {
-        // System.out.println(p.toString());
-        fs.delete(p, true);
-        writers.add(SequenceFile.createWriter(fs, conf, p, Text.class,
-            Text.class));
-      }
-
-      // parse our file
-      if (!fs.exists(fileToPartition))
-        throw new FileNotFoundException("File " + fileToPartition
-            + " wasn't found!");
-
-      SequenceFile.Reader reader = new SequenceFile.Reader(fs, fileToPartition,
-          conf);
-      Text key = new Text(); // name of the vertex
-      Text value = new Text(); // name of the adjacent vertex : weight
-
-      while (reader.next(key, value)) {
-        // a key vertex has weight 0 to itself
-        ShortestPathVertex keyVertex = new ShortestPathVertex(0, key.toString());
-        // just mod the id
-        int mod = Math.abs(keyVertex.getId() % sizeOfCluster);
-        // append it to the right sequenceFile
-        writers.get(mod).append(new Text(keyVertex.getName()), new Text(value));
-      }
-
-      reader.close();
-
-      for (SequenceFile.Writer w : writers)
-        w.close();
-    }
-
-    for (Path p : partPaths) {
-      conf.set(IN_PATH + p.getName(), p.toString());
-    }
-
-    return conf;
   }
 
 }
