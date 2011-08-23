@@ -17,25 +17,26 @@
  */
 package org.apache.hama.examples.graph;
 
-public final class ShortestPathVertex {
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-  private final int id;
-  private final String name;
-  private final int weight;
+public final class ShortestPathVertex extends Vertex {
+
+  private int weight;
   private Integer cost;
 
+  public ShortestPathVertex() {
+  }
+
   public ShortestPathVertex(int weight, String name) {
-    super();
-    this.id = name.hashCode();
+    super(name);
     this.weight = weight;
-    this.name = name;
   }
 
   public ShortestPathVertex(int weight, String name, Integer cost) {
-    super();
-    this.id = name.hashCode();
+    super(name);
     this.weight = weight;
-    this.name = name;
     this.cost = cost;
   }
 
@@ -65,28 +66,15 @@ public final class ShortestPathVertex {
   }
 
   @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((name == null) ? 0 : name.hashCode());
-    return result;
+  public void readFields(DataInput in) throws IOException {
+    super.readFields(in);
+    weight = in.readInt();
   }
 
   @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    ShortestPathVertex other = (ShortestPathVertex) obj;
-    if (name == null) {
-      if (other.name != null)
-        return false;
-    } else if (!name.equals(other.name))
-      return false;
-    return true;
+  public void write(DataOutput out) throws IOException {
+    super.write(out);
+    out.writeInt(weight);
   }
 
 }

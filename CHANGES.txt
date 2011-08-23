@@ -10,6 +10,7 @@ Release 0.4 - Unreleased
 
   IMPROVEMENTS
   
+    HAMA-423: Improve and Refactor Partitioning in the Examples (Thomas Jungblut via edwardyoon)
     HAMA-422: Update HttpServer to use QueuedThreadPool (edwardyoon)
     HAMA-414: Move BSPPeer constructor into child process (edwardyoon)
     HAMA-419: Migrating site from forrest to maven (edwardyoon)
