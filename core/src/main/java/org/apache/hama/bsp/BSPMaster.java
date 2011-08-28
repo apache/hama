@@ -205,13 +205,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       while (true) {
         try {
           Directive directive = this.buffer.take();
-          if (directive instanceof ReportGroomStatusDirective) {
-            ((DirectiveHandler) handlers.get(ReportGroomStatusDirective.class))
-                .handle(directive);
-          } else {
-            throw new RuntimeException("Directive is not supported."
-                + directive);
-          }
+          handlers.get(directive.getClass()).handle(directive);
         } catch (InterruptedException ie) {
           LOG.error("Unable to retrieve directive from the queue.", ie);
           Thread.currentThread().interrupt();

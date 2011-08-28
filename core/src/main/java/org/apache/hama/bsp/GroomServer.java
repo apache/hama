@@ -52,6 +52,8 @@ import org.apache.hadoop.util.DiskChecker;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hama.checkpoint.Checkpointer;
+import org.apache.hama.checkpoint.CheckpointRunner;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.BSPPeerProtocol;
@@ -73,7 +75,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
 
   private volatile static int REPORT_INTERVAL = 1 * 1000;
 
-  Configuration conf;
+  final Configuration conf;
 
   // Constants
   static enum State {
@@ -125,6 +127,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   // private BlockingQueue<GroomServerAction> tasksToCleanup = new
   // LinkedBlockingQueue<GroomServerAction>();
 
+  private final CheckpointRunner checkpointRunner;
+
   private class DispatchTasksHandler implements DirectiveHandler {
 
     public void handle(Directive directive) throws DirectiveException {
@@ -167,7 +171,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
 
   private class Instructor extends Thread {
     final BlockingQueue<Directive> buffer = new LinkedBlockingQueue<Directive>();
-    final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
+    final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = 
+      new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
 
     public void bind(Class<? extends Directive> instruction,
         DirectiveHandler handler) {
@@ -187,13 +192,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
       while (true) {
         try {
           Directive directive = buffer.take();
-          if (directive instanceof DispatchTasksDirective) {
-            ((DirectiveHandler) handlers.get(DispatchTasksDirective.class))
-                .handle(directive);
-          } else {
-            throw new RuntimeException("Directive is not supported."
-                + directive);
-          }
+          handlers.get(directive.getClass()).handle(directive);
         } catch (InterruptedException ie) {
           LOG.error("Unable to retrieve directive from the queue.", ie);
           Thread.currentThread().interrupt();
@@ -207,10 +206,16 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   public GroomServer(Configuration conf) throws IOException {
     LOG.info("groom start");
     this.conf = conf;
-
     bspMasterAddr = BSPMaster.getAddress(conf);
     // FileSystem local = FileSystem.getLocal(conf);
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
+
+    CheckpointRunner ckptRunner = null;
+    if(this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
+      ckptRunner = 
+        new CheckpointRunner(CheckpointRunner.buildCommands(this.conf));
+    }
+    this.checkpointRunner = ckptRunner;
   }
 
   public synchronized void initialize() throws IOException {
@@ -300,6 +305,10 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
     this.instructor.bind(DispatchTasksDirective.class,
         new DispatchTasksHandler());
     instructor.start();
+    if(this.conf.getBoolean("bsp.checkpoint.enabled", false) && 
+       null != this.checkpointRunner && !this.checkpointRunner.isAlive()) {
+      this.checkpointRunner.start(); 
+    }
     this.running = true;
     this.initialized = true;
   }
@@ -311,9 +320,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
 
   @Override
   public void dispatch(Directive directive) throws IOException {
-    if (!instructor.isAlive())
-      throw new IOException();
-
+    if (!instructor.isAlive()) throw new IOException();
     instructor.put(directive);
   }
 
@@ -656,7 +663,10 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
     cleanupStorage();
     this.workerServer.stop();
     RPC.stopProxy(masterClient);
-
+    if(this.conf.getBoolean("bsp.checkpoint.enabled", false) && 
+       null != this.checkpointRunner && this.checkpointRunner.isAlive()) {
+      this.checkpointRunner.stop();
+    }
     if (taskReportServer != null) {
       taskReportServer.stop();
       taskReportServer = null;
@@ -742,7 +752,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
      */
     public synchronized void killAndCleanup(boolean wasFailure)
         throws IOException {
-      runner.kill();
+      runner.killBsp();
     }
 
     /**
@@ -815,14 +825,40 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
     // TODO Later, peers list should be returned.
     return this.groomHostName + ":" + Constants.DEFAULT_PEER_PORT;
   }
-
-  /**
-   * The main() for child processes.
+ 
+  /** 
+   * Checkpointer child process.
    */
-  public static class Child {
+  public static final class CheckpointerChild {
 
     public static void main(String[] args) throws Throwable {
-      LOG.debug("Child starting");
+      if(LOG.isDebugEnabled()) LOG.debug("Starting Checkpointer child process.");
+      HamaConfiguration defaultConf = new HamaConfiguration();
+      int ret = 0;
+      if(null != args && 1 == args.length) {
+        int port = Integer.parseInt(args[0]);
+        defaultConf.setInt("bsp.checkpoint.port", 
+          Integer.parseInt(CheckpointRunner.DEFAULT_PORT));
+        if(LOG.isDebugEnabled()) 
+          LOG.debug("Supplied checkpointer port value:"+port);
+        Checkpointer ckpt = new Checkpointer(defaultConf);
+        ckpt.start();
+        ckpt.join();
+        LOG.info("Checkpoint finishes its execution.");
+      }else {
+        throw new IllegalArgumentException(
+        "Port value is not provided for checkpointing service.");
+      }
+    }
+  }
+
+  /**
+   * The main() for BSPPeer child processes.
+   */
+  public static class BSPPeerChild {
+
+    public static void main(String[] args) throws Throwable {
+      if(LOG.isDebugEnabled()) LOG.debug("BSPPeerChild starting");
 
       HamaConfiguration defaultConf = new HamaConfiguration();
       // report address
@@ -842,9 +878,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
       BSPJob job = new BSPJob(task.getJobID(), task.getJobFile());
 
       defaultConf.set(Constants.PEER_HOST, args[3]);
+      if(null != args && 5 == args.length ) {
+        defaultConf.setInt("bsp.checkpoint.port", Integer.parseInt(args[4]));
+      } 
       defaultConf.setInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
 
       BSPPeer bspPeer = new BSPPeer(defaultConf, taskid, umbilical);
+      bspPeer.reinitialize();
       bspPeer.setJobConf(job);
       bspPeer.setAllPeerNames(umbilical.getAllPeerNames().getAllPeerNames());
 
