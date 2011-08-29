@@ -22,21 +22,18 @@ import java.io.DataInputStream;
 import java.util.List;
 
 import junit.framework.TestCase;
-import static junit.framework.Assert.*;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hama.Constants;
-import org.apache.hama.bsp.BSPMessage;
-import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.BSPPeer.BSPSerializableMessage;
-import org.apache.hama.bsp.BSPSerializerWrapper;
-import org.apache.hama.bsp.DoubleMessage;
-import org.apache.hama.HamaConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.BSPMessage;
+import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.BSPSerializerWrapper;
+import org.apache.hama.bsp.DoubleMessage;
+import org.apache.hama.bsp.BSPPeer.BSPSerializableMessage;
 
 public class TestCheckpoint extends TestCase {
 
