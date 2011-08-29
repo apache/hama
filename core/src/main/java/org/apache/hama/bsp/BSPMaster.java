@@ -45,22 +45,34 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.http.HttpServer;
+import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 import org.apache.hama.ipc.MasterProtocol;
-import org.apache.hama.ipc.GroomProtocol;
+import org.apache.hama.zookeeper.QuorumPeer;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.data.Stat;
 
 /**
  * BSPMaster is responsible to control all the groom servers and to manage bsp
  * jobs.
  */
 public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
-    GroomServerManager {
+    GroomServerManager, Watcher {
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
 
   private HamaConfiguration conf;
 
+  private ZooKeeper zk = null;
+  private String bspRoot = null;
+  
   /**
    * Constants for BSPMaster's status.
    */
@@ -163,7 +175,6 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
             } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
               GroomProtocol worker = findGroomServer(tmpStatus);
               Directive d1 = new DispatchTasksDirective(
-                  currentGroomServerPeers(),
                   new GroomServerAction[] { new KillTaskAction(ts.getTaskId()) });
               try {
                 worker.dispatch(d1);
@@ -307,11 +318,11 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     }
     Throwable e = null;
     try {
-      GroomProtocol wc = (GroomProtocol) RPC.waitForProxy(
-          GroomProtocol.class, GroomProtocol.versionID,
-          resolveWorkerAddress(status.getRpcServer()), this.conf);
+      GroomProtocol wc = (GroomProtocol) RPC.waitForProxy(GroomProtocol.class,
+          GroomProtocol.versionID, resolveWorkerAddress(status.getRpcServer()),
+          this.conf);
       if (null == wc) {
-        LOG.warn("Fail to create Worker client at host " + status.getPeerName());
+        LOG.warn("Fail to create Worker client at host");
         return false;
       }
       // TODO: need to check if peer name has changed
@@ -415,10 +426,88 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     BSPMaster result = new BSPMaster(conf, identifier);
     result.taskScheduler.setGroomServerManager(result);
     result.taskScheduler.start();
+    
+    // init zk root and child nodes
+    result.initZK(conf);
 
     return result;
   }
 
+  /**
+   * When start the cluster, cleans all zk nodes up.
+   * 
+   * @param conf
+   */
+  private void initZK(HamaConfiguration conf) {
+    try {
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
+          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+    } catch (IOException e) {
+      LOG.error("Exception during reinitialization!", e);
+    }
+
+    bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
+        Constants.DEFAULT_ZOOKEEPER_ROOT);
+    Stat s = null;
+    if (zk != null) {
+      try {
+        s = zk.exists(bspRoot, false);
+      } catch (Exception e) {
+        LOG.error(s, e);
+      }
+
+      if (s == null) {
+        try {
+          zk.create(bspRoot, new byte[0], Ids.OPEN_ACL_UNSAFE,
+              CreateMode.PERSISTENT);
+        } catch (KeeperException e) {
+          LOG.error(e);
+        } catch (InterruptedException e) {
+          LOG.error(e);
+        }
+      } else {
+        this.clearZKNodes();
+      }
+    }
+  }
+
+  public void clearZKNodes() {
+    try {
+      for (String node : zk.getChildren(bspRoot, this)) {
+        zk.delete(bspRoot + "/" + node, 0);
+      }
+    } catch (KeeperException e) {
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public void createJobRoot(String string) {
+    try {
+      zk.create("/" + string, new byte[0], Ids.OPEN_ACL_UNSAFE,
+          CreateMode.PERSISTENT);
+    } catch (KeeperException e) {
+      LOG.error(e);
+    } catch (InterruptedException e) {
+      LOG.error(e);
+    }
+  }
+
+  public void deleteJobRoot(String string) {
+    try {
+      for (String node : zk.getChildren("/" + string, this)) {
+        zk.delete("/" + string + "/" + node, 0);
+      }
+      
+      zk.delete("/" + string, 0);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (KeeperException e) {
+      e.printStackTrace();
+    }
+  }
+  
   public static InetSocketAddress getAddress(Configuration conf) {
     String hamaMasterStr = conf.get("bsp.master.address", "localhost");
     int defaultPort = conf.getInt("bsp.master.port", 40000);
@@ -505,25 +594,25 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   @Override
   public ClusterStatus getClusterStatus(boolean detailed) {
-    Map<String, String> groomPeersMap = null;
+    Map<String, String> groomsMap = null;
 
     // give the caller a snapshot of the cluster status
     int numGroomServers = groomServers.size();
     if (detailed) {
-      groomPeersMap = new HashMap<String, String>();
+      groomsMap = new HashMap<String, String>();
       for (Map.Entry<GroomServerStatus, GroomProtocol> entry : groomServers
           .entrySet()) {
         GroomServerStatus s = entry.getKey();
-        groomPeersMap.put(s.getGroomName(), s.getPeerName());
+        groomsMap.put(s.getGroomName(), s.getGroomHostName());
       }
+
     }
 
-    // TODO currently we only have one task slot per groom server
-    this.totalTaskCapacity = numGroomServers;
+    int tasksPerGroom = conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3);
+    this.totalTaskCapacity = tasksPerGroom * numGroomServers;
 
     if (detailed) {
-      return new ClusterStatus(groomPeersMap, totalTasks, totalTaskCapacity,
-          state);
+      return new ClusterStatus(groomsMap, totalTasks, totalTaskCapacity, state);
     } else {
       return new ClusterStatus(numGroomServers, totalTasks, totalTaskCapacity,
           state);
@@ -553,15 +642,6 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   @Override
   public void removeJobInProgressListener(JobInProgressListener listener) {
     jobInProgressListeners.remove(listener);
-  }
-
-  @Override
-  public Map<String, String> currentGroomServerPeers() {
-    Map<String, String> tmp = new HashMap<String, String>();
-    for (GroomServerStatus status : groomServers.keySet()) {
-      tmp.put(status.getGroomName(), status.getPeerName());
-    }
-    return tmp;
   }
 
   public String getBSPMasterName() {
@@ -715,10 +795,21 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   }
 
   public void shutdown() {
+    try {
+      this.zk.close();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     this.masterServer.stop();
   }
 
   public BSPMaster.State currentState() {
     return this.state;
+  }
+
+  @Override
+  public void process(WatchedEvent event) {
+    // TODO Auto-generated method stub
+
   }
 }

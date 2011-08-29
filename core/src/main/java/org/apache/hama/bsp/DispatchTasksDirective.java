@@ -20,10 +20,6 @@ package org.apache.hama.bsp;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,22 +33,15 @@ public final class DispatchTasksDirective extends Directive implements Writable 
 
   public static final Log LOG = LogFactory.getLog(DispatchTasksDirective.class);
 
-  private Map<String, String> groomServerPeers;
   private GroomServerAction[] actions;
 
   public DispatchTasksDirective() {
     super();
   }
 
-  public DispatchTasksDirective(Map<String, String> groomServerPeers,
-      GroomServerAction[] actions) {
+  public DispatchTasksDirective(GroomServerAction[] actions) {
     super(Directive.Type.Request);
-    this.groomServerPeers = groomServerPeers;
     this.actions = actions;
-  }
-
-  public Map<String, String> getGroomServerPeers() {
-    return this.groomServerPeers;
   }
 
   public GroomServerAction[] getActions() {
@@ -71,18 +60,6 @@ public final class DispatchTasksDirective extends Directive implements Writable 
         action.write(out);
       }
     }
-    String[] groomServerNames = groomServerPeers.keySet()
-        .toArray(new String[0]);
-    WritableUtils.writeCompressedStringArray(out, groomServerNames);
-
-    List<String> groomServerAddresses = new ArrayList<String>(
-        groomServerNames.length);
-    for (String groomName : groomServerNames) {
-      groomServerAddresses.add(groomServerPeers.get(groomName));
-    }
-    WritableUtils.writeCompressedStringArray(out, groomServerAddresses
-        .toArray(new String[0]));
-
   }
 
   @Override
@@ -99,13 +76,6 @@ public final class DispatchTasksDirective extends Directive implements Writable 
       }
     } else {
       this.actions = null;
-    }
-    String[] groomServerNames = WritableUtils.readCompressedStringArray(in);
-    String[] groomServerAddresses = WritableUtils.readCompressedStringArray(in);
-    groomServerPeers = new HashMap<String, String>(groomServerNames.length);
-
-    for (int i = 0; i < groomServerNames.length; i++) {
-      groomServerPeers.put(groomServerNames[i], groomServerAddresses[i]);
     }
   }
 }

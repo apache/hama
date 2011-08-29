@@ -52,7 +52,9 @@ public interface Constants {
   public static final String GROOM_SERVER_IMPL= "hama.groomserver.impl";
   
   /** When we encode strings, we always specify UTF8 encoding */
-  static final String UTF8_ENCODING = "UTF-8";
+  public static final String UTF8_ENCODING = "UTF-8";
+  
+  public static final String MAX_TASKS_PER_GROOM = "bsp.tasks.maximum";
   
   ///////////////////////////////////////
   // Constants for ZooKeeper

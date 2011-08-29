@@ -18,7 +18,6 @@
 package org.apache.hama.bsp;
 
 import java.util.Collection;
-import java.util.Map;
 
 import org.apache.hama.ipc.GroomProtocol;
 
@@ -70,10 +69,4 @@ interface GroomServerManager {
    * @param the JobInProgressListener to be removed.
    */
   void removeJobInProgressListener(JobInProgressListener listener);
-
-  /**
-   * Current GroomServer Peers.
-   * @return GroomName and PeerName(host:port) in pair. 
-   */
-  Map<String, String> currentGroomServerPeers();
 }

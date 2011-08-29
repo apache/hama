@@ -19,8 +19,8 @@ package org.apache.hama.ipc;
 
 import java.io.IOException;
 
-import org.apache.hama.bsp.GroomServerStatus;
 import org.apache.hama.bsp.Directive;
+import org.apache.hama.bsp.GroomServerStatus;
 
 /**
  * A new protocol for GroomServers communicate with BSPMaster. This
@@ -44,6 +44,6 @@ public interface MasterProtocol extends HamaRPCProtocolVersion {
    */
   boolean report(Directive directive) throws IOException;
 
-  public String getSystemDir();  
+  public String getSystemDir();
 
 }

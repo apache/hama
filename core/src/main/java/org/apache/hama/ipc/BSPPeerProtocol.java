@@ -21,7 +21,6 @@ import java.io.Closeable;
 import java.io.IOException;
 
 import org.apache.hama.Constants;
-import org.apache.hama.bsp.PeerNames;
 import org.apache.hama.bsp.Task;
 import org.apache.hama.bsp.TaskAttemptID;
 
@@ -56,8 +55,9 @@ public interface BSPPeerProtocol extends HamaRPCProtocolVersion, Closeable,
   void incrementSuperstepCount(TaskAttemptID taskid) throws IOException;
 
   /**
-   * @return the all BSPPeer names.
+   * @param taskid
+   * @return assigned port number
    */
-  PeerNames getAllPeerNames();
+  int getAssignedPortNum(TaskAttemptID taskid);
 
 }

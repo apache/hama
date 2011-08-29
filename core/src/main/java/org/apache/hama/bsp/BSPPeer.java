@@ -17,6 +17,8 @@
  */
 package org.apache.hama.bsp;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
@@ -24,20 +26,16 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import static java.util.concurrent.TimeUnit.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -45,8 +43,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
-import org.apache.hama.checkpoint.CheckpointRunner;
 import org.apache.hama.Constants;
+import org.apache.hama.checkpoint.CheckpointRunner;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.util.Bytes;
 import org.apache.hama.zookeeper.QuorumPeer;
@@ -54,9 +52,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.ZooDefs.Ids;
 
 /**
  * This class represents a BSP peer.
@@ -75,18 +72,12 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   private final String bspRoot;
   private final String quorumServers;
 
-  private final Map<InetSocketAddress, BSPPeerInterface> peers = 
-    new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
-  private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = 
-    new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
-  private ConcurrentLinkedQueue<BSPMessage> localQueue = 
-    new ConcurrentLinkedQueue<BSPMessage>();
-  private ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration = 
-    new ConcurrentLinkedQueue<BSPMessage>();
-  private final Map<String, InetSocketAddress> peerSocketCache = 
-    new ConcurrentHashMap<String, InetSocketAddress>();
+  private final Map<InetSocketAddress, BSPPeerInterface> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeerInterface>();
+  private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
+  private ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
+  private ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
+  private final Map<String, InetSocketAddress> peerSocketCache = new ConcurrentHashMap<String, InetSocketAddress>();
 
-  private SortedSet<String> allPeerNames = new TreeSet<String>();
   private InetSocketAddress peerAddress;
   private TaskStatus currentTaskStatus;
 
@@ -97,15 +88,16 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   public static final class BSPSerializableMessage implements Writable {
     final AtomicReference<String> path = new AtomicReference<String>();
-    final AtomicReference<BSPMessageBundle> bundle = 
-      new AtomicReference<BSPMessageBundle>();
+    final AtomicReference<BSPMessageBundle> bundle = new AtomicReference<BSPMessageBundle>();
 
-    public BSPSerializableMessage(){}
+    public BSPSerializableMessage() {
+    }
 
-    public BSPSerializableMessage(final String path, final BSPMessageBundle bundle) {
-      if(null == path) 
+    public BSPSerializableMessage(final String path,
+        final BSPMessageBundle bundle) {
+      if (null == path)
         throw new NullPointerException("No path provided for checkpointing.");
-      if(null == bundle) 
+      if (null == bundle)
         throw new NullPointerException("No data provided for checkpointing.");
       this.path.set(path);
       this.bundle.set(bundle);
@@ -114,21 +106,21 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     public final String checkpointedPath() {
       return this.path.get();
     }
-    
-    public final BSPMessageBundle messageBundle(){
+
+    public final BSPMessageBundle messageBundle() {
       return this.bundle.get();
     }
 
-    @Override 
+    @Override
     public final void write(DataOutput out) throws IOException {
       out.writeUTF(this.path.get());
       this.bundle.get().write(out);
     }
 
-    @Override 
+    @Override
     public final void readFields(DataInput in) throws IOException {
       this.path.set(in.readUTF());
-      BSPMessageBundle pack = new BSPMessageBundle(); 
+      BSPMessageBundle pack = new BSPMessageBundle();
       pack.readFields(in);
       this.bundle.set(pack);
     }
@@ -139,45 +131,45 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     final Socket client;
     final ScheduledExecutorService sched;
 
-    public BSPMessageSerializer(final int port) { 
+    public BSPMessageSerializer(final int port) {
       Socket tmp = null;
       int cnt = 0;
       do {
         tmp = init(port);
-        cnt ++;
-        try {   
-          Thread.sleep(1000); 
-        } catch(InterruptedException ie) { 
-          LOG.warn("Thread is interrupted.", ie); 
+        cnt++;
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+          LOG.warn("Thread is interrupted.", ie);
           Thread.currentThread().interrupt();
         }
-      } while(null == tmp && 10 > cnt);
+      } while (null == tmp && 10 > cnt);
       this.client = tmp;
-      if(null == this.client)
+      if (null == this.client)
         throw new NullPointerException("Client socket is null.");
-      this.sched = Executors.newScheduledThreadPool(
-        conf.getInt("bsp.checkpoint.serializer_thread", 10));
-      LOG.info(BSPMessageSerializer.class.getName()+
-      " is ready to serialize message.");
+      this.sched = Executors.newScheduledThreadPool(conf.getInt(
+          "bsp.checkpoint.serializer_thread", 10));
+      LOG.info(BSPMessageSerializer.class.getName()
+          + " is ready to serialize message.");
     }
 
     private Socket init(final int port) {
-       Socket tmp = null;
-       try {
-         tmp = new Socket("localhost", port);
-       } catch(UnknownHostException uhe) {
-         LOG.error("Unable to connect to BSPMessageDeserializer.", uhe);
-       } catch(IOException ioe) {
-         LOG.warn("Fail to create socket.", ioe);
-       }
-       return tmp;
+      Socket tmp = null;
+      try {
+        tmp = new Socket("localhost", port);
+      } catch (UnknownHostException uhe) {
+        LOG.error("Unable to connect to BSPMessageDeserializer.", uhe);
+      } catch (IOException ioe) {
+        LOG.warn("Fail to create socket.", ioe);
+      }
+      return tmp;
     }
-   
-    void serialize(final BSPSerializableMessage tmp) throws IOException { 
-      if(LOG.isDebugEnabled())
-        LOG.debug("Messages are saved to "+tmp.checkpointedPath());
+
+    void serialize(final BSPSerializableMessage tmp) throws IOException {
+      if (LOG.isDebugEnabled())
+        LOG.debug("Messages are saved to " + tmp.checkpointedPath());
       final DataOutput out = new DataOutputStream(client.getOutputStream());
-      this.sched.schedule(new Callable() {
+      this.sched.schedule(new Callable<Object>() {
         public Object call() throws Exception {
           tmp.write(out);
           return null;
@@ -189,12 +181,12 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       try {
         this.client.close();
         this.sched.shutdown();
-      } catch(IOException io) {
+      } catch (IOException io) {
         LOG.error("Fail to close client socket.", io);
       }
     }
 
-  }// message serializer 
+  }// message serializer
 
   /**
    * Protected default constructor for LocalBSPRunner.
@@ -210,7 +202,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
    * BSPPeer Constructor.
    * 
    * BSPPeer acts on behalf of clients performing bsp() tasks.
-   *  
+   * 
    * @param conf is the configuration file containing bsp peer host, port, etc.
    * @param umbilical is the bsp protocol used to contact its parent process.
    * @param taskid is the id that current process holds.
@@ -228,54 +220,36 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT);
     quorumServers = QuorumPeer.getZKQuorumServersString(conf);
-    if(LOG.isDebugEnabled()) LOG.debug("Quorum  " + quorumServers);
+    if (LOG.isDebugEnabled())
+      LOG.debug("Quorum  " + quorumServers);
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
     BSPMessageSerializer msgSerializer = null;
-    if(this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      msgSerializer = 
-        new BSPMessageSerializer(conf.getInt("bsp.checkpoint.port", 
-        Integer.parseInt(CheckpointRunner.DEFAULT_PORT)));
+    if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
+      msgSerializer = new BSPMessageSerializer(conf.getInt(
+          "bsp.checkpoint.port", Integer
+              .parseInt(CheckpointRunner.DEFAULT_PORT)));
     }
     this.messageSerializer = msgSerializer;
   }
 
   public void reinitialize() {
     try {
-      if(LOG.isDebugEnabled()) LOG.debug("reinitialize(): " + getPeerName());
-      this.server = RPC.getServer(this, peerAddress.getHostName(),
-          peerAddress.getPort(), conf);
+      if (LOG.isDebugEnabled())
+        LOG.debug("reinitialize(): " + getPeerName());
+      this.server = RPC.getServer(this, peerAddress.getHostName(), peerAddress
+          .getPort(), conf);
       server.start();
       LOG.info(" BSPPeer address:" + peerAddress.getHostName() + " port:"
           + peerAddress.getPort());
     } catch (IOException e) {
       LOG.error("Fail to start RPC server!", e);
     }
- 
+
     try {
       this.zk = new ZooKeeper(quorumServers, conf.getInt(
           Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
-    } catch(IOException e) {
+    } catch (IOException e) {
       LOG.error("Fail while reinitializing zookeeeper!", e);
-    }
-  
-    Stat s = null;
-    if (zk != null) {
-      try {
-        s = zk.exists(Constants.DEFAULT_ZOOKEEPER_ROOT, false);
-      } catch (Exception e) {
-        LOG.error(s, e);
-      }
-
-      if (s == null) {
-        try {
-          zk.create(Constants.DEFAULT_ZOOKEEPER_ROOT, new byte[0],
-              Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        } catch (KeeperException e) {
-          LOG.error(e);
-        } catch (InterruptedException e) {
-          LOG.error(e);
-        }
-      }
     }
   }
 
@@ -316,11 +290,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   private String checkpointedPath() {
     String backup = conf.get("bsp.checkpoint.prefix_path", "/checkpoint/");
-    String ckptPath = 
-      backup + jobConf.getJobID().toString() + "/" + getSuperstepCount() + 
-      "/" + this.taskid.toString();
-    if(LOG.isDebugEnabled()) 
-      LOG.debug("Messages are to be saved to "+ckptPath);
+    String ckptPath = backup + jobConf.getJobID().toString() + "/"
+        + getSuperstepCount() + "/" + this.taskid.toString();
+    if (LOG.isDebugEnabled())
+      LOG.debug("Messages are to be saved to " + ckptPath);
     return ckptPath;
   }
 
@@ -332,8 +305,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public void sync() throws IOException, KeeperException, InterruptedException {
     enterBarrier();
     long startTime = System.currentTimeMillis();
-    Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = 
-        this.outgoingQueues.entrySet().iterator();
+    Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = this.outgoingQueues
+        .entrySet().iterator();
 
     while (it.hasNext()) {
       Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> entry = it
@@ -348,11 +321,11 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       for (BSPMessage message : messages) {
         bundle.addMessage(message);
       }
-      
-      // checkpointing 
-      if(null != this.messageSerializer) {
+
+      // checkpointing
+      if (null != this.messageSerializer) {
         this.messageSerializer.serialize(new BSPSerializableMessage(
-          checkpointedPath(), bundle));
+            checkpointedPath(), bundle));
       }
 
       peer.put(bundle);
@@ -365,7 +338,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     leaveBarrier();
     currentTaskStatus.incrementSuperstepCount();
     umbilical.incrementSuperstepCount(taskid);
-    
+
     startTime = System.currentTimeMillis();
     // Clear outgoing queues.
     clearOutgoingQueues();
@@ -392,9 +365,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
     LOG.debug("[" + getPeerName() + "] enter the enterbarrier: "
         + this.getSuperstepCount());
-    zk.create(bspRoot + "/" + getPeerName(),
-        Bytes.toBytes(this.getSuperstepCount()), Ids.OPEN_ACL_UNSAFE,
-        CreateMode.EPHEMERAL);
+    zk.create(getNodeName(), Bytes.toBytes(this.getSuperstepCount()),
+        Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 
     while (true) {
       synchronized (mutex) {
@@ -410,7 +382,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   protected boolean leaveBarrier() throws KeeperException, InterruptedException {
-    zk.delete(bspRoot + "/" + getPeerName(), 0);
+    zk.delete(getNodeName(), 0);
     while (true) {
       synchronized (mutex) {
         List<String> list = zk.getChildren(bspRoot, true);
@@ -422,6 +394,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         }
       }
     }
+  }
+
+  private String getNodeName() {
+    return bspRoot + "/" + taskid.getJobID().toString() + "_" + getPeerName();
   }
 
   @Override
@@ -438,8 +414,16 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   @Override
   public void close() throws IOException {
-    server.stop();
-    if(null != messageSerializer) this.messageSerializer.close();
+    this.clear();
+    try {
+      zk.close();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    if (server != null)
+      server.stop();
+    if (null != messageSerializer)
+      this.messageSerializer.close();
   }
 
   @Override
@@ -487,23 +471,22 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   private InetSocketAddress getAddress(String peerName) {
     String[] peerAddrParts = peerName.split(":");
-    return new InetSocketAddress(peerAddrParts[0],
-        Integer.parseInt(peerAddrParts[1]));
+    return new InetSocketAddress(peerAddrParts[0], Integer
+        .parseInt(peerAddrParts[1]));
   }
 
   @Override
   public String[] getAllPeerNames() {
-    return allPeerNames.toArray(new String[0]);
-  }
-
-  /**
-   * To be invoked by the Groom Server with a list of peers received from an
-   * heartbeat response (BSPMaster).
-   * 
-   * @param allPeers
-   */
-  void setAllPeerNames(Collection<String> allPeerNames) {
-    this.allPeerNames = new TreeSet<String>(allPeerNames);
+    String[] result = null;
+    try {
+      result = zk.getChildren("/" + jobConf.getJobID().toString(), this).toArray(new String[0]);
+    } catch (KeeperException e) {
+      e.printStackTrace();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    
+    return result;
   }
 
   /**

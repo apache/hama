@@ -31,7 +31,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
   protected MiniBSPCluster bspCluster;
   protected MiniZooKeeperCluster zooKeeperCluster;
   protected boolean startDfs;
-  protected int numOfGroom = 2;
+  protected int numOfGroom = 1;
 
   /** default constructor */
   public HamaClusterTestCase() {
