@@ -47,9 +47,10 @@ public class SerializePrinting {
     private FileSystem fileSys;
     private int num;
 
-    public void bsp(BSPPeer bspPeer) throws IOException,
-        KeeperException, InterruptedException {
+    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+        InterruptedException {
 
+      LOG.info(bspPeer.getAllPeerNames());
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {
         String peerName = bspPeer.getPeerName();
