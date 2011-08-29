@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
@@ -137,8 +138,8 @@ public class PiEstimator {
     }
 
     // Choose one as a master
-    for (String peerName : cluster.getActiveGroomNames().values()) {
-      conf.set(MASTER_TASK, peerName);
+    for (String hostName : cluster.getActiveGroomNames().values()) {
+      conf.set(MASTER_TASK, hostName + ":" + Constants.DEFAULT_PEER_PORT);
       break;
     }
 
