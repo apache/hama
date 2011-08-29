@@ -91,7 +91,7 @@ public class ClusterStatus implements Writable {
   }
   
   /**
-   * Get the names of groom servers, and their peers, in the cluster.
+   * Get the names of groom servers, and their hostnames, in the cluster.
    * 
    * @return the active groom servers in the cluster.
    */  

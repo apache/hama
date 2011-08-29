@@ -50,8 +50,8 @@ public class GroomServerStatus implements Writable {
   }
 
   String groomName;
-  String peerName;
   String rpcServer;
+  String hostName;
   int failures;
   List<TaskStatus> taskReports;
 
@@ -63,34 +63,29 @@ public class GroomServerStatus implements Writable {
     taskReports = new CopyOnWriteArrayList<TaskStatus>();
   }
 
-  public GroomServerStatus(String groomName, String peerName,
+  public GroomServerStatus(String groomName, 
       List<TaskStatus> taskReports, int failures, int maxTasks) {
-    this(groomName, peerName, taskReports, failures, maxTasks, "");
+    this(groomName, taskReports, failures, maxTasks, "", "");
   }
 
-  public GroomServerStatus(String groomName, String peerName,
-      List<TaskStatus> taskReports, int failures, int maxTasks, String rpc) {
+  public GroomServerStatus(String groomName, 
+      List<TaskStatus> taskReports, int failures, int maxTasks, String rpc, String hostName) {
     this.groomName = groomName;
-    this.peerName = peerName;
     this.taskReports = new ArrayList<TaskStatus>(taskReports);
     this.failures = failures;
     this.maxTasks = maxTasks;
     this.rpcServer = rpc;
+    this.hostName = hostName;
   }
 
   public String getGroomName() {
     return groomName;
   }
 
-  /**
-   * The host (and port) from where the groom server can be reached.
-   * 
-   * @return The groom server address in the form of "hostname:port"
-   */
-  public String getPeerName() {
-    return peerName;
+  public String getGroomHostName() {
+    return hostName;
   }
-
+  
   public String getRpcServer() {
     return rpcServer;
   }
@@ -147,8 +142,8 @@ public class GroomServerStatus implements Writable {
   public int hashCode() {
     int result = 17;
     result = 37 * result + groomName.hashCode();
-    result = 37 * result + peerName.hashCode();
     result = 37 * result + rpcServer.hashCode();
+    result = 37 * result + hostName.hashCode();
     /*
      * result = 37*result + (int)failures; result = 37*result +
      * taskReports.hashCode(); result = 37*result +
@@ -169,8 +164,6 @@ public class GroomServerStatus implements Writable {
     GroomServerStatus s = (GroomServerStatus) o;
     if (!s.groomName.equals(groomName))
       return false;
-    if (!s.peerName.equals(peerName))
-      return false;
     if (!s.rpcServer.equals(rpcServer))
       return false;
     /*
@@ -189,8 +182,9 @@ public class GroomServerStatus implements Writable {
   @Override
   public void readFields(DataInput in) throws IOException {
     this.groomName = Text.readString(in);
-    this.peerName = Text.readString(in);
     this.rpcServer = Text.readString(in);
+    this.hostName = Text.readString(in);
+    
     this.failures = in.readInt();
     this.maxTasks = in.readInt();
     taskReports.clear();
@@ -211,8 +205,9 @@ public class GroomServerStatus implements Writable {
   @Override
   public void write(DataOutput out) throws IOException {
     Text.writeString(out, groomName);
-    Text.writeString(out, peerName);
     Text.writeString(out, rpcServer);
+    Text.writeString(out, hostName);
+    
     out.writeInt(failures);
     out.writeInt(maxTasks);
     out.writeInt(taskReports.size());

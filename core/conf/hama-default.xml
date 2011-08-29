@@ -77,7 +77,7 @@
   </property>
   <property>
     <name>bsp.child.java.opts</name>
-    <value>-Xmx1024m</value>
+    <value>-Xmx512m</value>
     <description>Java opts for the groom server child processes.  
     The following symbol, if present, will be interpolated: @taskid@ is replaced 
     by current TaskID. Any other occurrences of '@' will go unchanged.
@@ -92,6 +92,12 @@
     <name>bsp.local.tasks.maximum</name>
     <value>20</value>
     <description>Number of tasks that run in parallel when in local mode.</description>
+  </property>
+  <property>
+    <name>bsp.tasks.maximum</name>
+    <value>3</value>
+    <description>The maximum number of BSP tasks that will be run simultaneously 
+    by a groom server.</description>
   </property>
 
   <!--

@@ -49,17 +49,24 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.DiskChecker;
-import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hama.checkpoint.Checkpointer;
-import org.apache.hama.checkpoint.CheckpointRunner;
+import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.checkpoint.CheckpointRunner;
+import org.apache.hama.checkpoint.Checkpointer;
 import org.apache.hama.ipc.BSPPeerProtocol;
-import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.ipc.GroomProtocol;
+import org.apache.hama.ipc.MasterProtocol;
+import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.log4j.LogManager;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.ZooDefs.Ids;
 
 /**
  * A Groom Server (shortly referred to as groom) is a process that performs bsp
@@ -69,7 +76,8 @@ import org.apache.log4j.LogManager;
  * storages. Basically, a groom server and a data node should be run on one
  * physical node.
  */
-public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
+public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
+    Watcher {
   public static final Log LOG = LogFactory.getLog(GroomServer.class);
   static final String SUBDIR = "groomServer";
 
@@ -81,6 +89,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   static enum State {
     NORMAL, COMPUTE, SYNC, BARRIER, STALE, INTERRUPTED, DENIED
   };
+
+  private static ZooKeeper zk = null;
 
   // Running States and its related things
   volatile boolean initialized = false;
@@ -103,11 +113,12 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
 
   // Job
   private int failures;
-  private int maxCurrentTasks = 1;
+  private int maxCurrentTasks;
   Map<TaskAttemptID, TaskInProgress> tasks = new HashMap<TaskAttemptID, TaskInProgress>();
   /** Map from taskId -> TaskInProgress. */
   Map<TaskAttemptID, TaskInProgress> runningTasks = null;
   Map<TaskAttemptID, TaskInProgress> finishedTasks = null;
+  Map<TaskAttemptID, Integer> assignedPeerNames = null;
   Map<BSPJobID, RunningJob> runningJobs = null;
 
   // new nexus between GroomServer and BSPMaster
@@ -122,8 +133,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   InetSocketAddress taskReportAddress;
   Server taskReportServer = null;
 
-  private PeerNames allPeerNames = null;
-
   // private BlockingQueue<GroomServerAction> tasksToCleanup = new
   // LinkedBlockingQueue<GroomServerAction>();
 
@@ -135,15 +144,37 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
       GroomServerAction[] actions = ((DispatchTasksDirective) directive)
           .getActions();
 
-      allPeerNames = new PeerNames(((DispatchTasksDirective) directive)
-          .getGroomServerPeers().values());
-
       if (LOG.isDebugEnabled()) {
         LOG.debug("Got Response from BSPMaster with "
             + ((actions != null) ? actions.length : 0) + " actions");
       }
 
       if (actions != null) {
+        assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
+        int i = 0;
+
+        // add peers to BSPMaster.
+        // TODO find another way to manage all activate peers.
+        for (GroomServerAction action : actions) {
+          Task t = ((LaunchTaskAction) action).getTask();
+
+          int peerPort = (Constants.DEFAULT_PEER_PORT + i);
+
+          try {
+            zk.create("/" + t.getJobID().toString() + "/" + groomHostName + ":"
+                + peerPort, new byte[0], Ids.OPEN_ACL_UNSAFE,
+                CreateMode.EPHEMERAL);
+          } catch (KeeperException e) {
+            e.printStackTrace();
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+
+          assignedPeerNames.put(t.getTaskID(), peerPort);
+
+          i++;
+        }
+
         for (GroomServerAction action : actions) {
           if (action instanceof LaunchTaskAction) {
             startNewTask((LaunchTaskAction) action);
@@ -171,8 +202,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
 
   private class Instructor extends Thread {
     final BlockingQueue<Directive> buffer = new LinkedBlockingQueue<Directive>();
-    final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = 
-      new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
+    final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
 
     public void bind(Class<? extends Directive> instruction,
         DirectiveHandler handler) {
@@ -211,11 +241,18 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
 
     CheckpointRunner ckptRunner = null;
-    if(this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      ckptRunner = 
-        new CheckpointRunner(CheckpointRunner.buildCommands(this.conf));
+    if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
+      ckptRunner = new CheckpointRunner(CheckpointRunner
+          .buildCommands(this.conf));
     }
     this.checkpointRunner = ckptRunner;
+
+    try {
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
+          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+    } catch (IOException e) {
+      LOG.error("Exception during reinitialization!", e);
+    }
   }
 
   public synchronized void initialize() throws IOException {
@@ -224,9 +261,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(
-          conf.get("bsp.dns.interface", "default"),
-          conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
+          "default"), conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -239,6 +275,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
     this.finishedTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
     this.conf.set(Constants.PEER_HOST, localHostname);
     this.conf.set(Constants.GROOM_RPC_HOST, localHostname);
+    this.maxCurrentTasks = conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3);
 
     int rpcPort = -1;
     String rpcAddr = null;
@@ -293,8 +330,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
       throw new IllegalArgumentException("Error rpc address " + rpcAddr
           + " port" + rpcPort);
     if (!this.masterClient.register(new GroomServerStatus(groomServerName,
-        getBspPeerName(), cloneAndResetRunningTaskStatuses(), failures,
-        maxCurrentTasks, this.rpcServer))) {
+        cloneAndResetRunningTaskStatuses(), failures, maxCurrentTasks,
+        this.rpcServer, groomHostName))) {
       LOG.error("There is a problem in establishing communication"
           + " link with BSPMaster");
       throw new IOException("There is a problem in establishing"
@@ -305,9 +342,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
     this.instructor.bind(DispatchTasksDirective.class,
         new DispatchTasksHandler());
     instructor.start();
-    if(this.conf.getBoolean("bsp.checkpoint.enabled", false) && 
-       null != this.checkpointRunner && !this.checkpointRunner.isAlive()) {
-      this.checkpointRunner.start(); 
+    if (this.conf.getBoolean("bsp.checkpoint.enabled", false)
+        && null != this.checkpointRunner && !this.checkpointRunner.isAlive()) {
+      this.checkpointRunner.start();
     }
     this.running = true;
     this.initialized = true;
@@ -320,7 +357,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
 
   @Override
   public void dispatch(Directive directive) throws IOException {
-    if (!instructor.isAlive()) throw new IOException();
+    if (!instructor.isAlive())
+      throw new IOException();
     instructor.put(directive);
   }
 
@@ -380,33 +418,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   public State offerService() throws Exception {
     while (running && !shuttingDown) {
       try {
-
-        // Reports to a BSPMaster
-        for (Map.Entry<TaskAttemptID, TaskInProgress> e : runningTasks
-            .entrySet()) {
-          Thread.sleep(REPORT_INTERVAL);
-          TaskInProgress tip = e.getValue();
-          TaskStatus taskStatus = tip.getStatus();
-
-          if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
-            taskStatus.setProgress(taskStatus.getSuperstepCount());
-
-            if (!tip.runner.isAlive()) {
-              if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
-                taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-              }
-              taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
-            }
-          }
-
-          doReport(taskStatus);
-        }
-
-        Thread.sleep(REPORT_INTERVAL);
-      } catch (InterruptedException ie) {
-      }
-
-      try {
         if (justInited) {
           String dir = masterClient.getSystemDir();
           if (dir == null) {
@@ -430,6 +441,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
             + StringUtils.stringifyException(except);
         LOG.error(msg);
       }
+      Thread.sleep(REPORT_INTERVAL);
     }
     return State.NORMAL;
   }
@@ -464,15 +476,15 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
    */
   public void doReport(TaskStatus taskStatus) {
     GroomServerStatus groomStatus = new GroomServerStatus(groomServerName,
-        getBspPeerName(), updateTaskStatus(taskStatus), failures,
-        maxCurrentTasks, rpcServer);
+        updateTaskStatus(taskStatus), failures, maxCurrentTasks, rpcServer,
+        groomHostName);
     try {
       boolean ret = masterClient.report(new ReportGroomStatusDirective(
           groomStatus));
       if (!ret) {
         LOG.warn("Fail to renew BSPMaster's GroomServerStatus. "
-            + " groom name: " + groomStatus.getGroomName() + " peer name:"
-            + groomStatus.getPeerName() + " rpc server:" + rpcServer);
+            + " groom name: " + groomStatus.getGroomName() + " rpc server:"
+            + rpcServer);
       }
     } catch (IOException ioe) {
       LOG.error("Fail to communicate with BSPMaster for reporting.", ioe);
@@ -536,6 +548,10 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
           RunJar.unJar(new File(localJarFile.toString()), workDir);
         }
         rjob.localized = true;
+      } else {
+        HamaConfiguration conf = new HamaConfiguration();
+        conf.addResource(rjob.getJobFile());
+        jobConf = new BSPJob(conf, rjob.getJobId().toString());
       }
     }
 
@@ -658,13 +674,19 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   }
 
   public synchronized void close() throws IOException {
+    try {
+      zk.close();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
     this.running = false;
     this.initialized = false;
     cleanupStorage();
     this.workerServer.stop();
     RPC.stopProxy(masterClient);
-    if(this.conf.getBoolean("bsp.checkpoint.enabled", false) && 
-       null != this.checkpointRunner && this.checkpointRunner.isAlive()) {
+    if (this.conf.getBoolean("bsp.checkpoint.enabled", false)
+        && null != this.checkpointRunner && this.checkpointRunner.isAlive()) {
       this.checkpointRunner.stop();
     }
     if (taskReportServer != null) {
@@ -725,9 +747,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
         systemFS.copyToLocalFile(new Path(jarFile), localJarFile);
         localJobConf.setJar(localJarFile.toString());
       }
-
-      LOG.debug("localizeTask : " + localJobConf.getJar());
-      LOG.debug("localizeTask : " + localJobFile.toString());
 
       task.setConf(localJobConf);
     }
@@ -819,35 +838,28 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   }
 
   /**
-   * @return bsp peer information in the form of "address:port".
-   */
-  public String getBspPeerName() {
-    // TODO Later, peers list should be returned.
-    return this.groomHostName + ":" + Constants.DEFAULT_PEER_PORT;
-  }
- 
-  /** 
    * Checkpointer child process.
    */
   public static final class CheckpointerChild {
 
     public static void main(String[] args) throws Throwable {
-      if(LOG.isDebugEnabled()) LOG.debug("Starting Checkpointer child process.");
+      if (LOG.isDebugEnabled())
+        LOG.debug("Starting Checkpointer child process.");
       HamaConfiguration defaultConf = new HamaConfiguration();
-      int ret = 0;
-      if(null != args && 1 == args.length) {
+      // int ret = 0;
+      if (null != args && 1 == args.length) {
         int port = Integer.parseInt(args[0]);
-        defaultConf.setInt("bsp.checkpoint.port", 
-          Integer.parseInt(CheckpointRunner.DEFAULT_PORT));
-        if(LOG.isDebugEnabled()) 
-          LOG.debug("Supplied checkpointer port value:"+port);
+        defaultConf.setInt("bsp.checkpoint.port", Integer
+            .parseInt(CheckpointRunner.DEFAULT_PORT));
+        if (LOG.isDebugEnabled())
+          LOG.debug("Supplied checkpointer port value:" + port);
         Checkpointer ckpt = new Checkpointer(defaultConf);
         ckpt.start();
         ckpt.join();
         LOG.info("Checkpoint finishes its execution.");
-      }else {
+      } else {
         throw new IllegalArgumentException(
-        "Port value is not provided for checkpointing service.");
+            "Port value is not provided for checkpointing service.");
       }
     }
   }
@@ -858,7 +870,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   public static class BSPPeerChild {
 
     public static void main(String[] args) throws Throwable {
-      if(LOG.isDebugEnabled()) LOG.debug("BSPPeerChild starting");
+      if (LOG.isDebugEnabled())
+        LOG.debug("BSPPeerChild starting");
 
       HamaConfiguration defaultConf = new HamaConfiguration();
       // report address
@@ -873,20 +886,20 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
           defaultConf);
 
       Task task = umbilical.getTask(taskid);
+      int peerPort = umbilical.getAssignedPortNum(taskid);
 
       defaultConf.addResource(new Path(task.getJobFile()));
       BSPJob job = new BSPJob(task.getJobID(), task.getJobFile());
 
       defaultConf.set(Constants.PEER_HOST, args[3]);
-      if(null != args && 5 == args.length ) {
+      if (null != args && 5 == args.length) {
         defaultConf.setInt("bsp.checkpoint.port", Integer.parseInt(args[4]));
-      } 
-      defaultConf.setInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+      }
+      defaultConf.setInt(Constants.PEER_PORT, peerPort);
 
       BSPPeer bspPeer = new BSPPeer(defaultConf, taskid, umbilical);
       bspPeer.reinitialize();
       bspPeer.setJobConf(job);
-      bspPeer.setAllPeerNames(umbilical.getAllPeerNames().getAllPeerNames());
 
       TaskStatus taskStatus = new TaskStatus(task.getJobID(), task.getTaskID(),
           0, TaskStatus.State.RUNNING, "running", host,
@@ -945,7 +958,20 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   @Override
   public void done(TaskAttemptID taskid, boolean shouldBePromoted)
       throws IOException {
-    // TODO Auto-generated method stub
+    TaskInProgress tip = runningTasks.get(taskid);
+    TaskStatus taskStatus = tip.getStatus();
+
+    if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
+      taskStatus.setProgress(taskStatus.getSuperstepCount());
+
+      if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
+        taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+        taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
+      }
+    }
+
+    // TODO reduce the reporting times.
+    doReport(taskStatus);
   }
 
   @Override
@@ -954,7 +980,14 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol {
   }
 
   @Override
-  public PeerNames getAllPeerNames() {
-    return allPeerNames;
+  public int getAssignedPortNum(TaskAttemptID taskid) {
+    return assignedPeerNames.get(taskid);
   }
+
+  @Override
+  public void process(WatchedEvent event) {
+    // TODO Auto-generated method stub
+
+  }
+
 }

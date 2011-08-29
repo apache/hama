@@ -20,7 +20,9 @@ package org.apache.hama.bsp;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -129,7 +131,16 @@ class SimpleTaskScheduler extends TaskScheduler {
 
     public void run() {
       // obtain tasks
-      Task t = jip.obtainNewTask(this.stus, groomNum);
+      List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
+      Task t = null;
+      int cnt = 0;
+      while((t = jip.obtainNewTask(this.stus, groomNum) ) != null) {
+        actions.add(new LaunchTaskAction(t));
+        cnt++;
+
+        if(cnt > (this.stus.getMaxTasks() - 1))
+          break;
+      }
       
       // assembly into actions
       // List<Task> tasks = new ArrayList<Task>();
@@ -137,9 +148,7 @@ class SimpleTaskScheduler extends TaskScheduler {
         GroomProtocol worker = groomServerManager.findGroomServer(this.stus);
         try {
           // dispatch() to the groom server
-          Directive d1 = new DispatchTasksDirective(groomServerManager
-              .currentGroomServerPeers(), new GroomServerAction[] { 
-              new LaunchTaskAction(t)});
+          Directive d1 = new DispatchTasksDirective(actions.toArray(new GroomServerAction[0]));
           worker.dispatch(d1);
         } catch (IOException ioe) {
           LOG.error("Fail to dispatch tasks to GroomServer "

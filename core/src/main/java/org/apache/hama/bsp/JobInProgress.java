@@ -80,6 +80,7 @@ class JobInProgress {
     this.localFs = FileSystem.getLocal(conf);
     this.jobFile = jobFile;
     this.master = master;
+    
     this.status = new JobStatus(jobId, null, 0L, 0L,
         JobStatus.State.PREP.value());
     this.startTime = System.currentTimeMillis();
@@ -191,6 +192,10 @@ class JobInProgress {
     this.status = new JobStatus(this.status.getJobID(), this.profile.getUser(),
         0L, 0L, JobStatus.RUNNING);
 
+    // delete all nodes before start 
+    master.clearZKNodes();
+    master.createJobRoot(this.getJobID().toString());
+    
     tasksInited = true;
     LOG.debug("Job is initialized.");
   }
@@ -245,7 +250,10 @@ class JobInProgress {
       this.status.setFinishTime(this.finishTime);
 
       LOG.debug("Job successfully done.");
-
+      
+      // delete job root
+      master.deleteJobRoot(this.getJobID().toString());
+      
       garbageCollect();
     }
   }

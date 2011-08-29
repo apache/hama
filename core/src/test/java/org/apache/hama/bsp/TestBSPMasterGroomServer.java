@@ -61,10 +61,8 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     BSPJobClient jobClient = new BSPJobClient(configuration);
     configuration.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 600);
     ClusterStatus cluster = jobClient.getClusterStatus(false);
-    assertEquals(this.numOfGroom, cluster.getMaxTasks());
-    
-    // TODO test the multi-tasks 
-    bsp.setNumBspTask(1);
+    assertEquals(this.numOfGroom, cluster.getGroomServers());
+    bsp.setNumBspTask(2);
     
     FileSystem fileSys = FileSystem.get(conf);
 
@@ -76,12 +74,14 @@ public class TestBSPMasterGroomServer extends HamaCluster {
 
   private static void checkOutput(FileSystem fileSys, ClusterStatus cluster,
       HamaConfiguration conf) throws Exception {
-    for (int i = 0; i < 1; i++) { // TODO test the multi-tasks
+    for (int i = 0; i < 2; i++) {
       SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, new Path(
           TMP_OUTPUT + i), conf);
       LongWritable timestamp = new LongWritable();
       Text message = new Text();
       reader.next(timestamp, message);
+      
+      LOG.info("output: " + message);
       assertTrue("Check if `Hello BSP' gets printed.", message.toString()
           .indexOf("Hello BSP from") >= 0);
       reader.close();
