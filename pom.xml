@@ -185,6 +185,7 @@
 
   <modules>
     <module>core</module>
+    <module>graph</module>
     <module>examples</module>
   </modules>
 
