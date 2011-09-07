@@ -343,7 +343,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       LOG.error("Fail to register GroomServer " + status.getGroomName(), e);
       return false;
     }
-
+    LOG.info(status.getGroomName()+" is added.");
     return true;
   }
 

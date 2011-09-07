@@ -271,7 +271,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     // Clear out state tables
     this.tasks.clear();
     this.runningJobs = new TreeMap<BSPJobID, RunningJob>();
-    this.runningTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
+    this.runningTasks = new ConcurrentHashMap<TaskAttemptID, TaskInProgress>();
     this.finishedTasks = new LinkedHashMap<TaskAttemptID, TaskInProgress>();
     this.conf.set(Constants.PEER_HOST, localHostname);
     this.conf.set(Constants.GROOM_RPC_HOST, localHostname);
@@ -418,6 +418,33 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   public State offerService() throws Exception {
     while (running && !shuttingDown) {
       try {
+
+        // Reports to a BSPMaster
+        for (Map.Entry<TaskAttemptID, TaskInProgress> e : runningTasks
+            .entrySet()) {
+          Thread.sleep(REPORT_INTERVAL);
+          TaskInProgress tip = e.getValue();
+          TaskStatus taskStatus = tip.getStatus();
+
+          if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
+            taskStatus.setProgress(taskStatus.getSuperstepCount());
+
+            if (!tip.runner.isAlive()) {
+              if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
+                taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+              }
+              taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
+            }
+          }
+
+          doReport(taskStatus);
+        }
+
+        Thread.sleep(REPORT_INTERVAL);
+      } catch (InterruptedException ie) {
+      }
+
+      try {
         if (justInited) {
           String dir = masterClient.getSystemDir();
           if (dir == null) {
@@ -493,7 +520,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
   public List<TaskStatus> updateTaskStatus(TaskStatus taskStatus) {
     List<TaskStatus> tlist = new ArrayList<TaskStatus>();
-    synchronized (runningTasks) {
 
       if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED
           || taskStatus.getRunState() == TaskStatus.State.FAILED) {
@@ -506,7 +532,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         tlist.add((TaskStatus) taskStatus.clone());
       }
 
-    }
     return tlist;
   }
 
@@ -958,20 +983,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   @Override
   public void done(TaskAttemptID taskid, boolean shouldBePromoted)
       throws IOException {
-    TaskInProgress tip = runningTasks.get(taskid);
-    TaskStatus taskStatus = tip.getStatus();
-
-    if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
-      taskStatus.setProgress(taskStatus.getSuperstepCount());
-
-      if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
-        taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-        taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
-      }
-    }
-
-    // TODO reduce the reporting times.
-    doReport(taskStatus);
   }
 
   @Override
