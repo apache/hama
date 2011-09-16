@@ -18,6 +18,7 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -58,7 +59,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   protected static CyclicBarrier barrier;
 
   static {
-    threadPoolSize = Runtime.getRuntime().availableProcessors();
     barrier = new CyclicBarrier(threadPoolSize);
     threadPool = (ThreadPoolExecutor) Executors
         .newFixedThreadPool(threadPoolSize);
@@ -125,9 +125,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   @Override
   public ClusterStatus getClusterStatus(boolean detailed) throws IOException {
-    Map<String, String> map = new HashMap<String, String>();
+    Map<String, GroomServerStatus> map = new HashMap<String, GroomServerStatus>();
     for (Entry<String, LocalGroom> entry : localGrooms.entrySet()) {
-      map.put(entry.getKey(), entry.getValue().getPeerName());
+      map.put(entry.getKey(), new GroomServerStatus(entry.getKey(), new ArrayList<TaskStatus>(0), 0, 0, "", entry.getKey()));
     }
     return new ClusterStatus(map, threadPoolSize, threadPoolSize, State.RUNNING);
   }

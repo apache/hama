@@ -9,6 +9,7 @@ Release 0.4 - Unreleased
 
   BUG FIXES
 
+    HAMA-436: Web Interface does not update Superstep Count (Thomas Jungblut)
     HAMA-429: Groom statuses should be reported periodically (ChiaHung Lin via edwardyoon)
     HAMA-421: Maven build issues using proxy (Joe Crobak via edwardyoon)
 

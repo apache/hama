@@ -72,7 +72,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   private ZooKeeper zk = null;
   private String bspRoot = null;
-  
+
   /**
    * Constants for BSPMaster's status.
    */
@@ -343,7 +343,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       LOG.error("Fail to register GroomServer " + status.getGroomName(), e);
       return false;
     }
-    LOG.info(status.getGroomName()+" is added.");
+    LOG.info(status.getGroomName() + " is added.");
     return true;
   }
 
@@ -426,7 +426,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     BSPMaster result = new BSPMaster(conf, identifier);
     result.taskScheduler.setGroomServerManager(result);
     result.taskScheduler.start();
-    
+
     // init zk root and child nodes
     result.initZK(conf);
 
@@ -440,8 +440,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
    */
   private void initZK(HamaConfiguration conf) {
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
-          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
+          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -499,7 +499,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       for (String node : zk.getChildren("/" + string, this)) {
         zk.delete("/" + string + "/" + node, 0);
       }
-      
+
       zk.delete("/" + string, 0);
     } catch (InterruptedException e) {
       e.printStackTrace();
@@ -507,7 +507,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       e.printStackTrace();
     }
   }
-  
+
   public static InetSocketAddress getAddress(Configuration conf) {
     String hamaMasterStr = conf.get("bsp.master.address", "localhost");
     int defaultPort = conf.getInt("bsp.master.port", 40000);
@@ -594,16 +594,16 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   @Override
   public ClusterStatus getClusterStatus(boolean detailed) {
-    Map<String, String> groomsMap = null;
+    Map<String, GroomServerStatus> groomsMap = null;
 
     // give the caller a snapshot of the cluster status
     int numGroomServers = groomServers.size();
     if (detailed) {
-      groomsMap = new HashMap<String, String>();
+      groomsMap = new HashMap<String, GroomServerStatus>();
       for (Map.Entry<GroomServerStatus, GroomProtocol> entry : groomServers
           .entrySet()) {
         GroomServerStatus s = entry.getKey();
-        groomsMap.put(s.getGroomName(), s.getGroomHostName());
+        groomsMap.put(s.getGroomName(), s);
       }
 
     }

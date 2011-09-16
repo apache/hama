@@ -26,23 +26,6 @@
 	String trackerName = tracker.getBSPMasterName();
 	String type = request.getParameter("type");
 %>
-<%!public void generateGroomsTable(JspWriter out, String type,
-			ClusterStatus status, BSPMaster master) throws IOException {
-	out.print("<center>\n");
-    out.print("<table border=\"2\" cellpadding=\"5\" cellspacing=\"2\">\n");
-    out.print("<tr><td align=\"center\" colspan=\"6\"><b>Groom Servers</b></td></tr>\n");
-    out.print("<tr><td><b>Name</b></td>" + "<td><b>Host</b></td>"
-        + "<td><b># running tasks</b></td></tr>\n");
-    for (Map.Entry<String, String> entry : status.getActiveGroomNames()
-        .entrySet()) {
-      out.print("<tr><td><a href=\"http://");
-      out.print(entry.getKey() + ":" + master.getHttpPort() + "/\">");
-      out.print(entry.getValue() + "</a></td><td>");
-      out.print(entry.getValue() + "</td>" + "<td>" + 1 + "</td></tr>\n");
-    }
-    out.print("</table>\n");
-    out.print("</center>\n");
-  }%>
 
 <html>
 
@@ -53,9 +36,6 @@
 
 <h2>Grooms</h2>
 <%
-  generateGroomsTable(out, type, status, tracker);
-%>
-
-<%
+  out.println(BSPServletUtil.generateGroomsTable(type, status, tracker));
   out.println(BSPServletUtil.htmlFooter());
 %>
