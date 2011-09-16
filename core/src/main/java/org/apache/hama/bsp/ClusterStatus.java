@@ -20,10 +20,9 @@ package org.apache.hama.bsp;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
@@ -31,56 +30,58 @@ import org.apache.hadoop.io.WritableUtils;
 /**
  * Status information on the current state of the BSP cluster.
  * 
- * <p><code>ClusterStatus</code> provides clients with information such as:
+ * <p>
+ * <code>ClusterStatus</code> provides clients with information such as:
  * <ol>
- *   <li>
- *   Size of the cluster. 
- *   </li>
- *   <li>
- *   Name of the grooms. 
- *   </li>
- *   <li>
- *   Task capacity of the cluster. 
- *   </li>
- *   <li>
- *   The number of currently running bsp tasks.
- *   </li>
- *   <li>
- *   State of the <code>BSPMaster</code>.
- *   </li>
- * </ol></p>
+ * <li>
+ * Size of the cluster.</li>
+ * <li>
+ * Name of the grooms.</li>
+ * <li>
+ * Task capacity of the cluster.</li>
+ * <li>
+ * The number of currently running bsp tasks.</li>
+ * <li>
+ * State of the <code>BSPMaster</code>.</li>
+ * </ol>
+ * </p>
  * 
- * <p>Clients can query for the latest <code>ClusterStatus</code>, via 
- * {@link BSPJobClient#getClusterStatus(boolean)}.</p>
+ * <p>
+ * Clients can query for the latest <code>ClusterStatus</code>, via
+ * {@link BSPJobClient#getClusterStatus(boolean)}.
+ * </p>
  * 
  * @see BSPMaster
  */
 public class ClusterStatus implements Writable {
 
   private int numActiveGrooms;
-  private Map<String, String> activeGrooms = new HashMap<String, String>();
+  private Map<String, GroomServerStatus> activeGrooms = new HashMap<String, GroomServerStatus>();
+  private Map<String, String> cachedActiveGroomNames = null;
   private int tasks;
   private int maxTasks;
   private BSPMaster.State state;
-  
+
   /**
    * 
    */
-  public ClusterStatus() {}
-    
-  public ClusterStatus(int grooms, int tasks, int maxTasks, BSPMaster.State state) {
+  public ClusterStatus() {
+  }
+
+  public ClusterStatus(int grooms, int tasks, int maxTasks,
+      BSPMaster.State state) {
     this.numActiveGrooms = grooms;
     this.tasks = tasks;
     this.maxTasks = maxTasks;
     this.state = state;
   }
-  
-  public ClusterStatus(Map<String, String> activeGrooms, int tasks, int maxTasks,
-      BSPMaster.State state) {
+
+  public ClusterStatus(Map<String, GroomServerStatus> activeGrooms, int tasks,
+      int maxTasks, BSPMaster.State state) {
     this(activeGrooms.size(), tasks, maxTasks, state);
     this.activeGrooms = activeGrooms;
   }
-  
+
   /**
    * Get the number of groom servers in the cluster.
    * 
@@ -89,16 +90,34 @@ public class ClusterStatus implements Writable {
   public int getGroomServers() {
     return numActiveGrooms;
   }
-  
+
   /**
    * Get the names of groom servers, and their hostnames, in the cluster.
    * 
    * @return the active groom servers in the cluster.
-   */  
+   */
   public Map<String, String> getActiveGroomNames() {
+    if (cachedActiveGroomNames == null) {
+      if (activeGrooms != null) {
+        Map<String, String> map = new HashMap<String, String>();
+        for (Entry<String, GroomServerStatus> entry : activeGrooms.entrySet()) {
+          map.put(entry.getKey(), entry.getValue().getGroomHostName());
+        }
+        cachedActiveGroomNames = map;
+      }
+    }
+    return cachedActiveGroomNames;
+  }
+
+  /**
+   * Get the names of groom servers, and their current status in the cluster.
+   * 
+   * @return the active groom servers in the cluster.
+   */
+  public Map<String, GroomServerStatus> getActiveGroomServerStatus() {
     return activeGrooms;
   }
-  
+
   /**
    * Get the number of currently running tasks in the cluster.
    * 
@@ -107,7 +126,7 @@ public class ClusterStatus implements Writable {
   public int getTasks() {
     return tasks;
   }
-  
+
   /**
    * Get the maximum capacity for running tasks in the cluster.
    * 
@@ -116,20 +135,20 @@ public class ClusterStatus implements Writable {
   public int getMaxTasks() {
     return maxTasks;
   }
-  
+
   /**
-   * Get the current state of the <code>BSPMaster</code>, 
-   * as {@link BSPMaster.State}
+   * Get the current state of the <code>BSPMaster</code>, as
+   * {@link BSPMaster.State}
    * 
    * @return the current state of the <code>BSPMaster</code>.
    */
   public BSPMaster.State getBSPMasterState() {
     return state;
   }
-  
-  //////////////////////////////////////////////
+
+  // ////////////////////////////////////////////
   // Writable
-  //////////////////////////////////////////////
+  // ////////////////////////////////////////////
   @Override
   public void write(DataOutput out) throws IOException {
     if (activeGrooms.isEmpty()) {
@@ -139,33 +158,30 @@ public class ClusterStatus implements Writable {
       out.writeInt(activeGrooms.size());
       out.writeBoolean(true);
 
-      String[] groomNames = activeGrooms.keySet().toArray(new String[0]);
-      List<String> peerNames = new ArrayList<String>();
-
-      for (String groomName : groomNames) {
-        peerNames.add(activeGrooms.get(groomName));
+      for (Entry<String, GroomServerStatus> entry : activeGrooms.entrySet()) {
+        out.writeUTF(entry.getKey());
+        entry.getValue().write(out);
       }
 
-      WritableUtils.writeCompressedStringArray(out, groomNames);
-      WritableUtils.writeCompressedStringArray(out, peerNames.toArray(new String[0]));
     }
     out.writeInt(tasks);
     out.writeInt(maxTasks);
     WritableUtils.writeEnum(out, state);
   }
-  
+
   @Override
   public void readFields(DataInput in) throws IOException {
     numActiveGrooms = in.readInt();
     boolean groomListFollows = in.readBoolean();
 
     if (groomListFollows) {
-      String[] groomNames = WritableUtils.readCompressedStringArray(in);
-      String[] peerNames = WritableUtils.readCompressedStringArray(in);
-      activeGrooms = new HashMap<String, String>(groomNames.length);
+      activeGrooms = new HashMap<String, GroomServerStatus>(numActiveGrooms);
 
-      for (int i = 0; i < groomNames.length; i++) {
-        activeGrooms.put(groomNames[i], peerNames[i]);
+      for (int i = 0; i < numActiveGrooms; i++) {
+        final String groomName = in.readUTF();
+        final GroomServerStatus status = new GroomServerStatus();
+        status.readFields(in);
+        activeGrooms.put(groomName, status);
       }
     }
 

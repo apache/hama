@@ -18,16 +18,16 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import junit.framework.TestCase;
 
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hama.bsp.BSPMaster;
-import org.apache.hama.bsp.ClusterStatus;
 
 public class TestClusterStatus extends TestCase {
   Random rnd = new Random();
@@ -41,13 +41,13 @@ public class TestClusterStatus extends TestCase {
     DataInputBuffer in = new DataInputBuffer();
 
     ClusterStatus status1;
-    Map<String, String> grooms = new HashMap<String, String>();
+    Map<String, GroomServerStatus> grooms = new HashMap<String, GroomServerStatus>();
 
     for (int i = 0; i < 10; i++) {
       int num = rnd.nextInt();
       String groomName = "groom_" + num;
       String peerName = "peerhost:" + num;
-      grooms.put(groomName, peerName);
+      grooms.put(groomName, new GroomServerStatus(peerName, new ArrayList<TaskStatus>(0), 25, 2));
     }
 
     int tasks = rnd.nextInt(100);
@@ -61,11 +61,16 @@ public class TestClusterStatus extends TestCase {
 
     ClusterStatus status2 = new ClusterStatus();
     status2.readFields(in);
+    
+    for(Entry<String, GroomServerStatus> entry : status2.getActiveGroomServerStatus().entrySet()){
+      assertEquals(entry.getValue().getMaxTasks(),2);
+      assertEquals(entry.getValue().getFailures(),25);
+    }
 
-    Map<String, String> grooms_s = new HashMap<String, String>(status1
-        .getActiveGroomNames());
-    Map<String, String> grooms_o = new HashMap<String, String>(status2
-        .getActiveGroomNames());
+    Map<String, String> grooms_s = new HashMap<String, String>(
+        status1.getActiveGroomNames());
+    Map<String, String> grooms_o = new HashMap<String, String>(
+        status2.getActiveGroomNames());
 
     assertEquals(status1.getGroomServers(), status2.getGroomServers());
 

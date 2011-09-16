@@ -18,10 +18,14 @@
 package org.apache.hama.util;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.util.ServletUtil;
+import org.apache.hama.bsp.BSPMaster;
+import org.apache.hama.bsp.ClusterStatus;
+import org.apache.hama.bsp.GroomServerStatus;
 import org.apache.hama.bsp.JobStatus;
 
 public class BSPServletUtil extends ServletUtil {
@@ -59,14 +63,15 @@ public class BSPServletUtil extends ServletUtil {
       sb.append("<tr><th>Jobid</th>" + "<th>User</th>" + "<th>Name</th>"
           + "<th>SuperStep</th>" + "<th>Starttime</th>" + "</tr>\n");
       for (JobStatus status : jobs) {
-        sb.append("<tr><td><a href=\"bspjob.jsp?jobid="+status.getJobID()+ "\">");
+        sb.append("<tr><td><a href=\"bspjob.jsp?jobid=" + status.getJobID()
+            + "\">");
         sb.append(status.getJobID());
         sb.append("</a></td><td>");
         sb.append(status.getUsername());
         sb.append("</td><td>");
         sb.append(status.getName());
         sb.append("</td><td>");
-        sb.append(status.getSuperstepCount());
+        sb.append(status.progress());
         sb.append("</td><td>");
         sb.append(new Date(status.getStartTime()));
         sb.append("</td></tr>\n");
@@ -76,6 +81,34 @@ public class BSPServletUtil extends ServletUtil {
       sb.append("No jobs found!");
     }
 
+    return sb.toString();
+  }
+
+  public static String generateGroomsTable(String type, ClusterStatus status,
+      BSPMaster master) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    sb.append("<center>\n");
+    sb.append("<table border=\"2\" cellpadding=\"5\" cellspacing=\"2\">\n");
+    sb.append("<tr><td align=\"center\" colspan=\"6\"><b>Groom Servers</b></td></tr>\n");
+    sb.append("<tr><td><b>Name</b></td>"
+        + "<td><b>Host</b></td>"
+        + "<td><b># maximum tasks</b></td><td><b># current running tasks</b></td>" +
+        		"<td><b># current failures</b></td>" +
+        		"<td><b>Last seen</b></td>" +
+        		"</tr>\n");
+    for (Entry<String, GroomServerStatus> entry : status
+        .getActiveGroomServerStatus().entrySet()) {
+      sb.append("<tr><td>");
+      sb.append(entry.getKey() + "</td><td>");
+      sb.append(entry.getValue().getGroomHostName() + "</td>" + "<td>"
+          + entry.getValue().getMaxTasks() + "</td><td>");
+      sb.append(entry.getValue().countTasks() + "</td><td>");
+      sb.append(entry.getValue().getFailures() + "</td><td>");
+      sb.append(entry.getValue().getLastSeen() + "</td>");
+      sb.append("</tr>\n");
+    }
+    sb.append("</table>\n");
+    sb.append("</center>\n");
     return sb.toString();
   }
 
