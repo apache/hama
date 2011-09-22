@@ -37,6 +37,7 @@ import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.BSPMaster;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
@@ -62,6 +63,11 @@ public class QuorumPeer implements Constants {
    */
   public static void run(Configuration baseConf) {
     Configuration conf = new HamaConfiguration(baseConf);
+    if(BSPMaster.getAddress(conf) == null){
+      System.out.println(BSPMaster.localModeMessage);
+      LOG.info(BSPMaster.localModeMessage);
+      System.exit(0);
+    }
     try {
       Properties zkProperties = makeZKProps(conf);
       writeMyID(zkProperties);

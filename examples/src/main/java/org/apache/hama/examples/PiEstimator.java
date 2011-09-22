@@ -27,7 +27,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
@@ -49,6 +48,7 @@ public class PiEstimator {
 
     public void bsp(BSPPeer bspPeer) throws IOException,
         KeeperException, InterruptedException {
+      
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {
         double x = 2.0 * Math.random() - 1.0, y = 2.0 * Math.random() - 1.0;
@@ -138,8 +138,8 @@ public class PiEstimator {
     }
 
     // Choose one as a master
-    for (String hostName : cluster.getActiveGroomNames().values()) {
-      conf.set(MASTER_TASK, hostName + ":" + Constants.DEFAULT_PEER_PORT);
+    for (String hostName : cluster.getActiveGroomNames().keySet()) {
+      conf.set(MASTER_TASK,hostName);
       break;
     }
 

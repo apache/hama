@@ -237,19 +237,26 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     LOG.info("groom start");
     this.conf = conf;
     bspMasterAddr = BSPMaster.getAddress(conf);
+
+    if (bspMasterAddr == null) {
+      System.out.println(BSPMaster.localModeMessage);
+      LOG.info(BSPMaster.localModeMessage);
+      System.exit(0);
+    }
+
     // FileSystem local = FileSystem.getLocal(conf);
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
 
     CheckpointRunner ckptRunner = null;
     if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      ckptRunner = new CheckpointRunner(CheckpointRunner
-          .buildCommands(this.conf));
+      ckptRunner = new CheckpointRunner(
+          CheckpointRunner.buildCommands(this.conf));
     }
     this.checkpointRunner = ckptRunner;
 
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
-          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
+          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -261,8 +268,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
-          "default"), conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(
+          conf.get("bsp.dns.interface", "default"),
+          conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -521,16 +529,16 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   public List<TaskStatus> updateTaskStatus(TaskStatus taskStatus) {
     List<TaskStatus> tlist = new ArrayList<TaskStatus>();
 
-      if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED
-          || taskStatus.getRunState() == TaskStatus.State.FAILED) {
-        synchronized (finishedTasks) {
-          TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
-          tlist.add((TaskStatus) taskStatus.clone());
-          finishedTasks.put(taskStatus.getTaskId(), tip);
-        }
-      } else if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
+    if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED
+        || taskStatus.getRunState() == TaskStatus.State.FAILED) {
+      synchronized (finishedTasks) {
+        TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
         tlist.add((TaskStatus) taskStatus.clone());
+        finishedTasks.put(taskStatus.getTaskId(), tip);
       }
+    } else if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
+      tlist.add((TaskStatus) taskStatus.clone());
+    }
 
     return tlist;
   }
@@ -874,8 +882,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       // int ret = 0;
       if (null != args && 1 == args.length) {
         int port = Integer.parseInt(args[0]);
-        defaultConf.setInt("bsp.checkpoint.port", Integer
-            .parseInt(CheckpointRunner.DEFAULT_PORT));
+        defaultConf.setInt("bsp.checkpoint.port",
+            Integer.parseInt(CheckpointRunner.DEFAULT_PORT));
         if (LOG.isDebugEnabled())
           LOG.debug("Supplied checkpointer port value:" + port);
         Checkpointer ckpt = new Checkpointer(defaultConf);

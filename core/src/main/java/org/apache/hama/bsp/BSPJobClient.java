@@ -48,6 +48,7 @@ import org.apache.hama.ipc.JobSubmissionProtocol;
  * component-tasks' reports/logs, get the BSP cluster status information etc.
  */
 public class BSPJobClient extends Configured implements Tool {
+
   private static final Log LOG = LogFactory.getLog(BSPJobClient.class);
 
   public static enum TaskStatusFilter {
@@ -55,6 +56,16 @@ public class BSPJobClient extends Configured implements Tool {
   }
 
   private static final long MAX_JOBPROFILE_AGE = 1000 * 2;
+  // job files are world-wide readable and owner writable
+  final private static FsPermission JOB_FILE_PERMISSION = FsPermission
+      .createImmutable((short) 0644); // rw-r--r--
+  // job submission directory is world readable/writable/executable
+  final static FsPermission JOB_DIR_PERMISSION = FsPermission
+      .createImmutable((short) 0777); // rwx-rwx-rwx
+
+  private JobSubmissionProtocol jobSubmitClient = null;
+  private Path sysDir = null;
+  private FileSystem fs = null;
 
   class NetworkedJob implements RunningJob {
     JobProfile profile;
@@ -175,18 +186,6 @@ public class BSPJobClient extends Configured implements Tool {
       jobSubmitClient.killTask(taskId, shouldFail);
     }
   }
-
-  private JobSubmissionProtocol jobSubmitClient = null;
-  private Path sysDir = null;
-  private FileSystem fs = null;
-
-  // job files are world-wide readable and owner writable
-  final private static FsPermission JOB_FILE_PERMISSION = FsPermission
-      .createImmutable((short) 0644); // rw-r--r--
-
-  // job submission directory is world readable/writable/executable
-  final static FsPermission JOB_DIR_PERMISSION = FsPermission
-      .createImmutable((short) 0777); // rwx-rwx-rwx
 
   public BSPJobClient(Configuration conf) throws IOException {
     setConf(conf);
@@ -356,7 +355,7 @@ public class BSPJobClient extends Configured implements Tool {
     // Now, actually submit the job (using the submit name)
     //
     JobStatus status = jobSubmitClient.submitJob(jobId,
-        submitJobFile.toString());
+        submitJobFile.makeQualified(fs).toString());
     if (status != null) {
       return new NetworkedJob(status);
     } else {
@@ -470,6 +469,11 @@ public class BSPJobClient extends Configured implements Tool {
    */
   public ClusterStatus getClusterStatus(boolean detailed) throws IOException {
     return jobSubmitClient.getClusterStatus(detailed);
+  }
+
+  // for the testcase
+  JobSubmissionProtocol getJobSubmissionProtocol() {
+    return jobSubmitClient;
   }
 
   @Override

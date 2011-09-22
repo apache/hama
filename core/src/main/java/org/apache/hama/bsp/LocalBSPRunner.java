@@ -37,16 +37,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMaster.State;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 import org.apache.zookeeper.KeeperException;
 
 /**
- * A multithreaded local BSP runner that can be used for debugging BSP's. It
- * uses the working directory "/user/hama/bsp/" and starts runners based on the
- * number of the machines core.
- * 
+ * A multithreaded local BSP runner that can be used for debugging and local
+ * running BSP's.
  */
 public class LocalBSPRunner implements JobSubmissionProtocol {
   public static final Log LOG = LogFactory.getLog(LocalBSPRunner.class);
@@ -57,12 +57,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   protected static int threadPoolSize;
   protected static final LinkedList<Future<BSP>> futureList = new LinkedList<Future<BSP>>();
   protected static CyclicBarrier barrier;
-
-  static {
-    barrier = new CyclicBarrier(threadPoolSize);
-    threadPool = (ThreadPoolExecutor) Executors
-        .newFixedThreadPool(threadPoolSize);
-  }
 
   protected HashMap<String, LocalGroom> localGrooms = new HashMap<String, LocalGroom>();
   protected String jobFile;
@@ -76,10 +70,10 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   public LocalBSPRunner(Configuration conf) throws IOException {
     super();
     this.conf = conf;
-    this.fs = FileSystem.get(conf);
     String path = conf.get("bsp.local.dir");
-    if (path != null && !path.isEmpty())
+    if (path != null && !path.isEmpty()) {
       WORKING_DIR = path;
+    }
 
     threadPoolSize = conf.getInt("bsp.local.tasks.maximum", 20);
     threadPool = (ThreadPoolExecutor) Executors
@@ -107,8 +101,19 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   @Override
   public JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException {
     this.jobFile = jobFile;
-    BSPJob job = new BSPJob(jobID, jobFile);
+    
+    if(fs == null)
+      this.fs = FileSystem.get(conf);
+    
+    // add the resource to the current configuration, because add resouce in
+    // HamaConfigurations constructor (ID,FILE) does not take local->HDFS
+    // connections into account. This leads to not serializing the
+    // configuration, which yields into failure.
+    conf.addResource(fs.open(new Path(jobFile)));
+
+    BSPJob job = new BSPJob(new HamaConfiguration(conf), jobID);
     job.setNumBspTask(threadPoolSize);
+
     this.jobName = job.getJobName();
     currentJobStatus = new JobStatus(jobID, System.getProperty("user.name"), 0,
         JobStatus.RUNNING);
@@ -127,7 +132,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   public ClusterStatus getClusterStatus(boolean detailed) throws IOException {
     Map<String, GroomServerStatus> map = new HashMap<String, GroomServerStatus>();
     for (Entry<String, LocalGroom> entry : localGrooms.entrySet()) {
-      map.put(entry.getKey(), new GroomServerStatus(entry.getKey(), new ArrayList<TaskStatus>(0), 0, 0, "", entry.getKey()));
+      map.put(entry.getKey(), new GroomServerStatus(entry.getKey(),
+          new ArrayList<TaskStatus>(0), 0, 0, "", entry.getKey()));
     }
     return new ClusterStatus(map, threadPoolSize, threadPoolSize, State.RUNNING);
   }
@@ -197,7 +203,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     public void run() {
       bsp.setConf(conf);
       try {
-         bsp.bsp(groom);
+        bsp.bsp(groom);
       } catch (Exception e) {
         LOG.error("Exception during BSP execution!", e);
       }

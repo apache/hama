@@ -47,15 +47,14 @@ import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.Constants;
 import org.apache.hama.checkpoint.CheckpointRunner;
 import org.apache.hama.ipc.BSPPeerProtocol;
-import org.apache.hama.util.Bytes;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 
 /**
  * This class represents a BSP peer.
@@ -538,6 +537,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   private InetSocketAddress getAddress(String peerName) {
     String[] peerAddrParts = peerName.split(":");
+    if(peerAddrParts.length != 2){
+      throw new ArrayIndexOutOfBoundsException("Peername must consist of exactly ONE \":\"! Given peername was: " + peerName);
+    }
     return new InetSocketAddress(peerAddrParts[0], Integer
         .parseInt(peerAddrParts[1]));
   }

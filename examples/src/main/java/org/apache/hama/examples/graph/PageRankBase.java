@@ -136,7 +136,6 @@ public abstract class PageRankBase extends BSP {
     }
 
     writer.close();
-    fs.close();
 
     return partitionTextFile(input, conf, groomNames);
   }
