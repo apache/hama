@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.util.Bytes;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -59,7 +61,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
  * This class represents a BSP peer.
  */
 public class BSPPeer implements Watcher, BSPPeerInterface {
-
+  
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
 
   private final Configuration conf;
@@ -304,7 +306,6 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   @Override
   public void sync() throws IOException, KeeperException, InterruptedException {
     enterBarrier();
-    long startTime = System.currentTimeMillis();
     Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = this.outgoingQueues
         .entrySet().iterator();
 
@@ -331,15 +332,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
       peer.put(bundle);
     }
 
-    if ((System.currentTimeMillis() - startTime) < 200) {
-      Thread.sleep(200);
-    }
-
     leaveBarrier();
     currentTaskStatus.incrementSuperstepCount();
     umbilical.incrementSuperstepCount(taskid);
 
-    startTime = System.currentTimeMillis();
     // Clear outgoing queues.
     clearOutgoingQueues();
 
@@ -351,53 +347,124 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     // Switch local queues.
     localQueue = localQueueForNextIteration;
     localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
-
-    // TODO: This is a quite temporary solution of HAMA-387.
-    // If zk.getChildren() response is slower than 200 milliseconds,
-    // BSP system will be hanged.
-
-    // We have to consider another way to avoid this problem.
-    if ((System.currentTimeMillis() - startTime) < 200) {
-      Thread.sleep(200); // at least wait
-    }
   }
 
-  protected boolean enterBarrier() throws KeeperException, InterruptedException {
-    LOG.debug("[" + getPeerName() + "] enter the enterbarrier: "
-        + this.getSuperstepCount());
-    zk.create(getNodeName(), Bytes.toBytes(this.getSuperstepCount()),
-        Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+  private void createZnode(final String path) throws KeeperException, 
+      InterruptedException {
+    createZnode(path, CreateMode.PERSISTENT);
+  }
 
-    while (true) {
-      synchronized (mutex) {
-        List<String> list = zk.getChildren(bspRoot, true);
+  private void createEphemeralZnode(final String path) throws KeeperException, 
+      InterruptedException {
+    createZnode(path, CreateMode.EPHEMERAL);
+  }
 
-        if (list.size() < jobConf.getNumBspTask()) {
-          mutex.wait();
-        } else {
-          return true;
-        }
+  private void createZnode(final String path, final CreateMode mode) throws KeeperException, 
+      InterruptedException {
+    Stat s = zk.exists(path, false);
+    if(null == s) {
+      try {
+        zk.create(path, null, Ids.OPEN_ACL_UNSAFE, mode);
+      } catch(KeeperException.NodeExistsException nee) {
+        LOG.warn("Ignore because znode may be already created at "+path, nee);
       }
     }
   }
 
-  protected boolean leaveBarrier() throws KeeperException, InterruptedException {
-    zk.delete(getNodeName(), 0);
-    while (true) {
-      synchronized (mutex) {
-        List<String> list = zk.getChildren(bspRoot, true);
+  protected boolean enterBarrier() throws KeeperException, InterruptedException {
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("[" + getPeerName() + "] enter the enterbarrier: " + 
+      this.getSuperstepCount());
+    }
 
-        if (list.size() > 0) {
-          mutex.wait();
-        } else {
+    createZnode(bspRoot); 
+
+    final String pathToJobIdZnode = 
+      bspRoot + "/" + taskid.getJobID().toString();
+    createZnode(pathToJobIdZnode);
+
+    final String pathToSuperstepZnode = 
+      pathToJobIdZnode + "/" + getSuperstepCount();
+    createZnode(pathToSuperstepZnode); 
+    
+    zk.exists(pathToSuperstepZnode+"/ready", new Watcher() {
+      @Override
+      public void process(WatchedEvent event) {
+        synchronized(mutex) {
+          try {
+            Stat s = zk.exists(pathToSuperstepZnode+"/ready", false);
+            if(null != s) {
+              zk.delete(pathToSuperstepZnode+"/ready", 0);
+            }
+          } catch(KeeperException.NoNodeException nne) {
+            LOG.warn("Ignore because znode may be deleted.", nne);
+          } catch(Exception e) {
+            throw new RuntimeException(e);
+          }
+          mutex.notifyAll();
+        }
+      }
+    }); 
+    zk.create(getNodeName(), null, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+
+    synchronized(mutex) {
+      List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
+      if(LOG.isDebugEnabled()) 
+        LOG.debug("enterBarrier() znode size within "+pathToSuperstepZnode+" is "+
+        znodes.size()+". Znodes include " +znodes);
+      if (znodes.size() < jobConf.getNumBspTask()) {
+        mutex.wait();
+      } else {
+        createEphemeralZnode(pathToSuperstepZnode+"/ready");
+      }
+    }
+    return true;
+  }
+
+  protected boolean leaveBarrier() throws KeeperException, InterruptedException {
+    final String pathToSuperstepZnode = 
+      bspRoot + "/" + taskid.getJobID().toString() + "/" + getSuperstepCount();
+    while(true) {
+      synchronized (mutex) {
+        final List<String> znodes = zk.getChildren(pathToSuperstepZnode, false); 
+        final int size = znodes.size();
+        if(null == znodes || znodes.isEmpty()) return true;
+        if(1 == size) {
+          zk.delete(getNodeName(), 0); 
           return true;
+        }
+        Collections.sort(znodes);
+        final String lowest = znodes.get(0);
+        final String highest = znodes.get(size-1);
+        if (getNodeName().equals(pathToSuperstepZnode+"/"+lowest)) { 
+          Stat s = zk.exists(pathToSuperstepZnode+"/"+highest, new Watcher() {
+            @Override
+            public void process(WatchedEvent event) {
+              synchronized(mutex) {
+                mutex.notifyAll();
+              }
+            }
+          });
+          if(null != s) mutex.wait();
+        }else{
+          Stat s1 = zk.exists(getNodeName(), false);
+          if(null != s1) zk.delete(getNodeName(), 0);
+          Stat s2 = zk.exists(pathToSuperstepZnode+"/"+lowest, new Watcher() {
+            @Override
+            public void process(WatchedEvent event) {
+              synchronized(mutex) {
+                mutex.notifyAll();
+              }
+            }
+          });
+          if(null != s2) mutex.wait();
         }
       }
     }
   }
 
   private String getNodeName() {
-    return bspRoot + "/" + taskid.getJobID().toString() + "_" + getPeerName();
+    return bspRoot + "/" + taskid.getJobID().toString() + "/" + getSuperstepCount() + "/" + taskid.toString() ;
   }
 
   @Override
