@@ -9,6 +9,7 @@ Release 0.4 - Unreleased
 
   BUG FIXES
 
+    HAMA-432: Add statusUpdate() method to BSPPeerProtocol (edwardyoon)
     HAMA-437: PiEstimator is not working in Local Mode (Thomas Jungblut)
     HAMA-387: Fixed barrier synchronization problem (ChiaHung Lin via edwardyoon)
     HAMA-436: Web Interface does not update Superstep Count (Thomas Jungblut)

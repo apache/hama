@@ -23,6 +23,7 @@ import java.io.IOException;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.Task;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.TaskStatus;
 
 /**
  * Protocol that task child process uses to contact its parent process.
@@ -52,7 +53,20 @@ public interface BSPPeerProtocol extends HamaRPCProtocolVersion, Closeable,
   /** Report that the task encounted a local filesystem error. */
   void fsError(TaskAttemptID taskId, String message) throws IOException;
 
-  void incrementSuperstepCount(TaskAttemptID taskid) throws IOException;
+  /** Report that the task encounted a fatal error. */
+  void fatalError(TaskAttemptID taskId, String message) throws IOException;
+  
+  /**
+   * Report child's progress to parent.
+   * 
+   * @param taskId task-id of the child
+   * @param taskStatus status of the child
+   * @throws IOException
+   * @throws InterruptedException
+   * @return True if the task is known
+   */
+  boolean statusUpdate(TaskAttemptID taskId, TaskStatus taskStatus)
+      throws IOException, InterruptedException;
 
   /**
    * @param taskid

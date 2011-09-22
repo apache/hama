@@ -249,14 +249,14 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     CheckpointRunner ckptRunner = null;
     if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      ckptRunner = new CheckpointRunner(
-          CheckpointRunner.buildCommands(this.conf));
+      ckptRunner = new CheckpointRunner(CheckpointRunner
+          .buildCommands(this.conf));
     }
     this.checkpointRunner = ckptRunner;
 
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
-          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
+          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -268,9 +268,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(
-          conf.get("bsp.dns.interface", "default"),
-          conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
+          "default"), conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -840,6 +839,21 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     public int hashCode() {
       return task.getTaskID().hashCode();
     }
+
+    public void reportProgress(TaskStatus taskStatus2) {
+      LOG.info(task.getTaskID() + " " + taskStatus.getProgress() + "% "
+          + taskStatus.getStateString());
+
+      if (this.done) {
+        LOG.info(task.getTaskID()
+            + " Ignoring status-update since "
+            + ((this.done) ? "task is 'done'" : ("runState: " + this.taskStatus
+                .getRunState())));
+        return;
+      }
+
+      this.taskStatus.statusUpdate(taskStatus);
+    }
   }
 
   public boolean isRunning() {
@@ -882,8 +896,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       // int ret = 0;
       if (null != args && 1 == args.length) {
         int port = Integer.parseInt(args[0]);
-        defaultConf.setInt("bsp.checkpoint.port",
-            Integer.parseInt(CheckpointRunner.DEFAULT_PORT));
+        defaultConf.setInt("bsp.checkpoint.port", Integer
+            .parseInt(CheckpointRunner.DEFAULT_PORT));
         if (LOG.isDebugEnabled())
           LOG.debug("Supplied checkpointer port value:" + port);
         Checkpointer ckpt = new Checkpointer(defaultConf);
@@ -977,15 +991,33 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
   }
 
-  public void incrementSuperstepCount(TaskAttemptID taskid) throws IOException {
-    TaskInProgress tip = tasks.get(taskid);
-    tip.getStatus().incrementSuperstepCount();
-  }
-
   @Override
   public boolean ping(TaskAttemptID taskid) throws IOException {
     // TODO Auto-generated method stub
     return false;
+  }
+
+  /**
+   * A child task had a fatal error. Kill the task.
+   */
+  @Override
+  public void fatalError(TaskAttemptID taskId, String message)
+      throws IOException {
+    LOG.fatal("Task: " + taskId + " - Killed : " + message);
+    // TODO kill the task.
+  }
+
+  @Override
+  public boolean statusUpdate(TaskAttemptID taskId, TaskStatus taskStatus)
+      throws IOException, InterruptedException {
+    TaskInProgress tip = tasks.get(taskId);
+    if (tip != null) {
+      tip.reportProgress(taskStatus);
+      return true;
+    } else {
+      LOG.warn("Progress from unknown child task: " + taskId);
+      return false;
+    }
   }
 
   @Override

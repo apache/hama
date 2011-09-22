@@ -60,7 +60,7 @@ import org.apache.zookeeper.data.Stat;
  * This class represents a BSP peer.
  */
 public class BSPPeer implements Watcher, BSPPeerInterface {
-  
+
   public static final Log LOG = LogFactory.getLog(BSPPeer.class);
 
   private final Configuration conf;
@@ -314,7 +314,12 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
       BSPPeerInterface peer = peers.get(entry.getKey());
       if (peer == null) {
-        peer = getBSPPeerConnection(entry.getKey());
+        try {
+          peer = getBSPPeerConnection(entry.getKey());
+        } catch (NullPointerException ne) {
+          umbilical.fatalError(taskid, entry.getKey().getHostName()
+              + " doesn't exists.");
+        }
       }
       Iterable<BSPMessage> messages = entry.getValue();
       BSPMessageBundle bundle = new BSPMessageBundle();
@@ -333,7 +338,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
     leaveBarrier();
     currentTaskStatus.incrementSuperstepCount();
-    umbilical.incrementSuperstepCount(taskid);
+    umbilical.statusUpdate(taskid, currentTaskStatus);
 
     // Clear outgoing queues.
     clearOutgoingQueues();
@@ -348,122 +353,129 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
   }
 
-  private void createZnode(final String path) throws KeeperException, 
+  private void createZnode(final String path) throws KeeperException,
       InterruptedException {
     createZnode(path, CreateMode.PERSISTENT);
   }
 
-  private void createEphemeralZnode(final String path) throws KeeperException, 
+  private void createEphemeralZnode(final String path) throws KeeperException,
       InterruptedException {
     createZnode(path, CreateMode.EPHEMERAL);
   }
 
-  private void createZnode(final String path, final CreateMode mode) throws KeeperException, 
-      InterruptedException {
+  private void createZnode(final String path, final CreateMode mode)
+      throws KeeperException, InterruptedException {
     Stat s = zk.exists(path, false);
-    if(null == s) {
+    if (null == s) {
       try {
         zk.create(path, null, Ids.OPEN_ACL_UNSAFE, mode);
-      } catch(KeeperException.NodeExistsException nee) {
-        LOG.warn("Ignore because znode may be already created at "+path, nee);
+      } catch (KeeperException.NodeExistsException nee) {
+        LOG.warn("Ignore because znode may be already created at " + path, nee);
       }
     }
   }
 
   protected boolean enterBarrier() throws KeeperException, InterruptedException {
-    if(LOG.isDebugEnabled()) {
-      LOG.debug("[" + getPeerName() + "] enter the enterbarrier: " + 
-      this.getSuperstepCount());
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("[" + getPeerName() + "] enter the enterbarrier: "
+          + this.getSuperstepCount());
     }
 
-    createZnode(bspRoot); 
+    createZnode(bspRoot);
 
-    final String pathToJobIdZnode = 
-      bspRoot + "/" + taskid.getJobID().toString();
+    final String pathToJobIdZnode = bspRoot + "/"
+        + taskid.getJobID().toString();
     createZnode(pathToJobIdZnode);
 
-    final String pathToSuperstepZnode = 
-      pathToJobIdZnode + "/" + getSuperstepCount();
-    createZnode(pathToSuperstepZnode); 
-    
-    zk.exists(pathToSuperstepZnode+"/ready", new Watcher() {
+    final String pathToSuperstepZnode = pathToJobIdZnode + "/"
+        + getSuperstepCount();
+    createZnode(pathToSuperstepZnode);
+
+    zk.exists(pathToSuperstepZnode + "/ready", new Watcher() {
       @Override
       public void process(WatchedEvent event) {
-        synchronized(mutex) {
+        synchronized (mutex) {
           try {
-            Stat s = zk.exists(pathToSuperstepZnode+"/ready", false);
-            if(null != s) {
-              zk.delete(pathToSuperstepZnode+"/ready", 0);
+            Stat s = zk.exists(pathToSuperstepZnode + "/ready", false);
+            if (null != s) {
+              zk.delete(pathToSuperstepZnode + "/ready", 0);
             }
-          } catch(KeeperException.NoNodeException nne) {
+          } catch (KeeperException.NoNodeException nne) {
             LOG.warn("Ignore because znode may be deleted.", nne);
-          } catch(Exception e) {
+          } catch (Exception e) {
             throw new RuntimeException(e);
           }
           mutex.notifyAll();
         }
       }
-    }); 
+    });
     zk.create(getNodeName(), null, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 
-    synchronized(mutex) {
+    synchronized (mutex) {
       List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
-      if(LOG.isDebugEnabled()) 
-        LOG.debug("enterBarrier() znode size within "+pathToSuperstepZnode+" is "+
-        znodes.size()+". Znodes include " +znodes);
+      if (LOG.isDebugEnabled())
+        LOG.debug("enterBarrier() znode size within " + pathToSuperstepZnode
+            + " is " + znodes.size() + ". Znodes include " + znodes);
       if (znodes.size() < jobConf.getNumBspTask()) {
         mutex.wait();
       } else {
-        createEphemeralZnode(pathToSuperstepZnode+"/ready");
+        createEphemeralZnode(pathToSuperstepZnode + "/ready");
       }
     }
     return true;
   }
 
   protected boolean leaveBarrier() throws KeeperException, InterruptedException {
-    final String pathToSuperstepZnode = 
-      bspRoot + "/" + taskid.getJobID().toString() + "/" + getSuperstepCount();
-    while(true) {
+    final String pathToSuperstepZnode = bspRoot + "/"
+        + taskid.getJobID().toString() + "/" + getSuperstepCount();
+    while (true) {
       synchronized (mutex) {
-        final List<String> znodes = zk.getChildren(pathToSuperstepZnode, false); 
+        final List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
         final int size = znodes.size();
-        if(null == znodes || znodes.isEmpty()) return true;
-        if(1 == size) {
-          zk.delete(getNodeName(), 0); 
+        if (null == znodes || znodes.isEmpty())
+          return true;
+        if (1 == size) {
+          zk.delete(getNodeName(), 0);
           return true;
         }
         Collections.sort(znodes);
         final String lowest = znodes.get(0);
-        final String highest = znodes.get(size-1);
-        if (getNodeName().equals(pathToSuperstepZnode+"/"+lowest)) { 
-          Stat s = zk.exists(pathToSuperstepZnode+"/"+highest, new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-              synchronized(mutex) {
-                mutex.notifyAll();
-              }
-            }
-          });
-          if(null != s) mutex.wait();
-        }else{
+        final String highest = znodes.get(size - 1);
+        if (getNodeName().equals(pathToSuperstepZnode + "/" + lowest)) {
+          Stat s = zk.exists(pathToSuperstepZnode + "/" + highest,
+              new Watcher() {
+                @Override
+                public void process(WatchedEvent event) {
+                  synchronized (mutex) {
+                    mutex.notifyAll();
+                  }
+                }
+              });
+          if (null != s)
+            mutex.wait();
+        } else {
           Stat s1 = zk.exists(getNodeName(), false);
-          if(null != s1) zk.delete(getNodeName(), 0);
-          Stat s2 = zk.exists(pathToSuperstepZnode+"/"+lowest, new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-              synchronized(mutex) {
-                mutex.notifyAll();
-              }
-            }
-          });
-          if(null != s2) mutex.wait();
+          if (null != s1)
+            zk.delete(getNodeName(), 0);
+          Stat s2 = zk.exists(pathToSuperstepZnode + "/" + lowest,
+              new Watcher() {
+                @Override
+                public void process(WatchedEvent event) {
+                  synchronized (mutex) {
+                    mutex.notifyAll();
+                  }
+                }
+              });
+          if (null != s2)
+            mutex.wait();
         }
       }
     }
   }
 
   private String getNodeName() {
-    return bspRoot + "/" + taskid.getJobID().toString() + "/" + getSuperstepCount() + "/" + taskid.toString() ;
+    return bspRoot + "/" + taskid.getJobID().toString() + "/"
+        + getSuperstepCount() + "/" + taskid.toString();
   }
 
   @Override
@@ -509,7 +521,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     return BSPPeerInterface.versionID;
   }
 
-  protected BSPPeerInterface getBSPPeerConnection(InetSocketAddress addr) {
+  protected BSPPeerInterface getBSPPeerConnection(InetSocketAddress addr)
+      throws NullPointerException {
     BSPPeerInterface peer;
     synchronized (this.peers) {
       peer = peers.get(addr);
@@ -519,7 +532,7 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
           peer = (BSPPeerInterface) RPC.getProxy(BSPPeerInterface.class,
               BSPPeerInterface.versionID, addr, this.conf);
         } catch (IOException e) {
-
+          LOG.error(e);
         }
         this.peers.put(addr, peer);
       }
@@ -537,8 +550,10 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
 
   private InetSocketAddress getAddress(String peerName) {
     String[] peerAddrParts = peerName.split(":");
-    if(peerAddrParts.length != 2){
-      throw new ArrayIndexOutOfBoundsException("Peername must consist of exactly ONE \":\"! Given peername was: " + peerName);
+    if (peerAddrParts.length != 2) {
+      throw new ArrayIndexOutOfBoundsException(
+          "Peername must consist of exactly ONE \":\"! Given peername was: "
+              + peerName);
     }
     return new InetSocketAddress(peerAddrParts[0], Integer
         .parseInt(peerAddrParts[1]));
@@ -548,13 +563,14 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   public String[] getAllPeerNames() {
     String[] result = null;
     try {
-      result = zk.getChildren("/" + jobConf.getJobID().toString(), this).toArray(new String[0]);
+      result = zk.getChildren("/" + jobConf.getJobID().toString(), this)
+          .toArray(new String[0]);
     } catch (KeeperException e) {
       e.printStackTrace();
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    
+
     return result;
   }
 
