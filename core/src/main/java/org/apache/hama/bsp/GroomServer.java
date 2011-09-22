@@ -840,7 +840,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       return task.getTaskID().hashCode();
     }
 
-    public void reportProgress(TaskStatus taskStatus2) {
+    public void reportProgress(TaskStatus taskStatus) {
       LOG.info(task.getTaskID() + " " + taskStatus.getProgress() + "% "
           + taskStatus.getStateString());
 
