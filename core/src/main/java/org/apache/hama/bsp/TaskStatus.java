@@ -31,7 +31,7 @@ import org.apache.hadoop.io.WritableUtils;
  * Describes the current status of a task. This is not intended to be a
  * comprehensive piece of data.
  */
-class TaskStatus implements Writable, Cloneable {
+public class TaskStatus implements Writable, Cloneable {
   static final Log LOG = LogFactory.getLog(TaskStatus.class);
 
   // enumeration for reporting current phase of a task.
@@ -94,6 +94,10 @@ class TaskStatus implements Writable, Cloneable {
     return progress;
   }
 
+  public void setSuperstepCount(long superstepCount) {
+    this.superstepCount = superstepCount;  
+  }
+  
   public void setProgress(float progress) {
     this.progress = progress;
   }
@@ -186,6 +190,7 @@ class TaskStatus implements Writable, Cloneable {
    * @param status updated status
    */
   synchronized void statusUpdate(TaskStatus status) {
+    this.superstepCount = status.getSuperstepCount();
     this.progress = status.getProgress();
     this.runState = status.getRunState();
     this.stateString = status.getStateString();
@@ -206,14 +211,16 @@ class TaskStatus implements Writable, Cloneable {
    * This update is done in BSPMaster when a cleanup attempt of task reports its
    * status. Then update only specific fields, not all.
    * 
+   * @param superstepCount
    * @param runState
    * @param progress
    * @param state
    * @param phase
    * @param finishTime
    */
-  synchronized void statusUpdate(State runState, float progress, String state,
+  synchronized void statusUpdate(long superstepCount, State runState, float progress, String state,
       Phase phase, long finishTime) {
+    setSuperstepCount(superstepCount);
     setRunState(runState);
     setProgress(progress);
     setStateString(state);
