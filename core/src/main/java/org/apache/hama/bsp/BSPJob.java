@@ -48,7 +48,11 @@ public class BSPJob extends BSPJobContext {
     super(conf, null);
     jobClient = new BSPJobClient(conf);
   }
-
+  
+  public BSPJob(HamaConfiguration conf, BSPJobID jobID) throws IOException {
+    super(conf, jobID);
+  }
+  
   public BSPJob(HamaConfiguration conf, String jobName) throws IOException {
     this(conf);
     setJobName(jobName);
@@ -199,6 +203,11 @@ public class BSPJob extends BSPJobContext {
       info.waitForCompletion();
     }
     return isSuccessful();
+  }
+  
+  // for the testcase
+  BSPJobClient getJobClient(){
+    return jobClient;
   }
 
   public void set(String name, String value) {

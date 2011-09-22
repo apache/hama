@@ -55,7 +55,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     BSPJob bsp = new BSPJob(configuration);
     bsp.setJobName("Test Serialize Printing");
     bsp.setBspClass(testjar.ClassSerializePrinting.HelloBSP.class);
-    bsp.setJar(System.getProperty("user.dir")+"/"+TEST_JOB);
+    bsp.setJar(System.getProperty("user.dir") + "/" + TEST_JOB);
 
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(configuration);
@@ -63,7 +63,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     ClusterStatus cluster = jobClient.getClusterStatus(false);
     assertEquals(this.numOfGroom, cluster.getGroomServers());
     bsp.setNumBspTask(2);
-    
+
     FileSystem fileSys = FileSystem.get(conf);
 
     if (bsp.waitForCompletion(true)) {
@@ -80,7 +80,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
       LongWritable timestamp = new LongWritable();
       Text message = new Text();
       reader.next(timestamp, message);
-      
+
       LOG.info("output: " + message);
       assertTrue("Check if `Hello BSP' gets printed.", message.toString()
           .indexOf("Hello BSP from") >= 0);

@@ -56,8 +56,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**
@@ -66,10 +66,13 @@ import org.apache.zookeeper.data.Stat;
  */
 public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     GroomServerManager, Watcher {
+
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
+  public static final String localModeMessage = "Local mode detected, no launch of the daemon needed.";
+  public static final long GROOMSERVER_EXPIRY_INTERVAL = 10 * 60 * 1000;
+  private static final int FS_ACCESS_RETRY_PERIOD = 10000;
 
   private HamaConfiguration conf;
-
   private ZooKeeper zk = null;
   private String bspRoot = null;
 
@@ -80,8 +83,6 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     INITIALIZING, RUNNING
   }
 
-  private static final int FS_ACCESS_RETRY_PERIOD = 10000;
-  public static final long GROOMSERVER_EXPIRY_INTERVAL = 10 * 60 * 1000;
   static long JOBINIT_SLEEP_INTERVAL = 2000;
 
   // States
@@ -247,60 +248,68 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     this.taskScheduler = (TaskScheduler) ReflectionUtils.newInstance(
         schedulerClass, conf);
 
-    host = getAddress(conf).getHostName();
-    port = getAddress(conf).getPort();
-    LOG.info("RPC BSPMaster: host " + host + " port " + port);
+    InetSocketAddress inetSocketAddress = getAddress(conf);
+    // inetSocketAddress is null if we are in local mode, then we should start
+    // nothing.
+    if (inetSocketAddress != null) {
+      host = inetSocketAddress.getHostName();
+      port = inetSocketAddress.getPort();
+      LOG.info("RPC BSPMaster: host " + host + " port " + port);
 
-    startTime = System.currentTimeMillis();
-    this.masterServer = RPC.getServer(this, host, port, conf);
+      startTime = System.currentTimeMillis();
+      this.masterServer = RPC.getServer(this, host, port, conf);
 
-    infoPort = conf.getInt("bsp.http.infoserver.port", 40013);
+      infoPort = conf.getInt("bsp.http.infoserver.port", 40013);
 
-    infoServer = new HttpServer("bspmaster", host, infoPort, true, conf);
-    infoServer.setAttribute("bsp.master", this);
+      infoServer = new HttpServer("bspmaster", host, infoPort, true, conf);
+      infoServer.setAttribute("bsp.master", this);
 
-    // starting webserver
-    infoServer.start();
+      // starting webserver
+      infoServer.start();
 
-    while (!Thread.currentThread().isInterrupted()) {
-      try {
-        if (fs == null) {
-          fs = FileSystem.get(conf);
+      while (!Thread.currentThread().isInterrupted()) {
+        try {
+          if (fs == null) {
+            fs = FileSystem.get(conf);
+          }
+          // clean up the system dir, which will only work if hdfs is out of
+          // safe mode
+          if (systemDir == null) {
+            systemDir = new Path(getSystemDir());
+          }
+
+          LOG.info("Cleaning up the system directory");
+          LOG.info(systemDir);
+          fs.delete(systemDir, true);
+          if (FileSystem.mkdirs(fs, systemDir, new FsPermission(
+              SYSTEM_DIR_PERMISSION))) {
+            break;
+          }
+          LOG.error("Mkdirs failed to create " + systemDir);
+          LOG.info(SUBDIR);
+
+        } catch (AccessControlException ace) {
+          LOG.warn("Failed to operate on bsp.system.dir (" + systemDir
+              + ") because of permissions.");
+          LOG.warn("Manually delete the bsp.system.dir (" + systemDir
+              + ") and then start the BSPMaster.");
+          LOG.warn("Bailing out ... ");
+          throw ace;
+        } catch (IOException ie) {
+          LOG.info("problem cleaning system directory: " + systemDir, ie);
         }
-        // clean up the system dir, which will only work if hdfs is out of
-        // safe mode
-        if (systemDir == null) {
-          systemDir = new Path(getSystemDir());
-        }
-
-        LOG.info("Cleaning up the system directory");
-        LOG.info(systemDir);
-        fs.delete(systemDir, true);
-        if (FileSystem.mkdirs(fs, systemDir, new FsPermission(
-            SYSTEM_DIR_PERMISSION))) {
-          break;
-        }
-        LOG.error("Mkdirs failed to create " + systemDir);
-        LOG.info(SUBDIR);
-
-      } catch (AccessControlException ace) {
-        LOG.warn("Failed to operate on bsp.system.dir (" + systemDir
-            + ") because of permissions.");
-        LOG.warn("Manually delete the bsp.system.dir (" + systemDir
-            + ") and then start the BSPMaster.");
-        LOG.warn("Bailing out ... ");
-        throw ace;
-      } catch (IOException ie) {
-        LOG.info("problem cleaning system directory: " + systemDir, ie);
+        Thread.sleep(FS_ACCESS_RETRY_PERIOD);
       }
-      Thread.sleep(FS_ACCESS_RETRY_PERIOD);
-    }
 
-    if (Thread.currentThread().isInterrupted()) {
-      throw new InterruptedException();
-    }
+      if (Thread.currentThread().isInterrupted()) {
+        throw new InterruptedException();
+      }
 
-    deleteLocalFiles(SUBDIR);
+      deleteLocalFiles(SUBDIR);
+    } else {
+      System.out.println(localModeMessage);
+      LOG.info(localModeMessage);
+    }
   }
 
   /**
@@ -511,11 +520,24 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     }
   }
 
+  /**
+   * Parses the configuration for the master addresses.
+   * 
+   * @param conf normal configuration containing the information the user
+   *          configured.
+   * @return a InetSocketAddress if everything went fine. Or "null" if "local"
+   *         was configured, which is no valid hostname.
+   */
   public static InetSocketAddress getAddress(Configuration conf) {
     String hamaMasterStr = conf.get("bsp.master.address", "localhost");
-    int defaultPort = conf.getInt("bsp.master.port", 40000);
-
-    return NetUtils.createSocketAddr(hamaMasterStr, defaultPort);
+    // we ensure that hamaMasterStr is non-null here because we provided
+    // "localhost" as default.
+    if (!hamaMasterStr.equals("local")) {
+      int defaultPort = conf.getInt("bsp.master.port", 40000);
+      return NetUtils.createSocketAddr(hamaMasterStr, defaultPort);
+    } else {
+      return null;
+    }
   }
 
   /**
@@ -606,7 +628,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       for (Map.Entry<GroomServerStatus, GroomProtocol> entry : groomServers
           .entrySet()) {
         GroomServerStatus s = entry.getKey();
-        groomsMap.put(s.getGroomName(), s);
+        groomsMap.put(s.getGroomHostName() + ":" + Constants.DEFAULT_PEER_PORT, s);
       }
 
     }

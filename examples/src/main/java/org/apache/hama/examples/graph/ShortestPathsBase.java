@@ -160,7 +160,6 @@ public abstract class ShortestPathsBase extends BSP {
     }
 
     writer.close();
-    fs.close();
 
     return partition(conf, input, groomNames);
   }

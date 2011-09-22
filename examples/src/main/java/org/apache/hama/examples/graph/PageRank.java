@@ -222,7 +222,7 @@ public class PageRank extends PageRankBase {
     // leave the iterations on default
     conf.set("max.iterations", "0");
 
-    Collection<String> activeGrooms = cluster.getActiveGroomNames().values();
+    Collection<String> activeGrooms = cluster.getActiveGroomNames().keySet();
     String[] grooms = activeGrooms.toArray(new String[activeGrooms.size()]);
 
     if (conf.get("in.path") == null) {

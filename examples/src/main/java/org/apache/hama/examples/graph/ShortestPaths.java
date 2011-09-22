@@ -218,7 +218,7 @@ public class ShortestPaths extends ShortestPathsBase {
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);
 
-    Collection<String> activeGrooms = cluster.getActiveGroomNames().values();
+    Collection<String> activeGrooms = cluster.getActiveGroomNames().keySet();
     String[] grooms = activeGrooms.toArray(new String[activeGrooms.size()]);
 
     LOG.info("Starting data partitioning...");
