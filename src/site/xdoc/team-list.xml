@@ -87,6 +87,12 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">HP Laboratories</td>
           <td align="center">mentor, committer</td>
         </tr>
+       <tr valign="top">
+          <td align="center">tjungblut</td>
+          <td align="center">Thomas Jungblut</td>
+          <td align="center">Testberichte.de</td>
+          <td align="center">committer</td>
+        </tr>
     </table>
       
     <subsection name="Contributors"></subsection>
