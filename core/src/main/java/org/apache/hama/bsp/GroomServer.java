@@ -841,8 +841,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     public void reportProgress(TaskStatus taskStatus) {
-      LOG.info(task.getTaskID() + " " + taskStatus.getProgress() + "% "
-          + taskStatus.getStateString());
+//      LOG.info(task.getTaskID() + " " + taskStatus.getProgress() + "% "
+//          + taskStatus.getStateString());
 
       if (this.done) {
         LOG.info(task.getTaskID()
