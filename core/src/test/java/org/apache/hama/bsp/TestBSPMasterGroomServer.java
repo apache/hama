@@ -43,6 +43,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     assertEquals("Make sure master addr is set to localhost:", "localhost",
         configuration.get("bsp.master.address"));
     configuration.setStrings("bsp.local.dir", "/tmp/hama-test");
+    System.setProperty("hama.log.dir", "/tmp/hama-test/logs");
     configuration.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     configuration.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
   }

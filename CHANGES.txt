@@ -17,7 +17,8 @@ Release 0.4 - Unreleased
     HAMA-421: Maven build issues using proxy (Joe Crobak via edwardyoon)
 
   IMPROVEMENTS
-  
+
+    HAMA-441: Logging tasks to distinct files
     HAMA-423: Improve and Refactor Partitioning in the Examples (Thomas Jungblut via edwardyoon)
     HAMA-422: Update HttpServer to use QueuedThreadPool (edwardyoon)
     HAMA-414: Move BSPPeer constructor into child process (edwardyoon)
