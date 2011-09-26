@@ -485,6 +485,9 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       for (String node : zk.getChildren(bspRoot, this)) {
         for (String subnode : zk.getChildren(bspRoot + "/" + node, this)) {
           for (String subnode2 : zk.getChildren(bspRoot + "/" + node, this)) {
+            for (String subnode3 : zk.getChildren(bspRoot + "/" + node + "/" + subnode2, this)) {
+              zk.delete(bspRoot + "/" + node + "/" + subnode + "/" + subnode2 + "/" + subnode3, 0);
+            }
             zk.delete(bspRoot + "/" + node + "/" + subnode + "/" + subnode2, 0);
           }
           zk.delete(bspRoot + "/" + node + "/" + subnode, 0);
