@@ -57,9 +57,8 @@ public class BSPTask extends Task {
     BSP bsp = (BSP) ReflectionUtils.newInstance(
         job.getConf().getClass("bsp.work.class", BSP.class), job.getConf());
 
-    bsp.setup(bspPeer);
-
     try {
+      bsp.setup(bspPeer);
       bsp.bsp(bspPeer);
     } catch (IOException e) {
       LOG.error("Exception during BSP execution!", e);
