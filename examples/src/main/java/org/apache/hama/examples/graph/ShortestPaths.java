@@ -41,9 +41,9 @@ import org.apache.hama.examples.RandBench;
 import org.apache.zookeeper.KeeperException;
 
 public class ShortestPaths extends ShortestPathsBase {
+
   public static final Log LOG = LogFactory.getLog(ShortestPaths.class);
 
-  private Configuration conf;
   private final HashMap<ShortestPathVertex, List<ShortestPathVertex>> adjacencyList = new HashMap<ShortestPathVertex, List<ShortestPathVertex>>();
   private final HashMap<String, ShortestPathVertex> vertexLookupMap = new HashMap<String, ShortestPathVertex>();
   private String[] peerNames;
@@ -52,15 +52,16 @@ public class ShortestPaths extends ShortestPathsBase {
   public void bsp(BSPPeer peer) throws IOException, KeeperException,
       InterruptedException {
     // map our input into ram
-    mapAdjacencyList(conf, peer, adjacencyList, vertexLookupMap);
+    mapAdjacencyList(peer.getConfiguration(), peer, adjacencyList,
+        vertexLookupMap);
     // parse the configuration to get the peerNames
-    parsePeerNames(conf);
+    parsePeerNames(peer.getConfiguration());
     // get our master groom
-    String master = conf.get(MASTER_TASK);
+    String master = peer.getConfiguration().get(MASTER_TASK);
 
     // initial message bypass
-    ShortestPathVertex v = vertexLookupMap.get(conf
-        .get(SHORTEST_PATHS_START_VERTEX_ID));
+    ShortestPathVertex v = vertexLookupMap.get(peer.getConfiguration().get(
+        SHORTEST_PATHS_START_VERTEX_ID));
     if (v != null) {
       v.setCost(0);
       sendMessageToNeighbors(peer, v);
@@ -90,7 +91,7 @@ public class ShortestPaths extends ShortestPathsBase {
       }
     }
     // finished, finally save our map to DFS.
-    saveVertexMap(conf, peer, adjacencyList);
+    saveVertexMap(peer.getConfiguration(), peer, adjacencyList);
   }
 
   /**
@@ -159,16 +160,6 @@ public class ShortestPaths extends ShortestPathsBase {
               id.getCost() == Integer.MAX_VALUE ? id.getCost() : id.getCost()
                   + adjacent.getWeight()));
     }
-  }
-
-  @Override
-  public void setConf(Configuration conf) {
-    this.conf = conf;
-  }
-
-  @Override
-  public Configuration getConf() {
-    return conf;
   }
 
   public static void printUsage() {

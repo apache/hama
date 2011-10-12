@@ -26,18 +26,19 @@ import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.zookeeper.KeeperException;
 
 /**
- * Base class for tasks. 
+ * Base class for tasks.
  */
 public class BSPTask extends Task {
-  
+
   public static final Log LOG = LogFactory.getLog(BSPTask.class);
-  
+
   private BSPJob conf;
-  
+
   public BSPTask() {
   }
 
-  public BSPTask(BSPJobID jobId, String jobFile, TaskAttemptID taskid, int partition) {
+  public BSPTask(BSPJobID jobId, String jobFile, TaskAttemptID taskid,
+      int partition) {
     this.jobId = jobId;
     this.jobFile = jobFile;
     this.taskId = taskid;
@@ -52,9 +53,11 @@ public class BSPTask extends Task {
   @Override
   public void run(BSPJob job, BSPPeer bspPeer, BSPPeerProtocol umbilical)
       throws IOException {
-    
-    BSP bsp = (BSP) ReflectionUtils.newInstance(job.getConf().getClass(
-        "bsp.work.class", BSP.class), job.getConf());
+
+    BSP bsp = (BSP) ReflectionUtils.newInstance(
+        job.getConf().getClass("bsp.work.class", BSP.class), job.getConf());
+
+    bsp.setup(bspPeer);
 
     try {
       bsp.bsp(bspPeer);
@@ -64,17 +67,19 @@ public class BSPTask extends Task {
       LOG.error("Exception during BSP execution!", e);
     } catch (InterruptedException e) {
       LOG.error("Exception during BSP execution!", e);
+    } finally {
+      bsp.cleanup(bspPeer);
     }
 
     done(umbilical);
   }
-  
+
   public BSPJob getConf() {
-      return conf;
-    }
-  
-    public void setConf(BSPJob conf) {
-      this.conf = conf;
-    }
+    return conf;
+  }
+
+  public void setConf(BSPJob conf) {
+    this.conf = conf;
+  }
 
 }

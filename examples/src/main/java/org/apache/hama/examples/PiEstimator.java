@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
@@ -42,13 +41,18 @@ public class PiEstimator {
 
   public static class MyEstimator extends BSP {
     public static final Log LOG = LogFactory.getLog(MyEstimator.class);
-    private Configuration conf;
     private String masterTask;
     private static final int iterations = 10000;
 
-    public void bsp(BSPPeer bspPeer) throws IOException,
-        KeeperException, InterruptedException {
-      
+    @Override
+    public void setup(BSPPeer peer) {
+      this.masterTask = conf.get(MASTER_TASK);
+    }
+
+    @Override
+    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+        InterruptedException {
+
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {
         double x = 2.0 * Math.random() - 1.0, y = 2.0 * Math.random() - 1.0;
@@ -87,16 +91,6 @@ public class PiEstimator {
       writer.append(new DoubleWritable(pi), new DoubleWritable(0));
       writer.close();
     }
-
-    public Configuration getConf() {
-      return conf;
-    }
-
-    public void setConf(Configuration conf) {
-      this.conf = conf;
-      this.masterTask = conf.get(MASTER_TASK);
-    }
-
   }
 
   private static void initTempDir(FileSystem fileSys) throws IOException {
@@ -139,7 +133,7 @@ public class PiEstimator {
 
     // Choose one as a master
     for (String hostName : cluster.getActiveGroomNames().keySet()) {
-      conf.set(MASTER_TASK,hostName);
+      conf.set(MASTER_TASK, hostName);
       break;
     }
 

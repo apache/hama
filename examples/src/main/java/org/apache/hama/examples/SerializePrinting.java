@@ -22,7 +22,6 @@ import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -42,11 +41,21 @@ public class SerializePrinting {
 
   public static class HelloBSP extends BSP {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
-    private Configuration conf;
     private final static int PRINT_INTERVAL = 1000;
     private FileSystem fileSys;
     private int num;
 
+    @Override
+    public void setup(BSPPeer peer) {
+      num = Integer.parseInt(conf.get("bsp.peers.num"));
+      try {
+        fileSys = FileSystem.get(conf);
+      } catch (IOException e) {
+        throw new Error("Filesystem could not be initialized! ", e);
+      }
+    }
+
+    @Override
     public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
         InterruptedException {
 
@@ -72,21 +81,6 @@ public class SerializePrinting {
           "Hello BSP from " + (i + 1) + " of " + num + ": " + string));
       writer.close();
     }
-
-    public Configuration getConf() {
-      return conf;
-    }
-
-    public void setConf(Configuration conf) {
-      this.conf = conf;
-      num = Integer.parseInt(conf.get("bsp.peers.num"));
-      try {
-        fileSys = FileSystem.get(conf);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-
   }
 
   private static void printOutput(FileSystem fileSys, ClusterStatus cluster,
