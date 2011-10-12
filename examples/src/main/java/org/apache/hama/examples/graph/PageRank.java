@@ -39,8 +39,6 @@ import org.apache.zookeeper.KeeperException;
 public class PageRank extends PageRankBase {
   public static final Log LOG = LogFactory.getLog(PageRank.class);
 
-  private Configuration conf;
-
   private final HashMap<Vertex, List<Vertex>> adjacencyList = new HashMap<Vertex, List<Vertex>>();
   private final HashMap<String, Vertex> lookupMap = new HashMap<String, Vertex>();
   private final HashMap<Vertex, Double> tentativePagerank = new HashMap<Vertex, Double>();
@@ -49,11 +47,22 @@ public class PageRank extends PageRankBase {
   private String[] peerNames;
 
   @Override
+  public void setup(BSPPeer peer) {
+    Configuration conf = peer.getConfiguration();
+    numOfVertices = Integer.parseInt(conf.get("num.vertices"));
+    DAMPING_FACTOR = Double.parseDouble(conf.get("damping.factor"));
+    ALPHA = (1 - DAMPING_FACTOR) / (double) numOfVertices;
+    EPSILON = Double.parseDouble(conf.get("epsilon.error"));
+    MAX_ITERATIONS = Integer.parseInt(conf.get("max.iterations"));
+    peerNames = conf.get(ShortestPaths.BSP_PEERS).split(";");
+  }
+
+  @Override
   public void bsp(BSPPeer peer) throws IOException, KeeperException,
       InterruptedException {
-    String master = conf.get(MASTER_TASK);
+    String master = peer.getConfiguration().get(MASTER_TASK);
     // setup the datasets
-    PageRankBase.mapAdjacencyList(getConf(), peer, adjacencyList,
+    PageRankBase.mapAdjacencyList(peer.getConfiguration(), peer, adjacencyList,
         tentativePagerank, lookupMap);
 
     // while the error not converges against epsilon do the pagerank stuff
@@ -103,7 +112,8 @@ public class PageRank extends PageRankBase {
     // Clears all queues entries.
     peer.clear();
     // finally save the chunk of pageranks
-    PageRankBase.savePageRankMap(peer, conf, lastTentativePagerank);
+    PageRankBase.savePageRankMap(peer, peer.getConfiguration(),
+        lastTentativePagerank);
   }
 
   private double broadcastError(BSPPeer peer, String master, double error)
@@ -155,22 +165,6 @@ public class PageRank extends PageRankBase {
       peer.send(peerNames[mod], new DoubleMessage(adjacent.getName(),
           tentativePagerank.get(v) / outgoingEdges.size()));
     }
-  }
-
-  @Override
-  public void setConf(Configuration conf) {
-    this.conf = conf;
-    numOfVertices = Integer.parseInt(conf.get("num.vertices"));
-    DAMPING_FACTOR = Double.parseDouble(conf.get("damping.factor"));
-    ALPHA = (1 - DAMPING_FACTOR) / (double) numOfVertices;
-    EPSILON = Double.parseDouble(conf.get("epsilon.error"));
-    MAX_ITERATIONS = Integer.parseInt(conf.get("max.iterations"));
-    peerNames = conf.get(ShortestPaths.BSP_PEERS).split(";");
-  }
-
-  @Override
-  public Configuration getConf() {
-    return conf;
   }
 
   public static void printUsage() {

@@ -696,6 +696,15 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   /**
+   * Gets the job configuration.
+   * 
+   * @return the conf
+   */
+  public Configuration getConfiguration() {
+    return conf;
+  }
+
+  /**
    * Clears local queue
    */
   public void clearLocalQueue() {

@@ -22,7 +22,6 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
@@ -41,15 +40,21 @@ public class RandBench {
 
   public static class RandBSP extends BSP {
     public static final Log LOG = LogFactory.getLog(RandBSP.class);
-    private Configuration conf;
     private Random r = new Random();
     private int sizeOfMsg;
     private int nCommunications;
     private int nSupersteps;
 
     @Override
-    public void bsp(BSPPeer bspPeer) throws IOException,
-        KeeperException, InterruptedException {
+    public void setup(BSPPeer peer) {
+      this.sizeOfMsg = conf.getInt(SIZEOFMSG, 1);
+      this.nCommunications = conf.getInt(N_COMMUNICATIONS, 1);
+      this.nSupersteps = conf.getInt(N_SUPERSTEPS, 1);
+    }
+
+    @Override
+    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+        InterruptedException {
       byte[] dummyData = new byte[sizeOfMsg];
       BSPMessage msg = null;
       String[] peers = bspPeer.getAllPeerNames();
@@ -74,20 +79,6 @@ public class RandBench {
 
       }
     }
-
-    @Override
-    public void setConf(Configuration conf) {
-      this.conf = conf;
-      this.sizeOfMsg = conf.getInt(SIZEOFMSG, 1);
-      this.nCommunications = conf.getInt(N_COMMUNICATIONS, 1);
-      this.nSupersteps = conf.getInt(N_SUPERSTEPS, 1);
-    }
-
-    @Override
-    public Configuration getConf() {
-      return conf;
-    }
-
   }
 
   public static void main(String[] args) throws Exception {
