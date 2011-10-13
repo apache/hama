@@ -61,7 +61,8 @@ public class BSPServletUtil extends ServletUtil {
     if (jobs.length > 0) {
       sb.append("<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\">\n");
       sb.append("<tr><th>Jobid</th>" + "<th>User</th>" + "<th>Name</th>"
-          + "<th>SuperStep</th>" + "<th>Starttime</th>" + "</tr>\n");
+          + "<th>SuperSteps</th>" + "<th>Tasks</th>" + "<th>Starttime</th>"
+          + "</tr>\n");
       for (JobStatus status : jobs) {
         sb.append("<tr><td><a href=\"bspjob.jsp?jobid=" + status.getJobID()
             + "\">");
@@ -71,7 +72,9 @@ public class BSPServletUtil extends ServletUtil {
         sb.append("</td><td>");
         sb.append(status.getName());
         sb.append("</td><td>");
-        sb.append(status.progress());
+        sb.append(status.getSuperstepCount());
+        sb.append("</td><td>");
+        sb.append(status.getNumOfTasks());
         sb.append("</td><td>");
         sb.append(new Date(status.getStartTime()));
         sb.append("</td></tr>\n");
@@ -89,13 +92,14 @@ public class BSPServletUtil extends ServletUtil {
     StringBuilder sb = new StringBuilder();
     sb.append("<center>\n");
     sb.append("<table border=\"2\" cellpadding=\"5\" cellspacing=\"2\">\n");
-    sb.append("<tr><td align=\"center\" colspan=\"6\"><b>Groom Servers</b></td></tr>\n");
-    sb.append("<tr><td><b>Name</b></td>"
-        + "<td><b>Host</b></td>"
-        + "<td><b># maximum tasks</b></td><td><b># current running tasks</b></td>" +
-        		"<td><b># current failures</b></td>" +
-        		"<td><b>Last seen</b></td>" +
-        		"</tr>\n");
+    sb
+        .append("<tr><td align=\"center\" colspan=\"6\"><b>Groom Servers</b></td></tr>\n");
+    sb
+        .append("<tr><td><b>Name</b></td>"
+            + "<td><b>Host</b></td>"
+            + "<td><b># maximum tasks</b></td><td><b># current running tasks</b></td>"
+            + "<td><b># current failures</b></td>"
+            + "<td><b>Last seen</b></td>" + "</tr>\n");
     for (Entry<String, GroomServerStatus> entry : status
         .getActiveGroomServerStatus().entrySet()) {
       sb.append("<tr><td>");

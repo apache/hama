@@ -87,7 +87,7 @@ class TaskInProgress {
     this.jobFile = jobFile;
     this.partition = partition;
 
-    this.id = new TaskID(jobId, partition);
+    init(jobId);
   }
 
   public TaskInProgress(BSPJobID jobId, String jobFile, BSPMaster master,
@@ -99,9 +99,14 @@ class TaskInProgress {
     this.setConf(conf);
     this.partition = partition;
 
-    this.id = new TaskID(jobId, partition);
+    init(jobId);
   }
 
+  private void init(BSPJobID jobId2) {
+    this.id = new TaskID(jobId, partition);
+    this.startTime = System.currentTimeMillis();
+  }
+  
   /**
    * Return a Task that can be sent to a GroomServer for execution.
    */
