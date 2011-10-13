@@ -101,10 +101,10 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   @Override
   public JobStatus submitJob(BSPJobID jobID, String jobFile) throws IOException {
     this.jobFile = jobFile;
-    
-    if(fs == null)
+
+    if (fs == null)
       this.fs = FileSystem.get(conf);
-    
+
     // add the resource to the current configuration, because add resouce in
     // HamaConfigurations constructor (ID,FILE) does not take local->HDFS
     // connections into account. This leads to not serializing the
@@ -203,10 +203,12 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     public void run() {
       bsp.setConf(conf);
       try {
+        bsp.setup(groom);
         bsp.bsp(groom);
       } catch (Exception e) {
         LOG.error("Exception during BSP execution!", e);
       }
+      bsp.cleanup(groom);
     }
 
     @Override
@@ -356,6 +358,11 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     @Override
     public void put(BSPMessageBundle messages) throws IOException {
+    }
+
+    @Override
+    public Configuration getConfiguration() {
+      return conf;
     }
 
   }
