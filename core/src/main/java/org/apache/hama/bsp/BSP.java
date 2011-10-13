@@ -58,7 +58,7 @@ public abstract class BSP implements BSPInterface {
    * @param peer Your BSPPeer instance.
    */
   @Override
-  public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+  public void bsp(BSPPeer peer) throws IOException, KeeperException,
       InterruptedException {
 
   }
