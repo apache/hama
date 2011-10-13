@@ -37,11 +37,12 @@
   <b>State: </b>  <%=state.toString() %> 
   
   <br/> <br/>
-  <table border="1" cellpadding="5" cellspacing="0">
+  <table border="1" cellpadding="6" cellspacing="0">
     <tr>
       <th>Name</th>
       <th>User</th>
-      <th>SuperStep</th>
+      <th>SuperSteps</th>
+      <th>Tasks</th>
       <th>StartTime</th>
       <th>FinishTime</th>
     </tr>
@@ -50,6 +51,7 @@
       <td><%=status.getName() %></td>
       <td><%=status.getUsername() %></td>
       <td><%=status.getSuperstepCount() %></td>
+      <td><%=status.getNumOfTasks() %></td>
       <td><%=new Date(status.getStartTime()).toString() %></td>
       <td>
         <% if(status.getFinishTime() != 0L) {out.write(new Date(status.getFinishTime()).toString());} %>

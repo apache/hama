@@ -97,7 +97,8 @@ public class JobStatus implements Writable, Cloneable {
   private String user;
   private long superstepCount;
   private String name;
-
+  private int tasks;
+  
   private long finishTime;
 
   public JobStatus() {
@@ -171,6 +172,14 @@ public class JobStatus implements Writable, Cloneable {
 
   public synchronized void setRunState(int state) {
     this.runState = state;
+  }
+  
+  public synchronized void setNumOfTasks(int tasks) {
+    this.tasks = tasks;
+  }
+  
+  public synchronized int getNumOfTasks() {
+    return tasks;
   }
 
   public synchronized long getSuperstepCount() {

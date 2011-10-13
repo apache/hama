@@ -133,6 +133,10 @@ class JobInProgress {
     return finishTime;
   }
 
+  public int getNumOfTasks() {
+    return tasks.length;  
+  }
+  
   /**
    * @return the number of desired tasks.
    */
@@ -181,7 +185,7 @@ class JobInProgress {
       LOG.debug("numBSPTasks: " + numBSPTasks);
     }
 
-    // adjust number of map tasks to actual number of splits
+    // adjust number of BSP tasks to actual number of splits
     this.tasks = new TaskInProgress[numBSPTasks];
     for (int i = 0; i < numBSPTasks; i++) {
       tasks[i] = new TaskInProgress(getJobID(), this.jobFile.toString(),

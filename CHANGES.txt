@@ -4,6 +4,7 @@ Release 0.4 - Unreleased
 
   NEW FEATURES
 
+   HAMA-449: Add tasks num of Job to web UI (edwardyoon)
    HAMA-428: Create a separate maven module and add basic structure for the Graph (edwardyoon)
    HAMA-398: Add CheckPointer and saving messages for future fault-tolerant systems (ChiaHung Lin via edwardyoon)
 

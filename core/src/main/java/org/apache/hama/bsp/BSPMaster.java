@@ -733,6 +733,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       JobStatus status = jip.getStatus();
 
       status.setStartTime(jip.getStartTime());
+      status.setNumOfTasks(jip.getNumOfTasks());
+      
       // Sets the user name
       status.setUsername(jip.getProfile().getUser());
       status.setName(jip.getJobName());

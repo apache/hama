@@ -227,8 +227,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     BSPMessageSerializer msgSerializer = null;
     if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
       msgSerializer = new BSPMessageSerializer(conf.getInt(
-          "bsp.checkpoint.port",
-          Integer.parseInt(CheckpointRunner.DEFAULT_PORT)));
+          "bsp.checkpoint.port", Integer
+              .valueOf(CheckpointRunner.DEFAULT_PORT)));
     }
     this.messageSerializer = msgSerializer;
   }
@@ -237,8 +237,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     try {
       if (LOG.isDebugEnabled())
         LOG.debug("reinitialize(): " + getPeerName());
-      this.server = RPC.getServer(this, peerAddress.getHostName(),
-          peerAddress.getPort(), conf);
+      this.server = RPC.getServer(this, peerAddress.getHostName(), peerAddress
+          .getPort(), conf);
       server.start();
       LOG.info(" BSPPeer address:" + peerAddress.getHostName() + " port:"
           + peerAddress.getPort());
@@ -389,15 +389,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
     public void process(WatchedEvent event) {
       this.complete = true;
       synchronized (mutex) {
-        LOG.info(">>>>>>>>>>>>>>> at superstep " + getSuperstepCount()
+        LOG.debug(">>>>>>>>>>>>>>> at superstep " + getSuperstepCount()
             + " taskid:" + taskid.toString() + " is notified.");
-        /*
-         * try { Stat s = zk.exists(pathToSuperstepZnode+"/ready", false);
-         * if(null != s) { zk.delete(pathToSuperstepZnode+"/ready", 0); } }
-         * catch(KeeperException.NoNodeException nne) {
-         * LOG.warn("Ignore because znode may be deleted.", nne); }
-         * catch(Exception e) { throw new RuntimeException(e); }
-         */
         mutex.notifyAll();
       }
     }
@@ -464,8 +457,9 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
         + taskid.getJobID().toString() + "/" + getSuperstepCount();
     while (true) {
       List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
-      LOG.info("leaveBarrier() !!! checking znodes cotnains /ready node or not: at superstep:"
-          + getSuperstepCount() + " znode:" + znodes);
+      LOG
+          .info("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
+              + getSuperstepCount() + " znode:" + znodes);
       if (znodes.contains("ready")) {
         znodes.remove("ready");
       }
@@ -597,20 +591,23 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
   }
 
   protected BSPPeerInterface getBSPPeerConnection(InetSocketAddress addr)
-      throws NullPointerException {
+      throws NullPointerException, IOException {
     BSPPeerInterface peer;
     synchronized (this.peers) {
       peer = peers.get(addr);
 
-      if (peer == null) {
-        try {
-          peer = (BSPPeerInterface) RPC.getProxy(BSPPeerInterface.class,
-              BSPPeerInterface.versionID, addr, this.conf);
-        } catch (IOException e) {
-          LOG.error(e);
+      int retries = 0;
+      while (peer != null) {
+        peer = (BSPPeerInterface) RPC.getProxy(BSPPeerInterface.class,
+            BSPPeerInterface.versionID, addr, this.conf);
+
+        retries++;
+        if (retries > 10) {
+          umbilical.fatalError(taskid, addr + " doesn't repond.");
         }
-        this.peers.put(addr, peer);
       }
+
+      this.peers.put(addr, peer);
     }
 
     return peer;
@@ -630,8 +627,8 @@ public class BSPPeer implements Watcher, BSPPeerInterface {
           "Peername must consist of exactly ONE \":\"! Given peername was: "
               + peerName);
     }
-    return new InetSocketAddress(peerAddrParts[0],
-        Integer.parseInt(peerAddrParts[1]));
+    return new InetSocketAddress(peerAddrParts[0], Integer
+        .valueOf(peerAddrParts[1]));
   }
 
   @Override
