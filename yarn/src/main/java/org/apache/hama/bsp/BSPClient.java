@@ -17,22 +17,13 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.IOException;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.ipc.VersionedProtocol;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPPeerImpl.BSPSerializableMessage;
+public interface BSPClient extends VersionedProtocol {
 
-public final class BSPSerializerWrapper {
-
-  private final BSPPeerImpl.BSPMessageSerializer serializer;
-
-  public BSPSerializerWrapper(Configuration conf, int port) throws IOException {
-    this.serializer = new BSPPeerImpl(conf, null, null).new BSPMessageSerializer(
-      conf.getInt("bsp.checkpoint.port", port)); 
-  }  
-
-  public final void serialize(final BSPSerializableMessage tmp) 
-      throws IOException {
-    this.serializer.serialize(tmp);
-  }
+  public static final int VERSION = 0;
+  
+  public LongWritable getCurrentSuperStep(); 
+  
 }

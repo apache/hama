@@ -42,7 +42,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.BSPPeer.BSPSerializableMessage;
+import org.apache.hama.bsp.BSPPeerImpl.BSPSerializableMessage;
 import org.apache.hama.GroomServerRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

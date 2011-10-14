@@ -17,22 +17,30 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.IOException;
+import org.apache.hadoop.yarn.exceptions.YarnRemoteException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPPeerImpl.BSPSerializableMessage;
 
-public final class BSPSerializerWrapper {
+/**
+ * Main interface to interact with the job. Provides only getters.
+ */
+public interface Job {
 
-  private final BSPPeerImpl.BSPMessageSerializer serializer;
-
-  public BSPSerializerWrapper(Configuration conf, int port) throws IOException {
-    this.serializer = new BSPPeerImpl(conf, null, null).new BSPMessageSerializer(
-      conf.getInt("bsp.checkpoint.port", port)); 
-  }  
-
-  public final void serialize(final BSPSerializableMessage tmp) 
-      throws IOException {
-    this.serializer.serialize(tmp);
+  public enum JobState {
+    NEW, RUNNING, SUCCESS, FAILED, KILLED
   }
+
+  public enum BSPPhase {
+    COMPUTATION, COMMUNICATION
+  }
+
+  public JobState startJob() throws Exception;
+  
+  public void cleanup() throws YarnRemoteException;
+
+  JobState getState();
+
+  BSPPhase getBSPPhase();
+
+  int getTotalBSPTasks();
+
 }

@@ -33,7 +33,7 @@ import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPSerializerWrapper;
 import org.apache.hama.bsp.DoubleMessage;
-import org.apache.hama.bsp.BSPPeer.BSPSerializableMessage;
+import org.apache.hama.bsp.BSPPeerImpl.BSPSerializableMessage;
 
 public class TestCheckpoint extends TestCase {
 

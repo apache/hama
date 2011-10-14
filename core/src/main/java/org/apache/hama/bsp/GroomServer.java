@@ -944,7 +944,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
       defaultConf.setInt(Constants.PEER_PORT, peerPort);
 
-      BSPPeer bspPeer = new BSPPeer(defaultConf, taskid, umbilical);
+      BSPPeerImpl bspPeer = new BSPPeerImpl(defaultConf, taskid, umbilical);
       bspPeer.reinitialize();
       bspPeer.setJobConf(job);
 

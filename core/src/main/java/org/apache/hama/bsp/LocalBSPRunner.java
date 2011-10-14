@@ -253,7 +253,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   }
 
-  class LocalGroom extends BSPPeer {
+  class LocalGroom extends BSPPeerImpl {
     private long superStepCount = 0;
     private final ConcurrentLinkedQueue<BSPMessage> localMessageQueue = new ConcurrentLinkedQueue<BSPMessage>();
     // outgoing queue

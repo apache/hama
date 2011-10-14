@@ -51,7 +51,7 @@ public class BSPTask extends Task {
   }
 
   @Override
-  public void run(BSPJob job, BSPPeer bspPeer, BSPPeerProtocol umbilical)
+  public void run(BSPJob job, BSPPeerImpl bspPeer, BSPPeerProtocol umbilical)
       throws IOException {
 
     BSP bsp = (BSP) ReflectionUtils.newInstance(
