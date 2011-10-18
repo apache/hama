@@ -495,9 +495,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
         zk.delete(bspRoot + "/" + node, 0);
       }
     } catch (KeeperException e) {
-      e.printStackTrace();
     } catch (InterruptedException e) {
-      e.printStackTrace();
     }
   }
 

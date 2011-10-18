@@ -85,23 +85,34 @@ public interface BSPPeer extends HamaRPCProtocolVersion, Closeable, Constants {
   public long getSuperstepCount();
 
   /**
-   * @return The name of this peer in the format "hostname:port".
+   * @return the name of this peer in the format "hostname:port".
    */
   public String getPeerName();
 
   /**
-   * @return The names of all the peers executing tasks from the same job
+   * @param index
+   * @return the name of n-th peer from sorted array by name.
+   */
+  public String getPeerName(int index);
+  
+  /**
+   * @return the names of all the peers executing tasks from the same job
    *         (including this peer).
    */
   public String[] getAllPeerNames();
 
+  /**
+   * @return the number of peers
+   */
+  public int getNumPeers();
+  
   /**
    * Clears all queues entries.
    */
   public void clear();
 
   /**
-   * @return The jobs configuration
+   * @return the jobs configuration
    */
   public Configuration getConfiguration();
 }

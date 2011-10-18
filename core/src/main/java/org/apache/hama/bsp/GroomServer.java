@@ -153,23 +153,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
         int i = 0;
 
-        // add peers to BSPMaster.
+        // add peers to Zookeeper.
         // TODO find another way to manage all activate peers.
         for (GroomServerAction action : actions) {
           Task t = ((LaunchTaskAction) action).getTask();
 
           int peerPort = (Constants.DEFAULT_PEER_PORT + i);
-
-          try {
-            zk.create("/" + t.getJobID().toString() + "/" + groomHostName + ":"
-                + peerPort, new byte[0], Ids.OPEN_ACL_UNSAFE,
-                CreateMode.EPHEMERAL);
-          } catch (KeeperException e) {
-            e.printStackTrace();
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-
+          registerPeerAddress(t.getJobID(), peerPort);
           assignedPeerNames.put(t.getTaskID(), peerPort);
 
           i++;
@@ -196,6 +186,24 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             }
           }
         }
+      }
+    }
+
+    /**
+     * Register peer address to share all addresses among tasks.
+     * 
+     * @param jobID
+     * @param peerPort
+     */
+    private void registerPeerAddress(BSPJobID jobID, int peerPort) {
+      try {
+        zk.create(
+            "/" + jobID.toString() + "/" + groomHostName + ":" + peerPort,
+            new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+      } catch (KeeperException e) {
+        e.printStackTrace();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
       }
     }
   }
@@ -841,8 +849,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     public void reportProgress(TaskStatus taskStatus) {
-//      LOG.info(task.getTaskID() + " " + taskStatus.getProgress() + "% "
-//          + taskStatus.getStateString());
+      // LOG.info(task.getTaskID() + " " + taskStatus.getProgress() + "% "
+      // + taskStatus.getStateString());
 
       if (this.done) {
         LOG.info(task.getTaskID()
@@ -948,11 +956,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       bspPeer.reinitialize();
       bspPeer.setJobConf(job);
 
-      TaskStatus taskStatus = new TaskStatus(task.getJobID(), task.getTaskID(),
-          0, TaskStatus.State.RUNNING, "running", host,
-          TaskStatus.Phase.STARTING);
-
-      bspPeer.setCurrentTaskStatus(taskStatus);
+      bspPeer.setCurrentTaskStatus(new TaskStatus(task.getJobID(), task
+          .getTaskID(), 0, TaskStatus.State.RUNNING, "running", host,
+          TaskStatus.Phase.STARTING));
 
       try {
         // use job-specified working directory
