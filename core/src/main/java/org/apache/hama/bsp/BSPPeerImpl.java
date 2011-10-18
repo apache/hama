@@ -596,15 +596,9 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
     synchronized (this.peers) {
       peer = peers.get(addr);
 
-      int retries = 0;
-      while (peer != null) {
-        peer = (BSPPeer) RPC.getProxy(BSPPeer.class,
+      if(peer == null) {
+       peer = (BSPPeer) RPC.getProxy(BSPPeer.class,
             BSPPeer.versionID, addr, this.conf);
-
-        retries++;
-        if (retries > 10) {
-          umbilical.fatalError(taskid, addr + " doesn't repond.");
-        }
       }
 
       this.peers.put(addr, peer);
