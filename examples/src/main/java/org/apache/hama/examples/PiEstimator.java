@@ -36,7 +36,6 @@ import org.apache.hama.bsp.DoubleMessage;
 import org.apache.zookeeper.KeeperException;
 
 public class PiEstimator {
-  private static String MASTER_TASK = "master.task.";
   private static Path TMP_OUTPUT = new Path("/tmp/pi-example/output");
 
   public static class MyEstimator extends BSP {
@@ -46,7 +45,8 @@ public class PiEstimator {
 
     @Override
     public void setup(BSPPeer peer) {
-      this.masterTask = conf.get(MASTER_TASK);
+      // Choose one as a master
+      this.masterTask = peer.getPeerName(0);
     }
 
     @Override
@@ -129,12 +129,6 @@ public class PiEstimator {
     } else {
       // Set to maximum
       bsp.setNumBspTask(cluster.getMaxTasks());
-    }
-
-    // Choose one as a master
-    for (String hostName : cluster.getActiveGroomNames().keySet()) {
-      conf.set(MASTER_TASK, hostName);
-      break;
     }
 
     FileSystem fileSys = FileSystem.get(conf);
