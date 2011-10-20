@@ -17,40 +17,36 @@
  */
 package org.apache.hama.checkpoint;
 
-import java.io.BufferedReader;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.EOFException;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import static java.util.concurrent.TimeUnit.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.Path;
-import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.BSPPeerImpl.BSPSerializableMessage;
-import org.apache.hama.GroomServerRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hama.bsp.BSPSerializableMessage;
 
 /**
  * This class is responsible for checkpointing messages to hdfs. 
  */
-public final class Checkpointer implements Callable {
+public final class Checkpointer implements Callable<Object> {
 
   public static Log LOG = LogFactory.getLog(Checkpointer.class);
 
@@ -59,13 +55,13 @@ public final class Checkpointer implements Callable {
   private final FileSystem dfs; 
   private final AtomicBoolean ckptState = new AtomicBoolean(false);
   private final BSPMessageDeserializer messageDeserializer;
-  private final AtomicReference<ScheduledFuture> future =  
-    new AtomicReference<ScheduledFuture>(); 
+  private final AtomicReference<ScheduledFuture<Object>> future =  
+    new AtomicReference<ScheduledFuture<Object>>(); 
 
   /** 
    * Reading from socket inputstream as DataInput.
    */
-  public static final class BSPMessageDeserializer implements Callable {
+  public static final class BSPMessageDeserializer implements Callable<Object> {
     final BlockingQueue<BSPSerializableMessage> messageQueue = 
       new LinkedBlockingQueue<BSPSerializableMessage>();
     final ScheduledExecutorService sched; 
@@ -121,7 +117,7 @@ public final class Checkpointer implements Callable {
         while(state()) {
           Socket connection = server.accept();
           final DataInput in = new DataInputStream(connection.getInputStream());
-          this.workers.schedule(new Callable() {
+          this.workers.schedule(new Callable<Object>() {
             public Object call() throws Exception {
               BSPSerializableMessage tmp = new BSPSerializableMessage();
               tmp.readFields(in);

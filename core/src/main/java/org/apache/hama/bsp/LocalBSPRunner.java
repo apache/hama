@@ -42,7 +42,6 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMaster.State;
 import org.apache.hama.ipc.JobSubmissionProtocol;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * A multithreaded local BSP runner that can be used for debugging and local
@@ -59,6 +58,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   protected static CyclicBarrier barrier;
 
   protected HashMap<String, LocalGroom> localGrooms = new HashMap<String, LocalGroom>();
+  protected String[] allPeers;
   protected String jobFile;
   protected String jobName;
 
@@ -84,6 +84,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       String name = IDENTIFIER + " " + i;
       localGrooms.put(name, new LocalGroom(name));
     }
+    
+    allPeers = localGrooms.keySet().toArray(
+        new String[localGrooms.keySet().size()]);
 
   }
 
@@ -200,6 +203,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       this.groom = groom;
     }
 
+    // deprecated until 0.5.0, then it will be removed.
+    @SuppressWarnings("deprecation")
     public void run() {
       bsp.setConf(conf);
       try {
@@ -253,7 +258,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   }
 
-  class LocalGroom extends BSPPeerImpl {
+  final class LocalGroom implements BSPPeer {
     private long superStepCount = 0;
     private final ConcurrentLinkedQueue<BSPMessage> localMessageQueue = new ConcurrentLinkedQueue<BSPMessage>();
     // outgoing queue
@@ -293,8 +298,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public void sync() throws IOException, KeeperException,
-        InterruptedException {
+    public void sync() throws InterruptedException {
       // wait until all threads reach this barrier
       barrierSync();
       // send the messages
@@ -302,7 +306,11 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
           .entrySet()) {
         String peerName = entry.getKey();
         for (BSPMessage msg : entry.getValue())
-          localGrooms.get(peerName).put(msg);
+          try {
+            localGrooms.get(peerName).put(msg);
+          } catch (IOException e) {
+            LOG.error("Putting message \"" + msg.toString() + "\" failed! ", e);
+          }
       }
       // clear the local outgoing queue
       outgoingQueues.clear();
@@ -336,8 +344,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     @Override
     public String[] getAllPeerNames() {
-      return localGrooms.keySet().toArray(
-          new String[localGrooms.keySet().size()]);
+      return allPeers;
     }
 
     @Override
@@ -351,10 +358,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       return 3;
     }
 
-    @Override
-    public void close() throws IOException {
-
-    }
 
     @Override
     public void put(BSPMessageBundle messages) throws IOException {
@@ -363,6 +366,16 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public Configuration getConfiguration() {
       return conf;
+    }
+
+    @Override
+    public String getPeerName(int index) {
+      return allPeers[index];
+    }
+
+    @Override
+    public int getNumPeers() {
+      return allPeers.length;
     }
 
   }

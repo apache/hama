@@ -17,33 +17,35 @@
  */
 package org.apache.hama.bsp.sync;
 
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.ipc.VersionedProtocol;
-import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.util.StringArrayWritable;
+import java.util.concurrent.Callable;
+import org.apache.hadoop.conf.Configuration;
 
 /**
- * Hadoop RPC based barrier synchronization service.
+ * Thread runner for a sync server.
  * 
  */
-public interface SyncServer extends VersionedProtocol {
+public class SyncServerRunner implements Callable<Object> {
 
-  public static final long versionID = 0L;
+  private SyncServer syncServer;
 
-  public void enterBarrier(TaskAttemptID id);
+  // use the SyncServiceFactory to obtain a new instance.
+  SyncServerRunner(Configuration conf) {
+    syncServer = SyncServiceFactory.getSyncServer(conf);
+  }
 
-  public void leaveBarrier(TaskAttemptID id);
+  public Configuration init(Configuration conf) throws Exception {
+    return syncServer.init(conf);
+  }
 
-  public void register(TaskAttemptID id, Text hostAddress, LongWritable port);
+  @Override
+  public Object call() throws Exception {
+    syncServer.start();
+    return null;
+  }
 
-  public LongWritable getSuperStep();
-
-  public StringArrayWritable getAllPeerNames();
-
-  public void deregisterFromBarrier(TaskAttemptID id, Text hostAddress,
-      LongWritable port);
-
-  public void stopServer();
+  @Override
+  protected void finalize() throws Throwable {
+    syncServer.stopServer();
+  }
 
 }

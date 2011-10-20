@@ -17,33 +17,35 @@
  */
 package org.apache.hama.bsp.sync;
 
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.ipc.VersionedProtocol;
-import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.util.StringArrayWritable;
+import org.apache.hadoop.conf.Configuration;
 
 /**
- * Hadoop RPC based barrier synchronization service.
+ * Basic interface for a barrier synchronization services. This interface is not
+ * used by HAMA, because every syncserver has to run as a seperate daemon. In
+ * YARN this is used to launch the sync server as part of the ApplicationMaster
+ * in a separate thread.
  * 
  */
-public interface SyncServer extends VersionedProtocol {
+public interface SyncServer {
 
-  public static final long versionID = 0L;
+  /**
+   * In YARN port and hostname of the sync server is only known at runtime, so
+   * this method should modify the conf to set the host:port of the syncserver
+   * that is going to start and return it.
+   * 
+   * @param conf
+   * @return
+   */
+  public Configuration init(Configuration conf) throws Exception;
 
-  public void enterBarrier(TaskAttemptID id);
+  /**
+   * Starts the server. This method can possibly block the call.
+   */
+  public void start() throws Exception;
 
-  public void leaveBarrier(TaskAttemptID id);
-
-  public void register(TaskAttemptID id, Text hostAddress, LongWritable port);
-
-  public LongWritable getSuperStep();
-
-  public StringArrayWritable getAllPeerNames();
-
-  public void deregisterFromBarrier(TaskAttemptID id, Text hostAddress,
-      LongWritable port);
-
+  /**
+   * Stops the server.
+   */
   public void stopServer();
 
 }

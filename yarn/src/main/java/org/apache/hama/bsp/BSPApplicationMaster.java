@@ -36,6 +36,7 @@ import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hama.util.BSPNetUtils;
 import org.apache.hadoop.yarn.Clock;
 import org.apache.hadoop.yarn.SystemClock;
 import org.apache.hadoop.yarn.api.AMRMProtocol;
@@ -54,7 +55,6 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Job.JobState;
 import org.apache.hama.bsp.sync.SyncServer;
 import org.apache.hama.bsp.sync.SyncServerImpl;
-import org.apache.mina.util.AvailablePortFinder;
 
 /**
  * BSPApplicationMaster is an application master for Apache Hamas BSP Engine.
@@ -112,9 +112,9 @@ public class BSPApplicationMaster implements BSPClient {
     jobId = new BSPJobID(appAttemptId.toString(), 0);
 
     // TODO this is not localhost, is it?
-    hostname = InetAddress.getLocalHost().getCanonicalHostName();
+    hostname = BSPNetUtils.getCanonicalHostname();
     startSyncServer();
-    clientPort = getFreePort();
+    clientPort = BSPNetUtils.getFreePort();
     // TODO should have a configurable amount of RPC handlers
     this.clientServer = RPC.getServer(this, hostname, clientPort, 10, false,
         jobConf);
@@ -137,7 +137,7 @@ public class BSPApplicationMaster implements BSPClient {
    * @throws IOException
    */
   private void startSyncServer() throws IOException {
-    int syncPort = getFreePort(15000);
+    int syncPort = BSPNetUtils.getFreePort(15000);
     syncServer = new SyncServerImpl(jobConf.getInt("bsp.peers.num", 1),
         hostname, syncPort);
     syncServerFuture = threadPool.submit(syncServer);
@@ -296,29 +296,6 @@ public class BSPApplicationMaster implements BSPClient {
     conf.writeXml(out);
     out.close();
     LOG.info("Written new configuration back to " + path);
-  }
-
-  /**
-   * Uses Minas AvailablePortFinder to find a port, starting at 14000.
-   * 
-   * @return a free port.
-   */
-  private int getFreePort() {
-    int startPort = 14000;
-    return getFreePort(startPort);
-  }
-
-  /**
-   * Uses Minas AvailablePortFinder to find a port, starting at startPort.
-   * 
-   * @return a free port.
-   */
-  private int getFreePort(int startPort) {
-    while (!AvailablePortFinder.available(startPort)) {
-      startPort++;
-      LOG.debug("Testing port for availability: " + startPort);
-    }
-    return startPort;
   }
 
   @Override

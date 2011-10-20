@@ -275,7 +275,7 @@ public class YARNBSPPeerImpl implements BSPPeer {
    * @see org.apache.hama.bsp.BSPPeerInterface#sync()
    */
   @Override
-  public void sync() throws IOException, InterruptedException {
+  public void sync() throws InterruptedException {
     enterBarrier();
     Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = this.outgoingQueues
         .entrySet().iterator();
@@ -299,13 +299,6 @@ public class YARNBSPPeerImpl implements BSPPeer {
         bundle.addMessage(message);
       }
 
-      // checkpointing
-      if (null != this.messageSerializer) {
-        this.messageSerializer.serialize(new BSPSerializableMessage(
-            checkpointedPath(), bundle));
-      }
-
-      peer.put(bundle);
     }
 
     leaveBarrier();
@@ -349,7 +342,6 @@ public class YARNBSPPeerImpl implements BSPPeer {
     this.outgoingQueues.clear();
   }
 
-  @Override
   public void close() throws IOException {
     this.clear();
     syncService.deregisterFromBarrier(taskid,
@@ -484,5 +476,17 @@ public class YARNBSPPeerImpl implements BSPPeer {
       long clientVersion, int clientMethodsHash) throws IOException {
     // TODO Auto-generated method stub
     return new ProtocolSignature();
+  }
+
+  @Override
+  public String getPeerName(int index) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public int getNumPeers() {
+    // TODO Auto-generated method stub
+    return 0;
   }
 }

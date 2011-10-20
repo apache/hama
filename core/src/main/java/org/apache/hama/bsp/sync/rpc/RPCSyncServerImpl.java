@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.sync;
+package org.apache.hama.bsp.sync.rpc;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 
 import org.apache.commons.logging.Log;
@@ -33,18 +32,19 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.sync.SyncServer;
+import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.util.StringArrayWritable;
 
 /**
- * Synchronization Deamon. <br\>
+ * Example Synchronization Deamon with Hadoops RPC. <br\>
  */
-public class SyncServerImpl implements SyncServer, Callable<Long> {
+public class RPCSyncServerImpl implements SyncServer, RPCSyncServer {
 
-  private static final Log LOG = LogFactory.getLog(SyncServerImpl.class);
+  private static final Log LOG = LogFactory.getLog(RPCSyncServerImpl.class);
 
   private Configuration conf = new Configuration();
   private Server server;
@@ -58,7 +58,30 @@ public class SyncServerImpl implements SyncServer, Callable<Long> {
 
   private volatile long superstep = 0L;
 
-  public SyncServerImpl(int parties, String host, int port) throws IOException {
+  // default constructor to be instantiated via reflection
+  public RPCSyncServerImpl() {
+  }
+
+  // used by the main method if someone decides to launch it as seperate
+  // service.
+  RPCSyncServerImpl(int parties, String host, int port) throws IOException {
+    initInternal(parties, host, port);
+  }
+
+  @Override
+  public Configuration init(Configuration conf) throws Exception {
+    String host = BSPNetUtils.getCanonicalHostname();
+    int port = BSPNetUtils.getFreePort();
+
+    this.parties = conf.getInt("bsp.peers.num", 1);
+    initInternal(parties, host, port);
+
+    conf.set("hama.sync.server.address", host + ":" + port);
+    return conf;
+  }
+
+  private void initInternal(int parties, String host, int port)
+      throws IOException {
     this.parties = parties;
     this.barrier = new CyclicBarrier(parties);
     this.leaveBarrier = new CyclicBarrier(parties, new SuperStepIncrementor(
@@ -87,7 +110,7 @@ public class SyncServerImpl implements SyncServer, Callable<Long> {
     server.join();
   }
 
-  public static SyncServer getService(Configuration conf)
+  public static RPCSyncServer getService(Configuration conf)
       throws NumberFormatException, IOException {
     String syncAddress = conf.get("hama.sync.server.address");
     if (syncAddress == null || syncAddress.isEmpty()
@@ -97,8 +120,7 @@ public class SyncServerImpl implements SyncServer, Callable<Long> {
               + syncAddress);
     }
     String[] hostPort = syncAddress.split(":");
-    return (SyncServer) RPC.waitForProxy(SyncServer.class,
-        SyncServer.versionID,
+    return (RPCSyncServer) RPC.waitForProxy(RPCSyncServer.class, versionID,
         new InetSocketAddress(hostPort[0], Integer.valueOf(hostPort[1])), conf);
 
   }
@@ -155,9 +177,9 @@ public class SyncServerImpl implements SyncServer, Callable<Long> {
 
   private static class SuperStepIncrementor implements Runnable {
 
-    private final SyncServerImpl instance;
+    private final RPCSyncServerImpl instance;
 
-    public SuperStepIncrementor(SyncServerImpl syncServer) {
+    public SuperStepIncrementor(RPCSyncServerImpl syncServer) {
       this.instance = syncServer;
     }
 
@@ -175,8 +197,8 @@ public class SyncServerImpl implements SyncServer, Callable<Long> {
       InterruptedException {
     LOG.info(Arrays.toString(args));
     if (args.length == 3) {
-      SyncServerImpl syncServer = new SyncServerImpl(Integer.valueOf(args[0]),
-          args[1], Integer.valueOf(args[2]));
+      RPCSyncServerImpl syncServer = new RPCSyncServerImpl(
+          Integer.valueOf(args[0]), args[1], Integer.valueOf(args[2]));
       syncServer.start();
       syncServer.join();
     } else {
@@ -184,13 +206,6 @@ public class SyncServerImpl implements SyncServer, Callable<Long> {
           "Argument count does not match 3! Given size was " + args.length
               + " and parameters were " + Arrays.toString(args));
     }
-  }
-
-  @Override
-  public Long call() throws Exception {
-    this.start();
-    this.join();
-    return this.superstep;
   }
 
   @Override
@@ -211,12 +226,4 @@ public class SyncServerImpl implements SyncServer, Callable<Long> {
     // basically has to recreate the barriers and remove from the two basic
     // sets.
   }
-
-  @Override
-  public ProtocolSignature getProtocolSignature(String protocol,
-      long clientVersion, int clientMethodsHash) throws IOException {
-    // TODO Auto-generated method stub
-    return new ProtocolSignature();
-  }
-
 }

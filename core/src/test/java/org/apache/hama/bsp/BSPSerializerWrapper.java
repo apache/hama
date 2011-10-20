@@ -20,18 +20,17 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPPeerImpl.BSPSerializableMessage;
 
 public final class BSPSerializerWrapper {
 
-  private final BSPPeerImpl.BSPMessageSerializer serializer;
+  private final BSPMessageSerializer serializer;
 
   public BSPSerializerWrapper(Configuration conf, int port) throws IOException {
-    this.serializer = new BSPPeerImpl(conf, null, null).new BSPMessageSerializer(
-      conf.getInt("bsp.checkpoint.port", port)); 
-  }  
+    this.serializer = new BSPMessageSerializer(conf, conf.getInt(
+        "bsp.checkpoint.port", port));
+  }
 
-  public final void serialize(final BSPSerializableMessage tmp) 
+  public final void serialize(final BSPSerializableMessage tmp)
       throws IOException {
     this.serializer.serialize(tmp);
   }

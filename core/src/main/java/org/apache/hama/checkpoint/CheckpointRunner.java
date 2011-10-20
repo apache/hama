@@ -17,30 +17,29 @@
  */
 package org.apache.hama.checkpoint;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.GroomServer.CheckpointerChild;
-import org.apache.hama.bsp.GroomServer;
-import static java.util.concurrent.TimeUnit.*;
 
 
-public final class CheckpointRunner implements Callable {
+public final class CheckpointRunner implements Callable<Object> {
 
   public static final Log LOG = LogFactory.getLog(CheckpointRunner.class);
   public static final String DEFAULT_PORT = "1590";

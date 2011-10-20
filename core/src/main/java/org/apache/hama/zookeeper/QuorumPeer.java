@@ -27,8 +27,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -59,28 +59,43 @@ public class QuorumPeer implements Constants {
 
   /**
    * Parse ZooKeeper configuration from Hama XML config and run a QuorumPeer.
+   * This method checks if we are in localmode to prevent zookeeper from
+   * starting.
+   * 
    * @param baseConf Hadoop Configuration.
    */
   public static void run(Configuration baseConf) {
     Configuration conf = new HamaConfiguration(baseConf);
-    if(BSPMaster.getAddress(conf) == null){
+    if (BSPMaster.getAddress(conf) == null) {
       System.out.println(BSPMaster.localModeMessage);
       LOG.info(BSPMaster.localModeMessage);
       System.exit(0);
     }
     try {
-      Properties zkProperties = makeZKProps(conf);
-      writeMyID(zkProperties);
-      QuorumPeerConfig zkConfig = new QuorumPeerConfig();
-      zkConfig.parseProperties(zkProperties);
-      runZKServer(zkConfig);
+      runZooKeeper(conf);
     } catch (Exception e) {
-      LOG.error("Exception during ZooKeeper startup - exiting...",e);
+      LOG.error("Exception during ZooKeeper startup - exiting...", e);
       System.exit(-1);
     }
   }
 
-  private static void runZKServer(QuorumPeerConfig zkConfig) throws UnknownHostException, IOException {
+  /**
+   * Parse ZooKeeper configuration from Hama XML config and run a QuorumPeer.
+   * 
+   * @param baseConf Hadoop Configuration.
+   */
+  public static void runZooKeeper(Configuration conf) throws Exception {
+
+    Properties zkProperties = makeZKProps(conf);
+    writeMyID(zkProperties);
+    QuorumPeerConfig zkConfig = new QuorumPeerConfig();
+    zkConfig.parseProperties(zkProperties);
+    runZKServer(zkConfig);
+
+  }
+
+  private static void runZKServer(QuorumPeerConfig zkConfig)
+      throws UnknownHostException, IOException {
     if (zkConfig.isDistributed()) {
       QuorumPeerMain qp = new QuorumPeerMain();
       qp.runFromConfig(zkConfig);
@@ -101,22 +116,21 @@ public class QuorumPeer implements Constants {
 
     Configuration conf = new HamaConfiguration();
     String myAddress = DNS.getDefaultHost(
-        conf.get("hama.zookeeper.dns.interface","default"),
-        conf.get("hama.zookeeper.dns.nameserver","default"));
+        conf.get("hama.zookeeper.dns.interface", "default"),
+        conf.get("hama.zookeeper.dns.nameserver", "default"));
 
     List<String> ips = new ArrayList<String>();
 
     // Add what could be the best (configured) match
-    ips.add(myAddress.contains(".") ?
-        myAddress :
-        StringUtils.simpleHostname(myAddress));
+    ips.add(myAddress.contains(".") ? myAddress : StringUtils
+        .simpleHostname(myAddress));
 
     // For all nics get all hostnames and IPs
     Enumeration<?> nics = NetworkInterface.getNetworkInterfaces();
-    while(nics.hasMoreElements()) {
-      Enumeration<?> rawAdrs =
-          ((NetworkInterface)nics.nextElement()).getInetAddresses();
-      while(rawAdrs.hasMoreElements()) {
+    while (nics.hasMoreElements()) {
+      Enumeration<?> rawAdrs = ((NetworkInterface) nics.nextElement())
+          .getInetAddresses();
+      while (rawAdrs.hasMoreElements()) {
         InetAddress inet = (InetAddress) rawAdrs.nextElement();
         ips.add(StringUtils.simpleHostname(inet.getHostName()));
         ips.add(inet.getHostAddress());
@@ -126,7 +140,7 @@ public class QuorumPeer implements Constants {
     for (Entry<Object, Object> entry : properties.entrySet()) {
       String key = entry.getKey().toString().trim();
       String value = entry.getValue().toString().trim();
- 
+
       if (key.startsWith("server.")) {
         int dot = key.indexOf('.');
         long id = Long.parseLong(key.substring(dot + 1));
@@ -140,8 +154,8 @@ public class QuorumPeer implements Constants {
     }
 
     if (myId == -1) {
-      throw new IOException("Could not find my address: " + myAddress +
-                            " in list of ZooKeeper quorum servers");
+      throw new IOException("Could not find my address: " + myAddress
+          + " in list of ZooKeeper quorum servers");
     }
 
     String dataDirStr = properties.get("dataDir").toString().trim();
@@ -159,10 +173,11 @@ public class QuorumPeer implements Constants {
   }
 
   /**
-   * Make a Properties object holding ZooKeeper config equivalent to zoo.cfg.
-   * If there is a zoo.cfg in the classpath, simply read it in. Otherwise parse
-   * the corresponding config options from the Hama XML configs and generate
-   * the appropriate ZooKeeper properties.
+   * Make a Properties object holding ZooKeeper config equivalent to zoo.cfg. If
+   * there is a zoo.cfg in the classpath, simply read it in. Otherwise parse the
+   * corresponding config options from the Hama XML configs and generate the
+   * appropriate ZooKeeper properties.
+   * 
    * @param conf Configuration to read from.
    * @return Properties holding mappings representing ZooKeeper zoo.cfg file.
    */
@@ -175,8 +190,8 @@ public class QuorumPeer implements Constants {
       try {
         return parseZooCfg(conf, inputStream);
       } catch (IOException e) {
-        LOG.warn("Cannot read " + ZOOKEEPER_CONFIG_NAME +
-                 ", loading from XML files", e);
+        LOG.warn("Cannot read " + ZOOKEEPER_CONFIG_NAME
+            + ", loading from XML files", e);
       }
     }
 
@@ -186,7 +201,7 @@ public class QuorumPeer implements Constants {
     // Set the max session timeout from the provided client-side timeout
     zkProperties.setProperty("maxSessionTimeout",
         conf.get(Constants.ZOOKEEPER_SESSION_TIMEOUT, "1200000"));
-    
+
     // Directly map all of the hama.zookeeper.property.KEY properties.
     for (Entry<String, String> entry : conf) {
       String key = entry.getKey();
@@ -222,8 +237,9 @@ public class QuorumPeer implements Constants {
   }
 
   /**
-   * Parse ZooKeeper's zoo.cfg, injecting Hama Configuration variables in.
-   * This method is used for testing so we can pass our own InputStream.
+   * Parse ZooKeeper's zoo.cfg, injecting Hama Configuration variables in. This
+   * method is used for testing so we can pass our own InputStream.
+   * 
    * @param conf Configuration to use for injecting variables.
    * @param inputStream InputStream to read from.
    * @return Properties parsed from config stream with variables substituted.
@@ -252,7 +268,8 @@ public class QuorumPeer implements Constants {
           LOG.fatal(msg);
           throw new IOException(msg);
         }
-        String variable = value.substring(varStart + VARIABLE_START_LENGTH, varEnd);
+        String variable = value.substring(varStart + VARIABLE_START_LENGTH,
+            varEnd);
 
         String substituteValue = System.getProperty(variable);
         if (substituteValue == null) {
@@ -260,7 +277,7 @@ public class QuorumPeer implements Constants {
         }
         if (substituteValue == null) {
           String msg = "variable " + variable + " not set in system property "
-                     + "or hama configs";
+              + "or hama configs";
           LOG.fatal(msg);
           throw new IOException(msg);
         }
@@ -272,11 +289,11 @@ public class QuorumPeer implements Constants {
       }
       // Special case for 'hama.cluster.distributed' property being 'true'
       if (key.startsWith("server.")) {
-        if (conf.get(CLUSTER_DISTRIBUTED).equals(CLUSTER_IS_DISTRIBUTED) &&
-            value.startsWith("localhost")) {
-          String msg = "The server in zoo.cfg cannot be set to localhost " +
-              "in a fully-distributed setup because it won't be reachable. " +
-              "See \"Getting Started\" for more information.";
+        if (conf.get(CLUSTER_DISTRIBUTED).equals(CLUSTER_IS_DISTRIBUTED)
+            && value.startsWith("localhost")) {
+          String msg = "The server in zoo.cfg cannot be set to localhost "
+              + "in a fully-distributed setup because it won't be reachable. "
+              + "See \"Getting Started\" for more information.";
           LOG.fatal(msg);
           throw new IOException(msg);
         }
@@ -286,10 +303,11 @@ public class QuorumPeer implements Constants {
     }
     return properties;
   }
-  
+
   /**
    * Return the ZK Quorum servers string given zk properties returned by
    * makeZKProps
+   * 
    * @param properties
    * @return Quorum servers String
    */
@@ -300,17 +318,16 @@ public class QuorumPeer implements Constants {
     // The clientPort option may come after the server.X hosts, so we need to
     // grab everything and then create the final host:port comma separated list.
     boolean anyValid = false;
-    for (Entry<Object,Object> property : properties.entrySet()) {
+    for (Entry<Object, Object> property : properties.entrySet()) {
       String key = property.getKey().toString().trim();
       String value = property.getValue().toString().trim();
       if (key.equals("clientPort")) {
         clientPort = value;
-      }
-      else if (key.startsWith("server.")) {
+      } else if (key.startsWith("server.")) {
         String host = value.substring(0, value.indexOf(':'));
         servers.add(host);
         try {
-          //noinspection ResultOfMethodCallIgnored
+          // noinspection ResultOfMethodCallIgnored
           InetAddress.getByName(host);
           anyValid = true;
         } catch (UnknownHostException e) {
@@ -320,7 +337,8 @@ public class QuorumPeer implements Constants {
     }
 
     if (!anyValid) {
-      LOG.error("no valid quorum servers found in " + Constants.ZOOKEEPER_CONFIG_NAME);
+      LOG.error("no valid quorum servers found in "
+          + Constants.ZOOKEEPER_CONFIG_NAME);
       return null;
     }
 
@@ -330,8 +348,8 @@ public class QuorumPeer implements Constants {
     }
 
     if (servers.isEmpty()) {
-      LOG.fatal("No server.X lines found in conf/zoo.cfg. Hama must have a " +
-                "ZooKeeper cluster configured for its operation.");
+      LOG.fatal("No server.X lines found in conf/zoo.cfg. Hama must have a "
+          + "ZooKeeper cluster configured for its operation.");
       return null;
     }
 
@@ -348,9 +366,10 @@ public class QuorumPeer implements Constants {
 
     return hostPortBuilder.toString();
   }
-  
+
   /**
    * Return the ZK Quorum servers string given the specified configuration.
+   * 
    * @param conf
    * @return Quorum servers
    */
