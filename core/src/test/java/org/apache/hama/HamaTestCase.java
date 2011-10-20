@@ -62,6 +62,8 @@ public abstract class HamaTestCase extends TestCase {
   
   private void init() {
     conf = new HamaConfiguration();
+    System.setProperty("hama.log.dir", "/tmp/hama-test/logs/");
+    conf.set("hama.log.dir", "/tmp/hama-test/logs/");
     conf.setStrings("bsp.local.dir", "/tmp/hama-test");
     conf.set("bsp.master.address", "localhost");
     conf.set("bsp.groom.report.address", "127.0.0.1:0");

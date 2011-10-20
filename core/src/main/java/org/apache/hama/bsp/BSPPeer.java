@@ -17,18 +17,16 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.Closeable;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.Constants;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * BSP communication interface.
  */
-public interface BSPPeer extends HamaRPCProtocolVersion, Closeable, Constants {
+public interface BSPPeer extends HamaRPCProtocolVersion, Constants {
 
   /**
    * Send a data with a tag to another BSPSlave corresponding to hostname.
@@ -74,10 +72,9 @@ public interface BSPPeer extends HamaRPCProtocolVersion, Closeable, Constants {
    * Sends all the messages in the outgoing message queues to the corresponding
    * remote peers.
    * 
-   * @throws InterruptedException
-   * @throws KeeperException
+   * @throws InterruptedException 
    */
-  public void sync() throws IOException, KeeperException, InterruptedException;
+  public void sync() throws InterruptedException;
 
   /**
    * @return the count of current super-step

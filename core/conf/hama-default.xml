@@ -99,6 +99,20 @@
     <description>The maximum number of BSP tasks that will be run simultaneously 
     by a groom server.</description>
   </property>
+  
+  <property>
+    <name>hama.sync.server.class</name>
+    <value>org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncServerImpl</value>
+    <description>The server class which is used for the barrier synchronization. 
+    This has only effects in YARN module.</description>
+  </property>
+  
+  <property>
+    <name>hama.sync.client.class</name>
+    <value>org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncClientImpl</value>
+    <description>The client class which is used for the 
+    barrier synchronization.</description>
+  </property>
 
   <!--
   Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.

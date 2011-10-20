@@ -49,9 +49,9 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.DiskChecker;
+import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.checkpoint.CheckpointRunner;
@@ -61,12 +61,9 @@ import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.log4j.LogManager;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.ZooDefs.Ids;
 
 /**
  * A Groom Server (shortly referred to as groom) is a process that performs bsp
@@ -153,13 +150,11 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
         int i = 0;
 
-        // add peers to Zookeeper.
         // TODO find another way to manage all activate peers.
         for (GroomServerAction action : actions) {
           Task t = ((LaunchTaskAction) action).getTask();
 
           int peerPort = (Constants.DEFAULT_PEER_PORT + i);
-          registerPeerAddress(t.getJobID(), peerPort);
           assignedPeerNames.put(t.getTaskID(), peerPort);
 
           i++;
@@ -186,24 +181,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             }
           }
         }
-      }
-    }
-
-    /**
-     * Register peer address to share all addresses among tasks.
-     * 
-     * @param jobID
-     * @param peerPort
-     */
-    private void registerPeerAddress(BSPJobID jobID, int peerPort) {
-      try {
-        zk.create(
-            "/" + jobID.toString() + "/" + groomHostName + ":" + peerPort,
-            new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-      } catch (KeeperException e) {
-        e.printStackTrace();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
       }
     }
   }
@@ -257,14 +234,14 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     CheckpointRunner ckptRunner = null;
     if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      ckptRunner = new CheckpointRunner(CheckpointRunner
-          .buildCommands(this.conf));
+      ckptRunner = new CheckpointRunner(
+          CheckpointRunner.buildCommands(this.conf));
     }
     this.checkpointRunner = ckptRunner;
 
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
-          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
+          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -276,8 +253,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
-          "default"), conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(
+          conf.get("bsp.dns.interface", "default"),
+          conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -904,8 +882,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       // int ret = 0;
       if (null != args && 1 == args.length) {
         int port = Integer.parseInt(args[0]);
-        defaultConf.setInt("bsp.checkpoint.port", Integer
-            .parseInt(CheckpointRunner.DEFAULT_PORT));
+        defaultConf.setInt("bsp.checkpoint.port",
+            Integer.parseInt(CheckpointRunner.DEFAULT_PORT));
         if (LOG.isDebugEnabled())
           LOG.debug("Supplied checkpointer port value:" + port);
         Checkpointer ckpt = new Checkpointer(defaultConf);
@@ -952,13 +930,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
       defaultConf.setInt(Constants.PEER_PORT, peerPort);
 
-      BSPPeerImpl bspPeer = new BSPPeerImpl(defaultConf, taskid, umbilical);
-      bspPeer.reinitialize();
-      bspPeer.setJobConf(job);
-
-      bspPeer.setCurrentTaskStatus(new TaskStatus(task.getJobID(), task
-          .getTaskID(), 0, TaskStatus.State.RUNNING, "running", host,
-          TaskStatus.Phase.STARTING));
+      // instantiate and init our peer
+      BSPPeerImpl bspPeer = new BSPPeerImpl(job, defaultConf, taskid, umbilical);
 
       try {
         // use job-specified working directory

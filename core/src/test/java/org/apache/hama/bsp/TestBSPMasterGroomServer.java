@@ -21,6 +21,7 @@ package org.apache.hama.bsp;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -42,10 +43,11 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     configuration.set("bsp.master.address", "localhost");
     assertEquals("Make sure master addr is set to localhost:", "localhost",
         configuration.get("bsp.master.address"));
-    configuration.setStrings("bsp.local.dir", "/tmp/hama-test");
-    System.setProperty("hama.log.dir", "/tmp/hama-test/logs");
+    configuration.set("bsp.local.dir", "/tmp/hama-test");
     configuration.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     configuration.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
+    configuration.set("hama.sync.client.class",
+        "org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncClientImpl");
   }
 
   public void setUp() throws Exception {
@@ -68,14 +70,14 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     FileSystem fileSys = FileSystem.get(conf);
 
     if (bsp.waitForCompletion(true)) {
-      checkOutput(fileSys, cluster, conf);
+      checkOutput(fileSys, conf, 2);
     }
     LOG.info("Client finishes execution job.");
   }
 
-  private static void checkOutput(FileSystem fileSys, ClusterStatus cluster,
-      HamaConfiguration conf) throws Exception {
-    for (int i = 0; i < 2; i++) {
+  public static void checkOutput(FileSystem fileSys, Configuration conf,
+      int tasks) throws Exception {
+    for (int i = 0; i < tasks; i++) {
       SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, new Path(
           TMP_OUTPUT + i), conf);
       LongWritable timestamp = new LongWritable();

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.sync;
+package org.apache.hama.bsp.sync.rpc;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -27,7 +27,7 @@ import org.apache.hama.util.StringArrayWritable;
  * Hadoop RPC based barrier synchronization service.
  * 
  */
-public interface SyncServer extends VersionedProtocol {
+public interface RPCSyncServer extends VersionedProtocol {
 
   public static final long versionID = 0L;
 
@@ -43,7 +43,7 @@ public interface SyncServer extends VersionedProtocol {
 
   public void deregisterFromBarrier(TaskAttemptID id, Text hostAddress,
       LongWritable port);
-
+  
   public void stopServer();
 
 }

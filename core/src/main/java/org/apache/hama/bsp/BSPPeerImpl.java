@@ -17,62 +17,36 @@
  */
 package org.apache.hama.bsp;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.Constants;
+import org.apache.hama.bsp.sync.SyncClient;
+import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.checkpoint.CheckpointRunner;
 import org.apache.hama.ipc.BSPPeerProtocol;
-import org.apache.hama.zookeeper.QuorumPeer;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 
 /**
  * This class represents a BSP peer.
  */
-public class BSPPeerImpl implements Watcher, BSPPeer {
+public class BSPPeerImpl implements BSPPeer {
 
   public static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
   private final Configuration conf;
-  private BSPJob jobConf;
+  private BSPJob bspJob;
 
   private volatile Server server = null;
-  private ZooKeeper zk = null;
-  private volatile Integer mutex = 0;
-
-  private final String bspRoot;
-  private final String quorumServers;
 
   private final Map<InetSocketAddress, BSPPeer> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeer>();
   private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
@@ -90,114 +64,12 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
 
   private String[] allPeers;
 
-  public static final class BSPSerializableMessage implements Writable {
-    final AtomicReference<String> path = new AtomicReference<String>();
-    final AtomicReference<BSPMessageBundle> bundle = new AtomicReference<BSPMessageBundle>();
-
-    public BSPSerializableMessage() {
-    }
-
-    public BSPSerializableMessage(final String path,
-        final BSPMessageBundle bundle) {
-      if (null == path)
-        throw new NullPointerException("No path provided for checkpointing.");
-      if (null == bundle)
-        throw new NullPointerException("No data provided for checkpointing.");
-      this.path.set(path);
-      this.bundle.set(bundle);
-    }
-
-    public final String checkpointedPath() {
-      return this.path.get();
-    }
-
-    public final BSPMessageBundle messageBundle() {
-      return this.bundle.get();
-    }
-
-    @Override
-    public final void write(DataOutput out) throws IOException {
-      out.writeUTF(this.path.get());
-      this.bundle.get().write(out);
-    }
-
-    @Override
-    public final void readFields(DataInput in) throws IOException {
-      this.path.set(in.readUTF());
-      BSPMessageBundle pack = new BSPMessageBundle();
-      pack.readFields(in);
-      this.bundle.set(pack);
-    }
-
-  }// serializable message
-
-  final class BSPMessageSerializer {
-    final Socket client;
-    final ScheduledExecutorService sched;
-
-    public BSPMessageSerializer(final int port) {
-      Socket tmp = null;
-      int cnt = 0;
-      do {
-        tmp = init(port);
-        cnt++;
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException ie) {
-          LOG.warn("Thread is interrupted.", ie);
-          Thread.currentThread().interrupt();
-        }
-      } while (null == tmp && 10 > cnt);
-      this.client = tmp;
-      if (null == this.client)
-        throw new NullPointerException("Client socket is null.");
-      this.sched = Executors.newScheduledThreadPool(conf.getInt(
-          "bsp.checkpoint.serializer_thread", 10));
-      LOG.info(BSPMessageSerializer.class.getName()
-          + " is ready to serialize message.");
-    }
-
-    private Socket init(final int port) {
-      Socket tmp = null;
-      try {
-        tmp = new Socket("localhost", port);
-      } catch (UnknownHostException uhe) {
-        LOG.error("Unable to connect to BSPMessageDeserializer.", uhe);
-      } catch (IOException ioe) {
-        LOG.warn("Fail to create socket.", ioe);
-      }
-      return tmp;
-    }
-
-    void serialize(final BSPSerializableMessage tmp) throws IOException {
-      if (LOG.isDebugEnabled())
-        LOG.debug("Messages are saved to " + tmp.checkpointedPath());
-      final DataOutput out = new DataOutputStream(client.getOutputStream());
-      this.sched.schedule(new Callable<Object>() {
-        public Object call() throws Exception {
-          tmp.write(out);
-          return null;
-        }
-      }, 0, SECONDS);
-    }
-
-    public void close() {
-      try {
-        this.client.close();
-        this.sched.shutdown();
-      } catch (IOException io) {
-        LOG.error("Fail to close client socket.", io);
-      }
-    }
-
-  }// message serializer
+  private SyncClient syncClient;
 
   /**
    * Protected default constructor for LocalBSPRunner.
    */
   protected BSPPeerImpl() {
-    bspRoot = null;
-    quorumServers = null;
     messageSerializer = null;
     conf = null;
   }
@@ -210,37 +82,44 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
    * @param conf is the configuration file containing bsp peer host, port, etc.
    * @param umbilical is the bsp protocol used to contact its parent process.
    * @param taskId is the id that current process holds.
+   * @throws Exception
    */
-  public BSPPeerImpl(Configuration conf, TaskAttemptID taskId,
-      BSPPeerProtocol umbilical) throws IOException {
+  public BSPPeerImpl(BSPJob job, Configuration conf, TaskAttemptID taskId,
+      BSPPeerProtocol umbilical) throws Exception {
     this.conf = conf;
     this.taskId = taskId;
     this.umbilical = umbilical;
+    this.bspJob = job;
 
     String bindAddress = conf.get(Constants.PEER_HOST,
         Constants.DEFAULT_PEER_HOST);
     int bindPort = conf
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
-    bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
-        Constants.DEFAULT_ZOOKEEPER_ROOT);
-    quorumServers = QuorumPeer.getZKQuorumServersString(conf);
-    LOG.debug("Quorum  " + quorumServers);
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
     BSPMessageSerializer msgSerializer = null;
     if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      msgSerializer = new BSPMessageSerializer(conf
-          .getInt("bsp.checkpoint.port", Integer
-              .valueOf(CheckpointRunner.DEFAULT_PORT)));
+      msgSerializer = new BSPMessageSerializer(conf,
+          conf.getInt("bsp.checkpoint.port",
+              Integer.valueOf(CheckpointRunner.DEFAULT_PORT)));
     }
     this.messageSerializer = msgSerializer;
+    initialize();
+    syncClient.register(taskId.getJobID(), taskId, peerAddress.getHostName(),
+        peerAddress.getPort());
+    // initial barrier syncing to get all the hosts to the same point, to get
+    // consistent peernames.
+    syncClient.enterBarrier(taskId.getJobID(), taskId, -1);
+    syncClient.leaveBarrier(taskId.getJobID(), taskId, -1);
+    setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 0, TaskStatus.State.RUNNING, "running", peerAddress.getHostName(),
+        TaskStatus.Phase.STARTING));
   }
 
-  public void reinitialize() {
+  public void initialize() throws Exception {
     try {
       if (LOG.isDebugEnabled())
         LOG.debug("reinitialize(): " + getPeerName());
-      this.server = RPC.getServer(this, peerAddress.getHostName(), peerAddress
-          .getPort(), conf);
+      this.server = RPC.getServer(this, peerAddress.getHostName(),
+          peerAddress.getPort(), conf);
       server.start();
       LOG.info(" BSPPeer address:" + peerAddress.getHostName() + " port:"
           + peerAddress.getPort());
@@ -248,23 +127,9 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
       LOG.error("Fail to start RPC server!", e);
     }
 
-    try {
-      this.zk = new ZooKeeper(quorumServers, conf.getInt(
-          Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
-    } catch (IOException e) {
-      LOG.error("Fail while reinitializing zookeeeper!", e);
-    }
-
-    try {
-      allPeers = zk.getChildren("/" + taskId.getJobID().toString(), this)
-          .toArray(new String[0]);
-    } catch (KeeperException e) {
-      e.printStackTrace();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
-    Arrays.sort(allPeers);
+    syncClient = SyncServiceFactory.getSyncClient(conf);
+    syncClient.init(conf, taskId.getJobID(), taskId);
+    
   }
 
   @Override
@@ -304,7 +169,7 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
 
   private String checkpointedPath() {
     String backup = conf.get("bsp.checkpoint.prefix_path", "/checkpoint/");
-    String ckptPath = backup + jobConf.getJobID().toString() + "/"
+    String ckptPath = backup + bspJob.getJobID().toString() + "/"
         + getSuperstepCount() + "/" + this.taskId.toString();
     if (LOG.isDebugEnabled())
       LOG.debug("Messages are to be saved to " + ckptPath);
@@ -316,247 +181,63 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
    * @see org.apache.hama.bsp.BSPPeerInterface#sync()
    */
   @Override
-  public void sync() throws IOException, KeeperException, InterruptedException {
-    enterBarrier();
-    Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = this.outgoingQueues
-        .entrySet().iterator();
+  public void sync() throws InterruptedException {
+    try {
+      enterBarrier();
+      Iterator<Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>> it = this.outgoingQueues
+          .entrySet().iterator();
 
-    while (it.hasNext()) {
-      Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> entry = it
-          .next();
+      while (it.hasNext()) {
+        Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> entry = it
+            .next();
 
-      BSPPeer peer = getBSPPeerConnection(entry.getKey());
-      Iterable<BSPMessage> messages = entry.getValue();
-      BSPMessageBundle bundle = new BSPMessageBundle();
-      for (BSPMessage message : messages) {
-        bundle.addMessage(message);
-      }
-
-      // checkpointing
-      if (null != this.messageSerializer) {
-        this.messageSerializer.serialize(new BSPSerializableMessage(
-            checkpointedPath(), bundle));
-      }
-
-      peer.put(bundle);
-    }
-
-    leaveBarrier();
-    currentTaskStatus.incrementSuperstepCount();
-    umbilical.statusUpdate(taskId, currentTaskStatus);
-
-    // Clear outgoing queues.
-    clearOutgoingQueues();
-
-    // Add non-processed messages from this iteration for the next's queue.
-    while (!localQueue.isEmpty()) {
-      BSPMessage message = localQueue.poll();
-      localQueueForNextIteration.add(message);
-    }
-    // Switch local queues.
-    localQueue = localQueueForNextIteration;
-    localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
-  }
-
-  private void createZnode(final String path) throws KeeperException,
-      InterruptedException {
-    createZnode(path, CreateMode.PERSISTENT);
-  }
-
-  private void createEphemeralZnode(final String path) throws KeeperException,
-      InterruptedException {
-    createZnode(path, CreateMode.EPHEMERAL);
-  }
-
-  private void createZnode(final String path, final CreateMode mode)
-      throws KeeperException, InterruptedException {
-    synchronized (zk) {
-      Stat s = zk.exists(path, false);
-      if (null == s) {
-        try {
-          zk.create(path, null, Ids.OPEN_ACL_UNSAFE, mode);
-        } catch (KeeperException.NodeExistsException nee) {
-          LOG.warn("Ignore because znode may be already created at " + path,
-              nee);
+        BSPPeer peer = getBSPPeerConnection(entry.getKey());
+        Iterable<BSPMessage> messages = entry.getValue();
+        BSPMessageBundle bundle = new BSPMessageBundle();
+        for (BSPMessage message : messages) {
+          bundle.addMessage(message);
         }
-      }
-    }
-  }
 
-  private class BarrierWatcher implements Watcher {
-    private boolean complete = false;
-
-    boolean isComplete() {
-      return this.complete;
-    }
-
-    @Override
-    public void process(WatchedEvent event) {
-      this.complete = true;
-      synchronized (mutex) {
-        mutex.notifyAll();
-      }
-    }
-  }
-
-  protected boolean enterBarrier() throws KeeperException, InterruptedException {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("[" + getPeerName() + "] enter the enterbarrier: "
-          + this.getSuperstepCount());
-    }
-
-    synchronized (zk) {
-      createZnode(bspRoot);
-      final String pathToJobIdZnode = bspRoot + "/"
-          + taskId.getJobID().toString();
-      createZnode(pathToJobIdZnode);
-      final String pathToSuperstepZnode = pathToJobIdZnode + "/"
-          + getSuperstepCount();
-      createZnode(pathToSuperstepZnode);
-      BarrierWatcher barrierWatcher = new BarrierWatcher();
-      Stat readyStat = zk.exists(pathToSuperstepZnode + "/ready",
-          barrierWatcher);
-      zk.create(getNodeName(), null, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-
-      List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
-      int size = znodes.size(); // may contains ready
-      boolean hasReady = znodes.contains("ready");
-      if (hasReady) {
-        size--;
-      }
-
-      LOG.debug("===> at superstep :" + getSuperstepCount()
-          + " current znode size: " + znodes.size() + " current znodes:"
-          + znodes);
-
-      if (LOG.isDebugEnabled())
-        LOG.debug("enterBarrier() znode size within " + pathToSuperstepZnode
-            + " is " + znodes.size() + ". Znodes include " + znodes);
-
-      if (size < jobConf.getNumBspTask()) {
-        LOG.info("1. At superstep: " + getSuperstepCount()
-            + " which task is waiting? " + taskId.toString()
-            + " stat is null? " + readyStat);
-        while (!barrierWatcher.isComplete()) {
-          if (!hasReady) {
-            synchronized (mutex) {
-              mutex.wait(1000);
-            }
-          }
+        // checkpointing
+        if (null != this.messageSerializer) {
+          this.messageSerializer.serialize(new BSPSerializableMessage(
+              checkpointedPath(), bundle));
         }
-        LOG.debug("2. at superstep: " + getSuperstepCount()
-            + " after waiting ..." + taskId.toString());
-      } else {
-        LOG.debug("---> at superstep: " + getSuperstepCount()
-            + " task that is creating /ready znode:" + taskId.toString());
-        createEphemeralZnode(pathToSuperstepZnode + "/ready");
+
+        peer.put(bundle);
       }
-    }
-    return true;
-  }
 
-  protected boolean leaveBarrier() throws KeeperException, InterruptedException {
-    final String pathToSuperstepZnode = bspRoot + "/"
-        + taskId.getJobID().toString() + "/" + getSuperstepCount();
-    while (true) {
-      List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
-      LOG
-          .info("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
-              + getSuperstepCount() + " znode:" + znodes);
-      if (znodes.contains("ready")) {
-        znodes.remove("ready");
+      leaveBarrier();
+      currentTaskStatus.incrementSuperstepCount();
+      umbilical.statusUpdate(taskId, currentTaskStatus);
+
+      // Clear outgoing queues.
+      clearOutgoingQueues();
+
+      // Add non-processed messages from this iteration for the next's queue.
+      while (!localQueue.isEmpty()) {
+        BSPMessage message = localQueue.poll();
+        localQueueForNextIteration.add(message);
       }
-      final int size = znodes.size();
-
-      LOG.debug("leaveBarrier() at superstep:" + getSuperstepCount()
-          + " znode size: (" + size + ") znodes:" + znodes);
-
-      if (null == znodes || znodes.isEmpty())
-        return true;
-      if (1 == size) {
-        try {
-          zk.delete(getNodeName(), 0);
-        } catch (KeeperException.NoNodeException nne) {
-          LOG.warn(
-              "+++ (znode size is 1). Ignore because znode may disconnect.",
-              nne);
-        }
-        return true;
-      }
-      Collections.sort(znodes);
-
-      final String lowest = znodes.get(0);
-      final String highest = znodes.get(size - 1);
-
-      LOG.info("leaveBarrier() at superstep: " + getSuperstepCount()
-          + " taskid:" + taskId.toString() + " lowest: " + lowest + " highest:"
-          + highest);
-      synchronized (mutex) {
-
-        if (getNodeName().equals(pathToSuperstepZnode + "/" + lowest)) {
-          Stat s = zk.exists(pathToSuperstepZnode + "/" + highest,
-              new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                  synchronized (mutex) {
-                    LOG.debug("leaveBarrier() at superstep: "
-                        + getSuperstepCount() + " taskid:" + taskId.toString()
-                        + " highest notify lowest.");
-                    mutex.notifyAll();
-                  }
-                }
-              });
-
-          if (null != s) {
-            LOG.debug("leaveBarrier(): superstep:" + getSuperstepCount()
-                + " taskid:" + taskId.toString() + " wait for higest notify.");
-            mutex.wait();
-          }
-        } else {
-          Stat s1 = zk.exists(getNodeName(), false);
-
-          if (null != s1) {
-            LOG.info("leaveBarrier() znode at superstep:" + getSuperstepCount()
-                + " taskid:" + taskId.toString() + " exists, so delete it.");
-            try {
-              zk.delete(getNodeName(), 0);
-            } catch (KeeperException.NoNodeException nne) {
-              LOG.warn("++++ Ignore because node may be dleted.", nne);
-            }
-          }
-
-          Stat s2 = zk.exists(pathToSuperstepZnode + "/" + lowest,
-              new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                  synchronized (mutex) {
-                    LOG.debug("leaveBarrier() at superstep: "
-                        + getSuperstepCount() + " taskid:" + taskId.toString()
-                        + " lowest notify other nodes.");
-                    mutex.notifyAll();
-                  }
-                }
-              });
-          if (null != s2) {
-            LOG.debug("leaveBarrier(): superstep:" + getSuperstepCount()
-                + " taskid:" + taskId.toString() + " wait for lowest notify.");
-            mutex.wait();
-          }
-        }
-      }
+      // Switch local queues.
+      localQueue = localQueueForNextIteration;
+      localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
+    } catch (Exception e) {
+      LOG.fatal(
+          "Caught exception during superstep "
+              + currentTaskStatus.getSuperstepCount() + "!", e);
+      // throw new RuntimeException(e);
     }
   }
 
-  private String getNodeName() {
-    return bspRoot + "/" + taskId.getJobID().toString() + "/"
-        + getSuperstepCount() + "/" + taskId.toString();
+  protected void enterBarrier() throws Exception {
+    syncClient.enterBarrier(taskId.getJobID(), taskId,
+        currentTaskStatus.getSuperstepCount());
   }
 
-  @Override
-  public void process(WatchedEvent event) {
-    synchronized (mutex) {
-      mutex.notify();
-    }
+  protected void leaveBarrier() throws Exception {
+    syncClient.leaveBarrier(taskId.getJobID(), taskId,
+        currentTaskStatus.getSuperstepCount());
   }
 
   public void clear() {
@@ -564,14 +245,9 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
     this.outgoingQueues.clear();
   }
 
-  @Override
-  public void close() throws IOException {
+  public void close() throws Exception {
     this.clear();
-    try {
-      zk.close();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+    syncClient.close();
     if (server != null)
       server.stop();
     if (null != messageSerializer)
@@ -623,23 +299,32 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
           "Peername must consist of exactly ONE \":\"! Given peername was: "
               + peerName);
     }
-    return new InetSocketAddress(peerAddrParts[0], Integer
-        .valueOf(peerAddrParts[1]));
+    return new InetSocketAddress(peerAddrParts[0],
+        Integer.valueOf(peerAddrParts[1]));
   }
 
   @Override
   public String[] getAllPeerNames() {
+    initPeerNames();
     return allPeers;
   }
 
   @Override
   public String getPeerName(int index) {
+    initPeerNames();
     return allPeers[index];
   }
 
   @Override
   public int getNumPeers() {
+    initPeerNames();
     return allPeers.length;
+  }
+
+  private void initPeerNames() {
+    if (allPeers == null) {
+      allPeers = syncClient.getAllPeerNames(taskId);
+    }
   }
 
   /**
@@ -663,15 +348,6 @@ public class BSPPeerImpl implements Watcher, BSPPeer {
    */
   public long getSuperstepCount() {
     return currentTaskStatus.getSuperstepCount();
-  }
-
-  /**
-   * Sets the job configuration
-   * 
-   * @param jobConf
-   */
-  public void setJobConf(BSPJob jobConf) {
-    this.jobConf = jobConf;
   }
 
   /**

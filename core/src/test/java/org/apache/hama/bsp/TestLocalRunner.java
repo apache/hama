@@ -15,35 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.sync;
+package org.apache.hama.bsp;
 
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.ipc.VersionedProtocol;
-import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.util.StringArrayWritable;
+import junit.framework.TestCase;
 
-/**
- * Hadoop RPC based barrier synchronization service.
- * 
- */
-public interface SyncServer extends VersionedProtocol {
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hama.HamaConfiguration;
 
-  public static final long versionID = 0L;
+public class TestLocalRunner extends TestCase {
 
-  public void enterBarrier(TaskAttemptID id);
+  public void testSubmitJob() throws Exception {
+    Configuration configuration = new Configuration();
+    configuration.set("bsp.local.dir", "/tmp/hama-test");
+    BSPJob bsp = new BSPJob(new HamaConfiguration(configuration));
+    bsp.setJobName("Test Serialize Printing");
+    bsp.setBspClass(testjar.ClassSerializePrinting.HelloBSP.class);
 
-  public void leaveBarrier(TaskAttemptID id);
+    FileSystem fileSys = FileSystem.get(configuration);
 
-  public void register(TaskAttemptID id, Text hostAddress, LongWritable port);
-
-  public LongWritable getSuperStep();
-
-  public StringArrayWritable getAllPeerNames();
-
-  public void deregisterFromBarrier(TaskAttemptID id, Text hostAddress,
-      LongWritable port);
-
-  public void stopServer();
+    assertTrue(bsp.waitForCompletion(true));
+    TestBSPMasterGroomServer.checkOutput(fileSys, configuration, 20);
+  }
 
 }
