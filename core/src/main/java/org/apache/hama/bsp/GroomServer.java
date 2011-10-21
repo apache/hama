@@ -359,7 +359,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       throws DiskErrorException {
     boolean writable = false;
 
-    LOG.info(localDirs);
+    LOG.debug(localDirs);
 
     if (localDirs != null) {
       for (int i = 0; i < localDirs.length; i++) {
@@ -412,6 +412,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     while (running && !shuttingDown) {
       try {
 
+        List<TaskStatus> taskStatuses = new ArrayList<TaskStatus>();
         // Reports to a BSPMaster
         for (Map.Entry<TaskAttemptID, TaskInProgress> e : runningTasks
             .entrySet()) {
@@ -430,9 +431,10 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             }
           }
 
-          doReport(taskStatus);
+          taskStatuses.add(taskStatus);
         }
-
+        
+        doReport(taskStatuses);
         Thread.sleep(REPORT_INTERVAL);
       } catch (InterruptedException ie) {
       }
@@ -494,9 +496,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   /**
    * Update and report refresh status back to BSPMaster.
    */
-  public void doReport(TaskStatus taskStatus) {
+  public void doReport(List<TaskStatus> taskStatuses) {
     GroomServerStatus groomStatus = new GroomServerStatus(groomServerName,
-        updateTaskStatus(taskStatus), failures, maxCurrentTasks, rpcServer,
+        updateTaskStatuses(taskStatuses), failures, maxCurrentTasks, rpcServer,
         groomHostName);
     try {
       boolean ret = masterClient.report(new ReportGroomStatusDirective(
@@ -511,20 +513,21 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
   }
 
-  public List<TaskStatus> updateTaskStatus(TaskStatus taskStatus) {
+  public List<TaskStatus> updateTaskStatuses(List<TaskStatus> taskStatuses) {
     List<TaskStatus> tlist = new ArrayList<TaskStatus>();
 
-    if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED
-        || taskStatus.getRunState() == TaskStatus.State.FAILED) {
-      synchronized (finishedTasks) {
-        TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
+    for(TaskStatus taskStatus : taskStatuses) {
+      if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED
+          || taskStatus.getRunState() == TaskStatus.State.FAILED) {
+        synchronized (finishedTasks) {
+          TaskInProgress tip = runningTasks.remove(taskStatus.getTaskId());
+          tlist.add((TaskStatus) taskStatus.clone());
+          finishedTasks.put(taskStatus.getTaskId(), tip);
+        }
+      } else if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
         tlist.add((TaskStatus) taskStatus.clone());
-        finishedTasks.put(taskStatus.getTaskId(), tip);
       }
-    } else if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
-      tlist.add((TaskStatus) taskStatus.clone());
     }
-
     return tlist;
   }
 
@@ -639,6 +642,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       TaskStatus status = tip.getStatus();
       result.add((TaskStatus) status.clone());
     }
+    
     return result;
   }
 
