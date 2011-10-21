@@ -12,6 +12,7 @@ Release 0.4 - Unreleased
 
   BUG FIXES
 
+    HAMA-459: GroomServerStatus.countTask() always returns 1 (edwardyoon)
     HAMA-432: Add statusUpdate() method to BSPPeerProtocol (edwardyoon)
     HAMA-437: PiEstimator is not working in Local Mode (Thomas Jungblut)
     HAMA-387: Fixed barrier synchronization problem (ChiaHung Lin via edwardyoon)

@@ -118,7 +118,7 @@ public class GroomServerStatus implements Writable {
   }
 
   /**
-   * Return the current MapTask count
+   * Return the current BSP Task count
    */
   public int countTasks() {
     int taskCount = 0;
