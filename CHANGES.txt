@@ -4,6 +4,7 @@ Release 0.4 - Unreleased
 
   NEW FEATURES
   
+   HAMA-456: Add Message Combiner (edwardyoon)
    HAMA-456: Add getPeerName(int index) and getNumPeers() (edwardyoon)
    HAMA-431: MapReduce NG integration (tjungblut)
    HAMA-449: Add tasks num of Job to web UI (edwardyoon)

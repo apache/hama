@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
@@ -110,7 +111,8 @@ public class BSPPeerImpl implements BSPPeer {
     // consistent peernames.
     syncClient.enterBarrier(taskId.getJobID(), taskId, -1);
     syncClient.leaveBarrier(taskId.getJobID(), taskId, -1);
-    setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 0, TaskStatus.State.RUNNING, "running", peerAddress.getHostName(),
+    setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 0,
+        TaskStatus.State.RUNNING, "running", peerAddress.getHostName(),
         TaskStatus.Phase.STARTING));
   }
 
@@ -129,7 +131,7 @@ public class BSPPeerImpl implements BSPPeer {
 
     syncClient = SyncServiceFactory.getSyncClient(conf);
     syncClient.init(conf, taskId.getJobID(), taskId);
-    
+
   }
 
   @Override
@@ -144,10 +146,6 @@ public class BSPPeerImpl implements BSPPeer {
    */
   @Override
   public void send(String peerName, BSPMessage msg) throws IOException {
-    if (peerName.equals(getPeerName())) {
-      LOG.debug("Local send bytes (" + msg.getData().toString() + ")");
-      localQueueForNextIteration.add(msg);
-    } else {
       LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
       InetSocketAddress targetPeerAddress = null;
       // Get socket for target peer.
@@ -164,7 +162,6 @@ public class BSPPeerImpl implements BSPPeer {
       }
       queue.add(msg);
       outgoingQueues.put(targetPeerAddress, queue);
-    }
   }
 
   private String checkpointedPath() {
@@ -194,8 +191,16 @@ public class BSPPeerImpl implements BSPPeer {
         BSPPeer peer = getBSPPeerConnection(entry.getKey());
         Iterable<BSPMessage> messages = entry.getValue();
         BSPMessageBundle bundle = new BSPMessageBundle();
-        for (BSPMessage message : messages) {
-          bundle.addMessage(message);
+
+        Combiner combiner = (Combiner) ReflectionUtils.newInstance(
+            conf.getClass("bsp.combiner.class", Combiner.class), conf);
+
+        if (combiner != null) {
+          bundle = combiner.combine(messages);
+        } else {
+          for (BSPMessage message : messages) {
+            bundle.addMessage(message);
+          }
         }
 
         // checkpointing

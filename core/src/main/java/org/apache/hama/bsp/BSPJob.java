@@ -106,6 +106,16 @@ public class BSPJob extends BSPJobContext {
     return (Class<? extends BSP>) conf.getClass(WORK_CLASS_ATTR, BSP.class);
   }
 
+  public void setCombinerClass(Class<? extends Combiner> cls) {
+    ensureState(JobState.DEFINE);
+    conf.setClass(COMBINER_CLASS_ATTR, cls, Combiner.class);
+  }
+
+  @SuppressWarnings("unchecked")
+  public Class<? extends Combiner> getCombinerClass() {
+    return (Class<? extends Combiner>) conf.getClass(COMBINER_CLASS_ATTR, Combiner.class);
+  }
+  
   public void setJar(String jar) {
     conf.set("bsp.jar", jar);
   }
