@@ -33,6 +33,7 @@ public class BSPJobContext {
   // Put all of the attribute names in here so that BSPJob and JobContext are
   // consistent.  
   protected static final String WORK_CLASS_ATTR = "bsp.work.class";
+  protected static final String COMBINER_CLASS_ATTR = "bsp.combiner.class";
   protected static final String INPUT_FORMAT_CLASS_ATTR = "bsp.inputformat.class";
   protected static final String OUTPUT_FORMAT_CLASS_ATTR = "bsp.outputformat.class";
   protected static final String WORKING_DIR = "bsp.working.dir";

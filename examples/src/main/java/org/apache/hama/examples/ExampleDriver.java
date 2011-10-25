@@ -33,6 +33,7 @@ public class ExampleDriver {
       pgd.addClass("test", SerializePrinting.class, "Serialize Printing Test");
       pgd.addClass("sssp", ShortestPaths.class, "Single Source Shortest Path");
       pgd.addClass("pagerank", PageRank.class, "PageRank");
+      pgd.addClass("combine", CombineExample.class, "Combiner Example");
       
       pgd.driver(args);
     } catch (Throwable e) {
