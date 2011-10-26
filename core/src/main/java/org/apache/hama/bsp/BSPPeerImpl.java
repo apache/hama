@@ -192,10 +192,10 @@ public class BSPPeerImpl implements BSPPeer {
         Iterable<BSPMessage> messages = entry.getValue();
         BSPMessageBundle bundle = new BSPMessageBundle();
 
-        Combiner combiner = (Combiner) ReflectionUtils.newInstance(
+        if (!conf.getClass("bsp.combiner.class", Combiner.class).equals(Combiner.class)) {
+          Combiner combiner = (Combiner) ReflectionUtils.newInstance(
             conf.getClass("bsp.combiner.class", Combiner.class), conf);
 
-        if (combiner != null) {
           bundle = combiner.combine(messages);
         } else {
           for (BSPMessage message : messages) {
