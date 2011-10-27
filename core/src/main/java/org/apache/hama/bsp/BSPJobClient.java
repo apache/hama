@@ -300,7 +300,7 @@ public class BSPJobClient extends Configured implements Tool {
     int maxTasks = clusterStatus.getMaxTasks();
 
     if (tasks <= 0 || tasks > maxTasks) {
-      LOG.warn("The number of tasks you've entered was invalid. Using default value of "
+      LOG.info("The number of tasks you've entered was invalid. Using default value of "
           + maxTasks + "!");
       job.setNumBspTask(maxTasks);
     }

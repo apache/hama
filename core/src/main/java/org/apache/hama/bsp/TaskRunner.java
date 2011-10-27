@@ -78,7 +78,7 @@ public class TaskRunner extends Thread {
 
     void start() {
       this.future.set(this.sched.schedule(this, 0, SECONDS));
-      LOG.info("Start building BSPPeer process.");
+      LOG.debug("Start building BSPPeer process.");
     }
 
     void stop() {
@@ -246,7 +246,7 @@ public class TaskRunner extends Thread {
     } catch (ExecutionException ee) {
       LOG.error("Failure occurs when retrieving tasks result.", ee);
     }
-    LOG.info("Finishes executing BSPPeer child process.");
+    LOG.debug("Finishes executing BSPPeer child process.");
   }
 
   /**

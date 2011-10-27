@@ -201,7 +201,7 @@ class JobInProgress {
     master.createJobRoot(this.getJobID().toString());
     
     tasksInited = true;
-    LOG.debug("Job is initialized.");
+    LOG.info("Job is initialized.");
   }
 
   public synchronized Task obtainNewTask(GroomServerStatus status,
@@ -231,7 +231,7 @@ class JobInProgress {
   public synchronized void completedTask(TaskInProgress tip, TaskStatus status) {
     TaskAttemptID taskid = status.getTaskId();
     updateTaskStatus(tip, status);
-    LOG.info("Taskid '" + taskid + "' has finished successfully.");
+    LOG.debug("Taskid '" + taskid + "' has finished successfully.");
     tip.completed(taskid);
 
     //
@@ -253,7 +253,7 @@ class JobInProgress {
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
-      LOG.debug("Job successfully done.");
+      LOG.info("Job successfully done.");
       
       // delete job root
       master.deleteJobRoot(this.getJobID().toString());
@@ -287,7 +287,7 @@ class JobInProgress {
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
-      LOG.debug("Job failed.");
+      LOG.info("Job failed.");
 
       garbageCollect();
     }
