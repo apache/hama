@@ -39,7 +39,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FSError;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -147,6 +146,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
 
       if (actions != null) {
+        LOG.info("Launch " + actions.length + " tasks.");
+        
         assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
         int i = 0;
 
@@ -312,8 +313,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     this.groomServerName = "groomd_" + this.rpcServer.replace(':', '_');
     LOG.info("Starting groom: " + this.rpcServer);
 
-    DistributedCache.purgeCache(this.conf);
-
     // establish the communication link to bsp master
     this.masterClient = (MasterProtocol) RPC.waitForProxy(MasterProtocol.class,
         MasterProtocol.versionID, bspMasterAddr, conf);
@@ -426,6 +425,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             if (!tip.runner.isAlive()) {
               if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
                 taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+                LOG.info("Task '" + taskStatus.getTaskId().toString() + "' has completed.");
               }
               taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
             }
@@ -476,7 +476,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     } catch (IOException e1) {
       LOG.error(e1);
     }
-
+    
     TaskInProgress tip = new TaskInProgress(t, jobConf, this.groomServerName);
 
     synchronized (this) {
@@ -786,6 +786,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       taskStatus.setRunState(TaskStatus.State.RUNNING);
       this.runner = task.createRunner(GroomServer.this);
       this.runner.start();
+      LOG.info("Task '" + task.getTaskID().toString() + "' has started.");
     }
 
     /**

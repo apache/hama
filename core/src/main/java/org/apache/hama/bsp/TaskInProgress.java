@@ -212,7 +212,7 @@ class TaskInProgress {
   }
 
   public void completed(TaskAttemptID taskid) {
-    LOG.info("Task '" + taskid.getTaskID().toString() + "' has completed.");
+    LOG.debug("Task '" + taskid.getTaskID().toString() + "' has completed.");
 
     TaskStatus status = (TaskStatus) taskStatuses.get(taskid);
     status.setRunState(TaskStatus.State.SUCCEEDED);
