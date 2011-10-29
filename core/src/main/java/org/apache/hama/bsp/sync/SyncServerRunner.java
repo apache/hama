@@ -30,7 +30,12 @@ public class SyncServerRunner implements Callable<Object> {
 
   // use the SyncServiceFactory to obtain a new instance.
   SyncServerRunner(Configuration conf) {
-    syncServer = SyncServiceFactory.getSyncServer(conf);
+    try {
+      syncServer = SyncServiceFactory.getSyncServer(conf);
+    } catch (ClassNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 
   public Configuration init(Configuration conf) throws Exception {

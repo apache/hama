@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.sync.zookeeper;
+package org.apache.hama.bsp.sync;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.sync.SyncServer;
