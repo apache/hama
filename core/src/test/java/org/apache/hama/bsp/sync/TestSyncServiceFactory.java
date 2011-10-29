@@ -20,8 +20,6 @@ package org.apache.hama.bsp.sync;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncClientImpl;
-import org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncServerImpl;
 
 public class TestSyncServiceFactory extends TestCase {
 

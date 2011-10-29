@@ -17,17 +17,10 @@
  */
 package org.apache.hama.bsp.sync;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncClientImpl;
-import org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncServerImpl;
 
 public class SyncServiceFactory {
-
-  private static final Log LOG = LogFactory.getLog(SyncServiceFactory.class);
-
   public static final String SYNC_SERVER_CLASS = "hama.sync.server.class";
   public static final String SYNC_CLIENT_CLASS = "hama.sync.client.class";
 
@@ -37,20 +30,11 @@ public class SyncServiceFactory {
    * @param conf
    * @return
    */
-  public static SyncClient getSyncClient(Configuration conf) {
-    if (conf.get(SYNC_CLIENT_CLASS) != null) {
-      try {
-        return (SyncClient) ReflectionUtils.newInstance(
-            conf.getClassByName(conf.get(SYNC_CLIENT_CLASS)), conf);
-      } catch (ClassNotFoundException e) {
-        LOG.error(
-            "Class for sync client has not been found, returning default zookeeper client!",
-            e);
-      }
-    } else {
-      LOG.info("No property set for \"hama.sync.client.class\", using default zookeeper client");
-    }
-    return ReflectionUtils.newInstance(ZooKeeperSyncClientImpl.class, conf);
+  public static SyncClient getSyncClient(Configuration conf)
+      throws ClassNotFoundException {
+    return (SyncClient) ReflectionUtils.newInstance(conf.getClassByName(conf
+        .get(SYNC_CLIENT_CLASS,
+            "org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl")), conf);
   }
 
   /**
@@ -59,20 +43,11 @@ public class SyncServiceFactory {
    * @param conf
    * @return
    */
-  public static SyncServer getSyncServer(Configuration conf) {
-    if (conf.get(SYNC_SERVER_CLASS) != null) {
-      try {
-        return (SyncServer) ReflectionUtils.newInstance(
-            conf.getClassByName(conf.get(SYNC_SERVER_CLASS)), conf);
-      } catch (ClassNotFoundException e) {
-        LOG.error(
-            "Class for sync server has not been found, returning default zookeeper server!",
-            e);
-      }
-    } else {
-      LOG.info("No property set for \"hama.sync.server.class\", using default zookeeper client");
-    }
-    return ReflectionUtils.newInstance(ZooKeeperSyncServerImpl.class, conf);
+  public static SyncServer getSyncServer(Configuration conf)
+      throws ClassNotFoundException {
+    return (SyncServer) ReflectionUtils.newInstance(conf.getClassByName(conf
+        .get(SYNC_SERVER_CLASS,
+            "org.apache.hama.bsp.sync.ZooKeeperSyncServerImpl")), conf);
   }
 
   /**
