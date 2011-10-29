@@ -20,8 +20,6 @@ package org.apache.hama.bsp.sync;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.sync.rpc.RPCSyncClientImpl;
-import org.apache.hama.bsp.sync.rpc.RPCSyncServerImpl;
 import org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncClientImpl;
 import org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncServerImpl;
 
@@ -33,12 +31,6 @@ public class TestSyncServiceFactory extends TestCase {
     // given null, should return zookeeper
     SyncClient syncClient = SyncServiceFactory.getSyncClient(conf);
     assertTrue(syncClient instanceof ZooKeeperSyncClientImpl);
-    
-    // other class
-    conf.set(SyncServiceFactory.SYNC_CLIENT_CLASS, RPCSyncClientImpl.class.getCanonicalName());
-    syncClient = SyncServiceFactory.getSyncClient(conf);
-    assertTrue(syncClient instanceof RPCSyncClientImpl);
-
   }
   
   public void testServerInstantiation() throws Exception {
@@ -47,12 +39,6 @@ public class TestSyncServiceFactory extends TestCase {
     // given null, should return zookeeper
     SyncServer syncServer = SyncServiceFactory.getSyncServer(conf);
     assertTrue(syncServer instanceof ZooKeeperSyncServerImpl);
-    
-    // other class
-    conf.set(SyncServiceFactory.SYNC_SERVER_CLASS, RPCSyncServerImpl.class.getCanonicalName());
-    syncServer = SyncServiceFactory.getSyncServer(conf);
-    assertTrue(syncServer instanceof RPCSyncServerImpl);
-
   }
 
 }
