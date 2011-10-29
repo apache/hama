@@ -94,7 +94,7 @@
     <slf4j-log4j12.version>1.5.2</slf4j-log4j12.version>
     <servlet-api.version>6.0.32</servlet-api.version>
     <log4j.version>1.2.16</log4j.version>
-    <zookeeper.version>3.3.1</zookeeper.version>
+    <zookeeper.version>3.3.3</zookeeper.version>
     <ant.version>1.7.1</ant.version>
   </properties>
 
@@ -187,7 +187,6 @@
     <module>core</module>
     <module>graph</module>
     <module>examples</module>
-    <module>yarn</module>
   </modules>
 
   <build>
