@@ -64,5 +64,6 @@ public class TestCheckpoint extends TestCase {
     String content = new String(byteMsg.getData());
     LOG.info("Saved checkpointed content is "+content);
     assertTrue("Message content should be the same.",  "data".equals(content)); 
+    dfs.delete(new Path("checkpoint"), true);
   }
 }
