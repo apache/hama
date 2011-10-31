@@ -34,7 +34,7 @@ public class TestCheckpoint extends TestCase {
 
   public static final Log LOG = LogFactory.getLog(TestCheckpoint.class);
 
-  static final String checkpointedDir = "/tmp/checkpoint/job_201110302255_0001/0/";
+  static final String checkpointedDir = "checkpoint/job_201110302255_0001/0/";
 
   public void testCheckpoint() throws Exception {
     Configuration config = new HamaConfiguration();
