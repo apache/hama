@@ -23,6 +23,7 @@ Release 0.4 - Unreleased
 
   IMPROVEMENTS
   
+    HAMA-463: Integrate checkpoint with bsp task (chl501)
     HAMA-457: Refactoring of BSPPeerImpl (tjungblut)
     HAMA-448: Restructure BSP API (Thomas Jungblut via edwardyoon)
     HAMA-441: Logging tasks to distinct files (Thomas Jungblut)

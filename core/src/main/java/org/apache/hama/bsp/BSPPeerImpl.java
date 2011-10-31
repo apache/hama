@@ -28,13 +28,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
-import org.apache.hama.checkpoint.CheckpointRunner;
 import org.apache.hama.ipc.BSPPeerProtocol;
 
 /**
@@ -45,6 +47,7 @@ public class BSPPeerImpl implements BSPPeer {
   public static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
   private final Configuration conf;
+  private final FileSystem dfs;
   private BSPJob bspJob;
 
   private volatile Server server = null;
@@ -61,8 +64,6 @@ public class BSPPeerImpl implements BSPPeer {
   private TaskAttemptID taskId;
   private BSPPeerProtocol umbilical;
 
-  private final BSPMessageSerializer messageSerializer;
-
   private String[] allPeers;
 
   private SyncClient syncClient;
@@ -71,8 +72,18 @@ public class BSPPeerImpl implements BSPPeer {
    * Protected default constructor for LocalBSPRunner.
    */
   protected BSPPeerImpl() {
-    messageSerializer = null;
     conf = null;
+    dfs = null;
+  }
+
+  /**
+   * For unit test.
+   * @param conf is the configuration file. 
+   * @param dfs is the Hadoop FileSystem. 
+   */
+  protected BSPPeerImpl(final Configuration conf, FileSystem dfs) {
+    this.conf = conf;
+    this.dfs = dfs;
   }
 
   /**
@@ -92,18 +103,17 @@ public class BSPPeerImpl implements BSPPeer {
     this.umbilical = umbilical;
     this.bspJob = job;
 
+    FileSystem fs = null;
+    if (conf.getBoolean("bsp.checkpoint.enabled", false)) {
+      fs = FileSystem.get(conf);
+    }
+    this.dfs = fs;
+
     String bindAddress = conf.get(Constants.PEER_HOST,
         Constants.DEFAULT_PEER_HOST);
     int bindPort = conf
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
-    BSPMessageSerializer msgSerializer = null;
-    if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      msgSerializer = new BSPMessageSerializer(conf,
-          conf.getInt("bsp.checkpoint.port",
-              Integer.valueOf(CheckpointRunner.DEFAULT_PORT)));
-    }
-    this.messageSerializer = msgSerializer;
     initialize();
     syncClient.register(taskId.getJobID(), taskId, peerAddress.getHostName(),
         peerAddress.getPort());
@@ -173,6 +183,20 @@ public class BSPPeerImpl implements BSPPeer {
     return ckptPath;
   }
 
+  void checkpoint(String checkpointedPath, BSPMessageBundle bundle) {
+    FSDataOutputStream out = null;
+    try {
+      out = this.dfs.create(new Path(checkpointedPath));
+      bundle.write(out);
+    } catch(IOException ioe) {
+      LOG.warn("Fail checkpointing messages to "+checkpointedPath, ioe);
+    } finally { 
+      try { if(null != out) out.close(); } catch(IOException e) {
+        LOG.warn("Fail to close dfs output stream while checkpointing.", e); 
+      } 
+    }
+  }
+
   /*
    * (non-Javadoc)
    * @see org.apache.hama.bsp.BSPPeerInterface#sync()
@@ -203,10 +227,8 @@ public class BSPPeerImpl implements BSPPeer {
           }
         }
 
-        // checkpointing
-        if (null != this.messageSerializer) {
-          this.messageSerializer.serialize(new BSPSerializableMessage(
-              checkpointedPath(), bundle));
+        if (conf.getBoolean("bsp.checkpoint.enabled", false)) {
+          checkpoint(checkpointedPath(), bundle);
         }
 
         peer.put(bundle);
@@ -255,8 +277,6 @@ public class BSPPeerImpl implements BSPPeer {
     syncClient.close();
     if (server != null)
       server.stop();
-    if (null != messageSerializer)
-      this.messageSerializer.close();
   }
 
   @Override

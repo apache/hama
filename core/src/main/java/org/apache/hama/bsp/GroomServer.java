@@ -53,8 +53,6 @@ import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.checkpoint.CheckpointRunner;
-import org.apache.hama.checkpoint.Checkpointer;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.MasterProtocol;
@@ -131,8 +129,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
   // private BlockingQueue<GroomServerAction> tasksToCleanup = new
   // LinkedBlockingQueue<GroomServerAction>();
-
-  private final CheckpointRunner checkpointRunner;
 
   private class DispatchTasksHandler implements DirectiveHandler {
 
@@ -233,13 +229,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     // FileSystem local = FileSystem.getLocal(conf);
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
 
-    CheckpointRunner ckptRunner = null;
-    if (this.conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      ckptRunner = new CheckpointRunner(
-          CheckpointRunner.buildCommands(this.conf));
-    }
-    this.checkpointRunner = ckptRunner;
-
     try {
       zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
           conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
@@ -334,10 +323,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     this.instructor.bind(DispatchTasksDirective.class,
         new DispatchTasksHandler());
     instructor.start();
-    if (this.conf.getBoolean("bsp.checkpoint.enabled", false)
-        && null != this.checkpointRunner && !this.checkpointRunner.isAlive()) {
-      this.checkpointRunner.start();
-    }
     this.running = true;
     this.initialized = true;
   }
@@ -707,10 +692,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     cleanupStorage();
     this.workerServer.stop();
     RPC.stopProxy(masterClient);
-    if (this.conf.getBoolean("bsp.checkpoint.enabled", false)
-        && null != this.checkpointRunner && this.checkpointRunner.isAlive()) {
-      this.checkpointRunner.stop();
-    }
     if (taskReportServer != null) {
       taskReportServer.stop();
       taskReportServer = null;
@@ -872,33 +853,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       return BSPPeerProtocol.versionID;
     } else {
       throw new IOException("Unknown protocol to GroomServer: " + protocol);
-    }
-  }
-
-  /**
-   * Checkpointer child process.
-   */
-  public static final class CheckpointerChild {
-
-    public static void main(String[] args) throws Throwable {
-      if (LOG.isDebugEnabled())
-        LOG.debug("Starting Checkpointer child process.");
-      HamaConfiguration defaultConf = new HamaConfiguration();
-      // int ret = 0;
-      if (null != args && 1 == args.length) {
-        int port = Integer.parseInt(args[0]);
-        defaultConf.setInt("bsp.checkpoint.port",
-            Integer.parseInt(CheckpointRunner.DEFAULT_PORT));
-        if (LOG.isDebugEnabled())
-          LOG.debug("Supplied checkpointer port value:" + port);
-        Checkpointer ckpt = new Checkpointer(defaultConf);
-        ckpt.start();
-        ckpt.join();
-        LOG.info("Checkpoint finishes its execution.");
-      } else {
-        throw new IllegalArgumentException(
-            "Port value is not provided for checkpointing service.");
-      }
     }
   }
 

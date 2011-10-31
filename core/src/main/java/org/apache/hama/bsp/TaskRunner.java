@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.util.RunJar;
-import org.apache.hama.checkpoint.CheckpointRunner;
 
 /**
  * Base class that runs a task in a separate process.
@@ -114,7 +113,7 @@ public class TaskRunner extends Thread {
               + exit_code + ".");
         }
       } catch (InterruptedException e) {
-        LOG.warn("Thread is interrupted when execeuting Checkpointer process.",
+        LOG.warn("Thread is interrupted when execeuting BSP process.",
             e);
       } catch (IOException ioe) {
         LOG.error("Error when executing BSPPeer process.", ioe);
@@ -204,7 +203,7 @@ public class TaskRunner extends Thread {
     vargs.add(classPath.toString());
     // Add main class and its arguments
     LOG.debug("Executing child Process " + child.getName());
-    vargs.add(child.getName()); // main of bsp or checkpointer Child
+    vargs.add(child.getName()); // bsp class name 
 
     if (GroomServer.BSPPeerChild.class.equals(child)) {
       InetSocketAddress addr = groomServer.getTaskTrackerReportAddress();
@@ -213,21 +212,11 @@ public class TaskRunner extends Thread {
       vargs.add(task.getTaskID().toString());
       vargs.add(groomServer.groomHostName);
     }
-
-    if (jobConf.getConf().getBoolean("bsp.checkpoint.enabled", false)) {
-      String ckptPort = jobConf.getConf().get("bsp.checkpoint.port",
-          CheckpointRunner.DEFAULT_PORT);
-      LOG.debug("Checkpointer's port:" + ckptPort);
-      vargs.add(ckptPort);
-    }
-
     return vargs;
   }
 
   /**
-   * Build working environment and launch BSPPeer and Checkpointer processes.
-   * And transmit data from BSPPeer's inputstream to Checkpointer's
-   * OutputStream.
+   * Build working environment and launch BSPPeer processes.
    */
   public void run() {
     File workDir = createWorkDirectory();
