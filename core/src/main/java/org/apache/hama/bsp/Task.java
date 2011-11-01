@@ -20,6 +20,7 @@ package org.apache.hama.bsp;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.text.NumberFormat;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -92,6 +93,18 @@ public abstract class Task implements Writable {
    */
   public int getPartition() {
     return partition;
+  }
+  
+  /** Construct output file names so that, when an output directory listing is
+   * sorted lexicographically, positions correspond to output partitions.*/
+  private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance();
+  static {
+    NUMBER_FORMAT.setMinimumIntegerDigits(5);
+    NUMBER_FORMAT.setGroupingUsed(false);
+  }
+  
+  static synchronized String getOutputName(int partition) {
+    return "part-" + NUMBER_FORMAT.format(partition);
   }
 
   @Override

@@ -37,6 +37,8 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BooleanMessage;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.IntegerMessage;
+import org.apache.hama.bsp.OutputCollector;
+import org.apache.hama.bsp.RecordReader;
 import org.apache.hama.examples.RandBench;
 import org.apache.zookeeper.KeeperException;
 
@@ -49,8 +51,8 @@ public class ShortestPaths extends ShortestPathsBase {
   private String[] peerNames;
 
   @Override
-  public void bsp(BSPPeer peer) throws IOException, KeeperException,
-      InterruptedException {
+  public void bsp(BSPPeer peer, RecordReader input, OutputCollector output)
+      throws IOException, KeeperException, InterruptedException {
     // map our input into ram
     mapAdjacencyList(peer.getConfiguration(), peer, adjacencyList,
         vertexLookupMap);
@@ -155,10 +157,9 @@ public class ShortestPaths extends ShortestPathsBase {
     List<ShortestPathVertex> outgoingEdges = adjacencyList.get(id);
     for (ShortestPathVertex adjacent : outgoingEdges) {
       int mod = Math.abs((adjacent.getId() % peer.getAllPeerNames().length));
-      peer.send(peerNames[mod],
-          new IntegerMessage(adjacent.getName(),
-              id.getCost() == Integer.MAX_VALUE ? id.getCost() : id.getCost()
-                  + adjacent.getWeight()));
+      peer.send(peerNames[mod], new IntegerMessage(adjacent.getName(), id
+          .getCost() == Integer.MAX_VALUE ? id.getCost() : id.getCost()
+          + adjacent.getWeight()));
     }
   }
 
@@ -229,6 +230,19 @@ public class ShortestPaths extends ShortestPathsBase {
           + " seconds");
       printOutput(FileSystem.get(conf), conf);
     }
+  }
+
+  @Override
+  public void cleanup(BSPPeer peer) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void setup(BSPPeer peer) throws IOException, KeeperException,
+      InterruptedException {
+    // TODO Auto-generated method stub
+
   }
 
 }

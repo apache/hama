@@ -56,7 +56,7 @@ public class BSPJobContext {
     return jobId;
   }
 
-  public Path getWorkingDirectory() throws IOException {
+  public Path getWorkingDirectory() {
     String name = conf.get(WORKING_DIR);
 
     if (name != null) {

@@ -26,7 +26,7 @@ import org.apache.zookeeper.KeeperException;
  * Interface BSP defines the basic operations needed to implement the BSP
  * algorithm.
  */
-public interface BSPInterface extends Configurable {
+public interface BSPInterface<K1, V1, K2, V2> extends Configurable {
 
   /**
    * A user defined function for programming in the BSP style.
@@ -39,6 +39,7 @@ public interface BSPInterface extends Configurable {
    * @throws KeeperException
    * @throws InterruptedException
    */
-  public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+  public void bsp(BSPPeer bspPeer, RecordReader<K1, V1> input,
+      OutputCollector<K2, V2> output) throws IOException, KeeperException,
       InterruptedException;
 }

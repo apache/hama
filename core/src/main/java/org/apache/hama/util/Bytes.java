@@ -1010,7 +1010,6 @@ public class Bytes {
 
   /**
    * Split passed range. Expensive operation relatively. Uses BigInteger math.
-   * Useful splitting ranges for MapReduce jobs.
    * 
    * @param a Beginning of range
    * @param b End of range

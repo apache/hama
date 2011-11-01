@@ -25,9 +25,19 @@ import org.apache.zookeeper.KeeperException;
 /**
  * This class provides an abstract implementation of the BSP interface.
  */
-public abstract class BSP implements BSPInterface {
+public abstract class BSP<K1, V1, K2, V2> implements BSPInterface<K1, V1, K2, V2> {
 
   protected Configuration conf;
+
+  /**
+   * This method is your computation method, the main work of your BSP should be
+   * done here.
+   * 
+   * @param peer Your BSPPeer instance.
+   */
+  public abstract void bsp(BSPPeer peer, RecordReader<K1, V1> input,
+      OutputCollector<K2, V2> output) throws IOException, KeeperException,
+      InterruptedException;
 
   /**
    * This method is called before the BSP method. It can be used for setup
@@ -35,10 +45,8 @@ public abstract class BSP implements BSPInterface {
    * 
    * @param peer Your BSPPeer instance.
    */
-  public void setup(BSPPeer peer) throws IOException, KeeperException,
-      InterruptedException {
-
-  }
+  public abstract void setup(BSPPeer peer) throws IOException, KeeperException,
+      InterruptedException;
 
   /**
    * This method is called after the BSP method. It can be used for cleanup
@@ -47,21 +55,7 @@ public abstract class BSP implements BSPInterface {
    * 
    * @param peer Your BSPPeer instance.
    */
-  public void cleanup(BSPPeer peer) {
-
-  }
-
-  /**
-   * This method is your computation method, the main work of your BSP should be
-   * done here.
-   * 
-   * @param peer Your BSPPeer instance.
-   */
-  @Override
-  public void bsp(BSPPeer peer) throws IOException, KeeperException,
-      InterruptedException {
-
-  }
+  public abstract void cleanup(BSPPeer peer);
 
   /**
    * Returns the configuration of this BSP Job.
@@ -85,5 +79,4 @@ public abstract class BSP implements BSPInterface {
   public void setConf(Configuration conf) {
     this.conf = conf;
   }
-
 }

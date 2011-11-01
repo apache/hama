@@ -24,7 +24,8 @@ import java.util.TreeSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.JobStatus;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hama.bsp.BSPJobClient.RawSplit;
 
 /**
  *TaskInProgress maintains all the info needed for a Task in the lifetime of
@@ -75,6 +76,8 @@ class TaskInProgress {
 
   private BSPJobID jobId;
 
+  private RawSplit rawSplit;
+  
   /**
    * Constructor for new nexus between BSPMaster and GroomServer.
    * 
@@ -90,10 +93,11 @@ class TaskInProgress {
     init(jobId);
   }
 
-  public TaskInProgress(BSPJobID jobId, String jobFile, BSPMaster master,
+  public TaskInProgress(BSPJobID jobId, String jobFile, RawSplit rawSplit, BSPMaster master,
       Configuration conf, JobInProgress job, int partition) {
     this.jobId = jobId;
     this.jobFile = jobFile;
+    this.rawSplit = rawSplit;
     this.setBspMaster(master);
     this.job = job;
     this.setConf(conf);
@@ -102,7 +106,7 @@ class TaskInProgress {
     init(jobId);
   }
 
-  private void init(BSPJobID jobId2) {
+  private void init(BSPJobID jobId) {
     this.id = new TaskID(jobId, partition);
     this.startTime = System.currentTimeMillis();
   }
@@ -125,7 +129,10 @@ class TaskInProgress {
       return null;
     }
 
-    t = new BSPTask(jobId, jobFile, taskid, partition);
+    String splitClass = rawSplit.getClassName();
+    BytesWritable split = rawSplit.getBytes();
+    
+    t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
     activeTasks.put(taskid, status.getGroomName());
 
     return t;

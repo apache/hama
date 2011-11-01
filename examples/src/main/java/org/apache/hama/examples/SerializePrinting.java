@@ -25,25 +25,60 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ClusterStatus;
+import org.apache.hama.bsp.NullInputFormat;
+import org.apache.hama.bsp.NullOutputFormat;
+import org.apache.hama.bsp.OutputCollector;
+import org.apache.hama.bsp.RecordReader;
 import org.apache.zookeeper.KeeperException;
 
 public class SerializePrinting {
-  private static String TMP_OUTPUT = "/tmp/test-example/";
+  private static String TMP_OUTPUT = "/tmp/serialize-example/";
 
-  public static class HelloBSP extends BSP {
+  public static class HelloBSP extends
+      BSP<NullWritable, NullWritable, NullWritable, NullWritable> {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private final static int PRINT_INTERVAL = 1000;
     private FileSystem fileSys;
     private int num;
+
+    @Override
+    public void bsp(BSPPeer peer,
+        RecordReader<NullWritable, NullWritable> input,
+        OutputCollector<NullWritable, NullWritable> output) throws IOException,
+        KeeperException, InterruptedException {
+
+      LOG.info(peer.getAllPeerNames());
+      int i = 0;
+      for (String otherPeer : peer.getAllPeerNames()) {
+        String peerName = peer.getPeerName();
+        if (peerName.equals(otherPeer)) {
+          writeLogToFile(peerName, i);
+        }
+
+        Thread.sleep(PRINT_INTERVAL);
+        peer.sync();
+        i++;
+      }
+    }
+
+    private void writeLogToFile(String string, int i) throws IOException {
+      SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
+          new Path(TMP_OUTPUT + i), LongWritable.class, Text.class,
+          CompressionType.NONE);
+      writer.append(new LongWritable(System.currentTimeMillis()), new Text(
+          "Hello BSP from " + (i + 1) + " of " + num + ": " + string));
+      writer.close();
+    }
 
     @Override
     public void setup(BSPPeer peer) {
@@ -56,30 +91,9 @@ public class SerializePrinting {
     }
 
     @Override
-    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
-        InterruptedException {
+    public void cleanup(BSPPeer peer) {
+      // TODO Auto-generated method stub
 
-      LOG.info(bspPeer.getAllPeerNames());
-      int i = 0;
-      for (String otherPeer : bspPeer.getAllPeerNames()) {
-        String peerName = bspPeer.getPeerName();
-        if (peerName.equals(otherPeer)) {
-          writeLogToFile(peerName, i);
-        }
-
-        Thread.sleep(PRINT_INTERVAL);
-        bspPeer.sync();
-        i++;
-      }
-    }
-
-    private void writeLogToFile(String string, int i) throws IOException {
-      SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
-          new Path(TMP_OUTPUT + i), LongWritable.class, Text.class,
-          CompressionType.NONE);
-      writer.append(new LongWritable(System.currentTimeMillis()), new Text(
-          "Hello BSP from " + (i + 1) + " of " + num + ": " + string));
-      writer.close();
     }
   }
 
@@ -112,7 +126,9 @@ public class SerializePrinting {
     // Set the job name
     bsp.setJobName("Serialize Printing");
     bsp.setBspClass(HelloBSP.class);
-
+    bsp.setInputFormat(NullInputFormat.class);
+    bsp.setOutputFormat(NullOutputFormat.class);
+    
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(false);

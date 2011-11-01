@@ -102,7 +102,7 @@ public class TaskLog {
   public static synchronized void cleanup(int logsRetainHours)
       throws IOException {
     // Purge logs of tasks on this tasktracker if their
-    // mtime has exceeded "mapred.task.log.retain" hours
+    // mtime has exceeded "bsp.task.log.retain" hours
     long purgeTimeStamp = System.currentTimeMillis()
         - (logsRetainHours * 60L * 60 * 1000);
     File[] oldTaskLogs = LOG_DIR.listFiles(new TaskLogsPurgeFilter(
@@ -199,7 +199,7 @@ public class TaskLog {
    * @return the number of bytes to cap the log files at
    */
   public static long getTaskLogLength(HamaConfiguration conf) {
-    return conf.getLong("mapred.userlog.limit.kb", 100) * 1024;
+    return conf.getLong("bsp.userlog.limit.kb", 100) * 1024;
   }
 
   /**

@@ -25,24 +25,30 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.OutputCollector;
+import org.apache.hama.bsp.RecordReader;
 import org.apache.zookeeper.KeeperException;
 
 public class ClassSerializePrinting {
   private static String TMP_OUTPUT = "/tmp/test-example/";
 
-  public static class HelloBSP extends BSP {
+  public static class HelloBSP extends
+      BSP<NullWritable, NullWritable, NullWritable, NullWritable> {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private Configuration conf;
     private final static int PRINT_INTERVAL = 1000;
     private FileSystem fileSys;
     private int num;
 
-    public void bsp(BSPPeer bspPeer) throws IOException,
+    public void bsp(BSPPeer bspPeer,
+        RecordReader<NullWritable, NullWritable> input,
+        OutputCollector<NullWritable, NullWritable> out) throws IOException,
         KeeperException, InterruptedException {
 
       int i = 0;
@@ -81,6 +87,17 @@ public class ClassSerializePrinting {
       }
     }
 
-  }
+    @Override
+    public void cleanup(BSPPeer peer) {
+      // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public void setup(BSPPeer peer) throws IOException, KeeperException,
+        InterruptedException {
+      // TODO Auto-generated method stub
+
+    }
+  }
 }
