@@ -23,6 +23,9 @@ import java.net.URLDecoder;
 import java.util.Enumeration;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
 
 /**
@@ -48,11 +51,11 @@ public class BSPJob extends BSPJobContext {
     super(conf, null);
     jobClient = new BSPJobClient(conf);
   }
-  
+
   public BSPJob(HamaConfiguration conf, BSPJobID jobID) throws IOException {
     super(conf, jobID);
   }
-  
+
   public BSPJob(HamaConfiguration conf, String jobName) throws IOException {
     this(conf);
     setJobName(jobName);
@@ -95,6 +98,7 @@ public class BSPJob extends BSPJobContext {
    * @param cls
    * @throws IllegalStateException
    */
+  @SuppressWarnings("unchecked")
   public void setBspClass(Class<? extends BSP> cls)
       throws IllegalStateException {
     ensureState(JobState.DEFINE);
@@ -113,9 +117,10 @@ public class BSPJob extends BSPJobContext {
 
   @SuppressWarnings("unchecked")
   public Class<? extends Combiner> getCombinerClass() {
-    return (Class<? extends Combiner>) conf.getClass(COMBINER_CLASS_ATTR, Combiner.class);
+    return (Class<? extends Combiner>) conf.getClass(COMBINER_CLASS_ATTR,
+        Combiner.class);
   }
-  
+
   public void setJar(String jar) {
     conf.set("bsp.jar", jar);
   }
@@ -153,10 +158,6 @@ public class BSPJob extends BSPJobContext {
   public void setJobName(String name) throws IllegalStateException {
     ensureState(JobState.DEFINE);
     conf.set("bsp.job.name", name);
-  }
-
-  public void setInputPath(HamaConfiguration conf, Path iNPUTPATH) {
-
   }
 
   public void setUser(String user) {
@@ -214,9 +215,9 @@ public class BSPJob extends BSPJobContext {
     }
     return isSuccessful();
   }
-  
+
   // for the testcase
-  BSPJobClient getJobClient(){
+  BSPJobClient getJobClient() {
     return jobClient;
   }
 
@@ -230,5 +231,65 @@ public class BSPJob extends BSPJobContext {
 
   public int getNumBspTask() {
     return conf.getInt("bsp.peers.num", 0);
+  }
+
+  @SuppressWarnings("unchecked")
+  public InputFormat getInputFormat() {
+    return (InputFormat) ReflectionUtils.newInstance(conf.getClass(
+        "bsp.input.format.class", TextInputFormat.class, InputFormat.class), conf);
+  }
+
+  @SuppressWarnings("unchecked")
+  public void setInputFormat(Class<? extends InputFormat> cls) {
+    conf.setClass("bsp.input.format.class", cls, InputFormat.class);
+  }
+
+  /**
+   * Get the key class for the job output data.
+   * 
+   * @return the key class for the job output data.
+   */
+  public Class<?> getOutputKeyClass() {
+    return conf.getClass("bsp.output.key.class", LongWritable.class,
+        Object.class);
+  }
+
+  /**
+   * Set the key class for the job output data.
+   * 
+   * @param theClass the key class for the job output data.
+   */
+  public void setOutputKeyClass(Class<?> theClass) {
+    conf.setClass("bsp.output.key.class", theClass, Object.class);
+  }
+
+  /**
+   * Get the value class for job outputs.
+   * 
+   * @return the value class for job outputs.
+   */
+  public Class<?> getOutputValueClass() {
+    return conf.getClass("bsp.output.value.class", Text.class, Object.class);
+  }
+
+  /**
+   * Set the value class for job outputs.
+   * 
+   * @param theClass the value class for job outputs.
+   */
+  public void setOutputValueClass(Class<?> theClass) {
+    conf.setClass("bsp.output.value.class", theClass, Object.class);
+  }
+
+  @SuppressWarnings("unchecked")
+  public void setOutputFormat(Class<? extends OutputFormat> theClass) {
+    conf.setClass("bsp.output.format.class", theClass, OutputFormat.class);
+  }
+  
+  @SuppressWarnings("unchecked")
+  public OutputFormat getOutputFormat() {
+    return (OutputFormat) ReflectionUtils.newInstance(conf.getClass(
+        "bsp.output.format.class", TextOutputFormat.class, OutputFormat.class),
+        conf);
   }
 }

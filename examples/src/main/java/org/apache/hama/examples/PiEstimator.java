@@ -21,11 +21,14 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
@@ -33,25 +36,27 @@ import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.DoubleMessage;
+import org.apache.hama.bsp.FileOutputFormat;
+import org.apache.hama.bsp.NullInputFormat;
+import org.apache.hama.bsp.OutputCollector;
+import org.apache.hama.bsp.RecordReader;
+import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.zookeeper.KeeperException;
 
 public class PiEstimator {
-  private static Path TMP_OUTPUT = new Path("/tmp/pi-example/output");
+  private static Path TMP_OUTPUT = new Path("/tmp/pi-temp");
 
-  public static class MyEstimator extends BSP {
+  public static class MyEstimator extends
+      BSP<NullWritable, NullWritable, Text, DoubleWritable> {
     public static final Log LOG = LogFactory.getLog(MyEstimator.class);
     private String masterTask;
     private static final int iterations = 10000;
 
     @Override
-    public void setup(BSPPeer peer) {
-      // Choose one as a master
-      this.masterTask = peer.getPeerName(0);
-    }
-
-    @Override
-    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
-        InterruptedException {
+    public void bsp(BSPPeer peer,
+        RecordReader<NullWritable, NullWritable> input,
+        OutputCollector<Text, DoubleWritable> output) throws IOException,
+        KeeperException, InterruptedException {
 
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {
@@ -64,51 +69,50 @@ public class PiEstimator {
       }
 
       double data = 4.0 * (double) in / (double) iterations;
-      DoubleMessage estimate = new DoubleMessage(bspPeer.getPeerName(), data);
+      DoubleMessage estimate = new DoubleMessage(peer.getPeerName(), data);
 
-      bspPeer.send(masterTask, estimate);
-      bspPeer.sync();
+      peer.send(masterTask, estimate);
+      peer.sync();
 
-      if (bspPeer.getPeerName().equals(masterTask)) {
+      if (peer.getPeerName().equals(masterTask)) {
         double pi = 0.0;
-        int numPeers = bspPeer.getNumCurrentMessages();
+        int numPeers = peer.getNumCurrentMessages();
         DoubleMessage received;
-        while ((received = (DoubleMessage) bspPeer.getCurrentMessage()) != null) {
+        while ((received = (DoubleMessage) peer.getCurrentMessage()) != null) {
           pi += received.getData();
         }
 
         pi = pi / numPeers;
-        writeResult(pi);
+        output.collect(new Text("Estimated value of PI is"),
+            new DoubleWritable(pi));
       }
     }
 
-    private void writeResult(double pi) throws IOException {
-      FileSystem fileSys = FileSystem.get(conf);
-
-      SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
-          TMP_OUTPUT, DoubleWritable.class, DoubleWritable.class,
-          CompressionType.NONE);
-      writer.append(new DoubleWritable(pi), new DoubleWritable(0));
-      writer.close();
+    @Override
+    public void setup(BSPPeer peer) {
+      // Choose one as a master
+      this.masterTask = peer.getPeerName(0);
     }
+
+    @Override
+    public void cleanup(BSPPeer peer) {
+    }
+
   }
 
-  private static void initTempDir(FileSystem fileSys) throws IOException {
-    if (fileSys.exists(TMP_OUTPUT)) {
-      fileSys.delete(TMP_OUTPUT, true);
+  private static void printOutput(HamaConfiguration conf) throws IOException {
+    FileSystem fs = FileSystem.get(conf);
+    FileStatus[] files = fs.listStatus(TMP_OUTPUT);
+    for (int i = 0; i < files.length; i++) {
+      if (files[i].getLen() > 0) {
+        FSDataInputStream in = fs.open(files[i].getPath());
+        IOUtils.copyBytes(in, System.out, conf, false);
+        in.close();
+        break;
+      }
     }
-  }
 
-  private static void printOutput(FileSystem fileSys, HamaConfiguration conf)
-      throws IOException {
-    SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, TMP_OUTPUT,
-        conf);
-    DoubleWritable output = new DoubleWritable();
-    DoubleWritable zero = new DoubleWritable();
-    reader.next(output, zero);
-    reader.close();
-
-    System.out.println("Estimated value of PI is " + output);
+    fs.delete(TMP_OUTPUT, true);
   }
 
   public static void main(String[] args) throws InterruptedException,
@@ -120,6 +124,11 @@ public class PiEstimator {
     // Set the job name
     bsp.setJobName("Pi Estimation Example");
     bsp.setBspClass(MyEstimator.class);
+    bsp.setInputFormat(NullInputFormat.class);
+    bsp.setOutputKeyClass(Text.class);
+    bsp.setOutputValueClass(DoubleWritable.class);
+    bsp.setOutputFormat(TextOutputFormat.class);
+    FileOutputFormat.setOutputPath(bsp, TMP_OUTPUT);
 
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(true);
@@ -131,14 +140,9 @@ public class PiEstimator {
       bsp.setNumBspTask(cluster.getMaxTasks());
     }
 
-    FileSystem fileSys = FileSystem.get(conf);
-    initTempDir(fileSys);
-
     long startTime = System.currentTimeMillis();
-
     if (bsp.waitForCompletion(true)) {
-      printOutput(fileSys, conf);
-
+      printOutput(conf);
       System.out.println("Job Finished in "
           + (double) (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");

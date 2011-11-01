@@ -209,7 +209,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       bsp.setConf(conf);
       try {
         bsp.setup(groom);
-        bsp.bsp(groom);
+        // TODO 
+        bsp.bsp(groom, null, null);
       } catch (Exception e) {
         LOG.error("Exception during BSP execution!", e);
       }

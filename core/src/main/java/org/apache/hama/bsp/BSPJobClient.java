@@ -17,8 +17,13 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Random;
 
@@ -32,6 +37,11 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UnixUserGroupInformation;
@@ -200,8 +210,8 @@ public class BSPJobClient extends Configured implements Tool {
     if (masterAdress != null && !masterAdress.equals("local")) {
       this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
           JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
-          BSPMaster.getAddress(conf), conf,
-          NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
+          BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(conf,
+              JobSubmissionProtocol.class));
     } else {
       LOG.debug("Using local BSP runner.");
       this.jobSubmitClient = new LocalBSPRunner(conf);
@@ -283,6 +293,7 @@ public class BSPJobClient extends Configured implements Tool {
 
     Path submitJobDir = new Path(getSystemDir(), "submit_"
         + Integer.toString(Math.abs(r.nextInt()), 36));
+    Path submitSplitFile = new Path(submitJobDir, "job.split");
     Path submitJarFile = new Path(submitJobDir, "job.jar");
     Path submitJobFile = new Path(submitJobDir, "job.xml");
     LOG.debug("BSPJobClient.submitJobDir: " + submitJobDir);
@@ -298,15 +309,12 @@ public class BSPJobClient extends Configured implements Tool {
     // check the number of BSP tasks
     int tasks = job.getNumBspTask();
     int maxTasks = clusterStatus.getMaxTasks();
-
     if (tasks <= 0 || tasks > maxTasks) {
-      LOG.info("The number of tasks you've entered was invalid. Using default value of "
-          + maxTasks + "!");
       job.setNumBspTask(maxTasks);
     }
 
-    // Create a number of filenames in the BSPMaster's fs namespace
     FileSystem fs = getFs();
+    // Create a number of filenames in the BSPMaster's fs namespace
     fs.delete(submitJobDir, true);
     submitJobDir = fs.makeQualified(submitJobDir);
     submitJobDir = new Path(submitJobDir.toUri().getPath());
@@ -314,6 +322,11 @@ public class BSPJobClient extends Configured implements Tool {
     FileSystem.mkdirs(fs, submitJobDir, bspSysPerms);
     fs.mkdirs(submitJobDir);
     short replication = (short) job.getInt("bsp.submit.replication", 10);
+
+    // Create the splits for the job
+    LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
+    job.setNumBspTask(writeSplits(job, submitSplitFile));
+    job.set("bsp.job.split.file", submitSplitFile.toString());
 
     String originalJarPath = job.getJar();
 
@@ -354,13 +367,97 @@ public class BSPJobClient extends Configured implements Tool {
     //
     // Now, actually submit the job (using the submit name)
     //
-    JobStatus status = jobSubmitClient.submitJob(jobId,
-        submitJobFile.makeQualified(fs).toString());
+    JobStatus status = jobSubmitClient.submitJob(jobId, submitJobFile
+        .makeQualified(fs).toString());
     if (status != null) {
       return new NetworkedJob(status);
     } else {
       throw new IOException("Could not launch job");
     }
+  }
+
+  private int writeSplits(BSPJob job, Path submitSplitFile) throws IOException {
+    InputSplit[] splits = job.getInputFormat().getSplits(job,
+        job.getNumBspTask());
+    // sort the splits into order based on size, so that the biggest
+    // go first
+    Arrays.sort(splits, new Comparator<InputSplit>() {
+      public int compare(InputSplit a, InputSplit b) {
+        try {
+          long left = a.getLength();
+          long right = b.getLength();
+          if (left == right) {
+            return 0;
+          } else if (left < right) {
+            return 1;
+          } else {
+            return -1;
+          }
+        } catch (IOException ie) {
+          throw new RuntimeException("Problem getting input split size", ie);
+        }
+      }
+    });
+    DataOutputStream out = writeSplitsFileHeader(job.getConf(),
+        submitSplitFile, splits.length);
+
+    try {
+      DataOutputBuffer buffer = new DataOutputBuffer();
+      RawSplit rawSplit = new RawSplit();
+      for (InputSplit split : splits) {
+        rawSplit.setClassName(split.getClass().getName());
+        buffer.reset();
+        split.write(buffer);
+        rawSplit.setDataLength(split.getLength());
+        rawSplit.setBytes(buffer.getData(), 0, buffer.getLength());
+        rawSplit.setLocations(split.getLocations());
+        rawSplit.write(out);
+      }
+    } finally {
+      out.close();
+    }
+    return splits.length;
+  }
+
+  private static final int CURRENT_SPLIT_FILE_VERSION = 0;
+  private static final byte[] SPLIT_FILE_HEADER = "SPL".getBytes();
+
+  private DataOutputStream writeSplitsFileHeader(Configuration conf,
+      Path filename, int length) throws IOException {
+    // write the splits to a file for the bsp master
+    FileSystem fs = filename.getFileSystem(conf);
+    FSDataOutputStream out = FileSystem.create(fs, filename, new FsPermission(
+        JOB_FILE_PERMISSION));
+    out.write(SPLIT_FILE_HEADER);
+    WritableUtils.writeVInt(out, CURRENT_SPLIT_FILE_VERSION);
+    WritableUtils.writeVInt(out, length);
+    return out;
+  }
+
+  /**
+   * Read a splits file into a list of raw splits
+   * 
+   * @param in the stream to read from
+   * @return the complete list of splits
+   * @throws IOException
+   */
+  static RawSplit[] readSplitFile(DataInput in) throws IOException {
+    byte[] header = new byte[SPLIT_FILE_HEADER.length];
+    in.readFully(header);
+    if (!Arrays.equals(SPLIT_FILE_HEADER, header)) {
+      throw new IOException("Invalid header on split file");
+    }
+    int vers = WritableUtils.readVInt(in);
+    if (vers != CURRENT_SPLIT_FILE_VERSION) {
+      throw new IOException("Unsupported split version " + vers);
+    }
+    int len = WritableUtils.readVInt(in);
+    RawSplit[] result = new RawSplit[len];
+    for (int i = 0; i < len; ++i) {
+      result[i] = new RawSplit();
+      result[i].readFields(in);
+    }
+    return result;
   }
 
   /**
@@ -583,9 +680,8 @@ public class BSPJobClient extends Configured implements Tool {
         System.out.println("Job name: " + job.getJobName());
         System.out.printf("States are:\n\tRunning : 1\tSucceded : 2"
             + "\tFailed : 3\tPrep : 4\n");
-        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(),
-            jobStatus.getRunState(), jobStatus.getStartTime(),
-            jobStatus.getUsername());
+        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(), jobStatus
+            .getRunState(), jobStatus.getStartTime(), jobStatus.getUsername());
 
         exitCode = 0;
       }
@@ -674,10 +770,76 @@ public class BSPJobClient extends Configured implements Tool {
     }
   }
 
+  static class RawSplit implements Writable {
+    private String splitClass;
+    private BytesWritable bytes = new BytesWritable();
+    private String[] locations;
+    long dataLength;
+
+    public void setBytes(byte[] data, int offset, int length) {
+      bytes.set(data, offset, length);
+    }
+
+    public void setClassName(String className) {
+      splitClass = className;
+    }
+
+    public String getClassName() {
+      return splitClass;
+    }
+
+    public BytesWritable getBytes() {
+      return bytes;
+    }
+
+    public void clearBytes() {
+      bytes = null;
+    }
+
+    public void setLocations(String[] locations) {
+      this.locations = locations;
+    }
+
+    public String[] getLocations() {
+      return locations;
+    }
+
+    public void readFields(DataInput in) throws IOException {
+      splitClass = Text.readString(in);
+      dataLength = in.readLong();
+      bytes.readFields(in);
+      int len = WritableUtils.readVInt(in);
+      locations = new String[len];
+      for (int i = 0; i < len; ++i) {
+        locations[i] = Text.readString(in);
+      }
+    }
+
+    public void write(DataOutput out) throws IOException {
+      Text.writeString(out, splitClass);
+      out.writeLong(dataLength);
+      bytes.write(out);
+      WritableUtils.writeVInt(out, locations.length);
+      for (int i = 0; i < locations.length; i++) {
+        Text.writeString(out, locations[i]);
+      }
+    }
+
+    public long getDataLength() {
+      return dataLength;
+    }
+
+    public void setDataLength(long l) {
+      dataLength = l;
+    }
+
+  }
+
   /**
    */
   public static void main(String[] args) throws Exception {
     int res = ToolRunner.run(new BSPJobClient(), args);
     System.exit(res);
   }
+
 }

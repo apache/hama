@@ -34,6 +34,8 @@ import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.DoubleMessage;
+import org.apache.hama.bsp.OutputCollector;
+import org.apache.hama.bsp.RecordReader;
 import org.apache.zookeeper.KeeperException;
 
 public class PageRank extends PageRankBase {
@@ -58,7 +60,7 @@ public class PageRank extends PageRankBase {
   }
 
   @Override
-  public void bsp(BSPPeer peer) throws IOException, KeeperException,
+  public void bsp(BSPPeer peer, RecordReader input, OutputCollector output) throws IOException, KeeperException,
       InterruptedException {
     String master = peer.getConfiguration().get(MASTER_TASK);
     // setup the datasets
@@ -235,5 +237,11 @@ public class PageRank extends PageRankBase {
     if (job.waitForCompletion(true)) {
       PageRankBase.printOutput(FileSystem.get(conf), conf);
     }
+  }
+
+  @Override
+  public void cleanup(BSPPeer peer) {
+    // TODO Auto-generated method stub
+    
   }
 }

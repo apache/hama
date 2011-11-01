@@ -22,6 +22,7 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
@@ -30,32 +31,49 @@ import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.IntegerMessage;
+import org.apache.hama.bsp.NullInputFormat;
+import org.apache.hama.bsp.NullOutputFormat;
+import org.apache.hama.bsp.OutputCollector;
+import org.apache.hama.bsp.RecordReader;
 import org.apache.zookeeper.KeeperException;
 
 public class CombineExample {
 
-  public static class MyBSP extends BSP {
+  public static class MyBSP extends
+      BSP<NullWritable, NullWritable, NullWritable, NullWritable> {
     public static final Log LOG = LogFactory.getLog(MyBSP.class);
 
     @Override
-    public void setup(BSPPeer peer) {
-    }
-
-    @Override
-    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
-        InterruptedException {
-      for (String peer : bspPeer.getAllPeerNames()) {
-        bspPeer.send(peer, new IntegerMessage(bspPeer.getPeerName(), 1));
-        bspPeer.send(peer, new IntegerMessage(bspPeer.getPeerName(), 2));
-        bspPeer.send(peer, new IntegerMessage(bspPeer.getPeerName(), 3));
+    public void bsp(BSPPeer peer,
+        RecordReader<NullWritable, NullWritable> input,
+        OutputCollector<NullWritable, NullWritable> output) throws IOException,
+        KeeperException, InterruptedException {
+      for (String peerName : peer.getAllPeerNames()) {
+        peer.send(peerName, new IntegerMessage(peer.getPeerName(), 1));
+        peer.send(peerName, new IntegerMessage(peer.getPeerName(), 2));
+        peer.send(peerName, new IntegerMessage(peer.getPeerName(), 3));
       }
-      bspPeer.sync();
+      peer.sync();
 
       IntegerMessage received;
-      while ((received = (IntegerMessage) bspPeer.getCurrentMessage()) != null) {
+      while ((received = (IntegerMessage) peer.getCurrentMessage()) != null) {
         LOG.info(received.getTag() + ": " + received.getData());
       }
     }
+
+    @Override
+    public void cleanup(BSPPeer peer) {
+      // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void setup(BSPPeer peer) throws IOException, KeeperException,
+        InterruptedException {
+      // TODO Auto-generated method stub
+
+    }
+
   }
 
   public static class SumCombiner extends Combiner {
@@ -86,6 +104,8 @@ public class CombineExample {
     bsp.setJobName("Combine Example");
     bsp.setBspClass(MyBSP.class);
     bsp.setCombinerClass(SumCombiner.class);
+    bsp.setInputFormat(NullInputFormat.class);
+    bsp.setOutputFormat(NullOutputFormat.class);
     bsp.setNumBspTask(2);
 
     bsp.waitForCompletion(true);

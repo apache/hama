@@ -17,6 +17,7 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 
 import org.apache.commons.logging.Log;
@@ -72,6 +73,7 @@ class JobInProgress {
 
   int numBSPTasks = 0;
   int clusterSize;
+  String jobSplit;
 
   public JobInProgress(BSPJobID jobId, Path jobFile, BSPMaster master,
       Configuration conf) throws IOException {
@@ -80,9 +82,9 @@ class JobInProgress {
     this.localFs = FileSystem.getLocal(conf);
     this.jobFile = jobFile;
     this.master = master;
-    
-    this.status = new JobStatus(jobId, null, 0L, 0L,
-        JobStatus.State.PREP.value());
+
+    this.status = new JobStatus(jobId, null, 0L, 0L, JobStatus.State.PREP
+        .value());
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -96,10 +98,10 @@ class JobInProgress {
     FileSystem fs = jobDir.getFileSystem(conf);
     fs.copyToLocalFile(jobFile, localJobFile);
     BSPJob job = new BSPJob(jobId, localJobFile.toString());
-    this.numBSPTasks = job.getNumBspTask();
+    this.jobSplit = job.getConf().get("bsp.job.split.file");
 
-    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
-        job.getJobName());
+    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
+        .getJobName());
 
     this.setJobName(job.getJobName());
 
@@ -134,9 +136,9 @@ class JobInProgress {
   }
 
   public int getNumOfTasks() {
-    return tasks.length;  
+    return tasks.length;
   }
-  
+
   /**
    * @return the number of desired tasks.
    */
@@ -181,25 +183,34 @@ class JobInProgress {
       return;
     }
 
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("numBSPTasks: " + numBSPTasks);
+    Path sysDir = new Path(this.master.getSystemDir());
+    FileSystem fs = sysDir.getFileSystem(conf);
+    DataInputStream splitFile = fs.open(new Path(this.jobSplit));
+
+    BSPJobClient.RawSplit[] splits;
+    try {
+      splits = BSPJobClient.readSplitFile(splitFile);
+    } finally {
+      splitFile.close();
     }
+    numBSPTasks = splits.length;
+    LOG.info("num BSPTasks: " + numBSPTasks);
 
     // adjust number of BSP tasks to actual number of splits
     this.tasks = new TaskInProgress[numBSPTasks];
     for (int i = 0; i < numBSPTasks; i++) {
       tasks[i] = new TaskInProgress(getJobID(), this.jobFile.toString(),
-          this.master, this.conf, this, i);
+          splits[i], this.master, this.conf, this, i);
     }
 
     // Update job status
     this.status = new JobStatus(this.status.getJobID(), this.profile.getUser(),
         0L, 0L, JobStatus.RUNNING);
 
-    // delete all nodes before start 
+    // delete all nodes before start
     master.clearZKNodes();
     master.createJobRoot(this.getJobID().toString());
-    
+
     tasksInited = true;
     LOG.info("Job is initialized.");
   }
@@ -247,17 +258,17 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(),
-          this.profile.getUser(), superstepCounter, superstepCounter,
-          superstepCounter, JobStatus.SUCCEEDED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(), this.profile
+          .getUser(), superstepCounter, superstepCounter, superstepCounter,
+          JobStatus.SUCCEEDED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
       LOG.info("Job successfully done.");
-      
+
       // delete job root
       master.deleteJobRoot(this.getJobID().toString());
-      
+
       garbageCollect();
     }
   }
@@ -281,9 +292,9 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(),
-          this.profile.getUser(), superstepCounter, superstepCounter,
-          superstepCounter, JobStatus.FAILED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(), this.profile
+          .getUser(), superstepCounter, superstepCounter, superstepCounter,
+          JobStatus.FAILED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 

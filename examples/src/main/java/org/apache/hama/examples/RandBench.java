@@ -22,6 +22,7 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
@@ -30,6 +31,10 @@ import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ByteMessage;
 import org.apache.hama.bsp.ClusterStatus;
+import org.apache.hama.bsp.NullInputFormat;
+import org.apache.hama.bsp.NullOutputFormat;
+import org.apache.hama.bsp.OutputCollector;
+import org.apache.hama.bsp.RecordReader;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
 
@@ -38,12 +43,43 @@ public class RandBench {
   private static final String N_COMMUNICATIONS = "communications.num";
   private static final String N_SUPERSTEPS = "supersteps.num";
 
-  public static class RandBSP extends BSP {
+  public static class RandBSP extends
+      BSP<NullWritable, NullWritable, NullWritable, NullWritable> {
     public static final Log LOG = LogFactory.getLog(RandBSP.class);
     private Random r = new Random();
     private int sizeOfMsg;
     private int nCommunications;
     private int nSupersteps;
+
+    @Override
+    public void bsp(BSPPeer peer,
+        RecordReader<NullWritable, NullWritable> input,
+        OutputCollector<NullWritable, NullWritable> output) throws IOException,
+        KeeperException, InterruptedException {
+      byte[] dummyData = new byte[sizeOfMsg];
+      BSPMessage msg = null;
+      String[] peers = peer.getAllPeerNames();
+      String peerName = peer.getPeerName();
+
+      for (int i = 0; i < nSupersteps; i++) {
+
+        for (int j = 0; j < nCommunications; j++) {
+          String tPeer = peers[r.nextInt(peers.length)];
+          String tag = peerName + " to " + tPeer;
+          msg = new ByteMessage(Bytes.toBytes(tag), dummyData);
+          peer.send(tPeer, msg);
+        }
+
+        peer.sync();
+
+        ByteMessage received;
+        while ((received = (ByteMessage) peer.getCurrentMessage()) != null) {
+          LOG.info(Bytes.toString(received.getTag()) + " : "
+              + received.getData().length);
+        }
+
+      }
+    }
 
     @Override
     public void setup(BSPPeer peer) {
@@ -53,31 +89,9 @@ public class RandBench {
     }
 
     @Override
-    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
-        InterruptedException {
-      byte[] dummyData = new byte[sizeOfMsg];
-      BSPMessage msg = null;
-      String[] peers = bspPeer.getAllPeerNames();
-      String peerName = bspPeer.getPeerName();
+    public void cleanup(BSPPeer peer) {
+      // TODO Auto-generated method stub
 
-      for (int i = 0; i < nSupersteps; i++) {
-
-        for (int j = 0; j < nCommunications; j++) {
-          String tPeer = peers[r.nextInt(peers.length)];
-          String tag = peerName + " to " + tPeer;
-          msg = new ByteMessage(Bytes.toBytes(tag), dummyData);
-          bspPeer.send(tPeer, msg);
-        }
-
-        bspPeer.sync();
-
-        ByteMessage received;
-        while ((received = (ByteMessage) bspPeer.getCurrentMessage()) != null) {
-          LOG.info(Bytes.toString(received.getTag()) + " : "
-              + received.getData().length);
-        }
-
-      }
     }
   }
 
@@ -98,6 +112,8 @@ public class RandBench {
     // Set the job name
     bsp.setJobName("Random Communication Benchmark");
     bsp.setBspClass(RandBSP.class);
+    bsp.setInputFormat(NullInputFormat.class);
+    bsp.setOutputFormat(NullOutputFormat.class);
 
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(conf);

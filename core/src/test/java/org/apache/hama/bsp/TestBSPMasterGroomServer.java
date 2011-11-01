@@ -66,7 +66,8 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     ClusterStatus cluster = jobClient.getClusterStatus(false);
     assertEquals(this.numOfGroom, cluster.getGroomServers());
     bsp.setNumBspTask(2);
-
+    bsp.setInputFormat(NullInputFormat.class);
+    
     FileSystem fileSys = FileSystem.get(conf);
 
     if (bsp.waitForCompletion(true)) {
