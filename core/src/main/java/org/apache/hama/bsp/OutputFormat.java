@@ -26,13 +26,13 @@ public interface OutputFormat<K, V> {
   /**
    * Get the {@link RecordWriter} for the given job.
    * 
-   * @param ignored
+   * @param fs
    * @param job configuration for the job whose output is being written.
    * @param name the unique name for this part of the output.
    * @return a {@link RecordWriter} to write the output for the job.
    * @throws IOException
    */
-  RecordWriter<K, V> getRecordWriter(FileSystem ignored, BSPJob job, String name)
+  RecordWriter<K, V> getRecordWriter(FileSystem fs, BSPJob job, String name)
       throws IOException;
 
   /**

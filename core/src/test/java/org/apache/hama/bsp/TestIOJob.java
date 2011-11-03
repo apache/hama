@@ -21,24 +21,21 @@ package org.apache.hama.bsp;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
 
-public class TestBSPMasterGroomServer extends HamaCluster {
+public class TestIOJob extends HamaCluster {
 
-  private static Log LOG = LogFactory.getLog(TestBSPMasterGroomServer.class);
+  private static Log LOG = LogFactory.getLog(TestIOJob.class);
   private static String TMP_OUTPUT = "/tmp/test-example/";
   private HamaConfiguration configuration;
-  private String TEST_JOB = "src/test/java/testjar/testjob.jar";
 
-  public TestBSPMasterGroomServer() {
+  public TestIOJob() {
     configuration = new HamaConfiguration();
     configuration.set("bsp.master.address", "localhost");
     assertEquals("Make sure master addr is set to localhost:", "localhost",
@@ -48,18 +45,17 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     configuration.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
     configuration.set("hama.sync.client.class",
         org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl.class
-        .getCanonicalName());
+            .getCanonicalName());
   }
 
   public void setUp() throws Exception {
     super.setUp();
   }
 
-  public void testSubmitJob() throws Exception {
+  public void testOutputJob() throws Exception {
     BSPJob bsp = new BSPJob(configuration);
-    bsp.setJobName("Test Serialize Printing");
-    bsp.setBspClass(testjar.ClassSerializePrinting.HelloBSP.class);
-    bsp.setJar(System.getProperty("user.dir") + "/" + TEST_JOB);
+    bsp.setJobName("Test Serialize Printing with Output");
+    bsp.setBspClass(IOSerializePrinting.class);
 
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(configuration);
@@ -68,30 +64,17 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     assertEquals(this.numOfGroom, cluster.getGroomServers());
     bsp.setNumBspTask(2);
     bsp.setInputFormat(NullInputFormat.class);
-    
+    bsp.setOutputFormat(SequenceFileOutputFormat.class);
+    bsp.setOutputKeyClass(LongWritable.class);
+    bsp.setOutputValueClass(Text.class);
+    bsp.setOutputPath(new Path(TMP_OUTPUT));
+
     FileSystem fileSys = FileSystem.get(conf);
 
     if (bsp.waitForCompletion(true)) {
-      checkOutput(fileSys, conf, 2);
+      TestBSPMasterGroomServer.checkOutput(fileSys, conf, 2);
     }
     LOG.info("Client finishes execution job.");
-  }
-
-  public static void checkOutput(FileSystem fileSys, Configuration conf,
-      int tasks) throws Exception {
-    for (int i = 0; i < tasks; i++) {
-      SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, new Path(
-          TMP_OUTPUT + i), conf);
-      LongWritable timestamp = new LongWritable();
-      Text message = new Text();
-      reader.next(timestamp, message);
-
-      LOG.info("output: " + message);
-      assertTrue("Check if `Hello BSP' gets printed.", message.toString()
-          .indexOf("Hello BSP from") >= 0);
-      reader.close();
-    }
-    fileSys.delete(new Path(TMP_OUTPUT), true);
   }
 
   public void tearDown() throws Exception {
