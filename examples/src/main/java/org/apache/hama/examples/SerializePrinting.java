@@ -27,8 +27,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
@@ -37,8 +37,6 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.NullOutputFormat;
-import org.apache.hama.bsp.OutputCollector;
-import org.apache.hama.bsp.RecordReader;
 import org.apache.zookeeper.KeeperException;
 
 public class SerializePrinting {
@@ -52,10 +50,9 @@ public class SerializePrinting {
     private int num;
 
     @Override
-    public void bsp(BSPPeer peer,
-        RecordReader<NullWritable, NullWritable> input,
-        OutputCollector<NullWritable, NullWritable> output) throws IOException,
-        KeeperException, InterruptedException {
+    public void bsp(
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer)
+        throws IOException, KeeperException, InterruptedException {
 
       LOG.info(peer.getAllPeerNames());
       int i = 0;
@@ -81,19 +78,14 @@ public class SerializePrinting {
     }
 
     @Override
-    public void setup(BSPPeer peer) {
+    public void setup(
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer) {
       num = Integer.parseInt(conf.get("bsp.peers.num"));
       try {
         fileSys = FileSystem.get(conf);
       } catch (IOException e) {
         throw new Error("Filesystem could not be initialized! ", e);
       }
-    }
-
-    @Override
-    public void cleanup(BSPPeer peer) {
-      // TODO Auto-generated method stub
-
     }
   }
 
@@ -128,7 +120,7 @@ public class SerializePrinting {
     bsp.setBspClass(HelloBSP.class);
     bsp.setInputFormat(NullInputFormat.class);
     bsp.setOutputFormat(NullOutputFormat.class);
-    
+
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(conf);
     ClusterStatus cluster = jobClient.getClusterStatus(false);

@@ -28,9 +28,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -38,11 +40,13 @@ import org.apache.hama.Constants;
 import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.util.KeyValuePair;
 
 /**
  * This class represents a BSP peer.
  */
-public class BSPPeerImpl implements BSPPeer {
+public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
+    BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
 
   public static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
@@ -52,7 +56,7 @@ public class BSPPeerImpl implements BSPPeer {
 
   private volatile Server server = null;
 
-  private final Map<InetSocketAddress, BSPPeer> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeer>();
+  private final Map<InetSocketAddress, BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT>> peers = new ConcurrentHashMap<InetSocketAddress, BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT>>();
   private final Map<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> outgoingQueues = new ConcurrentHashMap<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>>();
   private ConcurrentLinkedQueue<BSPMessage> localQueue = new ConcurrentLinkedQueue<BSPMessage>();
   private ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
@@ -66,7 +70,16 @@ public class BSPPeerImpl implements BSPPeer {
 
   private String[] allPeers;
 
+  // SYNC
   private SyncClient syncClient;
+
+  // IO
+  private int partition;
+  private String splitClass;
+  private BytesWritable split;
+  private OutputCollector<KEYOUT, VALUEOUT> collector;
+  private RecordReader<KEYIN, VALUEIN> in;
+  private RecordWriter<KEYOUT, VALUEOUT> outWriter;
 
   /**
    * Protected default constructor for LocalBSPRunner.
@@ -78,8 +91,9 @@ public class BSPPeerImpl implements BSPPeer {
 
   /**
    * For unit test.
-   * @param conf is the configuration file. 
-   * @param dfs is the Hadoop FileSystem. 
+   * 
+   * @param conf is the configuration file.
+   * @param dfs is the Hadoop FileSystem.
    */
   protected BSPPeerImpl(final Configuration conf, FileSystem dfs) {
     this.conf = conf;
@@ -97,11 +111,16 @@ public class BSPPeerImpl implements BSPPeer {
    * @throws Exception
    */
   public BSPPeerImpl(BSPJob job, Configuration conf, TaskAttemptID taskId,
-      BSPPeerProtocol umbilical) throws Exception {
+      BSPPeerProtocol umbilical, int partition, String splitClass,
+      BytesWritable split) throws Exception {
     this.conf = conf;
     this.taskId = taskId;
     this.umbilical = umbilical;
     this.bspJob = job;
+    // IO
+    this.partition = partition;
+    this.splitClass = splitClass;
+    this.split = split;
 
     FileSystem fs = null;
     if (conf.getBoolean("bsp.checkpoint.enabled", false)) {
@@ -126,6 +145,7 @@ public class BSPPeerImpl implements BSPPeer {
         TaskStatus.Phase.STARTING));
   }
 
+  @SuppressWarnings("unchecked")
   public void initialize() throws Exception {
     try {
       if (LOG.isDebugEnabled())
@@ -142,6 +162,40 @@ public class BSPPeerImpl implements BSPPeer {
     syncClient = SyncServiceFactory.getSyncClient(conf);
     syncClient.init(conf, taskId.getJobID(), taskId);
 
+    InputSplit inputSplit = null;
+    // reinstantiate the split
+    try {
+      inputSplit = (InputSplit) ReflectionUtils.newInstance(getConfiguration()
+          .getClassByName(splitClass), getConfiguration());
+    } catch (ClassNotFoundException exp) {
+      IOException wrap = new IOException("Split class " + splitClass
+          + " not found");
+      wrap.initCause(exp);
+      throw wrap;
+    }
+
+    DataInputBuffer splitBuffer = new DataInputBuffer();
+    splitBuffer.reset(split.getBytes(), 0, split.getLength());
+    inputSplit.readFields(splitBuffer);
+
+    in = bspJob.getInputFormat().getRecordReader(inputSplit, bspJob);
+
+    // just output something when the user configured it
+    if (conf.get("bsp.output.dir") != null) {
+      Path outdir = new Path(conf.get("bsp.output.dir"),
+          Task.getOutputName(partition));
+
+      outWriter = bspJob.getOutputFormat().getRecordWriter(dfs, bspJob,
+          outdir.makeQualified(dfs).toString());
+      final RecordWriter<KEYOUT, VALUEOUT> finalOut = outWriter;
+
+      collector = new OutputCollector<KEYOUT, VALUEOUT>() {
+        public void collect(KEYOUT key, VALUEOUT value) throws IOException {
+          finalOut.write(key, value);
+        }
+      };
+    }
+
   }
 
   @Override
@@ -156,22 +210,22 @@ public class BSPPeerImpl implements BSPPeer {
    */
   @Override
   public void send(String peerName, BSPMessage msg) throws IOException {
-      LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
-      InetSocketAddress targetPeerAddress = null;
-      // Get socket for target peer.
-      if (peerSocketCache.containsKey(peerName)) {
-        targetPeerAddress = peerSocketCache.get(peerName);
-      } else {
-        targetPeerAddress = getAddress(peerName);
-        peerSocketCache.put(peerName, targetPeerAddress);
-      }
-      ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues
-          .get(targetPeerAddress);
-      if (queue == null) {
-        queue = new ConcurrentLinkedQueue<BSPMessage>();
-      }
-      queue.add(msg);
-      outgoingQueues.put(targetPeerAddress, queue);
+    LOG.debug("Send bytes (" + msg.getData().toString() + ") to " + peerName);
+    InetSocketAddress targetPeerAddress = null;
+    // Get socket for target peer.
+    if (peerSocketCache.containsKey(peerName)) {
+      targetPeerAddress = peerSocketCache.get(peerName);
+    } else {
+      targetPeerAddress = getAddress(peerName);
+      peerSocketCache.put(peerName, targetPeerAddress);
+    }
+    ConcurrentLinkedQueue<BSPMessage> queue = outgoingQueues
+        .get(targetPeerAddress);
+    if (queue == null) {
+      queue = new ConcurrentLinkedQueue<BSPMessage>();
+    }
+    queue.add(msg);
+    outgoingQueues.put(targetPeerAddress, queue);
   }
 
   private String checkpointedPath() {
@@ -188,12 +242,15 @@ public class BSPPeerImpl implements BSPPeer {
     try {
       out = this.dfs.create(new Path(checkpointedPath));
       bundle.write(out);
-    } catch(IOException ioe) {
-      LOG.warn("Fail checkpointing messages to "+checkpointedPath, ioe);
-    } finally { 
-      try { if(null != out) out.close(); } catch(IOException e) {
-        LOG.warn("Fail to close dfs output stream while checkpointing.", e); 
-      } 
+    } catch (IOException ioe) {
+      LOG.warn("Fail checkpointing messages to " + checkpointedPath, ioe);
+    } finally {
+      try {
+        if (null != out)
+          out.close();
+      } catch (IOException e) {
+        LOG.warn("Fail to close dfs output stream while checkpointing.", e);
+      }
     }
   }
 
@@ -212,13 +269,15 @@ public class BSPPeerImpl implements BSPPeer {
         Entry<InetSocketAddress, ConcurrentLinkedQueue<BSPMessage>> entry = it
             .next();
 
-        BSPPeer peer = getBSPPeerConnection(entry.getKey());
+        BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> peer = getBSPPeerConnection(entry
+            .getKey());
         Iterable<BSPMessage> messages = entry.getValue();
         BSPMessageBundle bundle = new BSPMessageBundle();
 
-        if (!conf.getClass("bsp.combiner.class", Combiner.class).equals(Combiner.class)) {
+        if (!conf.getClass("bsp.combiner.class", Combiner.class).equals(
+            Combiner.class)) {
           Combiner combiner = (Combiner) ReflectionUtils.newInstance(
-            conf.getClass("bsp.combiner.class", Combiner.class), conf);
+              conf.getClass("bsp.combiner.class", Combiner.class), conf);
 
           bundle = combiner.combine(messages);
         } else {
@@ -253,7 +312,6 @@ public class BSPPeerImpl implements BSPPeer {
       LOG.fatal(
           "Caught exception during superstep "
               + currentTaskStatus.getSuperstepCount() + "!", e);
-      // throw new RuntimeException(e);
     }
   }
 
@@ -273,10 +331,13 @@ public class BSPPeerImpl implements BSPPeer {
   }
 
   public void close() throws Exception {
+    in.close();
+    outWriter.close();
     this.clear();
     syncClient.close();
-    if (server != null)
+    if (server != null) {
       server.stop();
+    }
   }
 
   @Override
@@ -296,14 +357,15 @@ public class BSPPeerImpl implements BSPPeer {
     return BSPPeer.versionID;
   }
 
-  protected BSPPeer getBSPPeerConnection(InetSocketAddress addr)
-      throws NullPointerException, IOException {
-    BSPPeer peer;
+  @SuppressWarnings("unchecked")
+  protected BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> getBSPPeerConnection(
+      InetSocketAddress addr) throws NullPointerException, IOException {
+    BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> peer;
     peer = peers.get(addr);
     if (peer == null) {
       synchronized (this.peers) {
-        peer = (BSPPeer) RPC.getProxy(BSPPeer.class, BSPPeer.versionID, addr,
-            this.conf);
+        peer = (BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT>) RPC.getProxy(
+            BSPPeer.class, BSPPeer.versionID, addr, this.conf);
         this.peers.put(addr, peer);
       }
     }
@@ -411,4 +473,30 @@ public class BSPPeerImpl implements BSPPeer {
   public void clearOutgoingQueues() {
     this.outgoingQueues.clear();
   }
+
+  /*
+   * IO STUFF
+   */
+
+  @Override
+  public void write(KEYOUT key, VALUEOUT value) throws IOException {
+    collector.collect(key, value);
+  }
+
+  @Override
+  public boolean readNext(KEYIN key, VALUEIN value) throws IOException {
+    return in.next(key, value);
+  }
+
+  @Override
+  public KeyValuePair<KEYIN, VALUEIN> readNext() throws IOException {
+    KEYIN k = in.createKey();
+    VALUEIN v = in.createValue();
+    if (in.next(k, v)) {
+      return new KeyValuePair<KEYIN, VALUEIN>(k, v);
+    } else {
+      return null;
+    }
+  }
+
 }

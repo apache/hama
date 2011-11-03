@@ -98,14 +98,14 @@ public class BSPJob extends BSPJobContext {
    * @param cls
    * @throws IllegalStateException
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings("rawtypes")
   public void setBspClass(Class<? extends BSP> cls)
       throws IllegalStateException {
     ensureState(JobState.DEFINE);
     conf.setClass(WORK_CLASS_ATTR, cls, BSP.class);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends BSP> getBspClass() {
     return (Class<? extends BSP>) conf.getClass(WORK_CLASS_ATTR, BSP.class);
   }
@@ -233,13 +233,14 @@ public class BSPJob extends BSPJobContext {
     return conf.getInt("bsp.peers.num", 0);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes" })
   public InputFormat getInputFormat() {
     return (InputFormat) ReflectionUtils.newInstance(conf.getClass(
-        "bsp.input.format.class", TextInputFormat.class, InputFormat.class), conf);
+        "bsp.input.format.class", TextInputFormat.class, InputFormat.class),
+        conf);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes" })
   public void setInputFormat(Class<? extends InputFormat> cls) {
     conf.setClass("bsp.input.format.class", cls, InputFormat.class);
   }
@@ -281,15 +282,34 @@ public class BSPJob extends BSPJobContext {
     conf.setClass("bsp.output.value.class", theClass, Object.class);
   }
 
-  @SuppressWarnings("unchecked")
+  /**
+   * Sets the output path for the job.
+   * 
+   * @param path where the output gets written.
+   */
+  public void setOutputPath(Path path) {
+    conf.set("bsp.output.dir", path.toString());
+  }
+  
+  /**
+   * Sets the input path for the job.
+   * 
+   * @param path where the output gets written.
+   */
+  public void setInputPath(Path path) {
+    conf.set("bsp.input.dir", path.toString());
+  }
+
+  @SuppressWarnings("rawtypes")
   public void setOutputFormat(Class<? extends OutputFormat> theClass) {
     conf.setClass("bsp.output.format.class", theClass, OutputFormat.class);
   }
-  
-  @SuppressWarnings("unchecked")
+
+  @SuppressWarnings("rawtypes")
   public OutputFormat getOutputFormat() {
     return (OutputFormat) ReflectionUtils.newInstance(conf.getClass(
         "bsp.output.format.class", TextOutputFormat.class, OutputFormat.class),
         conf);
   }
+
 }

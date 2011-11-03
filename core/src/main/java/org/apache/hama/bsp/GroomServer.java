@@ -143,7 +143,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
       if (actions != null) {
         LOG.info("Launch " + actions.length + " tasks.");
-        
+
         assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
         int i = 0;
 
@@ -410,7 +410,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             if (!tip.runner.isAlive()) {
               if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
                 taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-                LOG.info("Task '" + taskStatus.getTaskId().toString() + "' has completed.");
+                LOG.info("Task '" + taskStatus.getTaskId().toString()
+                    + "' has completed.");
               }
               taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
             }
@@ -418,7 +419,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
           taskStatuses.add(taskStatus);
         }
-        
+
         doReport(taskStatuses);
         Thread.sleep(REPORT_INTERVAL);
       } catch (InterruptedException ie) {
@@ -461,7 +462,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     } catch (IOException e1) {
       LOG.error(e1);
     }
-    
+
     TaskInProgress tip = new TaskInProgress(t, jobConf, this.groomServerName);
 
     synchronized (this) {
@@ -501,7 +502,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   public List<TaskStatus> updateTaskStatuses(List<TaskStatus> taskStatuses) {
     List<TaskStatus> tlist = new ArrayList<TaskStatus>();
 
-    for(TaskStatus taskStatus : taskStatuses) {
+    for (TaskStatus taskStatus : taskStatuses) {
       if (taskStatus.getRunState() == TaskStatus.State.SUCCEEDED
           || taskStatus.getRunState() == TaskStatus.State.FAILED) {
         synchronized (finishedTasks) {
@@ -536,7 +537,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         conf.addResource(localJobFile);
         jobConf = new BSPJob(conf, task.getJobID().toString());
 
-        Path jarFile = new Path(jobConf.getJar());
+        Path jarFile = null;
+        if (jobConf.getJar() != null) {
+          jarFile = new Path(jobConf.getJar());
+        } else {
+          LOG.warn("No jar file for job " + task.getJobID()
+              + " has been defined!");
+        }
         jobConf.setJar(localJarFile.toString());
 
         if (jarFile != null) {
@@ -627,7 +634,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       TaskStatus status = tip.getStatus();
       result.add((TaskStatus) status.clone());
     }
-    
+
     return result;
   }
 
@@ -877,7 +884,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           BSPPeerProtocol.class, BSPPeerProtocol.versionID, address,
           defaultConf);
 
-      Task task = umbilical.getTask(taskid);
+      BSPTask task = (BSPTask) umbilical.getTask(taskid);
       int peerPort = umbilical.getAssignedPortNum(taskid);
 
       defaultConf.addResource(new Path(task.getJobFile()));
@@ -889,13 +896,15 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
       defaultConf.setInt(Constants.PEER_PORT, peerPort);
 
-      // instantiate and init our peer
-      BSPPeerImpl bspPeer = new BSPPeerImpl(job, defaultConf, taskid, umbilical);
-
       try {
         // use job-specified working directory
         FileSystem.get(job.getConf()).setWorkingDirectory(
             job.getWorkingDirectory());
+
+        // instantiate and init our peer
+        @SuppressWarnings("rawtypes")
+        BSPPeerImpl<?, ?, ?, ?> bspPeer = new BSPPeerImpl(job, defaultConf,
+            taskid, umbilical, task.partition, task.splitClass, task.split);
 
         task.run(job, bspPeer, umbilical); // run the task
 
@@ -908,8 +917,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         throwable.printStackTrace(new PrintStream(baos));
       } finally {
-        bspPeer.close(); // close peer.
-
         RPC.stopProxy(umbilical);
         // Shutting down log4j of the child-vm...
         // This assumes that on return from Task.run()

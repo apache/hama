@@ -15,23 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp;
+package org.apache.hama.util;
 
-import org.apache.hadoop.fs.FileSystem;
+/**
+ * Immutable class for key values.
+ * 
+ * @param <K>
+ * @param <V>
+ */
+public class KeyValuePair<K, V> {
 
-public class NullOutputFormat<K, V> implements OutputFormat<K, V> {
+  private final K key;
+  private final V value;
 
-  public RecordWriter<K, V> getRecordWriter(FileSystem ignored, BSPJob job,
-      String name) {
-    return new RecordWriter<K, V>() {
-      public void write(K key, V value) {
-      }
-
-      public void close() {
-      }
-    };
+  public KeyValuePair(K key, V value) {
+    super();
+    this.key = key;
+    this.value = value;
   }
 
-  public void checkOutputSpecs(FileSystem ignored, BSPJob job) {
+  public K getKey() {
+    return key;
   }
+
+  public V getValue() {
+    return value;
+  }
+
 }

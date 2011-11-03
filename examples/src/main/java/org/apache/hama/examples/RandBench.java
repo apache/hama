@@ -33,8 +33,6 @@ import org.apache.hama.bsp.ByteMessage;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.NullOutputFormat;
-import org.apache.hama.bsp.OutputCollector;
-import org.apache.hama.bsp.RecordReader;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
 
@@ -52,10 +50,9 @@ public class RandBench {
     private int nSupersteps;
 
     @Override
-    public void bsp(BSPPeer peer,
-        RecordReader<NullWritable, NullWritable> input,
-        OutputCollector<NullWritable, NullWritable> output) throws IOException,
-        KeeperException, InterruptedException {
+    public void bsp(
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer)
+        throws IOException, KeeperException, InterruptedException {
       byte[] dummyData = new byte[sizeOfMsg];
       BSPMessage msg = null;
       String[] peers = peer.getAllPeerNames();
@@ -82,16 +79,11 @@ public class RandBench {
     }
 
     @Override
-    public void setup(BSPPeer peer) {
+    public void setup(
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer) {
       this.sizeOfMsg = conf.getInt(SIZEOFMSG, 1);
       this.nCommunications = conf.getInt(N_COMMUNICATIONS, 1);
       this.nSupersteps = conf.getInt(N_SUPERSTEPS, 1);
-    }
-
-    @Override
-    public void cleanup(BSPPeer peer) {
-      // TODO Auto-generated method stub
-
     }
   }
 

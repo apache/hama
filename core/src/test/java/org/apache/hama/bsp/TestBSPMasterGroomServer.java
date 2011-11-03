@@ -47,7 +47,8 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     configuration.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     configuration.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
     configuration.set("hama.sync.client.class",
-        "org.apache.hama.bsp.sync.zookeeper.ZooKeeperSyncClientImpl");
+        org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl.class
+        .getCanonicalName());
   }
 
   public void setUp() throws Exception {

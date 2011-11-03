@@ -17,10 +17,7 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.IOException;
-
 import org.apache.hadoop.conf.Configurable;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * Interface BSP defines the basic operations needed to implement the BSP
@@ -28,18 +25,4 @@ import org.apache.zookeeper.KeeperException;
  */
 public interface BSPInterface<K1, V1, K2, V2> extends Configurable {
 
-  /**
-   * A user defined function for programming in the BSP style.
-   * 
-   * Applications can use the {@link org.apache.hama.bsp.BSPPeer} to handle the
-   * communication and synchronization between processors.
-   * 
-   * @param bspPeer
-   * @throws IOException
-   * @throws KeeperException
-   * @throws InterruptedException
-   */
-  public void bsp(BSPPeer bspPeer, RecordReader<K1, V1> input,
-      OutputCollector<K2, V2> output) throws IOException, KeeperException,
-      InterruptedException;
 }

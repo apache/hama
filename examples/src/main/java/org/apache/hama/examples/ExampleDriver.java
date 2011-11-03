@@ -30,7 +30,7 @@ public class ExampleDriver {
       pgd.addClass("bench", RandBench.class, "Random Communication Benchmark");
       pgd.addClass("test", SerializePrinting.class, "Serialize Printing Test");
       pgd.addClass("combine", CombineExample.class, "Combiner Example");
-      
+
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();

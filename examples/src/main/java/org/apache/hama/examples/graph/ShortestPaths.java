@@ -51,7 +51,7 @@ public class ShortestPaths extends ShortestPathsBase {
   private String[] peerNames;
 
   @Override
-  public void bsp(BSPPeer peer, RecordReader input, OutputCollector output)
+  public void bsp(BSPPeer peer)
       throws IOException, KeeperException, InterruptedException {
     // map our input into ram
     mapAdjacencyList(peer.getConfiguration(), peer, adjacencyList,

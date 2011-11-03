@@ -210,8 +210,8 @@ public class BSPJobClient extends Configured implements Tool {
     if (masterAdress != null && !masterAdress.equals("local")) {
       this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
           JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
-          BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(conf,
-              JobSubmissionProtocol.class));
+          BSPMaster.getAddress(conf), conf,
+          NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
     } else {
       LOG.debug("Using local BSP runner.");
       this.jobSubmitClient = new LocalBSPRunner(conf);
@@ -680,8 +680,9 @@ public class BSPJobClient extends Configured implements Tool {
         System.out.println("Job name: " + job.getJobName());
         System.out.printf("States are:\n\tRunning : 1\tSucceded : 2"
             + "\tFailed : 3\tPrep : 4\n");
-        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(), jobStatus
-            .getRunState(), jobStatus.getStartTime(), jobStatus.getUsername());
+        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(),
+            jobStatus.getRunState(), jobStatus.getStartTime(),
+            jobStatus.getUsername());
 
         exitCode = 0;
       }
