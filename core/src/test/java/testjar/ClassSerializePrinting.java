@@ -62,7 +62,7 @@ public class ClassSerializePrinting {
 
     private void writeLogToFile(String string, int i) throws IOException {
       SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
-          new Path(TMP_OUTPUT + i), LongWritable.class, Text.class,
+          new Path(TMP_OUTPUT,i+""), LongWritable.class, Text.class,
           CompressionType.NONE);
       writer.append(new LongWritable(System.currentTimeMillis()), new Text(
           "Hello BSP from " + (i + 1) + " of " + num + ": " + string));

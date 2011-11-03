@@ -17,16 +17,13 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-
 import junit.framework.TestCase;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
 
@@ -39,6 +36,7 @@ public class TestCheckpoint extends TestCase {
   public void testCheckpoint() throws Exception {
     Configuration config = new HamaConfiguration();
     FileSystem dfs = FileSystem.get(config);
+    @SuppressWarnings("rawtypes")
     BSPPeerImpl bspTask = new BSPPeerImpl(config, dfs);
     assertNotNull("BSPPeerImpl should not be null.", bspTask);
     if(dfs.mkdirs(new Path("checkpoint"))) {
