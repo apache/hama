@@ -60,7 +60,7 @@ public class PageRank extends PageRankBase {
   }
 
   @Override
-  public void bsp(BSPPeer peer, RecordReader input, OutputCollector output) throws IOException, KeeperException,
+  public void bsp(BSPPeer peer) throws IOException, KeeperException,
       InterruptedException {
     String master = peer.getConfiguration().get(MASTER_TASK);
     // setup the datasets

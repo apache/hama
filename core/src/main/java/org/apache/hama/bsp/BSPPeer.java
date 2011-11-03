@@ -22,11 +22,13 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.Constants;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
+import org.apache.hama.util.KeyValuePair;
 
 /**
  * BSP communication interface.
  */
-public interface BSPPeer extends HamaRPCProtocolVersion, Constants {
+public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends
+    HamaRPCProtocolVersion, Constants {
 
   /**
    * Send a data with a tag to another BSPSlave corresponding to hostname.
@@ -72,7 +74,7 @@ public interface BSPPeer extends HamaRPCProtocolVersion, Constants {
    * Sends all the messages in the outgoing message queues to the corresponding
    * remote peers.
    * 
-   * @throws InterruptedException 
+   * @throws InterruptedException
    */
   public void sync() throws InterruptedException;
 
@@ -91,7 +93,7 @@ public interface BSPPeer extends HamaRPCProtocolVersion, Constants {
    * @return the name of n-th peer from sorted array by name.
    */
   public String getPeerName(int index);
-  
+
   /**
    * @return the names of all the peers executing tasks from the same job
    *         (including this peer).
@@ -102,11 +104,38 @@ public interface BSPPeer extends HamaRPCProtocolVersion, Constants {
    * @return the number of peers
    */
   public int getNumPeers();
-  
+
   /**
    * Clears all queues entries.
    */
   public void clear();
+
+  /**
+   * Writes a key/value pair to the output collector.
+   * 
+   * @param key your key object
+   * @param value your value object
+   * @throws IOException
+   */
+  public void write(KEYOUT key, VALUEOUT value) throws IOException;
+
+  /**
+   * Deserializes the next input key value into the given objects.
+   * 
+   * @param key
+   * @param value
+   * @return false if there are no records to read anymore
+   * @throws IOException
+   */
+  public boolean readNext(KEYIN key, VALUEIN value) throws IOException;
+
+  /**
+   * Reads the next key value pair and returns it as a pair.
+   * 
+   * @return null if there are no records left.
+   * @throws IOException
+   */
+  public KeyValuePair<KEYIN, VALUEIN> readNext() throws IOException;
 
   /**
    * @return the jobs configuration

@@ -34,7 +34,8 @@ public class SyncServiceFactory {
       throws ClassNotFoundException {
     return (SyncClient) ReflectionUtils.newInstance(conf.getClassByName(conf
         .get(SYNC_CLIENT_CLASS,
-            "org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl")), conf);
+            org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl.class
+                .getCanonicalName())), conf);
   }
 
   /**
@@ -47,7 +48,7 @@ public class SyncServiceFactory {
       throws ClassNotFoundException {
     return (SyncServer) ReflectionUtils.newInstance(conf.getClassByName(conf
         .get(SYNC_SERVER_CLASS,
-            "org.apache.hama.bsp.sync.ZooKeeperSyncServerImpl")), conf);
+            org.apache.hama.bsp.sync.ZooKeeperSyncServerImpl.class.getCanonicalName())), conf);
   }
 
   /**

@@ -42,6 +42,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMaster.State;
 import org.apache.hama.ipc.JobSubmissionProtocol;
+import org.apache.hama.util.KeyValuePair;
 
 /**
  * A multithreaded local BSP runner that can be used for debugging and local
@@ -210,7 +211,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       try {
         bsp.setup(groom);
         // TODO 
-        bsp.bsp(groom, null, null);
+//        bsp.bsp(groom, null, null);
       } catch (Exception e) {
         LOG.error("Exception during BSP execution!", e);
       }
@@ -377,6 +378,24 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public int getNumPeers() {
       return allPeers.length;
+    }
+
+    @Override
+    public void write(Object key, Object value) throws IOException {
+      // TODO Auto-generated method stub
+      
+    }
+
+    @Override
+    public boolean readNext(Object key, Object value) throws IOException {
+      // TODO Auto-generated method stub
+      return false;
+    }
+
+    @Override
+    public KeyValuePair readNext() throws IOException {
+      // TODO Auto-generated method stub
+      return null;
     }
 
   }

@@ -23,9 +23,7 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.ipc.BSPPeerProtocol;
@@ -39,8 +37,8 @@ public class BSPTask extends Task {
   public static final Log LOG = LogFactory.getLog(BSPTask.class);
 
   private BSPJob conf;
-  private BytesWritable split = new BytesWritable();
-  private String splitClass;
+  BytesWritable split = new BytesWritable();
+  String splitClass;
 
   public BSPTask() {
   }
@@ -62,65 +60,33 @@ public class BSPTask extends Task {
   }
 
   @Override
-  public void run(BSPJob job, BSPPeerImpl bspPeer, BSPPeerProtocol umbilical)
-      throws IOException {
+  public void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?> bspPeer,
+      BSPPeerProtocol umbilical) throws IOException {
 
     try {
       runBSP(job, bspPeer, split, umbilical);
     } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOG.error("Exception during BSP execution!", e);
     } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOG.error("Exception during instantiation of BSP class!", e);
     }
 
     done(umbilical);
   }
 
   @SuppressWarnings("unchecked")
-  private <INK, INV, OUTK, OUTV> void runBSP(final BSPJob job, BSPPeerImpl bspPeer,
+  private <KEYIN, VALUEIN, KEYOUT, VALUEOUT> void runBSP(final BSPJob job,
+      BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bspPeer,
       final BytesWritable rawSplit, final BSPPeerProtocol umbilical)
       throws IOException, InterruptedException, ClassNotFoundException {
-    InputSplit inputSplit = null;
-    // reinstantiate the split
-    try {
-      inputSplit = (InputSplit) ReflectionUtils.newInstance(job.getConf()
-          .getClassByName(splitClass), job.getConf());
-    } catch (ClassNotFoundException exp) {
-      IOException wrap = new IOException("Split class " + splitClass
-          + " not found");
-      wrap.initCause(exp);
-      throw wrap;
-    }
 
-    DataInputBuffer splitBuffer = new DataInputBuffer();
-    splitBuffer.reset(split.getBytes(), 0, split.getLength());
-    inputSplit.readFields(splitBuffer);
-
-    RecordReader<INK, INV> in = job.getInputFormat().getRecordReader(
-        inputSplit, job);
-    
-    FileSystem fs = FileSystem.get(job.getConf());
-    String finalName = getOutputName(getPartition());
-    
-    final RecordWriter<OUTK, OUTV> out = 
-      job.getOutputFormat().getRecordWriter(fs, job, finalName);
-    
-    OutputCollector<OUTK,OUTV> collector = 
-      new OutputCollector<OUTK,OUTV>() {
-        public void collect(OUTK key, OUTV value)
-          throws IOException {
-          out.write(key, value);
-        }
-      };
-      
-    BSP bsp = (BSP) ReflectionUtils.newInstance(job.getConf().getClass(
-        "bsp.work.class", BSP.class), job.getConf());
+    BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bsp = (BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT>) ReflectionUtils
+        .newInstance(job.getConf().getClass("bsp.work.class", BSP.class),
+            job.getConf());
 
     try {
       bsp.setup(bspPeer);
-      bsp.bsp(bspPeer, in, collector);
+      bsp.bsp(bspPeer);
     } catch (IOException e) {
       LOG.error("Exception during BSP execution!", e);
     } catch (KeeperException e) {
@@ -129,7 +95,11 @@ public class BSPTask extends Task {
       LOG.error("Exception during BSP execution!", e);
     } finally {
       bsp.cleanup(bspPeer);
-      out.close();
+      try {
+        bspPeer.close();
+      } catch (Exception e) {
+        LOG.fatal("Exception during BSP closing!", e);
+      }
     }
 
   }

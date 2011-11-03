@@ -33,8 +33,6 @@ import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.NullOutputFormat;
-import org.apache.hama.bsp.OutputCollector;
-import org.apache.hama.bsp.RecordReader;
 import org.apache.zookeeper.KeeperException;
 
 public class CombineExample {
@@ -44,9 +42,7 @@ public class CombineExample {
     public static final Log LOG = LogFactory.getLog(MyBSP.class);
 
     @Override
-    public void bsp(BSPPeer peer,
-        RecordReader<NullWritable, NullWritable> input,
-        OutputCollector<NullWritable, NullWritable> output) throws IOException,
+    public void bsp(BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer) throws IOException,
         KeeperException, InterruptedException {
       for (String peerName : peer.getAllPeerNames()) {
         peer.send(peerName, new IntegerMessage(peer.getPeerName(), 1));
@@ -59,19 +55,6 @@ public class CombineExample {
       while ((received = (IntegerMessage) peer.getCurrentMessage()) != null) {
         LOG.info(received.getTag() + ": " + received.getData());
       }
-    }
-
-    @Override
-    public void cleanup(BSPPeer peer) {
-      // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setup(BSPPeer peer) throws IOException, KeeperException,
-        InterruptedException {
-      // TODO Auto-generated method stub
-
     }
 
   }

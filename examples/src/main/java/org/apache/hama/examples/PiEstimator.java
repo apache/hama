@@ -38,8 +38,6 @@ import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.DoubleMessage;
 import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.NullInputFormat;
-import org.apache.hama.bsp.OutputCollector;
-import org.apache.hama.bsp.RecordReader;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.zookeeper.KeeperException;
 
@@ -53,10 +51,9 @@ public class PiEstimator {
     private static final int iterations = 10000;
 
     @Override
-    public void bsp(BSPPeer peer,
-        RecordReader<NullWritable, NullWritable> input,
-        OutputCollector<Text, DoubleWritable> output) throws IOException,
-        KeeperException, InterruptedException {
+    public void bsp(
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer)
+        throws IOException, KeeperException, InterruptedException {
 
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {
@@ -83,19 +80,15 @@ public class PiEstimator {
         }
 
         pi = pi / numPeers;
-        output.collect(new Text("Estimated value of PI is"),
-            new DoubleWritable(pi));
+        peer.write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
       }
     }
 
     @Override
-    public void setup(BSPPeer peer) {
+    public void setup(
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer) {
       // Choose one as a master
       this.masterTask = peer.getPeerName(0);
-    }
-
-    @Override
-    public void cleanup(BSPPeer peer) {
     }
 
   }
