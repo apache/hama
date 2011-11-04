@@ -80,7 +80,6 @@ public class JobImpl implements Job {
       threadPool);
   private Map<Integer, BSPTaskLauncher> launchers = new HashMap<Integer, BSPTaskLauncher>();
   private int lastResponseID = 0;
-  private Resource availableResources;
 
   public JobImpl(ApplicationAttemptId appAttemptId,
       Configuration jobConfiguration, YarnRPC yarnRPC, AMRMProtocol amrmRPC,
@@ -110,7 +109,7 @@ public class JobImpl implements Job {
     }
   }
 
-  // TODO This really needs a testcase
+  // This really needs a testcase
   private int getMemoryFromOptString(String opts) {
     if (!opts.contains("-Xmx")) {
       LOG.info("No \"-Xmx\" option found in child opts, using default amount of memory!");
@@ -158,7 +157,7 @@ public class JobImpl implements Job {
           + amResponse.getAvailableResources().getMemory() + "mb");
       this.lastResponseID = amResponse.getResponseId();
 
-      this.availableResources = amResponse.getAvailableResources();
+//      availableResources = amResponse.getAvailableResources();
       this.allocatedContainers.addAll(amResponse.getAllocatedContainers());
       LOG.info("Waiting to allocate "
           + (numBSPTasks - allocatedContainers.size()) + " more containers...");
@@ -202,7 +201,7 @@ public class JobImpl implements Job {
         state = JobState.FAILED;
         return state;
       } else {
-        LOG.info("Task \"" + id + "\" sucessfully finished!");
+        LOG.info("Task \"" + returnedTask.getId() + "\" sucessfully finished!");
       }
       cleanupTask(returnedTask.getId());
     }

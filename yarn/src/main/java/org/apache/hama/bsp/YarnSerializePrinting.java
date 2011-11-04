@@ -22,19 +22,20 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.zookeeper.KeeperException;
 
 public class YarnSerializePrinting {
 
-  public static class HelloBSP extends BSP {
+  public static class HelloBSP extends BSP<NullWritable, NullWritable, NullWritable, NullWritable> {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private Configuration conf;
     private final static int PRINT_INTERVAL = 1000;
     private int num;
 
     @Override
-    public void bsp(BSPPeer bspPeer) throws IOException, KeeperException,
+    public void bsp(BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> bspPeer) throws IOException, KeeperException,
         InterruptedException {
       num = conf.getInt("bsp.peers.num", 0);
       LOG.info(bspPeer.getAllPeerNames());
@@ -75,7 +76,6 @@ public class YarnSerializePrinting {
     job.setJobName("Serialize Printing");
     job.setMemoryUsedPerTaskInMb(50);
     job.setNumBspTask(2);
-    // TODO waitForCompletion(true) throws exceptions
     job.waitForCompletion(false);
   }
 }
