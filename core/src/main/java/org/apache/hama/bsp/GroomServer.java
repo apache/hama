@@ -400,12 +400,10 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         // Reports to a BSPMaster
         for (Map.Entry<TaskAttemptID, TaskInProgress> e : runningTasks
             .entrySet()) {
-          Thread.sleep(REPORT_INTERVAL);
           TaskInProgress tip = e.getValue();
           TaskStatus taskStatus = tip.getStatus();
 
           if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
-            taskStatus.setProgress(taskStatus.getSuperstepCount());
 
             if (!tip.runner.isAlive()) {
               if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
