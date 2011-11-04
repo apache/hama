@@ -18,12 +18,10 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,7 +34,6 @@ import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hadoop.net.NetUtils;
-import org.apache.hama.util.BSPNetUtils;
 import org.apache.hadoop.yarn.Clock;
 import org.apache.hadoop.yarn.SystemClock;
 import org.apache.hadoop.yarn.api.AMRMProtocol;
@@ -53,13 +50,15 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Job.JobState;
-import org.apache.hama.bsp.sync.SyncServer;
-import org.apache.hama.bsp.sync.SyncServerImpl;
+import org.apache.hama.bsp.sync.SyncServerRunner;
+import org.apache.hama.bsp.sync.SyncServiceFactory;
+import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.util.BSPNetUtils;
 
 /**
  * BSPApplicationMaster is an application master for Apache Hamas BSP Engine.
  */
-public class BSPApplicationMaster implements BSPClient {
+public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
 
   private static final Log LOG = LogFactory.getLog(BSPApplicationMaster.class);
   private static final ExecutorService threadPool = Executors
@@ -80,53 +79,77 @@ public class BSPApplicationMaster implements BSPClient {
   private JobImpl job;
   private BSPJobID jobId;
 
-  private SyncServerImpl syncServer;
-  private Future<Long> syncServerFuture;
-
   // RPC info where the AM receive client side requests
   private String hostname;
   private int clientPort;
+  private int taskServerPort;
 
   private Server clientServer;
+  private Server taskServer;
 
-  private BSPApplicationMaster(String[] args) throws IOException {
+  private long superstep;
+  private SyncServerRunner syncServer;
+
+  private BSPApplicationMaster(String[] args) throws Exception {
     if (args.length != 1) {
       throw new IllegalArgumentException();
     }
 
-    jobFile = args[0];
-    localConf = new YarnConfiguration();
-    jobConf = getSubmitConfiguration(jobFile);
+    this.jobFile = args[0];
+    this.localConf = new YarnConfiguration();
+    this.jobConf = getSubmitConfiguration(jobFile);
 
-    applicationName = jobConf.get("bsp.job.name", "<no bsp job name defined>");
+    this.applicationName = jobConf.get("bsp.job.name",
+        "<no bsp job name defined>");
     if (applicationName.isEmpty()) {
-      applicationName = "<no bsp job name defined>";
+      this.applicationName = "<no bsp job name defined>";
     }
 
-    appAttemptId = getApplicationAttemptId();
+    this.appAttemptId = getApplicationAttemptId();
 
-    yarnRPC = YarnRPC.create(localConf);
-    clock = new SystemClock();
-    startTime = clock.getTime();
+    this.yarnRPC = YarnRPC.create(localConf);
+    this.clock = new SystemClock();
+    this.startTime = clock.getTime();
 
-    jobId = new BSPJobID(appAttemptId.toString(), 0);
+    this.jobId = new BSPJobID(appAttemptId.toString(), 0);
 
-    // TODO this is not localhost, is it?
-    hostname = BSPNetUtils.getCanonicalHostname();
+    this.hostname = BSPNetUtils.getCanonicalHostname();
+    this.clientPort = BSPNetUtils.getFreePort(12000);
+
+    // start our synchronization service
     startSyncServer();
-    clientPort = BSPNetUtils.getFreePort();
-    // TODO should have a configurable amount of RPC handlers
-    this.clientServer = RPC.getServer(this, hostname, clientPort, 10, false,
-        jobConf);
 
+    startRPCServers();
     /*
-     * Make sure that this executes after the start of the sync server, because
-     * we are readjusting the configuration.
+     * Make sure that this executes after the start the RPC servers, because we
+     * are readjusting the configuration.
      */
     rewriteSubmitConfiguration(jobFile, jobConf);
 
-    amrmRPC = getYarnRPCConnection(localConf);
+    this.amrmRPC = getYarnRPCConnection(localConf);
     registerApplicationMaster(amrmRPC, appAttemptId, hostname, clientPort, null);
+  }
+
+  /**
+   * This method starts the needed RPC servers: client server and the task
+   * server. This method manipulates the configuration and therefore needs to be
+   * executed BEFORE the submitconfiguration gets rewritten.
+   * 
+   * @throws IOException
+   */
+  private void startRPCServers() throws IOException {
+    // start the RPC server which talks to the client
+    this.clientServer = RPC.getServer(BSPClient.class, this, hostname,
+        clientPort, jobConf);
+    this.clientServer.start();
+
+    // start the RPC server which talks to the tasks
+    this.taskServerPort = BSPNetUtils.getFreePort(10000);
+    this.taskServer = RPC.getServer(BSPPeerProtocol.class, this, hostname,
+        taskServerPort, jobConf);
+    this.taskServer.start();
+    // readjusting the configuration to let the tasks know where we are.
+    this.jobConf.set("hama.umbilical.address", hostname + ":" + taskServerPort);
   }
 
   /**
@@ -136,18 +159,10 @@ public class BSPApplicationMaster implements BSPClient {
    * 
    * @throws IOException
    */
-  private void startSyncServer() throws IOException {
-    int syncPort = BSPNetUtils.getFreePort(15000);
-    syncServer = new SyncServerImpl(jobConf.getInt("bsp.peers.num", 1),
-        hostname, syncPort);
-    syncServerFuture = threadPool.submit(syncServer);
-    // wait for the RPC to come up
-    InetSocketAddress syncAddress = NetUtils.createSocketAddr(hostname + ":"
-        + syncPort);
-    LOG.info("Waiting for the Sync Master at " + syncAddress);
-    RPC.waitForProxy(SyncServer.class, SyncServer.versionID, syncAddress,
-        jobConf);
-    jobConf.set("hama.sync.server.address", hostname + ":" + syncPort);
+  private void startSyncServer() throws Exception {
+    syncServer = SyncServiceFactory.getSyncServerRunner(jobConf);
+    jobConf = syncServer.init(jobConf);
+    threadPool.submit(syncServer);
   }
 
   /**
@@ -200,12 +215,12 @@ public class BSPApplicationMaster implements BSPClient {
    */
   private ApplicationAttemptId getApplicationAttemptId() throws IOException {
     Map<String, String> envs = System.getenv();
-    if (!envs.containsKey(ApplicationConstants.APPLICATION_ATTEMPT_ID_ENV)) {
+    if (!envs.containsKey(ApplicationConstants.AM_CONTAINER_ID_ENV)) {
       throw new IllegalArgumentException(
           "ApplicationAttemptId not set in the environment");
     }
     return ConverterUtils.toApplicationAttemptId(envs
-        .get(ApplicationConstants.APPLICATION_ATTEMPT_ID_ENV));
+        .get(ApplicationConstants.AM_CONTAINER_ID_ENV));
   }
 
   private void start() throws Exception {
@@ -214,13 +229,9 @@ public class BSPApplicationMaster implements BSPClient {
       job = new JobImpl(appAttemptId, jobConf, yarnRPC, amrmRPC, jobFile, jobId);
       finalState = job.startJob();
     } finally {
-      if (this.syncServer != null) {
-        this.syncServer.stopServer();
-      }
       if (finalState != null) {
         LOG.info("Job \"" + applicationName + "\"'s state after completion: "
             + finalState.toString());
-        LOG.info("Made " + (syncServerFuture.get() - 1L) + " supersteps!");
         LOG.info("Job took " + ((clock.getTime() - startTime) / 1000L)
             + "s to finish!");
       }
@@ -229,9 +240,12 @@ public class BSPApplicationMaster implements BSPClient {
   }
 
   private void cleanup() throws YarnRemoteException {
-    if (this.syncServer != null) {
-      this.syncServer.stopServer();
+    syncServer.stop();
+    if (threadPool != null && !threadPool.isShutdown()) {
+      threadPool.shutdownNow();
     }
+    clientServer.stop();
+    taskServer.stop();
     FinishApplicationMasterRequest finishReq = Records
         .newRecord(FinishApplicationMasterRequest.class);
     finishReq.setAppAttemptId(appAttemptId);
@@ -252,7 +266,7 @@ public class BSPApplicationMaster implements BSPClient {
   }
 
   public static void main(String[] args) throws YarnRemoteException {
-    // TODO we expect getting the qualified path of the job.xml as the first
+    // we expect getting the qualified path of the job.xml as the first
     // element in the arguments
     BSPApplicationMaster master = null;
     try {
@@ -300,19 +314,70 @@ public class BSPApplicationMaster implements BSPClient {
 
   @Override
   public long getProtocolVersion(String arg0, long arg1) throws IOException {
-    return BSPClient.VERSION;
+    return BSPClient.versionID;
   }
 
   @Override
   public LongWritable getCurrentSuperStep() {
-    return syncServer.getSuperStep();
+    return new LongWritable(superstep);
   }
 
   @Override
   public ProtocolSignature getProtocolSignature(String protocol,
       long clientVersion, int clientMethodsHash) throws IOException {
-    // TODO Auto-generated method stub
-    return new ProtocolSignature();
+    return new ProtocolSignature(BSPPeerProtocol.versionID, null);
+  }
+
+  @Override
+  public boolean statusUpdate(TaskAttemptID taskId, TaskStatus taskStatus)
+      throws IOException, InterruptedException {
+    if (taskStatus.getSuperstepCount() > superstep) {
+      superstep = taskStatus.getSuperstepCount();
+      LOG.info("Now in superstep " + superstep);
+    }
+    return true;
+  }
+
+  /**
+   * most of the following methods are already handled over YARN and with the
+   * JobImpl.
+   */
+
+  @Override
+  public void close() throws IOException {
+
+  }
+
+  @Override
+  public Task getTask(TaskAttemptID taskid) throws IOException {
+    return null;
+  }
+
+  @Override
+  public boolean ping(TaskAttemptID taskid) throws IOException {
+    return false;
+  }
+
+  @Override
+  public void done(TaskAttemptID taskid, boolean shouldBePromoted)
+      throws IOException {
+
+  }
+
+  @Override
+  public void fsError(TaskAttemptID taskId, String message) throws IOException {
+
+  }
+
+  @Override
+  public void fatalError(TaskAttemptID taskId, String message)
+      throws IOException {
+
+  }
+
+  @Override
+  public int getAssignedPortNum(TaskAttemptID taskid) {
+    return 0;
   }
 
 }

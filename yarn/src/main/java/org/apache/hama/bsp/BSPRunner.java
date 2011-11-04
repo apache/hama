@@ -17,15 +17,19 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.util.BSPNetUtils;
 
 public class BSPRunner {
 
@@ -33,30 +37,51 @@ public class BSPRunner {
 
   private Configuration conf;
   private TaskAttemptID id;
-  private YARNBSPPeerImpl peer;
+  private BSPPeerImpl<?, ?, ?, ?> peer;
 
+  @SuppressWarnings("rawtypes")
   Class<? extends BSP> bspClass;
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public BSPRunner(String jobId, int taskAttemptId, Path confPath)
-      throws IOException, ClassNotFoundException {
+      throws Exception {
     conf = new HamaConfiguration();
     conf.addResource(confPath);
     this.id = new TaskAttemptID(jobId, 0, taskAttemptId, 0);
     this.id.id = taskAttemptId;
-    peer = new YARNBSPPeerImpl(conf, id);
+
+    // use a calculatory trick to prevent port collision on the same host
+    int port = BSPNetUtils.getFreePort(taskAttemptId * 2 + 16000);
+    conf.setInt(Constants.PEER_PORT, port);
+    conf.set(Constants.PEER_HOST, BSPNetUtils.getCanonicalHostname());
+
+    String umbilicalAddress = conf.get("hama.umbilical.address");
+    if (umbilicalAddress == null || umbilicalAddress.isEmpty()
+        || !umbilicalAddress.contains(":")) {
+      throw new IllegalArgumentException(
+          "Umbilical address must contain a colon and must be non-empty and not-null! Property \"hama.umbilical.address\" was: "
+              + umbilicalAddress);
+    }
+    String[] hostPort = umbilicalAddress.split(":");
+    InetSocketAddress address = new InetSocketAddress(hostPort[0],
+        Integer.valueOf(hostPort[1]));
+
+    BSPPeerProtocol umbilical = (BSPPeerProtocol) RPC.getProxy(
+        BSPPeerProtocol.class, BSPPeerProtocol.versionID, address, conf);
+
+    BSPJob job = new BSPJob(new HamaConfiguration(conf));
+
+    peer = new BSPPeerImpl(job, conf, id, umbilical, port, umbilicalAddress,
+        null);
     // this is a checked cast because we can only set a class via the BSPJob
     // class which only allows derivates of BSP.
     bspClass = (Class<? extends BSP>) conf.getClassByName(conf
         .get("bsp.work.class"));
   }
 
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void startComputation() throws Exception {
     BSP bspInstance = ReflectionUtils.newInstance(bspClass, conf);
-    LOG.info("Syncing for the first time to wait for all the tasks to come up...");
-    peer.getSyncService().enterBarrier(id);
-    peer.getSyncService().leaveBarrier(id);
-    LOG.info("Initial sync was successful, now running the computation!");
     try {
       bspInstance.setup(peer);
       bspInstance.bsp(peer);
@@ -64,6 +89,7 @@ public class BSPRunner {
       throw e;
     } finally {
       bspInstance.cleanup(peer);
+      peer.close();
     }
   }
 
@@ -85,5 +111,6 @@ public class BSPRunner {
     BSPRunner bspRunner = new BSPRunner(args[0], Integer.valueOf(args[1]),
         new Path(args[2]));
     bspRunner.startComputation();
+    LOG.info("Task successfully ended!");
   }
 }

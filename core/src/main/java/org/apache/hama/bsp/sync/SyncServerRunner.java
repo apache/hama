@@ -33,13 +33,16 @@ public class SyncServerRunner implements Callable<Object> {
     try {
       syncServer = SyncServiceFactory.getSyncServer(conf);
     } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }
 
   public Configuration init(Configuration conf) throws Exception {
     return syncServer.init(conf);
+  }
+
+  public void stop() {
+    syncServer.stopServer();
   }
 
   @Override

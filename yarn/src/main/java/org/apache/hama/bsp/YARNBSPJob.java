@@ -240,7 +240,7 @@ public class YARNBSPJob extends BSPJob {
       this.submit();
     }
 
-    client = (BSPClient) RPC.waitForProxy(BSPClient.class, BSPClient.VERSION,
+    client = (BSPClient) RPC.waitForProxy(BSPClient.class, BSPClient.versionID,
         NetUtils.createSocketAddr(report.getHost(), report.getRpcPort()), conf);
 
     GetApplicationReportRequest reportRequest = Records
@@ -256,22 +256,19 @@ public class YARNBSPJob extends BSPJob {
         && localReport.getFinalApplicationStatus() != FinalApplicationStatus.FAILED
         && localReport.getFinalApplicationStatus() != FinalApplicationStatus.KILLED
         && localReport.getFinalApplicationStatus() != FinalApplicationStatus.SUCCEEDED) {
-      LOG.info("currently in state: " + localReport.getFinalApplicationStatus());
+      LOG.debug("currently in state: " + localReport.getFinalApplicationStatus());
       if (verbose) {
         long remoteSuperStep = client.getCurrentSuperStep().get();
         if (clientSuperStep > remoteSuperStep) {
           clientSuperStep = remoteSuperStep;
           LOG.info("Current supersteps number: " + clientSuperStep);
         }
-        reportResponse = applicationsManager
-            .getApplicationReport(reportRequest);
-        localReport = reportResponse.getApplicationReport();
       }
+      reportResponse = applicationsManager.getApplicationReport(reportRequest);
+      localReport = reportResponse.getApplicationReport();
+
       Thread.sleep(3000L);
     }
-
-    reportResponse = applicationsManager.getApplicationReport(reportRequest);
-    localReport = reportResponse.getApplicationReport();
 
     if (localReport.getFinalApplicationStatus() == FinalApplicationStatus.SUCCEEDED) {
       LOG.info("Job succeeded!");

@@ -31,7 +31,10 @@ public interface SyncServer {
   /**
    * In YARN port and hostname of the sync server is only known at runtime, so
    * this method should modify the conf to set the host:port of the syncserver
-   * that is going to start and return it.
+   * that is going to start and return it.<br/>
+   * <br/>
+   * The property key is "hama.sync.server.address" and the value is
+   * hostname:port.
    * 
    * @param conf
    * @return

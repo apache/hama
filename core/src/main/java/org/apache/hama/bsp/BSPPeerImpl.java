@@ -294,7 +294,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
       leaveBarrier();
       currentTaskStatus.incrementSuperstepCount();
       umbilical.statusUpdate(taskId, currentTaskStatus);
-
+      
       // Clear outgoing queues.
       clearOutgoingQueues();
 

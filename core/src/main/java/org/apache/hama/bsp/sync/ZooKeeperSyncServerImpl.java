@@ -17,10 +17,14 @@
  */
 package org.apache.hama.bsp.sync;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.sync.SyncServer;
 import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.zookeeper.QuorumPeer;
+import org.apache.hama.zookeeper.QuorumPeer.ShutdownableZooKeeperServerMain;
+import org.apache.hama.zookeeper.QuorumPeer.ZookeeperTuple;
 
 /**
  * 
@@ -29,7 +33,9 @@ import org.apache.hama.zookeeper.QuorumPeer;
  */
 public class ZooKeeperSyncServerImpl implements SyncServer {
 
+  private final Log LOG = LogFactory.getLog(ZooKeeperSyncServerImpl.class);
   private Configuration conf;
+  private ShutdownableZooKeeperServerMain zooKeeper;
 
   @Override
   public Configuration init(Configuration conf) throws Exception {
@@ -50,6 +56,15 @@ public class ZooKeeperSyncServerImpl implements SyncServer {
       host = hostConfigured.split(",")[0];
     }
 
+    if (conf.get("hama.zookeeper.property.dataDir") == null) {
+      conf.set("hama.zookeeper.property.dataDir", conf.get("bsp.local.dir")
+          + "zookeeper");
+    }
+
+    // always set them
+    conf.set("hama.zookeeper.quorum", host);
+    conf.set("hama.zookeeper.property.clientPort", port + "");
+
     conf.set("hama.sync.server.address", host + ":" + port);
 
     return conf;
@@ -57,12 +72,22 @@ public class ZooKeeperSyncServerImpl implements SyncServer {
 
   @Override
   public void start() throws Exception {
-    QuorumPeer.runZooKeeper(conf);
+    try {
+      ZookeeperTuple tuple = QuorumPeer.runShutdownableZooKeeper(conf);
+      zooKeeper = tuple.main;
+      zooKeeper.runFromConfig(tuple.conf);
+    } catch (Exception e) {
+      LOG.debug(e);
+    }
   }
 
   @Override
   public void stopServer() {
-    // TODO this could be done somehow
+    try {
+      zooKeeper.shutdownZookeeperMain();
+    } catch (Throwable e) {
+      LOG.debug(e);
+    }
   }
 
 }

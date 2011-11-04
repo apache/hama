@@ -85,13 +85,31 @@ public class QuorumPeer implements Constants {
    * @param baseConf Hadoop Configuration.
    */
   public static void runZooKeeper(Configuration conf) throws Exception {
-
     Properties zkProperties = makeZKProps(conf);
     writeMyID(zkProperties);
     QuorumPeerConfig zkConfig = new QuorumPeerConfig();
     zkConfig.parseProperties(zkProperties);
     runZKServer(zkConfig);
+  }
 
+  /**
+   * Runs a shutdownable Zookeeper main server. This does not work with multiple
+   * quorums!
+   * 
+   * @param conf
+   * @return
+   * @throws Exception
+   */
+  public static ZookeeperTuple runShutdownableZooKeeper(Configuration conf)
+      throws Exception {
+    Properties zkProperties = makeZKProps(conf);
+    writeMyID(zkProperties);
+    QuorumPeerConfig zkConfig = new QuorumPeerConfig();
+    zkConfig.parseProperties(zkProperties);
+    ShutdownableZooKeeperServerMain zk = new ShutdownableZooKeeperServerMain();
+    ServerConfig serverConfig = new ServerConfig();
+    serverConfig.readFrom(zkConfig);
+    return new ZookeeperTuple(zk, serverConfig);
   }
 
   private static void runZKServer(QuorumPeerConfig zkConfig)
@@ -375,5 +393,31 @@ public class QuorumPeer implements Constants {
    */
   public static String getZKQuorumServersString(Configuration conf) {
     return getZKQuorumServersString(makeZKProps(conf));
+  }
+
+  public static class ShutdownableZooKeeperServerMain extends
+      ZooKeeperServerMain {
+
+    public void shutdownZookeeperMain() {
+      this.shutdown();
+    }
+
+    @Override
+    protected void shutdown() {
+      super.shutdown();
+    }
+
+  }
+
+  public static class ZookeeperTuple {
+    public ShutdownableZooKeeperServerMain main;
+    public ServerConfig conf;
+
+    public ZookeeperTuple(ShutdownableZooKeeperServerMain main,
+        ServerConfig conf) {
+      super();
+      this.main = main;
+      this.conf = conf;
+    }
   }
 }

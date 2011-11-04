@@ -28,7 +28,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPJobID;
 import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -225,6 +224,18 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
   @Override
   public void register(BSPJobID jobId, TaskAttemptID taskId,
       String hostAddress, long port) {
+    try {
+      if (zk.exists("/" + jobId.toString(), false) == null) {
+        LOG.info("Root node for job: " + jobId.toString()
+            + " does not exists! Creating...");
+        zk.create("/" + jobId.toString(), new byte[0], Ids.OPEN_ACL_UNSAFE,
+            CreateMode.PERSISTENT);
+      }
+    } catch (KeeperException e) {
+      LOG.error(e);
+    } catch (InterruptedException e) {
+      LOG.error(e);
+    }
     registerTask(zk, jobId, hostAddress, port);
   }
 
