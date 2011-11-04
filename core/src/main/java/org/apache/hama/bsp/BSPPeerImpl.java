@@ -122,11 +122,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     this.splitClass = splitClass;
     this.split = split;
 
-    FileSystem fs = null;
-    if (conf.getBoolean("bsp.checkpoint.enabled", false)) {
-      fs = FileSystem.get(conf);
-    }
-    this.dfs = fs;
+    this.dfs = FileSystem.get(conf);
 
     String bindAddress = conf.get(Constants.PEER_HOST,
         Constants.DEFAULT_PEER_HOST);
