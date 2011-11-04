@@ -81,7 +81,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
       int tasks) throws Exception {
     for (int i = 0; i < tasks; i++) {
       SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, new Path(
-          TMP_OUTPUT + i), conf);
+          TMP_OUTPUT + "part-0000" +i), conf);
       LongWritable timestamp = new LongWritable();
       Text message = new Text();
       reader.next(timestamp, message);

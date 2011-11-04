@@ -44,8 +44,9 @@ public class ClassSerializePrinting {
     private FileSystem fileSys;
     private int num;
 
-    public void bsp(BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> bspPeer) throws IOException,
-        KeeperException, InterruptedException {
+    public void bsp(
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> bspPeer)
+        throws IOException, KeeperException, InterruptedException {
 
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {
@@ -62,8 +63,8 @@ public class ClassSerializePrinting {
 
     private void writeLogToFile(String string, int i) throws IOException {
       SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
-          new Path(TMP_OUTPUT,i+""), LongWritable.class, Text.class,
-          CompressionType.NONE);
+          new Path(TMP_OUTPUT, "part-0000" + i), LongWritable.class,
+          Text.class, CompressionType.NONE);
       writer.append(new LongWritable(System.currentTimeMillis()), new Text(
           "Hello BSP from " + (i + 1) + " of " + num + ": " + string));
       writer.close();
