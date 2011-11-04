@@ -83,8 +83,8 @@ class JobInProgress {
     this.jobFile = jobFile;
     this.master = master;
 
-    this.status = new JobStatus(jobId, null, 0L, 0L, JobStatus.State.PREP
-        .value());
+    this.status = new JobStatus(jobId, null, 0L, 0L,
+        JobStatus.State.PREP.value());
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -99,9 +99,13 @@ class JobInProgress {
     fs.copyToLocalFile(jobFile, localJobFile);
     BSPJob job = new BSPJob(jobId, localJobFile.toString());
     this.jobSplit = job.getConf().get("bsp.job.split.file");
+    
+    // default is 1, because with zero, we will hang in infinity
+    this.numBSPTasks = job.getInt("bsp.peers.num", 1);
 
-    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
-        .getJobName());
+
+    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
+        job.getJobName());
 
     this.setJobName(job.getJobName());
 
@@ -185,22 +189,30 @@ class JobInProgress {
 
     Path sysDir = new Path(this.master.getSystemDir());
     FileSystem fs = sysDir.getFileSystem(conf);
-    DataInputStream splitFile = fs.open(new Path(this.jobSplit));
+    if (jobSplit != null) {
+      DataInputStream splitFile = fs.open(new Path(this.jobSplit));
 
-    BSPJobClient.RawSplit[] splits;
-    try {
-      splits = BSPJobClient.readSplitFile(splitFile);
-    } finally {
-      splitFile.close();
-    }
-    numBSPTasks = splits.length;
-    LOG.info("num BSPTasks: " + numBSPTasks);
+      BSPJobClient.RawSplit[] splits;
+      try {
+        splits = BSPJobClient.readSplitFile(splitFile);
+      } finally {
+        splitFile.close();
+      }
+      numBSPTasks = splits.length;
+      LOG.info("num BSPTasks: " + numBSPTasks);
 
-    // adjust number of BSP tasks to actual number of splits
-    this.tasks = new TaskInProgress[numBSPTasks];
-    for (int i = 0; i < numBSPTasks; i++) {
-      tasks[i] = new TaskInProgress(getJobID(), this.jobFile.toString(),
-          splits[i], this.master, this.conf, this, i);
+      // adjust number of BSP tasks to actual number of splits
+      this.tasks = new TaskInProgress[numBSPTasks];
+      for (int i = 0; i < numBSPTasks; i++) {
+        tasks[i] = new TaskInProgress(getJobID(), this.jobFile.toString(),
+            splits[i], this.master, this.conf, this, i);
+      }
+    } else {
+      this.tasks = new TaskInProgress[numBSPTasks];
+      for (int i = 0; i < numBSPTasks; i++) {
+        tasks[i] = new TaskInProgress(getJobID(), this.jobFile.toString(),
+            null, this.master, this.conf, this, i);
+      }
     }
 
     // Update job status
@@ -258,9 +270,9 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), superstepCounter, superstepCounter, superstepCounter,
-          JobStatus.SUCCEEDED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(),
+          this.profile.getUser(), superstepCounter, superstepCounter,
+          superstepCounter, JobStatus.SUCCEEDED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
@@ -292,9 +304,9 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), superstepCounter, superstepCounter, superstepCounter,
-          JobStatus.FAILED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(),
+          this.profile.getUser(), superstepCounter, superstepCounter,
+          superstepCounter, JobStatus.FAILED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 

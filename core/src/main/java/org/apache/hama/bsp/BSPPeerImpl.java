@@ -51,7 +51,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   public static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
   private final Configuration conf;
-  private final FileSystem dfs;
+  private final FileSystem fs;
   private BSPJob bspJob;
 
   private volatile Server server = null;
@@ -86,7 +86,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    */
   protected BSPPeerImpl() {
     conf = null;
-    dfs = null;
+    fs = null;
   }
 
   /**
@@ -97,7 +97,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    */
   protected BSPPeerImpl(final Configuration conf, FileSystem dfs) {
     this.conf = conf;
-    this.dfs = dfs;
+    this.fs = dfs;
   }
 
   /**
@@ -122,7 +122,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     this.splitClass = splitClass;
     this.split = split;
 
-    this.dfs = FileSystem.get(conf);
+    this.fs = FileSystem.get(conf);
 
     String bindAddress = conf.get(Constants.PEER_HOST,
         Constants.DEFAULT_PEER_HOST);
@@ -158,31 +158,33 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     syncClient = SyncServiceFactory.getSyncClient(conf);
     syncClient.init(conf, taskId.getJobID(), taskId);
 
-    InputSplit inputSplit = null;
-    // reinstantiate the split
-    try {
-      inputSplit = (InputSplit) ReflectionUtils.newInstance(getConfiguration()
-          .getClassByName(splitClass), getConfiguration());
-    } catch (ClassNotFoundException exp) {
-      IOException wrap = new IOException("Split class " + splitClass
-          + " not found");
-      wrap.initCause(exp);
-      throw wrap;
+    // just read input if the user defined one
+    if (conf.get("bsp.input.dir") != null) {
+      InputSplit inputSplit = null;
+      // reinstantiate the split
+      try {
+        inputSplit = (InputSplit) ReflectionUtils.newInstance(
+            getConfiguration().getClassByName(splitClass), getConfiguration());
+      } catch (ClassNotFoundException exp) {
+        IOException wrap = new IOException("Split class " + splitClass
+            + " not found");
+        wrap.initCause(exp);
+        throw wrap;
+      }
+
+      DataInputBuffer splitBuffer = new DataInputBuffer();
+      splitBuffer.reset(split.getBytes(), 0, split.getLength());
+      inputSplit.readFields(splitBuffer);
+
+      in = bspJob.getInputFormat().getRecordReader(inputSplit, bspJob);
     }
-
-    DataInputBuffer splitBuffer = new DataInputBuffer();
-    splitBuffer.reset(split.getBytes(), 0, split.getLength());
-    inputSplit.readFields(splitBuffer);
-
-    in = bspJob.getInputFormat().getRecordReader(inputSplit, bspJob);
 
     // just output something when the user configured it
     if (conf.get("bsp.output.dir") != null) {
       Path outdir = new Path(conf.get("bsp.output.dir"),
           Task.getOutputName(partition));
-
-      outWriter = bspJob.getOutputFormat().getRecordWriter(dfs, bspJob,
-          outdir.makeQualified(dfs).toString());
+      outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob,
+          outdir.makeQualified(fs).toString());
       final RecordWriter<KEYOUT, VALUEOUT> finalOut = outWriter;
 
       collector = new OutputCollector<KEYOUT, VALUEOUT>() {
@@ -236,7 +238,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   void checkpoint(String checkpointedPath, BSPMessageBundle bundle) {
     FSDataOutputStream out = null;
     try {
-      out = this.dfs.create(new Path(checkpointedPath));
+      out = this.fs.create(new Path(checkpointedPath));
       bundle.write(out);
     } catch (IOException ioe) {
       LOG.warn("Fail checkpointing messages to " + checkpointedPath, ioe);
@@ -327,8 +329,12 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   public void close() throws Exception {
-    in.close();
-    outWriter.close();
+    if (in != null) {
+      in.close();
+    }
+    if (outWriter != null) {
+      outWriter.close();
+    }
     this.clear();
     syncClient.close();
     if (server != null) {

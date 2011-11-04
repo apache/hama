@@ -128,9 +128,13 @@ class TaskInProgress {
           + " attempts for the tip '" + getTIPId() + "'");
       return null;
     }
-
-    String splitClass = rawSplit.getClassName();
-    BytesWritable split = rawSplit.getBytes();
+    
+    String splitClass = null;
+    BytesWritable split = null;
+    if(rawSplit != null){
+      splitClass = rawSplit.getClassName();
+      split = rawSplit.getBytes();
+    }
     
     t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
     activeTasks.put(taskid, status.getGroomName());
