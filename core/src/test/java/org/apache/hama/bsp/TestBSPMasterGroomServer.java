@@ -48,7 +48,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     configuration.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
     configuration.set("hama.sync.client.class",
         org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl.class
-        .getCanonicalName());
+            .getCanonicalName());
   }
 
   public void setUp() throws Exception {
@@ -67,7 +67,6 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     ClusterStatus cluster = jobClient.getClusterStatus(false);
     assertEquals(this.numOfGroom, cluster.getGroomServers());
     bsp.setNumBspTask(2);
-    bsp.setInputFormat(NullInputFormat.class);
     
     FileSystem fileSys = FileSystem.get(conf);
 

@@ -72,7 +72,7 @@ public class TestIOJob extends HamaCluster {
     FileSystem fileSys = FileSystem.get(conf);
 
     if (bsp.waitForCompletion(true)) {
-      TestBSPMasterGroomServer.checkOutput(fileSys, conf, 2);
+      TestBSPMasterGroomServer.checkOutput(fileSys, conf,2);
     }
     LOG.info("Client finishes execution job.");
   }

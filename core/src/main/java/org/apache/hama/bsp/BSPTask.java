@@ -37,7 +37,7 @@ public class BSPTask extends Task {
   public static final Log LOG = LogFactory.getLog(BSPTask.class);
 
   private BSPJob conf;
-  BytesWritable split = new BytesWritable();
+  BytesWritable split;
   String splitClass;
 
   public BSPTask() {
@@ -62,7 +62,6 @@ public class BSPTask extends Task {
   @Override
   public void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?> bspPeer,
       BSPPeerProtocol umbilical) throws IOException {
-
     try {
       runBSP(job, bspPeer, split, umbilical);
     } catch (InterruptedException e) {
@@ -115,16 +114,26 @@ public class BSPTask extends Task {
   @Override
   public void write(DataOutput out) throws IOException {
     super.write(out);
-    Text.writeString(out, splitClass);
-    split.write(out);
-    split = null;
+    if (split != null) {
+      out.writeBoolean(true);
+      Text.writeString(out, splitClass);
+      split.write(out);
+      split = null;
+    } else {
+      out.writeBoolean(false);
+    }
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     super.readFields(in);
-    splitClass = Text.readString(in);
-    split.readFields(in);
+    if (in.readBoolean()) {
+      splitClass = Text.readString(in);
+      if(split == null){
+        split = new BytesWritable();
+      }
+      split.readFields(in);
+    }
   }
 
 }
