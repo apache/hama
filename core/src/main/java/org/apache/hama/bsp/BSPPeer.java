@@ -21,14 +21,12 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.Constants;
-import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.util.KeyValuePair;
 
 /**
  * BSP communication interface.
  */
-public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends
-    HamaRPCProtocolVersion, Constants {
+public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Constants {
 
   /**
    * Send a data with a tag to another BSPSlave corresponding to hostname.
@@ -40,22 +38,6 @@ public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends
    * @throws IOException
    */
   public void send(String peerName, BSPMessage msg) throws IOException;
-
-  /**
-   * Puts a message to local queue.
-   * 
-   * @param msg
-   * @throws IOException
-   */
-  public void put(BSPMessage msg) throws IOException;
-
-  /**
-   * Puts a bundle of messages to local queue.
-   * 
-   * @param messages
-   * @throws IOException
-   */
-  public void put(BSPMessageBundle messages) throws IOException;
 
   /**
    * @return A message from the peer's received messages queue (a FIFO).
