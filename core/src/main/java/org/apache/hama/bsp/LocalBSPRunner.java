@@ -274,7 +274,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public void send(String peerName, BSPMessage msg) throws IOException {
       if (this.peerName.equals(peerName)) {
-        put(msg);
+//        put(msg);
       } else {
         // put this into a outgoing queue
         if (outgoingQueues.get(peerName) == null) {
@@ -284,10 +284,10 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       }
     }
 
-    @Override
-    public void put(BSPMessage msg) throws IOException {
-      localMessageQueue.add(msg);
-    }
+//    @Override
+//    public void put(BSPMessage msg) throws IOException {
+//      localMessageQueue.add(msg);
+//    }
 
     @Override
     public BSPMessage getCurrentMessage() throws IOException {
@@ -307,12 +307,12 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       for (Entry<String, ConcurrentLinkedQueue<BSPMessage>> entry : outgoingQueues
           .entrySet()) {
         String peerName = entry.getKey();
-        for (BSPMessage msg : entry.getValue())
-          try {
-            localGrooms.get(peerName).put(msg);
-          } catch (IOException e) {
-            LOG.error("Putting message \"" + msg.toString() + "\" failed! ", e);
-          }
+//        for (BSPMessage msg : entry.getValue())
+//          try {
+//            localGrooms.get(peerName).put(msg);
+//          } catch (IOException e) {
+//            LOG.error("Putting message \"" + msg.toString() + "\" failed! ", e);
+//          }
       }
       // clear the local outgoing queue
       outgoingQueues.clear();
@@ -352,17 +352,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public void clear() {
       localMessageQueue.clear();
-    }
-
-    @Override
-    public long getProtocolVersion(String protocol, long clientVersion)
-        throws IOException {
-      return 3;
-    }
-
-
-    @Override
-    public void put(BSPMessageBundle messages) throws IOException {
     }
 
     @Override
