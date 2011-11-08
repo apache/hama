@@ -33,6 +33,7 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.util.BSPNetUtils;
 
 /**
  * Implementation of the {@link HadoopMessageManager}.
@@ -94,7 +95,7 @@ public class HadoopMessageManagerImpl implements MessageManager,
     if (peerSocketCache.containsKey(peerName)) {
       targetPeerAddress = peerSocketCache.get(peerName);
     } else {
-      targetPeerAddress = getAddress(peerName);
+      targetPeerAddress = BSPNetUtils.getAddress(peerName);
       peerSocketCache.put(peerName, targetPeerAddress);
     }
     LinkedList<BSPMessage> queue = outgoingQueues.get(targetPeerAddress);
@@ -103,17 +104,6 @@ public class HadoopMessageManagerImpl implements MessageManager,
     }
     queue.add(msg);
     outgoingQueues.put(targetPeerAddress, queue);
-  }
-
-  private InetSocketAddress getAddress(String peerName) {
-    String[] peerAddrParts = peerName.split(":");
-    if (peerAddrParts.length != 2) {
-      throw new ArrayIndexOutOfBoundsException(
-          "Peername must consist of exactly ONE \":\"! Given peername was: "
-              + peerName);
-    }
-    return new InetSocketAddress(peerAddrParts[0],
-        Integer.valueOf(peerAddrParts[1]));
   }
 
   @Override

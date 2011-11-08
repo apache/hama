@@ -21,22 +21,34 @@ import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 
 public class TestLocalRunner extends TestCase {
 
-  public void testSubmitJob() throws Exception {
-    Configuration configuration = new Configuration();
-    configuration.set("bsp.local.dir", "/tmp/hama-test");
-    BSPJob bsp = new BSPJob(new HamaConfiguration(configuration));
-    bsp.setJobName("Test Serialize Printing");
-    bsp.setBspClass(testjar.ClassSerializePrinting.HelloBSP.class);
+  public void testOutputJob() throws Exception {
+    Configuration conf = new Configuration();
+    conf.set("bsp.local.dir", "/tmp/hama-test");
+    BSPJob bsp = new BSPJob(new HamaConfiguration(conf));
+    bsp.setJobName("Test Serialize Printing with Output");
+    bsp.setBspClass(IOSerializePrinting.class);
 
-    FileSystem fileSys = FileSystem.get(configuration);
+    conf.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 600);
+    bsp.setNumBspTask(2);
+    bsp.setInputFormat(NullInputFormat.class);
+    bsp.setOutputFormat(SequenceFileOutputFormat.class);
+    bsp.setOutputKeyClass(LongWritable.class);
+    bsp.setOutputValueClass(Text.class);
+    bsp.setOutputPath(new Path(TestBSPMasterGroomServer.TMP_OUTPUT));
 
-    // FIXME
-    // assertTrue(bsp.waitForCompletion(true));
-    //TestBSPMasterGroomServer.checkOutput(fileSys, configuration, 20);
+    FileSystem fileSys = FileSystem.get(conf);
+
+    if (bsp.waitForCompletion(true)) {
+      TestBSPMasterGroomServer.checkOutput(fileSys, conf, 2);
+    }
   }
 
 }

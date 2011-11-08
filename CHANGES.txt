@@ -15,6 +15,7 @@ Release 0.4 - Unreleased
 
   BUG FIXES
 
+    HAMA-465: LocalJobRunner should support combiners and IO
     HAMA-459: GroomServerStatus.countTask() always returns 1 (edwardyoon)
     HAMA-432: Add statusUpdate() method to BSPPeerProtocol (edwardyoon)
     HAMA-437: PiEstimator is not working in Local Mode (Thomas Jungblut)
@@ -24,6 +25,7 @@ Release 0.4 - Unreleased
     HAMA-421: Maven build issues using proxy (Joe Crobak via edwardyoon)
 
   IMPROVEMENTS
+
     HAMA-461: Extract a message service from BSPPeer (tjungblut)
     HAMA-463: Integrate checkpoint with bsp task (chl501)
     HAMA-457: Refactoring of BSPPeerImpl (tjungblut)
