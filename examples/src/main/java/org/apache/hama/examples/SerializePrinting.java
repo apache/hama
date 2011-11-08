@@ -54,7 +54,7 @@ public class SerializePrinting {
         BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer)
         throws IOException, KeeperException, InterruptedException {
 
-      LOG.info(peer.getAllPeerNames());
+      LOG.debug(peer.getAllPeerNames());
       int i = 0;
       for (String otherPeer : peer.getAllPeerNames()) {
         String peerName = peer.getPeerName();

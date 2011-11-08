@@ -18,6 +18,7 @@
 package org.apache.hama.util;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import org.apache.mina.util.AvailablePortFinder;
@@ -57,6 +58,24 @@ public class BSPNetUtils {
       startPort++;
     }
     return startPort;
+  }
+
+  /**
+   * Gets a new InetSocketAddress from the given peerName. peerName must contain
+   * a colon to distinct between host and port.
+   * 
+   * @param peerName
+   * @return
+   */
+  public static InetSocketAddress getAddress(String peerName) {
+    String[] peerAddrParts = peerName.split(":");
+    if (peerAddrParts.length != 2) {
+      throw new ArrayIndexOutOfBoundsException(
+          "Peername must consist of exactly ONE \":\"! Given peername was: "
+              + peerName);
+    }
+    return new InetSocketAddress(peerAddrParts[0],
+        Integer.valueOf(peerAddrParts[1]));
   }
 
 }

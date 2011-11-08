@@ -34,7 +34,7 @@ import org.apache.hama.HamaConfiguration;
 public class TestBSPMasterGroomServer extends HamaCluster {
 
   private static Log LOG = LogFactory.getLog(TestBSPMasterGroomServer.class);
-  private static String TMP_OUTPUT = "/tmp/test-example/";
+  static String TMP_OUTPUT = "/tmp/test-example/";
   private HamaConfiguration configuration;
   private String TEST_JOB = "src/test/java/testjar/testjob.jar";
 
