@@ -22,8 +22,9 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -39,12 +40,17 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.ipc.RPC;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.security.UnixUserGroupInformation;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.HamaConfiguration;
@@ -290,6 +296,8 @@ public class BSPJobClient extends Configured implements Tool {
 
   public RunningJob submitJobInternal(BSPJob job) throws IOException {
     BSPJobID jobId = jobSubmitClient.getNewJobId();
+    
+    job.setJobID(jobId);
 
     Path submitJobDir = new Path(getSystemDir(), "submit_"
         + Integer.toString(Math.abs(r.nextInt()), 36));
@@ -327,6 +335,7 @@ public class BSPJobClient extends Configured implements Tool {
     if (job.get("bsp.input.dir") != null) {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
+      job = partition(job);
       job.setNumBspTask(writeSplits(job, submitSplitFile));
       job.set("bsp.job.split.file", submitSplitFile.toString());
     }
@@ -379,31 +388,135 @@ public class BSPJobClient extends Configured implements Tool {
     }
   }
 
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private BSPJob partition(BSPJob job) throws IOException {
+    if (job.getConf().get("bsp.input.partitioner.class") != null) {
+      InputSplit[] splits = job.getInputFormat().getSplits(job,
+          job.getNumBspTask());
+      int numOfTasks = job.getNumBspTask();
+      String input = job.getConf().get("bsp.input.dir");
+
+      if (input != null) {
+        InputFormat<?, ?> inputFormat = job.getInputFormat();
+
+        Path partitionedPath = new Path(input, "hama-partitions");
+        Path inputPath = new Path(input);
+        if (fs.isFile(inputPath)) {
+          partitionedPath = new Path(inputPath.getParent(), "hama-partitions");
+        }
+
+        String alternatePart = job.get("bsp.partitioning.dir");
+        if (alternatePart != null) {
+          partitionedPath = new Path(alternatePart, job.getJobID().toString());
+        }
+
+        if (fs.exists(partitionedPath)) {
+          fs.delete(partitionedPath, true);
+        } else {
+          fs.mkdirs(partitionedPath);
+        }
+        // FIXME this is soo unsafe
+        RecordReader sampleReader = inputFormat.getRecordReader(splits[0], job);
+
+        List<SequenceFile.Writer> writers = new ArrayList<SequenceFile.Writer>(
+            numOfTasks);
+
+        CompressionType compressionType = getOutputCompressionType(job);
+        Class<? extends CompressionCodec> outputCompressorClass = getOutputCompressorClass(
+            job, null);
+        CompressionCodec codec = null;
+        if (outputCompressorClass != null) {
+          codec = ReflectionUtils.newInstance(outputCompressorClass,
+              job.getConf());
+        }
+
+        try {
+          for (int i = 0; i < numOfTasks; i++) {
+            Path p = new Path(partitionedPath, "part-" + i);
+            if (codec == null) {
+              writers.add(SequenceFile.createWriter(fs, job.getConf(), p,
+                  sampleReader.createKey().getClass(), sampleReader
+                      .createValue().getClass(), CompressionType.NONE));
+            } else {
+              writers.add(SequenceFile.createWriter(fs, job.getConf(), p,
+                  sampleReader.createKey().getClass(), sampleReader
+                      .createValue().getClass(), compressionType, codec));
+            }
+          }
+
+          Partitioner partitioner = job.getPartitioner();
+          for (int i = 0; i < splits.length; i++) {
+            InputSplit split = splits[i];
+            RecordReader recordReader = inputFormat.getRecordReader(split, job);
+            Object key = recordReader.createKey();
+            Object value = recordReader.createValue();
+            while (recordReader.next(key, value)) {
+              int index = partitioner.getPartition(key, value, numOfTasks);
+              writers.get(index).append(key, value);
+            }
+            LOG.debug("Done with split " + i);
+          }
+        } finally {
+          for (SequenceFile.Writer wr : writers) {
+            wr.close();
+          }
+        }
+
+        job.setInputFormat(SequenceFileInputFormat.class);
+        job.setInputPath(partitionedPath);
+      }
+
+    }
+    return job;
+  }
+
+  /**
+   * Get the {@link CompressionType} for the output {@link SequenceFile}.
+   * 
+   * @param job the {@link Job}
+   * @return the {@link CompressionType} for the output {@link SequenceFile},
+   *         defaulting to {@link CompressionType#RECORD}
+   */
+  static CompressionType getOutputCompressionType(BSPJob job) {
+    String val = job.get("bsp.partitioning.compression.type");
+    if (val != null) {
+      return CompressionType.valueOf(val);
+    } else {
+      return CompressionType.NONE;
+    }
+  }
+
+  /**
+   * Get the {@link CompressionCodec} for compressing the job outputs.
+   * 
+   * @param job the {@link Job} to look in
+   * @param defaultValue the {@link CompressionCodec} to return if not set
+   * @return the {@link CompressionCodec} to be used to compress the job outputs
+   * @throws IllegalArgumentException if the class was specified, but not found
+   */
+  static Class<? extends CompressionCodec> getOutputCompressorClass(BSPJob job,
+      Class<? extends CompressionCodec> defaultValue) {
+    Class<? extends CompressionCodec> codecClass = defaultValue;
+    Configuration conf = job.getConf();
+    String name = conf.get("bsp.partitioning.compression.codec");
+    if (name != null) {
+      try {
+        codecClass = conf.getClassByName(name).asSubclass(
+            CompressionCodec.class);
+      } catch (ClassNotFoundException e) {
+        throw new IllegalArgumentException("Compression codec " + name
+            + " was not found.", e);
+      }
+    }
+    return codecClass;
+  }
+
   private int writeSplits(BSPJob job, Path submitSplitFile) throws IOException {
     InputSplit[] splits = job.getInputFormat().getSplits(job,
         job.getNumBspTask());
-    // sort the splits into order based on size, so that the biggest
-    // go first
-    Arrays.sort(splits, new Comparator<InputSplit>() {
-      public int compare(InputSplit a, InputSplit b) {
-        try {
-          long left = a.getLength();
-          long right = b.getLength();
-          if (left == right) {
-            return 0;
-          } else if (left < right) {
-            return 1;
-          } else {
-            return -1;
-          }
-        } catch (IOException ie) {
-          throw new RuntimeException("Problem getting input split size", ie);
-        }
-      }
-    });
-    DataOutputStream out = writeSplitsFileHeader(job.getConf(),
-        submitSplitFile, splits.length);
 
+    final DataOutputStream out = writeSplitsFileHeader(job.getConf(),
+        submitSplitFile, splits.length);
     try {
       DataOutputBuffer buffer = new DataOutputBuffer();
       RawSplit rawSplit = new RawSplit();

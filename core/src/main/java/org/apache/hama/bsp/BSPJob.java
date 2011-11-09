@@ -290,19 +290,36 @@ public class BSPJob extends BSPJobContext {
   public void setOutputPath(Path path) {
     conf.set("bsp.output.dir", path.toString());
   }
-  
+
   /**
    * Sets the input path for the job.
    * 
-   * @param path where the output gets written.
    */
   public void setInputPath(Path path) {
     conf.set("bsp.input.dir", path.toString());
   }
 
+  /**
+   * Sets the output format for the job.
+   */
   @SuppressWarnings("rawtypes")
   public void setOutputFormat(Class<? extends OutputFormat> theClass) {
     conf.setClass("bsp.output.format.class", theClass, OutputFormat.class);
+  }
+
+  /**
+   * Sets the partitioner for the input of the job.
+   */
+  @SuppressWarnings("rawtypes")
+  public void setPartitioner(Class<? extends Partitioner> theClass) {
+    conf.setClass("bsp.input.partitioner.class", theClass, Partitioner.class);
+  }
+
+  @SuppressWarnings("rawtypes")
+  public Partitioner getPartitioner() {
+    return (Partitioner) ReflectionUtils.newInstance(conf
+        .getClass("bsp.input.partitioner.class", HashPartitioner.class,
+            Partitioner.class), conf);
   }
 
   @SuppressWarnings("rawtypes")
