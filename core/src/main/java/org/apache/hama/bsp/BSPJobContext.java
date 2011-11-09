@@ -31,21 +31,21 @@ import org.apache.hama.HamaConfiguration;
  */
 public class BSPJobContext {
   // Put all of the attribute names in here so that BSPJob and JobContext are
-  // consistent.  
+  // consistent.
   protected static final String WORK_CLASS_ATTR = "bsp.work.class";
   protected static final String COMBINER_CLASS_ATTR = "bsp.combiner.class";
   protected static final String INPUT_FORMAT_CLASS_ATTR = "bsp.inputformat.class";
   protected static final String OUTPUT_FORMAT_CLASS_ATTR = "bsp.outputformat.class";
   protected static final String WORKING_DIR = "bsp.working.dir";
-  
+
   protected final Configuration conf;
-  private final BSPJobID jobId;
+  private BSPJobID jobId;
 
   public BSPJobContext(Configuration conf, BSPJobID jobId) {
     this.conf = conf;
     this.jobId = jobId;
   }
-  
+
   public BSPJobContext(Path config, BSPJobID jobId) throws IOException {
     this.conf = new HamaConfiguration();
     this.jobId = jobId;
@@ -54,6 +54,10 @@ public class BSPJobContext {
 
   public BSPJobID getJobID() {
     return jobId;
+  }
+
+  void setJobID(BSPJobID id) {
+    this.jobId = id;
   }
 
   public Path getWorkingDirectory() {
@@ -79,32 +83,32 @@ public class BSPJobContext {
   public String getJar() {
     return conf.get("bsp.jar");
   }
-  
-  /** 
-   * Constructs a local file name. Files are distributed among configured
-   * local directories.
+
+  /**
+   * Constructs a local file name. Files are distributed among configured local
+   * directories.
    */
   public Path getLocalPath(String pathString) throws IOException {
     return conf.getLocalPath("bsp.local.dir", pathString);
   }
-  
+
   public String getUser() {
     return conf.get("user.name");
   }
-  
+
   public void writeXml(OutputStream out) throws IOException {
     conf.writeXml(out);
   }
-  
+
   public Configuration getConf() {
     return this.conf;
   }
-  
+
   public String get(String name) {
     return conf.get(name);
   }
-  
+
   public int getInt(String name, int defaultValue) {
-    return conf.getInt(name, defaultValue);    
+    return conf.getInt(name, defaultValue);
   }
 }
