@@ -599,9 +599,8 @@ public class BSPJobClient extends Configured implements Tool {
       String report = "";
 
       if (step == 0) {
-        report = "Wait for tasks that have not yet been activated: "
-            + ((float) getClusterStatus(false).getTasks()
-                / (float) job.getNumBspTask() * 100) + "%";
+        report = "Launched tasks: " + getClusterStatus(false).getTasks() + "/"
+            + job.getNumBspTask();
       } else {
         report = "Current supersteps number: " + step;
       }
