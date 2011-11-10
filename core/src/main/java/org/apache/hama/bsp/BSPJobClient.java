@@ -451,7 +451,7 @@ public class BSPJobClient extends Configured implements Tool {
             Object key = recordReader.createKey();
             Object value = recordReader.createValue();
             while (recordReader.next(key, value)) {
-              int index = partitioner.getPartition(key, value, numOfTasks);
+              int index = Math.abs(partitioner.getPartition(key, value, numOfTasks));
               writers.get(index).append(key, value);
             }
             LOG.debug("Done with split " + i);
