@@ -595,7 +595,15 @@ public class BSPJobClient extends Configured implements Tool {
     while (!job.isComplete()) {
       Thread.sleep(3000);
       long step = job.progress();
-      String report = "Current supersteps number: " + step;
+      String report = "";
+
+      if (step == 0) {
+        report = "Wait for tasks that have not yet been activated: "
+            + ((getClusterStatus(false).getTasks() / job.getNumBspTask()) * 100)
+            + "%";
+      } else {
+        report = "Current supersteps number: " + step;
+      }
 
       if (!report.equals(lastReport)) {
         LOG.info(report);

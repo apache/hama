@@ -143,12 +143,16 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
         GroomServerStatus tmpStatus = null;
         for (GroomServerStatus old : groomServers.keySet()) {
           if (old.equals(groomStatus)) {
+            totalTasks -= old.countTasks();
             tmpStatus = groomStatus;
             updateGroomServersKey(old, tmpStatus);
             break;
           }
-        }// for
+        }
+        
         if (null != tmpStatus) {
+          totalTasks += tmpStatus.countTasks();
+          
           List<TaskStatus> tlist = tmpStatus.getTaskReports();
           for (TaskStatus ts : tlist) {
             JobInProgress jip = whichJob(ts.getJobId());
@@ -637,7 +641,6 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
         GroomServerStatus s = entry.getKey();
         groomsMap.put(s.getGroomHostName() + ":" + Constants.DEFAULT_PEER_PORT, s);
       }
-
     }
 
     int tasksPerGroom = conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3);
