@@ -15,7 +15,7 @@ Release 0.4 - Unreleased
 
   BUG FIXES
 
-    HAMA-465: LocalJobRunner should support combiners and IO
+    HAMA-465: LocalJobRunner should support combiners and IO (tjungblut)
     HAMA-459: GroomServerStatus.countTask() always returns 1 (edwardyoon)
     HAMA-432: Add statusUpdate() method to BSPPeerProtocol (edwardyoon)
     HAMA-437: PiEstimator is not working in Local Mode (Thomas Jungblut)
