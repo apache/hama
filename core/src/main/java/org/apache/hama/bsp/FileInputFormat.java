@@ -185,12 +185,21 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
       totalSize += file.getLen();
     }
 
+    ArrayList<FileSplit> splits = new ArrayList<FileSplit>(numSplits);
+    // take the short circuit path if we have already partitioned
+    if (numSplits == files.length) {
+      for (FileStatus file : files) {
+        splits.add(new FileSplit(file.getPath(), 0, file.getLen(),
+            new String[0]));
+      }
+      return splits.toArray(new FileSplit[splits.size()]);
+    }
+
     long goalSize = totalSize / (numSplits == 0 ? 1 : numSplits);
     long minSize = Math.max(job.getConf().getLong("bsp.min.split.size", 1),
         minSplitSize);
 
     // generate splits
-    ArrayList<FileSplit> splits = new ArrayList<FileSplit>(numSplits);
     NetworkTopology clusterMap = new NetworkTopology();
     for (FileStatus file : files) {
       Path path = file.getPath();
@@ -255,8 +264,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    *          inputs for the map-reduce job.
    */
   public static void setInputPaths(BSPJob conf, String commaSeparatedPaths) {
-    setInputPaths(conf, StringUtils
-        .stringToPath(getPathStrings(commaSeparatedPaths)));
+    setInputPaths(conf,
+        StringUtils.stringToPath(getPathStrings(commaSeparatedPaths)));
   }
 
   /**
