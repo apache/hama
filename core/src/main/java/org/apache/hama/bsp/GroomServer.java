@@ -230,8 +230,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
 
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
-          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
+          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -243,9 +243,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(
-          conf.get("bsp.dns.interface", "default"),
-          conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
+          "default"), conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(conf.getStrings("bsp.local.dir"));
@@ -474,6 +473,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       String msg = ("Error initializing " + tip.getTask().getTaskID() + ":\n" + StringUtils
           .stringifyException(e));
       LOG.warn(msg);
+
+      try {
+        tip.killAndCleanup(true);
+      } catch (IOException ie2) {
+        LOG.info("Error cleaning up " + tip.getTask().getTaskID() + ":\n"
+            + StringUtils.stringifyException(ie2));
+      }
     }
   }
 
@@ -733,7 +739,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       this.jobConf = jobConf;
       this.localJobConf = null;
       this.taskStatus = new TaskStatus(task.getJobID(), task.getTaskID(), 0,
-          TaskStatus.State.UNASSIGNED, "running", groomServer,
+          TaskStatus.State.UNASSIGNED, "init", groomServer,
           TaskStatus.Phase.STARTING);
     }
 
@@ -776,11 +782,23 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     /**
-     * This task has run on too long, and should be killed.
+     * Something went wrong and the task must be killed.
      */
     public synchronized void killAndCleanup(boolean wasFailure)
         throws IOException {
-      runner.killBsp();
+      if (wasFailure) {
+        failures += 1;
+        taskStatus.setRunState(TaskStatus.State.FAILED);
+      } else {
+        taskStatus.setRunState(TaskStatus.State.KILLED);
+      }
+
+      if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
+        // runner could be null if task-cleanup attempt is not localized yet
+        if (runner != null) {
+          runner.killBsp();
+        }
+      }
     }
 
     /**
