@@ -216,8 +216,8 @@ public class BSPJobClient extends Configured implements Tool {
     if (masterAdress != null && !masterAdress.equals("local")) {
       this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
           JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
-          BSPMaster.getAddress(conf), conf,
-          NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
+          BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(conf,
+              JobSubmissionProtocol.class));
     } else {
       LOG.debug("Using local BSP runner.");
       this.jobSubmitClient = new LocalBSPRunner(conf);
@@ -296,7 +296,7 @@ public class BSPJobClient extends Configured implements Tool {
 
   public RunningJob submitJobInternal(BSPJob job) throws IOException {
     BSPJobID jobId = jobSubmitClient.getNewJobId();
-    
+
     job.setJobID(jobId);
 
     Path submitJobDir = new Path(getSystemDir(), "submit_"
@@ -388,7 +388,7 @@ public class BSPJobClient extends Configured implements Tool {
     }
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @SuppressWarnings( { "rawtypes", "unchecked" })
   private BSPJob partition(BSPJob job) throws IOException {
     if (job.getConf().get("bsp.input.partitioner.class") != null) {
       InputSplit[] splits = job.getInputFormat().getSplits(job,
@@ -426,8 +426,8 @@ public class BSPJobClient extends Configured implements Tool {
             job, null);
         CompressionCodec codec = null;
         if (outputCompressorClass != null) {
-          codec = ReflectionUtils.newInstance(outputCompressorClass,
-              job.getConf());
+          codec = ReflectionUtils.newInstance(outputCompressorClass, job
+              .getConf());
         }
 
         try {
@@ -451,7 +451,8 @@ public class BSPJobClient extends Configured implements Tool {
             Object key = recordReader.createKey();
             Object value = recordReader.createValue();
             while (recordReader.next(key, value)) {
-              int index = Math.abs(partitioner.getPartition(key, value, numOfTasks));
+              int index = Math.abs(partitioner.getPartition(key, value,
+                  numOfTasks));
               writers.get(index).append(key, value);
             }
             LOG.debug("Done with split " + i);
@@ -599,8 +600,8 @@ public class BSPJobClient extends Configured implements Tool {
 
       if (step == 0) {
         report = "Wait for tasks that have not yet been activated: "
-            + ((getClusterStatus(false).getTasks() / job.getNumBspTask()) * 100)
-            + "%";
+            + ((float) getClusterStatus(false).getTasks()
+                / (float) job.getNumBspTask() * 100) + "%";
       } else {
         report = "Current supersteps number: " + step;
       }
@@ -804,9 +805,8 @@ public class BSPJobClient extends Configured implements Tool {
         System.out.println("Job name: " + job.getJobName());
         System.out.printf("States are:\n\tRunning : 1\tSucceded : 2"
             + "\tFailed : 3\tPrep : 4\n");
-        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(),
-            jobStatus.getRunState(), jobStatus.getStartTime(),
-            jobStatus.getUsername());
+        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(), jobStatus
+            .getRunState(), jobStatus.getStartTime(), jobStatus.getUsername());
 
         exitCode = 0;
       }
