@@ -15,6 +15,7 @@ Release 0.4 - Unreleased
 
   BUG FIXES
 
+    HAMA-472: The task should be killed if it fails to initialize (edwardyoon)
     HAMA-465: LocalJobRunner should support combiners and IO (tjungblut)
     HAMA-459: GroomServerStatus.countTask() always returns 1 (edwardyoon)
     HAMA-432: Add statusUpdate() method to BSPPeerProtocol (edwardyoon)
