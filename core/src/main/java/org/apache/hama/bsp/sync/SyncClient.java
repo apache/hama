@@ -72,7 +72,7 @@ public interface SyncClient {
 
   /**
    * Returns all registered tasks within the sync daemon. They have to be
-   * ordered descending.
+   * ordered ascending by their task id.
    * 
    * @param taskId the tasks ID
    * @return an <b>ordered</b> string array of host:port pairs of all tasks
