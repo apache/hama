@@ -25,7 +25,8 @@ Release 0.4 - Unreleased
     HAMA-421: Maven build issues using proxy (Joe Crobak via edwardyoon)
 
   IMPROVEMENTS
-
+   
+    HAMA-471: Peer names should be sorted by task id (tjungblut)
     HAMA-461: Extract a message service from BSPPeer (tjungblut)
     HAMA-463: Integrate checkpoint with bsp task (chl501)
     HAMA-457: Refactoring of BSPPeerImpl (tjungblut)

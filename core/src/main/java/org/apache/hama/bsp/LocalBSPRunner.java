@@ -20,13 +20,9 @@ package org.apache.hama.bsp;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,6 +76,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   protected FileSystem fs;
 
   private static long superStepCount = 0L;
+  private static String[] peerNames;
 
   // this is used for not-input driven job
   private int maxTasks;
@@ -146,7 +143,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       }
     }
 
+    peerNames = new String[numBspTask];
     for (int i = 0; i < numBspTask; i++) {
+      peerNames[i] = "local:" + i;
       futureList.add(threadPool.submit(new BSPRunner(new Configuration(conf),
           job, i, splits)));
     }
@@ -221,7 +220,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       this.id = id;
       this.splits = splits;
 
+      // set the peer port to the id, to prevent collision
       conf.setInt(Constants.PEER_PORT, id);
+      conf.set(Constants.PEER_HOST, "local");
 
       bsp = (BSP) ReflectionUtils.newInstance(
           job.getConf().getClass("bsp.work.class", BSP.class), job.getConf());
@@ -426,10 +427,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   public static class LocalSyncClient implements SyncClient {
     // note that this is static, because we will have multiple peers
     private static CyclicBarrier barrier;
-    private static List<String> peers = Collections
-        .synchronizedList(new ArrayList<String>());
-    private String[] hosts;
-
     private int tasks;
 
     @Override
@@ -454,23 +451,17 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public void leaveBarrier(BSPJobID jobId, TaskAttemptID taskId,
         long superstep) throws Exception {
-      // in our initial superstep we have to set the tasks to an array
-      if (superstep == -1l) {
-        hosts = peers.toArray(new String[peers.size()]);
-        Arrays.sort(hosts);
-      }
       barrier.await();
     }
 
     @Override
     public void register(BSPJobID jobId, TaskAttemptID taskId,
         String hostAddress, long port) {
-      peers.add(hostAddress + ":" + port);
     }
 
     @Override
     public String[] getAllPeerNames(TaskAttemptID taskId) {
-      return hosts;
+      return peerNames;
     }
 
     @Override

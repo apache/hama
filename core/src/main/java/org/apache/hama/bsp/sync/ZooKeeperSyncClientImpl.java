@@ -17,10 +17,16 @@
  */
 package org.apache.hama.bsp.sync;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,14 +44,16 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**
- * This client class abstracts the use of our zookeeper sync code. <br/>
- * <br/>
- * TODO maybe extract an abstract class and let the subclasses implement
- * enter-/leaveBarrier so we can have multiple implementations, just like
- * goldenorb.
+ * This client class abstracts the use of our zookeeper sync code.
  * 
  */
 public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
+
+  /*
+   * TODO maybe extract an abstract class and let the subclasses implement
+   * enter-/leaveBarrier so we can have multiple implementations, just like
+   * goldenorb.
+   */
 
   public static final Log LOG = LogFactory
       .getLog(ZooKeeperSyncClientImpl.class);
@@ -236,7 +244,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
     } catch (InterruptedException e) {
       LOG.error(e);
     }
-    registerTask(zk, jobId, hostAddress, port);
+    registerTask(zk, jobId, hostAddress, port, taskId);
   }
 
   /**
@@ -248,12 +256,16 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
    * @param taskId
    * @param hostAddress
    * @param port
+   * @param taskId
    */
   public static void registerTask(ZooKeeper zk, BSPJobID jobId,
-      String hostAddress, long port) {
+      String hostAddress, long port, TaskAttemptID taskId) {
+
+    byte[] taskIdBytes = serializeTaskId(taskId);
+
     try {
       zk.create("/" + jobId.toString() + "/" + hostAddress + ":" + port,
-          new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+          taskIdBytes, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
     } catch (KeeperException e) {
       LOG.error(e);
     } catch (InterruptedException e) {
@@ -261,19 +273,71 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
     }
   }
 
+  private static byte[] serializeTaskId(TaskAttemptID taskId) {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    DataOutputStream out = new DataOutputStream(bos);
+    try {
+      taskId.write(out);
+    } catch (IOException e) {
+      LOG.error(e);
+    } finally {
+      try {
+        out.close();
+      } catch (IOException e) {
+        LOG.error(e);
+      }
+    }
+    return bos.toByteArray();
+  }
+
+  public static TaskAttemptID deserializeTaskId(byte[] arr) {
+    ByteArrayInputStream bis = new ByteArrayInputStream(arr);
+    DataInputStream in = new DataInputStream(bis);
+    TaskAttemptID id = new TaskAttemptID();
+    try {
+      id.readFields(in);
+    } catch (IOException e) {
+      LOG.error(e);
+    } finally {
+      try {
+        in.close();
+      } catch (IOException e) {
+        LOG.error(e);
+      }
+    }
+    return id;
+  }
+
   @Override
   public String[] getAllPeerNames(TaskAttemptID taskId) {
     if (allPeers == null) {
+      TreeMap<Integer, String> sortedMap = new TreeMap<Integer, String>();
       try {
         allPeers = zk.getChildren("/" + taskId.getJobID().toString(), this)
             .toArray(new String[0]);
+
+        for (String s : allPeers) {
+          byte[] data = zk.getData(
+              "/" + taskId.getJobID().toString() + "/" + s, this, null);
+          TaskAttemptID thatTask = deserializeTaskId(data);
+          LOG.debug("TASK mapping from zookeeper: " + thatTask + " ID:"
+              + thatTask.getTaskID().getId() + " : " + s);
+          sortedMap.put(thatTask.getTaskID().getId(), s);
+        }
+
       } catch (Exception e) {
         LOG.error(e);
-        throw new NullPointerException("All peer names could not be retrieved!");
+        throw new RuntimeException("All peer names could not be retrieved!");
       }
-      // don't forget to sort the peers, since zookeeper does not care about
-      // ordering the children.
-      Arrays.sort(allPeers);
+
+      allPeers = new String[sortedMap.size()];
+      int count = 0;
+      for (Entry<Integer, String> entry : sortedMap.entrySet()) {
+        allPeers[count++] = entry.getValue();
+        LOG.debug("TASK mapping from zookeeper: " + entry.getKey() + " : "
+            + entry.getValue() + " at index " + (count-1));
+      }
+
     }
     return allPeers;
   }
