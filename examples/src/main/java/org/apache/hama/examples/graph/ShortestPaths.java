@@ -39,7 +39,6 @@ import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.OutputCollector;
 import org.apache.hama.bsp.RecordReader;
-import org.apache.hama.examples.RandBench;
 import org.apache.zookeeper.KeeperException;
 
 public class ShortestPaths extends ShortestPathsBase {
@@ -201,7 +200,7 @@ public class ShortestPaths extends ShortestPathsBase {
     if (adjacencyListPath == null)
       adjacencyList = ShortestPathsGraphLoader.loadGraph();
 
-    BSPJob bsp = new BSPJob(conf, RandBench.class);
+    BSPJob bsp = new BSPJob(conf, ShortestPaths.class);
     // Set the job name
     bsp.setJobName("Single Source Shortest Path");
     bsp.setBspClass(ShortestPaths.class);

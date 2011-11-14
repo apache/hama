@@ -55,9 +55,11 @@ public class TestBSPMasterGroomServer extends HamaCluster {
   }
 
   public void testSubmitJob() throws Exception {
-    BSPJob bsp = new BSPJob(configuration, testjar.ClassSerializePrinting.HelloBSP.class);
+    BSPJob bsp = new BSPJob(configuration,
+        org.apache.hama.examples.ClassSerializePrinting.HelloBSP.class);
     bsp.setJobName("Test Serialize Printing");
-    bsp.setBspClass(testjar.ClassSerializePrinting.HelloBSP.class);
+    bsp
+        .setBspClass(org.apache.hama.examples.ClassSerializePrinting.HelloBSP.class);
 
     // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(configuration);
@@ -65,7 +67,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     ClusterStatus cluster = jobClient.getClusterStatus(false);
     assertEquals(this.numOfGroom, cluster.getGroomServers());
     bsp.setNumBspTask(2);
-    
+
     FileSystem fileSys = FileSystem.get(conf);
 
     if (bsp.waitForCompletion(true)) {
@@ -78,7 +80,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
       int tasks) throws Exception {
     for (int i = 0; i < tasks; i++) {
       SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, new Path(
-          TMP_OUTPUT + "part-0000" +i), conf);
+          TMP_OUTPUT + "part-0000" + i), conf);
       LongWritable timestamp = new LongWritable();
       Text message = new Text();
       reader.next(timestamp, message);
