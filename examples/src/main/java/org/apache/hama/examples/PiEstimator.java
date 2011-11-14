@@ -88,9 +88,8 @@ public class PiEstimator {
     public void setup(
         BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer) {
       // Choose one as a master
-      this.masterTask = peer.getPeerName(0);
+      this.masterTask = peer.getPeerName(peer.getNumPeers() / 2);
     }
-
   }
 
   private static void printOutput(HamaConfiguration conf) throws IOException {

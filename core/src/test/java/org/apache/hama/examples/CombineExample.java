@@ -82,7 +82,7 @@ public class CombineExample {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
 
-    BSPJob bsp = new BSPJob(conf, PiEstimator.class);
+    BSPJob bsp = new BSPJob(conf, CombineExample.class);
     // Set the job name
     bsp.setJobName("Combine Example");
     bsp.setBspClass(MyBSP.class);
