@@ -100,8 +100,7 @@ class JobInProgress {
     BSPJob job = new BSPJob(jobId, localJobFile.toString());
     this.jobSplit = job.getConf().get("bsp.job.split.file");
     
-    // default is 1, because with zero, we will hang in infinity
-    this.numBSPTasks = job.getInt("bsp.peers.num", 1);
+    this.numBSPTasks = job.getNumBspTask();
 
 
     this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
