@@ -70,7 +70,19 @@ public class PiEstimator {
 
       peer.send(masterTask, estimate);
       peer.sync();
+    }
 
+    @Override
+    public void setup(
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer)
+        throws IOException {
+      // Choose one as a master
+      this.masterTask = peer.getPeerName(peer.getNumPeers() / 2);
+    }
+
+    public void cleanup(
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer)
+        throws IOException {
       if (peer.getPeerName().equals(masterTask)) {
         double pi = 0.0;
         int numPeers = peer.getNumCurrentMessages();
@@ -80,19 +92,13 @@ public class PiEstimator {
         }
 
         pi = pi / numPeers;
-        peer.write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
+        peer
+            .write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
       }
-    }
-
-    @Override
-    public void setup(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer) {
-      // Choose one as a master
-      this.masterTask = peer.getPeerName(peer.getNumPeers() / 2);
     }
   }
 
-  private static void printOutput(HamaConfiguration conf) throws IOException {
+  static void printOutput(HamaConfiguration conf) throws IOException {
     FileSystem fs = FileSystem.get(conf);
     FileStatus[] files = fs.listStatus(TMP_OUTPUT);
     for (int i = 0; i < files.length; i++) {
