@@ -35,6 +35,7 @@ public abstract class BSP<K1, V1, K2, V2> implements
    * done here.
    * 
    * @param peer Your BSPPeer instance.
+   * @throws IOException 
    */
   public abstract void bsp(BSPPeer<K1, V1, K2, V2> peer) throws IOException,
       KeeperException, InterruptedException;
@@ -44,6 +45,7 @@ public abstract class BSP<K1, V1, K2, V2> implements
    * purposes.
    * 
    * @param peer Your BSPPeer instance.
+   * @throws IOException 
    */
   public void setup(BSPPeer<K1, V1, K2, V2> peer) throws IOException,
       KeeperException, InterruptedException {
@@ -56,8 +58,9 @@ public abstract class BSP<K1, V1, K2, V2> implements
    * case of exceptions.
    * 
    * @param peer Your BSPPeer instance.
+   * @throws IOException 
    */
-  public void cleanup(BSPPeer<K1, V1, K2, V2> peer) {
+  public void cleanup(BSPPeer<K1, V1, K2, V2> peer) throws IOException {
 
   }
 
