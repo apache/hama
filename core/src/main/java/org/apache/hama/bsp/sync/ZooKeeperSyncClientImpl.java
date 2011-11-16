@@ -99,6 +99,8 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
       createZnode(pathToSuperstepZnode);
       BarrierWatcher barrierWatcher = new BarrierWatcher();
 
+      Stat readyStat = zk.exists(pathToSuperstepZnode + "/ready",
+          barrierWatcher);
       zk.create(getNodeName(taskId, superstep), null, Ids.OPEN_ACL_UNSAFE,
           CreateMode.EPHEMERAL);
 
