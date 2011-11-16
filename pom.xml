@@ -187,7 +187,7 @@
     <module>core</module>
     <module>graph</module>
     <module>examples</module>
-    <!--<module>yarn</module>-->
+    <module>yarn</module>
   </modules>
 
   <build>
