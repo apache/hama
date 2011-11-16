@@ -20,6 +20,7 @@
 package org.apache.hama.examples;
 
 import org.apache.hadoop.util.ProgramDriver;
+import org.apache.hama.examples.graph.ShortestPaths;
 
 public class ExampleDriver {
 
@@ -27,6 +28,7 @@ public class ExampleDriver {
     ProgramDriver pgd = new ProgramDriver();
     try {
       pgd.addClass("pi", PiEstimator.class, "Pi Estimator");
+      pgd.addClass("sssp", ShortestPaths.class, "Single Shortest Path");
 
       pgd.driver(args);
     } catch (Throwable e) {

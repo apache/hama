@@ -21,11 +21,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hama.examples.graph.partitioning.PartitionableWritable;
+import org.apache.hadoop.io.Writable;
 
-public class Vertex implements PartitionableWritable {
+public class Vertex implements Writable {
 
-  protected int id;
   protected String name;
 
   public Vertex() {
@@ -35,24 +34,21 @@ public class Vertex implements PartitionableWritable {
   public Vertex(String name) {
     super();
     this.name = name;
-    this.id = name.hashCode();
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.id = in.readInt();
     this.name = in.readUTF();
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(id);
     out.writeUTF(name);
   }
 
   @Override
   public int hashCode() {
-    return id;
+    return name.hashCode();
   }
 
   @Override
@@ -67,11 +63,6 @@ public class Vertex implements PartitionableWritable {
     if (!name.equals(other.name))
       return false;
     return true;
-  }
-
-  @Override
-  public int getId() {
-    return id;
   }
 
   public String getName() {
