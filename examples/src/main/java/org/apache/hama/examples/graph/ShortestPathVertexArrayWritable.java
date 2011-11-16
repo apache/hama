@@ -15,26 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples.graph.partitioning;
+package org.apache.hama.examples.graph;
 
-import org.apache.hama.examples.graph.Vertex;
+import org.apache.hadoop.io.ArrayWritable;
 
-public class VertexPartitioner extends AbstractGraphPartitioner<Vertex> {
+public class ShortestPathVertexArrayWritable extends ArrayWritable {
 
-  @Override
-  protected AdjacentPair<Vertex> process(String line) {
-
-    String[] vertices = line.split("\t");
-
-    Vertex v = new Vertex(vertices[0]);
-    Vertex[] adjacents = new Vertex[vertices.length - 1];
-
-    for (int i = 1; i < vertices.length; i++) {
-      adjacents[i - 1] = new Vertex(vertices[i]);
-    }
-
-    return new AdjacentPair<Vertex>(v, adjacents);
+  public ShortestPathVertexArrayWritable() {
+    super(ShortestPathVertex.class);
   }
-  
-  
+
 }

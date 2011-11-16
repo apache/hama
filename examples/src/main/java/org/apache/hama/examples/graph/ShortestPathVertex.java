@@ -24,7 +24,7 @@ import java.io.IOException;
 public final class ShortestPathVertex extends Vertex {
 
   private int weight;
-  private Integer cost;
+  private int cost = Integer.MAX_VALUE;
 
   public ShortestPathVertex() {
   }
@@ -34,7 +34,7 @@ public final class ShortestPathVertex extends Vertex {
     this.weight = weight;
   }
 
-  public ShortestPathVertex(int weight, String name, Integer cost) {
+  public ShortestPathVertex(int weight, String name, int cost) {
     super(name);
     this.weight = weight;
     this.cost = cost;
@@ -44,16 +44,12 @@ public final class ShortestPathVertex extends Vertex {
     return name;
   }
 
-  public Integer getCost() {
+  public int getCost() {
     return cost;
   }
 
   public void setCost(Integer cost) {
     this.cost = cost;
-  }
-
-  public int getId() {
-    return id;
   }
 
   public int getWeight() {
