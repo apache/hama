@@ -20,7 +20,6 @@
 package org.apache.hama.examples;
 
 import org.apache.hadoop.util.ProgramDriver;
-import org.apache.hama.examples.graph.ShortestPaths;
 
 public class ExampleDriver {
 

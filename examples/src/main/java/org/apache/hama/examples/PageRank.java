@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples.graph;
+package org.apache.hama.examples;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,6 +43,7 @@ import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.util.KeyValuePair;
 import org.apache.zookeeper.KeeperException;
+import org.apache.hama.graph.Vertex;
 
 public class PageRank extends
     BSP<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> {

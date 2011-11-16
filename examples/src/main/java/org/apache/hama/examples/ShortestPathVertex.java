@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples.graph;
+package org.apache.hama.examples;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import org.apache.hama.graph.Vertex;
 
 public final class ShortestPathVertex extends Vertex {
 

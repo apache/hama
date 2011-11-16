@@ -15,16 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples.graph;
+package org.apache.hama.examples;
 
 import java.io.IOException;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.fs.FileStatus;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -35,10 +31,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BooleanMessage;
-import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.SequenceFileInputFormat;
@@ -110,16 +104,13 @@ public class ShortestPaths extends
 
   @Override
   public void cleanup(
-      BSPPeer<ShortestPathVertex, ShortestPathVertexArrayWritable, Text, IntWritable> peer) {
+      BSPPeer<ShortestPathVertex, ShortestPathVertexArrayWritable, Text, IntWritable> peer)
+      throws IOException {
     // write our map into hdfs
     for (Entry<ShortestPathVertex, ShortestPathVertex[]> entry : adjacencyList
         .entrySet()) {
-      try {
-        peer.write(new Text(entry.getKey().getName()), new IntWritable(entry
-            .getKey().getCost()));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      peer.write(new Text(entry.getKey().getName()), new IntWritable(entry
+          .getKey().getCost()));
     }
   }
 
@@ -187,28 +178,6 @@ public class ShortestPaths extends
     System.out.println("Usage: <startNode> <output path> <input path>");
   }
 
-  public static void printOutput(Configuration conf) throws IOException {
-    FileSystem fs = FileSystem.get(conf);
-    LOG.info("-------------------- RESULTS --------------------");
-    FileStatus[] stati = fs.listStatus(new Path(conf.get("bsp.output.dir")));
-    for (FileStatus status : stati) {
-      if (!status.isDir() && !status.getPath().getName().endsWith(".crc")) {
-        Path path = status.getPath();
-        SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-        Text key = new Text();
-        IntWritable value = new IntWritable();
-        int x = 0;
-        while (reader.next(key, value)) {
-          LOG.info(key.toString() + " | " + value.get());
-          x++;
-          if(x > 3)
-           break;
-        }
-        reader.close();
-      }
-    }
-  }
-
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException, InstantiationException,
       IllegalAccessException {
@@ -234,15 +203,10 @@ public class ShortestPaths extends
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
     bsp.setOutputKeyClass(Text.class);
     bsp.setOutputValueClass(IntWritable.class);
-
-    BSPJobClient jobClient = new BSPJobClient(conf);
-    ClusterStatus cluster = jobClient.getClusterStatus(false);
-    // Use max tasks
     bsp.setNumBspTask(6);
 
     long startTime = System.currentTimeMillis();
     if (bsp.waitForCompletion(true)) {
-      printOutput(conf);
       System.out.println("Job Finished in "
           + (double) (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
