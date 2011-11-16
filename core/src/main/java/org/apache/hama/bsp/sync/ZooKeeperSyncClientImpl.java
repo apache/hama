@@ -98,8 +98,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
       final String pathToSuperstepZnode = pathToJobIdZnode + "/" + superstep;
       createZnode(pathToSuperstepZnode);
       BarrierWatcher barrierWatcher = new BarrierWatcher();
-      Stat readyStat = zk.exists(pathToSuperstepZnode + "/ready",
-          barrierWatcher);
+
       zk.create(getNodeName(taskId, superstep), null, Ids.OPEN_ACL_UNSAFE,
           CreateMode.EPHEMERAL);
 
@@ -117,8 +116,6 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
           + " is " + znodes.size() + ". Znodes include " + znodes);
 
       if (size < numBSPTasks) {
-        LOG.info("1. At superstep: " + superstep + " which task is waiting? "
-            + taskId.toString() + " stat is null? " + readyStat);
         while (!barrierWatcher.isComplete()) {
           if (!hasReady) {
             synchronized (mutex) {
@@ -143,8 +140,9 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
         + taskId.getJobID().toString() + "/" + superstep;
     while (true) {
       List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
-      LOG.debug("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
-          + superstep + " znode:" + znodes);
+      LOG
+          .debug("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
+              + superstep + " znode:" + znodes);
       if (znodes.contains("ready")) {
         znodes.remove("ready");
       }
@@ -170,8 +168,6 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
       final String lowest = znodes.get(0);
       final String highest = znodes.get(size - 1);
 
-      LOG.info("leaveBarrier() at superstep: " + superstep + " taskid:"
-          + taskId.toString() + " lowest: " + lowest + " highest:" + highest);
       synchronized (mutex) {
 
         if (getNodeName(taskId, superstep).equals(
@@ -198,8 +194,6 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
           Stat s1 = zk.exists(getNodeName(taskId, superstep), false);
 
           if (null != s1) {
-            LOG.info("leaveBarrier() znode at superstep:" + superstep
-                + " taskid:" + taskId.toString() + " exists, so delete it.");
             try {
               zk.delete(getNodeName(taskId, superstep), 0);
             } catch (KeeperException.NoNodeException nne) {
@@ -234,8 +228,6 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
       String hostAddress, long port) {
     try {
       if (zk.exists("/" + jobId.toString(), false) == null) {
-        LOG.info("Root node for job: " + jobId.toString()
-            + " does not exists! Creating...");
         zk.create("/" + jobId.toString(), new byte[0], Ids.OPEN_ACL_UNSAFE,
             CreateMode.PERSISTENT);
       }
@@ -335,7 +327,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
       for (Entry<Integer, String> entry : sortedMap.entrySet()) {
         allPeers[count++] = entry.getValue();
         LOG.debug("TASK mapping from zookeeper: " + entry.getKey() + " : "
-            + entry.getValue() + " at index " + (count-1));
+            + entry.getValue() + " at index " + (count - 1));
       }
 
     }
