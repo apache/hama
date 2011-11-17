@@ -20,9 +20,12 @@ package org.apache.hama.examples;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.graph.Vertex;
 
-public final class ShortestPathVertex extends Vertex {
+public final class ShortestPathVertex extends Vertex implements
+    WritableComparable<ShortestPathVertex> {
 
   private int weight;
   private int cost = Integer.MAX_VALUE;
@@ -72,6 +75,11 @@ public final class ShortestPathVertex extends Vertex {
   public void write(DataOutput out) throws IOException {
     super.write(out);
     out.writeInt(weight);
+  }
+
+  public int compareTo(ShortestPathVertex o) {
+    ShortestPathVertex that = (ShortestPathVertex) o;
+    return this.name.compareTo(that.name);
   }
 
 }

@@ -203,7 +203,6 @@ public class ShortestPaths extends
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
     bsp.setOutputKeyClass(Text.class);
     bsp.setOutputValueClass(IntWritable.class);
-    bsp.setNumBspTask(6);
 
     long startTime = System.currentTimeMillis();
     if (bsp.waitForCompletion(true)) {
