@@ -219,8 +219,9 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
       throw new IllegalArgumentException(
           "ApplicationAttemptId not set in the environment");
     }
-    return ConverterUtils.toApplicationAttemptId(envs
-        .get(ApplicationConstants.AM_CONTAINER_ID_ENV));
+    return ConverterUtils.toContainerId(
+        envs.get(ApplicationConstants.AM_CONTAINER_ID_ENV))
+        .getApplicationAttemptId();
   }
 
   private void start() throws Exception {
