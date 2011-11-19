@@ -202,7 +202,7 @@ public class YARNBSPJob extends BSPJob {
     Resource capability = Records.newRecord(Resource.class);
     // we have at least 3 threads, which comsumes 1mb each, for each bsptask and
     // a base usage of 100mb
-    capability.setMemory(3 * this.getNumBspTask() + 100);
+    capability.setMemory(3 * this.getNumBspTask() + conf.getInt("hama.appmaster.memory.mb", 100));
     LOG.info("Set memory for the application master to "
         + capability.getMemory() + "mb!");
     amContainer.setResource(capability);
