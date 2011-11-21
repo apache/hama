@@ -431,6 +431,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           }
           systemDirectory = new Path(dir);
           systemFS = systemDirectory.getFileSystem(conf);
+          deleteLocalFiles(SUBDIR);
         }
         justInited = false;
       } catch (DiskErrorException de) {
