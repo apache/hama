@@ -60,7 +60,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   public static final Log LOG = LogFactory.getLog(LocalBSPRunner.class);
 
   private static final String IDENTIFIER = "localrunner";
-  private static String WORKING_DIR = "/user/hama/bsp/";
+  private static String WORKING_DIR = "/tmp/hama-bsp/";
   protected static volatile ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Executors
       .newCachedThreadPool();
 
