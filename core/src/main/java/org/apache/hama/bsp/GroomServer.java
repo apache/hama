@@ -247,8 +247,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           "default"), conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
-    checkLocalDirs(conf.getStrings("bsp.local.dir"));
-    deleteLocalFiles("groomserver");
+    checkLocalDirs(getLocalDirs());
+    deleteLocalFiles(SUBDIR);
 
     // Clear out state tables
     this.tasks.clear();
@@ -431,7 +431,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           }
           systemDirectory = new Path(dir);
           systemFS = systemDirectory.getFileSystem(conf);
-          deleteLocalFiles(SUBDIR);
         }
         justInited = false;
       } catch (DiskErrorException de) {
