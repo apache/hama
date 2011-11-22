@@ -22,18 +22,16 @@ import org.junit.Test;
 import static org.junit.Assert.fail;
 
 /**
- * Testcase for {@link ShortestPaths}
+ * Testcase for {@link org.apache.hama.examples.CombineExample}
  */
-
-public class ShortestPathsTest {
-
+public class CombineExampleTest {
   @Test
-  public void testShortestPathsWithWrongArgs() {
+  public void testCorrectCombineExecution() {
     try {
-      ShortestPaths.main(new String[]{"1", ".", "."});
-      fail("ShortestPaths should fail if the arguments list contains wrong items");
+      CombineExample.main(new String[]{});
     } catch (Exception e) {
-      // everything ok
+      fail(e.getLocalizedMessage());
     }
   }
+
 }

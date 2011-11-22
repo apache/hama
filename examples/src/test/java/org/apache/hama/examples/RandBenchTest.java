@@ -22,18 +22,26 @@ import org.junit.Test;
 import static org.junit.Assert.fail;
 
 /**
- * Testcase for {@link ShortestPaths}
+ * Testcase for {@link org.apache.hama.examples.RandBench}
  */
-
-public class ShortestPathsTest {
+public class RandBenchTest {
+  @Test
+  public void testCorrectRandBenchExecution() {
+    try {
+      RandBench.main(new String[]{"10","100","200"});
+    } catch (Exception e) {
+      fail(e.getLocalizedMessage());
+    }
+  }
 
   @Test
-  public void testShortestPathsWithWrongArgs() {
+  public void testRandBenchExecutionWithEmptyArgs() {
     try {
-      ShortestPaths.main(new String[]{"1", ".", "."});
-      fail("ShortestPaths should fail if the arguments list contains wrong items");
+      RandBench.main(new String[10]);
+      fail("RandBench should fail if the argument list has size < 3");
     } catch (Exception e) {
       // everything ok
     }
   }
+
 }
