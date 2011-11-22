@@ -28,7 +28,8 @@ public class ExampleDriver {
     try {
       pgd.addClass("pi", PiEstimator.class, "Pi Estimator");
       pgd.addClass("sssp", ShortestPaths.class, "Single Shortest Path");
-
+      pgd.addClass("cmb", CombineExample.class, "Combine");
+      pgd.addClass("bench", RandBench.class, "Random Benchmark");
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();

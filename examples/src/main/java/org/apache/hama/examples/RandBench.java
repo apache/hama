@@ -17,24 +17,16 @@
  */
 package org.apache.hama.examples;
 
-import java.io.IOException;
-import java.util.Random;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.BSP;
-import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.bsp.BSPJobClient;
-import org.apache.hama.bsp.BSPMessage;
-import org.apache.hama.bsp.BSPPeer;
-import org.apache.hama.bsp.ByteMessage;
-import org.apache.hama.bsp.ClusterStatus;
-import org.apache.hama.bsp.NullInputFormat;
-import org.apache.hama.bsp.NullOutputFormat;
+import org.apache.hama.bsp.*;
 import org.apache.hama.util.Bytes;
 import org.apache.zookeeper.KeeperException;
+
+import java.io.IOException;
+import java.util.Random;
 
 public class RandBench {
   private static final String SIZEOFMSG = "msg.size";
