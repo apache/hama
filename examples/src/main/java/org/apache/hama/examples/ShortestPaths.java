@@ -18,15 +18,22 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
@@ -45,7 +52,7 @@ public class ShortestPaths extends
   public static final Log LOG = LogFactory.getLog(ShortestPaths.class);
 
   public static final String START_VERTEX = "shortest.paths.start.vertex.name";
-  private final HashMap<String, ShortestPathVertex> vertexLookupMap = new HashMap<String, ShortestPathVertex>();
+  private final List<ShortestPathVertex> vertexLookup = new ArrayList<ShortestPathVertex>();
   private final HashMap<ShortestPathVertex, ShortestPathVertex[]> adjacencyList = new HashMap<ShortestPathVertex, ShortestPathVertex[]>();
   private String masterTask;
 
@@ -55,13 +62,15 @@ public class ShortestPaths extends
       throws IOException, KeeperException, InterruptedException {
     boolean updated = true;
     while (updated) {
-      int updatesMade = 0;
       peer.sync();
 
-      IntegerMessage msg = null;
+      int updatesMade = 0;
+      ShortestPathVertexMessage msg = null;
       Deque<ShortestPathVertex> updatedQueue = new LinkedList<ShortestPathVertex>();
-      while ((msg = (IntegerMessage) peer.getCurrentMessage()) != null) {
-        ShortestPathVertex vertex = vertexLookupMap.get(msg.getTag());
+      while ((msg = (ShortestPathVertexMessage) peer.getCurrentMessage()) != null) {
+        int index = Collections.binarySearch(vertexLookup, msg.getTag());
+        ShortestPathVertex vertex = vertexLookup.get(index);
+
         // check if we need an distance update
         if (vertex.getCost() > msg.getData()) {
           updatesMade++;
@@ -69,7 +78,7 @@ public class ShortestPaths extends
           vertex.setCost(msg.getData());
         }
       }
-      // synchonize with all grooms if there were updates
+
       updated = broadcastUpdatesMade(peer, updatesMade);
       // send updates to the adjacents of the updated vertices
       for (ShortestPathVertex vertex : updatedQueue) {
@@ -78,26 +87,28 @@ public class ShortestPaths extends
     }
   }
 
-  @Override
   public void setup(
       BSPPeer<ShortestPathVertex, ShortestPathVertexArrayWritable, Text, IntWritable> peer)
       throws IOException, KeeperException, InterruptedException {
-
     KeyValuePair<ShortestPathVertex, ShortestPathVertexArrayWritable> next = null;
+    ShortestPathVertex startVertex = null;
+
     while ((next = peer.readNext()) != null) {
+      if (next.getKey().getName().equals(
+          peer.getConfiguration().get(START_VERTEX))) {
+        next.getKey().setCost(0);
+        startVertex = next.getKey();
+      }
       adjacencyList.put(next.getKey(), (ShortestPathVertex[]) next.getValue()
           .toArray());
-      vertexLookupMap.put(next.getKey().getName(), next.getKey());
+      vertexLookup.add(next.getKey());
     }
 
+    Collections.sort(vertexLookup);
     masterTask = peer.getPeerName(0);
 
     // initial message bypass
-    ShortestPathVertex startVertex = vertexLookupMap.get(peer
-        .getConfiguration().get(START_VERTEX));
-
     if (startVertex != null) {
-      startVertex.setCost(0);
       sendMessageToNeighbors(peer, startVertex);
     }
   }
@@ -109,8 +120,10 @@ public class ShortestPaths extends
     // write our map into hdfs
     for (Entry<ShortestPathVertex, ShortestPathVertex[]> entry : adjacencyList
         .entrySet()) {
-      peer.write(new Text(entry.getKey().getName()), new IntWritable(entry
-          .getKey().getCost()));
+      int cost = entry.getKey().getCost();
+      if (cost < Integer.MAX_VALUE) {
+        peer.write(new Text(entry.getKey().getName()), new IntWritable(cost));
+      }
     }
   }
 
@@ -166,11 +179,37 @@ public class ShortestPaths extends
       BSPPeer<ShortestPathVertex, ShortestPathVertexArrayWritable, Text, IntWritable> peer,
       ShortestPathVertex id) throws IOException {
     ShortestPathVertex[] outgoingEdges = adjacencyList.get(id);
+
     for (ShortestPathVertex adjacent : outgoingEdges) {
-      int mod = Math.abs((adjacent.hashCode() % peer.getAllPeerNames().length));
-      peer.send(peer.getPeerName(mod), new IntegerMessage(adjacent.getName(),
+      String target = peer.getPeerName(Math.abs((adjacent.hashCode() % peer
+          .getAllPeerNames().length)));
+
+      peer.send(target, new ShortestPathVertexMessage(adjacent,
           id.getCost() == Integer.MAX_VALUE ? id.getCost() : id.getCost()
               + adjacent.getWeight()));
+    }
+  }
+
+  static void printOutput(Configuration conf) throws IOException {
+    FileSystem fs = FileSystem.get(conf);
+    FileStatus[] stati = fs.listStatus(new Path(conf.get("bsp.output.dir")));
+    for (FileStatus status : stati) {
+      if (!status.isDir() && !status.getPath().getName().endsWith(".crc")) {
+        Path path = status.getPath();
+        SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
+        Text key = new Text();
+        IntWritable value = new IntWritable();
+        int x = 0;
+        while (reader.next(key, value)) {
+          System.out.println(key.toString() + " | " + value.get());
+          x++;
+          if (x > 10) {
+            System.out.println("...");
+            break;
+          }
+        }
+        reader.close();
+      }
     }
   }
 
@@ -206,10 +245,10 @@ public class ShortestPaths extends
 
     long startTime = System.currentTimeMillis();
     if (bsp.waitForCompletion(true)) {
+      printOutput(conf);
       System.out.println("Job Finished in "
           + (double) (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
     }
   }
-
 }
