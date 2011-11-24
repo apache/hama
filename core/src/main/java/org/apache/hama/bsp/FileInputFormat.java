@@ -209,6 +209,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
       if ((length != 0) && isSplitable(fs, path)) {
         long blockSize = file.getBlockSize();
         long splitSize = computeSplitSize(goalSize, minSize, blockSize);
+        LOG.debug("computeSplitSize: " + splitSize + " (" + goalSize + ", "
+            + minSize + ", " + blockSize + ")");
 
         long bytesRemaining = length;
         while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
@@ -264,8 +266,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    *          inputs for the map-reduce job.
    */
   public static void setInputPaths(BSPJob conf, String commaSeparatedPaths) {
-    setInputPaths(conf,
-        StringUtils.stringToPath(getPathStrings(commaSeparatedPaths)));
+    setInputPaths(conf, StringUtils
+        .stringToPath(getPathStrings(commaSeparatedPaths)));
   }
 
   /**
