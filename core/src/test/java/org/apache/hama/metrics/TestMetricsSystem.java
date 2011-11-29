@@ -46,7 +46,7 @@ public class TestMetricsSystem extends TestCase {
     // metrics information from source to sink.
     long period = this.metricsSystem.period();
     LOG.info("period (in seconds) the metrics system is configured: "+period);
-    Thread.sleep(period*1000); 
+    Thread.sleep(period * 2000); 
     MetricsSink sink =  this.metricsSystem.findSink(
       "org.apache.hama.metrics.SystemMonitorSink");
     assertNotNull("Sink should be auto registered.", sink);
