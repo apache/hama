@@ -328,17 +328,16 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     @Override
     public void send(String peerName, BSPMessage msg) throws IOException {
-      LinkedList<BSPMessage> msgs = localOutgoingMessages.get(peerName);
-      if (msgs == null) {
-        msgs = new LinkedList<BSPMessage>();
-      }
-      msgs.add(msg);
-
       InetSocketAddress inetSocketAddress = socketCache.get(peerName);
       if (inetSocketAddress == null) {
         inetSocketAddress = BSPNetUtils.getAddress(peerName);
         socketCache.put(peerName, inetSocketAddress);
       }
+      LinkedList<BSPMessage> msgs = localOutgoingMessages.get(inetSocketAddress);
+      if (msgs == null) {
+        msgs = new LinkedList<BSPMessage>();
+      }
+      msgs.add(msg);
 
       localOutgoingMessages.put(inetSocketAddress, msgs);
     }
