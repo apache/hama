@@ -134,7 +134,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
 
     messenger = MessageManagerFactory.getMessageManager(conf);
     messenger.init(conf, peerAddress);
-    
+
   }
 
   @SuppressWarnings("unchecked")
@@ -142,6 +142,27 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     syncClient = SyncServiceFactory.getSyncClient(conf);
     syncClient.init(conf, taskId.getJobID(), taskId);
 
+    initInput();
+
+    // just output something when the user configured it
+    if (conf.get("bsp.output.dir") != null) {
+      Path outdir = new Path(conf.get("bsp.output.dir"),
+          Task.getOutputName(partition));
+      outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob,
+          outdir.makeQualified(fs).toString());
+      final RecordWriter<KEYOUT, VALUEOUT> finalOut = outWriter;
+
+      collector = new OutputCollector<KEYOUT, VALUEOUT>() {
+        public void collect(KEYOUT key, VALUEOUT value) throws IOException {
+          finalOut.write(key, value);
+        }
+      };
+    }
+
+  }
+
+  @SuppressWarnings("unchecked")
+  public void initInput() throws IOException {
     // just read input if the user defined one
     if (conf.get("bsp.input.dir") != null) {
       InputSplit inputSplit = null;
@@ -159,25 +180,11 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
       DataInputBuffer splitBuffer = new DataInputBuffer();
       splitBuffer.reset(split.getBytes(), 0, split.getLength());
       inputSplit.readFields(splitBuffer);
-
+      if (in != null) {
+        in.close();
+      }
       in = bspJob.getInputFormat().getRecordReader(inputSplit, bspJob);
     }
-
-    // just output something when the user configured it
-    if (conf.get("bsp.output.dir") != null) {
-      Path outdir = new Path(conf.get("bsp.output.dir"),
-          Task.getOutputName(partition));
-      outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob,
-          outdir.makeQualified(fs).toString());
-      final RecordWriter<KEYOUT, VALUEOUT> finalOut = outWriter;
-
-      collector = new OutputCollector<KEYOUT, VALUEOUT>() {
-        public void collect(KEYOUT key, VALUEOUT value) throws IOException {
-          finalOut.write(key, value);
-        }
-      };
-    }
-
   }
 
   @Override
@@ -390,6 +397,11 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     } else {
       return null;
     }
+  }
+
+  @Override
+  public void reopenInput() throws IOException {
+    initInput();
   }
 
 }
