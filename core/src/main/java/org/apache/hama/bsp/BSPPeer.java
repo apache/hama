@@ -120,6 +120,12 @@ public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Constants {
   public KeyValuePair<KEYIN, VALUEIN> readNext() throws IOException;
 
   /**
+   * Closes the input and opens it right away, so that the file pointer is at
+   * the beginning again.
+   */
+  public void reopenInput() throws IOException;
+
+  /**
    * @return the jobs configuration
    */
   public Configuration getConfiguration();
