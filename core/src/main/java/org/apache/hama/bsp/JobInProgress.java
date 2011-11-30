@@ -83,8 +83,8 @@ class JobInProgress {
     this.jobFile = jobFile;
     this.master = master;
 
-    this.status = new JobStatus(jobId, null, 0L, 0L,
-        JobStatus.State.PREP.value());
+    this.status = new JobStatus(jobId, null, 0L, 0L, JobStatus.State.PREP
+        .value());
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -99,12 +99,11 @@ class JobInProgress {
     fs.copyToLocalFile(jobFile, localJobFile);
     BSPJob job = new BSPJob(jobId, localJobFile.toString());
     this.jobSplit = job.getConf().get("bsp.job.split.file");
-    
+
     this.numBSPTasks = job.getNumBspTask();
 
-
-    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
-        job.getJobName());
+    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
+        .getJobName());
 
     this.setJobName(job.getJobName());
 
@@ -269,9 +268,9 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(),
-          this.profile.getUser(), superstepCounter, superstepCounter,
-          superstepCounter, JobStatus.SUCCEEDED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(), this.profile
+          .getUser(), superstepCounter, superstepCounter, superstepCounter,
+          JobStatus.SUCCEEDED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
@@ -303,9 +302,8 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(),
-          this.profile.getUser(), superstepCounter, superstepCounter,
-          superstepCounter, JobStatus.FAILED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(), this.profile
+          .getUser(), 0L, 0L, 0L, JobStatus.FAILED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
