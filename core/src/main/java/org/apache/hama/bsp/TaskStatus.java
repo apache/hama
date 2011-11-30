@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hama.bsp.BSPPeerImpl.PeerCounter;
 
 /**
  * Describes the current status of a task. This is not intended to be a
@@ -50,24 +51,24 @@ public class TaskStatus implements Writable, Cloneable {
   private volatile State runState;
   private String stateString;
   private String groomServer;
-  private long superstepCount;
 
   private long startTime;
   private long finishTime;
 
   private volatile Phase phase = Phase.STARTING;
 
+  private Counters counters;
+  
   /**
    * 
    */
   public TaskStatus() {
     jobId = new BSPJobID();
     taskId = new TaskAttemptID();
-    this.superstepCount = 0;
   }
 
   public TaskStatus(BSPJobID jobId, TaskAttemptID taskId, float progress,
-      State runState, String stateString, String groomServer, Phase phase) {
+      State runState, String stateString, String groomServer, Phase phase, Counters counters) {
     this.jobId = jobId;
     this.taskId = taskId;
     this.progress = progress;
@@ -75,7 +76,7 @@ public class TaskStatus implements Writable, Cloneable {
     this.stateString = stateString;
     this.groomServer = groomServer;
     this.phase = phase;
-    this.superstepCount = 0;
+    this.counters = counters;
   }
 
   // //////////////////////////////////////////////////
@@ -94,10 +95,6 @@ public class TaskStatus implements Writable, Cloneable {
     return progress;
   }
 
-  public void setSuperstepCount(long superstepCount) {
-    this.superstepCount = superstepCount;  
-  }
-  
   public void setProgress(float progress) {
     this.progress = progress;
   }
@@ -171,6 +168,20 @@ public class TaskStatus implements Writable, Cloneable {
   }
 
   /**
+   * Get task's counters.
+   */
+  public Counters getCounters() {
+    return counters;
+  }
+  /**
+   * Set the task's counters.
+   * @param counters
+   */
+  public void setCounters(Counters counters) {
+    this.counters = counters;
+  }
+  
+  /**
    * Update the status of the task.
    * 
    * This update is done by ping thread before sending the status.
@@ -179,9 +190,10 @@ public class TaskStatus implements Writable, Cloneable {
    * @param state
    * @param counters
    */
-  synchronized void statusUpdate(float progress, String state) {
+  synchronized void statusUpdate(float progress, String state, Counters counters) {
     setProgress(progress);
     setStateString(state);
+    setCounters(counters);
   }
 
   /**
@@ -190,7 +202,8 @@ public class TaskStatus implements Writable, Cloneable {
    * @param status updated status
    */
   synchronized void statusUpdate(TaskStatus status) {
-    this.superstepCount = status.getSuperstepCount();
+    this.counters = status.getCounters();
+    
     this.progress = status.getProgress();
     this.runState = status.getRunState();
     this.stateString = status.getStateString();
@@ -211,16 +224,14 @@ public class TaskStatus implements Writable, Cloneable {
    * This update is done in BSPMaster when a cleanup attempt of task reports its
    * status. Then update only specific fields, not all.
    * 
-   * @param superstepCount
    * @param runState
    * @param progress
    * @param state
    * @param phase
    * @param finishTime
    */
-  synchronized void statusUpdate(long superstepCount, State runState, float progress, String state,
+  synchronized void statusUpdate(State runState, float progress, String state,
       Phase phase, long finishTime) {
-    setSuperstepCount(superstepCount);
     setRunState(runState);
     setProgress(progress);
     setStateString(state);
@@ -234,14 +245,7 @@ public class TaskStatus implements Writable, Cloneable {
    * @return The number of BSP super steps executed by the task.
    */
   public long getSuperstepCount() {
-    return superstepCount;
-  }
-
-  /**
-   * Increments the number of BSP super steps executed by the task.
-   */
-  public void incrementSuperstepCount() {
-    superstepCount += 1;
+    return counters.getCounter(PeerCounter.SUPERSTEPS);
   }
 
   @Override
@@ -268,7 +272,9 @@ public class TaskStatus implements Writable, Cloneable {
     this.phase = WritableUtils.readEnum(in, Phase.class);
     this.startTime = in.readLong();
     this.finishTime = in.readLong();
-    this.superstepCount = in.readLong();
+    
+    counters = new Counters();
+    this.counters.readFields(in);
   }
 
   @Override
@@ -281,6 +287,7 @@ public class TaskStatus implements Writable, Cloneable {
     WritableUtils.writeEnum(out, phase);
     out.writeLong(startTime);
     out.writeLong(finishTime);
-    out.writeLong(superstepCount);
+    
+    counters.write(out);
   }
 }

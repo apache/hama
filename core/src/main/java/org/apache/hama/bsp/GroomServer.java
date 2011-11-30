@@ -740,7 +740,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       this.localJobConf = null;
       this.taskStatus = new TaskStatus(task.getJobID(), task.getTaskID(), 0,
           TaskStatus.State.UNASSIGNED, "init", groomServer,
-          TaskStatus.Phase.STARTING);
+          TaskStatus.Phase.STARTING, task.getCounters());
     }
 
     private void localizeTask(Task task) throws IOException {
@@ -920,7 +920,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         // instantiate and init our peer
         @SuppressWarnings("rawtypes")
         BSPPeerImpl<?, ?, ?, ?> bspPeer = new BSPPeerImpl(job, defaultConf,
-            taskid, umbilical, task.partition, task.splitClass, task.split);
+            taskid, umbilical, task.partition, task.splitClass, task.split, task.getCounters());
 
         task.run(job, bspPeer, umbilical); // run the task
 

@@ -204,7 +204,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   }
 
   // this class will spawn a new thread and executes the BSP
-  @SuppressWarnings({ "deprecation", "rawtypes" })
+  @SuppressWarnings( { "deprecation", "rawtypes" })
   class BSPRunner implements Callable<BSP> {
 
     private Configuration conf;
@@ -212,6 +212,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     private int id;
     private BSP bsp;
     private RawSplit[] splits;
+    private Counters counters = new Counters();
 
     public BSPRunner(Configuration conf, BSPJob job, int id, RawSplit[] splits) {
       super();
@@ -224,8 +225,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       conf.setInt(Constants.PEER_PORT, id);
       conf.set(Constants.PEER_HOST, "local");
 
-      bsp = (BSP) ReflectionUtils.newInstance(
-          job.getConf().getClass("bsp.work.class", BSP.class), job.getConf());
+      bsp = (BSP) ReflectionUtils.newInstance(job.getConf().getClass(
+          "bsp.work.class", BSP.class), job.getConf());
 
     }
 
@@ -242,7 +243,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
       BSPPeerImpl peer = new BSPPeerImpl(job, conf, new TaskAttemptID(
           new TaskID(job.getJobID(), id), id), new LocalUmbilical(), id,
-          splitname, realBytes);
+          splitname, realBytes, counters);
 
       bsp.setConf(conf);
       try {
@@ -333,7 +334,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         inetSocketAddress = BSPNetUtils.getAddress(peerName);
         socketCache.put(peerName, inetSocketAddress);
       }
-      LinkedList<BSPMessage> msgs = localOutgoingMessages.get(inetSocketAddress);
+      LinkedList<BSPMessage> msgs = localOutgoingMessages
+          .get(inetSocketAddress);
       if (msgs == null) {
         msgs = new LinkedList<BSPMessage>();
       }
@@ -478,7 +480,5 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     public void close() throws Exception {
 
     }
-
   }
-
 }

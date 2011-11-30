@@ -45,6 +45,9 @@ public abstract class Task implements Writable {
 
   protected LocalDirAllocator lDirAlloc;
 
+  // Current counters
+  private transient Counters counters = new Counters();
+  
   public Task() {
     jobId = new BSPJobID();
     taskId = new TaskAttemptID();
@@ -149,5 +152,7 @@ public abstract class Task implements Writable {
   
   public abstract BSPJob getConf();
   public abstract void setConf(BSPJob localJobConf);
+
+  Counters getCounters() { return counters; }
   
 }

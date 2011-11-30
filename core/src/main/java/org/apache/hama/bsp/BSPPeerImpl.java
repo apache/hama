@@ -39,6 +39,7 @@ import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.util.KeyValuePair;
+import org.apache.hama.bsp.Counters.Counter;
 
 /**
  * This class represents a BSP peer.
@@ -47,6 +48,10 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
 
   private static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
+
+  protected static enum PeerCounter {
+    SUPERSTEPS
+  }
 
   private final Configuration conf;
   private final FileSystem fs;
@@ -72,6 +77,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   private RecordWriter<KEYOUT, VALUEOUT> outWriter;
 
   private InetSocketAddress peerAddress;
+  private Counters counters;
 
   /**
    * Protected default constructor for LocalBSPRunner.
@@ -104,7 +110,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    */
   public BSPPeerImpl(BSPJob job, Configuration conf, TaskAttemptID taskId,
       BSPPeerProtocol umbilical, int partition, String splitClass,
-      BytesWritable split) throws Exception {
+      BytesWritable split, Counters counters) throws Exception {
     this.conf = conf;
     this.taskId = taskId;
     this.umbilical = umbilical;
@@ -113,6 +119,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     this.partition = partition;
     this.splitClass = splitClass;
     this.split = split;
+    this.counters = counters;
 
     this.fs = FileSystem.get(conf);
 
@@ -130,7 +137,7 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     syncClient.leaveBarrier(taskId.getJobID(), taskId, -1);
     setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 0,
         TaskStatus.State.RUNNING, "running", peerAddress.getHostName(),
-        TaskStatus.Phase.STARTING));
+        TaskStatus.Phase.STARTING, counters));
 
     messenger = MessageManagerFactory.getMessageManager(conf);
     messenger.init(conf, peerAddress);
@@ -146,8 +153,8 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
 
     // just output something when the user configured it
     if (conf.get("bsp.output.dir") != null) {
-      Path outdir = new Path(conf.get("bsp.output.dir"),
-          Task.getOutputName(partition));
+      Path outdir = new Path(conf.get("bsp.output.dir"), Task
+          .getOutputName(partition));
       outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob,
           outdir.makeQualified(fs).toString());
       final RecordWriter<KEYOUT, VALUEOUT> finalOut = outWriter;
@@ -252,24 +259,24 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
       }
 
       leaveBarrier();
-      currentTaskStatus.incrementSuperstepCount();
+      incrCounter(PeerCounter.SUPERSTEPS, 1);
+      currentTaskStatus.setCounters(counters);
       umbilical.statusUpdate(taskId, currentTaskStatus);
 
       // Clear outgoing queues.
       messenger.clearOutgoingQueues();
 
     } catch (Exception e) {
-      LOG.fatal(
-          "Caught exception during superstep "
-              + currentTaskStatus.getSuperstepCount() + "!", e);
+      LOG.fatal("Caught exception during superstep "
+          + currentTaskStatus.getSuperstepCount() + "!", e);
     }
   }
 
   private BSPMessageBundle combineMessages(Iterable<BSPMessage> messages) {
     if (!conf.getClass("bsp.combiner.class", Combiner.class).equals(
         Combiner.class)) {
-      Combiner combiner = (Combiner) ReflectionUtils.newInstance(
-          conf.getClass("bsp.combiner.class", Combiner.class), conf);
+      Combiner combiner = (Combiner) ReflectionUtils.newInstance(conf.getClass(
+          "bsp.combiner.class", Combiner.class), conf);
 
       return combiner.combine(messages);
     } else {
@@ -282,13 +289,13 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   protected void enterBarrier() throws Exception {
-    syncClient.enterBarrier(taskId.getJobID(), taskId,
-        currentTaskStatus.getSuperstepCount());
+    syncClient.enterBarrier(taskId.getJobID(), taskId, currentTaskStatus
+        .getSuperstepCount());
   }
 
   protected void leaveBarrier() throws Exception {
-    syncClient.leaveBarrier(taskId.getJobID(), taskId,
-        currentTaskStatus.getSuperstepCount());
+    syncClient.leaveBarrier(taskId.getJobID(), taskId, currentTaskStatus
+        .getSuperstepCount());
   }
 
   public void close() throws Exception {
@@ -404,4 +411,31 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     initInput();
   }
 
+  @Override
+  public Counter getCounter(Enum<?> name) {
+    return counters == null ? null : counters.findCounter(name);
+  }
+
+  @Override
+  public Counter getCounter(String group, String name) {
+    Counters.Counter counter = null;
+    if (counters != null) {
+      counter = counters.findCounter(group, name);
+    }
+    return counter;
+  }
+
+  @Override
+  public void incrCounter(Enum<?> key, long amount) {
+    if (counters != null) {
+      counters.incrCounter(key, amount);
+    }
+  }
+
+  @Override
+  public void incrCounter(String group, String counter, long amount) {
+    if (counters != null) {
+      counters.incrCounter(group, counter, amount);
+    }
+  }
 }
