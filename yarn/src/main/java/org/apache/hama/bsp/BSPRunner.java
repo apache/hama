@@ -38,7 +38,8 @@ public class BSPRunner {
   private Configuration conf;
   private TaskAttemptID id;
   private BSPPeerImpl<?, ?, ?, ?> peer;
-
+  private Counters counters = new Counters();
+  
   @SuppressWarnings("rawtypes")
   Class<? extends BSP> bspClass;
 
@@ -72,7 +73,7 @@ public class BSPRunner {
     BSPJob job = new BSPJob(new HamaConfiguration(conf));
 
     peer = new BSPPeerImpl(job, conf, id, umbilical, port, umbilicalAddress,
-        null);
+        null, counters);
     // this is a checked cast because we can only set a class via the BSPJob
     // class which only allows derivates of BSP.
     bspClass = (Class<? extends BSP>) conf.getClassByName(conf
