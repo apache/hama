@@ -205,14 +205,14 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   // this class will spawn a new thread and executes the BSP
   @SuppressWarnings( { "deprecation", "rawtypes" })
-  class BSPRunner implements Callable<BSP> {
+  static class BSPRunner implements Callable<BSP> {
 
     private Configuration conf;
     private BSPJob job;
     private int id;
     private BSP bsp;
     private RawSplit[] splits;
-    private Counters counters = new Counters();
+    private static final Counters counters = new Counters();
 
     public BSPRunner(Configuration conf, BSPJob job, int id, RawSplit[] splits) {
       super();
