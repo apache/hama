@@ -44,6 +44,7 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
 import org.apache.zookeeper.KeeperException;
 
@@ -59,7 +60,7 @@ public class ShortestPaths extends
   @Override
   public void bsp(
       BSPPeer<ShortestPathVertex, ShortestPathVertexArrayWritable, Text, IntWritable> peer)
-      throws IOException, KeeperException, InterruptedException {
+      throws IOException, SyncException, InterruptedException {
     boolean updated = true;
     while (updated) {
       peer.sync();
@@ -89,7 +90,7 @@ public class ShortestPaths extends
 
   public void setup(
       BSPPeer<ShortestPathVertex, ShortestPathVertexArrayWritable, Text, IntWritable> peer)
-      throws IOException, KeeperException, InterruptedException {
+      throws IOException, SyncException, InterruptedException {
     KeyValuePair<ShortestPathVertex, ShortestPathVertexArrayWritable> next = null;
     ShortestPathVertex startVertex = null;
 
@@ -143,7 +144,7 @@ public class ShortestPaths extends
    */
   private boolean broadcastUpdatesMade(
       BSPPeer<ShortestPathVertex, ShortestPathVertexArrayWritable, Text, IntWritable> peer,
-      int updates) throws IOException, KeeperException, InterruptedException {
+      int updates) throws IOException, SyncException, InterruptedException {
     peer.send(masterTask, new IntegerMessage(peer.getPeerName(), updates));
     peer.sync();
     if (peer.getPeerName().equals(masterTask)) {

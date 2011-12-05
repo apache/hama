@@ -27,11 +27,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
-import org.apache.zookeeper.KeeperException;
+import org.apache.hama.bsp.sync.SyncException;
 
 public class ClassSerializePrinting {
   private static String TMP_OUTPUT = "/tmp/test-example/";
@@ -46,7 +46,7 @@ public class ClassSerializePrinting {
 
     public void bsp(
         BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> bspPeer)
-        throws IOException, KeeperException, InterruptedException {
+        throws IOException, SyncException, InterruptedException {
 
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {

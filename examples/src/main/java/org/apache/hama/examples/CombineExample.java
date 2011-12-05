@@ -17,15 +17,23 @@
  */
 package org.apache.hama.examples;
 
+import java.io.IOException;
+import java.util.Iterator;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.*;
-import org.apache.zookeeper.KeeperException;
-
-import java.io.IOException;
-import java.util.Iterator;
+import org.apache.hama.bsp.BSP;
+import org.apache.hama.bsp.BSPJob;
+import org.apache.hama.bsp.BSPMessage;
+import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.Combiner;
+import org.apache.hama.bsp.IntegerMessage;
+import org.apache.hama.bsp.NullInputFormat;
+import org.apache.hama.bsp.NullOutputFormat;
+import org.apache.hama.bsp.sync.SyncException;
 
 public class CombineExample {
 
@@ -34,8 +42,9 @@ public class CombineExample {
     public static final Log LOG = LogFactory.getLog(MyBSP.class);
 
     @Override
-    public void bsp(BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer) throws IOException,
-        KeeperException, InterruptedException {
+    public void bsp(
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer)
+        throws IOException, SyncException, InterruptedException {
       for (String peerName : peer.getAllPeerNames()) {
         peer.send(peerName, new IntegerMessage(peer.getPeerName(), 1));
         peer.send(peerName, new IntegerMessage(peer.getPeerName(), 2));

@@ -21,8 +21,9 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.Constants;
-import org.apache.hama.util.KeyValuePair;
 import org.apache.hama.bsp.Counters.Counter;
+import org.apache.hama.bsp.sync.SyncException;
+import org.apache.hama.util.KeyValuePair;
 
 /**
  * BSP communication interface.
@@ -57,9 +58,11 @@ public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Constants {
    * Sends all the messages in the outgoing message queues to the corresponding
    * remote peers.
    * 
+   * @throws IOException
+   * @throws SyncException
    * @throws InterruptedException
    */
-  public void sync() throws InterruptedException;
+  public void sync() throws IOException, SyncException, InterruptedException;
 
   /**
    * @return the count of current super-step

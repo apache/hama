@@ -288,10 +288,7 @@ class JobInProgress {
     updateTaskStatus(tip, status);
     LOG.info("Taskid '" + taskid + "' has failed.");
     tip.terminated(taskid);
-
-    //
-    // If all tasks are complete, then the job is done!
-    //
+    tip.kill();
 
     boolean allDone = true;
     for (TaskInProgress taskInProgress : tasks) {
@@ -301,7 +298,8 @@ class JobInProgress {
       }
     }
 
-    if (allDone) {
+    // TODO
+    if (!allDone) {
       this.status = new JobStatus(this.status.getJobID(), this.profile
           .getUser(), 0L, 0L, 0L, JobStatus.FAILED, superstepCounter);
       this.finishTime = System.currentTimeMillis();

@@ -41,9 +41,9 @@ import org.apache.hama.bsp.DoubleMessage;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
-import org.apache.hama.util.KeyValuePair;
-import org.apache.zookeeper.KeeperException;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.graph.Vertex;
+import org.apache.hama.util.KeyValuePair;
 
 public class PageRank extends
     BSP<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> {
@@ -87,7 +87,7 @@ public class PageRank extends
   @Override
   public void bsp(
       BSPPeer<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer)
-      throws IOException, KeeperException, InterruptedException {
+      throws IOException, SyncException, InterruptedException {
 
     // while the error not converges against epsilon do the pagerank stuff
     double error = 1.0;
@@ -145,8 +145,8 @@ public class PageRank extends
       BSPPeer<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer) {
     try {
       for (Entry<Vertex, Double> row : tentativePagerank.entrySet()) {
-        peer.write(new Text(row.getKey().getName()),
-            new DoubleWritable(row.getValue()));
+        peer.write(new Text(row.getKey().getName()), new DoubleWritable(row
+            .getValue()));
       }
     } catch (IOException e) {
       e.printStackTrace();
@@ -155,7 +155,7 @@ public class PageRank extends
 
   private double broadcastError(
       BSPPeer<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer,
-      double error) throws IOException, KeeperException, InterruptedException {
+      double error) throws IOException, SyncException, InterruptedException {
     peer.send(masterTaskName, new DoubleMessage("", error));
     peer.sync();
     if (peer.getPeerName().equals(masterTaskName)) {
@@ -258,7 +258,7 @@ public class PageRank extends
     if (!inputGiven) {
       Path tmp = new Path("pagerank/input");
       FileSystem.get(conf).delete(tmp, true);
-      //ShortestPathsGraphLoader.loadGraph(conf, tmp);
+      // ShortestPathsGraphLoader.loadGraph(conf, tmp);
       job.setInputPath(tmp);
     }
 

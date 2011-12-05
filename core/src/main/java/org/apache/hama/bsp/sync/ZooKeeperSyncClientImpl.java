@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,8 +39,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 
 /**
@@ -87,141 +87,149 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
 
   @Override
   public void enterBarrier(BSPJobID jobId, TaskAttemptID taskId, long superstep)
-      throws Exception {
+      throws SyncException {
     LOG.debug("[" + getPeerName() + "] enter the enterbarrier: " + superstep);
 
-    synchronized (zk) {
-      createZnode(bspRoot);
-      final String pathToJobIdZnode = bspRoot + "/"
-          + taskId.getJobID().toString();
-      createZnode(pathToJobIdZnode);
-      final String pathToSuperstepZnode = pathToJobIdZnode + "/" + superstep;
-      createZnode(pathToSuperstepZnode);
-      BarrierWatcher barrierWatcher = new BarrierWatcher();
+    try {
+      synchronized (zk) {
+        createZnode(bspRoot);
+        final String pathToJobIdZnode = bspRoot + "/"
+            + taskId.getJobID().toString();
+        createZnode(pathToJobIdZnode);
+        final String pathToSuperstepZnode = pathToJobIdZnode + "/" + superstep;
+        createZnode(pathToSuperstepZnode);
+        BarrierWatcher barrierWatcher = new BarrierWatcher();
 
-      Stat readyStat = zk.exists(pathToSuperstepZnode + "/ready",
-          barrierWatcher);
-      zk.create(getNodeName(taskId, superstep), null, Ids.OPEN_ACL_UNSAFE,
-          CreateMode.EPHEMERAL);
+        Stat readyStat = zk.exists(pathToSuperstepZnode + "/ready",
+            barrierWatcher);
+        zk.create(getNodeName(taskId, superstep), null, Ids.OPEN_ACL_UNSAFE,
+            CreateMode.EPHEMERAL);
 
-      List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
-      int size = znodes.size(); // may contains ready
-      boolean hasReady = znodes.contains("ready");
-      if (hasReady) {
-        size--;
-      }
+        List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
+        int size = znodes.size(); // may contains ready
+        boolean hasReady = znodes.contains("ready");
+        if (hasReady) {
+          size--;
+        }
 
-      LOG.debug("===> at superstep :" + superstep + " current znode size: "
-          + znodes.size() + " current znodes:" + znodes);
+        LOG.debug("===> at superstep :" + superstep + " current znode size: "
+            + znodes.size() + " current znodes:" + znodes);
 
-      LOG.debug("enterBarrier() znode size within " + pathToSuperstepZnode
-          + " is " + znodes.size() + ". Znodes include " + znodes);
+        LOG.debug("enterBarrier() znode size within " + pathToSuperstepZnode
+            + " is " + znodes.size() + ". Znodes include " + znodes);
 
-      if (size < numBSPTasks) {
-        while (!barrierWatcher.isComplete()) {
-          if (!hasReady) {
-            synchronized (mutex) {
-              mutex.wait(1000);
+        if (size < numBSPTasks) {
+          while (!barrierWatcher.isComplete()) {
+            if (!hasReady) {
+              synchronized (mutex) {
+                mutex.wait(1000);
+              }
             }
           }
+          LOG.debug("2. at superstep: " + superstep + " after waiting ..."
+              + taskId.toString());
+        } else {
+          LOG.debug("---> at superstep: " + superstep
+              + " task that is creating /ready znode:" + taskId.toString());
+          createEphemeralZnode(pathToSuperstepZnode + "/ready");
         }
-        LOG.debug("2. at superstep: " + superstep + " after waiting ..."
-            + taskId.toString());
-      } else {
-        LOG.debug("---> at superstep: " + superstep
-            + " task that is creating /ready znode:" + taskId.toString());
-        createEphemeralZnode(pathToSuperstepZnode + "/ready");
       }
+    } catch (Exception e) {
+      throw new SyncException(e.toString());
     }
   }
 
   @Override
   public void leaveBarrier(final BSPJobID jobId, final TaskAttemptID taskId,
-      final long superstep) throws Exception {
-    final String pathToSuperstepZnode = bspRoot + "/"
-        + taskId.getJobID().toString() + "/" + superstep;
-    while (true) {
-      List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
-      LOG
-          .debug("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
-              + superstep + " znode:" + znodes);
-      if (znodes.contains("ready")) {
-        znodes.remove("ready");
-      }
-      final int size = znodes.size();
-
-      LOG.debug("leaveBarrier() at superstep:" + superstep + " znode size: ("
-          + size + ") znodes:" + znodes);
-
-      if (null == znodes || znodes.isEmpty())
-        return;
-      if (1 == size) {
-        try {
-          zk.delete(getNodeName(taskId, superstep), 0);
-        } catch (KeeperException.NoNodeException nne) {
-          LOG.warn(
-              "+++ (znode size is 1). Ignore because znode may disconnect.",
-              nne);
+      final long superstep) throws SyncException {
+    try {
+      final String pathToSuperstepZnode = bspRoot + "/"
+          + taskId.getJobID().toString() + "/" + superstep;
+      while (true) {
+        List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
+        LOG
+            .debug("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
+                + superstep + " znode:" + znodes);
+        if (znodes.contains("ready")) {
+          znodes.remove("ready");
         }
-        return;
-      }
-      Collections.sort(znodes);
+        final int size = znodes.size();
 
-      final String lowest = znodes.get(0);
-      final String highest = znodes.get(size - 1);
+        LOG.debug("leaveBarrier() at superstep:" + superstep + " znode size: ("
+            + size + ") znodes:" + znodes);
 
-      synchronized (mutex) {
-
-        if (getNodeName(taskId, superstep).equals(
-            pathToSuperstepZnode + "/" + lowest)) {
-          Stat s = zk.exists(pathToSuperstepZnode + "/" + highest,
-              new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                  synchronized (mutex) {
-                    LOG.debug("leaveBarrier() at superstep: " + superstep
-                        + " taskid:" + taskId.toString()
-                        + " highest notify lowest.");
-                    mutex.notifyAll();
-                  }
-                }
-              });
-
-          if (null != s) {
-            LOG.debug("leaveBarrier(): superstep:" + superstep + " taskid:"
-                + taskId.toString() + " wait for higest notify.");
-            mutex.wait();
+        if (null == znodes || znodes.isEmpty())
+          return;
+        if (1 == size) {
+          try {
+            zk.delete(getNodeName(taskId, superstep), 0);
+          } catch (KeeperException.NoNodeException nne) {
+            LOG.warn(
+                "+++ (znode size is 1). Ignore because znode may disconnect.",
+                nne);
           }
-        } else {
-          Stat s1 = zk.exists(getNodeName(taskId, superstep), false);
+          return;
+        }
+        Collections.sort(znodes);
 
-          if (null != s1) {
-            try {
-              zk.delete(getNodeName(taskId, superstep), 0);
-            } catch (KeeperException.NoNodeException nne) {
-              LOG.warn("++++ Ignore because node may be dleted.", nne);
+        final String lowest = znodes.get(0);
+        final String highest = znodes.get(size - 1);
+
+        synchronized (mutex) {
+
+          if (getNodeName(taskId, superstep).equals(
+              pathToSuperstepZnode + "/" + lowest)) {
+            Stat s = zk.exists(pathToSuperstepZnode + "/" + highest,
+                new Watcher() {
+                  @Override
+                  public void process(WatchedEvent event) {
+                    synchronized (mutex) {
+                      LOG.debug("leaveBarrier() at superstep: " + superstep
+                          + " taskid:" + taskId.toString()
+                          + " highest notify lowest.");
+                      mutex.notifyAll();
+                    }
+                  }
+                });
+
+            if (null != s) {
+              LOG.debug("leaveBarrier(): superstep:" + superstep + " taskid:"
+                  + taskId.toString() + " wait for higest notify.");
+              mutex.wait();
+            }
+          } else {
+            Stat s1 = zk.exists(getNodeName(taskId, superstep), false);
+
+            if (null != s1) {
+              try {
+                zk.delete(getNodeName(taskId, superstep), 0);
+              } catch (KeeperException.NoNodeException nne) {
+                LOG.warn("++++ Ignore because node may be dleted.", nne);
+              }
+            }
+
+            Stat s2 = zk.exists(pathToSuperstepZnode + "/" + lowest,
+                new Watcher() {
+                  @Override
+                  public void process(WatchedEvent event) {
+                    synchronized (mutex) {
+                      LOG.debug("leaveBarrier() at superstep: " + superstep
+                          + " taskid:" + taskId.toString()
+                          + " lowest notify other nodes.");
+                      mutex.notifyAll();
+                    }
+                  }
+                });
+            if (null != s2) {
+              LOG.debug("leaveBarrier(): superstep:" + superstep + " taskid:"
+                  + taskId.toString() + " wait for lowest notify.");
+              mutex.wait();
             }
           }
-
-          Stat s2 = zk.exists(pathToSuperstepZnode + "/" + lowest,
-              new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                  synchronized (mutex) {
-                    LOG.debug("leaveBarrier() at superstep: " + superstep
-                        + " taskid:" + taskId.toString()
-                        + " lowest notify other nodes.");
-                    mutex.notifyAll();
-                  }
-                }
-              });
-          if (null != s2) {
-            LOG.debug("leaveBarrier(): superstep:" + superstep + " taskid:"
-                + taskId.toString() + " wait for lowest notify.");
-            mutex.wait();
-          }
         }
       }
+    } catch (Exception e) {
+      throw new SyncException(e.toString());
     }
   }
 
@@ -337,8 +345,8 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
   }
 
   @Override
-  public void close() throws Exception {
-    zk.close();
+  public void close() throws InterruptedException {
+      zk.close();
   }
 
   @Override

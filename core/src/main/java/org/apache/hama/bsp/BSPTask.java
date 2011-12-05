@@ -26,8 +26,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.ipc.BSPPeerProtocol;
-import org.apache.zookeeper.KeeperException;
 
 /**
  * Base class for tasks.
@@ -61,14 +61,9 @@ public class BSPTask extends Task {
 
   @Override
   public void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?> bspPeer,
-      BSPPeerProtocol umbilical) throws IOException {
-    try {
-      runBSP(job, bspPeer, split, umbilical);
-    } catch (InterruptedException e) {
-      LOG.error("Exception during BSP execution!", e);
-    } catch (ClassNotFoundException e) {
-      LOG.error("Exception during instantiation of BSP class!", e);
-    }
+      BSPPeerProtocol umbilical) throws IOException, SyncException,
+      ClassNotFoundException, InterruptedException {
+    runBSP(job, bspPeer, split, umbilical);
 
     done(umbilical);
   }
@@ -77,30 +72,18 @@ public class BSPTask extends Task {
   private <KEYIN, VALUEIN, KEYOUT, VALUEOUT> void runBSP(final BSPJob job,
       BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bspPeer,
       final BytesWritable rawSplit, final BSPPeerProtocol umbilical)
-      throws IOException, InterruptedException, ClassNotFoundException {
+      throws IOException, SyncException, ClassNotFoundException,
+      InterruptedException {
 
     BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bsp = (BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT>) ReflectionUtils
-        .newInstance(job.getConf().getClass("bsp.work.class", BSP.class),
-            job.getConf());
+        .newInstance(job.getConf().getClass("bsp.work.class", BSP.class), job
+            .getConf());
 
-    try {
-      bsp.setup(bspPeer);
-      bsp.bsp(bspPeer);
-    } catch (IOException e) {
-      LOG.error("Exception during BSP execution!", e);
-    } catch (KeeperException e) {
-      LOG.error("Exception during BSP execution!", e);
-    } catch (InterruptedException e) {
-      LOG.error("Exception during BSP execution!", e);
-    } finally {
-      bsp.cleanup(bspPeer);
-      try {
-        bspPeer.close();
-      } catch (Exception e) {
-        LOG.fatal("Exception during BSP closing!", e);
-      }
-    }
+    bsp.setup(bspPeer);
+    bsp.bsp(bspPeer);
 
+    bsp.cleanup(bspPeer);
+    bspPeer.close();
   }
 
   public BSPJob getConf() {
@@ -129,7 +112,7 @@ public class BSPTask extends Task {
     super.readFields(in);
     if (in.readBoolean()) {
       splitClass = Text.readString(in);
-      if(split == null){
+      if (split == null) {
         split = new BytesWritable();
       }
       split.readFields(in);

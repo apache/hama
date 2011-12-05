@@ -46,9 +46,8 @@ public interface BSPPeerProtocol extends HamaRPCProtocolVersion, Closeable,
    * task process exits without calling this.
    * 
    * @param taskid task's id
-   * @param shouldBePromoted whether to promote the task's output or not
    */
-  void done(TaskAttemptID taskid, boolean shouldBePromoted) throws IOException;
+  void done(TaskAttemptID taskid) throws IOException;
 
   /** Report that the task encounted a local filesystem error. */
   void fsError(TaskAttemptID taskId, String message) throws IOException;
