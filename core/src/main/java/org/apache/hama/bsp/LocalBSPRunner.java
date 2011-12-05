@@ -47,6 +47,7 @@ import org.apache.hama.bsp.BSPMaster.State;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
 import org.apache.hama.bsp.sync.SyncClient;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.JobSubmissionProtocol;
@@ -393,7 +394,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public void done(TaskAttemptID taskid, boolean shouldBePromoted)
+    public void done(TaskAttemptID taskid)
         throws IOException {
 
     }
@@ -445,14 +446,22 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     @Override
     public void enterBarrier(BSPJobID jobId, TaskAttemptID taskId,
-        long superstep) throws Exception {
-      barrier.await();
+        long superstep) throws SyncException {
+      try {
+        barrier.await();
+      } catch (Exception e) {
+        throw new SyncException(e.toString());
+      }
     }
 
     @Override
     public void leaveBarrier(BSPJobID jobId, TaskAttemptID taskId,
-        long superstep) throws Exception {
-      barrier.await();
+        long superstep) throws SyncException {
+      try {
+        barrier.await();
+      } catch (Exception e) {
+        throw new SyncException(e.toString());
+      }
     }
 
     @Override
@@ -477,7 +486,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws InterruptedException {
 
     }
   }

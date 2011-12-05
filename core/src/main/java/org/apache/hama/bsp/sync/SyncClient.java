@@ -43,10 +43,10 @@ public interface SyncClient {
    * @param jobId the jobs ID
    * @param taskId the tasks ID
    * @param superstep the superstep of the task
-   * @throws Exception
+   * @throws SyncException
    */
   public void enterBarrier(BSPJobID jobId, TaskAttemptID taskId, long superstep)
-      throws Exception;
+      throws SyncException;
 
   /**
    * Leaves the barrier after all communication has been done, this is usually
@@ -55,9 +55,10 @@ public interface SyncClient {
    * @param jobId the jobs ID
    * @param taskId the tasks ID
    * @param superstep the superstep of the task
+   * @throws SyncException
    */
   public void leaveBarrier(BSPJobID jobId, TaskAttemptID taskId, long superstep)
-      throws Exception;
+      throws SyncException;
 
   /**
    * Registers a specific task with a its host and port to the sync daemon.
@@ -101,8 +102,8 @@ public interface SyncClient {
   /**
    * This method should close all used resources, e.G. a ZooKeeper instance.
    * 
-   * @throws Exception
+   * @throws InterruptedException
    */
-  public void close() throws Exception;
+  public void close() throws InterruptedException;
 
 }

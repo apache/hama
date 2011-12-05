@@ -48,11 +48,12 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.DiskChecker;
-import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.MasterProtocol;
@@ -401,19 +402,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             .entrySet()) {
           TaskInProgress tip = e.getValue();
           TaskStatus taskStatus = tip.getStatus();
-
-          if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
-
-            if (!tip.runner.isAlive()) {
-              if (taskStatus.getRunState() != TaskStatus.State.FAILED) {
-                taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
-                LOG.info("Task '" + taskStatus.getTaskId().toString()
-                    + "' has completed.");
-              }
-              taskStatus.setPhase(TaskStatus.Phase.CLEANUP);
-            }
-          }
-
           taskStatuses.add(taskStatus);
         }
 
@@ -849,6 +837,28 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
       this.taskStatus.statusUpdate(taskStatus);
     }
+
+    public void reportDone() {
+      if (this.taskStatus.getRunState() != TaskStatus.State.FAILED) {
+        this.taskStatus.setRunState(TaskStatus.State.SUCCEEDED);
+      }
+
+      this.taskStatus.setFinishTime(System.currentTimeMillis());
+      this.done = true;
+      this.runner.killBsp();
+      LOG.info("Task " + task.getTaskID() + " is done.");
+    }
+
+    public void jobHasFinished(boolean wasFailure) throws IOException {
+      // Kill the task if it is still running
+      synchronized (this) {
+        if (getRunState() == TaskStatus.State.RUNNING
+            || getRunState() == TaskStatus.State.UNASSIGNED
+            || getRunState() == TaskStatus.State.COMMIT_PENDING) {
+          killAndCleanup(wasFailure);
+        }
+      }
+    }
   }
 
   public boolean isRunning() {
@@ -876,6 +886,37 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       return BSPPeerProtocol.versionID;
     } else {
       throw new IOException("Unknown protocol to GroomServer: " + protocol);
+    }
+  }
+
+  /**
+   * Remove the tip and update all relevant state.
+   * 
+   * @param tip {@link TaskInProgress} to be removed.
+   * @param wasFailure did the task fail or was it killed?
+   */
+  private void purgeTask(TaskInProgress tip, boolean wasFailure)
+      throws IOException {
+    if (tip != null) {
+      LOG.info("About to purge task: " + tip.getTask().getTaskID());
+
+      // Remove the task from running jobs,
+      // removing the job if it's the last task
+      removeTaskFromJob(tip.getTask().getJobID(), tip);
+      tip.jobHasFinished(wasFailure);
+    }
+  }
+
+  private void removeTaskFromJob(BSPJobID jobId, TaskInProgress tip) {
+    synchronized (runningJobs) {
+      RunningJob rjob = runningJobs.get(jobId);
+      if (rjob == null) {
+        LOG.warn("Unknown job " + jobId + " being deleted.");
+      } else {
+        synchronized (rjob) {
+          rjob.tasks.remove(tip);
+        }
+      }
     }
   }
 
@@ -920,13 +961,21 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         // instantiate and init our peer
         @SuppressWarnings("rawtypes")
         BSPPeerImpl<?, ?, ?, ?> bspPeer = new BSPPeerImpl(job, defaultConf,
-            taskid, umbilical, task.partition, task.splitClass, task.split, task.getCounters());
+            taskid, umbilical, task.partition, task.splitClass, task.split,
+            task.getCounters());
 
         task.run(job, bspPeer, umbilical); // run the task
 
       } catch (FSError e) {
         LOG.fatal("FSError from child", e);
         umbilical.fsError(taskid, e.getMessage());
+      } catch (SyncException e) {
+        LOG.fatal("SyncError from child", e);
+        umbilical.fatalError(taskid, e.toString());
+        
+        // Report back any failures, for diagnostic purposes
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        e.printStackTrace(new PrintStream(baos));
       } catch (Throwable throwable) {
         LOG.warn("Error running child", throwable);
         // Report back any failures, for diagnostic purposes
@@ -965,7 +1014,16 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   public void fatalError(TaskAttemptID taskId, String message)
       throws IOException {
     LOG.fatal("Task: " + taskId + " - Killed : " + message);
-    // TODO kill the task.
+    TaskInProgress tip = runningTasks.get(taskId);
+
+    purgeTask(tip, true);
+  }
+
+  @Override
+  public void fsError(TaskAttemptID taskId, String message) throws IOException {
+    LOG.fatal("Task: " + taskId + " - Killed due to FSError: " + message);
+    // TODO
+
   }
 
   @Override
@@ -982,13 +1040,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   }
 
   @Override
-  public void done(TaskAttemptID taskid, boolean shouldBePromoted)
-      throws IOException {
-  }
-
-  @Override
-  public void fsError(TaskAttemptID taskId, String message) throws IOException {
-    // TODO Auto-generated method stub
+  public void done(TaskAttemptID taskid) throws IOException {
+    TaskInProgress tip = tasks.get(taskid);
+    if (tip != null) {
+      tip.reportDone();
+    } else {
+      LOG.warn("Unknown child task done: " + taskid + ". Ignored.");
+    }
   }
 
   @Override

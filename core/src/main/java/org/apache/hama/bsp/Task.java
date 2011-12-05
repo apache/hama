@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.ipc.BSPPeerProtocol;
 
 /**
@@ -142,12 +143,12 @@ public abstract class Task implements Writable {
    * @param umbilical for communications with GroomServer
    */
   public abstract void run(BSPJob job, BSPPeerImpl<?,?,?,?> bspPeer, BSPPeerProtocol umbilical)
-      throws IOException;
+      throws IOException, SyncException, ClassNotFoundException, InterruptedException;
 
   public abstract BSPTaskRunner createRunner(GroomServer groom);
 
   public void done(BSPPeerProtocol umbilical) throws IOException {
-    umbilical.done(getTaskID(), true);
+    umbilical.done(getTaskID());
   }
   
   public abstract BSPJob getConf();

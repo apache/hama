@@ -30,8 +30,8 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
-import org.apache.zookeeper.KeeperException;
 
 public class TestPartitioning extends TestCase {
 
@@ -59,7 +59,7 @@ public class TestPartitioning extends TestCase {
 
     @Override
     public void bsp(BSPPeer<LongWritable, Text, NullWritable, NullWritable> peer)
-        throws IOException, KeeperException, InterruptedException {
+        throws IOException, SyncException, InterruptedException {
       long numOfPairs = 0;
       KeyValuePair<LongWritable, Text> readNext = null;
       while ((readNext = peer.readNext()) != null) {

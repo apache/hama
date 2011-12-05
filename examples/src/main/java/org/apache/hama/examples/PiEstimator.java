@@ -39,7 +39,7 @@ import org.apache.hama.bsp.DoubleMessage;
 import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
-import org.apache.zookeeper.KeeperException;
+import org.apache.hama.bsp.sync.SyncException;
 
 public class PiEstimator {
   private static Path TMP_OUTPUT = new Path("/tmp/pi-temp");
@@ -53,7 +53,7 @@ public class PiEstimator {
     @Override
     public void bsp(
         BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer)
-        throws IOException, KeeperException, InterruptedException {
+        throws IOException, SyncException, InterruptedException {
 
       int in = 0, out = 0;
       for (int i = 0; i < iterations; i++) {

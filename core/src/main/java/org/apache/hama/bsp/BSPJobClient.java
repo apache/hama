@@ -599,8 +599,9 @@ public class BSPJobClient extends Configured implements Tool {
         lastReport = report;
       }
     }
-
+    
     LOG.info("The total number of supersteps: " + info.getSuperstepCount());
+    // TODO job.getCounters().log(LOG);
     return job.isSuccessful();
   }
 

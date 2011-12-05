@@ -33,13 +33,14 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
+import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
 import org.apache.hama.bsp.sync.SyncClient;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.util.KeyValuePair;
-import org.apache.hama.bsp.Counters.Counter;
 
 /**
  * This class represents a BSP peer.
@@ -235,41 +236,36 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    * @see org.apache.hama.bsp.BSPPeerInterface#sync()
    */
   @Override
-  public void sync() throws InterruptedException {
-    try {
-      enterBarrier();
-      Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> it = messenger
-          .getMessageIterator();
+  public void sync() throws IOException, SyncException, InterruptedException {
+    enterBarrier();
+    Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> it = messenger
+        .getMessageIterator();
 
-      while (it.hasNext()) {
-        Entry<InetSocketAddress, LinkedList<BSPMessage>> entry = it.next();
-        final InetSocketAddress addr = entry.getKey();
-        final Iterable<BSPMessage> messages = entry.getValue();
+    while (it.hasNext()) {
+      Entry<InetSocketAddress, LinkedList<BSPMessage>> entry = it.next();
+      final InetSocketAddress addr = entry.getKey();
+      final Iterable<BSPMessage> messages = entry.getValue();
 
-        final BSPMessageBundle bundle = combineMessages(messages);
+      final BSPMessageBundle bundle = combineMessages(messages);
 
-        if (conf.getBoolean("bsp.checkpoint.enabled", false)) {
-          checkpoint(checkpointedPath(), bundle);
-        }
-
-        // remove this message during runtime to save a bit of memory
-        it.remove();
-
-        messenger.transfer(addr, bundle);
+      if (conf.getBoolean("bsp.checkpoint.enabled", false)) {
+        checkpoint(checkpointedPath(), bundle);
       }
 
-      leaveBarrier();
-      incrCounter(PeerCounter.SUPERSTEPS, 1);
-      currentTaskStatus.setCounters(counters);
-      umbilical.statusUpdate(taskId, currentTaskStatus);
+      // remove this message during runtime to save a bit of memory
+      it.remove();
 
-      // Clear outgoing queues.
-      messenger.clearOutgoingQueues();
-
-    } catch (Exception e) {
-      LOG.fatal("Caught exception during superstep "
-          + currentTaskStatus.getSuperstepCount() + "!", e);
+      messenger.transfer(addr, bundle);
     }
+
+    // Clear outgoing queues.
+    messenger.clearOutgoingQueues();
+    leaveBarrier();
+    
+    incrCounter(PeerCounter.SUPERSTEPS, 1);
+    currentTaskStatus.setCounters(counters);
+
+    umbilical.statusUpdate(taskId, currentTaskStatus);
   }
 
   private BSPMessageBundle combineMessages(Iterable<BSPMessage> messages) {
@@ -288,17 +284,17 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     }
   }
 
-  protected void enterBarrier() throws Exception {
+  protected void enterBarrier() throws SyncException {
     syncClient.enterBarrier(taskId.getJobID(), taskId, currentTaskStatus
         .getSuperstepCount());
   }
 
-  protected void leaveBarrier() throws Exception {
+  protected void leaveBarrier() throws SyncException {
     syncClient.leaveBarrier(taskId.getJobID(), taskId, currentTaskStatus
         .getSuperstepCount());
   }
 
-  public void close() throws Exception {
+  public void close() throws SyncException, IOException, InterruptedException {
     if (in != null) {
       in.close();
     }
@@ -309,7 +305,6 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     syncClient.close();
 
     messenger.close();
-
   }
 
   @Override

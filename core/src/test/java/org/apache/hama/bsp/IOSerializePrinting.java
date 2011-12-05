@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.zookeeper.KeeperException;
+import org.apache.hama.bsp.sync.SyncException;
 
 public class IOSerializePrinting extends
     BSP<NullWritable, NullWritable, LongWritable, Text> {
@@ -34,7 +34,7 @@ public class IOSerializePrinting extends
   private int num;
 
   public void bsp(BSPPeer<NullWritable, NullWritable, LongWritable, Text> peer)
-      throws IOException, KeeperException, InterruptedException {
+      throws IOException, SyncException, InterruptedException {
 
     int i = 0;
     for (String otherPeer : peer.getAllPeerNames()) {
@@ -52,7 +52,7 @@ public class IOSerializePrinting extends
 
   public void setup(
       org.apache.hama.bsp.BSPPeer<NullWritable, NullWritable, LongWritable, Text> peer)
-      throws IOException, KeeperException, InterruptedException {
+      throws IOException, SyncException, InterruptedException {
     num = Integer.parseInt(conf.get("bsp.peers.num"));
 
   }

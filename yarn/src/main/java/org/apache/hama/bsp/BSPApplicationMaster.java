@@ -360,8 +360,7 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   }
 
   @Override
-  public void done(TaskAttemptID taskid, boolean shouldBePromoted)
-      throws IOException {
+  public void done(TaskAttemptID taskid) throws IOException {
 
   }
 
