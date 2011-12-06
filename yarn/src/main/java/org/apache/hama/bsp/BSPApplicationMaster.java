@@ -87,8 +87,10 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   private Server clientServer;
   private Server taskServer;
 
-  private long superstep;
+  private volatile long superstep;
   private SyncServerRunner syncServer;
+
+  private Counters globalCounter = new Counters();
 
   private BSPApplicationMaster(String[] args) throws Exception {
     if (args.length != 1) {
@@ -336,6 +338,10 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
       superstep = taskStatus.getSuperstepCount();
       LOG.info("Now in superstep " + superstep);
     }
+
+    Counters counters = taskStatus.getCounters();
+    globalCounter.incrAllCounters(counters);
+
     return true;
   }
 
