@@ -213,7 +213,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     private int id;
     private BSP bsp;
     private RawSplit[] splits;
-    private static final Counters counters = new Counters();
 
     public BSPRunner(Configuration conf, BSPJob job, int id, RawSplit[] splits) {
       super();
@@ -244,7 +243,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
       BSPPeerImpl peer = new BSPPeerImpl(job, conf, new TaskAttemptID(
           new TaskID(job.getJobID(), id), id), new LocalUmbilical(), id,
-          splitname, realBytes, counters);
+          splitname, realBytes, new Counters());
 
       bsp.setConf(conf);
       try {
