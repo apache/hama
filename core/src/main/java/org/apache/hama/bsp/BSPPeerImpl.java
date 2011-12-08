@@ -258,14 +258,14 @@ public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
       messenger.transfer(addr, bundle);
     }
 
-    // Clear outgoing queues.
-    messenger.clearOutgoingQueues();
     leaveBarrier();
     
     incrCounter(PeerCounter.SUPERSTEPS, 1);
     currentTaskStatus.setCounters(counters);
 
     umbilical.statusUpdate(taskId, currentTaskStatus);
+    // Clear outgoing queues.
+    messenger.clearOutgoingQueues();
   }
 
   private BSPMessageBundle combineMessages(Iterable<BSPMessage> messages) {
