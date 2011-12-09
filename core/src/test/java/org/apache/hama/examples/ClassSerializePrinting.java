@@ -19,68 +19,31 @@ package org.apache.hama.examples;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.sync.SyncException;
 
-public class ClassSerializePrinting {
-  private static String TMP_OUTPUT = "/tmp/test-example/";
+public class ClassSerializePrinting extends
+    BSP<NullWritable, NullWritable, IntWritable, Text> {
 
-  public static class HelloBSP extends
-      BSP<NullWritable, NullWritable, NullWritable, NullWritable> {
-    public static final Log LOG = LogFactory.getLog(HelloBSP.class);
-    private Configuration conf;
-    private final static int PRINT_INTERVAL = 1000;
-    private FileSystem fileSys;
-    private int num;
+  public static final int NUM_SUPERSTEPS = 15;
 
-    public void bsp(
-        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> bspPeer)
-        throws IOException, SyncException, InterruptedException {
+  @Override
+  public void bsp(BSPPeer<NullWritable, NullWritable, IntWritable, Text> bspPeer)
+      throws IOException, SyncException, InterruptedException {
 
-      int i = 0;
+    for (int i = 0; i < NUM_SUPERSTEPS; i++) {
       for (String otherPeer : bspPeer.getAllPeerNames()) {
-        String peerName = bspPeer.getPeerName();
-        if (peerName.equals(otherPeer)) {
-          writeLogToFile(peerName, i);
-        }
-
-        Thread.sleep(PRINT_INTERVAL);
-        bspPeer.sync();
-        i++;
+        bspPeer.send(otherPeer, new IntegerMessage(bspPeer.getPeerName(), i));
       }
-    }
-
-    private void writeLogToFile(String string, int i) throws IOException {
-      SequenceFile.Writer writer = SequenceFile.createWriter(fileSys, conf,
-          new Path(TMP_OUTPUT, "part-0000" + i), LongWritable.class,
-          Text.class, CompressionType.NONE);
-      writer.append(new LongWritable(System.currentTimeMillis()), new Text(
-          "Hello BSP from " + (i + 1) + " of " + num + ": " + string));
-      writer.close();
-    }
-
-    public Configuration getConf() {
-      return conf;
-    }
-
-    public void setConf(Configuration conf) {
-      this.conf = conf;
-      num = Integer.parseInt(conf.get("bsp.peers.num"));
-      try {
-        fileSys = FileSystem.get(conf);
-      } catch (IOException e) {
-        e.printStackTrace();
+      bspPeer.sync();
+      IntegerMessage msg = null;
+      while ((msg = (IntegerMessage) bspPeer.getCurrentMessage()) != null) {
+        bspPeer.write(new IntWritable(msg.getData()), new Text(msg.getTag()));
       }
     }
   }

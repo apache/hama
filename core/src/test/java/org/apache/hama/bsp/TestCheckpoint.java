@@ -33,10 +33,11 @@ public class TestCheckpoint extends TestCase {
 
   static final String checkpointedDir = "checkpoint/job_201110302255_0001/0/";
 
+  @SuppressWarnings("unchecked")
   public void testCheckpoint() throws Exception {
     Configuration config = new HamaConfiguration();
     FileSystem dfs = FileSystem.get(config);
-    @SuppressWarnings("rawtypes")
+
     BSPPeerImpl bspTask = new BSPPeerImpl(config, dfs);
     assertNotNull("BSPPeerImpl should not be null.", bspTask);
     if(dfs.mkdirs(new Path("checkpoint"))) {

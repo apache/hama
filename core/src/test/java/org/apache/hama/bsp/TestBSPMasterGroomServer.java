@@ -22,19 +22,23 @@ package org.apache.hama.bsp;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.ClassSerializePrinting;
 
 public class TestBSPMasterGroomServer extends HamaCluster {
 
   private static Log LOG = LogFactory.getLog(TestBSPMasterGroomServer.class);
   static String TMP_OUTPUT = "/tmp/test-example/";
+  static Path OUTPUT_PATH = new Path(TMP_OUTPUT + "serialout");
+
   private HamaConfiguration configuration;
 
   public TestBSPMasterGroomServer() {
@@ -56,12 +60,14 @@ public class TestBSPMasterGroomServer extends HamaCluster {
 
   public void testSubmitJob() throws Exception {
     BSPJob bsp = new BSPJob(configuration,
-        org.apache.hama.examples.ClassSerializePrinting.HelloBSP.class);
+        org.apache.hama.examples.ClassSerializePrinting.class);
     bsp.setJobName("Test Serialize Printing");
-    bsp
-        .setBspClass(org.apache.hama.examples.ClassSerializePrinting.HelloBSP.class);
+    bsp.setBspClass(org.apache.hama.examples.ClassSerializePrinting.class);
+    bsp.setOutputFormat(SequenceFileOutputFormat.class);
+    bsp.setOutputKeyClass(IntWritable.class);
+    bsp.setOutputValueClass(Text.class);
+    bsp.setOutputPath(OUTPUT_PATH);
 
-    // Set the task size as a number of GroomServer
     BSPJobClient jobClient = new BSPJobClient(configuration);
     configuration.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 6000);
     ClusterStatus cluster = jobClient.getClusterStatus(false);
@@ -78,18 +84,32 @@ public class TestBSPMasterGroomServer extends HamaCluster {
 
   public static void checkOutput(FileSystem fileSys, Configuration conf,
       int tasks) throws Exception {
-    for (int i = 0; i < tasks; i++) {
-      SequenceFile.Reader reader = new SequenceFile.Reader(fileSys, new Path(
-          TMP_OUTPUT + "part-0000" + i), conf);
-      LongWritable timestamp = new LongWritable();
-      Text message = new Text();
-      reader.next(timestamp, message);
-
-      LOG.info("output: " + message);
-      assertTrue("Check if `Hello BSP' gets printed.", message.toString()
-          .indexOf("Hello BSP from") >= 0);
-      reader.close();
+    FileStatus[] listStatus = fileSys.listStatus(OUTPUT_PATH);
+    assertEquals(listStatus.length, tasks);
+    for (FileStatus status : listStatus) {
+      if (!status.isDir()) {
+        SequenceFile.Reader reader = new SequenceFile.Reader(fileSys,
+            status.getPath(), conf);
+        int superStep = 0;
+        int taskstep = 0;
+        IntWritable key = new IntWritable();
+        Text value = new Text();
+        /*
+         * The serialize printing task should write in each superstep
+         * "tasks"-times its superstep, along with the hostname.
+         */
+        while (reader.next(key, value)) {
+          assertEquals(superStep, key.get());
+          taskstep++;
+          if (taskstep % tasks == 0) {
+            superStep++;
+          }
+        }
+        // the maximum should be the number of supersteps defined in the task
+        assertEquals(superStep, ClassSerializePrinting.NUM_SUPERSTEPS);
+      }
     }
+
     fileSys.delete(new Path(TMP_OUTPUT), true);
   }
 
