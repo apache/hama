@@ -50,6 +50,7 @@ public class ShortestPaths extends
   public static final Log LOG = LogFactory.getLog(ShortestPaths.class);
 
   public static final String START_VERTEX = "shortest.paths.start.vertex.name";
+  private String FLAG_MESSAGE = "updatesFrom:";
   private final List<ShortestPathVertex> vertexLookup = new ArrayList<ShortestPathVertex>();
   private final HashMap<ShortestPathVertex, ShortestPathVertex[]> adjacencyList = new HashMap<ShortestPathVertex, ShortestPathVertex[]>();
   private String masterTask;
@@ -65,8 +66,8 @@ public class ShortestPaths extends
       ShortestPathVertexMessage msg = null;
       Deque<ShortestPathVertex> updatedQueue = new LinkedList<ShortestPathVertex>();
       while ((msg = (ShortestPathVertexMessage) peer.getCurrentMessage()) != null) {
-        if (msg.getTag().getName().startsWith("updatesMade")) {
-          if (msg.getData() == -1) {
+        if (msg.getTag().getName().startsWith(FLAG_MESSAGE)) {
+          if (msg.getData() == Integer.MIN_VALUE) {
             updated = false;
           } else {
             globalUpdateCounts += msg.getData();
@@ -84,21 +85,18 @@ public class ShortestPaths extends
         }
       }
 
-      LOG.info(">> previous updates counts: " + globalUpdateCounts + " at "
-          + peer.getSuperstepCount());
-
       if (globalUpdateCounts == 0 && peer.getPeerName().equals(masterTask)
           && peer.getSuperstepCount() > 1) {
         for (String peerName : peer.getAllPeerNames()) {
           peer.send(peerName, new ShortestPathVertexMessage(
               new ShortestPathVertex((int) peer.getSuperstepCount(),
-                  "updatesMade-" + peer.getPeerName()), -1));
+                  FLAG_MESSAGE + peer.getPeerName()), Integer.MIN_VALUE));
         }
       }
 
       // send updates to the adjacents of the updated vertices
       peer.send(masterTask, new ShortestPathVertexMessage(
-          new ShortestPathVertex((int) peer.getSuperstepCount(), "updatesMade-"
+          new ShortestPathVertex((int) peer.getSuperstepCount(), FLAG_MESSAGE
               + peer.getPeerName()), updatesMade));
 
       for (ShortestPathVertex vertex : updatedQueue) {
