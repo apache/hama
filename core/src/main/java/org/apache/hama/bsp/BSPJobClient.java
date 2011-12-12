@@ -423,7 +423,7 @@ public class BSPJobClient extends Configured implements Tool {
 
       try {
         for (int i = 0; i < numOfTasks; i++) {
-          Path p = new Path(partitionedPath, "part-" + i);
+          Path p = new Path(partitionedPath, getPartitionName(i));
           if (codec == null) {
             writers.add(SequenceFile.createWriter(fs, job.getConf(), p,
                 sampleReader.createKey().getClass(), sampleReader.createValue()
@@ -459,6 +459,10 @@ public class BSPJobClient extends Configured implements Tool {
     }
 
     return job;
+  }
+
+  private String getPartitionName(int i) {
+    return "part-"  + String.valueOf(100000 + i).substring(1, 6);
   }
 
   /**
