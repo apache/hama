@@ -17,6 +17,7 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.ipc.ProtocolSignature;
 import org.apache.hadoop.ipc.RPC;
@@ -92,6 +94,9 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
 
   private Counters globalCounter = new Counters();
 
+  private FileSystem fs;
+  private BSPJobClient.RawSplit[] splits;
+
   private BSPApplicationMaster(String[] args) throws Exception {
     if (args.length != 1) {
       throw new IllegalArgumentException();
@@ -128,8 +133,20 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
      */
     rewriteSubmitConfiguration(jobFile, jobConf);
 
+    String jobSplit = jobConf.get("bsp.job.split.file");
+    splits = null;
+    if (jobSplit != null) {
+      DataInputStream splitFile = fs.open(new Path(jobSplit));
+      try {
+        splits = BSPJobClient.readSplitFile(splitFile);
+      } finally {
+        splitFile.close();
+      }
+    }
+
     this.amrmRPC = getYarnRPCConnection(localConf);
-    registerApplicationMaster(amrmRPC, appAttemptId, hostname, clientPort, null);
+    registerApplicationMaster(amrmRPC, appAttemptId, hostname, clientPort,
+        "http://localhost:8080");
   }
 
   /**
@@ -200,7 +217,7 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
     appMasterRequest.setHost(appMasterHostName);
     appMasterRequest.setRpcPort(appMasterRpcPort);
     // TODO tracking URL
-    // appMasterRequest.setTrackingUrl(appMasterTrackingUrl);
+    appMasterRequest.setTrackingUrl(appMasterTrackingUrl);
     RegisterApplicationMasterResponse response = resourceManager
         .registerApplicationMaster(appMasterRequest);
     LOG.debug("ApplicationMaster has maximum resource capability of: "
@@ -301,7 +318,6 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   /**
    * Writes the current configuration to a given path to reflect changes. For
    * example the sync server address is put after the file has been written.
-   * TODO this should upload to HDFS to a given path as well.
    * 
    * @throws IOException
    */
@@ -357,7 +373,17 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
 
   @Override
   public Task getTask(TaskAttemptID taskid) throws IOException {
-    return null;
+    BSPJobClient.RawSplit assignedSplit = null;
+    String splitName = NullInputFormat.NullInputSplit.class.getCanonicalName();
+    if (splits != null) {
+      assignedSplit = splits[taskid.id];
+      splitName = assignedSplit.getClassName();
+      return new BSPTask(jobId, jobFile, taskid, taskid.id, splitName,
+          assignedSplit.getBytes());
+    } else {
+      return new BSPTask(jobId, jobFile, taskid, taskid.id, splitName,
+          new BytesWritable());
+    }
   }
 
   @Override

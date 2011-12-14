@@ -17,6 +17,8 @@
  */
 package org.apache.hama.bsp.sync;
 
+import javax.management.InstanceNotFoundException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -76,7 +78,7 @@ public class ZooKeeperSyncServerImpl implements SyncServer {
       ZookeeperTuple tuple = QuorumPeer.runShutdownableZooKeeper(conf);
       zooKeeper = tuple.main;
       zooKeeper.runFromConfig(tuple.conf);
-    } catch (Exception e) {
+    } catch (InstanceNotFoundException e) {
       LOG.debug(e);
     }
   }

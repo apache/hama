@@ -27,8 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import javax.security.auth.login.LoginException;
+import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,8 +48,8 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.net.NetUtils;
-import org.apache.hadoop.security.UnixUserGroupInformation;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.HamaConfiguration;
@@ -87,6 +86,9 @@ public class BSPJobClient extends Configured implements Tool {
     JobProfile profile;
     JobStatus status;
     long statustime;
+    
+    public NetworkedJob() {
+    }
 
     public NetworkedJob(JobStatus job) throws IOException {
       this.status = job;
@@ -216,8 +218,8 @@ public class BSPJobClient extends Configured implements Tool {
     if (masterAdress != null && !masterAdress.equals("local")) {
       this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
           JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
-          BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(conf,
-              JobSubmissionProtocol.class));
+          BSPMaster.getAddress(conf), conf,
+          NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
     } else {
       LOG.debug("Using local BSP runner.");
       this.jobSubmitClient = new LocalBSPRunner(conf);
@@ -265,18 +267,6 @@ public class BSPJobClient extends Configured implements Tool {
     return jobSubmitClient.jobsToComplete();
   }
 
-  private UnixUserGroupInformation getUGI(Configuration conf)
-      throws IOException {
-    UnixUserGroupInformation ugi = null;
-    try {
-      ugi = UnixUserGroupInformation.login(conf, true);
-    } catch (LoginException e) {
-      throw (IOException) (new IOException(
-          "Failed to get the current user's information.").initCause(e));
-    }
-    return ugi;
-  }
-
   /**
    * Submit a job to the BSP system. This returns a handle to the
    * {@link RunningJob} which can be used to track the running-job.
@@ -289,14 +279,13 @@ public class BSPJobClient extends Configured implements Tool {
    */
   public RunningJob submitJob(BSPJob job) throws FileNotFoundException,
       IOException {
-    return submitJobInternal(job);
+    return submitJobInternal(job, jobSubmitClient.getNewJobId());
   }
 
   static Random r = new Random();
 
-  public RunningJob submitJobInternal(BSPJob job) throws IOException {
-    BSPJobID jobId = jobSubmitClient.getNewJobId();
-
+  public RunningJob submitJobInternal(BSPJob job, BSPJobID jobId)
+      throws IOException {
     job.setJobID(jobId);
 
     Path submitJobDir = new Path(getSystemDir(), "submit_"
@@ -305,12 +294,6 @@ public class BSPJobClient extends Configured implements Tool {
     Path submitJarFile = new Path(submitJobDir, "job.jar");
     Path submitJobFile = new Path(submitJobDir, "job.xml");
     LOG.debug("BSPJobClient.submitJobDir: " + submitJobDir);
-
-    /*
-     * set this user's id in job configuration, so later job files can be
-     * accessed using this user's id
-     */
-    UnixUserGroupInformation ugi = getUGI(job.getConf());
 
     FileSystem fs = getFs();
     // Create a number of filenames in the BSPMaster's fs namespace
@@ -351,10 +334,8 @@ public class BSPJobClient extends Configured implements Tool {
     }
 
     // Set the user's name and working directory
-    job.setUser(ugi.getUserName());
-    if (ugi.getGroupNames().length > 0) {
-      job.set("group.name", ugi.getGroupNames()[0]);
-    }
+    job.setUser(getUnixUserName());
+    job.set("group.name", getUnixUserGroupName(job.getUser()));
     if (job.getWorkingDirectory() == null) {
       job.setWorkingDirectory(fs.getWorkingDirectory());
     }
@@ -369,6 +350,11 @@ public class BSPJobClient extends Configured implements Tool {
       out.close();
     }
 
+    return launchJob(jobId, job, submitJobFile, fs);
+  }
+
+  protected RunningJob launchJob(BSPJobID jobId, BSPJob job,
+      Path submitJobFile, FileSystem fs) throws IOException {
     //
     // Now, actually submit the job (using the submit name)
     //
@@ -381,8 +367,8 @@ public class BSPJobClient extends Configured implements Tool {
     }
   }
 
-  @SuppressWarnings( { "rawtypes", "unchecked" })
-  private BSPJob partition(BSPJob job) throws IOException {
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  protected BSPJob partition(BSPJob job) throws IOException {
     InputSplit[] splits = job.getInputFormat().getSplits(job, 0);
     int numOfTasks = splits.length; // job.getNumBspTask();
     String input = job.getConf().get("bsp.input.dir");
@@ -417,8 +403,8 @@ public class BSPJobClient extends Configured implements Tool {
           job, null);
       CompressionCodec codec = null;
       if (outputCompressorClass != null) {
-        codec = ReflectionUtils.newInstance(outputCompressorClass, job
-            .getConf());
+        codec = ReflectionUtils.newInstance(outputCompressorClass,
+            job.getConf());
       }
 
       try {
@@ -631,7 +617,7 @@ public class BSPJobClient extends Configured implements Tool {
       job.setNumBspTask(jc.getClusterStatus(false).getMaxTasks());
     }
 
-    RunningJob running = jc.submitJobInternal(job);
+    RunningJob running = jc.submitJob(job);
     BSPJobID jobId = running.getID();
     LOG.info("Running job: " + jobId.toString());
 
@@ -798,8 +784,9 @@ public class BSPJobClient extends Configured implements Tool {
         System.out.println("Job name: " + job.getJobName());
         System.out.printf("States are:\n\tRunning : 1\tSucceded : 2"
             + "\tFailed : 3\tPrep : 4\n");
-        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(), jobStatus
-            .getRunState(), jobStatus.getStartTime(), jobStatus.getUsername());
+        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(),
+            jobStatus.getRunState(), jobStatus.getStartTime(),
+            jobStatus.getUsername());
 
         exitCode = 0;
       }
@@ -886,6 +873,54 @@ public class BSPJobClient extends Configured implements Tool {
     for (String groomName : grooms.keySet()) {
       System.out.println(groomName);
     }
+  }
+
+  /*
+   * Helper methods for unix operations
+   */
+
+  static String getUnixUserName() throws IOException {
+    String[] result = executeShellCommand(new String[] { Shell.USER_NAME_COMMAND });
+    if (result.length != 1) {
+      throw new IOException("Expect one token as the result of "
+          + Shell.USER_NAME_COMMAND + ": " + toString(result));
+    }
+    return result[0];
+  }
+
+  static String getUnixUserGroupName(String user) throws IOException {
+    String[] result = executeShellCommand(new String[] { "bash", "-c",
+        "id -Gn " + user });
+    if (result.length < 1) {
+      throw new IOException("Expect one token as the result of "
+          + "bash -c id -Gn " + user + ": " + toString(result));
+    }
+    return result[0];
+  }
+
+  protected static String toString(String[] strArray) {
+    if (strArray == null || strArray.length == 0) {
+      return "";
+    }
+    StringBuilder buf = new StringBuilder(strArray[0]);
+    for (int i = 1; i < strArray.length; i++) {
+      buf.append(' ');
+      buf.append(strArray[i]);
+    }
+    return buf.toString();
+  }
+
+  protected static String[] executeShellCommand(String[] command)
+      throws IOException {
+    String groups = Shell.execCommand(command);
+    StringTokenizer tokenizer = new StringTokenizer(groups);
+    int numOfTokens = tokenizer.countTokens();
+    String[] tokens = new String[numOfTokens];
+    for (int i = 0; tokenizer.hasMoreTokens(); i++) {
+      tokens[i] = tokenizer.nextToken();
+    }
+
+    return tokens;
   }
 
   static class RawSplit implements Writable {
