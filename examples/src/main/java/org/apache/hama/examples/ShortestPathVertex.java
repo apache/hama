@@ -22,9 +22,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hama.graph.Vertex;
+import org.apache.hama.graph.VertexWritable;
 
-public final class ShortestPathVertex extends Vertex implements
+public final class ShortestPathVertex extends VertexWritable implements
     WritableComparable<ShortestPathVertex> {
 
   private int weight;
