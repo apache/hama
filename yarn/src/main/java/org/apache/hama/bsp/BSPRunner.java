@@ -72,8 +72,11 @@ public class BSPRunner {
 
     BSPJob job = new BSPJob(new HamaConfiguration(conf));
 
-    peer = new BSPPeerImpl(job, conf, id, umbilical, port, umbilicalAddress,
-        null, counters);
+    BSPTask task = (BSPTask) umbilical.getTask(id);
+
+    peer = new BSPPeerImpl(job, conf, id, umbilical, id.id, task.splitClass,
+        task.split, counters);
+
     // this is a checked cast because we can only set a class via the BSPJob
     // class which only allows derivates of BSP.
     bspClass = (Class<? extends BSP>) conf.getClassByName(conf

@@ -20,13 +20,11 @@ package org.apache.hama.bsp;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -53,9 +51,6 @@ import org.apache.hama.bsp.BSPTaskLauncher.BSPTaskStatus;
 public class JobImpl implements Job {
 
   private static final Log LOG = LogFactory.getLog(JobImpl.class);
-  private static final ExecutorService threadPool = Executors
-      .newCachedThreadPool();
-
   private static final int DEFAULT_MEMORY_MB = 256;
 
   private Configuration conf;
@@ -76,9 +71,9 @@ public class JobImpl implements Job {
   private List<Container> allocatedContainers;
   private List<ContainerId> releasedContainers = Collections.emptyList();
 
-  private ExecutorCompletionService<BSPTaskStatus> completionService = new ExecutorCompletionService<BSPTaskStatus>(
-      threadPool);
   private Map<Integer, BSPTaskLauncher> launchers = new HashMap<Integer, BSPTaskLauncher>();
+  private Deque<BSPTaskLauncher> completionQueue = new LinkedList<BSPTaskLauncher>();
+
   private int lastResponseID = 0;
 
   public JobImpl(ApplicationAttemptId appAttemptId,
@@ -135,8 +130,7 @@ public class JobImpl implements Job {
   }
 
   @Override
-  public JobState startJob() throws YarnRemoteException, InterruptedException,
-      ExecutionException {
+  public JobState startJob() throws Exception {
 
     this.allocatedContainers = new ArrayList<Container>(numBSPTasks);
     while (allocatedContainers.size() < numBSPTasks) {
@@ -157,7 +151,7 @@ public class JobImpl implements Job {
           + amResponse.getAvailableResources().getMemory() + "mb");
       this.lastResponseID = amResponse.getResponseId();
 
-//      availableResources = amResponse.getAvailableResources();
+      // availableResources = amResponse.getAvailableResources();
       this.allocatedContainers.addAll(amResponse.getAllocatedContainers());
       LOG.info("Waiting to allocate "
           + (numBSPTasks - allocatedContainers.size()) + " more containers...");
@@ -187,23 +181,36 @@ public class JobImpl implements Job {
 
       BSPTaskLauncher runnableLaunchContainer = new BSPTaskLauncher(id,
           allocatedContainer, cm, conf, jobFile, jobId);
+
       launchers.put(id, runnableLaunchContainer);
-      completionService.submit(runnableLaunchContainer);
+      runnableLaunchContainer.start();
+      completionQueue.add(runnableLaunchContainer);
       id++;
       launchedBSPTasks++;
     }
+    LOG.info("Waiting for tasks to finish...");
     state = JobState.RUNNING;
-
-    for (int i = 0; i < launchedBSPTasks; i++) {
-      BSPTaskStatus returnedTask = completionService.take().get();
-      if (returnedTask.getExitStatus() != 0) {
-        LOG.error("Task with id \"" + returnedTask.getId() + "\" failed!");
-        state = JobState.FAILED;
-        return state;
-      } else {
-        LOG.info("Task \"" + returnedTask.getId() + "\" sucessfully finished!");
+    int completed = 0;
+    while (completed != numBSPTasks) {
+      for (BSPTaskLauncher task : completionQueue) {
+        BSPTaskStatus returnedTask = task.poll();
+        // if our task returned with a finished state
+        if (returnedTask != null) {
+          if (returnedTask.getExitStatus() != 0) {
+            LOG.error("Task with id \"" + returnedTask.getId() + "\" failed!");
+            state = JobState.FAILED;
+            return state;
+          } else {
+            LOG.info("Task \"" + returnedTask.getId()
+                + "\" sucessfully finished!");
+            completed++;
+            LOG.info("Waiting for " + (numBSPTasks - completed)
+                + " tasks to finish!");
+          }
+          cleanupTask(returnedTask.getId());
+        }
       }
-      cleanupTask(returnedTask.getId());
+      Thread.sleep(1000L);
     }
 
     state = JobState.SUCCESS;
@@ -221,14 +228,14 @@ public class JobImpl implements Job {
     BSPTaskLauncher bspTaskLauncher = launchers.get(id);
     bspTaskLauncher.stopAndCleanup();
     launchers.remove(id);
+    completionQueue.remove(bspTaskLauncher);
   }
 
   @Override
   public void cleanup() throws YarnRemoteException {
-    for (BSPTaskLauncher launcher : launchers.values()) {
+    for (BSPTaskLauncher launcher : completionQueue) {
       launcher.stopAndCleanup();
     }
-    threadPool.shutdownNow();
   }
 
   private List<ResourceRequest> createBSPTaskRequest(int numTasks,

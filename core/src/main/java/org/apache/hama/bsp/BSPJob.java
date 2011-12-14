@@ -199,7 +199,7 @@ public class BSPJob extends BSPJobContext {
 
   public void submit() throws IOException, InterruptedException {
     ensureState(JobState.DEFINE);
-    info = jobClient.submitJobInternal(this);
+    info = jobClient.submitJob(this);
     state = JobState.RUNNING;
   }
 

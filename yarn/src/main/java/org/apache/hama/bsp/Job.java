@@ -19,7 +19,6 @@ package org.apache.hama.bsp;
 
 import org.apache.hadoop.yarn.exceptions.YarnRemoteException;
 
-
 /**
  * Main interface to interact with the job. Provides only getters.
  */
@@ -34,7 +33,7 @@ public interface Job {
   }
 
   public JobState startJob() throws Exception;
-  
+
   public void cleanup() throws YarnRemoteException;
 
   JobState getState();
