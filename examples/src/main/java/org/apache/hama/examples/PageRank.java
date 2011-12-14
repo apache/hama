@@ -42,18 +42,18 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.graph.Vertex;
+import org.apache.hama.graph.VertexWritable;
 import org.apache.hama.util.KeyValuePair;
 
 public class PageRank extends
-    BSP<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> {
+    BSP<VertexWritable, ShortestPathVertexArrayWritable, Text, DoubleWritable> {
   public static final Log LOG = LogFactory.getLog(PageRank.class);
 
-  private final HashMap<Vertex, Vertex[]> adjacencyList = new HashMap<Vertex, Vertex[]>();
-  private final HashMap<String, Vertex> vertexLookupMap = new HashMap<String, Vertex>();
-  private final HashMap<Vertex, Double> tentativePagerank = new HashMap<Vertex, Double>();
+  private final HashMap<VertexWritable, VertexWritable[]> adjacencyList = new HashMap<VertexWritable, VertexWritable[]>();
+  private final HashMap<String, VertexWritable> vertexLookupMap = new HashMap<String, VertexWritable>();
+  private final HashMap<VertexWritable, Double> tentativePagerank = new HashMap<VertexWritable, Double>();
   // backup of the last pagerank to determine the error
-  private final HashMap<Vertex, Double> lastTentativePagerank = new HashMap<Vertex, Double>();
+  private final HashMap<VertexWritable, Double> lastTentativePagerank = new HashMap<VertexWritable, Double>();
 
   protected static int MAX_ITERATIONS = 30;
   protected static String masterTaskName;
@@ -64,11 +64,11 @@ public class PageRank extends
 
   @Override
   public void setup(
-      BSPPeer<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer)
+      BSPPeer<VertexWritable, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer)
       throws IOException {
     // map our stuff into ram
 
-    KeyValuePair<Vertex, ShortestPathVertexArrayWritable> next = null;
+    KeyValuePair<VertexWritable, ShortestPathVertexArrayWritable> next = null;
     while ((next = peer.readNext()) != null) {
       adjacencyList.put(next.getKey(), (ShortestPathVertex[]) next.getValue()
           .toArray());
@@ -86,7 +86,7 @@ public class PageRank extends
 
   @Override
   public void bsp(
-      BSPPeer<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer)
+      BSPPeer<VertexWritable, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer)
       throws IOException, SyncException, InterruptedException {
 
     // while the error not converges against epsilon do the pagerank stuff
@@ -102,10 +102,10 @@ public class PageRank extends
         // copy the old pagerank to the backup
         copyTentativePageRankToBackup();
         // sum up all incoming messages for a vertex
-        HashMap<Vertex, Double> sumMap = new HashMap<Vertex, Double>();
+        HashMap<VertexWritable, Double> sumMap = new HashMap<VertexWritable, Double>();
         DoubleMessage msg = null;
         while ((msg = (DoubleMessage) peer.getCurrentMessage()) != null) {
-          Vertex k = vertexLookupMap.get(msg.getTag());
+          VertexWritable k = vertexLookupMap.get(msg.getTag());
           if (k == null) {
             LOG.fatal("If you see this, partitioning has totally failed.");
           }
@@ -118,7 +118,7 @@ public class PageRank extends
         // pregel formula:
         // ALPHA = 0.15 / NumVertices()
         // P(i) = ALPHA + 0.85 * sum
-        for (Entry<Vertex, Double> entry : sumMap.entrySet()) {
+        for (Entry<VertexWritable, Double> entry : sumMap.entrySet()) {
           tentativePagerank.put(entry.getKey(), ALPHA
               + (entry.getValue() * DAMPING_FACTOR));
         }
@@ -129,7 +129,7 @@ public class PageRank extends
       }
       // in every step send the tentative pagerank of a vertex to its
       // adjacent vertices
-      for (Vertex vertex : adjacencyList.keySet()) {
+      for (VertexWritable vertex : adjacencyList.keySet()) {
         sendMessageToNeighbors(peer, vertex);
       }
 
@@ -142,9 +142,9 @@ public class PageRank extends
 
   @Override
   public void cleanup(
-      BSPPeer<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer) {
+      BSPPeer<VertexWritable, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer) {
     try {
-      for (Entry<Vertex, Double> row : tentativePagerank.entrySet()) {
+      for (Entry<VertexWritable, Double> row : tentativePagerank.entrySet()) {
         peer.write(new Text(row.getKey().getName()), new DoubleWritable(row
             .getValue()));
       }
@@ -154,7 +154,7 @@ public class PageRank extends
   }
 
   private double broadcastError(
-      BSPPeer<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer,
+      BSPPeer<VertexWritable, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer,
       double error) throws IOException, SyncException, InterruptedException {
     peer.send(masterTaskName, new DoubleMessage("", error));
     peer.sync();
@@ -180,7 +180,7 @@ public class PageRank extends
 
   private double determineError() {
     double error = 0.0;
-    for (Entry<Vertex, Double> entry : tentativePagerank.entrySet()) {
+    for (Entry<VertexWritable, Double> entry : tentativePagerank.entrySet()) {
       error += Math.abs(lastTentativePagerank.get(entry.getKey())
           - entry.getValue());
     }
@@ -188,16 +188,16 @@ public class PageRank extends
   }
 
   private void copyTentativePageRankToBackup() {
-    for (Entry<Vertex, Double> entry : tentativePagerank.entrySet()) {
+    for (Entry<VertexWritable, Double> entry : tentativePagerank.entrySet()) {
       lastTentativePagerank.put(entry.getKey(), entry.getValue());
     }
   }
 
   private void sendMessageToNeighbors(
-      BSPPeer<Vertex, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer,
-      Vertex v) throws IOException {
-    Vertex[] outgoingEdges = adjacencyList.get(v);
-    for (Vertex adjacent : outgoingEdges) {
+      BSPPeer<VertexWritable, ShortestPathVertexArrayWritable, Text, DoubleWritable> peer,
+      VertexWritable v) throws IOException {
+    VertexWritable[] outgoingEdges = adjacencyList.get(v);
+    for (VertexWritable adjacent : outgoingEdges) {
       int mod = Math.abs(adjacent.hashCode() % peer.getNumPeers());
       // send a message of the tentative pagerank divided by the size of
       // the outgoing edges to all adjacents
