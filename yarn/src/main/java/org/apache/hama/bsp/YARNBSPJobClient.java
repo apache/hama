@@ -44,6 +44,7 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.util.EnvironmentUtil;
 
 public class YARNBSPJobClient extends BSPJobClient {
 
@@ -72,7 +73,7 @@ public class YARNBSPJobClient extends BSPJobClient {
     }
 
     if (getConf().get("bsp.user.name") == null) {
-      String s = getUnixUserName();
+      String s = EnvironmentUtil.getUnixUserName();
       getConf().set("bsp.user.name", s);
       LOG.info("Retrieved username: " + s);
     }
