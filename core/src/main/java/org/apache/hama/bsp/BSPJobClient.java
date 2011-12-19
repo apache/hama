@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,11 +49,11 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.JobSubmissionProtocol;
-import org.apache.hama.util.EnvironmentUtil;
 
 /**
  * BSPJobClient is the primary interface for the user-job to interact with the
@@ -85,7 +86,7 @@ public class BSPJobClient extends Configured implements Tool {
     JobProfile profile;
     JobStatus status;
     long statustime;
-
+    
     public NetworkedJob() {
     }
 
@@ -333,8 +334,8 @@ public class BSPJobClient extends Configured implements Tool {
     }
 
     // Set the user's name and working directory
-    job.setUser(EnvironmentUtil.getUnixUserName());
-    job.set("group.name", EnvironmentUtil.getUnixUserGroupName(job.getUser()));
+    job.setUser(getUnixUserName());
+    job.set("group.name", getUnixUserGroupName(job.getUser()));
     if (job.getWorkingDirectory() == null) {
       job.setWorkingDirectory(fs.getWorkingDirectory());
     }
@@ -447,7 +448,7 @@ public class BSPJobClient extends Configured implements Tool {
   }
 
   private String getPartitionName(int i) {
-    return "part-" + String.valueOf(100000 + i).substring(1, 6);
+    return "part-"  + String.valueOf(100000 + i).substring(1, 6);
   }
 
   /**
@@ -588,7 +589,7 @@ public class BSPJobClient extends Configured implements Tool {
         lastReport = report;
       }
     }
-
+    
     LOG.info("The total number of supersteps: " + info.getSuperstepCount());
     // TODO job.getCounters().log(LOG);
     return job.isSuccessful();
@@ -872,6 +873,54 @@ public class BSPJobClient extends Configured implements Tool {
     for (String groomName : grooms.keySet()) {
       System.out.println(groomName);
     }
+  }
+
+  /*
+   * Helper methods for unix operations
+   */
+
+  static String getUnixUserName() throws IOException {
+    String[] result = executeShellCommand(new String[] { Shell.USER_NAME_COMMAND });
+    if (result.length != 1) {
+      throw new IOException("Expect one token as the result of "
+          + Shell.USER_NAME_COMMAND + ": " + toString(result));
+    }
+    return result[0];
+  }
+
+  static String getUnixUserGroupName(String user) throws IOException {
+    String[] result = executeShellCommand(new String[] { "bash", "-c",
+        "id -Gn " + user });
+    if (result.length < 1) {
+      throw new IOException("Expect one token as the result of "
+          + "bash -c id -Gn " + user + ": " + toString(result));
+    }
+    return result[0];
+  }
+
+  protected static String toString(String[] strArray) {
+    if (strArray == null || strArray.length == 0) {
+      return "";
+    }
+    StringBuilder buf = new StringBuilder(strArray[0]);
+    for (int i = 1; i < strArray.length; i++) {
+      buf.append(' ');
+      buf.append(strArray[i]);
+    }
+    return buf.toString();
+  }
+
+  protected static String[] executeShellCommand(String[] command)
+      throws IOException {
+    String groups = Shell.execCommand(command);
+    StringTokenizer tokenizer = new StringTokenizer(groups);
+    int numOfTokens = tokenizer.countTokens();
+    String[] tokens = new String[numOfTokens];
+    for (int i = 0; tokenizer.hasMoreTokens(); i++) {
+      tokens[i] = tokenizer.nextToken();
+    }
+
+    return tokens;
   }
 
   static class RawSplit implements Writable {
