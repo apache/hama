@@ -57,6 +57,7 @@ import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.MasterProtocol;
+import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.log4j.LogManager;
 import org.apache.zookeeper.WatchedEvent;
@@ -146,19 +147,14 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         LOG.info("Launch " + actions.length + " tasks.");
 
         assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
-        int i = 0;
+        int prevPort = Constants.DEFAULT_PEER_PORT;
 
-        // TODO find another way to manage all activate peers.
         for (GroomServerAction action : actions) {
           Task t = ((LaunchTaskAction) action).getTask();
 
-          int peerPort = (Constants.DEFAULT_PEER_PORT + i);
-          assignedPeerNames.put(t.getTaskID(), peerPort);
-
-          i++;
-        }
-
-        for (GroomServerAction action : actions) {
+          prevPort = BSPNetUtils.getNextAvailable(prevPort);
+          assignedPeerNames.put(t.getTaskID(), prevPort);
+          
           if (action instanceof LaunchTaskAction) {
             startNewTask((LaunchTaskAction) action);
           } else {
