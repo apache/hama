@@ -521,6 +521,17 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     synchronized (rjob) {
       if (!rjob.localized) {
+        
+        FileSystem localFs = FileSystem.getLocal(conf);
+        Path jobDir = localJobFile.getParent();
+        if (localFs.exists(jobDir)){
+          localFs.delete(jobDir, true);
+          boolean b = localFs.mkdirs(jobDir);
+          if (!b)
+            throw new IOException("Not able to create job directory "
+                                  + jobDir.toString());
+        }
+        
         Path localJarFile = defaultJobConf.getLocalPath(SUBDIR + "/"
             + task.getTaskID() + "/" + "job.jar");
         systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
