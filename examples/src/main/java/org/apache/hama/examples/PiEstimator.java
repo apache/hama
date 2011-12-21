@@ -42,7 +42,7 @@ import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.bsp.sync.SyncException;
 
 public class PiEstimator {
-  private static Path TMP_OUTPUT = new Path("/tmp/pi-temp");
+  private static Path TMP_OUTPUT = new Path("/tmp/pi-" + System.currentTimeMillis());
 
   public static class MyEstimator extends
       BSP<NullWritable, NullWritable, Text, DoubleWritable> {
