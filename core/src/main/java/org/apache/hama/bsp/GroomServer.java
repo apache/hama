@@ -150,12 +150,12 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         int prevPort = Constants.DEFAULT_PEER_PORT;
 
         for (GroomServerAction action : actions) {
-          Task t = ((LaunchTaskAction) action).getTask();
-
-          prevPort = BSPNetUtils.getNextAvailable(prevPort);
-          assignedPeerNames.put(t.getTaskID(), prevPort);
-          
           if (action instanceof LaunchTaskAction) {
+            Task t = ((LaunchTaskAction) action).getTask();
+
+            prevPort = BSPNetUtils.getNextAvailable(prevPort);
+            assignedPeerNames.put(t.getTaskID(), prevPort);
+
             startNewTask((LaunchTaskAction) action);
           } else {
 
