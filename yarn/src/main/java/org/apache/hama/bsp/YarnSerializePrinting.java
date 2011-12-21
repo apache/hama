@@ -80,6 +80,6 @@ public class YarnSerializePrinting {
     job.setJobName("Serialize Printing");
     job.setMemoryUsedPerTaskInMb(50);
     job.setNumBspTask(2);
-    job.waitForCompletion(false);
+    job.waitForCompletion(true);
   }
 }

@@ -97,7 +97,6 @@ public class YARNBSPJob extends BSPJob {
 
     client = (BSPClient) RPC.waitForProxy(BSPClient.class, BSPClient.versionID,
         NetUtils.createSocketAddr(report.getHost(), report.getRpcPort()), conf);
-
     GetApplicationReportRequest reportRequest = Records
         .newRecord(GetApplicationReportRequest.class);
     reportRequest.setApplicationId(submitClient.getId());
@@ -105,17 +104,14 @@ public class YARNBSPJob extends BSPJob {
     GetApplicationReportResponse reportResponse = applicationsManager
         .getApplicationReport(reportRequest);
     ApplicationReport localReport = reportResponse.getApplicationReport();
-    long clientSuperStep = 0L;
-    // TODO this may cause infinite loops, we can go with our rpc client
+    long clientSuperStep = -1L;
     while (localReport.getFinalApplicationStatus() != null
-        && localReport.getFinalApplicationStatus() != FinalApplicationStatus.FAILED
-        && localReport.getFinalApplicationStatus() != FinalApplicationStatus.KILLED
-        && localReport.getFinalApplicationStatus() != FinalApplicationStatus.SUCCEEDED) {
+        && localReport.getFinalApplicationStatus().ordinal() == 0) {
       LOG.debug("currently in state: "
           + localReport.getFinalApplicationStatus());
       if (verbose) {
         long remoteSuperStep = client.getCurrentSuperStep().get();
-        if (clientSuperStep > remoteSuperStep) {
+        if (clientSuperStep < remoteSuperStep) {
           clientSuperStep = remoteSuperStep;
           LOG.info("Current supersteps number: " + clientSuperStep);
         }

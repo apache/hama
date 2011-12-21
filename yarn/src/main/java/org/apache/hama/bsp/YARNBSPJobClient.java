@@ -74,7 +74,7 @@ public class YARNBSPJobClient extends BSPJobClient {
     if (getConf().get("bsp.user.name") == null) {
       String s = getUnixUserName();
       getConf().set("bsp.user.name", s);
-      LOG.info("Retrieved username: " + s);
+      LOG.debug("Retrieved username: " + s);
     }
 
     GetNewApplicationRequest request = Records
@@ -82,7 +82,7 @@ public class YARNBSPJobClient extends BSPJobClient {
     GetNewApplicationResponse response = job.getApplicationsManager()
         .getNewApplication(request);
     id = response.getApplicationId();
-    LOG.info("Got new ApplicationId=" + id);
+    LOG.debug("Got new ApplicationId=" + id);
 
     // Create a new ApplicationSubmissionContext
     ApplicationSubmissionContext appContext = Records
@@ -107,7 +107,7 @@ public class YARNBSPJobClient extends BSPJobClient {
     }
     Path jarPath = new Path(job.getWorkingDirectory(), id + "/app.jar");
     fs.copyFromLocalFile(job.getLocalPath(job.getJar()), jarPath);
-    LOG.info("Copying app jar to " + jarPath);
+    LOG.debug("Copying app jar to " + jarPath);
     getConf()
         .set(
             "bsp.jar",
@@ -148,7 +148,7 @@ public class YARNBSPJobClient extends BSPJobClient {
         + "/stdout" + " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
         + "/stderr";
 
-    LOG.info("Start command: " + command);
+    LOG.debug("Start command: " + command);
 
     amContainer.setCommands(Collections.singletonList(command));
 
@@ -185,7 +185,7 @@ public class YARNBSPJobClient extends BSPJobClient {
       }
     }
     LOG.info("Got report: " + report.getApplicationId() + " "
-        + report.getHost());
+        + report.getHost() + ":" + report.getRpcPort());
     return new NetworkedJob();
   }
 

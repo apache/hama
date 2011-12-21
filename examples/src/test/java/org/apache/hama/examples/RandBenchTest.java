@@ -28,7 +28,7 @@ public class RandBenchTest {
   @Test
   public void testCorrectRandBenchExecution() {
     try {
-      RandBench.main(new String[]{"10","100","200"});
+      RandBench.main(new String[]{"10","3","2"});
     } catch (Exception e) {
       fail(e.getLocalizedMessage());
     }
