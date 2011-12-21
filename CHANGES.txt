@@ -4,7 +4,8 @@ Release 0.4 - Unreleased
 
   NEW FEATURES
    
-   HAMA-479: Add Counters to Hama Jobs (edwardyoon)
+   HAMA-451: Show Supersteps in waitForCompletion in YARN (tjungblut) 
+   HAMA-479: Add Counters to Hama Jobs (edwardyoon) 
    HAMA-454: Add Zookeeper as synchronization service to YARN (tjungblut)
    HAMA-258: Add Input Output system (edwardyoon)
    HAMA-458: Add Message Combiner (edwardyoon)
