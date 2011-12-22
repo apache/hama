@@ -227,8 +227,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
 
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
-          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
+          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -240,8 +240,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
-          "default"), conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(
+          conf.get("bsp.dns.interface", "default"),
+          conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(getLocalDirs());
@@ -517,17 +518,17 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     synchronized (rjob) {
       if (!rjob.localized) {
-        
+
         FileSystem localFs = FileSystem.getLocal(conf);
         Path jobDir = localJobFile.getParent();
-        if (localFs.exists(jobDir)){
+        if (localFs.exists(jobDir)) {
           localFs.delete(jobDir, true);
           boolean b = localFs.mkdirs(jobDir);
           if (!b)
             throw new IOException("Not able to create job directory "
-                                  + jobDir.toString());
+                + jobDir.toString());
         }
-        
+
         Path localJarFile = defaultJobConf.getLocalPath(SUBDIR + "/"
             + task.getTaskID() + "/" + "job.jar");
         systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
@@ -930,13 +931,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   /**
    * The main() for BSPPeer child processes.
    */
-  public static class BSPPeerChild {
+  public static final class BSPPeerChild {
 
     public static void main(String[] args) throws Throwable {
       if (LOG.isDebugEnabled())
         LOG.debug("BSPPeerChild starting");
 
-      HamaConfiguration defaultConf = new HamaConfiguration();
+      final HamaConfiguration defaultConf = new HamaConfiguration();
       // report address
       String host = args[0];
       int port = Integer.parseInt(args[1]);
@@ -948,7 +949,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           BSPPeerProtocol.class, BSPPeerProtocol.versionID, address,
           defaultConf);
 
-      BSPTask task = (BSPTask) umbilical.getTask(taskid);
+      final BSPTask task = (BSPTask) umbilical.getTask(taskid);
       int peerPort = umbilical.getAssignedPortNum(taskid);
 
       defaultConf.addResource(new Path(task.getJobFile()));
@@ -967,9 +968,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
         // instantiate and init our peer
         @SuppressWarnings("rawtypes")
-        BSPPeerImpl<?, ?, ?, ?> bspPeer = new BSPPeerImpl(job, defaultConf,
-            taskid, umbilical, task.partition, task.splitClass, task.split,
-            task.getCounters());
+        final BSPPeerImpl<?, ?, ?, ?> bspPeer = new BSPPeerImpl(job,
+            defaultConf, taskid, umbilical, task.partition, task.splitClass,
+            task.split, task.getCounters());
 
         task.run(job, bspPeer, umbilical); // run the task
 
@@ -979,7 +980,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       } catch (SyncException e) {
         LOG.fatal("SyncError from child", e);
         umbilical.fatalError(taskid, e.toString());
-        
+
         // Report back any failures, for diagnostic purposes
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         e.printStackTrace(new PrintStream(baos));
