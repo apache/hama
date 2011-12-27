@@ -45,7 +45,7 @@ import org.apache.hama.util.KeyValuePair;
 /**
  * This class represents a BSP peer.
  */
-public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
+public class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
 
   private static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
@@ -146,7 +146,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   @SuppressWarnings("unchecked")
-  public final void initialize() throws Exception {
+  public void initialize() throws Exception {
     syncClient = SyncServiceFactory.getSyncClient(conf);
     syncClient.init(conf, taskId.getJobID(), taskId);
 
@@ -154,8 +154,8 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
 
     // just output something when the user configured it
     if (conf.get("bsp.output.dir") != null) {
-      Path outdir = new Path(conf.get("bsp.output.dir"),
-          Task.getOutputName(partition));
+      Path outdir = new Path(conf.get("bsp.output.dir"), Task
+          .getOutputName(partition));
       outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob,
           outdir.makeQualified(fs).toString());
       final RecordWriter<KEYOUT, VALUEOUT> finalOut = outWriter;
@@ -170,7 +170,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   @SuppressWarnings("unchecked")
-  public final void initInput() throws IOException {
+  public void initInput() throws IOException {
     // just read input if the user defined one
     if (conf.get("bsp.input.dir") != null) {
       InputSplit inputSplit = null;
@@ -196,16 +196,16 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   @Override
-  public final BSPMessage getCurrentMessage() throws IOException {
+  public BSPMessage getCurrentMessage() throws IOException {
     return messenger.getCurrentMessage();
   }
 
   @Override
-  public final void send(String peerName, BSPMessage msg) throws IOException {
+  public void send(String peerName, BSPMessage msg) throws IOException {
     messenger.send(peerName, msg);
   }
 
-  private final String checkpointedPath() {
+  private String checkpointedPath() {
     String backup = conf.get("bsp.checkpoint.prefix_path", "/checkpoint/");
     String ckptPath = backup + bspJob.getJobID().toString() + "/"
         + getSuperstepCount() + "/" + this.taskId.toString();
@@ -214,7 +214,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     return ckptPath;
   }
 
-  final void checkpoint(String checkpointedPath, BSPMessageBundle bundle) {
+  void checkpoint(String checkpointedPath, BSPMessageBundle bundle) {
     FSDataOutputStream out = null;
     try {
       out = this.fs.create(new Path(checkpointedPath));
@@ -236,8 +236,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    * @see org.apache.hama.bsp.BSPPeerInterface#sync()
    */
   @Override
-  public final void sync() throws IOException, SyncException,
-      InterruptedException {
+  public void sync() throws IOException, SyncException, InterruptedException {
     enterBarrier();
     Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> it = messenger
         .getMessageIterator();
@@ -260,7 +259,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     }
 
     leaveBarrier();
-
+    
     incrCounter(PeerCounter.SUPERSTEPS, 1);
     currentTaskStatus.setCounters(counters);
 
@@ -269,11 +268,11 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     messenger.clearOutgoingQueues();
   }
 
-  private final BSPMessageBundle combineMessages(Iterable<BSPMessage> messages) {
+  private BSPMessageBundle combineMessages(Iterable<BSPMessage> messages) {
     if (!conf.getClass("bsp.combiner.class", Combiner.class).equals(
         Combiner.class)) {
-      Combiner combiner = (Combiner) ReflectionUtils.newInstance(
-          conf.getClass("bsp.combiner.class", Combiner.class), conf);
+      Combiner combiner = (Combiner) ReflectionUtils.newInstance(conf.getClass(
+          "bsp.combiner.class", Combiner.class), conf);
 
       return combiner.combine(messages);
     } else {
@@ -285,18 +284,17 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     }
   }
 
-  protected final void enterBarrier() throws SyncException {
-    syncClient.enterBarrier(taskId.getJobID(), taskId,
-        currentTaskStatus.getSuperstepCount());
+  protected void enterBarrier() throws SyncException {
+    syncClient.enterBarrier(taskId.getJobID(), taskId, currentTaskStatus
+        .getSuperstepCount());
   }
 
-  protected final void leaveBarrier() throws SyncException {
-    syncClient.leaveBarrier(taskId.getJobID(), taskId,
-        currentTaskStatus.getSuperstepCount());
+  protected void leaveBarrier() throws SyncException {
+    syncClient.leaveBarrier(taskId.getJobID(), taskId, currentTaskStatus
+        .getSuperstepCount());
   }
 
-  public final void close() throws SyncException, IOException,
-      InterruptedException {
+  public void close() throws SyncException, IOException, InterruptedException {
     if (in != null) {
       in.close();
     }
@@ -310,36 +308,36 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   @Override
-  public final void clear() {
+  public void clear() {
     messenger.clearOutgoingQueues();
   }
 
   /**
    * @return the string as host:port of this Peer
    */
-  public final String getPeerName() {
+  public String getPeerName() {
     return peerAddress.getHostName() + ":" + peerAddress.getPort();
   }
 
   @Override
-  public final String[] getAllPeerNames() {
+  public String[] getAllPeerNames() {
     initPeerNames();
     return allPeers;
   }
 
   @Override
-  public final String getPeerName(int index) {
+  public String getPeerName(int index) {
     initPeerNames();
     return allPeers[index];
   }
 
   @Override
-  public final int getNumPeers() {
+  public int getNumPeers() {
     initPeerNames();
     return allPeers.length;
   }
 
-  private final void initPeerNames() {
+  private void initPeerNames() {
     if (allPeers == null) {
       allPeers = syncClient.getAllPeerNames(taskId);
     }
@@ -349,7 +347,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    * @return the number of messages
    */
   @Override
-  public final int getNumCurrentMessages() {
+  public int getNumCurrentMessages() {
     return messenger.getNumCurrentMessages();
   }
 
@@ -358,14 +356,14 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    * 
    * @param currentTaskStatus
    */
-  public final void setCurrentTaskStatus(TaskStatus currentTaskStatus) {
+  public void setCurrentTaskStatus(TaskStatus currentTaskStatus) {
     this.currentTaskStatus = currentTaskStatus;
   }
 
   /**
    * @return the count of current super-step
    */
-  public final long getSuperstepCount() {
+  public long getSuperstepCount() {
     return currentTaskStatus.getSuperstepCount();
   }
 
@@ -374,7 +372,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    * 
    * @return the conf
    */
-  public final Configuration getConfiguration() {
+  public Configuration getConfiguration() {
     return conf;
   }
 
@@ -383,17 +381,17 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    */
 
   @Override
-  public final void write(KEYOUT key, VALUEOUT value) throws IOException {
+  public void write(KEYOUT key, VALUEOUT value) throws IOException {
     collector.collect(key, value);
   }
 
   @Override
-  public final boolean readNext(KEYIN key, VALUEIN value) throws IOException {
+  public boolean readNext(KEYIN key, VALUEIN value) throws IOException {
     return in.next(key, value);
   }
 
   @Override
-  public final KeyValuePair<KEYIN, VALUEIN> readNext() throws IOException {
+  public KeyValuePair<KEYIN, VALUEIN> readNext() throws IOException {
     KEYIN k = in.createKey();
     VALUEIN v = in.createValue();
     if (in.next(k, v)) {
@@ -404,17 +402,17 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   @Override
-  public final void reopenInput() throws IOException {
+  public void reopenInput() throws IOException {
     initInput();
   }
 
   @Override
-  public final Counter getCounter(Enum<?> name) {
+  public Counter getCounter(Enum<?> name) {
     return counters == null ? null : counters.findCounter(name);
   }
 
   @Override
-  public final Counter getCounter(String group, String name) {
+  public Counter getCounter(String group, String name) {
     Counters.Counter counter = null;
     if (counters != null) {
       counter = counters.findCounter(group, name);
@@ -423,14 +421,14 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   @Override
-  public final void incrCounter(Enum<?> key, long amount) {
+  public void incrCounter(Enum<?> key, long amount) {
     if (counters != null) {
       counters.incrCounter(key, amount);
     }
   }
 
   @Override
-  public final void incrCounter(String group, String counter, long amount) {
+  public void incrCounter(String group, String counter, long amount) {
     if (counters != null) {
       counters.incrCounter(group, counter, amount);
     }

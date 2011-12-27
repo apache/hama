@@ -32,7 +32,7 @@ import org.apache.hama.ipc.BSPPeerProtocol;
 /**
  * Base class for tasks.
  */
-public final class BSPTask extends Task {
+public class BSPTask extends Task {
 
   public static final Log LOG = LogFactory.getLog(BSPTask.class);
 
@@ -55,12 +55,12 @@ public final class BSPTask extends Task {
   }
 
   @Override
-  public final BSPTaskRunner createRunner(GroomServer groom) {
+  public BSPTaskRunner createRunner(GroomServer groom) {
     return new BSPTaskRunner(this, groom, this.conf);
   }
 
   @Override
-  public final void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?> bspPeer,
+  public void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?> bspPeer,
       BSPPeerProtocol umbilical) throws IOException, SyncException,
       ClassNotFoundException, InterruptedException {
     runBSP(job, bspPeer, split, umbilical);
@@ -69,15 +69,15 @@ public final class BSPTask extends Task {
   }
 
   @SuppressWarnings("unchecked")
-  private final <KEYIN, VALUEIN, KEYOUT, VALUEOUT> void runBSP(
-      final BSPJob job, BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bspPeer,
+  private <KEYIN, VALUEIN, KEYOUT, VALUEOUT> void runBSP(final BSPJob job,
+      BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bspPeer,
       final BytesWritable rawSplit, final BSPPeerProtocol umbilical)
       throws IOException, SyncException, ClassNotFoundException,
       InterruptedException {
 
     BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bsp = (BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT>) ReflectionUtils
-        .newInstance(job.getConf().getClass("bsp.work.class", BSP.class),
-            job.getConf());
+        .newInstance(job.getConf().getClass("bsp.work.class", BSP.class), job
+            .getConf());
 
     bsp.setup(bspPeer);
     bsp.bsp(bspPeer);
@@ -86,16 +86,16 @@ public final class BSPTask extends Task {
     bspPeer.close();
   }
 
-  public final BSPJob getConf() {
+  public BSPJob getConf() {
     return conf;
   }
 
-  public final void setConf(BSPJob conf) {
+  public void setConf(BSPJob conf) {
     this.conf = conf;
   }
 
   @Override
-  public final void write(DataOutput out) throws IOException {
+  public void write(DataOutput out) throws IOException {
     super.write(out);
     if (split != null) {
       out.writeBoolean(true);
@@ -108,7 +108,7 @@ public final class BSPTask extends Task {
   }
 
   @Override
-  public final void readFields(DataInput in) throws IOException {
+  public void readFields(DataInput in) throws IOException {
     super.readFields(in);
     if (in.readBoolean()) {
       splitClass = Text.readString(in);
