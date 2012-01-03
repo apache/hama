@@ -41,7 +41,7 @@ public class ShortestPathsTest extends TestCase {
   private Configuration conf;
   private FileSystem fs;
 
-  public void testShortestPathsWithWrongArgs() throws IOException,
+  public void testShortestPaths() throws IOException,
       InterruptedException, ClassNotFoundException, InstantiationException,
       IllegalAccessException {
     conf = new HamaConfiguration();
