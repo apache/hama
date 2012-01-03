@@ -31,6 +31,7 @@ Release 0.4 - Unreleased
 
   IMPROVEMENTS
   
+    HAMA-475: Add unit test for SSSP example (edwardyoon)
     HAMA-481: Add reopen to peer (tjungblut) 
     HAMA-471: Peer names should be sorted by task id (tjungblut)
     HAMA-461: Extract a message service from BSPPeer (tjungblut)
