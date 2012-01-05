@@ -594,12 +594,7 @@ public class BSPJobClient extends Configured implements Tool {
       long step = job.progress();
       String report = "";
 
-      if (step == 0) {
-        report = "Launched tasks: " + getClusterStatus(false).getTasks() + "/"
-            + job.getNumBspTask();
-      } else {
-        report = "Current supersteps number: " + step;
-      }
+      report = "Current supersteps number: " + step;
 
       if (!report.equals(lastReport)) {
         LOG.info(report);
