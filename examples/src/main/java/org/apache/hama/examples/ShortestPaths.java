@@ -199,7 +199,7 @@ public class ShortestPaths extends
   }
 
   public static void printUsage() {
-    System.out.println("Usage: <startNode> <output path> <input path>");
+    System.out.println("Usage: <startNode> <output path> <input path> [numTasks]");
   }
 
   public static void main(String[] args) throws IOException,
@@ -221,6 +221,10 @@ public class ShortestPaths extends
     bsp.setOutputPath(new Path(args[1]));
     bsp.setInputPath(new Path(args[2]));
 
+    if(args.length == 4) {
+      bsp.setNumBspTask(Integer.parseInt(args[3]));
+    }
+    
     bsp.setBspClass(ShortestPaths.class);
     bsp.setInputFormat(SequenceFileInputFormat.class);
     bsp.setPartitioner(HashPartitioner.class);
