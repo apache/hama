@@ -57,7 +57,7 @@ public class ShortestPathsTest extends TestCase {
 
   private void verifyResult() throws IOException {
     Map<String, Integer> rs = new HashMap<String, Integer>();
-    rs.put("Erfurt", 385);
+    rs.put("Erfurt", 403);
     rs.put("Mannheim", 85);
     rs.put("Stuttgart", 503);
     rs.put("Kassel", 173);
@@ -114,7 +114,7 @@ public class ShortestPathsTest extends TestCase {
       } else if (city.equals("Wuerzburg")) {
         ShortestPathVertex[] textArr = new ShortestPathVertex[3];
         textArr[0] = new ShortestPathVertex(217, "Frankfurt");
-        textArr[1] = new ShortestPathVertex(168, "Erfurt");
+        textArr[1] = new ShortestPathVertex(186, "Erfurt");
         textArr[2] = new ShortestPathVertex(103, "Nuernberg");
         ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
         arr.set(textArr);
@@ -151,7 +151,7 @@ public class ShortestPathsTest extends TestCase {
       } else if (city.equals("Muenchen")) {
         ShortestPathVertex[] textArr = new ShortestPathVertex[3];
         textArr[0] = new ShortestPathVertex(167, "Nuernberg");
-        textArr[1] = new ShortestPathVertex(173, "Kassel");
+        textArr[1] = new ShortestPathVertex(502, "Kassel");
         textArr[2] = new ShortestPathVertex(84, "Augsburg");
         ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
         arr.set(textArr);
