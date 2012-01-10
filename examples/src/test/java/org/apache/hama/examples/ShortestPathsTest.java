@@ -41,18 +41,19 @@ public class ShortestPathsTest extends TestCase {
   private Configuration conf;
   private FileSystem fs;
 
-  public void testShortestPaths() throws IOException,
-      InterruptedException, ClassNotFoundException, InstantiationException,
-      IllegalAccessException {
+  public void testShortestPaths() throws IOException, InterruptedException,
+      ClassNotFoundException, InstantiationException, IllegalAccessException {
     conf = new HamaConfiguration();
     fs = FileSystem.get(conf);
 
     generateTestData();
-    ShortestPaths.main(new String[] { "Frankfurt", OUTPUT, INPUT });
+    try {
+      ShortestPaths.main(new String[] { "Frankfurt", OUTPUT, INPUT });
 
-    verifyResult();
-    fs.delete(new Path(INPUT), true);
-    fs.delete(new Path(OUTPUT), true);
+      verifyResult();
+    } finally {
+      deleteTempDirs();
+    }
   }
 
   private void verifyResult() throws IOException {
@@ -167,5 +168,16 @@ public class ShortestPathsTest extends TestCase {
       writer.append(e.getKey(), e.getValue());
     }
     writer.close();
+  }
+  
+  private void deleteTempDirs() {
+    try {
+      if (fs.exists(new Path(INPUT)))
+        fs.delete(new Path(INPUT), true);
+      if (fs.exists(new Path(OUTPUT)))
+        fs.delete(new Path(OUTPUT), true);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 }
