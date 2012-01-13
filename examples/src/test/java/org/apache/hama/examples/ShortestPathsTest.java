@@ -48,7 +48,7 @@ public class ShortestPathsTest extends TestCase {
 
     generateTestData();
     try {
-      ShortestPaths.main(new String[] { "Frankfurt", OUTPUT, INPUT });
+      ShortestPaths.main(new String[] { "Frankfurt", INPUT, OUTPUT });
 
       verifyResult();
     } finally {

@@ -230,7 +230,7 @@ public class BSPJob extends BSPJobContext {
   }
 
   public int getNumBspTask() {
-	// default is 1, because with zero, we will hang in infinity
+  // default is 1, because with zero, we will hang in infinity
     return conf.getInt("bsp.peers.num", 1);
   }
 
