@@ -17,6 +17,7 @@ Release 0.4 - Unreleased
 
   BUG FIXES
 
+    HAMA-488: PageRank refactor and fix bugs (tjungblut via edwardyoon)
     HAMA-489: Check port availability before forking child process (edwardyoon)
     HAMA-474: ClusterStatus.getTasks() always returns 0 (edwardyoon)
     HAMA-472: The task should be killed if it fails to initialize (edwardyoon)

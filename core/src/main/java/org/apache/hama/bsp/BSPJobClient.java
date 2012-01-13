@@ -897,7 +897,17 @@ public class BSPJobClient extends Configured implements Tool {
       throw new IOException("Expect one token as the result of "
           + Shell.USER_NAME_COMMAND + ": " + toString(result));
     }
-    return result[0];
+    String fixResult = fixCygwinName(result[0]);
+    return fixResult;
+  }
+
+  private static String fixCygwinName(String in) {
+    String string = in;
+    if (string.contains("\\")) {
+      // this is for cygwin systems
+      string = string.substring(string.indexOf("\\"));
+    }
+    return string;
   }
 
   static String getUnixUserGroupName(String user) throws IOException {
