@@ -39,7 +39,7 @@ import org.apache.hama.util.BSPNetUtils;
  * Implementation of the {@link HadoopMessageManager}.
  * 
  */
-public class HadoopMessageManagerImpl implements MessageManager,
+public final class HadoopMessageManagerImpl implements MessageManager,
     HadoopMessageManager {
 
   private static final Log LOG = LogFactory
@@ -57,12 +57,13 @@ public class HadoopMessageManagerImpl implements MessageManager,
   private final ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
 
   @Override
-  public void init(Configuration conf, InetSocketAddress peerAddress) {
+  public final void init(Configuration conf, InetSocketAddress peerAddress) {
     this.conf = conf;
     startRPCServer(conf, peerAddress);
   }
 
-  private void startRPCServer(Configuration conf, InetSocketAddress peerAddress) {
+  private final void startRPCServer(Configuration conf,
+      InetSocketAddress peerAddress) {
     try {
       this.server = RPC.getServer(this, peerAddress.getHostName(),
           peerAddress.getPort(), conf);
@@ -76,19 +77,19 @@ public class HadoopMessageManagerImpl implements MessageManager,
   }
 
   @Override
-  public void close() {
+  public final void close() {
     if (server != null) {
       server.stop();
     }
   }
 
   @Override
-  public BSPMessage getCurrentMessage() throws IOException {
+  public final BSPMessage getCurrentMessage() throws IOException {
     return localQueue.poll();
   }
 
   @Override
-  public void send(String peerName, BSPMessage msg) throws IOException {
+  public final void send(String peerName, BSPMessage msg) throws IOException {
     LOG.debug("Send message (" + msg.toString() + ") to " + peerName);
     InetSocketAddress targetPeerAddress = null;
     // Get socket for target peer.
@@ -107,12 +108,12 @@ public class HadoopMessageManagerImpl implements MessageManager,
   }
 
   @Override
-  public Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> getMessageIterator() {
+  public final Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> getMessageIterator() {
     return this.outgoingQueues.entrySet().iterator();
   }
 
-  protected HadoopMessageManager getBSPPeerConnection(InetSocketAddress addr)
-      throws IOException {
+  protected final HadoopMessageManager getBSPPeerConnection(
+      InetSocketAddress addr) throws IOException {
     HadoopMessageManager peer = peers.get(addr);
     if (peer == null) {
       peer = (HadoopMessageManager) RPC.getProxy(HadoopMessageManager.class,
@@ -123,7 +124,7 @@ public class HadoopMessageManagerImpl implements MessageManager,
   }
 
   @Override
-  public void transfer(InetSocketAddress addr, BSPMessageBundle bundle)
+  public final void transfer(InetSocketAddress addr, BSPMessageBundle bundle)
       throws IOException {
 
     HadoopMessageManager bspPeerConnection = this.getBSPPeerConnection(addr);
@@ -137,31 +138,32 @@ public class HadoopMessageManagerImpl implements MessageManager,
   }
 
   @Override
-  public void clearOutgoingQueues() {
+  public final void clearOutgoingQueues() {
     this.outgoingQueues.clear();
     localQueue.addAll(localQueueForNextIteration);
     localQueueForNextIteration.clear();
   }
 
   @Override
-  public void put(BSPMessage msg) {
+  public final void put(BSPMessage msg) {
     this.localQueueForNextIteration.add(msg);
   }
 
   @Override
-  public void put(BSPMessageBundle messages) {
+  public final void put(BSPMessageBundle messages) {
     for (BSPMessage message : messages.getMessages()) {
       this.localQueueForNextIteration.add(message);
     }
   }
 
   @Override
-  public int getNumCurrentMessages() {
+  public final int getNumCurrentMessages() {
     return localQueue.size();
   }
 
   @Override
-  public long getProtocolVersion(String arg0, long arg1) throws IOException {
+  public final long getProtocolVersion(String arg0, long arg1)
+      throws IOException {
     return versionID;
   }
 
