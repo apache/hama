@@ -48,7 +48,10 @@ public class VertexWritable implements Writable {
 
   @Override
   public int hashCode() {
-    return name.hashCode();
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((name == null) ? 0 : name.hashCode());
+    return result;
   }
 
   @Override
@@ -60,13 +63,21 @@ public class VertexWritable implements Writable {
     if (getClass() != obj.getClass())
       return false;
     VertexWritable other = (VertexWritable) obj;
-    if (!name.equals(other.name))
+    if (name == null) {
+      if (other.name != null)
+        return false;
+    } else if (!name.equals(other.name))
       return false;
     return true;
   }
 
   public String getName() {
     return name;
+  }
+  
+  @Override
+  public String toString() {
+    return getName();
   }
 
 }

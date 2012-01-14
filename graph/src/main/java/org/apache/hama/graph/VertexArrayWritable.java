@@ -17,12 +17,19 @@
  */
 package org.apache.hama.graph;
 
+import java.util.Arrays;
+
 import org.apache.hadoop.io.ArrayWritable;
 
 public class VertexArrayWritable extends ArrayWritable {
 
   public VertexArrayWritable() {
     super(VertexWritable.class);
+  }
+
+  @Override
+  public String toString() {
+    return Arrays.toString(get());
   }
 
 }

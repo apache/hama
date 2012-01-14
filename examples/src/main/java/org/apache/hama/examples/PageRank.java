@@ -43,7 +43,7 @@ import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 import org.apache.hama.util.KeyValuePair;
 
-public class PageRank extends
+public final class PageRank extends
     BSP<VertexWritable, VertexArrayWritable, Text, DoubleWritable> {
 
   public static final Log LOG = LogFactory.getLog(PageRank.class);
@@ -55,47 +55,54 @@ public class PageRank extends
   private final HashMap<VertexWritable, Double> lastTentativePagerank = new HashMap<VertexWritable, Double>();
 
   protected static int MAX_ITERATIONS = 30;
-  protected static String masterTaskName;
+  protected static String MASTER_TASK_NAME;
   protected static double ALPHA;
-  protected static int numOfVertices;
+  protected static long numOfVertices;
   protected static double DAMPING_FACTOR = 0.85;
   protected static double EPSILON = 0.001;
 
   @Override
-  public void setup(
+  public final void setup(
       BSPPeer<VertexWritable, VertexArrayWritable, Text, DoubleWritable> peer)
       throws IOException {
 
     DAMPING_FACTOR = Double.parseDouble(conf.get("damping.factor"));
     EPSILON = Double.parseDouble(conf.get("epsilon.error"));
     MAX_ITERATIONS = Integer.parseInt(conf.get("max.iterations"));
-    masterTaskName = peer.getPeerName(0);
+    MASTER_TASK_NAME = peer.getPeerName(0);
 
-    // map our stuff into ram
+    // put our graph into a map
     KeyValuePair<VertexWritable, VertexArrayWritable> next = null;
     while ((next = peer.readNext()) != null) {
-      adjacencyList.put(next.getKey(), (VertexWritable[]) next.getValue()
-          .toArray());
+      // put the origin vertex into the outlinks to make sure dangling nodes are
+      // sending their pagerank as well
+      VertexWritable[] outlinks = (VertexWritable[]) next.getValue().toArray();
+      VertexWritable[] outlinksWithOrigin = new VertexWritable[outlinks.length + 1];
+      System.arraycopy(outlinks, 0, outlinksWithOrigin, 0, outlinks.length);
+      outlinksWithOrigin[outlinks.length] = next.getKey();
+
+      adjacencyList.put(next.getKey(), outlinksWithOrigin);
       vertexLookupMap.put(next.getKey().getName(), next.getKey());
     }
 
-    // normally this should be the global number of vertices
-    numOfVertices = vertexLookupMap.size();
-    ALPHA = (1 - DAMPING_FACTOR) / (double) numOfVertices;
+    // we do not have a global number of vertices present at this point
+    // so we use a naive approximation
+    long approximateNumberOfVertices = adjacencyList.size()
+        * peer.getNumPeers();
 
-    // reread the input to save ram
-    peer.reopenInput();
-    VertexWritable key = new VertexWritable();
-    VertexArrayWritable value = new VertexArrayWritable();
-    while (peer.readNext(key, value)) {
-      VertexWritable vertexWritable = vertexLookupMap.get(key.getName());
-      tentativePagerank
-          .put(vertexWritable, Double.valueOf(1.0 / numOfVertices));
+    // normally this should be the global number of vertices
+    numOfVertices = approximateNumberOfVertices;
+    ALPHA = (1 - DAMPING_FACTOR) / (double) approximateNumberOfVertices;
+
+    // put a tentative pagerank for each vertex into the map
+    double initialPagerank = 1.0 / (double) approximateNumberOfVertices;
+    for (VertexWritable vertexWritable : adjacencyList.keySet()) {
+      tentativePagerank.put(vertexWritable, initialPagerank);
     }
   }
 
   @Override
-  public void bsp(
+  public final void bsp(
       BSPPeer<VertexWritable, VertexArrayWritable, Text, DoubleWritable> peer)
       throws IOException, SyncException, InterruptedException {
 
@@ -126,8 +133,8 @@ public class PageRank extends
           }
         }
         // pregel formula:
-        // ALPHA = 0.15 / NumVertices()
-        // P(i) = ALPHA + 0.85 * sum
+        // ALPHA = (1-DAMPING_FACTOR) / NumVertices()
+        // P(i) = ALPHA + DAMPING_FACTOR * sum
         for (Entry<VertexWritable, Double> entry : sumMap.entrySet()) {
           tentativePagerank.put(entry.getKey(), ALPHA
               + (entry.getValue() * DAMPING_FACTOR));
@@ -151,7 +158,7 @@ public class PageRank extends
   }
 
   @Override
-  public void cleanup(
+  public final void cleanup(
       BSPPeer<VertexWritable, VertexArrayWritable, Text, DoubleWritable> peer) {
     try {
       for (Entry<VertexWritable, Double> row : tentativePagerank.entrySet()) {
@@ -163,12 +170,12 @@ public class PageRank extends
     }
   }
 
-  private double broadcastError(
+  private final double broadcastError(
       BSPPeer<VertexWritable, VertexArrayWritable, Text, DoubleWritable> peer,
       double error) throws IOException, SyncException, InterruptedException {
-    peer.send(masterTaskName, new DoubleMessage("", error));
+    peer.send(MASTER_TASK_NAME, new DoubleMessage("", error));
     peer.sync();
-    if (peer.getPeerName().equals(masterTaskName)) {
+    if (peer.getPeerName().equals(MASTER_TASK_NAME)) {
       double errorSum = 0.0;
       int count = 0;
       DoubleMessage message;
@@ -188,7 +195,7 @@ public class PageRank extends
     return message.getData();
   }
 
-  private double determineError() {
+  private final double determineError() {
     double error = 0.0;
     for (Entry<VertexWritable, Double> entry : tentativePagerank.entrySet()) {
       error += Math.abs(lastTentativePagerank.get(entry.getKey())
@@ -197,13 +204,13 @@ public class PageRank extends
     return error;
   }
 
-  private void copyTentativePageRankToBackup() {
+  private final void copyTentativePageRankToBackup() {
     for (Entry<VertexWritable, Double> entry : tentativePagerank.entrySet()) {
       lastTentativePagerank.put(entry.getKey(), entry.getValue());
     }
   }
 
-  private void sendMessageToNeighbors(
+  private final void sendMessageToNeighbors(
       BSPPeer<VertexWritable, VertexArrayWritable, Text, DoubleWritable> peer,
       VertexWritable v) throws IOException {
     VertexWritable[] outgoingEdges = adjacencyList.get(v);
@@ -216,7 +223,8 @@ public class PageRank extends
     }
   }
 
-  static void printOutput(FileSystem fs, Configuration conf) throws IOException {
+  static final void printOutput(FileSystem fs, Configuration conf)
+      throws IOException {
     LOG.info("-------------------- RESULTS --------------------");
     FileStatus[] stati = fs.listStatus(new Path(conf.get("bsp.output.dir")));
     for (FileStatus status : stati) {
@@ -237,14 +245,14 @@ public class PageRank extends
     }
   }
 
-  public static void printUsage() {
+  public final static void printUsage() {
     System.out.println("PageRank Example:");
     System.out
         .println("<input path> <output path> [damping factor] [epsilon error] [tasks]");
 
   }
 
-  public static void main(String[] args) throws IOException,
+  public final static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException, InstantiationException,
       IllegalAccessException {
     if (args.length == 0) {
@@ -258,7 +266,7 @@ public class PageRank extends
 
     job.setInputPath(new Path(args[0]));
     job.setOutputPath(new Path(args[1]));
-    
+
     conf.set("damping.factor", (args.length > 2) ? args[2] : "0.85");
     conf.set("epsilon.error", (args.length > 3) ? args[3] : "0.000001");
     if (args.length == 5) {
