@@ -20,22 +20,28 @@ p {
 }
 
 body a:link {
-        color: #74240f;
+  color: #74240f;
 }
 body a:visited {
-        color: #74240f;
+  color: #74240f;
 }
 body a:hover {
-        text-decoration: underline;
-        color: #888800;
+  text-decoration: underline;
+  color: #888800;
 }
 
 h2, h3, h4 {
-	color: #74240f;
+  color: #74240f;
+}
+
+ul {
+ margin-left:10px; 
 }
 
 .green {
  color: #0f7355;
+ width: 95%;
+ margin: 20px 20px 20px 20px;
  border: 1px solid #0f7355;
  background: #edf7f4;
  background-color: #edf7f4;
@@ -43,6 +49,8 @@ h2, h3, h4 {
 .green a:link, .green a:active, .green a:visited { color: #0a4d39; }
 .green a:hover { color: #888800; }
 .green h3 {
+  margin-bottom:-5px;
+  margin-top:-2px;
   padding: 0px 0px 0px 0px;
   border: 0px;
   color: #74240f;
@@ -65,4 +73,10 @@ h2, h3, h4 {
   margin: 0;
   padding: 0;
   font-size: small;
+}
+
+ul {
+  margin-left: 20px;
+  padding-left: 1em;
+  list-style-position: inside;
 }

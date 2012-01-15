@@ -41,10 +41,10 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     which is located within each download directory.
     <br/><br/>
     Always use the signature files to verify the authenticity of the distribution, e.g.,
-    <pre>  % pgpk -a KEYS
+    <pre class="green">  % pgpk -a KEYS
   % pgpv hama-x.x.x.tar.gz.asc</pre>
     or,
-    <pre>  % gpg --import KEYS
+    <pre class="green">  % gpg --import KEYS
   % gpg --verify hama-x.x.x.tar.gz.asc</pre>
     We offer MD5 hashes as an alternative to validate the integrity of the downloaded files.
     A unix program called md5 or md5sum is included in many unix distributions.

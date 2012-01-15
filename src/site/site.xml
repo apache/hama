@@ -65,7 +65,10 @@
     </menu>
 
     <menu name="Documentation">
-      <item name="Quick Start" href="http://wiki.apache.org/hama/GettingStarted"/>
+      <item name="Getting Started" href="getting_started_with_hama.html" />
+      <item name="Hama on Clouds" href="hama_on_clouds.html" />
+      <item name="Hama BSP tutorial" href="hama_bsp_tutorial.html" />
+      <item name="Benchmarks" href="http://wiki.apache.org/hama/Benchmarks" />
       <item name="Presentations" href="http://wiki.apache.org/hama/Presentations" />
       <item name="Research Papers" href="http://wiki.apache.org/hama/Articles" />
       <item name="Books" href="http://wiki.apache.org/hama/Books" />
