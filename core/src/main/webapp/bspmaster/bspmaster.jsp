@@ -61,6 +61,12 @@
 <%=status.getBSPMasterState()%><br>
 <b>Started:</b>
 <%=new Date(tracker.getStartTime())%><br>
+<b>Version:</b>
+<%=VersionInfo.getVersion()%><br>
+<b>Compiled By:</b>
+<%=VersionInfo.getUser()%><br>
+<b>Compiled At Time:</b>
+<%=VersionInfo.getDate()%><br>
 <b>Identifier:</b>
 <%=tracker.getBSPMasterIdentifier()%><br>
 
