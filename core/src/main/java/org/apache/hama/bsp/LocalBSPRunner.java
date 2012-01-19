@@ -76,7 +76,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   protected Configuration conf;
   protected FileSystem fs;
 
-  private static long superStepCount = 0L;
+  private static volatile long superStepCount = 0L;
   private static String[] peerNames;
 
   // this is used for not-input driven job
@@ -205,7 +205,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   }
 
   // this class will spawn a new thread and executes the BSP
-  @SuppressWarnings( { "deprecation", "rawtypes" })
+  @SuppressWarnings({ "deprecation", "rawtypes" })
   static class BSPRunner implements Callable<BSP> {
 
     private Configuration conf;
@@ -225,8 +225,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       conf.setInt(Constants.PEER_PORT, id);
       conf.set(Constants.PEER_HOST, "local");
 
-      bsp = (BSP) ReflectionUtils.newInstance(job.getConf().getClass(
-          "bsp.work.class", BSP.class), job.getConf());
+      bsp = (BSP) ReflectionUtils.newInstance(
+          job.getConf().getClass("bsp.work.class", BSP.class), job.getConf());
 
     }
 
@@ -393,8 +393,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public void done(TaskAttemptID taskid)
-        throws IOException {
+    public void done(TaskAttemptID taskid) throws IOException {
 
     }
 
@@ -413,8 +412,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public boolean statusUpdate(TaskAttemptID taskId, TaskStatus taskStatus)
         throws IOException, InterruptedException {
-      // does not need to be synchronized, because it is just an information.
-      superStepCount = taskStatus.getSuperstepCount();
       return true;
     }
 
@@ -461,6 +458,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       } catch (Exception e) {
         throw new SyncException(e.toString());
       }
+      if (superstep > superStepCount)
+        superStepCount = superstep;
     }
 
     @Override
