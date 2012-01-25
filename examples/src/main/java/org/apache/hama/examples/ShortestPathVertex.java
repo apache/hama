@@ -21,11 +21,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.graph.VertexWritable;
 
-public final class ShortestPathVertex extends VertexWritable implements
-    WritableComparable<ShortestPathVertex> {
+public final class ShortestPathVertex extends VertexWritable {
 
   private int weight;
   private int cost = Integer.MAX_VALUE;
@@ -76,10 +74,9 @@ public final class ShortestPathVertex extends VertexWritable implements
     super.write(out);
     out.writeInt(weight);
   }
-
+  
   public int compareTo(ShortestPathVertex o) {
     ShortestPathVertex that = (ShortestPathVertex) o;
     return this.name.compareTo(that.name);
   }
-
 }

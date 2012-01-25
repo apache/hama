@@ -22,8 +22,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
-public class VertexWritable implements Writable {
+public class VertexWritable implements Writable, WritableComparable<VertexWritable> {
 
   protected String name;
 
@@ -78,6 +79,12 @@ public class VertexWritable implements Writable {
   @Override
   public String toString() {
     return getName();
+  }
+
+  @Override
+  public int compareTo(VertexWritable o) {
+    VertexWritable that = (VertexWritable) o;
+    return this.name.compareTo(that.name);
   }
 
 }
