@@ -19,6 +19,7 @@
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties></properties>
+  <title>BSP Tutorial</title>
   <body>
     <section name="Hama BSP Tutorial"></section>
     <p>This document describes the Hama BSP framework and serves as a tutorial.</p>

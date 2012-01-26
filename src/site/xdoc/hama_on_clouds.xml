@@ -19,6 +19,8 @@
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties></properties>
+  <title>Deploy a Hama cluster on EC2</title>
+  
   <body>
     <section name="Hama on Clouds"></section>
     <p>This document describes how to deploy Hama clusters on Clouds e.g., EC2, Rackspace using Whirr.</p>
@@ -33,13 +35,11 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
   % export AWS_SECRET_ACCESS_KEY=YOUR_SECKEY
   % ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa_whirr
 
-  % bin/whirr launch-cluster --config recipes/hama-ec2.properties --private -key-file ~/.ssh/id_rsa_whirr
-    </pre>
+  % bin/whirr launch-cluster --config recipes/hama-ec2.properties --private -key-file ~/.ssh/id_rsa_whirr</pre>
     </p>
     <subsection name="Execute Hama Examples"></subsection>
     <pre class="green">
   % cd /usr/local/hama-0.x.0-incubating
-  % bin/hama jar hama-examples-0.x.0-incubating.jar [args]
-    </pre>
+  % bin/hama jar hama-examples-0.x.0-incubating.jar [args]</pre>
     </body>
 </document>
