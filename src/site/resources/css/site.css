@@ -30,8 +30,18 @@ body a:hover {
   color: #888800;
 }
 
-h2, h3, h4 {
+h2, h3, h4, h5 {
   color: #74240f;
+}
+
+h5 {
+  font-size: 15px;
+  margin-top: -0.8em;
+}
+
+table {
+  width: 95%;
+  margin-left:2em;
 }
 
 ul {
