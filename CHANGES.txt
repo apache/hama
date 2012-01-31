@@ -3,7 +3,8 @@ Hama Change Log
 Release 0.4 - Unreleased
 
   NEW FEATURES
-   
+
+   HAMA-493: Provide text to seq-file utils for graph examples (tjungblut)
    HAMA-491: Add dist module to generate release tarball (edwardyoon)
    HAMA-451: Show Supersteps in waitForCompletion in YARN (tjungblut) 
    HAMA-479: Add Counters to Hama Jobs (edwardyoon) 
