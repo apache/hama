@@ -602,7 +602,11 @@ public class BSPJobClient extends Configured implements Tool {
       }
     }
 
-    LOG.info("The total number of supersteps: " + info.getSuperstepCount());
+    if(job.isSuccessful()) {
+      LOG.info("The total number of supersteps: " + info.getSuperstepCount());
+    } else {
+      LOG.info("Job failed.");
+    }
     // TODO job.getCounters().log(LOG);
     return job.isSuccessful();
   }
@@ -646,8 +650,12 @@ public class BSPJobClient extends Configured implements Tool {
       running = jc.getJob(jobId);
     }
 
-    LOG.info("Job complete: " + jobId);
-    LOG.info("The total number of supersteps: " + running.getSuperstepCount());
+    if (running.isSuccessful()) {
+      LOG.info("Job complete: " + jobId);
+      LOG.info("The total number of supersteps: " + running.getSuperstepCount());
+    } else {
+      LOG.info("Job failed.");
+    }
 
     // TODO if error found, kill job
     // running.killJob();
