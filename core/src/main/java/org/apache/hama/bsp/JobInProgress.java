@@ -292,16 +292,20 @@ class JobInProgress {
 
     boolean allDone = true;
     for (TaskInProgress taskInProgress : tasks) {
-      if (!taskInProgress.isFailed()) {
+      if (taskInProgress.isFailed()) {
         allDone = false;
         break;
       }
     }
-
-    // TODO
+    
+    // TODO 
+    
     if (!allDone) {
+      // Kill job
+      this.kill();
+      // Send KillTaskAction to GroomServer
       this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), 0L, 0L, 0L, JobStatus.FAILED, superstepCounter);
+          .getUser(), 0L, 0L, 0L, JobStatus.KILLED, superstepCounter);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 

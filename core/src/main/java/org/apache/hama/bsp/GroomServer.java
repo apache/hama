@@ -144,8 +144,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
 
       if (actions != null) {
-        LOG.info("Launch " + actions.length + " tasks.");
-
         assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
         int prevPort = Constants.DEFAULT_PEER_PORT;
 
@@ -156,18 +154,20 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             prevPort = BSPNetUtils.getNextAvailable(prevPort);
             assignedPeerNames.put(t.getTaskID(), prevPort);
 
+            LOG.info("Launch " + actions.length + " tasks.");
             startNewTask((LaunchTaskAction) action);
           } else {
 
             // TODO Use the cleanup thread
             // tasksToCleanup.put(action);
 
+            LOG.info("Kill " + actions.length + " tasks.");
             KillTaskAction killAction = (KillTaskAction) action;
             if (tasks.containsKey(killAction.getTaskID())) {
               TaskInProgress tip = tasks.get(killAction.getTaskID());
               tip.taskStatus.setRunState(TaskStatus.State.FAILED);
               try {
-                tip.killAndCleanup(true);
+                tip.killAndCleanup(false);
               } catch (IOException ioe) {
                 throw new DirectiveException("Error when killing a "
                     + "TaskInProgress.", ioe);
@@ -789,11 +789,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         taskStatus.setRunState(TaskStatus.State.KILLED);
       }
 
-      if (taskStatus.getRunState() == TaskStatus.State.RUNNING) {
-        // runner could be null if task-cleanup attempt is not localized yet
-        if (runner != null) {
-          runner.killBsp();
-        }
+      // runner could be null if task-cleanup attempt is not localized yet
+      if (runner != null) {
+        runner.killBsp();
       }
     }
 
