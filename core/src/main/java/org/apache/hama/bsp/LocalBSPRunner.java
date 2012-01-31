@@ -62,8 +62,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   private static final String IDENTIFIER = "localrunner";
   private static String WORKING_DIR = "/tmp/hama-bsp/";
-  protected static volatile ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Executors
-      .newCachedThreadPool();
+  private volatile ThreadPoolExecutor threadPool;
 
   @SuppressWarnings("rawtypes")
   protected static final LinkedList<Future<BSP>> futureList = new LinkedList<Future<BSP>>();
@@ -143,6 +142,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         splitFile.close();
       }
     }
+    
+    threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(numBspTask);
 
     peerNames = new String[numBspTask];
     for (int i = 0; i < numBspTask; i++) {

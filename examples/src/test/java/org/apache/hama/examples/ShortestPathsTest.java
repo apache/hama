@@ -17,6 +17,8 @@
  */
 package org.apache.hama.examples;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,25 +32,131 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.util.SSSPTextToSeq;
 
 /**
  * Testcase for {@link ShortestPaths}
  */
 
 public class ShortestPathsTest extends TestCase {
+
+  private static final Map<ShortestPathVertex, ShortestPathVertexArrayWritable> testData = new HashMap<ShortestPathVertex, ShortestPathVertexArrayWritable>();
+
+  static {
+    String[] cities = new String[] { "Frankfurt", "Mannheim", "Wuerzburg",
+        "Stuttgart", "Kassel", "Karlsruhe", "Erfurt", "Nuernberg", "Augsburg",
+        "Muenchen" };
+
+    for (String city : cities) {
+      if (city.equals("Frankfurt")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[3];
+        textArr[0] = new ShortestPathVertex(85, "Mannheim");
+        textArr[1] = new ShortestPathVertex(173, "Kassel");
+        textArr[2] = new ShortestPathVertex(217, "Wuerzburg");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Stuttgart")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[1];
+        textArr[0] = new ShortestPathVertex(183, "Nuernberg");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Kassel")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[2];
+        textArr[0] = new ShortestPathVertex(502, "Muenchen");
+        textArr[1] = new ShortestPathVertex(173, "Frankfurt");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Erfurt")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[1];
+        textArr[0] = new ShortestPathVertex(186, "Wuerzburg");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Wuerzburg")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[3];
+        textArr[0] = new ShortestPathVertex(217, "Frankfurt");
+        textArr[1] = new ShortestPathVertex(186, "Erfurt");
+        textArr[2] = new ShortestPathVertex(103, "Nuernberg");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Mannheim")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[2];
+        textArr[0] = new ShortestPathVertex(80, "Karlsruhe");
+        textArr[1] = new ShortestPathVertex(85, "Frankfurt");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Karlsruhe")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[2];
+        textArr[0] = new ShortestPathVertex(250, "Augsburg");
+        textArr[1] = new ShortestPathVertex(80, "Mannheim");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Augsburg")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[2];
+        textArr[0] = new ShortestPathVertex(250, "Karlsruhe");
+        textArr[1] = new ShortestPathVertex(84, "Muenchen");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Nuernberg")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[3];
+        textArr[0] = new ShortestPathVertex(183, "Stuttgart");
+        textArr[1] = new ShortestPathVertex(167, "Muenchen");
+        textArr[2] = new ShortestPathVertex(103, "Wuerzburg");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      } else if (city.equals("Muenchen")) {
+        ShortestPathVertex[] textArr = new ShortestPathVertex[3];
+        textArr[0] = new ShortestPathVertex(167, "Nuernberg");
+        textArr[1] = new ShortestPathVertex(502, "Kassel");
+        textArr[2] = new ShortestPathVertex(84, "Augsburg");
+        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
+        arr.set(textArr);
+        testData.put(new ShortestPathVertex(0, city), arr);
+      }
+    }
+  }
+
   private static String INPUT = "/tmp/sssp-tmp.seq";
+  private static String TEXT_INPUT = "/tmp/sssp.txt";
+  private static String TEXT_OUTPUT = INPUT + "sssp.txt.seq";
   private static String OUTPUT = "/tmp/sssp-out";
-  private Configuration conf;
+  private Configuration conf = new HamaConfiguration();
   private FileSystem fs;
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    fs = FileSystem.get(conf);
+  }
 
   public void testShortestPaths() throws IOException, InterruptedException,
       ClassNotFoundException, InstantiationException, IllegalAccessException {
-    conf = new HamaConfiguration();
-    fs = FileSystem.get(conf);
 
-    generateTestData();
+    generateTestSequenceFileData();
     try {
       ShortestPaths.main(new String[] { "Frankfurt", INPUT, OUTPUT });
+
+      verifyResult();
+    } finally {
+      deleteTempDirs();
+    }
+  }
+
+  public void testShortestPathsUtil() throws IOException, InterruptedException,
+      ClassNotFoundException, InstantiationException, IllegalAccessException {
+    generateTestTextData();
+    // <input path> <output path>
+    SSSPTextToSeq.main(new String[] { TEXT_INPUT, TEXT_OUTPUT });
+    try {
+      ShortestPaths.main(new String[] { "Frankfurt", TEXT_OUTPUT, OUTPUT });
 
       verifyResult();
     } finally {
@@ -78,104 +186,42 @@ public class ShortestPathsTest extends TestCase {
     }
   }
 
-  private void generateTestData() throws IOException {
-    Map<ShortestPathVertex, ShortestPathVertexArrayWritable> tmp = new HashMap<ShortestPathVertex, ShortestPathVertexArrayWritable>();
-    String[] cities = new String[] { "Frankfurt", "Mannheim", "Wuerzburg",
-        "Stuttgart", "Kassel", "Karlsruhe", "Erfurt", "Nuernberg", "Augsburg",
-        "Muenchen" };
-
-    for (String city : cities) {
-      if (city.equals("Frankfurt")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[3];
-        textArr[0] = new ShortestPathVertex(85, "Mannheim");
-        textArr[1] = new ShortestPathVertex(173, "Kassel");
-        textArr[2] = new ShortestPathVertex(217, "Wuerzburg");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Stuttgart")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[1];
-        textArr[0] = new ShortestPathVertex(183, "Nuernberg");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Kassel")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[2];
-        textArr[0] = new ShortestPathVertex(502, "Muenchen");
-        textArr[1] = new ShortestPathVertex(173, "Frankfurt");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Erfurt")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[1];
-        textArr[0] = new ShortestPathVertex(186, "Wuerzburg");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Wuerzburg")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[3];
-        textArr[0] = new ShortestPathVertex(217, "Frankfurt");
-        textArr[1] = new ShortestPathVertex(186, "Erfurt");
-        textArr[2] = new ShortestPathVertex(103, "Nuernberg");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Mannheim")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[2];
-        textArr[0] = new ShortestPathVertex(80, "Karlsruhe");
-        textArr[1] = new ShortestPathVertex(85, "Frankfurt");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Karlsruhe")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[2];
-        textArr[0] = new ShortestPathVertex(250, "Augsburg");
-        textArr[1] = new ShortestPathVertex(80, "Mannheim");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Augsburg")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[2];
-        textArr[0] = new ShortestPathVertex(250, "Karlsruhe");
-        textArr[1] = new ShortestPathVertex(84, "Muenchen");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Nuernberg")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[3];
-        textArr[0] = new ShortestPathVertex(183, "Stuttgart");
-        textArr[1] = new ShortestPathVertex(167, "Muenchen");
-        textArr[2] = new ShortestPathVertex(103, "Wuerzburg");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      } else if (city.equals("Muenchen")) {
-        ShortestPathVertex[] textArr = new ShortestPathVertex[3];
-        textArr[0] = new ShortestPathVertex(167, "Nuernberg");
-        textArr[1] = new ShortestPathVertex(502, "Kassel");
-        textArr[2] = new ShortestPathVertex(84, "Augsburg");
-        ShortestPathVertexArrayWritable arr = new ShortestPathVertexArrayWritable();
-        arr.set(textArr);
-        tmp.put(new ShortestPathVertex(0, city), arr);
-      }
-    }
-
+  private void generateTestSequenceFileData() throws IOException {
     SequenceFile.Writer writer = SequenceFile
         .createWriter(fs, conf, new Path(INPUT), ShortestPathVertex.class,
             ShortestPathVertexArrayWritable.class);
-    for (Map.Entry<ShortestPathVertex, ShortestPathVertexArrayWritable> e : tmp
+    for (Map.Entry<ShortestPathVertex, ShortestPathVertexArrayWritable> e : testData
         .entrySet()) {
       writer.append(e.getKey(), e.getValue());
     }
     writer.close();
   }
-  
+
+  private void generateTestTextData() throws IOException {
+    BufferedWriter writer = new BufferedWriter(new FileWriter(TEXT_INPUT));
+    for (Map.Entry<ShortestPathVertex, ShortestPathVertexArrayWritable> e : testData
+        .entrySet()) {
+      writer.write(e.getKey().getName() + "\t");
+      for (int i = 0; i < e.getValue().get().length; i++) {
+        writer.write(((ShortestPathVertex) e.getValue().get()[i]).getName()
+            + ":" + ((ShortestPathVertex) e.getValue().get()[i]).getWeight()
+            + "\t");
+      }
+      writer.write("\n");
+    }
+    writer.close();
+  }
+
   private void deleteTempDirs() {
     try {
       if (fs.exists(new Path(INPUT)))
         fs.delete(new Path(INPUT), true);
       if (fs.exists(new Path(OUTPUT)))
         fs.delete(new Path(OUTPUT), true);
+      if (fs.exists(new Path(TEXT_INPUT)))
+        fs.delete(new Path(TEXT_INPUT), true);
+      if (fs.exists(new Path(TEXT_OUTPUT)))
+        fs.delete(new Path(TEXT_OUTPUT), true);
     } catch (IOException e) {
       e.printStackTrace();
     }

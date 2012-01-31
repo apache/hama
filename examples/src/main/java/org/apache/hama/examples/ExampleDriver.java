@@ -20,6 +20,8 @@
 package org.apache.hama.examples;
 
 import org.apache.hadoop.util.ProgramDriver;
+import org.apache.hama.examples.util.PagerankTextToSeq;
+import org.apache.hama.examples.util.SSSPTextToSeq;
 
 public class ExampleDriver {
 
@@ -27,9 +29,11 @@ public class ExampleDriver {
     ProgramDriver pgd = new ProgramDriver();
     try {
       pgd.addClass("pi", PiEstimator.class, "Pi Estimator");
+      pgd.addClass("sssp-text2seq", SSSPTextToSeq.class, "Generates SSSP input from textfile");
       pgd.addClass("sssp", ShortestPaths.class, "Single Shortest Path");
       pgd.addClass("cmb", CombineExample.class, "Combine");
       pgd.addClass("bench", RandBench.class, "Random Benchmark");
+      pgd.addClass("pagerank-text2seq", PagerankTextToSeq.class, "Generates Pagerank input from textfile");
       pgd.addClass("pagerank", PageRank.class, "PageRank");
       pgd.driver(args);
     } catch (Throwable e) {

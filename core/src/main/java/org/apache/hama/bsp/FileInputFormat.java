@@ -178,9 +178,24 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     FileStatus[] files = listStatus(job);
 
     long totalSize = 0; // compute total size
-    for (FileStatus file : files) { // check we have valid files
+    for (int i = 0; i < files.length; i++) { // check we have valid files
+      FileStatus file = files[i];
       if (file.isDir()) {
-        throw new IOException("Not a file: " + file.getPath());
+        final Path path = file.getPath();
+        if (path.getName().equals("hama-partitions")
+            || (job.get("bsp.partitioning.dir") != null && path.getName()
+                .equals(job.get("bsp.partitioning.dir")))) {
+          // if we find the partitioning dir, just remove it.
+          LOG.warn("Removing already existing partitioning directory " + path);
+          FileSystem fileSystem = path.getFileSystem(job.getConf());
+          if (!fileSystem.delete(path, true)) {
+            LOG.error("Remove failed.");
+          }
+          // remove this file from our initial list
+          files[i] = null;
+        } else {
+          throw new IOException("Not a file (dir): " + path);
+        }
       }
       totalSize += file.getLen();
     }
@@ -189,8 +204,10 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     // take the short circuit path if we have already partitioned
     if (numSplits == files.length) {
       for (FileStatus file : files) {
-        splits.add(new FileSplit(file.getPath(), 0, file.getLen(),
-            new String[0]));
+        if (file != null) {
+          splits.add(new FileSplit(file.getPath(), 0, file.getLen(),
+              new String[0]));
+        }
       }
       return splits.toArray(new FileSplit[splits.size()]);
     }
@@ -202,36 +219,40 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     // generate splits
     NetworkTopology clusterMap = new NetworkTopology();
     for (FileStatus file : files) {
-      Path path = file.getPath();
-      FileSystem fs = path.getFileSystem(job.getConf());
-      long length = file.getLen();
-      BlockLocation[] blkLocations = fs.getFileBlockLocations(file, 0, length);
-      if ((length != 0) && isSplitable(fs, path)) {
-        long blockSize = file.getBlockSize();
-        long splitSize = computeSplitSize(goalSize, minSize, blockSize);
-        LOG.debug("computeSplitSize: " + splitSize + " (" + goalSize + ", "
-            + minSize + ", " + blockSize + ")");
+      if (file != null) {
+        Path path = file.getPath();
+        FileSystem fs = path.getFileSystem(job.getConf());
+        long length = file.getLen();
+        BlockLocation[] blkLocations = fs
+            .getFileBlockLocations(file, 0, length);
+        if ((length != 0) && isSplitable(fs, path)) {
+          long blockSize = file.getBlockSize();
+          long splitSize = computeSplitSize(goalSize, minSize, blockSize);
+          LOG.debug("computeSplitSize: " + splitSize + " (" + goalSize + ", "
+              + minSize + ", " + blockSize + ")");
 
-        long bytesRemaining = length;
-        while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
-          String[] splitHosts = getSplitHosts(blkLocations, length
-              - bytesRemaining, splitSize, clusterMap);
-          splits.add(new FileSplit(path, length - bytesRemaining, splitSize,
-              splitHosts));
-          bytesRemaining -= splitSize;
-        }
+          long bytesRemaining = length;
+          while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
+            String[] splitHosts = getSplitHosts(blkLocations, length
+                - bytesRemaining, splitSize, clusterMap);
+            splits.add(new FileSplit(path, length - bytesRemaining, splitSize,
+                splitHosts));
+            bytesRemaining -= splitSize;
+          }
 
-        if (bytesRemaining != 0) {
-          splits
-              .add(new FileSplit(path, length - bytesRemaining, bytesRemaining,
-                  blkLocations[blkLocations.length - 1].getHosts()));
+          if (bytesRemaining != 0) {
+            splits.add(new FileSplit(path, length - bytesRemaining,
+                bytesRemaining, blkLocations[blkLocations.length - 1]
+                    .getHosts()));
+          }
+        } else if (length != 0) {
+          String[] splitHosts = getSplitHosts(blkLocations, 0, length,
+              clusterMap);
+          splits.add(new FileSplit(path, 0, length, splitHosts));
+        } else {
+          // Create empty hosts array for zero length files
+          splits.add(new FileSplit(path, 0, length, new String[0]));
         }
-      } else if (length != 0) {
-        String[] splitHosts = getSplitHosts(blkLocations, 0, length, clusterMap);
-        splits.add(new FileSplit(path, 0, length, splitHosts));
-      } else {
-        // Create empty hosts array for zero length files
-        splits.add(new FileSplit(path, 0, length, new String[0]));
       }
     }
     LOG.info("Total # of splits: " + splits.size());
@@ -266,8 +287,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    *          inputs for the map-reduce job.
    */
   public static void setInputPaths(BSPJob conf, String commaSeparatedPaths) {
-    setInputPaths(conf, StringUtils
-        .stringToPath(getPathStrings(commaSeparatedPaths)));
+    setInputPaths(conf,
+        StringUtils.stringToPath(getPathStrings(commaSeparatedPaths)));
   }
 
   /**
