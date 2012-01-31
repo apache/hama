@@ -21,7 +21,7 @@
         <include>org.apache.hama:hama-graph</include>
       </includes>
       <sources>
-        <outputDirectory>../${module.name}</outputDirectory>
+        <outputDirectory>../hama-${project.version}/${module.name}</outputDirectory>
         <includes>
           <include>*.xml</include>
           <include>src/**</include>
@@ -33,7 +33,7 @@
               <include>*.txt</include>
               <include>*.xml</include>
             </includes>
-            <outputDirectory>../</outputDirectory>
+            <outputDirectory>../hama-${project.version}/</outputDirectory>
           </fileSet>
           <fileSet>
             <directory>target/lib</directory>
@@ -41,7 +41,7 @@
               <include>*.jar</include>
             </includes>
             <fileMode>755</fileMode>
-            <outputDirectory>../lib</outputDirectory>
+            <outputDirectory>../hama-${project.version}/lib</outputDirectory>
           </fileSet>
           <fileSet>
             <directory>bin</directory>
@@ -49,7 +49,7 @@
               <include>hama</include>
               <include>*.sh</include>
             </includes>
-            <outputDirectory>../bin</outputDirectory>
+            <outputDirectory>../hama-${project.version}/bin</outputDirectory>
             <fileMode>755</fileMode>
           </fileSet>
           <fileSet>
@@ -61,14 +61,14 @@
               <include>hama-site.xml</include>
               <include>log4j.properties</include>
             </includes>
-            <outputDirectory>../conf</outputDirectory>
+            <outputDirectory>../hama-${project.version}/conf</outputDirectory>
             <fileMode>755</fileMode>
           </fileSet>
         </fileSets>
       </sources>
       <binaries>
         <fileMode>755</fileMode>
-        <outputDirectory>../</outputDirectory>
+        <outputDirectory>../hama-${project.version}/</outputDirectory>
         <unpack>false</unpack>
       </binaries>
     </moduleSet>
