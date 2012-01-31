@@ -286,7 +286,7 @@ public class HttpServer {
     // if (url == null)
     // throw new IOException("webapps not found in CLASSPATH");
     // return url.toString();
-    return "src/main/webapp";
+    return "core/src/main/webapp";
   }
 
   /**
