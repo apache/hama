@@ -19,7 +19,9 @@
         <include>org.apache.hama:hama-core</include>
         <include>org.apache.hama:hama-examples</include>
         <include>org.apache.hama:hama-graph</include>
+        <!-- Not ready to release yet! 
         <include>org.apache.hama:hama-yarn</include>
+         -->
         <include>org.apache.hama:hama-dist</include>
       </includes>
       <sources>

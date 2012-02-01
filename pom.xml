@@ -187,7 +187,9 @@
     <module>core</module>
     <module>graph</module>
     <module>examples</module>
+    <!-- Not ready to release yet! 
     <module>yarn</module>
+     -->
     <module>dist</module>
   </modules>
 
