@@ -45,5 +45,6 @@
       </executions>
     </plugin>
     </plugins>
+    <finalName>hama-${project.version}</finalName>
   </build>
 </project>
