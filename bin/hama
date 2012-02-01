@@ -100,11 +100,11 @@ CLASSPATH="${HAMA_CONF_DIR}"
 CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 
 # for developers, add Hama classes to CLASSPATH
-if [ -d "$HAMA_HOME/target/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HAMA_HOME/target/classes
+if [ -d "$HAMA_HOME/core/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/core/target/classes
 fi
-if [ -d "$HAMA_HOME/target/test-classes/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HAMA_HOME/target/test-classes
+if [ -d "$HAMA_HOME/core/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/core/target/test-classes
 fi
 
 # so that filenames w/ spaces are handled correctly in loops below

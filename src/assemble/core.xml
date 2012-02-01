@@ -19,6 +19,8 @@
         <include>org.apache.hama:hama-core</include>
         <include>org.apache.hama:hama-examples</include>
         <include>org.apache.hama:hama-graph</include>
+        <include>org.apache.hama:hama-yarn</include>
+        <include>org.apache.hama:hama-dist</include>
       </includes>
       <sources>
         <outputDirectory>../hama-${project.version}/${module.name}</outputDirectory>
@@ -32,11 +34,12 @@
             <includes>
               <include>*.txt</include>
               <include>*.xml</include>
+              <include>src/**</include>
             </includes>
             <outputDirectory>../hama-${project.version}/</outputDirectory>
           </fileSet>
           <fileSet>
-            <directory>target/lib</directory>
+            <directory>../lib</directory>
             <includes>
               <include>*.jar</include>
             </includes>
@@ -44,7 +47,7 @@
             <outputDirectory>../hama-${project.version}/lib</outputDirectory>
           </fileSet>
           <fileSet>
-            <directory>bin</directory>
+            <directory>../bin</directory>
             <includes>
               <include>hama</include>
               <include>*.sh</include>
@@ -53,7 +56,7 @@
             <fileMode>755</fileMode>
           </fileSet>
           <fileSet>
-            <directory>conf</directory>
+            <directory>../conf</directory>
             <includes>
               <include>groomservers</include>
               <include>hama-default.xml</include>

@@ -123,10 +123,11 @@
               <goal>copy-dependencies</goal>
             </goals>
             <configuration>
-              <outputDirectory>${basedir}/target/lib</outputDirectory>
+              <outputDirectory>${project.parent.basedir}/lib</outputDirectory>
               <overWriteReleases>false</overWriteReleases>
               <overWriteSnapshots>true</overWriteSnapshots>
               <excludeTransitive>true</excludeTransitive>
+              <fileMode>755</fileMode>
             </configuration>
           </execution>
         </executions>
