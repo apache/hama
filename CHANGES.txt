@@ -34,6 +34,7 @@ Release 0.4 - Unreleased
 
   IMPROVEMENTS
   
+    HAMA-460: Website Improvements (Suraj Menon via edwardyoon)
     HAMA-470: The web UI should display the version of running Hama cluster. (Suraj Menon via edwardyoon)
     HAMA-475: Add unit test for SSSP example (edwardyoon)
     HAMA-481: Add reopen to peer (tjungblut) 
