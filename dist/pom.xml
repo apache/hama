@@ -10,11 +10,11 @@
     <version>0.4.0-incubating-SNAPSHOT</version>
   </parent>
   
-  <artifactId>hama</artifactId>
+  <artifactId>hama-dist</artifactId>
 
   <packaging>pom</packaging>
 
-  <name>distribution</name>
+  <name>dist</name>
   
   <!-- NOTE: These dependency declarations are only required to sort this project to the 
        end of the line in the multimodule build. 
@@ -39,21 +39,7 @@
               <descriptor>src/assemble/core.xml</descriptor>
             </descriptors>
             <tarLongFileMode>gnu</tarLongFileMode>
-            <appendAssemblyId>true</appendAssemblyId>
-          </configuration>
-        </execution>
-        <execution>
-          <id>yarn-assembly</id>
-          <phase>package</phase>
-          <goals>
-            <goal>single</goal>
-          </goals>
-          <configuration>
-            <descriptors>
-              <descriptor>src/assemble/yarn.xml</descriptor>
-            </descriptors>
-            <tarLongFileMode>gnu</tarLongFileMode>
-            <appendAssemblyId>true</appendAssemblyId>
+            <appendAssemblyId>false</appendAssemblyId>
           </configuration>
         </execution>
       </executions>
