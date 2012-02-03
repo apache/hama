@@ -91,7 +91,7 @@
     <hadoop.version>0.20.2</hadoop.version>
     <jetty.version>6.1.14</jetty.version>
     <junit.version>4.8.1</junit.version>
-    <slf4j-log4j12.version>1.5.2</slf4j-log4j12.version>
+    <slf4j.version>1.5.8</slf4j.version>
     <servlet-api.version>6.0.32</servlet-api.version>
     <log4j.version>1.2.16</log4j.version>
     <zookeeper.version>3.3.3</zookeeper.version>
@@ -167,8 +167,13 @@
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
-        <version>${slf4j-log4j12.version}</version>
+        <version>${slf4j.version}</version>
       </dependency>
       <dependency>
         <groupId>log4j</groupId>
