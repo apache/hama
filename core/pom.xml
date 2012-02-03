@@ -95,6 +95,11 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
@@ -126,7 +131,21 @@
               <outputDirectory>${project.parent.basedir}/lib</outputDirectory>
               <overWriteReleases>false</overWriteReleases>
               <overWriteSnapshots>true</overWriteSnapshots>
+
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-log4j12</artifactId>
+                  <outputDirectory>${project.parent.basedir}/lib</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-api</artifactId>
+                  <outputDirectory>${project.parent.basedir}/lib</outputDirectory>
+                </artifactItem>
+              </artifactItems>
               <excludeTransitive>true</excludeTransitive>
+
               <fileMode>755</fileMode>
             </configuration>
           </execution>
