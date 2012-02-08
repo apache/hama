@@ -24,9 +24,11 @@ import java.io.IOException;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-public class VertexWritable implements Writable, WritableComparable<VertexWritable> {
+public class VertexWritable implements Writable,
+    WritableComparable<VertexWritable> {
 
-  protected String name;
+  public String name;
+  public int weight;
 
   public VertexWritable() {
     super();
@@ -35,16 +37,38 @@ public class VertexWritable implements Writable, WritableComparable<VertexWritab
   public VertexWritable(String name) {
     super();
     this.name = name;
+    this.weight = 0;
+  }
+  
+  public VertexWritable(int weight, String name) {
+    super();
+    this.name = name;
+    this.weight = weight;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public int getWeight() {
+    return weight;
   }
 
   @Override
+  public String toString() {
+    return getName();
+  }
+  
+  @Override
   public void readFields(DataInput in) throws IOException {
     this.name = in.readUTF();
+    this.weight = in.readInt();
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeUTF(name);
+    out.writeInt(weight);
   }
 
   @Override
@@ -70,15 +94,6 @@ public class VertexWritable implements Writable, WritableComparable<VertexWritab
     } else if (!name.equals(other.name))
       return false;
     return true;
-  }
-
-  public String getName() {
-    return name;
-  }
-  
-  @Override
-  public String toString() {
-    return getName();
   }
 
   @Override

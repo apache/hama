@@ -30,8 +30,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.examples.ShortestPathVertex;
-import org.apache.hama.examples.ShortestPathVertexArrayWritable;
+import org.apache.hama.graph.VertexArrayWritable;
+import org.apache.hama.graph.VertexWritable;
 
 public class SSSPTextToSeqTest extends TestCase {
 
@@ -71,8 +71,8 @@ public class SSSPTextToSeqTest extends TestCase {
   private void verifyOutput() throws IOException {
     SequenceFile.Reader reader = new SequenceFile.Reader(fs,
         new Path(SEQ_INPUT), conf);
-    ShortestPathVertex vertex = new ShortestPathVertex();
-    ShortestPathVertexArrayWritable vertexArray = new ShortestPathVertexArrayWritable();
+    VertexWritable vertex = new VertexWritable();
+    VertexArrayWritable vertexArray = new VertexArrayWritable();
 
     int lines = 0;
     while (reader.next(vertex, vertexArray)) {
@@ -82,8 +82,8 @@ public class SSSPTextToSeqTest extends TestCase {
       Writable[] writables = vertexArray.get();
       assertEquals(writables.length, 5);
       for (int i = 0; i < 5; i++) {
-        assertEquals(((ShortestPathVertex) writables[i]).getName(), count + "");
-        assertEquals(((ShortestPathVertex) writables[i]).getWeight(), lines);
+        assertEquals(((VertexWritable) writables[i]).getName(), count + "");
+        assertEquals(((VertexWritable) writables[i]).getWeight(), lines);
         count++;
       }
       lines++;

@@ -65,4 +65,14 @@ public class ByteMessage extends BSPMessage {
     out.write(data);
   }
 
+  @Override
+  public void setTag(Object tag) {
+    this.tag = (byte[]) tag;
+  }
+
+  @Override
+  public void setData(Object data) {
+    this.data = (byte[]) data;
+  }
+
 }

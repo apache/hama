@@ -15,34 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp;
+package org.apache.hama.graph;
 
-import org.apache.hadoop.io.Writable;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 
-/**
- * BSPMessage consists of the tag and the arbitrary amount of data to be
- * communicated.
- */
-public abstract class BSPMessage implements Messagable, Writable {
-
-  public BSPMessage() {
-  }
-  
-  /**
-   * BSP messages are typically identified with tags. This allows to get the tag
-   * of data.
-   * 
-   * @return tag of data of BSP message
-   */
-  public abstract Object getTag();
+public interface VertexInterface<MSGTYPE> {
 
   /**
-   * @return data of BSP message
+   * @return the vertex ID.
    */
-  public abstract Object getData();
+  public String getVertexID();
 
-  public abstract void setTag(Object tag);
-  
-  public abstract void setData(Object data);
-  
+  public void compute(Iterator<MSGTYPE> messages) throws IOException;
+
+  public List<Edge> getOutEdges();
+
+  public void sendMessage(String target, MSGTYPE msg) throws IOException;
+
+  public long getSuperstepCount();
+
+  public void setValue(Object value);
+
+  public Object getValue();
+
 }

@@ -27,13 +27,13 @@ import java.io.IOException;
 public class DoubleMessage extends BSPMessage {
 
   private String tag;
-  private double data;
+  private Double data;
 
   public DoubleMessage() {
     super();
   }
 
-  public DoubleMessage(String tag, double data) {
+  public DoubleMessage(String tag, Double data) {
     super();
     this.data = data;
     this.tag = tag;
@@ -61,4 +61,13 @@ public class DoubleMessage extends BSPMessage {
     data = in.readDouble();
   }
 
+  @Override
+  public void setTag(Object tag) {
+    this.tag = (String) tag;
+  }
+
+  @Override
+  public void setData(Object data) {
+    this.data = (Double) data;
+  }
 }

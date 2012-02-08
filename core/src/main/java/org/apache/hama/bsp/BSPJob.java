@@ -76,7 +76,7 @@ public class BSPJob extends BSPJobContext {
     this.setNumBspTask(numPeer);
   }
 
-  private void ensureState(JobState state) throws IllegalStateException {
+  public void ensureState(JobState state) throws IllegalStateException {
     if (state != this.state) {
       throw new IllegalStateException("Job in state " + this.state
           + " instead of " + state);
@@ -246,6 +246,44 @@ public class BSPJob extends BSPJobContext {
     conf.setClass("bsp.input.format.class", cls, InputFormat.class);
   }
 
+  /**
+   * Get the key class for the job input data.
+   * 
+   * @return the key class for the job input data.
+   */
+  public Class<?> getInputKeyClass() {
+    return conf.getClass("bsp.input.key.class", LongWritable.class,
+        Object.class);
+  }
+
+  /**
+   * Set the key class for the job input data.
+   * 
+   * @param theClass the key class for the job input data.
+   */
+  public void setInputKeyClass(Class<?> theClass) {
+    conf.setClass("bsp.input.key.class", theClass, Object.class);
+  }
+
+  /**
+   * Get the value class for job input.
+   * 
+   * @return the value class for job input.
+   */
+  public Class<?> getInputValueClass() {
+    return conf.getClass("bsp.input.value.class", Text.class, Object.class);
+  }
+
+  /**
+   * Set the value class for job input.
+   * 
+   * @param theClass the value class for job input.
+   */
+  public void setInputValueClass(Class<?> theClass) {
+    conf.setClass("bsp.input.value.class", theClass, Object.class);
+  }
+
+  
   /**
    * Get the key class for the job output data.
    * 

@@ -30,7 +30,7 @@ public class ExampleDriver {
     try {
       pgd.addClass("pi", PiEstimator.class, "Pi Estimator");
       pgd.addClass("sssp-text2seq", SSSPTextToSeq.class, "Generates SSSP input from textfile");
-      pgd.addClass("sssp", ShortestPaths.class, "Single Shortest Path");
+      pgd.addClass("sssp", SSSP.class, "Single Shortest Path");
       pgd.addClass("cmb", CombineExample.class, "Combine");
       pgd.addClass("bench", RandBench.class, "Random Benchmark");
       pgd.addClass("pagerank-text2seq", PagerankTextToSeq.class, "Generates Pagerank input from textfile");
