@@ -34,6 +34,7 @@ public class TestHadoopMessageManager extends TestCase {
 
   public void testMessaging() throws Exception {
     Configuration conf = new Configuration();
+    conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS, "org.apache.hama.bsp.message.HadoopMessageManagerImpl");
     MessageManager messageManager = MessageManagerFactory
         .getMessageManager(conf);
 

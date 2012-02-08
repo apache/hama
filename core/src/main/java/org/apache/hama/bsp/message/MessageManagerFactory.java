@@ -34,7 +34,7 @@ public class MessageManagerFactory {
       throws ClassNotFoundException {
     return (MessageManager) ReflectionUtils.newInstance(conf
         .getClassByName(conf.get(MESSAGE_MANAGER_CLASS,
-            org.apache.hama.bsp.message.HadoopMessageManagerImpl.class
+            org.apache.hama.bsp.message.AvroMessageManagerImpl.class
                 .getCanonicalName())), conf);
   }
 

@@ -156,6 +156,11 @@
   </property>
   
   <property>
+    <name>hama.messanger.class</name>
+    <value>org.apache.hama.bsp.message.AvroMessageManagerImpl</value>
+  </property>
+  
+  <property>
     <name>hama.zookeeper.quorum</name>
     <value>localhost</value>
     <description>Comma separated list of servers in the ZooKeeper quorum.

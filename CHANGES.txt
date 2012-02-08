@@ -3,9 +3,10 @@ Hama Change Log
 Release 0.5 - Unreleased
 
   NEW FEATURES
-  
+
+   HAMA-501: Add Avro RPC (tjungblut)
    HAMA-456: Add basic Graph interfaces and GraphJobRunner (edwardyoon)
-  
+
   BUG FIXES
 
   IMPROVEMENTS
