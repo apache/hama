@@ -15,14 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples;
+package org.apache.hama.graph;
 
-import org.apache.hadoop.io.ArrayWritable;
+public class Edge {
+  private String name;
+  private String target;
+  private int cost;
 
-public class ShortestPathVertexArrayWritable extends ArrayWritable {
-
-  public ShortestPathVertexArrayWritable() {
-    super(ShortestPathVertex.class);
+  public Edge(String name,String target, int cost) {
+    this.name = name;
+    this.target = target;
+    this.cost = cost;
   }
 
+  public String getName() {
+    return name;
+  }
+  
+  public int getCost() {
+    return cost;
+  }
+
+  public String getTarget() {
+    return target;
+  }
 }

@@ -22,7 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a string tag and a long data. 
+ * A message that consists of a string tag and a long data.
  */
 public class LongMessage extends BSPMessage {
 
@@ -59,6 +59,16 @@ public class LongMessage extends BSPMessage {
   public void readFields(DataInput in) throws IOException {
     tag = in.readUTF();
     data = in.readLong();
+  }
+
+  @Override
+  public void setTag(Object tag) {
+    this.tag = (String) tag;
+  }
+
+  @Override
+  public void setData(Object data) {
+    this.data = (Long) data;
   }
 
 }

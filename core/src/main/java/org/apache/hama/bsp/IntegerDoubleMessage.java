@@ -61,4 +61,14 @@ public class IntegerDoubleMessage extends BSPMessage {
     return data;
   }
 
+  @Override
+  public void setTag(Object tag) {
+    this.tag = (Integer) tag;
+  }
+
+  @Override
+  public void setData(Object data) {
+    this.data = (Double) data;
+  }
+
 }

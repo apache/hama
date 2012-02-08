@@ -60,4 +60,14 @@ public class BooleanMessage extends BSPMessage {
   public Boolean getData() {
     return data;
   }
+
+  @Override
+  public void setTag(Object tag) {
+    this.tag = (String) tag;
+  }
+
+  @Override
+  public void setData(Object data) {
+    this.data = (Boolean) data;
+  }
 }

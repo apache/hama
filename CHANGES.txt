@@ -1,5 +1,16 @@
 Hama Change Log
 
+Release 0.5 - Unreleased
+
+  NEW FEATURES
+  
+   HAMA-456: Add basic Graph interfaces and GraphJobRunner (edwardyoon)
+  
+  BUG FIXES
+
+  IMPROVEMENTS
+
+  
 Release 0.4 - February 5, 2012
 
   NEW FEATURES

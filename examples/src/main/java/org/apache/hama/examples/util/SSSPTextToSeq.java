@@ -21,8 +21,6 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile.Writer;
-import org.apache.hama.examples.ShortestPathVertex;
-import org.apache.hama.examples.ShortestPathVertexArrayWritable;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 import org.apache.hama.util.KeyValuePair;
@@ -58,8 +56,8 @@ public class SSSPTextToSeq extends TextToSequenceFile {
   protected KeyValuePair<VertexWritable, VertexArrayWritable> processLine(
       String line) throws IOException {
     String[] split = line.split(delimiter);
-    ShortestPathVertex key = new ShortestPathVertex(0, split[0]);
-    ShortestPathVertex[] v = new ShortestPathVertex[split.length - 1];
+    VertexWritable key = new VertexWritable(0, split[0]);
+    VertexWritable[] v = new VertexWritable[split.length - 1];
     for (int i = 1; i < split.length; i++) {
       String[] weightSplit = split[i].split(edgeDelimiter);
       if (weightSplit.length != 2) {
@@ -67,18 +65,18 @@ public class SSSPTextToSeq extends TextToSequenceFile {
             + "\" between the vertex name and the edge weight! Line was: "
             + line);
       }
-      v[i - 1] = new ShortestPathVertex(Integer.parseInt(weightSplit[1]),
+      v[i - 1] = new VertexWritable(Integer.parseInt(weightSplit[1]),
           weightSplit[0]);
     }
-    ShortestPathVertexArrayWritable value = new ShortestPathVertexArrayWritable();
+    VertexArrayWritable value = new VertexArrayWritable();
     value.set(v);
     return new KeyValuePair(key, value);
   }
 
   @Override
   protected Writer getWriter(Path outPath) throws IOException {
-    return new Writer(destFs, conf, outPath, ShortestPathVertex.class,
-        ShortestPathVertexArrayWritable.class);
+    return new Writer(destFs, conf, outPath, VertexWritable.class,
+        VertexArrayWritable.class);
   }
 
   private static void printUsage() {
