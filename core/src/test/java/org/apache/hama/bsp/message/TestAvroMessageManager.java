@@ -9,6 +9,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
+import junit.framework.TestCase;
+
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.NettyTransceiver;
@@ -23,11 +25,17 @@ import org.apache.hama.bsp.BooleanMessage;
 import org.apache.hama.bsp.DoubleMessage;
 import org.apache.hama.bsp.IntegerMessage;
 
-public class TestAvroMessageManager {
+public class TestAvroMessageManager extends TestCase {
 
   private static NettyServer server;
   private static Server hadoopServer;
   private static long start;
+
+  public void compareMessengers() throws Exception {
+    BSPMessageBundle randomBundle = getRandomBundle();
+    testAvro(randomBundle);
+    testHadoop(randomBundle);
+  }
 
   public static final class MessageSender implements Sender {
 
@@ -35,9 +43,10 @@ public class TestAvroMessageManager {
     public Void transfer(AvroBSPMessageBundle messagebundle)
         throws AvroRemoteException {
       try {
-        BSPMessageBundle msg = deserializeMessage(messagebundle.data);
+        BSPMessageBundle msg = deserializeMessage(messagebundle.getData());
         System.out.println("Received message in "
-            + (System.currentTimeMillis() - start) + "ms");
+            + (System.currentTimeMillis() - start) + "ms. Size: "
+            + msg.getMessages().size());
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -86,20 +95,14 @@ public class TestAvroMessageManager {
     return bundle;
   }
 
-  public static final void main(String[] args) throws IOException {
-    BSPMessageBundle randomBundle = getRandomBundle();
-    testAvro(randomBundle);
-    testHadoop(randomBundle);
-  }
-
   private static final void testAvro(BSPMessageBundle bundle)
       throws IOException, AvroRemoteException {
 
     server = new NettyServer(new SpecificResponder(Sender.class,
         new MessageSender()), new InetSocketAddress(13530));
 
-    NettyTransceiver client = new NettyTransceiver(new InetSocketAddress(server
-        .getPort()));
+    NettyTransceiver client = new NettyTransceiver(new InetSocketAddress(
+        server.getPort()));
     Sender proxy = (Sender) SpecificRequestor.getClient(Sender.class, client);
 
     AvroBSPMessageBundle msg = new AvroBSPMessageBundle();
