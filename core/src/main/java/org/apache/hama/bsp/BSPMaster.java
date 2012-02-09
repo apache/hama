@@ -149,10 +149,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
             break;
           }
         }
-        
+
         if (null != tmpStatus) {
           totalTasks += tmpStatus.countTasks();
-          
+
           List<TaskStatus> tlist = tmpStatus.getTaskReports();
           for (TaskStatus ts : tlist) {
             JobInProgress jip = whichJob(ts.getJobId());
@@ -279,6 +279,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
           if (fs == null) {
             fs = FileSystem.get(conf);
           }
+        } catch (IOException e) {
+          LOG.error("Can't get connection to Hadoop Namenode!", e);
+        }
+        try {
           // clean up the system dir, which will only work if hdfs is out of
           // safe mode
           if (systemDir == null) {
@@ -492,8 +496,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       for (String node : zk.getChildren(bspRoot, this)) {
         for (String subnode : zk.getChildren(bspRoot + "/" + node, this)) {
           for (String subnode2 : zk.getChildren(bspRoot + "/" + node, this)) {
-            for (String subnode3 : zk.getChildren(bspRoot + "/" + node + "/" + subnode2, this)) {
-              zk.delete(bspRoot + "/" + node + "/" + subnode + "/" + subnode2 + "/" + subnode3, 0);
+            for (String subnode3 : zk.getChildren(bspRoot + "/" + node + "/"
+                + subnode2, this)) {
+              zk.delete(bspRoot + "/" + node + "/" + subnode + "/" + subnode2
+                  + "/" + subnode3, 0);
             }
             zk.delete(bspRoot + "/" + node + "/" + subnode + "/" + subnode2, 0);
           }
@@ -639,7 +645,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       for (Map.Entry<GroomServerStatus, GroomProtocol> entry : groomServers
           .entrySet()) {
         GroomServerStatus s = entry.getKey();
-        groomsMap.put(s.getGroomHostName() + ":" + Constants.DEFAULT_PEER_PORT, s);
+        groomsMap.put(s.getGroomHostName() + ":" + Constants.DEFAULT_PEER_PORT,
+            s);
       }
     }
 
@@ -738,7 +745,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
       status.setStartTime(jip.getStartTime());
       status.setNumOfTasks(jip.getNumOfTasks());
-      
+
       // Sets the user name
       status.setUsername(jip.getProfile().getUser());
       status.setName(jip.getJobName());
