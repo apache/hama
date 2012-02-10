@@ -90,8 +90,7 @@ public class PiEstimator {
         }
 
         pi = pi / numPeers;
-        peer
-.write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
+        peer.write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
       }
     }
   }
