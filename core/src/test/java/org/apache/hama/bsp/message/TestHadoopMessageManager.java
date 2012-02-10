@@ -25,9 +25,8 @@ import java.util.Map.Entry;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPMessage;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestHadoopMessageManager extends TestCase {
@@ -35,7 +34,7 @@ public class TestHadoopMessageManager extends TestCase {
   public void testMessaging() throws Exception {
     Configuration conf = new Configuration();
     conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS, "org.apache.hama.bsp.message.HadoopMessageManagerImpl");
-    MessageManager messageManager = MessageManagerFactory
+    MessageManager<IntWritable> messageManager = new MessageManagerFactory<IntWritable>()
         .getMessageManager(conf);
 
     assertTrue(messageManager instanceof HadoopMessageManagerImpl);
@@ -45,20 +44,20 @@ public class TestHadoopMessageManager extends TestCase {
     messageManager.init(conf, peer);
     String peerName = peer.getHostName() + ":" + peer.getPort();
 
-    messageManager.send(peerName, new IntegerMessage("test", 1337));
+    messageManager.send(peerName, new IntWritable(1337));
 
-    Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> messageIterator = messageManager
+    Iterator<Entry<InetSocketAddress, LinkedList<IntWritable>>> messageIterator = messageManager
         .getMessageIterator();
 
-    Entry<InetSocketAddress, LinkedList<BSPMessage>> entry = messageIterator
+    Entry<InetSocketAddress, LinkedList<IntWritable>> entry = messageIterator
         .next();
 
     assertEquals(entry.getKey(), peer);
 
     assertTrue(entry.getValue().size() == 1);
 
-    BSPMessageBundle bundle = new BSPMessageBundle();
-    for (BSPMessage msg : entry.getValue()) {
+    BSPMessageBundle<IntWritable> bundle = new BSPMessageBundle<IntWritable>();
+    for (IntWritable msg : entry.getValue()) {
       bundle.addMessage(msg);
     }
 
@@ -67,14 +66,8 @@ public class TestHadoopMessageManager extends TestCase {
     messageManager.clearOutgoingQueues();
 
     assertTrue(messageManager.getNumCurrentMessages() == 1);
-    BSPMessage currentMessage = messageManager.getCurrentMessage();
+    IntWritable currentMessage = messageManager.getCurrentMessage();
 
-    assertTrue(currentMessage instanceof IntegerMessage);
-
-    IntegerMessage rec = (IntegerMessage) currentMessage;
-
-    assertEquals(rec.getTag(), "test");
-    assertEquals(rec.getData(), Integer.valueOf(1337));
-
+    assertEquals(currentMessage.get(), 1337);
   }
 }

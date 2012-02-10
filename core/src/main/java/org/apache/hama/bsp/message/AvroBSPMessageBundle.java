@@ -21,8 +21,9 @@ import java.nio.ByteBuffer;
 
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.hadoop.io.Writable;
 
-public final class AvroBSPMessageBundle extends SpecificRecordBase implements
+public final class AvroBSPMessageBundle<M extends Writable> extends SpecificRecordBase implements
     SpecificRecord {
   public static final org.apache.avro.Schema SCHEMA$ = org.apache.avro.Schema
       .parse("{\"type\":\"record\",\"name\":\"AvroBSPMessage\",\"namespace\":\"de.jungblut.avro\",\"fields\":[{\"name\":\"data\",\"type\":\"bytes\"}]}");

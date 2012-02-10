@@ -17,7 +17,9 @@
  */
 package org.apache.hama.bsp;
 
-public abstract class Combiner {
+import org.apache.hadoop.io.Writable;
+
+public abstract class Combiner<M extends Writable> {
 
   /**
    * Combines messages
@@ -25,6 +27,6 @@ public abstract class Combiner {
    * @param messages
    * @return the combined message
    */
-  public abstract BSPMessageBundle combine(Iterable<BSPMessage> messages);
+  public abstract BSPMessageBundle<M> combine(Iterable<M> messages);
   
 }

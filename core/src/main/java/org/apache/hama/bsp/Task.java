@@ -142,7 +142,7 @@ public abstract class Task implements Writable {
    * @param bspPeer for communications
    * @param umbilical for communications with GroomServer
    */
-  public abstract void run(BSPJob job, BSPPeerImpl<?,?,?,?> bspPeer, BSPPeerProtocol umbilical)
+  public abstract void run(BSPJob job, BSPPeerImpl<?,?,?,?,?> bspPeer, BSPPeerProtocol umbilical)
       throws IOException, SyncException, ClassNotFoundException, InterruptedException;
 
   public abstract BSPTaskRunner createRunner(GroomServer groom);

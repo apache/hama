@@ -22,27 +22,26 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
-import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeer;
-import org.apache.hama.bsp.ByteMessage;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.NullOutputFormat;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.util.Bytes;
 
 public class RandBench {
   private static final String SIZEOFMSG = "msg.size";
   private static final String N_COMMUNICATIONS = "communications.num";
   private static final String N_SUPERSTEPS = "supersteps.num";
 
-  public static class RandBSP extends
-      BSP<NullWritable, NullWritable, NullWritable, NullWritable> {
+  public static class RandBSP
+      extends
+      BSP<NullWritable, NullWritable, NullWritable, NullWritable, BytesWritable> {
     public static final Log LOG = LogFactory.getLog(RandBSP.class);
     private Random r = new Random();
     private int sizeOfMsg;
@@ -51,28 +50,25 @@ public class RandBench {
 
     @Override
     public void bsp(
-        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer)
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable, BytesWritable> peer)
         throws IOException, SyncException, InterruptedException {
       byte[] dummyData = new byte[sizeOfMsg];
-      BSPMessage msg = null;
       String[] peers = peer.getAllPeerNames();
-      String peerName = peer.getPeerName();
 
       for (int i = 0; i < nSupersteps; i++) {
 
         for (int j = 0; j < nCommunications; j++) {
           String tPeer = peers[r.nextInt(peers.length)];
-          String tag = peerName + " to " + tPeer;
-          msg = new ByteMessage(Bytes.toBytes(tag), dummyData);
-          peer.send(tPeer, msg);
+          BytesWritable data = new BytesWritable();
+          data.set(dummyData, 0, dummyData.length);
+          peer.send(tPeer, data);
         }
 
         peer.sync();
 
-        ByteMessage received;
-        while ((received = (ByteMessage) peer.getCurrentMessage()) != null) {
-          LOG.info(Bytes.toString(received.getTag()) + " : "
-              + received.getData().length);
+        BytesWritable received;
+        while ((received = peer.getCurrentMessage()) != null) {
+          LOG.info(received.getBytes().length);
         }
 
       }
@@ -80,7 +76,7 @@ public class RandBench {
 
     @Override
     public void setup(
-        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> peer) {
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable, BytesWritable> peer) {
       this.sizeOfMsg = conf.getInt(SIZEOFMSG, 1);
       this.nCommunications = conf.getInt(N_COMMUNICATIONS, 1);
       this.nSupersteps = conf.getInt(N_SUPERSTEPS, 1);

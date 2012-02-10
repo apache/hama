@@ -55,10 +55,10 @@ public class TestPartitioning extends TestCase {
   }
 
   public static class PartionedBSP extends
-      BSP<LongWritable, Text, NullWritable, NullWritable> {
+      BSP<LongWritable, Text, NullWritable, NullWritable, NullWritable> {
 
     @Override
-    public void bsp(BSPPeer<LongWritable, Text, NullWritable, NullWritable> peer)
+    public void bsp(BSPPeer<LongWritable, Text, NullWritable, NullWritable, NullWritable> peer)
         throws IOException, SyncException, InterruptedException {
       long numOfPairs = 0;
       KeyValuePair<LongWritable, Text> readNext = null;

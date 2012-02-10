@@ -23,10 +23,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.bsp.BSP;
-import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
@@ -47,18 +50,24 @@ public class GraphJobRunner extends BSP {
     while (updated && iteration < maxIteration) {
       peer.sync();
 
-      BSPMessage msg = null;
-      Map<String, LinkedList<BSPMessage>> msgMap = new HashMap<String, LinkedList<BSPMessage>>();
-      while ((msg = peer.getCurrentMessage()) != null) {
+      MapWritable msg = null;
+      Map<String, LinkedList<Writable>> msgMap = new HashMap<String, LinkedList<Writable>>();
+      while ((msg = (MapWritable) peer.getCurrentMessage()) != null) {
 
-        if (msgMap.containsKey(msg.getTag())) {
-          LinkedList<BSPMessage> msgs = msgMap.get(msg.getTag());
-          msgs.add(msg);
-          msgMap.put((String) msg.getTag(), msgs);
-        } else {
-          LinkedList<BSPMessage> msgs = new LinkedList<BSPMessage>();
-          msgs.add(msg);
-          msgMap.put((String) msg.getTag(), msgs);
+        for (Entry<Writable, Writable> e : msg.entrySet()) {
+          String vertexID = ((Text) e.getKey()).toString();
+          Writable value = e.getValue();
+
+          if (msgMap.containsKey(vertexID)) {
+            LinkedList<Writable> msgs = msgMap.get(vertexID);
+            msgs.add(value);
+            msgMap.put(vertexID, msgs);
+          } else {
+            LinkedList<Writable> msgs = new LinkedList<Writable>();
+            msgs.add(value);
+            msgMap.put(vertexID, msgs);
+          }
+
         }
       }
 
@@ -66,7 +75,7 @@ public class GraphJobRunner extends BSP {
         updated = false;
       }
 
-      for (Map.Entry<String, LinkedList<BSPMessage>> e : msgMap.entrySet()) {
+      for (Map.Entry<String, LinkedList<Writable>> e : msgMap.entrySet()) {
         vertices.get(e.getKey()).compute(e.getValue().iterator());
       }
       iteration++;
@@ -99,19 +108,10 @@ public class GraphJobRunner extends BSP {
     long numberVertices = vertices.size() * peer.getNumPeers();
 
     for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
-      LinkedList<BSPMessage> msgIterator = new LinkedList<BSPMessage>();
-
-      try {
-        BSPMessage msg = (BSPMessage) e.getValue().messageClass.newInstance();
-        msg.setTag(e.getValue().getVertexID());
-        msg.setData(e.getValue().getValue());
-        msgIterator.add(msg);
-      } catch (Exception e1) {
-        // TODO init failed.
-        e1.printStackTrace();
-      }
-
       e.getValue().setNumVertices(numberVertices);
+
+      LinkedList<Writable> msgIterator = new LinkedList<Writable>();
+      msgIterator.add(e.getValue().getValue());
       e.getValue().compute(msgIterator.iterator());
     }
   }

@@ -966,7 +966,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
         // instantiate and init our peer
         @SuppressWarnings("rawtypes")
-        final BSPPeerImpl<?, ?, ?, ?> bspPeer = new BSPPeerImpl(job,
+        final BSPPeerImpl<?, ?, ?, ?, ?> bspPeer = new BSPPeerImpl(job,
             defaultConf, taskid, umbilical, task.partition, task.splitClass,
             task.split, task.getCounters());
 

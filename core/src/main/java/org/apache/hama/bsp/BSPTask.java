@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.ipc.BSPPeerProtocol;
@@ -60,7 +61,7 @@ public final class BSPTask extends Task {
   }
 
   @Override
-  public final void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?> bspPeer,
+  public final void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?, ?> bspPeer,
       BSPPeerProtocol umbilical) throws IOException, SyncException,
       ClassNotFoundException, InterruptedException {
     runBSP(job, bspPeer, split, umbilical);
@@ -69,13 +70,13 @@ public final class BSPTask extends Task {
   }
 
   @SuppressWarnings("unchecked")
-  private final <KEYIN, VALUEIN, KEYOUT, VALUEOUT> void runBSP(
-      final BSPJob job, BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bspPeer,
+  private final <KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable> void runBSP(
+      final BSPJob job, BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> bspPeer,
       final BytesWritable rawSplit, final BSPPeerProtocol umbilical)
       throws IOException, SyncException, ClassNotFoundException,
       InterruptedException {
 
-    BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT> bsp = (BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT>) ReflectionUtils
+    BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> bsp = (BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M>) ReflectionUtils
         .newInstance(job.getConf().getClass("bsp.work.class", BSP.class),
             job.getConf());
 

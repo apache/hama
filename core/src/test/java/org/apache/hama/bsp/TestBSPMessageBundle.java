@@ -25,26 +25,29 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+
 import junit.framework.TestCase;
+
+import org.apache.hadoop.io.BytesWritable;;
 
 public class TestBSPMessageBundle extends TestCase {
 
   public void testEmpty() throws IOException {
-    BSPMessageBundle bundle = new BSPMessageBundle();
+    BSPMessageBundle<BytesWritable> bundle = new BSPMessageBundle<BytesWritable>();
     // Serialize it.
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     bundle.write(new DataOutputStream(baos));
     baos.close();
     // Deserialize it.
-    BSPMessageBundle readBundle = new BSPMessageBundle();
+    BSPMessageBundle<BytesWritable> readBundle = new BSPMessageBundle<BytesWritable>();
     readBundle.readFields(new DataInputStream(new ByteArrayInputStream(baos
         .toByteArray())));
     assertEquals(0, readBundle.getMessages().size());
   }
 
   public void testSerializationDeserialization() throws IOException {
-    BSPMessageBundle bundle = new BSPMessageBundle();
-    ByteMessage[] testMessages = new ByteMessage[16];
+    BSPMessageBundle<BytesWritable> bundle = new BSPMessageBundle<BytesWritable>();
+    BytesWritable[] testMessages = new BytesWritable[16];
     for (int i = 0; i < testMessages.length; ++i) {
       // Create a one byte tag containing the number of the message.
       byte[] tag = new byte[1];
@@ -55,7 +58,9 @@ public class TestBSPMessageBundle extends TestCase {
       baos.write(i);
       baos.close();
       byte[] data = baos.toByteArray();
-      testMessages[i] = new ByteMessage(tag, data);
+      BytesWritable msg = new BytesWritable();
+      msg.set(data, 0, data.length);
+      testMessages[i] = msg;
       bundle.addMessage(testMessages[i]);
     }
     // Serialize it.
@@ -63,17 +68,16 @@ public class TestBSPMessageBundle extends TestCase {
     bundle.write(new DataOutputStream(baos));
     baos.close();
     // Deserialize it.
-    BSPMessageBundle readBundle = new BSPMessageBundle();
+    BSPMessageBundle<BytesWritable> readBundle = new BSPMessageBundle<BytesWritable>();
     readBundle.readFields(new DataInputStream(new ByteArrayInputStream(baos
         .toByteArray())));
     // Check contents.
     int messageNumber = 0;
-    for (BSPMessage message : readBundle.getMessages()) {
-      ByteMessage byteMessage = (ByteMessage) message;
-      assertTrue(Arrays.equals(testMessages[messageNumber].getTag(),
-          byteMessage.getTag()));
-      assertTrue(Arrays.equals(testMessages[messageNumber].getData(),
-          byteMessage.getData()));
+    for (BytesWritable message : readBundle.getMessages()) {
+      BytesWritable byteMessage = message;
+
+      assertTrue(Arrays.equals(testMessages[messageNumber].getBytes(),
+          byteMessage.getBytes()));
       ++messageNumber;
     }
     assertEquals(testMessages.length, messageNumber);

@@ -24,7 +24,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.graph.Edge;
@@ -33,31 +32,21 @@ import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 
-public class InlinkCount extends Vertex<IntegerMessage> {
-  int inlinkCount;
-
-  public InlinkCount() {
-    super(IntegerMessage.class);
-  }
+public class InlinkCount extends Vertex<IntWritable> {
 
   @Override
-  public void compute(Iterator<IntegerMessage> messages) throws IOException {
+  public void compute(Iterator<IntWritable> messages) throws IOException {
 
     if (getSuperstepCount() == 0L) {
       for (Edge e : getOutEdges()) {
-        sendMessage(e.getTarget(), new IntegerMessage(e.getName(), 1));
+        sendMessage(e, new IntWritable(1));
       }
     } else {
       while (messages.hasNext()) {
-        IntegerMessage msg = messages.next();
-        inlinkCount += msg.getData();
+        IntWritable msg = messages.next();
+        this.setValue(new IntWritable(this.getValue().get() + msg.get()));
       }
     }
-  }
-
-  @Override
-  public Object getValue() {
-    return inlinkCount;
   }
 
   public static void main(String[] args) throws IOException,

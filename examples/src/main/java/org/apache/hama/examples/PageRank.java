@@ -25,7 +25,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.DoubleMessage;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
@@ -35,34 +34,30 @@ import org.apache.hama.graph.Vertex;
 
 public class PageRank {
 
-  public static class PageRankVertex extends Vertex<DoubleMessage> {
-    public PageRankVertex() {
-      super(DoubleMessage.class);
-    }
+  public static class PageRankVertex extends Vertex<DoubleWritable> {
 
     @Override
-    public void compute(Iterator<DoubleMessage> messages)
-        throws IOException {
-      if(this.getSuperstepCount() == 0) {
-         this.setValue(1.0 / (double) this.getNumVertices());
+    public void compute(Iterator<DoubleWritable> messages) throws IOException {
+      if (this.getSuperstepCount() == 0) {
+        this.setValue(new DoubleWritable(1.0 / (double) this.getNumVertices()));
       }
-      
+
       if (this.getSuperstepCount() >= 1) {
         double sum = 0;
-        while(messages.hasNext()) {
-          DoubleMessage msg = messages.next();
-          sum += msg.getData();
+        while (messages.hasNext()) {
+          DoubleWritable msg = messages.next();
+          sum += msg.get();
         }
 
         double ALPHA = (1 - 0.85) / (double) this.getNumVertices();
-        this.setValue(ALPHA + (0.85 * sum));
+        this.setValue(new DoubleWritable(ALPHA + (0.85 * sum)));
       }
 
       if (this.getSuperstepCount() < this.getMaxIteration()) {
         int numEdges = this.getOutEdges().size();
         for (Edge e : this.getOutEdges()) {
-          this.sendMessage(e.getTarget(), new DoubleMessage(e.getName(),
-              (Double) this.getValue() / numEdges));
+          this.sendMessage(e, new DoubleWritable(this.getValue().get()
+              / numEdges));
         }
       }
     }
@@ -72,12 +67,12 @@ public class PageRank {
     System.out.println("Usage: <input> <output> [tasks]");
     System.exit(-1);
   }
-  
+
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException {
     if (args.length < 2)
       printUsage();
-    
+
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
     GraphJob pageJob = new GraphJob(conf);
     pageJob.setJobName("Pagerank");

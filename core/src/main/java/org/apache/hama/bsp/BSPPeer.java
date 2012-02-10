@@ -20,6 +20,7 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.sync.SyncException;
@@ -28,7 +29,7 @@ import org.apache.hama.util.KeyValuePair;
 /**
  * BSP communication interface.
  */
-public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Constants {
+public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
 
   /**
    * Send a data with a tag to another BSPSlave corresponding to hostname.
@@ -39,13 +40,13 @@ public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Constants {
    * @param msg
    * @throws IOException
    */
-  public void send(String peerName, BSPMessage msg) throws IOException;
+  public void send(String peerName, M msg) throws IOException;
 
   /**
    * @return A message from the peer's received messages queue (a FIFO).
    * @throws IOException
    */
-  public BSPMessage getCurrentMessage() throws IOException;
+  public M getCurrentMessage() throws IOException;
 
   /**
    * @return The number of messages in the peer's received messages queue.
@@ -103,7 +104,7 @@ public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Constants {
    * @param value your value object
    * @throws IOException
    */
-  public void write(KEYOUT key, VALUEOUT value) throws IOException;
+  public void write(K2 key, V2 value) throws IOException;
 
   /**
    * Deserializes the next input key value into the given objects.
@@ -113,7 +114,7 @@ public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Constants {
    * @return false if there are no records to read anymore
    * @throws IOException
    */
-  public boolean readNext(KEYIN key, VALUEIN value) throws IOException;
+  public boolean readNext(K1 key, V1 value) throws IOException;
 
   /**
    * Reads the next key value pair and returns it as a pair.
@@ -121,7 +122,7 @@ public interface BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> extends Constants {
    * @return null if there are no records left.
    * @throws IOException
    */
-  public KeyValuePair<KEYIN, VALUEIN> readNext() throws IOException;
+  public KeyValuePair<K1, V1> readNext() throws IOException;
 
   /**
    * Closes the input and opens it right away, so that the file pointer is at

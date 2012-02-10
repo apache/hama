@@ -17,18 +17,21 @@
  */
 package org.apache.hama.bsp.message;
 
-public interface Sender {
+import org.apache.hadoop.io.Writable;
+
+public interface Sender<M extends Writable> {
+  
   public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol
       .parse("{\"protocol\":\"Sender\",\"namespace\":\"de.jungblut.avro\",\"types\":[{\"type\":\"record\",\"name\":\"AvroBSPMessageBundle\",\"fields\":[{\"name\":\"data\",\"type\":\"bytes\"}]}],\"messages\":{\"transfer\":{\"request\":[{\"name\":\"messagebundle\",\"type\":\"AvroBSPMessageBundle\"}],\"response\":\"null\"}}}");
 
-  java.lang.Void transfer(AvroBSPMessageBundle messagebundle)
+  java.lang.Void transfer(AvroBSPMessageBundle<M> messagebundle)
       throws org.apache.avro.AvroRemoteException;
 
   @SuppressWarnings("all")
   public interface Callback extends Sender {
     public static final org.apache.avro.Protocol PROTOCOL = Sender.PROTOCOL;
 
-    void transfer(AvroBSPMessageBundle messagebundle,
+    public void transfer(AvroBSPMessageBundle messagebundle,
         org.apache.avro.ipc.Callback<java.lang.Void> callback)
         throws java.io.IOException;
   }

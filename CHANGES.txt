@@ -11,6 +11,7 @@ Release 0.5 - Unreleased
 
   IMPROVEMENTS
 
+    HAMA-502: Message API Improvement (edwardyoon)
   
 Release 0.4 - February 5, 2012
 
