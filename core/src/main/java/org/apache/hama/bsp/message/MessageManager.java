@@ -24,7 +24,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPMessage;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 
 /**
@@ -32,7 +32,7 @@ import org.apache.hama.bsp.BSPMessageBundle;
  * server if needed and deal with incoming data.
  * 
  */
-public interface MessageManager {
+public interface MessageManager<M extends Writable> {
 
   /**
    * Init can be used to start servers and initialize internal state.
@@ -54,7 +54,7 @@ public interface MessageManager {
    * @return
    * @throws IOException
    */
-  public BSPMessage getCurrentMessage() throws IOException;
+  public M getCurrentMessage() throws IOException;
 
   /**
    * Send a message to the peer.
@@ -63,14 +63,14 @@ public interface MessageManager {
    * @param msg
    * @throws IOException
    */
-  public void send(String peerName, BSPMessage msg) throws IOException;
+  public void send(String peerName, M msg) throws IOException;
 
   /**
    * Returns an iterator of messages grouped by peer.
    * 
    * @return
    */
-  public Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> getMessageIterator();
+  public Iterator<Entry<InetSocketAddress, LinkedList<M>>> getMessageIterator();
 
   /**
    * This is the real transferring to a host with a bundle.
@@ -79,7 +79,7 @@ public interface MessageManager {
    * @param bundle
    * @throws IOException
    */
-  public void transfer(InetSocketAddress addr, BSPMessageBundle bundle)
+  public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException;
 
   /**

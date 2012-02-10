@@ -32,12 +32,12 @@ public interface VertexInterface<MSGTYPE> {
 
   public List<Edge> getOutEdges();
 
-  public void sendMessage(String target, MSGTYPE msg) throws IOException;
+  public void sendMessage(Edge e, MSGTYPE msg) throws IOException;
 
   public long getSuperstepCount();
 
-  public void setValue(Object value);
+  public void setValue(MSGTYPE value);
 
-  public Object getValue();
+  public MSGTYPE getValue();
 
 }

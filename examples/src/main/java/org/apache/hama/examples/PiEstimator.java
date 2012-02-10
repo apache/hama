@@ -35,7 +35,6 @@ import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.ClusterStatus;
-import org.apache.hama.bsp.DoubleMessage;
 import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
@@ -45,14 +44,14 @@ public class PiEstimator {
   private static Path TMP_OUTPUT = new Path("/tmp/pi-" + System.currentTimeMillis());
 
   public static class MyEstimator extends
-      BSP<NullWritable, NullWritable, Text, DoubleWritable> {
+      BSP<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> {
     public static final Log LOG = LogFactory.getLog(MyEstimator.class);
     private String masterTask;
     private static final int iterations = 10000;
 
     @Override
     public void bsp(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer)
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
         throws IOException, SyncException, InterruptedException {
 
       int in = 0, out = 0;
@@ -66,34 +65,33 @@ public class PiEstimator {
       }
 
       double data = 4.0 * (double) in / (double) iterations;
-      DoubleMessage estimate = new DoubleMessage(peer.getPeerName(), data);
 
-      peer.send(masterTask, estimate);
+      peer.send(masterTask, new DoubleWritable(data));
       peer.sync();
     }
 
     @Override
     public void setup(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer)
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
         throws IOException {
       // Choose one as a master
       this.masterTask = peer.getPeerName(peer.getNumPeers() / 2);
     }
 
     public void cleanup(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable> peer)
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
         throws IOException {
       if (peer.getPeerName().equals(masterTask)) {
         double pi = 0.0;
         int numPeers = peer.getNumCurrentMessages();
-        DoubleMessage received;
-        while ((received = (DoubleMessage) peer.getCurrentMessage()) != null) {
-          pi += received.getData();
+        DoubleWritable received;
+        while ((received = peer.getCurrentMessage()) != null) {
+          pi += received.get();
         }
 
         pi = pi / numPeers;
         peer
-            .write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
+.write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
       }
     }
   }

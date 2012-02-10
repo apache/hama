@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.Counters.Counter;
@@ -45,8 +46,8 @@ import org.apache.hama.util.KeyValuePair;
 /**
  * This class represents a BSP peer.
  */
-public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
-    BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
+public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
+    BSPPeer<K1, V1, K2, V2, M> {
 
   private static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
@@ -67,15 +68,15 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
 
   // SYNC
   private SyncClient syncClient;
-  private MessageManager messenger;
+  private MessageManager<M> messenger;
 
   // IO
   private int partition;
   private String splitClass;
   private BytesWritable split;
-  private OutputCollector<KEYOUT, VALUEOUT> collector;
-  private RecordReader<KEYIN, VALUEIN> in;
-  private RecordWriter<KEYOUT, VALUEOUT> outWriter;
+  private OutputCollector<K2, V2> collector;
+  private RecordReader<K1, V1> in;
+  private RecordWriter<K2, V2> outWriter;
 
   private InetSocketAddress peerAddress;
   private Counters counters;
@@ -140,7 +141,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
         TaskStatus.State.RUNNING, "running", peerAddress.getHostName(),
         TaskStatus.Phase.STARTING, counters));
 
-    messenger = MessageManagerFactory.getMessageManager(conf);
+    messenger = new MessageManagerFactory<M>().getMessageManager(conf);
     messenger.init(conf, peerAddress);
 
   }
@@ -158,10 +159,10 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
           Task.getOutputName(partition));
       outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob,
           outdir.makeQualified(fs).toString());
-      final RecordWriter<KEYOUT, VALUEOUT> finalOut = outWriter;
+      final RecordWriter<K2, V2> finalOut = outWriter;
 
-      collector = new OutputCollector<KEYOUT, VALUEOUT>() {
-        public void collect(KEYOUT key, VALUEOUT value) throws IOException {
+      collector = new OutputCollector<K2, V2>() {
+        public void collect(K2 key, V2 value) throws IOException {
           finalOut.write(key, value);
         }
       };
@@ -196,12 +197,12 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   }
 
   @Override
-  public final BSPMessage getCurrentMessage() throws IOException {
+  public final M getCurrentMessage() throws IOException {
     return messenger.getCurrentMessage();
   }
 
   @Override
-  public final void send(String peerName, BSPMessage msg) throws IOException {
+  public final void send(String peerName, M msg) throws IOException {
     messenger.send(peerName, msg);
   }
 
@@ -214,7 +215,7 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     return ckptPath;
   }
 
-  final void checkpoint(String checkpointedPath, BSPMessageBundle bundle) {
+  final void checkpoint(String checkpointedPath, BSPMessageBundle<M> bundle) {
     FSDataOutputStream out = null;
     try {
       out = this.fs.create(new Path(checkpointedPath));
@@ -239,15 +240,15 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
   public final void sync() throws IOException, SyncException,
       InterruptedException {
     enterBarrier();
-    Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> it = messenger
+    Iterator<Entry<InetSocketAddress, LinkedList<M>>> it = messenger
         .getMessageIterator();
 
     while (it.hasNext()) {
-      Entry<InetSocketAddress, LinkedList<BSPMessage>> entry = it.next();
+      Entry<InetSocketAddress, LinkedList<M>> entry = it.next();
       final InetSocketAddress addr = entry.getKey();
-      final Iterable<BSPMessage> messages = entry.getValue();
+      final Iterable<M> messages = entry.getValue();
 
-      final BSPMessageBundle bundle = combineMessages(messages);
+      final BSPMessageBundle<M> bundle = combineMessages(messages);
 
       if (conf.getBoolean("bsp.checkpoint.enabled", false)) {
         checkpoint(checkpointedPath(), bundle);
@@ -269,16 +270,16 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
     messenger.clearOutgoingQueues();
   }
 
-  private final BSPMessageBundle combineMessages(Iterable<BSPMessage> messages) {
+  private final BSPMessageBundle<M> combineMessages(Iterable<M> messages) {
     if (!conf.getClass("bsp.combiner.class", Combiner.class).equals(
         Combiner.class)) {
-      Combiner combiner = (Combiner) ReflectionUtils.newInstance(
+      Combiner<M> combiner = (Combiner<M>) ReflectionUtils.newInstance(
           conf.getClass("bsp.combiner.class", Combiner.class), conf);
 
       return combiner.combine(messages);
     } else {
-      BSPMessageBundle bundle = new BSPMessageBundle();
-      for (BSPMessage message : messages) {
+      BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+      for (M message : messages) {
         bundle.addMessage(message);
       }
       return bundle;
@@ -383,21 +384,21 @@ public final class BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT> implements
    */
 
   @Override
-  public final void write(KEYOUT key, VALUEOUT value) throws IOException {
+  public final void write(K2 key, V2 value) throws IOException {
     collector.collect(key, value);
   }
 
   @Override
-  public final boolean readNext(KEYIN key, VALUEIN value) throws IOException {
+  public final boolean readNext(K1 key, V1 value) throws IOException {
     return in.next(key, value);
   }
 
   @Override
-  public final KeyValuePair<KEYIN, VALUEIN> readNext() throws IOException {
-    KEYIN k = in.createKey();
-    VALUEIN v = in.createValue();
+  public final KeyValuePair<K1, V1> readNext() throws IOException {
+    K1 k = in.createKey();
+    V1 v = in.createValue();
     if (in.next(k, v)) {
-      return new KeyValuePair<KEYIN, VALUEIN>(k, v);
+      return new KeyValuePair<K1, V1>(k, v);
     } else {
       return null;
     }

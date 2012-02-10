@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
@@ -37,7 +38,7 @@ public class BSPRunner {
 
   private Configuration conf;
   private TaskAttemptID id;
-  private BSPPeerImpl<?, ?, ?, ?> peer;
+  private BSPPeerImpl<?, ?, ?, ?, ? extends Writable> peer;
   private Counters counters = new Counters();
   
   @SuppressWarnings("rawtypes")

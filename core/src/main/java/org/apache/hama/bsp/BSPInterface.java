@@ -23,6 +23,6 @@ import org.apache.hadoop.conf.Configurable;
  * Interface BSP defines the basic operations needed to implement the BSP
  * algorithm.
  */
-public interface BSPInterface<K1, V1, K2, V2> extends Configurable {
+public interface BSPInterface<K1, V1, K2, V2, M> extends Configurable {
 
 }

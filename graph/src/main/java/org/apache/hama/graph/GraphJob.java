@@ -19,9 +19,9 @@ package org.apache.hama.graph;
 
 import java.io.IOException;
 
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.bsp.BSPMessage;
 
 public class GraphJob extends BSPJob {
   public final static String VERTEX_CLASS_ATTR = "hama.graph.vertex.class";
@@ -37,20 +37,15 @@ public class GraphJob extends BSPJob {
    * @param cls
    * @throws IllegalStateException
    */
-  public void setVertexClass(Class<? extends Vertex<? extends BSPMessage>> cls)
+  public void setVertexClass(Class<? extends Vertex<? extends Writable>> cls)
       throws IllegalStateException {
     ensureState(JobState.DEFINE);
     conf.setClass(VERTEX_CLASS_ATTR, cls, Vertex.class);
   }
 
   @SuppressWarnings("unchecked")
-  public Class<? extends Vertex<? extends BSPMessage>> getVertexClass() {
-    return (Class<? extends Vertex<? extends BSPMessage>>) conf.getClass(
+  public Class<? extends Vertex<? extends Writable>> getVertexClass() {
+    return (Class<? extends Vertex<? extends Writable>>) conf.getClass(
         VERTEX_CLASS_ATTR, Vertex.class);
-  }
-
-  // TODO this method should be moved into BSPJob
-  public void setMaxIteration(int maxIteration) {
-    conf.setInt("hama.graph.max.iteration", maxIteration);
   }
 }

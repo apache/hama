@@ -39,25 +39,24 @@ import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPMessage;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.util.BSPNetUtils;
 
-public class AvroMessageManagerImpl implements MessageManager, Sender {
+public class AvroMessageManagerImpl<M extends Writable> implements MessageManager<M>, Sender<M> {
 
   private static final Log LOG = LogFactory
       .getLog(AvroMessageManagerImpl.class);
 
   private NettyServer server = null;
 
-  private final HashMap<InetSocketAddress, Sender> peers = new HashMap<InetSocketAddress, Sender>();
+  private final HashMap<InetSocketAddress, Sender<M>> peers = new HashMap<InetSocketAddress, Sender<M>>();
   private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
 
-  private final HashMap<InetSocketAddress, LinkedList<BSPMessage>> outgoingQueues = new HashMap<InetSocketAddress, LinkedList<BSPMessage>>();
-  private Deque<BSPMessage> localQueue = new LinkedList<BSPMessage>();
+  private final HashMap<InetSocketAddress, LinkedList<M>> outgoingQueues = new HashMap<InetSocketAddress, LinkedList<M>>();
+  private Deque<M> localQueue = new LinkedList<M>();
   // this must be a synchronized implementation: this is accessed per RPC
-  private final ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
+  private final ConcurrentLinkedQueue<M> localQueueForNextIteration = new ConcurrentLinkedQueue<M>();
 
   @Override
   public void init(Configuration conf, InetSocketAddress addr) {
@@ -76,8 +75,8 @@ public class AvroMessageManagerImpl implements MessageManager, Sender {
     localQueueForNextIteration.clear();
   }
 
-  public void put(BSPMessageBundle messages) {
-    for (BSPMessage message : messages.getMessages()) {
+  public void put(BSPMessageBundle<M> messages) {
+    for (M message : messages.getMessages()) {
       this.localQueueForNextIteration.add(message);
     }
   }
@@ -88,15 +87,15 @@ public class AvroMessageManagerImpl implements MessageManager, Sender {
   }
 
   @Override
-  public void transfer(InetSocketAddress addr, BSPMessageBundle bundle)
+  public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException {
-    AvroBSPMessageBundle msg = new AvroBSPMessageBundle();
+    AvroBSPMessageBundle<M> msg = new AvroBSPMessageBundle<M>();
     msg.setData(serializeMessage(bundle));
-    Sender sender = peers.get(addr);
+    Sender<M> sender = peers.get(addr);
 
     if (sender == null) {
       NettyTransceiver client = new NettyTransceiver(addr);
-      sender = (Sender) SpecificRequestor.getClient(Sender.class, client);
+      sender = (Sender<M>) SpecificRequestor.getClient(Sender.class, client);
       peers.put(addr, sender);
     }
     
@@ -104,10 +103,10 @@ public class AvroMessageManagerImpl implements MessageManager, Sender {
   }
 
   @Override
-  public Void transfer(AvroBSPMessageBundle messagebundle)
+  public Void transfer(AvroBSPMessageBundle<M> messagebundle)
       throws AvroRemoteException {
     try {
-      BSPMessageBundle deserializeMessage = deserializeMessage(messagebundle
+      BSPMessageBundle<M> deserializeMessage = deserializeMessage(messagebundle
           .getData());
       this.put(deserializeMessage);
     } catch (IOException e) {
@@ -117,12 +116,12 @@ public class AvroMessageManagerImpl implements MessageManager, Sender {
   }
 
   @Override
-  public BSPMessage getCurrentMessage() throws IOException {
+  public M getCurrentMessage() throws IOException {
     return localQueue.poll();
   }
 
   @Override
-  public void send(String peerName, BSPMessage msg) throws IOException {
+  public void send(String peerName, M msg) throws IOException {
     LOG.debug("Send message (" + msg.toString() + ") to " + peerName);
     InetSocketAddress targetPeerAddress = null;
     // Get socket for target peer.
@@ -132,17 +131,17 @@ public class AvroMessageManagerImpl implements MessageManager, Sender {
       targetPeerAddress = BSPNetUtils.getAddress(peerName);
       peerSocketCache.put(peerName, targetPeerAddress);
     }
-    LinkedList<BSPMessage> queue = outgoingQueues.get(targetPeerAddress);
+    LinkedList<M> queue = outgoingQueues.get(targetPeerAddress);
     if (queue == null) {
-      queue = new LinkedList<BSPMessage>();
+      queue = new LinkedList<M>();
     }
     queue.add(msg);
     outgoingQueues.put(targetPeerAddress, queue);
   }
 
-  private static final BSPMessageBundle deserializeMessage(ByteBuffer buffer)
+  private final BSPMessageBundle<M> deserializeMessage(ByteBuffer buffer)
       throws IOException {
-    BSPMessageBundle msg = new BSPMessageBundle();
+    BSPMessageBundle<M> msg = new BSPMessageBundle<M>();
 
     ByteArrayInputStream inArray = new ByteArrayInputStream(buffer.array());
     DataInputStream in = new DataInputStream(inArray);
@@ -151,7 +150,7 @@ public class AvroMessageManagerImpl implements MessageManager, Sender {
     return msg;
   }
 
-  private static final ByteBuffer serializeMessage(BSPMessageBundle msg)
+  private final ByteBuffer serializeMessage(BSPMessageBundle<M> msg)
       throws IOException {
     ByteArrayOutputStream outArray = new ByteArrayOutputStream();
     DataOutputStream out = new DataOutputStream(outArray);
@@ -162,7 +161,7 @@ public class AvroMessageManagerImpl implements MessageManager, Sender {
   }
 
   @Override
-  public Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> getMessageIterator() {
+  public Iterator<Entry<InetSocketAddress, LinkedList<M>>> getMessageIterator() {
     return this.outgoingQueues.entrySet().iterator();
   }
 }

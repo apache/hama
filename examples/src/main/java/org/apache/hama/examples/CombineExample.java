@@ -33,55 +33,54 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.FileOutputFormat;
-import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.bsp.sync.SyncException;
 
 public class CombineExample {
-  private static Path TMP_OUTPUT = new Path("/tmp/combine-" + System.currentTimeMillis());
-  
+  private static Path TMP_OUTPUT = new Path("/tmp/combine-"
+      + System.currentTimeMillis());
+
   public static class MyBSP extends
-      BSP<NullWritable, NullWritable, Text, IntWritable> {
+      BSP<NullWritable, NullWritable, Text, IntWritable, IntWritable> {
     public static final Log LOG = LogFactory.getLog(MyBSP.class);
 
     @Override
-    public void bsp(BSPPeer<NullWritable, NullWritable, Text, IntWritable> peer)
+    public void bsp(
+        BSPPeer<NullWritable, NullWritable, Text, IntWritable, IntWritable> peer)
         throws IOException, SyncException, InterruptedException {
       for (String peerName : peer.getAllPeerNames()) {
-        peer.send(peerName, new IntegerMessage(peer.getPeerName(), 1));
-        peer.send(peerName, new IntegerMessage(peer.getPeerName(), 2));
-        peer.send(peerName, new IntegerMessage(peer.getPeerName(), 3));
+        peer.send(peerName, new IntWritable(1));
+        peer.send(peerName, new IntWritable(2));
+        peer.send(peerName, new IntWritable(3));
       }
       peer.sync();
 
-      IntegerMessage received;
-      while ((received = (IntegerMessage) peer.getCurrentMessage()) != null) {
-        peer.write(new Text(received.getTag()),
-            new IntWritable(received.getData()));
+      IntWritable received;
+      while ((received = peer.getCurrentMessage()) != null) {
+        peer.write(new Text("Sum = "), received);
       }
     }
 
   }
 
-  public static class SumCombiner extends Combiner {
+  public static class SumCombiner extends Combiner<IntWritable> {
 
     @Override
-    public BSPMessageBundle combine(Iterable<BSPMessage> messages) {
-      BSPMessageBundle bundle = new BSPMessageBundle();
+    public BSPMessageBundle<IntWritable> combine(Iterable<IntWritable> messages) {
+      BSPMessageBundle<IntWritable> bundle = new BSPMessageBundle<IntWritable>();
       int sum = 0;
 
-      Iterator<BSPMessage> it = messages.iterator();
+      Iterator<IntWritable> it = messages.iterator();
       while (it.hasNext()) {
-        sum += ((IntegerMessage) it.next()).getData();
+        sum += it.next().get();
       }
 
-      bundle.addMessage(new IntegerMessage("Sum = ", sum));
+      bundle.addMessage(new IntWritable(sum));
       return bundle;
     }
   }

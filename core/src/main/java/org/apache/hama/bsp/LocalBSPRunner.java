@@ -39,6 +39,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
@@ -301,13 +302,13 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   }
 
-  public static class LocalMessageManager implements MessageManager {
+  public static class LocalMessageManager<M extends Writable> implements MessageManager<M> {
 
     private static final ConcurrentHashMap<InetSocketAddress, LocalMessageManager> managerMap = new ConcurrentHashMap<InetSocketAddress, LocalBSPRunner.LocalMessageManager>();
 
-    private final HashMap<InetSocketAddress, LinkedList<BSPMessage>> localOutgoingMessages = new HashMap<InetSocketAddress, LinkedList<BSPMessage>>();
+    private final HashMap<InetSocketAddress, LinkedList<M>> localOutgoingMessages = new HashMap<InetSocketAddress, LinkedList<M>>();
     private static final ConcurrentHashMap<String, InetSocketAddress> socketCache = new ConcurrentHashMap<String, InetSocketAddress>();
-    private final LinkedBlockingDeque<BSPMessage> localIncomingMessages = new LinkedBlockingDeque<BSPMessage>();
+    private final LinkedBlockingDeque<M> localIncomingMessages = new LinkedBlockingDeque<M>();
 
     @Override
     public void init(Configuration conf, InetSocketAddress peerAddress) {
@@ -320,7 +321,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public BSPMessage getCurrentMessage() throws IOException {
+    public M getCurrentMessage() throws IOException {
       if (localIncomingMessages.isEmpty()) {
         return null;
       } else {
@@ -329,16 +330,16 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public void send(String peerName, BSPMessage msg) throws IOException {
+    public void send(String peerName, M msg) throws IOException {
       InetSocketAddress inetSocketAddress = socketCache.get(peerName);
       if (inetSocketAddress == null) {
         inetSocketAddress = BSPNetUtils.getAddress(peerName);
         socketCache.put(peerName, inetSocketAddress);
       }
-      LinkedList<BSPMessage> msgs = localOutgoingMessages
+      LinkedList<M> msgs = localOutgoingMessages
           .get(inetSocketAddress);
       if (msgs == null) {
-        msgs = new LinkedList<BSPMessage>();
+        msgs = new LinkedList<M>();
       }
       msgs.add(msg);
 
@@ -346,18 +347,18 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> getMessageIterator() {
-      return localOutgoingMessages.entrySet().iterator();
-    }
-
-    @Override
-    public void transfer(InetSocketAddress addr, BSPMessageBundle bundle)
+    public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
         throws IOException {
-      for (BSPMessage value : bundle.getMessages()) {
+      for (M value : bundle.getMessages()) {
         managerMap.get(addr).localIncomingMessages.add(value);
       }
     }
 
+    @Override
+    public Iterator<Entry<InetSocketAddress, LinkedList<M>>> getMessageIterator() {
+      return localOutgoingMessages.entrySet().iterator();
+    }
+    
     @Override
     public void clearOutgoingQueues() {
       localOutgoingMessages.clear();

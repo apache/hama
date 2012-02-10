@@ -36,12 +36,12 @@ import org.apache.hadoop.util.ReflectionUtils;
  * batch rather than individually.
  * 
  */
-public class BSPMessageBundle implements Writable {
+public class BSPMessageBundle<M extends Writable> implements Writable {
   
   public static final Log LOG = LogFactory.getLog(BSPMessageBundle.class);
 
-  private HashMap<String, LinkedList<BSPMessage>> messages = new HashMap<String, LinkedList<BSPMessage>>();
-  private HashMap<String, Class<? extends BSPMessage>> classCache = new HashMap<String, Class<? extends BSPMessage>>();
+  private HashMap<String, LinkedList<M>> messages = new HashMap<String, LinkedList<M>>();
+  private HashMap<String, Class<M>> classCache = new HashMap<String, Class<M>>();
 
   public BSPMessageBundle() {
   }
@@ -51,11 +51,11 @@ public class BSPMessageBundle implements Writable {
    * 
    * @param message BSPMessage to add.
    */
-  public void addMessage(BSPMessage message) {
+  public void addMessage(M message) {
     String className = message.getClass().getName();
     if (!messages.containsKey(className)) {
       // use linked list because we're just iterating over them
-      LinkedList<BSPMessage> list = new LinkedList<BSPMessage>();
+      LinkedList<M> list = new LinkedList<M>();
       list.add(message);
       messages.put(className, list);
     } else {
@@ -63,11 +63,11 @@ public class BSPMessageBundle implements Writable {
     }
   }
 
-  public List<BSPMessage> getMessages() {
+  public List<M> getMessages() {
     // here we use an arraylist, because we know the size and outside may need
     // random access
-    List<BSPMessage> mergeList = new ArrayList<BSPMessage>(messages.size());
-    for (LinkedList<BSPMessage> c : messages.values()) {
+    List<M> mergeList = new ArrayList<M>(messages.size());
+    for (LinkedList<M> c : messages.values()) {
       mergeList.addAll(c);
     }
     return mergeList;
@@ -77,11 +77,11 @@ public class BSPMessageBundle implements Writable {
     // writes the k/v mapping size
     out.writeInt(messages.size());
     if (messages.size() > 0) {
-      for (Entry<String, LinkedList<BSPMessage>> entry : messages.entrySet()) {
+      for (Entry<String, LinkedList<M>> entry : messages.entrySet()) {
         out.writeUTF(entry.getKey());
-        LinkedList<BSPMessage> messageList = entry.getValue();
+        LinkedList<M> messageList = entry.getValue();
         out.writeInt(messageList.size());
-        for (BSPMessage msg : messageList) {
+        for (M msg : messageList) {
           msg.write(out);
         }
       }
@@ -91,20 +91,20 @@ public class BSPMessageBundle implements Writable {
   @SuppressWarnings("unchecked")
   public void readFields(DataInput in) throws IOException {
     if (messages == null) {
-      messages = new HashMap<String, LinkedList<BSPMessage>>();
+      messages = new HashMap<String, LinkedList<M>>();
     }
     int numMessages = in.readInt();
     if (numMessages > 0) {
       for (int entries = 0; entries < numMessages; entries++) {
         String className = in.readUTF();
         int size = in.readInt();
-        LinkedList<BSPMessage> msgList = new LinkedList<BSPMessage>();
+        LinkedList<M> msgList = new LinkedList<M>();
         messages.put(className, msgList);
 
-        Class<? extends BSPMessage> clazz = null;
+        Class<M> clazz = null;
         if ((clazz = classCache.get(className)) == null) {
           try {
-            clazz = (Class<? extends BSPMessage>) Class.forName(className);
+            clazz = (Class<M>) Class.forName(className);
             classCache.put(className, clazz);
           } catch (ClassNotFoundException e) {
             LOG.error("Class was not found.",e);
@@ -112,7 +112,7 @@ public class BSPMessageBundle implements Writable {
         }
 
         for (int i = 0; i < size; i++) {
-          BSPMessage msg = ReflectionUtils.newInstance(clazz, null);
+          M msg = ReflectionUtils.newInstance(clazz, null);
           msg.readFields(in);
           msgList.add(msg);
         }

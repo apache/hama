@@ -29,9 +29,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
-import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.util.BSPNetUtils;
 
@@ -39,8 +39,8 @@ import org.apache.hama.util.BSPNetUtils;
  * Implementation of the {@link HadoopMessageManager}.
  * 
  */
-public final class HadoopMessageManagerImpl implements MessageManager,
-    HadoopMessageManager {
+public final class HadoopMessageManagerImpl<M extends Writable> implements MessageManager<M>,
+    HadoopMessageManager<M> {
 
   private static final Log LOG = LogFactory
       .getLog(HadoopMessageManagerImpl.class);
@@ -51,10 +51,10 @@ public final class HadoopMessageManagerImpl implements MessageManager,
   private final HashMap<InetSocketAddress, HadoopMessageManager> peers = new HashMap<InetSocketAddress, HadoopMessageManager>();
   private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
 
-  private final HashMap<InetSocketAddress, LinkedList<BSPMessage>> outgoingQueues = new HashMap<InetSocketAddress, LinkedList<BSPMessage>>();
-  private Deque<BSPMessage> localQueue = new LinkedList<BSPMessage>();
+  private final HashMap<InetSocketAddress, LinkedList<M>> outgoingQueues = new HashMap<InetSocketAddress, LinkedList<M>>();
+  private Deque<M> localQueue = new LinkedList<M>();
   // this must be a synchronized implementation: this is accessed per RPC
-  private final ConcurrentLinkedQueue<BSPMessage> localQueueForNextIteration = new ConcurrentLinkedQueue<BSPMessage>();
+  private final ConcurrentLinkedQueue<M> localQueueForNextIteration = new ConcurrentLinkedQueue<M>();
 
   @Override
   public final void init(Configuration conf, InetSocketAddress peerAddress) {
@@ -84,12 +84,12 @@ public final class HadoopMessageManagerImpl implements MessageManager,
   }
 
   @Override
-  public final BSPMessage getCurrentMessage() throws IOException {
+  public final M getCurrentMessage() throws IOException {
     return localQueue.poll();
   }
 
   @Override
-  public final void send(String peerName, BSPMessage msg) throws IOException {
+  public final void send(String peerName, M msg) throws IOException {
     LOG.debug("Send message (" + msg.toString() + ") to " + peerName);
     InetSocketAddress targetPeerAddress = null;
     // Get socket for target peer.
@@ -99,16 +99,16 @@ public final class HadoopMessageManagerImpl implements MessageManager,
       targetPeerAddress = BSPNetUtils.getAddress(peerName);
       peerSocketCache.put(peerName, targetPeerAddress);
     }
-    LinkedList<BSPMessage> queue = outgoingQueues.get(targetPeerAddress);
+    LinkedList<M> queue = outgoingQueues.get(targetPeerAddress);
     if (queue == null) {
-      queue = new LinkedList<BSPMessage>();
+      queue = new LinkedList<M>();
     }
     queue.add(msg);
     outgoingQueues.put(targetPeerAddress, queue);
   }
 
   @Override
-  public final Iterator<Entry<InetSocketAddress, LinkedList<BSPMessage>>> getMessageIterator() {
+  public final Iterator<Entry<InetSocketAddress, LinkedList<M>>> getMessageIterator() {
     return this.outgoingQueues.entrySet().iterator();
   }
 
@@ -124,7 +124,7 @@ public final class HadoopMessageManagerImpl implements MessageManager,
   }
 
   @Override
-  public final void transfer(InetSocketAddress addr, BSPMessageBundle bundle)
+  public final void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException {
 
     HadoopMessageManager bspPeerConnection = this.getBSPPeerConnection(addr);
@@ -145,13 +145,13 @@ public final class HadoopMessageManagerImpl implements MessageManager,
   }
 
   @Override
-  public final void put(BSPMessage msg) {
+  public final void put(M msg) {
     this.localQueueForNextIteration.add(msg);
   }
 
   @Override
-  public final void put(BSPMessageBundle messages) {
-    for (BSPMessage message : messages.getMessages()) {
+  public final void put(BSPMessageBundle<M> messages) {
+    for (M message : messages.getMessages()) {
       this.localQueueForNextIteration.add(message);
     }
   }

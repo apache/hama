@@ -18,10 +18,10 @@
 package org.apache.hama.bsp.message;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 
-public class MessageManagerFactory {
-
+public class MessageManagerFactory<M extends Writable> {
   public static final String MESSAGE_MANAGER_CLASS = "hama.messanger.class";
 
   /**
@@ -30,9 +30,9 @@ public class MessageManagerFactory {
    * @param conf
    * @return
    */
-  public static MessageManager getMessageManager(Configuration conf)
+  public MessageManager<M> getMessageManager(Configuration conf)
       throws ClassNotFoundException {
-    return (MessageManager) ReflectionUtils.newInstance(conf
+    return (MessageManager<M>) ReflectionUtils.newInstance(conf
         .getClassByName(conf.get(MESSAGE_MANAGER_CLASS,
             org.apache.hama.bsp.message.AvroMessageManagerImpl.class
                 .getCanonicalName())), conf);

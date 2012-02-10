@@ -25,7 +25,6 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.graph.Edge;
@@ -37,10 +36,10 @@ import org.apache.hama.graph.VertexWritable;
 public class SSSP {
   public static final String START_VERTEX = "shortest.paths.start.vertex.name";
 
-  public static class ShortestPathVertex extends Vertex<IntegerMessage> {
+  public static class ShortestPathVertex extends Vertex<IntWritable> {
+
     public ShortestPathVertex() {
-      super(IntegerMessage.class);
-      this.setValue(Integer.MAX_VALUE);
+      this.setValue(new IntWritable(Integer.MAX_VALUE));
     }
 
     public boolean isStartVertex() {
@@ -49,21 +48,20 @@ public class SSSP {
     }
 
     @Override
-    public void compute(Iterator<IntegerMessage> messages) throws IOException {
+    public void compute(Iterator<IntWritable> messages) throws IOException {
       int minDist = isStartVertex() ? 0 : Integer.MAX_VALUE;
 
       while (messages.hasNext()) {
-        IntegerMessage msg = messages.next();
-        if (msg.getData() < minDist) {
-          minDist = msg.getData();
+        IntWritable msg = messages.next();
+        if (msg.get() < minDist) {
+          minDist = msg.get();
         }
       }
 
-      if (minDist < (Integer) this.getValue()) {
-        this.setValue(minDist);
+      if (minDist < this.getValue().get()) {
+        this.setValue(new IntWritable(minDist));
         for (Edge e : this.getOutEdges()) {
-          sendMessage(e.getTarget(), new IntegerMessage(e.getName(), minDist
-              + e.getCost()));
+          sendMessage(e, new IntWritable(minDist + e.getCost()));
         }
       }
     }

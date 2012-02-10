@@ -21,32 +21,18 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPMessage;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
-public abstract class Vertex<MSGTYPE extends BSPMessage> implements
-    VertexInterface<MSGTYPE> {
-  protected Class<MSGTYPE> messageClass;
-  private MSGTYPE value;
+public abstract class Vertex<M extends Writable> implements
+    VertexInterface<M> {
+  private M value;
   private String vertexID;
-  protected BSPPeer<?, ?, ?, ?> peer;
+  protected BSPPeer<?, ?, ?, ?, MapWritable> peer;
   public List<Edge> edges;
   private long numVertices;
-
-  // FIXME find another way to handles vertex value.
-  // See also HAMA-502
-  public Vertex(Class<MSGTYPE> messageClass) {
-    this.messageClass = messageClass;
-    try {
-      this.value = (MSGTYPE) messageClass.newInstance();
-    } catch (InstantiationException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (IllegalAccessException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
 
   public Configuration getConf() {
     return peer.getConfiguration();
@@ -58,8 +44,11 @@ public abstract class Vertex<MSGTYPE extends BSPMessage> implements
   }
 
   @Override
-  public void sendMessage(String target, MSGTYPE msg) throws IOException {
-    peer.send(target, msg);
+  public void sendMessage(Edge e, M msg) throws IOException {
+    MapWritable message = new MapWritable();
+    message.put(new Text(e.getName()), msg);
+
+    peer.send(e.getTarget(), message);
   }
 
   @Override
@@ -73,13 +62,13 @@ public abstract class Vertex<MSGTYPE extends BSPMessage> implements
   }
 
   @Override
-  public Object getValue() {
-    return value.getData();
+  public M getValue() {
+    return value;
   }
 
   @Override
-  public void setValue(Object value) {
-    this.value.setData(value);
+  public void setValue(M value) {
+    this.value = value;
   }
 
   public void setVertexID(String vertexID) {

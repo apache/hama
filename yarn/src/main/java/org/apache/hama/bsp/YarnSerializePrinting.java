@@ -29,7 +29,7 @@ import org.apache.hama.bsp.sync.SyncException;
 public class YarnSerializePrinting {
 
   public static class HelloBSP extends
-      BSP<NullWritable, NullWritable, NullWritable, NullWritable> {
+      BSP<NullWritable, NullWritable, NullWritable, NullWritable, NullWritable> {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
     private Configuration conf;
     private final static int PRINT_INTERVAL = 1000;
@@ -37,7 +37,7 @@ public class YarnSerializePrinting {
 
     @Override
     public void bsp(
-        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable> bspPeer)
+        BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable, NullWritable> bspPeer)
         throws IOException, SyncException, InterruptedException {
       num = conf.getInt("bsp.peers.num", 0);
       LOG.info(bspPeer.getAllPeerNames());

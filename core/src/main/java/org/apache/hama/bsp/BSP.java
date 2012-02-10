@@ -20,13 +20,14 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.sync.SyncException;
 
 /**
  * This class provides an abstract implementation of the BSP interface.
  */
-public abstract class BSP<K1, V1, K2, V2> implements
-    BSPInterface<K1, V1, K2, V2> {
+public abstract class BSP<K1, V1, K2, V2, M extends Writable> implements
+    BSPInterface<K1, V1, K2, V2, M> {
 
   protected Configuration conf;
 
@@ -39,7 +40,7 @@ public abstract class BSP<K1, V1, K2, V2> implements
    * @throws SyncException
    * @throws InterruptedException
    */
-  public abstract void bsp(BSPPeer<K1, V1, K2, V2> peer) throws IOException,
+  public abstract void bsp(BSPPeer<K1, V1, K2, V2, M> peer) throws IOException,
       SyncException, InterruptedException;
 
   /**
@@ -49,7 +50,7 @@ public abstract class BSP<K1, V1, K2, V2> implements
    * @param peer Your BSPPeer instance.
    * @throws IOException
    */
-  public void setup(BSPPeer<K1, V1, K2, V2> peer) throws IOException,
+  public void setup(BSPPeer<K1, V1, K2, V2, M> peer) throws IOException,
       SyncException, InterruptedException {
 
   }
@@ -62,7 +63,7 @@ public abstract class BSP<K1, V1, K2, V2> implements
    * @param peer Your BSPPeer instance.
    * @throws IOException
    */
-  public void cleanup(BSPPeer<K1, V1, K2, V2> peer) throws IOException {
+  public void cleanup(BSPPeer<K1, V1, K2, V2, M> peer) throws IOException {
 
   }
 

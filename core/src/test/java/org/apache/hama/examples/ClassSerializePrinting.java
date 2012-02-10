@@ -18,32 +18,41 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
-import org.apache.hama.bsp.IntegerMessage;
 import org.apache.hama.bsp.sync.SyncException;
 
 public class ClassSerializePrinting extends
-    BSP<NullWritable, NullWritable, IntWritable, Text> {
+    BSP<NullWritable, NullWritable, IntWritable, Text, MapWritable> {
 
   public static final int NUM_SUPERSTEPS = 15;
 
   @Override
-  public void bsp(BSPPeer<NullWritable, NullWritable, IntWritable, Text> bspPeer)
+  public void bsp(
+      BSPPeer<NullWritable, NullWritable, IntWritable, Text, MapWritable> bspPeer)
       throws IOException, SyncException, InterruptedException {
 
     for (int i = 0; i < NUM_SUPERSTEPS; i++) {
       for (String otherPeer : bspPeer.getAllPeerNames()) {
-        bspPeer.send(otherPeer, new IntegerMessage(bspPeer.getPeerName(), i));
+        MapWritable map = new MapWritable();
+        map.put(new Text(bspPeer.getPeerName()), new IntWritable(i));
+
+        bspPeer.send(otherPeer, map);
       }
       bspPeer.sync();
-      IntegerMessage msg = null;
-      while ((msg = (IntegerMessage) bspPeer.getCurrentMessage()) != null) {
-        bspPeer.write(new IntWritable(msg.getData()), new Text(msg.getTag()));
+
+      MapWritable msg = null;
+      while ((msg = bspPeer.getCurrentMessage()) != null) {
+        for (Entry<Writable, Writable> e : msg.entrySet()) {
+          bspPeer.write((IntWritable) e.getValue(), (Text) e.getKey());
+        }
       }
     }
   }

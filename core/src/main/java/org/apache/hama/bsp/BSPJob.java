@@ -25,6 +25,7 @@ import java.util.Enumeration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
 
@@ -110,15 +111,15 @@ public class BSPJob extends BSPJobContext {
     return (Class<? extends BSP>) conf.getClass(WORK_CLASS_ATTR, BSP.class);
   }
 
-  public void setCombinerClass(Class<? extends Combiner> cls) {
+  public void setCombinerClass(Class<? extends Combiner<? extends Writable>> cls) {
     ensureState(JobState.DEFINE);
     conf.setClass(COMBINER_CLASS_ATTR, cls, Combiner.class);
   }
 
   @SuppressWarnings("unchecked")
-  public Class<? extends Combiner> getCombinerClass() {
-    return (Class<? extends Combiner>) conf.getClass(COMBINER_CLASS_ATTR,
-        Combiner.class);
+  public Class<? extends Combiner<? extends Writable>> getCombinerClass() {
+    return (Class<? extends Combiner<? extends Writable>>) conf.getClass(
+        COMBINER_CLASS_ATTR, Combiner.class);
   }
 
   public void setJar(String jar) {
@@ -230,7 +231,7 @@ public class BSPJob extends BSPJobContext {
   }
 
   public int getNumBspTask() {
-  // default is 1, because with zero, we will hang in infinity
+    // default is 1, because with zero, we will hang in infinity
     return conf.getInt("bsp.peers.num", 1);
   }
 
@@ -283,7 +284,6 @@ public class BSPJob extends BSPJobContext {
     conf.setClass("bsp.input.value.class", theClass, Object.class);
   }
 
-  
   /**
    * Get the key class for the job output data.
    * 
@@ -368,4 +368,7 @@ public class BSPJob extends BSPJobContext {
         conf);
   }
 
+  public void setMaxIteration(int maxIteration) {
+    conf.setInt("hama.graph.max.iteration", maxIteration);
+  }
 }
