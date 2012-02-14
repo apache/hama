@@ -68,13 +68,13 @@ public class SSSP {
   }
 
   private static void printUsage() {
-    System.out.println("Usage: <input> <output> [tasks]");
+    System.out.println("Usage: <startnode> <input> <output> [tasks]");
     System.exit(-1);
   }
 
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException {
-    if (args.length < 2)
+    if (args.length < 3)
       printUsage();
 
     // Graph job configuration
