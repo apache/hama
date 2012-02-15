@@ -15,27 +15,26 @@
    limitations under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <parent>
     <groupId>org.apache.hama</groupId>
     <artifactId>hama-parent</artifactId>
-    <version>0.4.0-incubating-SNAPSHOT</version>
+    <version>0.4.0-incubating</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-core</artifactId>
   <name>core</name>
-  <version>0.4.0-incubating-SNAPSHOT</version>
+  <version>0.4.0-incubating</version>
   <packaging>jar</packaging>
   <scm>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/core
+      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/core/tags/hama-parent-0.4.0-incubating-SNAPSHOT/core
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/core
+      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/core/tags/hama-parent-0.4.0-incubating-SNAPSHOT/core
     </developerConnection>
   </scm>
 
@@ -160,10 +159,9 @@
             </goals>
             <configuration>
               <target>
-                <mkdir dir="${project.build.directory}/generated-sources/java"/>
+                <mkdir dir="${project.build.directory}/generated-sources/java" />
                 <exec executable="sh">
-                  <arg
-                      line="${basedir}/dev-support/saveVersion.sh ${project.version} ${project.build.directory}/generated-sources/annotations"/>
+                  <arg line="${basedir}/dev-support/saveVersion.sh ${project.version} ${project.build.directory}/generated-sources/annotations" />
                 </exec>
               </target>
             </configuration>
