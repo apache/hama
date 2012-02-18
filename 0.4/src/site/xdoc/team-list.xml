@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <title>Team List</title>
+  <body>
+
+    <section name="Who We Are"></section>
+    <p>
+    A successful project requires many people to play many roles. 
+    Some members write code or documentation, while others are valuable as testers, submitting patches and suggestions.
+    The team is comprised of Members and Contributors.<br/><br/>
+    Members have direct access to the source of a project and actively evolve the code-base. 
+    Contributors improve the project through submission of patches and suggestions to the Members. 
+    The number of Contributors to the project is unbounded. Get involved today. 
+    All contributions to the project are greatly appreciated.
+    </p>
+
+    <subsection name="Members"></subsection>
+    <p>The following is a list of developers with commit privileges that have directly contributed 
+    to the project in one way or another.</p>
+    
+    <table align="center" border="0">
+      <tr valign="top">
+        <th align="center">
+          <b>username</b>
+        </th>
+        <th align="center">
+          <b>name</b>
+        </th>
+        <th align="center">
+          <b>organization</b>
+        </th>
+        <th align="center">
+          <b>roles</b>
+        </th>
+       </tr>
+       <tr valign="top">
+          <td align="center">chanwit</td>
+          <td align="center">Chanwit Kaewkasi</td>
+          <td align="center">The University of Manchester</td>
+          <td align="center">committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">ianh</td>
+          <td align="center">Ian Holsman</td>
+          <td align="center">AOL</td>
+          <td align="center">mentor, committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">tommaso</td>
+          <td align="center">Tommaso Teofili</td>
+          <td align="center">Sourcesense</td>
+          <td align="center">mentor, committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">edwardyoon</td>
+          <td align="center"><a href="http://blog.udanax.org/">Edward J. Yoon</a></td>
+          <td align="center">Korea Telecom</td>
+          <td align="center">committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">jeastman</td>
+          <td align="center">Jeff Eastman</td>
+          <td align="center">Narus</td>
+          <td align="center">mentor, committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">stevel</td>
+          <td align="center">Steve Loughran</td>
+          <td align="center">HP Laboratories</td>
+          <td align="center">mentor, committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">tjungblut</td>
+          <td align="center">Thomas Jungblut</td>
+          <td align="center">Testberichte.de</td>
+          <td align="center">committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">chl501</td>
+          <td align="center">Chia-Hung Lin</td>
+          <td align="center">.</td>
+          <td align="center">committer</td>
+        </tr>
+    </table>
+      
+    <subsection name="Contributors"></subsection>
+
+    <table align="center" border="0">
+      <tr valign="top">
+        <th align="center">
+          <b>name</b>
+        </th>
+        <th align="center">
+          <b>contribution</b>
+        </th>
+       </tr>
+       <tr valign="top">
+          <td align="center">Sookyung Kim</td>
+          <td align="center">Hama logo sketch</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">Morakot</td>
+          <td align="center">Hama logo paint</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">Arthur</td>
+          <td align="center">Hama Artwork</td>
+        </tr>
+    </table>
+  </body>
+</document>

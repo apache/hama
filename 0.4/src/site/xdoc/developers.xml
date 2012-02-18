@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <title>Developers Guide</title>
+  
+  <body>
+
+    <section name="Developers"></section>
+    <subsection name="Contribution"></subsection>
+    <p>
+    We are always looking for contributions. See the 
+    <a href="http://wiki.apache.org/hama">Wiki</a> for details on contributing.
+    </p>
+    <subsection name="Source Code"></subsection>
+    <p>
+    The source files are now stored on Subversion : 
+    <a href="https://svn.apache.org/repos/asf/incubator/hama/trunk">https://svn.apache.org/repos/asf/incubator/hama/trunk</a>
+    <br/>
+    And, git mirros : <a href="git://git.apache.org/hama.git">git://git.apache.org/hama.git</a>
+    [ <a href="http://git.apache.org/hama.git">http</a>, <a href="http://github.com/apache/hama">github</a> ] 
+    </p>
+    <subsection name="Code Style"></subsection>
+    <p>
+    The following sections show how to set up the code style for Hama in Eclipse. 
+    It is strongly preferred that patches use this style before they are supplied.
+    <br /><br />
+    <a href="files/hama-eclipse-formatter.xml">
+    Download hama-eclipse-formatter.xml</a>.
+    <br /><br />
+    After this, select Window > Preferences, and open up the configuration for 
+    Java > Code Style > Code Formatter. Click on the button labeled Import... 
+    and select the file you downloaded. Give the style a name, and click OK.
+    </p>
+    <subsection name="Issues"></subsection>
+    <p>
+    All bugs, improvements, patches, etc. should be logged in 
+    <a href="./issue_tracking.html">JIRA</a>
+    </p>
+    </body>
+</document>

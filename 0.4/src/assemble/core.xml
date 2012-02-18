@@ -1,0 +1,98 @@
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+  <id>core</id>
+  <formats>
+    <format>dir</format>
+    <format>tar.gz</format>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <moduleSets>
+    <moduleSet>
+    
+      <!-- Enable access to all projects in the current multimodule build! -->
+      <useAllReactorProjects>true</useAllReactorProjects>
+      
+      <!-- Now, select which projects to include in this module-set. -->
+      <includes>
+        <include>org.apache.hama:hama-core</include>
+        <include>org.apache.hama:hama-examples</include>
+        <include>org.apache.hama:hama-graph</include>
+        <!-- Not ready to release yet! 
+        <include>org.apache.hama:hama-yarn</include>
+         -->
+        <include>org.apache.hama:hama-dist</include>
+      </includes>
+      <sources>
+        <outputDirectory>../hama-${project.version}/${module.name}</outputDirectory>
+        <includes>
+          <include>*.xml</include>
+          <include>src/**</include>
+          <include>dev-support/**</include>
+        </includes>
+        <fileSets>
+          <fileSet>
+            <directory>../</directory>
+            <includes>
+              <include>*.txt</include>
+              <include>*.xml</include>
+              <include>src/**</include>
+            </includes>
+            <outputDirectory>../hama-${project.version}/</outputDirectory>
+          </fileSet>
+          <fileSet>
+            <directory>../lib</directory>
+            <includes>
+              <include>*.jar</include>
+            </includes>
+            <fileMode>755</fileMode>
+            <outputDirectory>../hama-${project.version}/lib</outputDirectory>
+          </fileSet>
+          <fileSet>
+            <directory>../bin</directory>
+            <includes>
+              <include>hama</include>
+              <include>*.sh</include>
+            </includes>
+            <outputDirectory>../hama-${project.version}/bin</outputDirectory>
+            <fileMode>755</fileMode>
+          </fileSet>
+          <fileSet>
+            <directory>../conf</directory>
+            <includes>
+              <include>groomservers</include>
+              <include>hama-default.xml</include>
+              <include>hama-env.sh</include>
+              <include>hama-site.xml</include>
+              <include>log4j.properties</include>
+            </includes>
+            <outputDirectory>../hama-${project.version}/conf</outputDirectory>
+            <fileMode>755</fileMode>
+          </fileSet>
+        </fileSets>
+      </sources>
+      <binaries>
+        <fileMode>755</fileMode>
+        <outputDirectory>../hama-${project.version}/</outputDirectory>
+        <unpack>false</unpack>
+      </binaries>
+    </moduleSet>
+  </moduleSets>
+</assembly>

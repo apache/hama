@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <title>Deploy a Hama cluster on EC2</title>
+  
+  <body>
+    <section name="Hama on Clouds"></section>
+    <p>This document describes how to deploy Hama clusters on Clouds e.g., EC2, Rackspace using Whirr.</p>
+    
+    <subsection name="Deploy a Hama cluster on EC2"></subsection>
+    <p>The following commands install Whirr and start a 5 node Hama cluster on Amazon EC2 in 5 minutes or less.
+    <pre class="green">
+  % curl -O http://www.apache.org/dist/whirr/whirr-0.x.0/whirr-0.x.0.tar.gz
+  % tar zxf whirr-0.x.0.tar.gz; cd whirr-0.x.0
+
+  % export AWS_ACCESS_KEY_ID=YOUR_ID
+  % export AWS_SECRET_ACCESS_KEY=YOUR_SECKEY
+  % ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa_whirr
+
+  % bin/whirr launch-cluster --config recipes/hama-ec2.properties --private -key-file ~/.ssh/id_rsa_whirr</pre>
+    </p>
+    <subsection name="Execute Hama Examples"></subsection>
+    <pre class="green">
+  % cd /usr/local/hama-0.x.0-incubating
+  % bin/hama jar hama-examples-0.x.0-incubating.jar [args]</pre>
+    </body>
+</document>

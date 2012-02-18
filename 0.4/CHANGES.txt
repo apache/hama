@@ -1,0 +1,359 @@
+Hama Change Log
+
+Release 0.4 - February 5, 2012
+
+  NEW FEATURES
+
+   HAMA-493: Provide text to seq-file utils for graph examples (tjungblut)
+   HAMA-491: Add dist module to generate release tarball (edwardyoon)
+   HAMA-451: Show Supersteps in waitForCompletion in YARN (tjungblut) 
+   HAMA-479: Add Counters to Hama Jobs (edwardyoon) 
+   HAMA-454: Add Zookeeper as synchronization service to YARN (tjungblut)
+   HAMA-258: Add Input Output system (edwardyoon)
+   HAMA-458: Add Message Combiner (edwardyoon)
+   HAMA-456: Add getPeerName(int index) and getNumPeers() (edwardyoon)
+   HAMA-431: MapReduce NG integration (tjungblut)
+   HAMA-449: Add tasks num of Job to web UI (edwardyoon)
+   HAMA-428: Create a separate maven module and add basic structure for the Graph (edwardyoon)
+   HAMA-398: Add CheckPointer and saving messages for future fault-tolerant systems (ChiaHung Lin via edwardyoon)
+
+  BUG FIXES
+
+    HAMA-506: Error reading child output (edwardyoon)
+    HAMA-488: PageRank refactor and fix bugs (tjungblut via edwardyoon)
+    HAMA-489: Check port availability before forking child process (edwardyoon)
+    HAMA-474: ClusterStatus.getTasks() always returns 0 (edwardyoon)
+    HAMA-472: The task should be killed if it fails to initialize (edwardyoon)
+    HAMA-465: LocalJobRunner should support combiners and IO (tjungblut)
+    HAMA-459: GroomServerStatus.countTask() always returns 1 (edwardyoon)
+    HAMA-432: Add statusUpdate() method to BSPPeerProtocol (edwardyoon)
+    HAMA-437: PiEstimator is not working in Local Mode (Thomas Jungblut)
+    HAMA-387: Fixed barrier synchronization problem (ChiaHung Lin via edwardyoon)
+    HAMA-436: Web Interface does not update Superstep Count (Thomas Jungblut)
+    HAMA-429: Groom statuses should be reported periodically (ChiaHung Lin via edwardyoon)
+    HAMA-421: Maven build issues using proxy (Joe Crobak via edwardyoon)
+
+  IMPROVEMENTS
+  
+    HAMA-460: Website Improvements (Suraj Menon via edwardyoon)
+    HAMA-470: The web UI should display the version of running Hama cluster. (Suraj Menon via edwardyoon)
+    HAMA-475: Add unit test for SSSP example (edwardyoon)
+    HAMA-481: Add reopen to peer (tjungblut) 
+    HAMA-471: Peer names should be sorted by task id (tjungblut)
+    HAMA-461: Extract a message service from BSPPeer (tjungblut)
+    HAMA-463: Integrate checkpoint with bsp task (chl501)
+    HAMA-457: Refactoring of BSPPeerImpl (tjungblut)
+    HAMA-448: Restructure BSP API (Thomas Jungblut via edwardyoon)
+    HAMA-441: Logging tasks to distinct files (Thomas Jungblut)
+    HAMA-423: Improve and Refactor Partitioning in the Examples (Thomas Jungblut via edwardyoon)
+    HAMA-422: Update HttpServer to use QueuedThreadPool (edwardyoon)
+    HAMA-414: Move BSPPeer constructor into child process (edwardyoon)
+    HAMA-419: Migrating site from forrest to maven (edwardyoon)
+    
+Release 0.3 - July 28, 2011
+
+  NEW FEATURES
+
+    HAMA-395: Add PageRank example (Thomas Jungblut via edwardyoon)
+    HAMA-372: Add Web UI for Job monitoring (Thomas Jungblut via edwardyoon)
+    HAMA-359: Add shortest path finding example (Thomas Jungblut via edwardyoon)
+    HAMA-374: Add LocalBSPRunner (Thomas Jungblut via edwardyoon)
+    HAMA-380: Add BSPMessageBundle to reduce RPC overhead (Miklos Erdelyi via edwardyoon)
+    
+  BUG FIXES
+ 
+    HAMA-405: Fix NoClassDefFoundErrors (Joseph Boyd via edwardyoon)
+    HAMA-404: LocalBSPRunner returns wrong superstep numbers (Thomas Jungblut via edwardyoon)
+    HAMA-396: BSPPeer's ZK object should be constructed with listed quorum servers (edwardyoon)
+    HAMA-391: Refactor Exception.printStackTrace() to LOG.error(Exception) (Thomas Jungblut via edwardyoon)
+    HAMA-393: Add environment variable 'HAMA_HEAPSIZE' to hama-env.sh (edwardyoon)
+    
+  IMPROVEMENTS
+
+    HAMA-394: Refactor 'hama' script and pom.xml (edwardyoon)
+    HAMA-388: Add a profile 'forrest' to generate the website (edwardyoon)
+    HAMA-392: Make zk session-timeout configurable (edwardyoon)
+    HAMA-389: Make the thread pool size user configurable (Thomas Jungblut via edwardyoon)
+    HAMA-386: Removing 'System.arraycopy(...)' call from ByteMessage (edwardyoon)
+    HAMA-379: Setting default values to job.setNumBspTask() (Thomas Jungblut via edwardyoon)
+    HAMA-376: Refactor BSPMaster and GroomServer (ChiaHung Lin via edwardyoon)
+    HAMA-382: Refactor HAMA POM (Tommaso Teofili)
+    HAMA-362: Re-design a new data structure of BSPMessage (Thomas Jungblut via edwardyoon)   
+    HAMA-369: Reduce overhead of local communications (Miklos Erdelyi via edwardyoon)
+    HAMA-371: Add a parameter to build.xml to allow developers deciding to reset content 
+                       in conf files or not when building artifacts (ChiaHung Lin via edwardyoon)
+
+Release 0.2 - June 2, 2011
+
+  NEW FEATURES
+
+    HAMA-339: Add job status command (edwardyoon)
+    HAMA-337: Provide Apache Maven building support (Tommaso Teofili via edwardyoon)
+    HAMA-304: Allow BSP peers to get a list of all other peers 
+                executing tasks of the same job (Filipe Manana via edwardyoon)
+    HAMA-267: Add command-line interface for job management
+                (hyunsik via edwardyoon)
+    HAMA-279: Add "serialize printing" to examples (edwardyoon)
+    HAMA-272: Hama/Zookeeper Integration (edwardyoon)
+    HAMA-265: Add example Pi estimatior based on BSP (edwardyoon)
+    HAMA-266: Add Ant target to generate the UML class diagrams (edwardyoon)
+    HAMA-209: Add example for Cosine Similarity Matrix (edwardyoon)
+    HAMA-195: Interface of the bsp (hyunsik via edwardyoon)
+    HAMA-185: Finds the eigenvalues and eigenvectors 
+              associated with the symmetric matrix A (samuel)
+    HAMA-171: Find the maximum absolute row sum using MapReduce (edwardyoon)
+    HAMA-174: Compute the transpose of a matrix (edwardyoon)
+    HAMA-162: Add Graph using Sparse Matrix (edwardyoon)
+    HAMA-151: Add multiplication example of file matrices (edwardyoon)
+    HAMA-145: Add privacy policy page (edwardyoon)
+    HAMA-83: 2D sqaure blocking for dense matrix multiplication (edwardyoon)
+    HAMA-104: Add getNumMap/reduceTasks to HamaConfiguration (edwardyoon)
+    HAMA-92: Add subMatrix() to Matrix (edwardyoon)
+    HAMA-84: Add a writable comparable for BlockID (edwardyoon) 
+    HAMA-81: Add subVector(int i0, int i1) to Vector (edwardyoon)
+    Hama-80: Add identity(int m, int n) 
+               which returns identity matrix (edwardyoon) 
+    HAMA-62: Hama Shell Implementation (samuel via edwardyoon)
+    HAMA-61: Load / save matrices from HTable (edwardyoon)
+    HAMA-51: Add get/setRowAttribute() method (edwardyoon)
+    HAMA-13: Matrix multiplication (edwardyoon)
+    HAMA-48: Add getColumn(int column) method 
+               which returns column vector (edwardyoon)
+    HAMA-49: Add iterator() method to vector (edwardyoon)
+    HAMA-43: Color Hama Logo (Morakot via chanwit)
+    HAMA-37: Add forrest build to Hudson patch build script (edwardyoon)
+    HAMA-34: Hudson/Jira Intergration (edwardyoon)
+    HAMA-36: Add svn information to website (edwardyoon)
+    HAMA-33: Add set() method (edwardyoon)
+    HAMA-30: Add scaling method to Vector (edwardyoon)
+    HAMA-25: Add matrix addition example (edwardyoon)
+    HAMA-23: Add Hama configuration files (edwardyoon)
+    HAMA-6: Add a 'who we are' page (edwardyoon)
+    HAMA-7: Add some information for a new comer (edwardyoon)
+    HAMA-1: Create the Hama web site (edwardyoon via Ian Holsman)
+    HAMA-2: The intial donation of Hama from the google project (edwardyoon)
+
+  IMPROVEMENTS
+ 
+    HAMA-366: Remove unnecessary dependencies (Tommaso Teofili)
+    HAMA-365: TestBSPPeer doesn't check if the correct 
+                       number of messages have been received (Miklos Erdelyi via edwardyoon)
+    HAMA-298: Implement the kill method for JobInProgress (edwardyoon)
+    HAMA-353: Add "random communication benchmark" tool (edwardyoon)
+    HAMA-351: Improvement of lack of info- about the output of examples (edwardyoon)
+    HAMA-348: Remove hard-coded javaOpts (edwardyoon)
+    HAMA-347: Add implementation of umbilical interface (edwardyoon)
+    HAMA-346: Modify MniCluster so that developers can benefit when testing using Junit
+                       (ChiaHung Lin via edwardyoon)
+    HAMA-340: Implementation of job submit command (edwardyoon)   
+    HAMA-278: Few minor refactoring (edwardyoon)
+    HAMA-336: The all taskid variable's type should be declared as a TaskAttemptID
+                       (edwardyoon)
+    HAMA-331: Removing JobInProgressListener 
+                       and adding JobInitThread to BSPMaster (edwardyoon)
+    HAMA-334: Removing "java5.home" env key from build script. (edwardyoon)
+    HAMA-332: Renaming some members in BSPMaster 
+                to follow the Hama terminology (Filipe Manana via edwardyoon)
+    HAMA-329: Add taskNum argument to pi estimator (edwardyoon)
+    HAMA-313: Remove LocalJobRunner (edwardyoon)
+    HAMA-321: Allows user to set the number of tasks (edwardyoon) 
+    HAMA-282: Add superstep counter (Filipe Manana via edwardyoon)
+    HAMA-327: Add overview for javadoc (edwardyoon)
+    HAMA-325: Add package.html to each package and few comments (edwardyoon)
+    HAMA-322: JUnit test threads with GroboTestingJUnit (Filipe Manana via edwardyoon)
+    HAMA-323: Remove generic warnings (edwardyoon)
+    HAMA-254: Add news about rid of MapReduce and Hbase (edwardyoon)
+    HAMA-320: Add twitter widget to website (edwardyoon)
+    HAMA-300: Refactoring launchTask() method in GroomServer (edwardyoon)
+    HAMA-311: Add unit tests for IPC package (edwardyoon)
+    HAMA-312: Add serialize printing to ExampleDriver (edwardyoon)
+    HAMA-309: Add unit tests for Bytes utilities (edwardyoon)
+    HAMA-299: Remove unused field 'task' from GroomServer (edwardyoon)
+    HAMA-297: Add missing Apache License header to source files. (edwardyoon)
+    HAMA-268: Implement BSPMaster's all methods extended 
+                from JobSubmissionProtocol (hyunsik via edwardyoon)
+    HAMA-295: Removing HBase dependency (edwardyoon)
+    HAMA-294: Change log level of "Got heartbeatResponse.." messages
+                to debug (edwardyoon)
+    HAMA-256: Removing M/R and HBase based implementations (edwardyoon)
+    HAMA-293: Add starter classes for ZooKeeper, BSPMaster
+                and GroomServer (Filipe Manana via edwardyoon)
+    HAMA-286: Task progress should be monitored (eddieyoon)
+    HAMA-287: BSPMaster should use the bsp.master.port property when creating
+                its InetSocketAddr instance (Filipe Manana via edwardyoon)
+    HAMA-283: Removing duplicate code (Filipe Manana via edwardyoon)
+    HAMA-277: Add default number of bsp task (edwardyoon)
+    HAMA-273: Implement killJob() method for local job (edwardyoon)
+    HAMA-271: Add LocalJobRunner (edwardyoon)
+    HAMA-264: Moving BlockID, Pair classes to examples package (edwardyoon)
+    HAMA-269: Add getter for serverName to BSPPeerInterface (edwardyoon)
+    HAMA-257: Design BSP program code interface (edwardyoon)
+    HAMA-261: Remove meaningless unit tests (edwardyoon)
+    HAMA-253: Change the blog link url (edwardyoon)
+    HAMA-247: Discuss / Refactor HamaMaster and GroomServer (hyunsik)
+    HAMA-239: Remove unused class (edwardyoon)
+    HAMA-237: Add project blog link on website (edwardyoon)
+    HAMA-236: Add recent news on website (edwardyoon)
+    HAMA-232: Add file multiplication example (edwardyoon)
+    HAMA-226: Add benchmarking tool of eigenvalue operation (edwardyoon)
+    HAMA-223: Add simple admin tool for manage the temporary tables (edwardyoon)
+    HAMA-202: Replacement for deprecated API of Map/Reduce (edwardyoon)
+    HAMA-206: Replacement of JacobiEigenValueMap/Reduce (edwardyoon)
+    HAMA-217: Replacement of Block Multiplication Map/Reduce (edwardyoon)
+    HAMA-205: Replacement of NormMap/Reduce (edwardyoon)
+    HAMA-207: Replacement of Mat-Mat addition Map/Reduce (edwardyoon)
+    HAMA-208: Replacement of vector-matrix multiplication MapReduce (edwardyoon)
+    HAMA-216: Removing JobManager in util package (edwardyoon)
+    HAMA-215: Removing hama shell from version 0.2 (edwardyoon)
+    HAMA-204: Replacement of TransposeMap/Reduce (edwardyoon)
+    HAMA-213: Replacement of TableReadMapper (edwardyoon)
+    HAMA-203: Replacement of RandomMatrixMap/Reduce (edwardyoon)
+    HAMA-197: Replacement for deprecated API of Hbase (edwardyoon)
+    HAMA-188: Upgrade dependencies for hadoop/hbase 2.0 (edwardyoon)
+    HAMA-192: Refactor top-level package (edwardyoon)
+    HAMA-189: Update website (edwardyoon)
+    HAMA-187: Add matrix subtraction test case (edwardyoon)
+    HAMA-186: Add density option for random matrix (edwardyoon)
+    HAMA-171: Implementation of Matrix.Norm (samuel)
+    HAMA-178: Add example of norm (edwardyoon)
+    HAMA-158: Implementation of random sparse matrix (edwardyoon)
+    HAMA-164: Example for C = Alpha*B + A (edwardyoon)
+    HAMA-154: Combine multi-mapreduce jobs into a single mapreduce job 
+                while computing (samuel via edwardyoon)
+    HAMA-152: Replace MapWritable to hadoop.io.MapWritable (edwardyoon)
+    HAMA-109: Implement add(double alpha, Matrix B) (edwardyoon)
+    HAMA-150: Refactor blockingMapRed (edwardyoon)
+    HAMA-148: Implement of set(double alpha, Matrix B) (edwardyoon)
+    HAMA-100: Implement of set(Matrix B) (edwardyoon)
+    HAMA-144: GetProgress during MR over a matrix (samuel)
+    HAMA-129: Improving speed of matrix multiplication (edwardyoon)
+    HAMA-142: Trunk doesn't work for large matrices (edwardyoon)
+    HAMA-143: Improve of random_mapred() (edwardyoon)
+    HAMA-138: To order, left pad with zeroes to integer key (edwardyoon)
+    HAMA-135, HAMA-137: Refactor mapred, I/O package (edwardyoon)
+    HAMA-134: We don't need to fill C with zeros (edwardyoon)
+    HAMA-131: Add argument for the number of blocks (edwardyoon)
+    HAMA-113: Random matrix generator on map/reduce (edwardyoon)
+    HAMA-118: Add getting started page link (edwardyoon)
+    HAMA-117: Move bytesToSubMatrix/subMatrixToBytes method 
+                to submatrix class from BytesUtil (edwardyoon)
+    HAMA-114: Remove unwanted code (edwardyoon)
+    HAMA-107: Blocking job should be a map/reduce job (samuel via edwardyoon)
+    HAMA-99: Implement setColumn(int column, Vector vector) (edwardyoon)
+    HAMA-108: Implement add(int i, int j, double value) (edwardyoon)
+    HAMA-103: Reduce an rows of intermediate 
+                to improve the multiplication performance (edwardyoon)
+    HAMA-88: DenseMatrix.close should not delete the table 
+               that are aliased in HamaAdmin. (samuel via edwardyoon)
+    HAMA-89: Exception Handling of a ParseException (samuel via edwardyoon)
+    HAMA-77: clear the matrices in hbase after 
+               quiting the shell (samuel via edwardyoon)
+    HAMA-28: Implement Vector.add() method (edwardyoon)
+    HAMA-78: Separate Interface and Implementation for HamaAdmin (edwardyoon)
+    HAMA-76: Remove load() since it duplicated with constructor (edwardyoon)
+    HAMA-74: set the number of map/reduce task 
+               on the shell (samuel via edwardyoon)
+    HAMA-73: Add setNumMap/ReduceTasks() to HamaConfiguration (edwardyoon)
+    HAMA-60: Add an arguments for handle parallel degree
+               to MatrixAddition (edwardyoon)
+    HAMA-68: Shell parser JUnit test cases (samuel via edwardyoon)
+    HAMA-65: Remove the information of an inactive committers (edwardyoon) 
+    HAMA-58: Remove duplicated code (edwardyoon)
+    HAMA-56: Add setRow(int row, Vector vector) method to matrix (edwardyoon)
+    HAMA-39: IO operations should throws an IOException (edwardyoon)
+    HAMA-52: Fixture setup (edwardyoon)
+    HAMA-42: Replace ImmutableBytesWritable to IntWritable (edwardyoon)
+    HAMA-44: Remove findbugs warnings (edwardyoon)
+    HAMA-40: Rename MatrixInterface to Matrix (edwardyoon)
+    HAMA-14: Using Java 6 (edwardyoon)
+    HAMA-22: Add IRC channel information to website (edwardyoon)
+    HAMA-41: Add some tests (edwardyoon)
+    HAMA-38: Remove AbstractBase and make a new NumericUtil (edwardyoon)
+    HAMA-20: Adding license header to a whole code base
+    HAMA-31: Refactor VectorWritable (edwardyoon)
+    HAMA-29: Replace Matrix(Conf, Text) to Matrix(Conf, String) (edwardyoon)
+    HAMA-27: Replace table.get(Text, Text) 
+               to table.get(String, String) (edwardyoon)
+    HAMA-12: Matrix interface re-arrangement (edwardyoon)
+    HAMA-21: Implement get(int index) method (edwardyoon)
+    HAMA-19: Remove vector-norms enum to interface 
+               from implementation (edwardyoon)
+    HAMA-17: Vector to Writable conversion (edwardyoon)
+    HAMA-15: Logo Alignment (edwardyoon) 
+    HAMA-10: Refactor the mapred package 
+               for the latest version of dependencies (edwardyoon)  
+    HAMA-9: Upgrade dependencies (edwardyoon)
+
+  BUG FIXES
+  
+    HAMA-360: HAMA_MANAGES_ZK option doesn't work (edwardyoon)
+    HAMA-355: Intermittent conflicts of enterBarrier() and leaveBarrier() (edwardyoon)
+    HAMA-352: Can't send one more messages on to same server in bsp method (edwardyoon)
+    HAMA-350: Add task log appender and Fix log4j rootLogger (edwardyoon)
+    HAMA-345: Add execution time calculator to Pi job (edwardyoon)
+    HAMA-344: Task successfully finished but system re-attempt (edwardyoon)
+    HAMA-343: Fix Maven test fails (Tommaso Teofili via edwardyoon)
+    HAMA-338: Username and Job-manager states are not collectly displayed (edwardyoon)
+    HAMA-330: BSP program doesn't work when the desired tasks smaller than 
+                       cluster size (edwardyoon)
+    HAMA-326: GroomServer should wait until a job finishes (edwardyoon)
+    HAMA-324: Removing javadoc warnings and useless libraries (edwardyoon)
+    HAMA-322: Make sure failed assertions on test threads are reported
+               (Filipe Manana via edwardyoon)  
+    HAMA-316: Renaming and Refactoring methods in BSPPeerInterface (Filipe Manana)
+    HAMA-319: groom servers Map in HeartbeatResponse not correctly serialized
+                (Filipe Manana)
+    HAMA-317: Remove HBASE_CONF_DIR and HBASE_HEAPSIZE properties (edwardyoon)
+    HAMA-315: Uncomment code in checkLocalDirs() (edwardyoon)
+    HAMA-314: Remove unnecessary methods from HamaConfiguration (edwardyoon)
+    HAMA-307: BSPMaster - job ID counter is not read and updated atomically
+                      (Filipe Manana via edward)
+    HAMA-305: Redundant use of synchronize keyword (Filipe Manana via edward)
+    HAMA-301: Fix unit test fail bug (edwardyoon)
+    HAMA-303: slave.host.name is superceded by bsp.peer.hostname 
+                (Filipe Manana via edwardyoon)
+    HAMA-296: Fix warning about deprecated method (edwardyoon)
+    HAMA-291: bsp.groom.port is unnused and superseeded 
+                       by bsp.peer.port (Filipe Manana via edwardyoon)
+    HAMA-288: Typo might lead to null tasks getting assigned 
+                       to groom servers (Filipe Manana via edwardyoon)
+    HAMA-280: Fix warnings (Filipe Manana via edwardyoon)
+    HAMA-270: wrong sequence of readFields() of ClusterStatus (hyunsik)
+    HAMA-260: Current version command of script is linked unknown class 
+                (edwardyoon)
+    HAMA-250: Add --no-check-certificate option to 'wget' command lines 
+                (edwardyoon)
+    HAMA-242: Wrong assignment of default setting inside BSPPeer constructor 
+                (hyunsik)
+    HAMA-246: Current shell scripts for bsp daemon have several problems. 
+                (hyunsik)
+    HAMA-238: Example fail when performing sparse matrices addition (edwardyoon)
+    HAMA-225: Jacobi iteration is in a infinite loop (edwardyoon)
+    HAMA-214: Can't run the examples (edwardyoon)
+    HAMA-190: Bug in Matrix-Vector multiplication (edwardyoon)
+    HAMA-183: When we construct the matrix, 
+                dimensions should be defined. (edwardyoon)
+    HAMA-172: Vector.add(Vector v) throw the Index out of bounds 
+                exception when they are different (edwardyoon)
+    HAMA-169: Vector's first location bug fixed,
+              getNormInf() and getNorm2Robust() are implemented (edwardyoon)
+    HAMA-155: When out of index, should throw exception (edwardyoon)
+    HAMA-147: Fix typos (edwardyoon)
+    HAMA-140: In subMatrix(), Scanner should be closed (edwardyoon)
+    HAMA-120: remove findbugs warning in shell package (samuel via edwardyoon)
+    HAMA-130: Computing Block's range will miss some cell during blocking
+              (samuel)
+    HAMA-126: In random_mapred, (m) should be (m-1) 
+                since start from 0. (edwardyoon)
+    HAMA-116: ArrayIndexOutOfBoundsException at BlockingMapRed (samuel)
+    HAMA-112: DenseMatrix.get(i, j) should returns zero 
+                when entry is null (edwardyoon)
+    HAMA-106: SubMatrix should be able to get row, column size (edwardyoon)
+    HAMA-98: change '~=' operation to use `echo $f | grep 'examples$'` 
+               (samuel via edwardyoon)
+    HAMA-64: Bytes and Double convert (edwardyoon)
+    HAMA-55: Write dimension attributes when job completed (edwardyoon)
+    HAMA-54: Split doesn't split by map task num (edwardyoon)
+    HAMA-53: NullPointerException on distributed cluster (edwardyoon)
+    HAMA-26: hama-formatter.xml should be removed (edwardyoon)  
+    HAMA-25: Vector.get() returns double (edwardyoon)

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <title>a Bulk Synchronous Parallel computing framework on top of Hadoop</title>
+  <body>
+
+    <section name="Apache Hama"></section>
+      <img src="images/hama_art_arthur_300x220.png" align="right" style="margin-top:-20px;margin-left:20px;margin-right:20px;" />
+      <p>
+      <strong>Apache Hama</strong> is a pure BSP(Bulk Synchronous Parallel) computing framework on top of HDFS (Hadoop Distributed File System) for massive scientific computations 
+      such as matrix, graph and network algorithms. Currently, it has the following features:
+      </p>
+      <ul>
+        <li>Job submission and management interface.</li>
+        <li>Multiple tasks per node.</li>
+        <li>Input/Output Formatter.</li>
+        <li>Checkpoint recovery.</li>
+        <li>Support to run in the Cloud using <a href="hama_on_clouds.html">Apache Whirr</a>.</li>
+        <li>Support to run with Hadoop YARN.</li>
+      </ul>
+      <br/>
+      <table class="green" width="100%" cellspacing="0" cellpadding="5" border="1"> 
+      <tr><td> 
+          <h3 align="center">Recent News</h3>
+          <ul>
+            <li>Feb 5, 2012: release 0.4.0 available</li>
+            <li>July 28, 2011: release 0.3.0 available</li>
+            <li>June 2, 2011: release 0.2.0 available</li>
+            <li>Apr 30, 2010: Introduced in the <a href="http://www.bsp-worldwide.org/bspww3000.html">BSP Worldwide</a></li>
+          </ul>
+      </td></tr></table>
+    <subsection name="Why Hama and BSP?"></subsection>
+    <p>Today, many practical data processing applications require a more flexible programming abstraction model that is compatible to run on highly scalable and massive data systems (e.g., HDFS, HBase, etc). A message passing paradigm beyond Map-Reduce framework would increase its flexibility in its communication capability. Bulk Synchronous Parallel (BSP) model fills the bill appropriately. Some of its significant advantages over MapReduce and MPI are:</p>
+    <ul>
+      <li>Supports message passing paradigm style of application development</li>
+      <li>Provides a flexible, simple, and easy-to-use small APIs</li>
+      <li>Enables to perform better than MPI for communication-intensive applications</li>
+      <li>Guarantees impossibility of deadlocks or collisions in the communication mechanisms</li>
+    </ul>
+    
+    <subsection name="Getting Started"></subsection>
+      <p>
+      Start by installing Hama on a Hadoop cluster.
+      <br/>
+      </p>
+      <ul>
+        <li><a href="downloads.html">Download</a> Hama from the release page.</li>
+        <li><a href="getting_started_with_hama.html">Getting Started</a> with Hama.</li>
+        <li><a href="hama_on_clouds.html">Launch a Hama cluster</a> on Clouds.</li>
+        <li>Hama <a href="hama_bsp_tutorial.html">BSP Tutorial.</a></li>
+        <li><a href="http://wiki.apache.org/hama">Learn about</a> Hama and BSP by reading the documentation.</li>
+      </ul>
+    <subsection name="Getting Involved"></subsection>
+      <p>
+      Hama is an open source volunteer project under the Apache Software Foundation. We encourage you to learn about the project and contribute your expertise. 
+      Here are some starter links: <br/>
+      </p>
+      <ul>
+        <li>See our <a href="http://wiki.apache.org/hama/HowToContribute">How to Contribute to Hama</a> page</li>
+        <li><a href="http://wiki.apache.org/hama/Jira">Jira usage guidelines</a></li>
+      </ul>
+      
+    <subsection name="Disclaimer"></subsection>
+      <p>
+       Apache Hama is an effort undergoing incubation at The Apache Software Foundation (ASF), 
+      sponsored by the Apache Incubator. Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, 
+      communications, and decision making process have stabilized in a manner consistent with other successful ASF projects. 
+      While incubation status is not necessarily a reflection of the completeness or stability of the code, 
+      it does indicate that the project has yet to be fully endorsed by the ASF.
+      </p>
+  </body>
+</document>

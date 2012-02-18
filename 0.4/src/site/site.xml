@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project name="Hama">
+  <bannerLeft>
+    <name>Hama</name>
+    <src>http://incubator.apache.org/hama/images/apache-incubator-hama-white.png</src>
+    <href>http://incubator.apache.org/hama/index.html</href>
+  </bannerLeft>
+  <bannerRight>
+    <src>http://incubator.apache.org/hama/images/apache-incubator-logo.png</src>
+    <href>http://incubator.apache.org/</href>
+  </bannerRight>
+
+  <publishDate position="right"/>
+  <version position="right"/>
+
+  <skin>
+    <groupId>org.apache.maven.skins</groupId>
+    <artifactId>maven-default-skin</artifactId>
+    <version>1.0</version>
+  </skin>
+
+  <body>
+    <links position="left">
+      <item name="Wiki" href="https://wiki.apache.org/hama" />
+      <item name="Blog" href="http://blogs.apache.org/hama/" />
+      <item name="JIRA" href="https://issues.apache.org/jira/browse/HAMA" />
+      <item name="SVN" href="https://svn.apache.org/repos/asf/incubator/hama/" />
+      <item name="Twitter" href="http://twitter.com/apachehama" />
+    </links>
+
+    <breadcrumbs position="left">
+      <item name="Apache" href="http://www.apache.org/" />
+      <item name="Apache Incubator" href="http://incubator.apache.org/" />
+      <item name="Hama" href="http://incubator.apache.org/hama/"/>
+    </breadcrumbs>
+
+    <menu name="Information">
+      <item name="Overview" href="index.html"/>
+      <item name="Downloads" href="downloads.html"/>
+      <item name="Who We Are" href="team-list.html" />
+      <item name="Privacy Policy" href="privacy_policy.html" />
+    </menu>
+
+    <menu name="Resources">
+      <item name="Developers" href="developers.html" />
+      <item name="Mailing Lists" href="mail-lists.html" />
+      <item name="Issue Tracking" href="issue-tracking.html" />
+      <item name="IRC channel" href="irc-channel.html" />
+    </menu>
+
+    <menu name="Documentation">
+      <item name="Getting Started" href="getting_started_with_hama.html" />
+      <item name="Hama on Clouds" href="hama_on_clouds.html" />
+      <item name="Hama BSP tutorial" href="hama_bsp_tutorial.html" />
+      <item name="Benchmarks" href="http://wiki.apache.org/hama/Benchmarks" />
+      <item name="Presentations" href="http://wiki.apache.org/hama/Presentations" />
+      <item name="Research Papers" href="http://wiki.apache.org/hama/Articles" />
+      <item name="Books" href="http://wiki.apache.org/hama/Books" />
+    </menu>
+
+    <menu name="Related Projects">
+      <item name="Hadoop" href="http://hadoop.apache.org/" />
+      <item name="Whirr" href="https://incubator.apache.org/whirr/" />
+      <item name="Bigtop" href="https://incubator.apache.org/bigtop/" />
+      <item name="Mahout" href="http://mahout.apache.org/" />
+    </menu>
+    
+    <menu name="Art works">
+      <item name="Artwork and Clothing" href="artwork.html" />
+    </menu>
+  </body>
+</project>

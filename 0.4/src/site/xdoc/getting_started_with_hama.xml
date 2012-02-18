@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <title>Getting Started with Hama</title>
+  <body>
+    <section name="Getting Started with Hama"></section>
+    <p>This document describes how to install, configure and manage Hama clusters ranging from a few nodes to extremely large clusters with thousands of nodes.</p>
+
+    <subsection name="Requirements"></subsection>
+    <p>1. Make sure all required software is installed on all nodes in your cluster:</p>
+    <ul>
+      <li>hadoop-0.20.x (non-secure version)</li>
+      <li>Sun Java JDK 1.6.x or higher version</li>
+      <li>SSH access to manage BSP deamons</li>
+    </ul>
+    <p>2. <a href="downloads.html">Download</a> Hama from the release page.
+    <br /><br />
+    For additional information consult our 
+    <a href="http://wiki.apache.org/hama/CompatibilityTable">Compatibility Table</a></p>
+    
+    <subsection name="Mode"></subsection>
+    <p>Just like Hadoop, we distinct between three modes:</p>
+    <ul>
+      <li>Local Mode - <font style="font-size: 11px;">This mode is the default mode if you download Hama (>= 0.3.0) and install it. When submitting a job it will run a local multithreaded BSP Engine on your server. It can be configured via the bsp.master.address property to local. You can adjust the number of threads used in this utility by setting the <b>bsp.local.tasks.maximum property</b>. See the Settings step how and where to configure this.</font></li>
+      <li>Pseudo Distributed Mode - <font style="font-size: 11px;">This mode is when you just have a single server and want to launch all the deamon processes (BSPMaster, Groom and Zookeeper). It can be configured when you set the bsp.master.address to a host address e.g., <b>localhost</b> and put the same address into the groomservers file in the configuration directory. As stated it will run a BSPMaster, a Groom and a Zookeeper on your machine.</font></li>
+      <li>Distributed Mode - <font style="font-size: 11px;">This mode is just like the "Pseudo Distributed Mode", but you have multiple machines, which are mapped in the groomservers file.</font></li>
+    </ul>
+    
+    <subsection name="Configuration Files"></subsection>
+    <p>The $HAMA_HOME/conf directory contains some configuration files for Hama. These are:</p>
+    <ul>
+      <li>hama-env.sh - This file contains some environment variable settings used by Hama. You can use these to affect some aspects of Hama daemon behavior, such as where log files are stored, the maximum amount of heap used etc. The only variable you should need to change in this file is JAVA_HOME, which specifies the path to the Java 1.5.x installation used by Hama.</li>
+      <li>groomservers - This file lists the hosts, one per line, where the GroomServer daemons will run. By default this contains the single entry localhost</li>
+      <li>hama-default.xml - This file contains generic default settings for Hama daemons. Do not modify this file.</li>
+      <li>hama-site.xml - This file contains site specific settings for all Hama daemons and BSP jobs. This file is empty by default. Settings in this file override those in hama-default.xml. This file should contain settings that must be respected by all servers and clients in a Hama installation.</li>
+    </ul>
+    
+    <subsection name="Startup Scripts"></subsection>
+    <p>The $HAMA_HOME/bin directory contains some script used to start up the Hama daemons.</p>
+    <ul><li>start-bspd.sh - Starts all Hama daemons, the BSPMaster, GroomServers and Zookeeper.</li></ul>
+    <p>Note: You have to start Hama with the same user which is configured for Hadoop.</p>
+    
+    <subsection name="Setting up Hama"></subsection>
+    <ul><li>BSPMaster and Zookeeper settings - Figure out where to run your HDFS namenode and BSPMaster. Set the variable bsp.master.address to the BSPMaster's intended host:port. Set the variable fs.default.name to the HDFS Namenode's intended host:port.</li></ul>
+    <p>Here's an example of a hama-site.xml file:</p>
+
+<pre class="green">
+  &lt;?xml version="1.0"?&gt;
+  &lt;?xml-stylesheet type="text/xsl" href="configuration.xsl"?&gt;
+  &lt;configuration&gt;
+    &lt;property&gt;
+      &lt;name&gt;bsp.master.address&lt;/name&gt;
+      &lt;value&gt;host1.mydomain.com:40000&lt;/value&gt;
+      &lt;description&gt;The address of the bsp master server. Either the
+      literal string "local" or a host:port for distributed mode
+      &lt;/description&gt;
+    &lt;/property&gt;
+
+    &lt;property&gt;
+      &lt;name&gt;fs.default.name&lt;/name&gt;
+      &lt;value&gt;hdfs://host1.mydomain.com:9000/&lt;/value&gt;
+      &lt;description&gt;
+        The name of the default file system. Either the literal string
+        "local" or a host:port for HDFS.
+      &lt;/description&gt;
+    &lt;/property&gt;
+
+    &lt;property&gt;
+      &lt;name&gt;hama.zookeeper.quorum&lt;/name&gt;
+      &lt;value&gt;host1.mydomain.com,host2.mydomain.com&lt;/value&gt;
+      &lt;description&gt;Comma separated list of servers in the ZooKeeper Quorum.
+      For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
+      By default this is set to localhost for local and pseudo-distributed modes
+      of operation. For a fully-distributed setup, this should be set to a full
+      list of ZooKeeper quorum servers. If HAMA_MANAGES_ZK is set in hama-env.sh
+      this is the list of servers which we will start/stop zookeeper on.
+      &lt;/description&gt;
+    &lt;/property&gt;
+  &lt;/configuration&gt;
+</pre>
+
+<p>If you are managing your own ZooKeeper, you have to specify the port number as below:</p>
+
+<pre class="green">
+  &lt;property&gt;
+    &lt;name&gt;hama.zookeeper.property.clientPort&lt;/name&gt;
+    &lt;value&gt;2181&lt;/value&gt;
+  &lt;/property&gt;
+</pre>
+<p>See all <a href="http://wiki.apache.org/hama/GettingStarted/Properties">Configuration Properties</a></p>
+    
+    <subsection name="Starting a Hama cluster"></subsection>
+    <p>NOTE: Skip this step if you're in Local Mode.
+    <br/>Run the command:</p>
+    
+  <pre class="green">
+  % $HAMA_HOME/bin/start-bspd.sh</pre>
+    <p>This will startup a BSPMaster, GroomServers and Zookeeper on your machine.</p>
+    <p>Run the command:</p>
+  <pre class="green">
+  % $HAMA_HOME/bin/stop-bspd.sh</pre>
+
+    <p>to stop all the daemons running on your cluster.</p>
+    <subsection name="Execute Hama Examples"></subsection>
+  <pre class="green">
+  % $HAMA_HOME/bin/hama jar hama-examples-0.x.0-incubating.jar [args]</pre>
+    </body>
+</document>
