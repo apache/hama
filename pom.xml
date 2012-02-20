@@ -250,6 +250,28 @@
         </configuration>
       </plugin>
         
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>0.8</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <excludes>
+            <exclude>CHANGES.txt</exclude>
+            <exclude>conf/groomservers</exclude>
+            <exclude>src/site/resources/files/hama-eclipse-formatter.xml</exclude>
+            <exclude>**/src/test/resources/*.properties</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
   
