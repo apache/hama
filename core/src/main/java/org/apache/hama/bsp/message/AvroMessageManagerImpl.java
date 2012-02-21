@@ -36,17 +36,14 @@ import org.apache.avro.ipc.NettyServer;
 import org.apache.avro.ipc.NettyTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 import org.apache.avro.ipc.specific.SpecificResponder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.util.BSPNetUtils;
 
-public class AvroMessageManagerImpl<M extends Writable> implements MessageManager<M>, Sender<M> {
-
-  private static final Log LOG = LogFactory
-      .getLog(AvroMessageManagerImpl.class);
+public class AvroMessageManagerImpl<M extends Writable> extends
+    CompressableMessageManager<M> implements Sender<M> {
 
   private NettyServer server = null;
 
@@ -60,6 +57,7 @@ public class AvroMessageManagerImpl<M extends Writable> implements MessageManage
 
   @Override
   public void init(Configuration conf, InetSocketAddress addr) {
+    super.initCompression(conf);
     server = new NettyServer(new SpecificResponder(Sender.class, this), addr);
   }
 
@@ -86,6 +84,7 @@ public class AvroMessageManagerImpl<M extends Writable> implements MessageManage
     return localQueue.size();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException {
@@ -98,7 +97,7 @@ public class AvroMessageManagerImpl<M extends Writable> implements MessageManage
       sender = (Sender<M>) SpecificRequestor.getClient(Sender.class, client);
       peers.put(addr, sender);
     }
-    
+
     sender.transfer(msg);
   }
 
@@ -122,7 +121,6 @@ public class AvroMessageManagerImpl<M extends Writable> implements MessageManage
 
   @Override
   public void send(String peerName, M msg) throws IOException {
-    LOG.debug("Send message (" + msg.toString() + ") to " + peerName);
     InetSocketAddress targetPeerAddress = null;
     // Get socket for target peer.
     if (peerSocketCache.containsKey(peerName)) {
@@ -142,22 +140,30 @@ public class AvroMessageManagerImpl<M extends Writable> implements MessageManage
   private final BSPMessageBundle<M> deserializeMessage(ByteBuffer buffer)
       throws IOException {
     BSPMessageBundle<M> msg = new BSPMessageBundle<M>();
-
-    ByteArrayInputStream inArray = new ByteArrayInputStream(buffer.array());
-    DataInputStream in = new DataInputStream(inArray);
-    msg.readFields(in);
+    if (compressor == null) {
+      ByteArrayInputStream inArray = new ByteArrayInputStream(buffer.array());
+      DataInputStream in = new DataInputStream(inArray);
+      msg.readFields(in);
+    } else {
+      msg = compressor
+          .decompressBundle(new BSPCompressedBundle(buffer.array()));
+    }
 
     return msg;
   }
 
   private final ByteBuffer serializeMessage(BSPMessageBundle<M> msg)
       throws IOException {
-    ByteArrayOutputStream outArray = new ByteArrayOutputStream();
-    DataOutputStream out = new DataOutputStream(outArray);
-    msg.write(out);
-    out.close();
-    System.out.println("serialized " + outArray.size() + " bytes");
-    return ByteBuffer.wrap(outArray.toByteArray());
+    if (compressor == null) {
+      ByteArrayOutputStream outArray = new ByteArrayOutputStream();
+      DataOutputStream out = new DataOutputStream(outArray);
+      msg.write(out);
+      out.close();
+      return ByteBuffer.wrap(outArray.toByteArray());
+    } else {
+      BSPCompressedBundle compMsgBundle = compressor.compressBundle(msg);
+      return ByteBuffer.wrap(compMsgBundle.getData());
+    }
   }
 
   @Override

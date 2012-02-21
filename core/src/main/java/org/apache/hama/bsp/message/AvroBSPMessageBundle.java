@@ -23,8 +23,9 @@ import org.apache.avro.specific.SpecificRecord;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.hadoop.io.Writable;
 
-public final class AvroBSPMessageBundle<M extends Writable> extends SpecificRecordBase implements
-    SpecificRecord {
+@SuppressWarnings("deprecation")
+public final class AvroBSPMessageBundle<M extends Writable> extends
+    SpecificRecordBase implements SpecificRecord {
   public static final org.apache.avro.Schema SCHEMA$ = org.apache.avro.Schema
       .parse("{\"type\":\"record\",\"name\":\"AvroBSPMessage\",\"namespace\":\"de.jungblut.avro\",\"fields\":[{\"name\":\"data\",\"type\":\"bytes\"}]}");
   @Deprecated
@@ -87,16 +88,17 @@ public final class AvroBSPMessageBundle<M extends Writable> extends SpecificReco
    * AvroBSPMessage instance
    */
   public final static AvroBSPMessageBundle.Builder newBuilder(
-      AvroBSPMessageBundle other) {
+      AvroBSPMessageBundle<?> other) {
     return new AvroBSPMessageBundle.Builder(other);
   }
 
   /**
    * RecordBuilder for AvroBSPMessage instances.
    */
-  public final static class Builder extends
-      org.apache.avro.specific.SpecificRecordBuilderBase<AvroBSPMessageBundle>
-      implements org.apache.avro.data.RecordBuilder<AvroBSPMessageBundle> {
+  public final static class Builder
+      extends
+      org.apache.avro.specific.SpecificRecordBuilderBase<AvroBSPMessageBundle<?>>
+      implements org.apache.avro.data.RecordBuilder<AvroBSPMessageBundle<?>> {
 
     private java.nio.ByteBuffer data;
 
@@ -111,7 +113,7 @@ public final class AvroBSPMessageBundle<M extends Writable> extends SpecificReco
     }
 
     /** Creates a Builder by copying an existing AvroBSPMessage instance */
-    private Builder(AvroBSPMessageBundle other) {
+    private Builder(AvroBSPMessageBundle<?> other) {
       super(AvroBSPMessageBundle.SCHEMA$);
       if (isValidValue(fields[0], other.data)) {
         data = (java.nio.ByteBuffer) clone(other.data);
@@ -154,9 +156,10 @@ public final class AvroBSPMessageBundle<M extends Writable> extends SpecificReco
     }
 
     @Override
-    public final AvroBSPMessageBundle build() {
+    public final AvroBSPMessageBundle<?> build() {
       try {
-        AvroBSPMessageBundle record = new AvroBSPMessageBundle();
+        @SuppressWarnings("rawtypes")
+        AvroBSPMessageBundle<?> record = new AvroBSPMessageBundle();
         record.data = fieldSetFlags[0] ? this.data
             : (java.nio.ByteBuffer) getDefaultValue(fields[0]);
         return record;

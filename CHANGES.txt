@@ -4,6 +4,7 @@ Release 0.5 - Unreleased
 
   NEW FEATURES
 
+   HAMA-367: Runtime Compression of BSP Messages to Improve the Performance (Apurv Verma via tjungblut)
    HAMA-501: Add Avro RPC (tjungblut)
    HAMA-456: Add basic Graph interfaces and GraphJobRunner (edwardyoon)
 

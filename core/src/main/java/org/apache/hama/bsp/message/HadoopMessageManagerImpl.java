@@ -33,14 +33,16 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.util.BSPNetUtils;
+import org.apache.hama.util.CompressionUtil;
 
 /**
  * Implementation of the {@link HadoopMessageManager}.
  * 
  */
-public final class HadoopMessageManagerImpl<M extends Writable> implements MessageManager<M>,
-    HadoopMessageManager<M> {
+public final class HadoopMessageManagerImpl<M extends Writable> extends
+    CompressableMessageManager<M> implements HadoopMessageManager<M> {
 
   private static final Log LOG = LogFactory
       .getLog(HadoopMessageManagerImpl.class);
@@ -48,7 +50,7 @@ public final class HadoopMessageManagerImpl<M extends Writable> implements Messa
   private Server server = null;
   private Configuration conf;
 
-  private final HashMap<InetSocketAddress, HadoopMessageManager> peers = new HashMap<InetSocketAddress, HadoopMessageManager>();
+  private final HashMap<InetSocketAddress, HadoopMessageManager<M>> peers = new HashMap<InetSocketAddress, HadoopMessageManager<M>>();
   private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
 
   private final HashMap<InetSocketAddress, LinkedList<M>> outgoingQueues = new HashMap<InetSocketAddress, LinkedList<M>>();
@@ -59,6 +61,7 @@ public final class HadoopMessageManagerImpl<M extends Writable> implements Messa
   @Override
   public final void init(Configuration conf, InetSocketAddress peerAddress) {
     this.conf = conf;
+    super.initCompression(conf);
     startRPCServer(conf, peerAddress);
   }
 
@@ -112,11 +115,12 @@ public final class HadoopMessageManagerImpl<M extends Writable> implements Messa
     return this.outgoingQueues.entrySet().iterator();
   }
 
-  protected final HadoopMessageManager getBSPPeerConnection(
+  @SuppressWarnings("unchecked")
+  protected final HadoopMessageManager<M> getBSPPeerConnection(
       InetSocketAddress addr) throws IOException {
-    HadoopMessageManager peer = peers.get(addr);
+    HadoopMessageManager<M> peer = peers.get(addr);
     if (peer == null) {
-      peer = (HadoopMessageManager) RPC.getProxy(HadoopMessageManager.class,
+      peer = (HadoopMessageManager<M>) RPC.getProxy(HadoopMessageManager.class,
           HadoopMessageManager.versionID, addr, this.conf);
       this.peers.put(addr, peer);
     }
@@ -127,13 +131,22 @@ public final class HadoopMessageManagerImpl<M extends Writable> implements Messa
   public final void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException {
 
-    HadoopMessageManager bspPeerConnection = this.getBSPPeerConnection(addr);
+    HadoopMessageManager<M> bspPeerConnection = this.getBSPPeerConnection(addr);
 
     if (bspPeerConnection == null) {
       throw new IllegalArgumentException("Can not find " + addr.toString()
           + " to transfer messages to!");
     } else {
-      bspPeerConnection.put(bundle);
+      if (compressor != null) {
+        BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
+        if (CompressionUtil.getCompressionRatio(compMsgBundle, bundle) < 1.0) {
+          bspPeerConnection.put(compMsgBundle);
+        } else {
+          bspPeerConnection.put(bundle);
+        }
+      } else {
+        bspPeerConnection.put(bundle);
+      }
     }
   }
 
@@ -152,6 +165,14 @@ public final class HadoopMessageManagerImpl<M extends Writable> implements Messa
   @Override
   public final void put(BSPMessageBundle<M> messages) {
     for (M message : messages.getMessages()) {
+      this.localQueueForNextIteration.add(message);
+    }
+  }
+
+  @Override
+  public final void put(BSPCompressedBundle compMsgBundle) {
+    BSPMessageBundle<M> bundle = compressor.decompressBundle(compMsgBundle);
+    for (M message : bundle.getMessages()) {
       this.localQueueForNextIteration.add(message);
     }
   }
