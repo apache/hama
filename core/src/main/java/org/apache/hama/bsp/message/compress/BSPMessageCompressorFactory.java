@@ -15,28 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message;
+package org.apache.hama.bsp.message.compress;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 
-public class MessageManagerFactory<M extends Writable> {
-  public static final String MESSAGE_MANAGER_CLASS = "hama.messenger.class";
+public class BSPMessageCompressorFactory<M extends Writable> {
+
+  public static final String COMPRESSION_CODEC_CLASS = "hama.messenger.compression.class";
 
   /**
-   * Returns a messenger via reflection based on what was configured.
+   * Returns a compressor via reflection based on what was configured.
    * 
    * @param conf
    * @return
    */
   @SuppressWarnings("unchecked")
-  public MessageManager<M> getMessageManager(Configuration conf)
-      throws ClassNotFoundException {
-    return (MessageManager<M>) ReflectionUtils.newInstance(conf
-        .getClassByName(conf.get(MESSAGE_MANAGER_CLASS,
-            org.apache.hama.bsp.message.AvroMessageManagerImpl.class
-                .getCanonicalName())), conf);
+  public BSPMessageCompressor<M> getCompressor(Configuration conf) {
+    try {
+      return (BSPMessageCompressor<M>) ReflectionUtils.newInstance(conf
+          .getClassByName(conf.get(COMPRESSION_CODEC_CLASS,
+              SnappyCompressor.class.getCanonicalName())), conf);
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
-
 }

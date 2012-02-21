@@ -15,28 +15,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message;
+package org.apache.hama.bsp.message.compress;
 
-import org.apache.hadoop.conf.Configuration;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.util.ReflectionUtils;
 
-public class MessageManagerFactory<M extends Writable> {
-  public static final String MESSAGE_MANAGER_CLASS = "hama.messenger.class";
+/**
+ * A compressed representation of BSPMessageBundle.
+ * 
+ */
+public final class BSPCompressedBundle implements Writable{
 
-  /**
-   * Returns a messenger via reflection based on what was configured.
-   * 
-   * @param conf
-   * @return
-   */
-  @SuppressWarnings("unchecked")
-  public MessageManager<M> getMessageManager(Configuration conf)
-      throws ClassNotFoundException {
-    return (MessageManager<M>) ReflectionUtils.newInstance(conf
-        .getClassByName(conf.get(MESSAGE_MANAGER_CLASS,
-            org.apache.hama.bsp.message.AvroMessageManagerImpl.class
-                .getCanonicalName())), conf);
+  private byte[] data;
+
+  public BSPCompressedBundle(){		
+  }
+
+  public BSPCompressedBundle(byte[] data){
+    this.data = data;
+  }
+
+  public byte[] getData() {
+    return data;
+  }
+
+  public void setData(byte[] data) {
+    this.data = data;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(data.length);
+    out.write(data);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {		
+    int len = in.readInt();
+    data    = new byte[len];
+    in.readFully(data);
   }
 
 }

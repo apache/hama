@@ -15,42 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message;
+package org.apache.hama.bsp.message.compress;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
-import org.apache.hama.ipc.HamaRPCProtocolVersion;
 
 /**
- * Hadoop RPC Interface for messaging.
+ * Provides utilities for compressing and decompressing BSPMessageBundle.
  * 
  */
-public interface HadoopMessageManager<M extends Writable> extends
-    HamaRPCProtocolVersion {
+public interface BSPMessageCompressor<M extends Writable> {
+
+  public static final Log LOG = LogFactory.getLog(BSPMessageCompressor.class);
 
   /**
-   * This method puts a message for the next iteration. Accessed concurrently
-   * from protocol, this must be synchronized internal.
+   * Compresses the BSPMessageBundle and returns it in form of a
+   * BSPCompressedBundle.
    * 
-   * @param msg
+   * @param bundle
+   * @return
    */
-  public void put(M msg);
+  public BSPCompressedBundle compressBundle(BSPMessageBundle<M> bundle);
 
   /**
-   * This method puts a messagebundle for the next iteration. Accessed
-   * concurrently from protocol, this must be synchronized internal.
-   * 
-   * @param messages
-   */
-  public void put(BSPMessageBundle<M> messages);
-
-  /**
-   * This method puts a compressed message bundle for the next iteration.
-   * Accessed concurrently from protocol, this must be sychronized internally.
+   * Decompresses a BSPCompressedBundle and returns the corresponding
+   * BSPMessageBundle.
    * 
    * @param compMsgBundle
+   * @return
    */
-  public void put(BSPCompressedBundle compMsgBundle);
-
+  public BSPMessageBundle<M> decompressBundle(BSPCompressedBundle compMsgBundle);
 }

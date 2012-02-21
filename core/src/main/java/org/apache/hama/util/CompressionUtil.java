@@ -15,42 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message;
+package org.apache.hama.util;
 
-import org.apache.hadoop.io.Writable;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
-import org.apache.hama.ipc.HamaRPCProtocolVersion;
 
-/**
- * Hadoop RPC Interface for messaging.
- * 
- */
-public interface HadoopMessageManager<M extends Writable> extends
-    HamaRPCProtocolVersion {
+public class CompressionUtil {
 
   /**
-   * This method puts a message for the next iteration. Accessed concurrently
-   * from protocol, this must be synchronized internal.
-   * 
-   * @param msg
-   */
-  public void put(M msg);
-
-  /**
-   * This method puts a messagebundle for the next iteration. Accessed
-   * concurrently from protocol, this must be synchronized internal.
-   * 
-   * @param messages
-   */
-  public void put(BSPMessageBundle<M> messages);
-
-  /**
-   * This method puts a compressed message bundle for the next iteration.
-   * Accessed concurrently from protocol, this must be sychronized internally.
+   * Calculates the compression ratio. A compression ratio of less than 1 is
+   * desirable.
    * 
    * @param compMsgBundle
+   * @param bundle
+   * @return
+   * @throws IOException
    */
-  public void put(BSPCompressedBundle compMsgBundle);
+  public static float getCompressionRatio(BSPCompressedBundle compMsgBundle,
+      BSPMessageBundle<?> bundle) throws IOException {
+
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(bos);
+    bundle.write(dos);
+
+    dos.close();
+    bos.close();
+
+    float compLen = compMsgBundle.getData().length;
+
+    return (compLen / bos.toByteArray().length);
+  }
 
 }

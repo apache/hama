@@ -19,24 +19,21 @@ package org.apache.hama.bsp.message;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
 
-public class MessageManagerFactory<M extends Writable> {
-  public static final String MESSAGE_MANAGER_CLASS = "hama.messenger.class";
+/**
+ * Abstract message layer that can be used to compress messages.
+ * 
+ * @param <M>
+ */
+public abstract class CompressableMessageManager<M extends Writable> implements
+    MessageManager<M> {
 
-  /**
-   * Returns a messenger via reflection based on what was configured.
-   * 
-   * @param conf
-   * @return
-   */
-  @SuppressWarnings("unchecked")
-  public MessageManager<M> getMessageManager(Configuration conf)
-      throws ClassNotFoundException {
-    return (MessageManager<M>) ReflectionUtils.newInstance(conf
-        .getClassByName(conf.get(MESSAGE_MANAGER_CLASS,
-            org.apache.hama.bsp.message.AvroMessageManagerImpl.class
-                .getCanonicalName())), conf);
+  protected BSPMessageCompressor<M> compressor;
+
+  protected void initCompression(Configuration conf) {
+    compressor = new BSPMessageCompressorFactory<M>().getCompressor(conf);
   }
 
 }
