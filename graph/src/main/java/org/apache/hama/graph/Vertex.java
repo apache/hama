@@ -26,8 +26,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
-public abstract class Vertex<M extends Writable> implements
-    VertexInterface<M> {
+public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
   private M value;
   private String vertexID;
   protected BSPPeer<?, ?, ?, ?, MapWritable> peer;
@@ -49,6 +48,14 @@ public abstract class Vertex<M extends Writable> implements
     message.put(new Text(e.getName()), msg);
 
     peer.send(e.getTarget(), message);
+  }
+
+  @Override
+  public void sendMessageToNeighbors(M msg) throws IOException {
+    final List<Edge> outEdges = this.getOutEdges();
+    for (Edge e : outEdges) {
+      sendMessage(e, msg);
+    }
   }
 
   @Override

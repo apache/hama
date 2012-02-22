@@ -28,7 +28,6 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
-import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
 
@@ -55,10 +54,8 @@ public class PageRank {
 
       if (this.getSuperstepCount() < this.getMaxIteration()) {
         int numEdges = this.getOutEdges().size();
-        for (Edge e : this.getOutEdges()) {
-          this.sendMessage(e, new DoubleWritable(this.getValue().get()
-              / numEdges));
-        }
+        sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
+            / numEdges));
       }
     }
   }

@@ -11,7 +11,8 @@ Release 0.5 - Unreleased
   BUG FIXES
 
   IMPROVEMENTS
-
+    
+    HAMA-510: Add sendMessageToNeighbors() to Vertex (tjungblut)
     HAMA-502: Message API Improvement (edwardyoon)
   
 Release 0.4 - February 5, 2012

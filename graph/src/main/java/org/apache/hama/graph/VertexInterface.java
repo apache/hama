@@ -34,6 +34,8 @@ public interface VertexInterface<MSGTYPE> {
 
   public void sendMessage(Edge e, MSGTYPE msg) throws IOException;
 
+  public void sendMessageToNeighbors(MSGTYPE msg) throws IOException;
+
   public long getSuperstepCount();
 
   public void setValue(MSGTYPE value);
