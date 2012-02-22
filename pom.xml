@@ -302,6 +302,7 @@
             <exclude>conf/groomservers</exclude>
             <exclude>src/site/resources/files/hama-eclipse-formatter.xml</exclude>
             <exclude>**/src/test/resources/*.properties</exclude>
+            <exclude>**dependency-reduced-pom.xml</exclude>
           </excludes>
         </configuration>
       </plugin>
