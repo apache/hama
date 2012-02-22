@@ -26,7 +26,6 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
-import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexArrayWritable;
@@ -38,9 +37,7 @@ public class InlinkCount extends Vertex<IntWritable> {
   public void compute(Iterator<IntWritable> messages) throws IOException {
 
     if (getSuperstepCount() == 0L) {
-      for (Edge e : getOutEdges()) {
-        sendMessage(e, new IntWritable(1));
-      }
+      sendMessageToNeighbors(new IntWritable(1));
     } else {
       while (messages.hasNext()) {
         IntWritable msg = messages.next();
