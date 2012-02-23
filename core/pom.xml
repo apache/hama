@@ -16,7 +16,7 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <parent>
     <groupId>org.apache.hama</groupId>
@@ -41,9 +41,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.iq80.snappy</groupId>
-      <artifactId>snappy</artifactId>
-      <version>0.2</version>
+      <groupId>org.xerial.snappy</groupId>
+      <artifactId>snappy-java</artifactId>
+      <version>1.0.4.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -82,16 +82,16 @@
       <groupId>org.mortbay.jetty</groupId>
       <artifactId>jsp-2.1</artifactId>
     </dependency>
-      <dependency>
-        <groupId>org.apache.ant</groupId>
-        <artifactId>ant</artifactId>
-        <version>${ant.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.ant</groupId>
-        <artifactId>ant-launcher</artifactId>
-        <version>${ant.version}</version>
-      </dependency>
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant</artifactId>
+      <version>${ant.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant-launcher</artifactId>
+      <version>${ant.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-core</artifactId>
@@ -108,9 +108,9 @@
       <groupId>org.apache.avro</groupId>
       <artifactId>avro-ipc</artifactId>
     </dependency>
-      <dependency>
-        <groupId>org.jboss.netty</groupId>
-        <artifactId>netty</artifactId>
+    <dependency>
+      <groupId>org.jboss.netty</groupId>
+      <artifactId>netty</artifactId>
     </dependency>
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
@@ -192,10 +192,11 @@
             </goals>
             <configuration>
               <target>
-                <mkdir dir="${project.build.directory}/generated-sources/java"/>
+                <mkdir
+                  dir="${project.build.directory}/generated-sources/java" />
                 <exec executable="sh">
                   <arg
-                      line="${basedir}/dev-support/saveVersion.sh ${project.version} ${project.build.directory}/generated-sources/annotations"/>
+                    line="${basedir}/dev-support/saveVersion.sh ${project.version} ${project.build.directory}/generated-sources/annotations" />
                 </exec>
               </target>
             </configuration>
