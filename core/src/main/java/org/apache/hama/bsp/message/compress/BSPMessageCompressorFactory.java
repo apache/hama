@@ -33,12 +33,14 @@ public class BSPMessageCompressorFactory<M extends Writable> {
    */
   @SuppressWarnings("unchecked")
   public BSPMessageCompressor<M> getCompressor(Configuration conf) {
-    try {
-      return (BSPMessageCompressor<M>) ReflectionUtils.newInstance(conf
-          .getClassByName(conf.get(COMPRESSION_CODEC_CLASS,
-              SnappyCompressor.class.getCanonicalName())), conf);
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
+    if (conf.get(COMPRESSION_CODEC_CLASS) != null) {
+      try {
+        return (BSPMessageCompressor<M>) ReflectionUtils.newInstance(conf
+            .getClassByName(conf.get(COMPRESSION_CODEC_CLASS,
+                SnappyCompressor.class.getCanonicalName())), conf);
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
     }
     return null;
   }

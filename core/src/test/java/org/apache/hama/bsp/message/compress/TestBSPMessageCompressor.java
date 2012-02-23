@@ -27,8 +27,17 @@ import org.apache.hama.bsp.IntegerMessage;
 public class TestBSPMessageCompressor extends TestCase {
 
   public void testCompression() {
+    Configuration configuration = new Configuration();
     BSPMessageCompressor<IntegerMessage> compressor = new BSPMessageCompressorFactory<IntegerMessage>()
-        .getCompressor(new Configuration());
+        .getCompressor(configuration);
+
+    assertNull(compressor);
+    configuration.setClass(BSPMessageCompressorFactory.COMPRESSION_CODEC_CLASS,
+        SnappyCompressor.class, BSPMessageCompressor.class);
+    compressor = new BSPMessageCompressorFactory<IntegerMessage>()
+        .getCompressor(configuration);
+    
+    assertNotNull(compressor);
 
     int n = 20;
     BSPMessageBundle<IntegerMessage> bundle = new BSPMessageBundle<IntegerMessage>();
