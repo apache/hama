@@ -33,8 +33,9 @@ public class TestHadoopMessageManager extends TestCase {
 
   public void testMessaging() throws Exception {
     Configuration conf = new Configuration();
-    conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS, "org.apache.hama.bsp.message.HadoopMessageManagerImpl");
-    MessageManager<IntWritable> messageManager = new MessageManagerFactory<IntWritable>()
+    conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS,
+        "org.apache.hama.bsp.message.HadoopMessageManagerImpl");
+    MessageManager<IntWritable> messageManager = MessageManagerFactory
         .getMessageManager(conf);
 
     assertTrue(messageManager instanceof HadoopMessageManagerImpl);
@@ -62,7 +63,7 @@ public class TestHadoopMessageManager extends TestCase {
     }
 
     messageManager.transfer(peer, bundle);
-    
+
     messageManager.clearOutgoingQueues();
 
     assertTrue(messageManager.getNumCurrentMessages() == 1);

@@ -17,155 +17,82 @@
  */
 package org.apache.hama.bsp.message;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.Random;
 
 import junit.framework.TestCase;
 
-import org.apache.avro.AvroRemoteException;
-import org.apache.avro.ipc.NettyServer;
-import org.apache.avro.ipc.NettyTransceiver;
-import org.apache.avro.ipc.specific.SpecificRequestor;
-import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.ipc.RPC;
-import org.apache.hadoop.ipc.RPC.Server;
-import org.apache.hadoop.ipc.VersionedProtocol;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BooleanMessage;
 import org.apache.hama.bsp.DoubleMessage;
 import org.apache.hama.bsp.IntegerMessage;
+import org.apache.hama.util.BSPNetUtils;
 
 public class TestAvroMessageManager extends TestCase {
 
-  private static NettyServer server;
-  private static Server hadoopServer;
-  private static long start;
+  private static final int DOUBLE_MSG_COUNT = 400000;
+  private static final int BOOL_MSG_COUNT = 10000;
+  private static final int INT_MSG_COUNT = 500000;
 
-  public void compareMessengers() throws Exception {
-    BSPMessageBundle randomBundle = getRandomBundle();
-    testAvro(randomBundle);
-    testHadoop(randomBundle);
-  }
+  private static final int SUM = DOUBLE_MSG_COUNT + BOOL_MSG_COUNT
+      + INT_MSG_COUNT;
 
-  public static final class MessageSender implements Sender {
+  public void testAvroMessenger() throws Exception {
+    BSPMessageBundle<Writable> randomBundle = getRandomBundle();
+    Configuration conf = new Configuration();
+    MessageManager<Writable> messageManager = MessageManagerFactory
+        .getMessageManager(conf);
 
-    @Override
-    public Void transfer(AvroBSPMessageBundle messagebundle)
-        throws AvroRemoteException {
-      try {
-        BSPMessageBundle msg = deserializeMessage(messagebundle.getData());
-        System.out.println("Received message in "
-            + (System.currentTimeMillis() - start) + "ms. Size: "
-            + msg.getMessages().size());
-      } catch (IOException e) {
-        e.printStackTrace();
+    assertTrue(messageManager instanceof AvroMessageManagerImpl);
+
+    InetSocketAddress peer = new InetSocketAddress(
+        BSPNetUtils.getCanonicalHostname(), BSPNetUtils.getFreePort());
+    messageManager.init(conf, peer);
+
+    messageManager.transfer(peer, randomBundle);
+
+    messageManager.clearOutgoingQueues();
+
+    assertEquals(SUM, messageManager.getNumCurrentMessages());
+
+    int numIntMsgs = 0, numBoolMsgs = 0, numDoubleMsgs = 0;
+
+    Writable msg = null;
+    while ((msg = messageManager.getCurrentMessage()) != null) {
+      if (msg instanceof IntegerMessage) {
+        numIntMsgs++;
+      } else if (msg instanceof BooleanMessage) {
+        numBoolMsgs++;
+      } else if (msg instanceof DoubleMessage) {
+        numDoubleMsgs++;
       }
-      return null;
     }
 
+    assertEquals(INT_MSG_COUNT, numIntMsgs);
+    assertEquals(BOOL_MSG_COUNT, numBoolMsgs);
+    assertEquals(DOUBLE_MSG_COUNT, numDoubleMsgs);
+
   }
 
-  private static final BSPMessageBundle deserializeMessage(ByteBuffer buffer)
-      throws IOException {
-    BSPMessageBundle msg = new BSPMessageBundle();
+  public final BSPMessageBundle<Writable> getRandomBundle() {
+    BSPMessageBundle<Writable> bundle = new BSPMessageBundle<Writable>();
 
-    ByteArrayInputStream inArray = new ByteArrayInputStream(buffer.array());
-    DataInputStream in = new DataInputStream(inArray);
-    msg.readFields(in);
-
-    return msg;
-  }
-
-  private static final ByteBuffer serializeMessage(BSPMessageBundle msg)
-      throws IOException {
-    ByteArrayOutputStream outArray = new ByteArrayOutputStream();
-    DataOutputStream out = new DataOutputStream(outArray);
-    msg.write(out);
-    out.close();
-    System.out.println("serialized " + outArray.size() + " bytes");
-    return ByteBuffer.wrap(outArray.toByteArray());
-  }
-
-  public static final BSPMessageBundle getRandomBundle() {
-    BSPMessageBundle bundle = new BSPMessageBundle();
-
-    for (int i = 0; i < 500000; i++) {
+    for (int i = 0; i < INT_MSG_COUNT; i++) {
       bundle.addMessage(new IntegerMessage("test", i));
     }
 
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < BOOL_MSG_COUNT; i++) {
       bundle.addMessage(new BooleanMessage("test123", i % 2 == 0));
     }
 
     Random r = new Random();
-    for (int i = 0; i < 400000; i++) {
+    for (int i = 0; i < DOUBLE_MSG_COUNT; i++) {
       bundle.addMessage(new DoubleMessage("123123asd", r.nextDouble()));
     }
 
     return bundle;
-  }
-
-  private static final void testAvro(BSPMessageBundle bundle)
-      throws IOException, AvroRemoteException {
-
-    server = new NettyServer(new SpecificResponder(Sender.class,
-        new MessageSender()), new InetSocketAddress(13530));
-
-    NettyTransceiver client = new NettyTransceiver(new InetSocketAddress(
-        server.getPort()));
-    Sender proxy = (Sender) SpecificRequestor.getClient(Sender.class, client);
-
-    AvroBSPMessageBundle msg = new AvroBSPMessageBundle();
-
-    msg.setData(serializeMessage(bundle));
-
-    start = System.currentTimeMillis();
-    proxy.transfer(msg);
-
-    server.close();
-    client.close();
-  }
-
-  private static interface RPCTestInterface extends VersionedProtocol {
-
-    public void transfer(BSPMessageBundle bundle);
-
-  }
-
-  private static class HadoopRPCInstance implements RPCTestInterface {
-
-    @Override
-    public long getProtocolVersion(String arg0, long arg1) throws IOException {
-      return 0;
-    }
-
-    @Override
-    public void transfer(BSPMessageBundle bundle) {
-      System.out.println("Received message in "
-          + (System.currentTimeMillis() - start) + "ms");
-    }
-
-  }
-
-  private static final void testHadoop(BSPMessageBundle bundle)
-      throws IOException {
-    Configuration conf = new Configuration();
-    HadoopRPCInstance hadoopRPCInstance = new HadoopRPCInstance();
-    hadoopServer = new Server(hadoopRPCInstance, conf, new InetSocketAddress(
-        13612).getHostName(), 13612);
-    hadoopServer.start();
-    RPCTestInterface proxy = (RPCTestInterface) RPC.getProxy(
-        RPCTestInterface.class, 0, new InetSocketAddress(13612), conf);
-    start = System.currentTimeMillis();
-    proxy.transfer(bundle);
-    hadoopServer.stop();
   }
 
 }

@@ -89,6 +89,11 @@
     </description>
   </property>
   <property>
+    <name>hama.messenger.compression.class</name>
+    <value>org.apache.hama.bsp.message.compress.SnappyCompressor</value>
+    <description>The message compression algorithm to choose.</description>
+  </property>
+  <property>
     <name>bsp.local.tasks.maximum</name>
     <value>10</value>
     <description>Number of tasks that run in parallel when in local mode.</description>

@@ -141,7 +141,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         TaskStatus.State.RUNNING, "running", peerAddress.getHostName(),
         TaskStatus.Phase.STARTING, counters));
 
-    messenger = new MessageManagerFactory<M>().getMessageManager(conf);
+    messenger = MessageManagerFactory.getMessageManager(conf);
     messenger.init(conf, peerAddress);
 
   }
