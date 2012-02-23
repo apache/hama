@@ -12,6 +12,7 @@ Release 0.5 - Unreleased
 
   IMPROVEMENTS
     
+    HAMA-514: Add maven-gpg-plugin to parent POM file (edwardyoon)
     HAMA-510: Add sendMessageToNeighbors() to Vertex (tjungblut)
     HAMA-502: Message API Improvement (edwardyoon)
   
