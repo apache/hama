@@ -143,7 +143,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         splitFile.close();
       }
     }
-    
+
     threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(numBspTask);
 
     peerNames = new String[numBspTask];
@@ -246,8 +246,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       BSPPeerImpl peer = new BSPPeerImpl(job, conf, new TaskAttemptID(
           new TaskID(job.getJobID(), id), id), new LocalUmbilical(), id,
           splitname, realBytes, new Counters());
-
-      bsp.setConf(conf);
       try {
         bsp.setup(peer);
         bsp.bsp(peer);
@@ -302,7 +300,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   }
 
-  public static class LocalMessageManager<M extends Writable> implements MessageManager<M> {
+  public static class LocalMessageManager<M extends Writable> implements
+      MessageManager<M> {
 
     private static final ConcurrentHashMap<InetSocketAddress, LocalMessageManager> managerMap = new ConcurrentHashMap<InetSocketAddress, LocalBSPRunner.LocalMessageManager>();
 
@@ -336,8 +335,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         inetSocketAddress = BSPNetUtils.getAddress(peerName);
         socketCache.put(peerName, inetSocketAddress);
       }
-      LinkedList<M> msgs = localOutgoingMessages
-          .get(inetSocketAddress);
+      LinkedList<M> msgs = localOutgoingMessages.get(inetSocketAddress);
       if (msgs == null) {
         msgs = new LinkedList<M>();
       }
@@ -358,7 +356,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     public Iterator<Entry<InetSocketAddress, LinkedList<M>>> getMessageIterator() {
       return localOutgoingMessages.entrySet().iterator();
     }
-    
+
     @Override
     public void clearOutgoingQueues() {
       localOutgoingMessages.clear();

@@ -19,7 +19,6 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.sync.SyncException;
 
@@ -28,8 +27,6 @@ import org.apache.hama.bsp.sync.SyncException;
  */
 public abstract class BSP<K1, V1, K2, V2, M extends Writable> implements
     BSPInterface<K1, V1, K2, V2, M> {
-
-  protected Configuration conf;
 
   /**
    * This method is your computation method, the main work of your BSP should be
@@ -67,26 +64,4 @@ public abstract class BSP<K1, V1, K2, V2, M extends Writable> implements
 
   }
 
-  /**
-   * Returns the configuration of this BSP Job.
-   * 
-   * @deprecated Use BSPPeer.getConfiguration() instead. Will be removed in
-   *             0.5.0.
-   */
-  @Deprecated
-  @Override
-  public Configuration getConf() {
-    return conf;
-  }
-
-  /**
-   * Sets the configuration of this BSP Job.
-   * 
-   * @deprecated Won't be used anymore.
-   */
-  @Deprecated
-  @Override
-  public void setConf(Configuration conf) {
-    this.conf = conf;
-  }
 }
