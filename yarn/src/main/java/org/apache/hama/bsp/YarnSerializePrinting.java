@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.sync.SyncException;
@@ -31,7 +30,6 @@ public class YarnSerializePrinting {
   public static class HelloBSP extends
       BSP<NullWritable, NullWritable, NullWritable, NullWritable, NullWritable> {
     public static final Log LOG = LogFactory.getLog(HelloBSP.class);
-    private Configuration conf;
     private final static int PRINT_INTERVAL = 1000;
     private int num;
 
@@ -39,31 +37,19 @@ public class YarnSerializePrinting {
     public void bsp(
         BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable, NullWritable> bspPeer)
         throws IOException, SyncException, InterruptedException {
-      num = conf.getInt("bsp.peers.num", 0);
+      num = bspPeer.getConfiguration().getInt("bsp.peers.num", 0);
       LOG.info(bspPeer.getAllPeerNames());
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {
         String peerName = bspPeer.getPeerName();
         if (peerName.equals(otherPeer)) {
-          LOG
-              .info("Hello BSP from " + (i + 1) + " of " + num + ": "
-                  + peerName);
+          LOG.info("Hello BSP from " + (i + 1) + " of " + num + ": " + peerName);
         }
 
         Thread.sleep(PRINT_INTERVAL);
         bspPeer.sync();
         i++;
       }
-    }
-
-    @Override
-    public Configuration getConf() {
-      return conf;
-    }
-
-    @Override
-    public void setConf(Configuration conf) {
-      this.conf = conf;
     }
   }
 
