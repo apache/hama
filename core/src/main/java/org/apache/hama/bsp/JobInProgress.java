@@ -45,6 +45,10 @@ class JobInProgress {
     }
   }
 
+  public static enum JobCounter {
+    LAUNCHED_TASKS
+  }
+
   static final Log LOG = LogFactory.getLog(JobInProgress.class);
   boolean tasksInited = false;
   boolean jobInited = false;
@@ -71,6 +75,8 @@ class JobInProgress {
   TaskInProgress tasks[] = new TaskInProgress[0];
   private long superstepCounter;
 
+  private final Counters counters = new Counters();
+
   int numBSPTasks = 0;
   int clusterSize;
   String jobSplit;
@@ -83,8 +89,8 @@ class JobInProgress {
     this.jobFile = jobFile;
     this.master = master;
 
-    this.status = new JobStatus(jobId, null, 0L, 0L, JobStatus.State.PREP
-        .value());
+    this.status = new JobStatus(jobId, null, 0L, 0L,
+        JobStatus.State.PREP.value(), counters);
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -102,8 +108,8 @@ class JobInProgress {
 
     this.numBSPTasks = job.getNumBspTask();
 
-    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
-        .getJobName());
+    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
+        job.getJobName());
 
     this.setJobName(job.getJobName());
 
@@ -215,7 +221,7 @@ class JobInProgress {
 
     // Update job status
     this.status = new JobStatus(this.status.getJobID(), this.profile.getUser(),
-        0L, 0L, JobStatus.RUNNING);
+        0L, 0L, JobStatus.RUNNING, counters);
 
     // delete all nodes before start
     master.clearZKNodes();
@@ -246,6 +252,7 @@ class JobInProgress {
     } catch (IOException e) {
       LOG.error("Exception while obtaining new task!", e);
     }
+    counters.incrCounter(JobCounter.LAUNCHED_TASKS, 1L);
     return result;
   }
 
@@ -268,9 +275,9 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), superstepCounter, superstepCounter, superstepCounter,
-          JobStatus.SUCCEEDED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(),
+          this.profile.getUser(), superstepCounter, superstepCounter,
+          superstepCounter, JobStatus.SUCCEEDED, superstepCounter, counters);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
@@ -297,15 +304,16 @@ class JobInProgress {
         break;
       }
     }
-    
-    // TODO 
-    
+
+    // TODO
+
     if (!allDone) {
       // Kill job
       this.kill();
       // Send KillTaskAction to GroomServer
-      this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), 0L, 0L, 0L, JobStatus.KILLED, superstepCounter);
+      this.status = new JobStatus(this.status.getJobID(),
+          this.profile.getUser(), 0L, 0L, 0L, JobStatus.KILLED,
+          superstepCounter, counters);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
@@ -329,7 +337,7 @@ class JobInProgress {
   public synchronized void kill() {
     if (status.getRunState() != JobStatus.KILLED) {
       this.status = new JobStatus(status.getJobID(), this.profile.getUser(),
-          0L, 0L, 0L, JobStatus.KILLED);
+          0L, 0L, 0L, JobStatus.KILLED, counters);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
       //
@@ -389,6 +397,10 @@ class JobInProgress {
    */
   public String getJobName() {
     return jobName;
+  }
+
+  public Counters getCounters() {
+    return counters;
   }
 
 }

@@ -100,31 +100,33 @@ public class JobStatus implements Writable, Cloneable {
   private int tasks;
   
   private long finishTime;
+  private Counters counter;
 
   public JobStatus() {
   }
 
-  public JobStatus(BSPJobID jobid, String user, long progress, int runState) {
-    this(jobid, user, progress, 0, runState);
+  public JobStatus(BSPJobID jobid, String user, long progress, int runState, Counters counter) {
+    this(jobid, user, progress, 0, runState, counter);
   }
 
   public JobStatus(BSPJobID jobid, String user, long progress,
-      long cleanupProgress, int runState) {
-    this(jobid, user, 0, progress, cleanupProgress, runState);
+      long cleanupProgress, int runState, Counters counter) {
+    this(jobid, user, 0, progress, cleanupProgress, runState, counter);
   }
 
   public JobStatus(BSPJobID jobid, String user, long setupProgress,
-      long progress, long cleanupProgress, int runState) {
-    this(jobid, user, 0, progress, cleanupProgress, runState, 0);
+      long progress, long cleanupProgress, int runState, Counters counter) {
+    this(jobid, user, 0, progress, cleanupProgress, runState, 0, counter);
   }
 
   public JobStatus(BSPJobID jobid, String user, long setupProgress,
-      long progress, long cleanupProgress, int runState, long superstepCount) {
+      long progress, long cleanupProgress, int runState, long superstepCount, Counters counter) {
     this.jobid = jobid;
     this.setupProgress = setupProgress;
     this.progress = progress;
     this.cleanupProgress = cleanupProgress;
     this.runState = runState;
+    this.counter = counter;
     this.state = State.values()[runState - 1];
     this.superstepCount = superstepCount;
     this.user = user;
@@ -138,7 +140,7 @@ public class JobStatus implements Writable, Cloneable {
     return progress;
   }
 
-  synchronized void setprogress(long p) {
+  synchronized void setProgress(long p) {
     this.progress = p;
   }
 
@@ -255,6 +257,7 @@ public class JobStatus implements Writable, Cloneable {
     Text.writeString(out, user);
     Text.writeString(out, schedulingInfo);
     out.writeLong(superstepCount);
+    counter.write(out);
   }
 
   public synchronized void readFields(DataInput in) throws IOException {
@@ -269,6 +272,8 @@ public class JobStatus implements Writable, Cloneable {
     this.user = Text.readString(in);
     this.schedulingInfo = Text.readString(in);
     this.superstepCount = in.readLong();
+    counter = new Counters();
+    counter.readFields(in);
   }
 
   /**
@@ -283,6 +288,10 @@ public class JobStatus implements Writable, Cloneable {
    */
   public synchronized String getName() {
     return name;
+  }
+
+  public Counters getCounter() {
+    return counter;
   }
 
 }

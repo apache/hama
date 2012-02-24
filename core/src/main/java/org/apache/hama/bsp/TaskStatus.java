@@ -245,7 +245,7 @@ public class TaskStatus implements Writable, Cloneable {
    * @return The number of BSP super steps executed by the task.
    */
   public long getSuperstepCount() {
-    return counters.getCounter(PeerCounter.SUPERSTEPS);
+    return counters.getCounter(PeerCounter.SUPERSTEP_SUM);
   }
 
   @Override

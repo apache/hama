@@ -51,8 +51,8 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   private static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
-  protected static enum PeerCounter {
-    SUPERSTEPS
+  public static enum PeerCounter {
+    SUPERSTEP_SUM, SUPERSTEPS
   }
 
   private final Configuration conf;
@@ -137,7 +137,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     // consistent peernames.
     syncClient.enterBarrier(taskId.getJobID(), taskId, -1);
     syncClient.leaveBarrier(taskId.getJobID(), taskId, -1);
-    setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 0,
+    setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 1.0f,
         TaskStatus.State.RUNNING, "running", peerAddress.getHostName(),
         TaskStatus.Phase.STARTING, counters));
 
@@ -262,7 +262,8 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     leaveBarrier();
 
-    incrCounter(PeerCounter.SUPERSTEPS, 1);
+    incrCounter(PeerCounter.SUPERSTEP_SUM, 1L);
+
     currentTaskStatus.setCounters(counters);
 
     umbilical.statusUpdate(taskId, currentTaskStatus);
@@ -273,6 +274,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private final BSPMessageBundle<M> combineMessages(Iterable<M> messages) {
     if (!conf.getClass("bsp.combiner.class", Combiner.class).equals(
         Combiner.class)) {
+      @SuppressWarnings("unchecked")
       Combiner<M> combiner = (Combiner<M>) ReflectionUtils.newInstance(
           conf.getClass("bsp.combiner.class", Combiner.class), conf);
 
@@ -435,5 +437,9 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     if (counters != null) {
       counters.incrCounter(group, counter, amount);
     }
+  }
+
+  public Counters getCounters() {
+    return counters;
   }
 }
