@@ -113,4 +113,9 @@ public interface RunningJob {
       throws IOException;
 
   public long getSuperstepCount() throws IOException;
+
+  /**
+   * @return the latest status of the job.
+   */
+  public JobStatus getStatus();
 }

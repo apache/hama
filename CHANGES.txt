@@ -11,7 +11,8 @@ Release 0.5 - Unreleased
   BUG FIXES
 
   IMPROVEMENTS
-    
+
+    HAMA-484: Counters should be accessible in client (tjungblut)    
     HAMA-483: Remove old and deprecated BSP API (tjungblut)    
     HAMA-514: Add maven-gpg-plugin to parent POM file (edwardyoon)
     HAMA-510: Add sendMessageToNeighbors() to Vertex (tjungblut)

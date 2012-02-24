@@ -410,7 +410,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
    * A cache from enum values to the associated counter. Dramatically speeds up
    * typical usage.
    */
-  private Map<Enum, Counter> cache = new IdentityHashMap<Enum, Counter>();
+  private Map<Enum<?>, Counter> cache = new IdentityHashMap<Enum<?>, Counter>();
 
   /**
    * Returns the names of all counter classes.
@@ -445,7 +445,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
    * @param key the counter key
    * @return the matching counter object
    */
-  public synchronized Counter findCounter(Enum key) {
+  public synchronized Counter findCounter(Enum<?> key) {
     Counter counter = cache.get(key);
     if (counter == null) {
       Group group = getGroup(key.getDeclaringClass().getName());
@@ -487,7 +487,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
    * @param key identifies a counter
    * @param amount amount by which counter is to be incremented
    */
-  public synchronized void incrCounter(Enum key, long amount) {
+  public synchronized void incrCounter(Enum<?> key, long amount) {
     findCounter(key).increment(amount);
   }
 
@@ -507,7 +507,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
    * Returns current value of the specified counter, or 0 if the counter does
    * not exist.
    */
-  public synchronized long getCounter(Enum key) {
+  public synchronized long getCounter(Enum<?> key) {
     return findCounter(key).getValue();
   }
 

@@ -116,28 +116,16 @@ public class BSPJobClient extends Configured implements Tool {
       this.statustime = System.currentTimeMillis();
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.hama.bsp.RunningJob#getID()
-     */
     @Override
     public BSPJobID getID() {
       return profile.getJobID();
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.hama.bsp.RunningJob#getJobName()
-     */
     @Override
     public String getJobName() {
       return profile.getJobName();
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.apache.hama.bsp.RunningJob#getJobFile()
-     */
     @Override
     public String getJobFile() {
       return profile.getJobFile();
@@ -189,6 +177,11 @@ public class BSPJobClient extends Configured implements Tool {
     public synchronized int getJobState() throws IOException {
       updateStatus();
       return status.getRunState();
+    }
+
+    @Override
+    public JobStatus getStatus() {
+      return status;
     }
 
     /**
@@ -602,12 +595,13 @@ public class BSPJobClient extends Configured implements Tool {
       }
     }
 
-    if(job.isSuccessful()) {
+    if (job.isSuccessful()) {
       LOG.info("The total number of supersteps: " + info.getSuperstepCount());
+      info.getStatus().getCounter().incrCounter(BSPPeerImpl.PeerCounter.SUPERSTEPS, info.getSuperstepCount());
+      info.getStatus().getCounter().log(LOG);
     } else {
       LOG.info("Job failed.");
     }
-    // TODO job.getCounters().log(LOG);
     return job.isSuccessful();
   }
 
@@ -653,6 +647,7 @@ public class BSPJobClient extends Configured implements Tool {
     if (running.isSuccessful()) {
       LOG.info("Job complete: " + jobId);
       LOG.info("The total number of supersteps: " + running.getSuperstepCount());
+      running.getStatus().getCounter().log(LOG);
     } else {
       LOG.info("Job failed.");
     }

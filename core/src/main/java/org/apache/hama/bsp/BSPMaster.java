@@ -161,9 +161,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
             if (ts.getRunState() == TaskStatus.State.SUCCEEDED) {
               jip.completedTask(tip, ts);
+              // increment counters only if successful
+              jip.getCounters().incrAllCounters(ts.getCounters());
             } else if (ts.getRunState() == TaskStatus.State.RUNNING) {
-              // TODO add progress counter
-              jip.getStatus().setprogress(ts.getSuperstepCount());
+              jip.getStatus().setProgress(ts.getSuperstepCount());
               jip.getStatus().setSuperstepCount(ts.getSuperstepCount());
             } else if (ts.getRunState() == TaskStatus.State.FAILED) {
               jip.status.setRunState(JobStatus.FAILED);
@@ -178,7 +179,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
                 }
               }
             } else if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
-              jip.getStatus().setprogress(ts.getSuperstepCount());
+              jip.getStatus().setProgress(ts.getSuperstepCount());
               jip.getStatus().setSuperstepCount(ts.getSuperstepCount());
             } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
               GroomProtocol worker = findGroomServer(tmpStatus);
