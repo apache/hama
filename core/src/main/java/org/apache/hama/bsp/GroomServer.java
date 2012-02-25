@@ -57,6 +57,7 @@ import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.MasterProtocol;
+import org.apache.hama.monitor.Monitor;
 import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.log4j.LogManager;
@@ -320,6 +321,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     this.instructor.bind(DispatchTasksDirective.class,
         new DispatchTasksHandler());
     instructor.start();
+
+    if(conf.getBoolean("bsp.monitor.enabled", true)) {
+      // TODO: conf.get("bsp.monitor.class.impl", "Monitor.class")
+      // so user can switch to customized monitor impl if necessary.
+      new Monitor(conf, zk, this.groomServerName).start();
+    }
+
     this.running = true;
     this.initialized = true;
   }
