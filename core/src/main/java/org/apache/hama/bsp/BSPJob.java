@@ -28,6 +28,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
 
 /**
  * A BSP job configuration.
@@ -245,6 +247,14 @@ public class BSPJob extends BSPJobContext {
   @SuppressWarnings({ "rawtypes" })
   public void setInputFormat(Class<? extends InputFormat> cls) {
     conf.setClass("bsp.input.format.class", cls, InputFormat.class);
+  }
+
+  /**
+   * Sets the compression codec that should be used to compress messages.
+   */
+  public void setCompressionCodec(Class<? extends BSPMessageCompressor<?>> clazz) {
+    conf.setClass(BSPMessageCompressorFactory.COMPRESSION_CODEC_CLASS, clazz,
+        BSPMessageCompressor.class);
   }
 
   /**
