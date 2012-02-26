@@ -20,23 +20,23 @@
   <parent>
     <groupId>org.apache.hama</groupId>
     <artifactId>hama-parent</artifactId>
-    <version>0.4.0-incubating</version>
+    <version>0.4.1-incubating-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-core</artifactId>
   <name>core</name>
-  <version>0.4.0-incubating</version>
+  <version>0.4.1-incubating-SNAPSHOT</version>
   <packaging>jar</packaging>
   <scm>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/core/tags/hama-parent-0.4.0-incubating-SNAPSHOT/core
+      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/core
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/core/tags/hama-parent-0.4.0-incubating-SNAPSHOT/core
+      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/core
     </developerConnection>
-    <url>http://svn.apache.org/viewvc/maven/pom/tags/hama-parent-0.4.0-incubating-SNAPSHOT/hama-core</url>
+    <url>http://svn.apache.org/viewvc/maven/pom/tags/apache-8/hama-parent/hama-core</url>
   </scm>
 
   <dependencies>
