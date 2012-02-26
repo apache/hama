@@ -27,7 +27,7 @@
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-parent</artifactId>
   <name>Apache Hama parent POM</name>
-  <version>0.4.0-incubating-SNAPSHOT</version>
+  <version>0.4.0-incubating</version>
   <url>http://incubator.apache.org/hama</url>
   <packaging>pom</packaging>
   <prerequisites>
@@ -76,12 +76,12 @@
   </licenses>
   <scm>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/incubator/hama
+      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/tags/hama-parent-0.4.0-incubating-SNAPSHOT
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/hama
+      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/tags/hama-parent-0.4.0-incubating-SNAPSHOT
     </developerConnection>
-    <url>http://svn.apache.org/viewvc/maven/pom/tags/apache-8/hama-parent</url>
+    <url>http://svn.apache.org/viewvc/maven/pom/tags/hama-parent-0.4.0-incubating-SNAPSHOT</url>
   </scm>
 
   <properties>
