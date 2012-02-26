@@ -17,19 +17,17 @@
  */
 package org.apache.hama.util;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.StringTokenizer;
 
 import junit.framework.TestCase;
-import static org.junit.Assert.*;
 
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 
 public class TestZKUtil extends TestCase {
 
@@ -51,10 +49,10 @@ public class TestZKUtil extends TestCase {
         CreateMode createMode) throws KeeperException, InterruptedException {  
       parts[pos] = path; 
       pos++;
-      sb.append(File.separator+path);
+      sb.append(ZKUtil.ZK_SEPARATOR+path);
       StringBuilder builder = new StringBuilder();
       for(int i=0;i<pos;i++) {
-        builder.append(File.separator+parts[i]);
+        builder.append(ZKUtil.ZK_SEPARATOR+parts[i]);
       }
       assertEquals("Make sure path created is consistent.", sb.toString(), builder.toString());
       return path;
@@ -64,7 +62,7 @@ public class TestZKUtil extends TestCase {
   public void setUp() throws Exception {
     this.zk = new MockZK("localhost:2181", 3000, null);
     this.path = "/monitor/groom_lab01_61000/metrics/jvm";
-    StringTokenizer token = new StringTokenizer(path, File.separator);
+    StringTokenizer token = new StringTokenizer(path, ZKUtil.ZK_SEPARATOR);
     int count = token.countTokens(); // should be 4
     assertEquals("Make sure token are 4.", count, 4);
     this.parts = new String[count]; // 

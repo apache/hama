@@ -17,54 +17,57 @@
  */
 package org.apache.hama.util;
 
-import java.io.File;
 import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs.Ids; 
+import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 
 public class ZKUtil {
 
-  public static final Log LOG = LogFactory.getLog(ZKUtil.class); 
+  public static final Log LOG = LogFactory.getLog(ZKUtil.class);
+
+  public static final String ZK_SEPARATOR = "/";
 
   /**
-   * Recursively create ZooKeeper's znode with corresponded path, which 
-   * starts from the root (/).
+   * Recursively create ZooKeeper's znode with corresponded path, which starts
+   * from the root (/).
+   * 
    * @param zk is the target where znode is to be created.
    * @param path of the znode on ZooKeeper server.
    */
   public static void create(ZooKeeper zk, String path) {
-    if(LOG.isDebugEnabled()) LOG.debug("Path to be splitted: "+path);
-    if(!path.startsWith("/"))
-      throw new IllegalArgumentException("Path is not started from root(/): "+
-      path);
-    StringTokenizer token = new StringTokenizer(path, File.separator); 
+    if (LOG.isDebugEnabled())
+      LOG.debug("Path to be splitted: " + path);
+    if (!path.startsWith(ZK_SEPARATOR))
+      throw new IllegalArgumentException("Path is not started from root(/): "
+          + path);
+    StringTokenizer token = new StringTokenizer(path, ZKUtil.ZK_SEPARATOR);
     int count = token.countTokens();
-    if(0 >= count) 
+    if (0 >= count)
       throw new RuntimeException("Can not correctly split the path into.");
     String[] parts = new String[count];
     int pos = 0;
-    while(token.hasMoreTokens()) {
+    while (token.hasMoreTokens()) {
       parts[pos] = token.nextToken();
-      if(LOG.isDebugEnabled()) LOG.debug("Splitted string:"+parts[pos]);
+      if (LOG.isDebugEnabled())
+        LOG.debug("Splitted string:" + parts[pos]);
       pos++;
     }
     StringBuilder builder = new StringBuilder();
-    for(String part: parts) {
+    for (String part : parts) {
       try {
-        builder.append(File.separator+part);
-        if(null == zk.exists(builder.toString(), false)) {
-          zk.create(builder.toString(), null, Ids.OPEN_ACL_UNSAFE, 
-          CreateMode.PERSISTENT);
-        } 
-      } catch(KeeperException ke) {
+        builder.append(ZKUtil.ZK_SEPARATOR + part);
+        if (null == zk.exists(builder.toString(), false)) {
+          zk.create(builder.toString(), null, Ids.OPEN_ACL_UNSAFE,
+              CreateMode.PERSISTENT);
+        }
+      } catch (KeeperException ke) {
         LOG.warn(ke);
-      } catch(InterruptedException ie) {
+      } catch (InterruptedException ie) {
         LOG.warn(ie);
       }
     }
