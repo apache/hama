@@ -20,14 +20,14 @@
   <parent>
     <groupId>org.apache.hama</groupId>
     <artifactId>hama-parent</artifactId>
-    <version>0.4.0-incubating</version>
+    <version>0.4.0-incubating-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-graph</artifactId>
   <name>graph</name>
-  <version>0.4.0-incubating</version>
+  <version>0.4.0-incubating-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <dependencies>
