@@ -27,7 +27,7 @@
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-parent</artifactId>
   <name>Apache Hama parent POM</name>
-  <version>0.4.1-incubating-SNAPSHOT</version>
+  <version>0.4.0-incubating-SNAPSHOT</version>
   <url>http://incubator.apache.org/hama</url>
   <packaging>pom</packaging>
   <prerequisites>
@@ -250,7 +250,6 @@
         </configuration>
       </plugin>
         
-
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
@@ -265,10 +264,13 @@
         </executions>
         <configuration>
           <excludes>
+            <exclude>**/*.asc</exclude>
+            <exclude>**/logs/**</exclude>
             <exclude>CHANGES.txt</exclude>
             <exclude>conf/groomservers</exclude>
             <exclude>src/site/resources/files/hama-eclipse-formatter.xml</exclude>
             <exclude>**/src/test/resources/*.properties</exclude>
+            <exclude>**dependency-reduced-pom.xml</exclude>
           </excludes>
         </configuration>
       </plugin>
