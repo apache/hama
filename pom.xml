@@ -264,12 +264,28 @@
         </executions>
         <configuration>
           <excludes>
+            <exclude>**/*.asc</exclude>
+            <exclude>**/logs/**</exclude>
             <exclude>CHANGES.txt</exclude>
             <exclude>conf/groomservers</exclude>
             <exclude>src/site/resources/files/hama-eclipse-formatter.xml</exclude>
             <exclude>**/src/test/resources/*.properties</exclude>
+            <exclude>**dependency-reduced-pom.xml</exclude>
           </excludes>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
 
     </plugins>
