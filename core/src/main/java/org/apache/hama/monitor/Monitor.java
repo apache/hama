@@ -206,11 +206,11 @@ public final class Monitor extends Thread implements MonitorListener {
               if(null == zk.exists(znode+File.separator+name, false)) {
                 String p = this.zk.create(znode+File.separator+name, toBytes(value), 
                 Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                LOG.info("Successfully publish data to zk with path to `"+p+"'");
+                LOG.debug("Successfully publish data to zk with path to `"+p+"'");
               } else {
                 // can we just update by increasing 1 version?
                 this.zk.setData(znode+File.separator+name, toBytes(value), -1); 
-                LOG.info("Successfully update data in znode: "+znode);
+                LOG.debug("Successfully update data in znode: "+znode);
               }
             }
           } catch (KeeperException ke) {
@@ -313,7 +313,7 @@ public final class Monitor extends Thread implements MonitorListener {
     public void run() {
       try { 
         while(!Thread.currentThread().interrupted()) {
-          LOG.info("How many workers will be executed by collector? "+workers.size());
+          LOG.debug("How many workers will be executed by collector? "+workers.size());
           for(TaskWorker worker: workers.values()) {
             pool.submit(worker);
           }
@@ -410,7 +410,7 @@ public final class Monitor extends Thread implements MonitorListener {
   public void notify(Result result) {
     try {
       results.put(result); 
-      LOG.info(result.name()+" is put to queue (size is "+results.size()+")");
+      LOG.debug(result.name()+" is put to queue (size is "+results.size()+")");
     } catch(InterruptedException ie) {
       LOG.warn(this.getClass().getSimpleName()+" is interrupted.", ie);
       Thread.currentThread().interrupt();

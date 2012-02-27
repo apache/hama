@@ -58,7 +58,7 @@ public final class Configurator {
     File pluginDir = new File(pluginPath);
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
     Map<String, Task> taskList = new HashMap<String, Task>();
-    LOG.info("Scanning jar files within "+pluginDir+".");
+    LOG.debug("Scanning jar files within "+pluginDir+".");
     for(File jar: pluginDir.listFiles()) {
       String jarPath = jar.getPath();
       Long timestamp = repos.get(jarPath);
@@ -68,7 +68,7 @@ public final class Configurator {
           t.setListener(listener);
           taskList.put(jarPath, t);
           repos.put(jarPath, new Long(jar.lastModified()));
-          LOG.info(jar.getName()+" is loaded.");
+          LOG.debug(jar.getName()+" is loaded.");
         }
       }
     }
@@ -91,7 +91,7 @@ public final class Configurator {
       "in menifest file.");
     String namespace = pkg + File.separator + main;
     namespace = namespace.replaceAll(File.separator, ".");
-    LOG.info("Task class to be loaded: "+namespace);
+    LOG.debug("Task class to be loaded: "+namespace);
     URLClassLoader child = 
       new URLClassLoader(new URL[]{path.toURI().toURL()}, loader); 
     Thread.currentThread().setContextClassLoader(child);
