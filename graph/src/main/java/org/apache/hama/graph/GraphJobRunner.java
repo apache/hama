@@ -114,25 +114,28 @@ public class GraphJobRunner extends BSP {
     }
 
     long numberVertices = vertices.size() * peer.getNumPeers();
-    for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
-      e.getValue().setNumVertices(numberVertices);
-    }
-
-    startVertexCompute();
+    startVertexCompute(numberVertices);
   }
 
-  private void startVertexCompute() throws IOException {
+  @SuppressWarnings("unchecked")
+  private void startVertexCompute(long numberVertices) throws IOException {
     for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
+      // TODO there's no another way to set numVertices?
+      e.getValue().setNumVertices(numberVertices);
+
       LinkedList<Writable> msgIterator = new LinkedList<Writable>();
       msgIterator.add(e.getValue().getValue());
       e.getValue().compute(msgIterator.iterator());
     }
   }
 
-  public void cleanup(BSPPeer peer) {
-    // FIXME provide write solution to Vertex
-    LOG.debug("for debug\n==================");
+  /**
+   * Just write <new Text(vertexID), (Writable) value> pair as a result
+   */
+  @SuppressWarnings("unchecked")
+  public void cleanup(BSPPeer peer) throws IOException {
     for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
+      peer.write(new Text(e.getValue().getVertexID()), e.getValue().getValue());
       LOG.debug(e.getValue().getVertexID() + ", " + e.getValue().getValue());
     }
   }

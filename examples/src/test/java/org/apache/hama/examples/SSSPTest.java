@@ -32,6 +32,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.util.SSSPTextToSeq;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 
@@ -145,7 +146,21 @@ public class SSSPTest extends TestCase {
     try {
       SSSP.main(new String[] { "Frankfurt", INPUT, OUTPUT });
 
-      //FIXME verifyResult();
+      verifyResult();
+    } finally {
+      deleteTempDirs();
+    }
+  }
+
+  public void testShortestPathsUtil() throws IOException, InterruptedException,
+      ClassNotFoundException, InstantiationException, IllegalAccessException {
+    generateTestTextData();
+    // <input path> <output path>
+    SSSPTextToSeq.main(new String[] { TEXT_INPUT, TEXT_OUTPUT });
+    try {
+      SSSP.main(new String[] { "Frankfurt", TEXT_OUTPUT, OUTPUT });
+
+      verifyResult();
     } finally {
       deleteTempDirs();
     }
@@ -174,11 +189,9 @@ public class SSSPTest extends TestCase {
   }
 
   private void generateTestSequenceFileData() throws IOException {
-    SequenceFile.Writer writer = SequenceFile
-        .createWriter(fs, conf, new Path(INPUT), VertexWritable.class,
-            VertexArrayWritable.class);
-    for (Map.Entry<VertexWritable, VertexArrayWritable> e : testData
-        .entrySet()) {
+    SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, new Path(
+        INPUT), VertexWritable.class, VertexArrayWritable.class);
+    for (Map.Entry<VertexWritable, VertexArrayWritable> e : testData.entrySet()) {
       writer.append(e.getKey(), e.getValue());
     }
     writer.close();
@@ -186,13 +199,11 @@ public class SSSPTest extends TestCase {
 
   private void generateTestTextData() throws IOException {
     BufferedWriter writer = new BufferedWriter(new FileWriter(TEXT_INPUT));
-    for (Map.Entry<VertexWritable, VertexArrayWritable> e : testData
-        .entrySet()) {
+    for (Map.Entry<VertexWritable, VertexArrayWritable> e : testData.entrySet()) {
       writer.write(e.getKey().getName() + "\t");
       for (int i = 0; i < e.getValue().get().length; i++) {
-        writer.write(((VertexWritable) e.getValue().get()[i]).getName()
-            + ":" + ((VertexWritable) e.getValue().get()[i]).getWeight()
-            + "\t");
+        writer.write(((VertexWritable) e.getValue().get()[i]).getName() + ":"
+            + ((VertexWritable) e.getValue().get()[i]).getWeight() + "\t");
       }
       writer.write("\n");
     }
