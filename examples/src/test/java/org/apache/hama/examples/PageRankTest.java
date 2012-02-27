@@ -32,6 +32,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.util.PagerankTextToSeq;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 
@@ -64,8 +65,8 @@ public class PageRankTest extends TestCase {
       String name = pages[vertexId];
       VertexWritable[] arr = new VertexWritable[adjacencyStringArray.length - 1];
       for (int j = 1; j < adjacencyStringArray.length; j++) {
-        arr[j - 1] = new VertexWritable(pages[Integer
-            .parseInt(adjacencyStringArray[j])]);
+        arr[j - 1] = new VertexWritable(
+            pages[Integer.parseInt(adjacencyStringArray[j])]);
       }
       VertexArrayWritable wr = new VertexArrayWritable();
       wr.set(arr);
@@ -88,37 +89,25 @@ public class PageRankTest extends TestCase {
   public void testPageRank() throws Exception {
     generateSeqTestData();
     try {
-      PageRank.main(new String[] { INPUT, OUTPUT, "0.85", "0.000001" });
-      
-      //FIXME verifyResult();
+      PageRank.main(new String[] { INPUT, OUTPUT, "1" });
+
+      verifyResult();
     } finally {
       deleteTempDirs();
     }
   }
 
   private void verifyResult() throws IOException {
-    Map<String, Double> rs = new HashMap<String, Double>();
-    // our desired results
-    rs.put("stackoverflow.com", 0.20495476070571675);
-    rs.put("google.com", 0.339831187357033);
-    rs.put("facebook.com", 0.042503114866791786);
-    rs.put("yahoo.com", 0.2134265215074906);
-    rs.put("twitter.com", 0.042503114866791786);
-    rs.put("nasa.gov", 0.12688096846583075);
-    rs.put("youtube.com", 0.029900332230345304);
-
     SequenceFile.Reader reader = new SequenceFile.Reader(fs, new Path(OUTPUT
         + "/part-00000"), conf);
     Text key = new Text();
     DoubleWritable value = new DoubleWritable();
     double sum = 0.0;
     while (reader.next(key, value)) {
-      double result = (double) rs.get(key.toString());
-      assertEquals(value.get(), result);
       sum += value.get();
     }
     System.out.println("Sum is: " + sum);
-    assertEquals(sum, 1.0d);
+    assertTrue(sum > 0 && sum < 1d);
   }
 
   private void generateSeqTestData() throws IOException {
@@ -128,6 +117,20 @@ public class PageRankTest extends TestCase {
       writer.append(e.getKey(), e.getValue());
     }
     writer.close();
+  }
+
+  public void testPageRankUtil() throws IOException, InterruptedException,
+      ClassNotFoundException, InstantiationException, IllegalAccessException {
+    generateTestTextData();
+    // <input path> <output path>
+    PagerankTextToSeq.main(new String[] { TEXT_INPUT, TEXT_OUTPUT });
+    try {
+      PageRank.main(new String[] { TEXT_OUTPUT, OUTPUT, "1" });
+
+      verifyResult();
+    } finally {
+      deleteTempDirs();
+    }
   }
 
   private void generateTestTextData() throws IOException {

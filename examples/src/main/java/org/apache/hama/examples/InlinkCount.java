@@ -22,6 +22,7 @@ import java.util.Iterator;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
@@ -68,7 +69,7 @@ public class InlinkCount extends Vertex<IntWritable> {
 
     inlinkJob.setPartitioner(HashPartitioner.class);
     inlinkJob.setOutputFormat(SequenceFileOutputFormat.class);
-    inlinkJob.setOutputKeyClass(VertexWritable.class);
+    inlinkJob.setOutputKeyClass(Text.class);
     inlinkJob.setOutputValueClass(IntWritable.class);
 
     long startTime = System.currentTimeMillis();
