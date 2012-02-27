@@ -26,9 +26,10 @@ import org.apache.hama.bsp.BSPJob;
 public class GraphJob extends BSPJob {
   public final static String VERTEX_CLASS_ATTR = "hama.graph.vertex.class";
 
-  public GraphJob(HamaConfiguration conf) throws IOException {
+  public GraphJob(HamaConfiguration conf, Class<?> exampleClass) throws IOException {
     super(conf);
     this.setBspClass(GraphJobRunner.class);
+    this.setJarByClass(exampleClass);
   }
 
   /**
@@ -39,7 +40,6 @@ public class GraphJob extends BSPJob {
    */
   public void setVertexClass(Class<? extends Vertex<? extends Writable>> cls)
       throws IllegalStateException {
-    ensureState(JobState.DEFINE);
     conf.setClass(VERTEX_CLASS_ATTR, cls, Vertex.class);
   }
 

@@ -107,6 +107,14 @@ if [ -d "$HAMA_HOME/core/target/test-classes/classes" ]; then
   CLASSPATH=${CLASSPATH}:$HAMA_HOME/core/target/test-classes
 fi
 
+# for developers, add Graph classes to CLASSPATH
+if [ -d "$HAMA_HOME/graph/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/graph/target/classes
+fi
+if [ -d "$HAMA_HOME/graph/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/graph/target/test-classes
+fi
+
 # so that filenames w/ spaces are handled correctly in loops below
 IFS=
 
