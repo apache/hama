@@ -50,7 +50,7 @@ public class InlinkCount extends Vertex<IntWritable> {
       InterruptedException, ClassNotFoundException {
     // Graph job configuration
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob inlinkJob = new GraphJob(conf);
+    GraphJob inlinkJob = new GraphJob(conf, InlinkCount.class);
     // Set the job name
     inlinkJob.setJobName("Inlink Count");
 

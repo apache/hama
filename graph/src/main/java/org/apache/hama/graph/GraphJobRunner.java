@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -36,6 +39,7 @@ import org.apache.hama.util.KeyValuePair;
 
 @SuppressWarnings("rawtypes")
 public class GraphJobRunner extends BSP {
+  public static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
   private Map<String, Vertex> vertices = new HashMap<String, Vertex>();
 
   @SuppressWarnings("unchecked")
@@ -85,11 +89,15 @@ public class GraphJobRunner extends BSP {
   @SuppressWarnings("unchecked")
   public void setup(BSPPeer peer) throws IOException, SyncException,
       InterruptedException {
+    Configuration conf = peer.getConfiguration();
+    LOG.debug("vertex class: " + conf.get("hama.graph.vertex.class"));
+
     KeyValuePair<? extends VertexWritable, ? extends VertexArrayWritable> next = null;
     while ((next = peer.readNext()) != null) {
-      Vertex vertex = (Vertex) ReflectionUtils.newInstance(
-          peer.getConfiguration().getClass("hama.graph.vertex.class",
-              Vertex.class), peer.getConfiguration());
+      Vertex<? extends Writable> vertex = (Vertex<? extends Writable>) ReflectionUtils
+          .newInstance(
+              peer.getConfiguration().getClass("hama.graph.vertex.class",
+                  Vertex.class), peer.getConfiguration());
       vertex.setVertexID(next.getKey().getName());
       vertex.peer = peer;
 
@@ -106,10 +114,15 @@ public class GraphJobRunner extends BSP {
     }
 
     long numberVertices = vertices.size() * peer.getNumPeers();
-
     for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
       e.getValue().setNumVertices(numberVertices);
+    }
 
+    startVertexCompute();
+  }
+
+  private void startVertexCompute() throws IOException {
+    for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
       LinkedList<Writable> msgIterator = new LinkedList<Writable>();
       msgIterator.add(e.getValue().getValue());
       e.getValue().compute(msgIterator.iterator());
@@ -118,10 +131,9 @@ public class GraphJobRunner extends BSP {
 
   public void cleanup(BSPPeer peer) {
     // FIXME provide write solution to Vertex
-    System.out.println("for debug\n==================");
+    LOG.debug("for debug\n==================");
     for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
-      System.out.println(e.getValue().getVertexID() + ", "
-          + e.getValue().getValue());
+      LOG.debug(e.getValue().getVertexID() + ", " + e.getValue().getValue());
     }
   }
 }

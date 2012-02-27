@@ -79,7 +79,7 @@ public class SSSP {
 
     // Graph job configuration
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob ssspJob = new GraphJob(conf);
+    GraphJob ssspJob = new GraphJob(conf, SSSP.class);
     // Set the job name
     ssspJob.setJobName("Single Source Shortest Path");
 

@@ -71,7 +71,7 @@ public class PageRank {
       printUsage();
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
-    GraphJob pageJob = new GraphJob(conf);
+    GraphJob pageJob = new GraphJob(conf, PageRank.class);
     pageJob.setJobName("Pagerank");
 
     pageJob.setVertexClass(PageRankVertex.class);
