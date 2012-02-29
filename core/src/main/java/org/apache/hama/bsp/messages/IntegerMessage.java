@@ -15,28 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp;
+package org.apache.hama.bsp.messages;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a string tag and a long data.
+ * A message that consists of a string tag and a int data. 
  */
-public class LongMessage extends BSPMessage {
+public class IntegerMessage extends BSPMessage {
 
-  private String tag;
-  private long data;
+  String tag;
+  int data;
 
-  public LongMessage() {
+  public IntegerMessage() {
     super();
   }
 
-  public LongMessage(String tag, long data) {
+  public IntegerMessage(String tag, int data) {
     super();
-    this.data = data;
     this.tag = tag;
+    this.data = data;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(tag);
+    out.writeInt(data);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    tag = in.readUTF();
+    data = in.readInt();
   }
 
   @Override
@@ -45,20 +57,8 @@ public class LongMessage extends BSPMessage {
   }
 
   @Override
-  public Long getData() {
+  public Integer getData() {
     return data;
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    out.writeUTF(tag);
-    out.writeLong(data);
-  }
-
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    tag = in.readUTF();
-    data = in.readLong();
   }
 
   @Override
@@ -68,7 +68,7 @@ public class LongMessage extends BSPMessage {
 
   @Override
   public void setData(Object data) {
-    this.data = (Long) data;
+    this.data = (Integer) data;
   }
 
 }

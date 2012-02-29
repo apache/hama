@@ -15,59 +15,64 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp;
+package org.apache.hama.bsp.messages;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a string tag and a double data. 
+ * A message that consists of a byte tag and a byte data.
  */
-public class DoubleMessage extends BSPMessage {
+public class ByteMessage extends BSPMessage {
 
-  private String tag;
-  private Double data;
+  private byte[] tag;
+  private byte[] data;
 
-  public DoubleMessage() {
+  public ByteMessage() {
     super();
   }
 
-  public DoubleMessage(String tag, Double data) {
+  public ByteMessage(byte[] tag, byte[] data) {
     super();
-    this.data = data;
     this.tag = tag;
+    this.data = data;
   }
 
   @Override
-  public String getTag() {
-    return tag;
+  public byte[] getTag() {
+    return this.tag;
   }
 
   @Override
-  public Double getData() {
-    return data;
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    out.writeUTF(tag);
-    out.writeDouble(data);
+  public byte[] getData() {
+    return this.data;
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    tag = in.readUTF();
-    data = in.readDouble();
+    this.tag = new byte[in.readInt()];
+    in.readFully(tag, 0, this.tag.length);
+    this.data = new byte[in.readInt()];
+    in.readFully(data, 0, this.data.length);
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(tag.length);
+    out.write(tag);
+    out.writeInt(data.length);
+    out.write(data);
   }
 
   @Override
   public void setTag(Object tag) {
-    this.tag = (String) tag;
+    this.tag = (byte[]) tag;
   }
 
   @Override
   public void setData(Object data) {
-    this.data = (Double) data;
+    this.data = (byte[]) data;
   }
+
 }

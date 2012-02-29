@@ -15,64 +15,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp;
+package org.apache.hama.bsp.messages;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a byte tag and a byte data.
+ * A message that consists of a string tag and a long data.
  */
-public class ByteMessage extends BSPMessage {
+public class LongMessage extends BSPMessage {
 
-  private byte[] tag;
-  private byte[] data;
+  private String tag;
+  private long data;
 
-  public ByteMessage() {
+  public LongMessage() {
     super();
   }
 
-  public ByteMessage(byte[] tag, byte[] data) {
+  public LongMessage(String tag, long data) {
     super();
-    this.tag = tag;
     this.data = data;
+    this.tag = tag;
   }
 
   @Override
-  public byte[] getTag() {
-    return this.tag;
+  public String getTag() {
+    return tag;
   }
 
   @Override
-  public byte[] getData() {
-    return this.data;
-  }
-
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    this.tag = new byte[in.readInt()];
-    in.readFully(tag, 0, this.tag.length);
-    this.data = new byte[in.readInt()];
-    in.readFully(data, 0, this.data.length);
+  public Long getData() {
+    return data;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(tag.length);
-    out.write(tag);
-    out.writeInt(data.length);
-    out.write(data);
+    out.writeUTF(tag);
+    out.writeLong(data);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    tag = in.readUTF();
+    data = in.readLong();
   }
 
   @Override
   public void setTag(Object tag) {
-    this.tag = (byte[]) tag;
+    this.tag = (String) tag;
   }
 
   @Override
   public void setData(Object data) {
-    this.data = (byte[]) data;
+    this.data = (Long) data;
   }
 
 }
