@@ -20,9 +20,9 @@ package org.apache.hama.bsp.message.compress;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPMessage;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.IntegerMessage;
+import org.apache.hama.bsp.messages.BSPMessage;
+import org.apache.hama.bsp.messages.IntegerMessage;
 
 public class TestBSPMessageCompressor extends TestCase {
 

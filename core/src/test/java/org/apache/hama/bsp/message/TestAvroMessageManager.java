@@ -25,9 +25,9 @@ import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.BooleanMessage;
-import org.apache.hama.bsp.DoubleMessage;
-import org.apache.hama.bsp.IntegerMessage;
+import org.apache.hama.bsp.messages.BooleanMessage;
+import org.apache.hama.bsp.messages.DoubleMessage;
+import org.apache.hama.bsp.messages.IntegerMessage;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestAvroMessageManager extends TestCase {

@@ -19,6 +19,7 @@ package org.apache.hama.bsp;
 
 import junit.framework.TestCase;
 
+import org.apache.hama.bsp.messages.ByteMessage;
 import org.apache.hama.util.Bytes;
 
 public class TestMessages extends TestCase {
