@@ -14,3 +14,7 @@ The javax.servlet package used by Jetty is copyright
 Sun Microsystems, Inc and Apache Software Foundation. It is 
 distributed under the Common Development and Distribution License.
 See https://glassfish.dev.java.net/public/CDDLv1.0.html.
+
+Compression support provided by snappy-java
+See http://code.google.com/p/snappy-java/
+
