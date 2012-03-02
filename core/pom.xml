@@ -20,14 +20,14 @@
   <parent>
     <groupId>org.apache.hama</groupId>
     <artifactId>hama-parent</artifactId>
-    <version>0.4.0-incubating-SNAPSHOT</version>
+    <version>0.4.0-incubating</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-core</artifactId>
   <name>core</name>
-  <version>0.4.0-incubating-SNAPSHOT</version>
+  <version>0.4.0-incubating</version>
   <packaging>jar</packaging>
   <scm>
     <connection>
