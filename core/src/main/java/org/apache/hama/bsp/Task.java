@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.ipc.BSPPeerProtocol;
 
 /**
@@ -48,7 +47,7 @@ public abstract class Task implements Writable {
 
   // Current counters
   private transient Counters counters = new Counters();
-  
+
   public Task() {
     jobId = new BSPJobID();
     taskId = new TaskAttemptID();
@@ -98,15 +97,17 @@ public abstract class Task implements Writable {
   public int getPartition() {
     return partition;
   }
-  
-  /** Construct output file names so that, when an output directory listing is
-   * sorted lexicographically, positions correspond to output partitions.*/
+
+  /**
+   * Construct output file names so that, when an output directory listing is
+   * sorted lexicographically, positions correspond to output partitions.
+   */
   private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance();
   static {
     NUMBER_FORMAT.setMinimumIntegerDigits(5);
     NUMBER_FORMAT.setGroupingUsed(false);
   }
-  
+
   static synchronized String getOutputName(int partition) {
     return "part-" + NUMBER_FORMAT.format(partition);
   }
@@ -142,18 +143,21 @@ public abstract class Task implements Writable {
    * @param bspPeer for communications
    * @param umbilical for communications with GroomServer
    */
-  public abstract void run(BSPJob job, BSPPeerImpl<?,?,?,?,?> bspPeer, BSPPeerProtocol umbilical)
-      throws IOException, SyncException, ClassNotFoundException, InterruptedException;
+  public abstract void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?, ?> bspPeer,
+      BSPPeerProtocol umbilical) throws Exception;
 
   public abstract BSPTaskRunner createRunner(GroomServer groom);
 
   public void done(BSPPeerProtocol umbilical) throws IOException {
     umbilical.done(getTaskID());
   }
-  
+
   public abstract BSPJob getConf();
+
   public abstract void setConf(BSPJob localJobConf);
 
-  Counters getCounters() { return counters; }
-  
+  Counters getCounters() {
+    return counters;
+  }
+
 }

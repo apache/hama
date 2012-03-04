@@ -40,7 +40,7 @@ public class BSPRunner {
   private TaskAttemptID id;
   private BSPPeerImpl<?, ?, ?, ?, ? extends Writable> peer;
   private Counters counters = new Counters();
-  
+
   @SuppressWarnings("rawtypes")
   Class<? extends BSP> bspClass;
 
@@ -87,14 +87,34 @@ public class BSPRunner {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void startComputation() throws Exception {
     BSP bspInstance = ReflectionUtils.newInstance(bspClass, conf);
+    // Throw the first exception and log the remaining.
+    Exception firstException = null;
     try {
       bspInstance.setup(peer);
       bspInstance.bsp(peer);
     } catch (Exception e) {
-      throw e;
+      LOG.error("Error occured while running bsp function.", e);
+      firstException = e;
     } finally {
-      bspInstance.cleanup(peer);
-      peer.close();
+      try {
+        bspInstance.cleanup(peer);
+      } catch (Exception e) {
+        LOG.error("Cleaning up after bsp function.", e);
+        if (firstException == null) {
+          firstException = e;
+        }
+      } finally {
+        try {
+          peer.close();
+        } catch (Exception e) {
+          LOG.error("Error closing the bsp peer", e);
+          if (firstException == null)
+            firstException = e;
+        } finally {
+          if (firstException != null)
+            throw firstException;
+        }
+      }
     }
   }
 

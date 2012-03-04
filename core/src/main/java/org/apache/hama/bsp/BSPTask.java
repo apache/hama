@@ -20,6 +20,10 @@ package org.apache.hama.bsp;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,7 +31,7 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hama.bsp.sync.SyncException;
+import org.apache.hama.Constants;
 import org.apache.hama.ipc.BSPPeerProtocol;
 
 /**
@@ -41,7 +45,53 @@ public final class BSPTask extends Task {
   BytesWritable split;
   String splitClass;
 
+  // Schedule Heartbeats to GroomServer
+  private ScheduledExecutorService pingService;
+
+  /**
+   * This thread is responsible for sending a heartbeat ping to GroomServer.
+   */
+  private static class PingGroomServer implements Runnable {
+
+    private BSPPeerProtocol pingRPC;
+    private TaskAttemptID taskId;
+    private Thread bspThread;
+
+    public PingGroomServer(BSPPeerProtocol umbilical, TaskAttemptID id) {
+      pingRPC = umbilical;
+      taskId = id;
+      bspThread = Thread.currentThread();
+    }
+
+    @Override
+    public void run() {
+
+      boolean shouldKillSelf = false;
+      try {
+        if (LOG.isDebugEnabled())
+          LOG.debug("Pinging at time " + Calendar.getInstance().toString());
+        // if the RPC call returns false, it means that groomserver does not
+        // have knowledge of this task.
+        shouldKillSelf = !(pingRPC.ping(taskId) && bspThread.isAlive());
+      } catch (IOException e) {
+        LOG.error(new StringBuilder(
+            "IOException pinging GroomServer from task - ").append(taskId), e);
+        shouldKillSelf = true;
+      } catch (Exception e) {
+        LOG.error(new StringBuilder(
+            "Exception pinging GroomServer from task - ").append(taskId), e);
+        shouldKillSelf = true;
+      }
+      if (shouldKillSelf) {
+        LOG.error("Killing self. No connection to groom.");
+        System.exit(69);
+      }
+
+    }
+  }
+
   public BSPTask() {
+    this.pingService = Executors.newScheduledThreadPool(1);
   }
 
   public BSPTask(BSPJobID jobId, String jobFile, TaskAttemptID taskid,
@@ -53,6 +103,8 @@ public final class BSPTask extends Task {
 
     this.splitClass = splitClass;
     this.split = split;
+
+    this.pingService = Executors.newScheduledThreadPool(1);
   }
 
   @Override
@@ -60,31 +112,82 @@ public final class BSPTask extends Task {
     return new BSPTaskRunner(this, groom, this.conf);
   }
 
+  private void startPingingGroom(BSPJob job, BSPPeerProtocol umbilical) {
+
+    long pingPeriod = job.getConf().getLong(Constants.GROOM_PING_PERIOD,
+        Constants.DEFAULT_GROOM_PING_PERIOD) / 2;
+
+    try {
+      if (pingPeriod > 0) {
+        pingService.scheduleWithFixedDelay(new PingGroomServer(umbilical,
+            taskId), 0, pingPeriod, TimeUnit.MILLISECONDS);
+        LOG.error("Started pinging to groom");
+      }
+    } catch (Exception e) {
+      LOG.error("Error scheduling ping service", e);
+    }
+  }
+
+  private void stopPingingGroom() {
+    if (pingService != null) {
+      LOG.error("Shutting down ping service.");
+      pingService.shutdownNow();
+    }
+  }
+
   @Override
   public final void run(BSPJob job, BSPPeerImpl<?, ?, ?, ?, ?> bspPeer,
-      BSPPeerProtocol umbilical) throws IOException, SyncException,
-      ClassNotFoundException, InterruptedException {
-    runBSP(job, bspPeer, split, umbilical);
+      BSPPeerProtocol umbilical) throws Exception {
 
-    done(umbilical);
+    startPingingGroom(job, umbilical);
+    try {
+      runBSP(job, bspPeer, split, umbilical);
+      done(umbilical);
+    } finally {
+      stopPingingGroom();
+    }
+
   }
 
   @SuppressWarnings("unchecked")
   private final <KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable> void runBSP(
-      final BSPJob job, BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> bspPeer,
+      final BSPJob job,
+      BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> bspPeer,
       final BytesWritable rawSplit, final BSPPeerProtocol umbilical)
-      throws IOException, SyncException, ClassNotFoundException,
-      InterruptedException {
+      throws Exception {
 
     BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> bsp = (BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M>) ReflectionUtils
         .newInstance(job.getConf().getClass("bsp.work.class", BSP.class),
             job.getConf());
 
-    bsp.setup(bspPeer);
-    bsp.bsp(bspPeer);
+    // The policy is to throw the first exception and log the remaining.
+    Exception firstException = null;
+    try {
+      bsp.setup(bspPeer);
+      bsp.bsp(bspPeer);
+    } catch (Exception e) {
+      LOG.error("Error running bsp setup and bsp function.", e);
+      firstException = e;
+    } finally {
+      try {
+        bsp.cleanup(bspPeer);
+      } catch (Exception e) {
+        LOG.error("Error cleaning up after bsp executed.", e);
+        if (firstException == null)
+          firstException = e;
+      } finally {
 
-    bsp.cleanup(bspPeer);
-    bspPeer.close();
+        try {
+          bspPeer.close();
+        } catch (Exception e) {
+          LOG.error("Error closing BSP Peer.", e);
+          if (firstException == null)
+            firstException = e;
+        }
+        if (firstException != null)
+          throw firstException;
+      }
+    }
   }
 
   public final BSPJob getConf() {
