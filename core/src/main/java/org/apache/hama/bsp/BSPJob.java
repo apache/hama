@@ -27,6 +27,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
@@ -380,5 +381,13 @@ public class BSPJob extends BSPJobContext {
 
   public void setMaxIteration(int maxIteration) {
     conf.setInt("hama.graph.max.iteration", maxIteration);
+  }
+
+  public void setCheckPointInterval(int checkPointInterval) {
+    conf.setInt(Constants.CHECKPOINT_INTERVAL, checkPointInterval);
+  }
+
+  public void setCheckPointFlag(boolean enableCheckPoint) {
+    conf.setBoolean(Constants.CHECKPOINT_ENABLED, enableCheckPoint);
   }
 }

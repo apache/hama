@@ -24,8 +24,10 @@ import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +36,10 @@ import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,9 +53,9 @@ import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.net.DNS;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.DiskChecker;
+import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.util.RunJar;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.sync.SyncException;
@@ -133,6 +138,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   // private BlockingQueue<GroomServerAction> tasksToCleanup = new
   // LinkedBlockingQueue<GroomServerAction>();
 
+  // Schedule Heartbeats to GroomServer
+  private ScheduledExecutorService taskMonitorService;
+
   private class DispatchTasksHandler implements DirectiveHandler {
 
     public void handle(Directive directive) throws DirectiveException {
@@ -210,6 +218,49 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           LOG.error("Fail to execute directive.", e);
         }
       }
+    }
+  }
+
+  /*
+   * This thread is responsible for monitoring the pings from peers. If any peer
+   * fails to ping this groom for a pre-defined period, the task is purged from
+   * the records.
+   */
+  private class BSPTasksMonitor extends Thread {
+
+    private List<TaskInProgress> outOfContactTasks = new ArrayList<GroomServer.TaskInProgress>(
+        conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3));
+
+    private BSPTasksMonitor() {
+
+      outOfContactTasks = new ArrayList<GroomServer.TaskInProgress>(
+          conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3));
+    }
+
+    public void run() {
+
+      getObliviousTasks(outOfContactTasks);
+
+      if (outOfContactTasks.size() > 0) {
+        LOG.debug("Got " + outOfContactTasks.size() + " oblivious tasks");
+      }
+
+      Iterator<TaskInProgress> taskIter = outOfContactTasks.iterator();
+
+      while (taskIter.hasNext()) {
+        TaskInProgress tip = taskIter.next();
+        try {
+          LOG.debug("Purging task " + tip);
+          purgeTask(tip, true);
+        } catch (Exception e) {
+          LOG.error(
+              new StringBuilder("Error while removing a timed-out task - ")
+                  .append(tip.toString()), e);
+
+        }
+      }
+      outOfContactTasks.clear();
+
     }
   }
 
@@ -322,7 +373,17 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         new DispatchTasksHandler());
     instructor.start();
 
-    if(conf.getBoolean("bsp.monitor.enabled", true)) {
+    if (this.taskMonitorService == null) {
+      this.taskMonitorService = Executors.newScheduledThreadPool(1);
+      long monitorPeriod = this.conf.getLong(Constants.GROOM_PING_PERIOD,
+          Constants.DEFAULT_GROOM_PING_PERIOD);
+      if (monitorPeriod > 0) {
+        this.taskMonitorService.scheduleWithFixedDelay(new BSPTasksMonitor(),
+            1000, monitorPeriod, TimeUnit.MILLISECONDS);
+      }
+    }
+
+    if (conf.getBoolean("bsp.monitor.enabled", true)) {
       // TODO: conf.get("bsp.monitor.class.impl", "Monitor.class")
       // so user can switch to customized monitor impl if necessary.
       new Monitor(conf, zk, this.groomServerName).start();
@@ -608,6 +669,50 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
   }
 
+  private synchronized void getObliviousTasks(
+      List<TaskInProgress> outOfContactTasks) {
+
+    if (runningTasks == null) {
+      LOG.debug("returning null");
+      return;
+    }
+
+    long currentTime = Calendar.getInstance().getTimeInMillis();
+    long monitorPeriod = conf.getLong(Constants.GROOM_PING_PERIOD,
+        Constants.DEFAULT_GROOM_PING_PERIOD);
+
+    for (Map.Entry<TaskAttemptID, TaskInProgress> entry : runningTasks
+        .entrySet()) {
+      TaskInProgress tip = entry.getValue();
+      if (LOG.isDebugEnabled())
+        LOG.debug("checking task: "
+            + tip.getTask().getTaskID()
+            + " starttime ="
+            + tip.startTime
+            + " lastping = "
+            + tip.lastPingedTimestamp
+            + " run state = "
+            + tip.taskStatus.getRunState().toString()
+            + " monitorPeriod = "
+            + monitorPeriod
+            + " check = "
+            + (tip.taskStatus.getRunState().equals(TaskStatus.State.RUNNING) && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))));
+
+      // Task is out of contact if it has not pinged since more than
+      // monitorPeriod. A task is given a leeway of 10 times monitorPeriod
+      // to get started.
+      if (tip.taskStatus.getRunState().equals(TaskStatus.State.RUNNING)
+          && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))) {
+
+        LOG.info("adding purge task: " + tip.getTask().getTaskID());
+
+        outOfContactTasks.add(tip);
+      }
+
+    }
+
+  }
+
   /**
    * The datastructure for initializing a job
    */
@@ -711,6 +816,11 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       taskReportServer.stop();
       taskReportServer = null;
     }
+
+    if (taskMonitorService != null) {
+      taskMonitorService.shutdownNow();
+      taskMonitorService = null;
+    }
   }
 
   public static Thread startGroomServer(final GroomServer hrs) {
@@ -737,6 +847,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     volatile boolean done = false;
     volatile boolean wasKilled = false;
     private TaskStatus taskStatus;
+
+    private long startTime = 0L;
+    private volatile long lastPingedTimestamp = 0L;
 
     public TaskInProgress(Task task, BSPJob jobConf, String groomServer) {
       this.task = task;
@@ -782,6 +895,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       taskStatus.setRunState(TaskStatus.State.RUNNING);
       this.runner = task.createRunner(GroomServer.this);
       this.runner.start();
+      startTime = Calendar.getInstance().getTimeInMillis();
       LOG.info("Task '" + task.getTaskID().toString() + "' has started.");
     }
 
@@ -872,6 +986,10 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           killAndCleanup(wasFailure);
         }
       }
+    }
+
+    public synchronized void ping(long timestamp) {
+      this.lastPingedTimestamp = timestamp;
     }
   }
 
@@ -983,6 +1101,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       } catch (FSError e) {
         LOG.fatal("FSError from child", e);
         umbilical.fsError(taskid, e.getMessage());
+        e.printStackTrace();
       } catch (SyncException e) {
         LOG.fatal("SyncError from child", e);
         umbilical.fatalError(taskid, e.toString());
@@ -990,11 +1109,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         // Report back any failures, for diagnostic purposes
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         e.printStackTrace(new PrintStream(baos));
+        e.printStackTrace();
       } catch (Throwable throwable) {
-        LOG.warn("Error running child", throwable);
+        LOG.fatal("Error running child", throwable);
         // Report back any failures, for diagnostic purposes
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         throwable.printStackTrace(new PrintStream(baos));
+        throwable.printStackTrace();
       } finally {
         RPC.stopProxy(umbilical);
         // Shutting down log4j of the child-vm...
@@ -1017,7 +1138,11 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
   @Override
   public boolean ping(TaskAttemptID taskid) throws IOException {
-    // TODO Auto-generated method stub
+    TaskInProgress tip = runningTasks.get(taskid);
+    if (tip != null) {
+      tip.ping(Calendar.getInstance().getTimeInMillis());
+      return true;
+    }
     return false;
   }
 

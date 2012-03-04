@@ -12,6 +12,7 @@ Release 0.5 - Unreleased
 
   IMPROVEMENTS
 
+    HAMA-498: BSPTask should periodically ping its parent (Suraj Menon via edwardyoon)
     HAMA-513: Move message classes to somewhere from bsp package. (tjungblut)
     HAMA-484: Counters should be accessible in client (tjungblut)    
     HAMA-483: Remove old and deprecated BSP API (tjungblut)    

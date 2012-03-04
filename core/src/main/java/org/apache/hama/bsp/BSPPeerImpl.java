@@ -70,6 +70,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private SyncClient syncClient;
   private MessageManager<M> messenger;
 
+  // A checkpoint is initiated at the <checkPointInterval>th interval.
+  private int checkPointInterval;
+  private long lastCheckPointStep;
+
   // IO
   private int partition;
   private String splitClass;
@@ -124,6 +128,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     this.counters = counters;
 
     this.fs = FileSystem.get(conf);
+
+    this.checkPointInterval = conf.getInt(Constants.CHECKPOINT_INTERVAL,
+        Constants.DEFAULT_CHECKPOINT_INTERVAL);
+    this.lastCheckPointStep = 0;
 
     String bindAddress = conf.get(Constants.PEER_HOST,
         Constants.DEFAULT_PEER_HOST);
@@ -206,6 +214,25 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     messenger.send(peerName, msg);
   }
 
+  /*
+   * returns true if the peer would checkpoint in the next sync.
+   */
+  public final boolean isReadyToCheckpoint() {
+
+    checkPointInterval = conf.getInt(Constants.CHECKPOINT_INTERVAL, 1);
+    if (LOG.isDebugEnabled())
+      LOG.debug(new StringBuffer(1000).append("Enabled = ")
+          .append(conf.getBoolean(Constants.CHECKPOINT_ENABLED, false))
+          .append(" checkPointInterval = ").append(checkPointInterval)
+          .append(" lastCheckPointStep = ").append(lastCheckPointStep)
+          .append(" getSuperstepCount() = ").append(getSuperstepCount())
+          .toString());
+
+    return (conf.getBoolean(Constants.CHECKPOINT_ENABLED, false)
+        && (checkPointInterval != 0) && (((int) (getSuperstepCount() - lastCheckPointStep)) >= checkPointInterval));
+
+  }
+
   private final String checkpointedPath() {
     String backup = conf.get("bsp.checkpoint.prefix_path", "/checkpoint/");
     String ckptPath = backup + bspJob.getJobID().toString() + "/"
@@ -243,6 +270,12 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     Iterator<Entry<InetSocketAddress, LinkedList<M>>> it = messenger
         .getMessageIterator();
 
+    boolean shouldCheckPoint = false;
+
+    if ((shouldCheckPoint = isReadyToCheckpoint())) {
+      lastCheckPointStep = getSuperstepCount();
+    }
+
     while (it.hasNext()) {
       Entry<InetSocketAddress, LinkedList<M>> entry = it.next();
       final InetSocketAddress addr = entry.getKey();
@@ -250,7 +283,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
       final BSPMessageBundle<M> bundle = combineMessages(messages);
 
-      if (conf.getBoolean("bsp.checkpoint.enabled", false)) {
+      if (shouldCheckPoint) {
         checkpoint(checkpointedPath(), bundle);
       }
 

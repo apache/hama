@@ -60,6 +60,11 @@
     interface.</description>
   </property>
   <property>
+    <name>bsp.groomserver.pingperiod</name>
+    <value>5000</value>
+    <description>Periodicity in milliseconds that every BSP task should send its hearbeat ping latest. If a task fails to do so, the groom server would deem the task as failed.</description>
+  </property>
+  <property>
     <name>bsp.system.dir</name>
     <value>${hadoop.tmp.dir}/bsp/system</value>
     <description>The shared directory where BSP stores control files.
@@ -104,6 +109,17 @@
     <description>The maximum number of BSP tasks that will be run simultaneously 
     by a groom server.</description>
   </property>
+   <property>
+    <name>bsp.checkpoint.enabled</name>
+    <value>false</value>
+    <description>Enable Hama to checkpoint the messages transferred among BSP tasks during the BSP synchronization period.</description>
+  </property>
+  <property>
+    <name>bsp.checkpoint.interval</name>
+    <value>1</value>
+    <description>If bsp.checkpoint.enabled is set to true, the checkpointing is initiated on the valueth synchronization process of BSP tasks.</description>
+  </property>
+
   
   <!--
   Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.
@@ -161,7 +177,7 @@
   </property>
   
   <property>
-    <name>hama.messanger.class</name>
+    <name>hama.messenger.class</name>
     <value>org.apache.hama.bsp.message.AvroMessageManagerImpl</value>
   </property>
   

@@ -246,18 +246,39 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         realBytes = splits[id].getBytes();
       }
 
-      peer = new BSPPeerImpl(job, conf, new TaskAttemptID(
-          new TaskID(job.getJobID(), id), id), new LocalUmbilical(), id,
-          splitname, realBytes, new Counters());
+      peer = new BSPPeerImpl(job, conf, new TaskAttemptID(new TaskID(
+          job.getJobID(), id), id), new LocalUmbilical(), id, splitname,
+          realBytes, new Counters());
+      // Throw the first exception and log all the other exception.
+      Exception firstException = null;
       try {
         bsp.setup(peer);
         bsp.bsp(peer);
       } catch (Exception e) {
         LOG.error("Exception during BSP execution!", e);
+        firstException = e;
+      } finally {
+        try {
+          bsp.cleanup(peer);
+        } catch (Exception e) {
+          LOG.error("Error cleaning up after bsp execution.", e);
+          if (firstException == null)
+            firstException = e;
+        } finally {
+          try {
+            peer.clear();
+            peer.close();
+          } catch (Exception e) {
+            LOG.error("Exception closing BSP peer,", e);
+            if (firstException == null)
+              firstException = e;
+          } finally {
+            if (firstException != null)
+              throw firstException;
+          }
+        }
+
       }
-      bsp.cleanup(peer);
-      peer.clear();
-      peer.close();
     }
 
     @Override

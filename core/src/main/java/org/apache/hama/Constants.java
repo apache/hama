@@ -23,8 +23,8 @@ package org.apache.hama;
  * Some constants used in the Hama.
  */
 public interface Constants {
- 
-  public  static final String GROOM_RPC_HOST = "bsp.groom.rpc.hostname";
+
+  public static final String GROOM_RPC_HOST = "bsp.groom.rpc.hostname";
 
   public static final String DEFAULT_GROOM_RPC_HOST = "0.0.0.0";
 
@@ -32,13 +32,12 @@ public interface Constants {
 
   /** Default port region rpc server listens on. */
   public static final int DEFAULT_GROOM_RPC_PORT = 50000;
-  
 
-  ///////////////////////////////////////
+  // /////////////////////////////////////
   // Constants for BSP Package
-  ///////////////////////////////////////
+  // /////////////////////////////////////
   /** default host address */
-  public  static final String PEER_HOST = "bsp.peer.hostname";
+  public static final String PEER_HOST = "bsp.peer.hostname";
   /** default host address */
   public static final String DEFAULT_PEER_HOST = "0.0.0.0";
 
@@ -47,18 +46,35 @@ public interface Constants {
   public static final int DEFAULT_PEER_PORT = 61000;
 
   public static final String PEER_ID = "bsp.peer.id";
-  
+
   /** Parameter name for what groom server implementation to use. */
-  public static final String GROOM_SERVER_IMPL= "hama.groomserver.impl";
-  
+  public static final String GROOM_SERVER_IMPL = "hama.groomserver.impl";
+
+  /** Parameter name for interval at which bsp peer should ping groomserver */
+  public static final String GROOM_PING_PERIOD = "bsp.groomserver.pingperiod";
+
+  /** Default value of ping period in milliseconds. */
+  public static final long DEFAULT_GROOM_PING_PERIOD = 5000;
+
   /** When we encode strings, we always specify UTF8 encoding */
   public static final String UTF8_ENCODING = "UTF-8";
-  
+
   public static final String MAX_TASKS_PER_GROOM = "bsp.tasks.maximum";
-  
-  ///////////////////////////////////////
+
+  // //////////////////////////////////////
+  // Checkpointing related constants
+  // //////////////////////////////////////
+
+  // Set to true to enable checkpointing.
+  public static final String CHECKPOINT_ENABLED = "bsp.checkpoint.enabled";
+  // Superstep interval at which BSPPeer should initiate a checkpoint.
+  public static final String CHECKPOINT_INTERVAL = "bsp.checkpoint.interval";
+  // By default checkpointing when enabled would checkpoint on every superstep
+  public static final short DEFAULT_CHECKPOINT_INTERVAL = 1;
+
+  // /////////////////////////////////////
   // Constants for ZooKeeper
-  ///////////////////////////////////////  
+  // /////////////////////////////////////
   /** zookeeper root */
   public static final String ZOOKEEPER_ROOT = "bsp.zookeeper.root";
   /** zookeeper default root */
@@ -76,7 +92,7 @@ public interface Constants {
   public static final String ZOOKEEPER_PAUSE = "zookeeper.pause";
   /** Default ZooKeeper pause value. In milliseconds. */
   public static final int DEFAULT_ZOOKEEPER_PAUSE = 2 * 1000;
-  
+
   static final String ZOOKEEPER_CONFIG_NAME = "zoo.cfg";
   static final String ZOOKEEPER_CLIENT_PORT = "hama.zookeeper.property.clientPort";
   static final String ZOOKEEPER_SESSION_TIMEOUT = "hama.zookeeper.session.timeout";
@@ -87,11 +103,10 @@ public interface Constants {
   /** Cluster is fully-distributed */
   static final String CLUSTER_IS_DISTRIBUTED = "true";
 
-
   // Other constants
 
   /**
    * An empty instance.
    */
-  static final byte [] EMPTY_BYTE_ARRAY = new byte [0];
+  static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 }
