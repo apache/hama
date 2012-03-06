@@ -17,26 +17,33 @@
  */
 package org.apache.hama.graph;
 
+/**
+ * The edge class
+ */
 public class Edge {
-  private String name;
-  private String target;
+  private String sourceVertexID;
+  private String destVertexID;
   private int cost;
 
-  public Edge(String name,String target, int cost) {
-    this.name = name;
-    this.target = target;
+  public Edge(String sourceVertexID, String destVertexID, int cost) {
+    this.sourceVertexID = sourceVertexID;
+    this.destVertexID = destVertexID;
     this.cost = cost;
   }
 
   public String getName() {
-    return name;
+    return sourceVertexID;
   }
-  
+
+  public String getDestVertexID() {
+    return destVertexID;
+  }
+
   public int getCost() {
     return cost;
   }
 
-  public String getTarget() {
-    return target;
+  public String toString() {
+    return this.getDestVertexID() + ":" + this.getCost();
   }
 }
