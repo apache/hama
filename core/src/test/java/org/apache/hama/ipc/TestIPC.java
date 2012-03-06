@@ -88,8 +88,7 @@ public class TestIPC extends TestCase {
       for (int i = 0; i < count; i++) {
         try {
           LongWritable param = new LongWritable(RANDOM.nextLong());
-          LongWritable value = (LongWritable) client.call(param, server, null,
-              null);
+          LongWritable value = (LongWritable) client.call(param, server);
           if (!param.equals(value)) {
             LOG.fatal("Call failed!");
             failed = true;
@@ -214,7 +213,7 @@ public class TestIPC extends TestCase {
     Client client = new Client(LongWritable.class, conf);
     InetSocketAddress address = new InetSocketAddress("127.0.0.1", 10);
     try {
-      client.call(new LongWritable(RANDOM.nextLong()), address, null, null);
+      client.call(new LongWritable(RANDOM.nextLong()), address);
       fail("Expected an exception to have been thrown");
     } catch (IOException e) {
       String message = e.getMessage();
