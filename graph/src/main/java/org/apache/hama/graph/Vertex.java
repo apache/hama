@@ -47,7 +47,7 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
     MapWritable message = new MapWritable();
     message.put(new Text(e.getName()), msg);
 
-    peer.send(e.getTarget(), message);
+    peer.send(e.getDestVertexID(), message);
   }
 
   @Override
