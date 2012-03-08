@@ -161,7 +161,7 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    * @param amount A non-negative amount by which the counter is to 
    *               be incremented.
    */
-  public void incrCounter(Enum<?> key, long amount);
+  public void incrementCounter(Enum<?> key, long amount);
   
   /**
    * Increments the counter identified by the group and counter name
@@ -172,5 +172,5 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    * @param amount A non-negative amount by which the counter is to 
    *               be incremented.
    */
-  public void incrCounter(String group, String counter, long amount);
+  public void incrementCounter(String group, String counter, long amount);
 }

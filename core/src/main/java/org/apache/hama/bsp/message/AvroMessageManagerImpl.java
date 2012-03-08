@@ -39,10 +39,12 @@ import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.util.BSPNetUtils;
 
-public class AvroMessageManagerImpl<M extends Writable> extends
+public final class AvroMessageManagerImpl<M extends Writable> extends
     CompressableMessageManager<M> implements Sender<M> {
 
   private NettyServer server = null;
@@ -55,8 +57,12 @@ public class AvroMessageManagerImpl<M extends Writable> extends
   // this must be a synchronized implementation: this is accessed per RPC
   private final ConcurrentLinkedQueue<M> localQueueForNextIteration = new ConcurrentLinkedQueue<M>();
 
+  private BSPPeer<?, ?, ?, ?, M> peer;
+
   @Override
-  public void init(Configuration conf, InetSocketAddress addr) {
+  public void init(BSPPeer<?, ?, ?, ?, M> peer, Configuration conf,
+      InetSocketAddress addr) {
+    this.peer = peer;
     super.initCompression(conf);
     server = new NettyServer(new SpecificResponder(Sender.class, this), addr);
   }
@@ -74,8 +80,13 @@ public class AvroMessageManagerImpl<M extends Writable> extends
   }
 
   public void put(BSPMessageBundle<M> messages) {
-    for (M message : messages.getMessages()) {
-      this.localQueueForNextIteration.add(message);
+    peer.incrementCounter(
+        BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, messages.getMessages()
+            .size());
+    Iterator<M> iterator = messages.getMessages().iterator();
+    while (iterator.hasNext()) {
+      this.localQueueForNextIteration.add(iterator.next());
+      iterator.remove();
     }
   }
 
@@ -140,13 +151,17 @@ public class AvroMessageManagerImpl<M extends Writable> extends
   private final BSPMessageBundle<M> deserializeMessage(ByteBuffer buffer)
       throws IOException {
     BSPMessageBundle<M> msg = new BSPMessageBundle<M>();
+    byte[] byteArray = buffer.array();
     if (compressor == null) {
-      ByteArrayInputStream inArray = new ByteArrayInputStream(buffer.array());
+      peer.incrementCounter(
+          BSPPeerImpl.PeerCounter.MESSAGE_BYTES_RECEIVED, byteArray.length);
+      ByteArrayInputStream inArray = new ByteArrayInputStream(byteArray);
       DataInputStream in = new DataInputStream(inArray);
       msg.readFields(in);
     } else {
-      msg = compressor
-          .decompressBundle(new BSPCompressedBundle(buffer.array()));
+      peer.incrementCounter(
+          BSPPeerImpl.PeerCounter.COMPRESSED_BYTES_RECEIVED, byteArray.length);
+      msg = compressor.decompressBundle(new BSPCompressedBundle(byteArray));
     }
 
     return msg;
@@ -159,10 +174,16 @@ public class AvroMessageManagerImpl<M extends Writable> extends
       DataOutputStream out = new DataOutputStream(outArray);
       msg.write(out);
       out.close();
-      return ByteBuffer.wrap(outArray.toByteArray());
+      byte[] byteArray = outArray.toByteArray();
+      peer.incrementCounter(
+          BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED, byteArray.length);
+      return ByteBuffer.wrap(byteArray);
     } else {
       BSPCompressedBundle compMsgBundle = compressor.compressBundle(msg);
-      return ByteBuffer.wrap(compMsgBundle.getData());
+      byte[] data = compMsgBundle.getData();
+      peer.incrementCounter(
+          BSPPeerImpl.PeerCounter.COMPRESSED_BYTES_SENT, data.length);
+      return ByteBuffer.wrap(data);
     }
   }
 

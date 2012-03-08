@@ -33,6 +33,8 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.util.CompressionUtil;
@@ -57,9 +59,11 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
   private Deque<M> localQueue = new LinkedList<M>();
   // this must be a synchronized implementation: this is accessed per RPC
   private final ConcurrentLinkedQueue<M> localQueueForNextIteration = new ConcurrentLinkedQueue<M>();
+  private BSPPeer<?, ?, ?, ?, M> peer;
 
   @Override
-  public final void init(Configuration conf, InetSocketAddress peerAddress) {
+  public final void init(BSPPeer<?, ?, ?, ?, M> peer, Configuration conf, InetSocketAddress peerAddress) {
+    this.peer = peer;
     this.conf = conf;
     super.initCompression(conf);
     startRPCServer(conf, peerAddress);
@@ -107,6 +111,7 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
       queue = new LinkedList<M>();
     }
     queue.add(msg);
+    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_SENT, 1L);
     outgoingQueues.put(targetPeerAddress, queue);
   }
 
@@ -160,6 +165,8 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
   @Override
   public final void put(M msg) {
     this.localQueueForNextIteration.add(msg);
+    peer.incrementCounter(
+        BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, 1L);
   }
 
   @Override
