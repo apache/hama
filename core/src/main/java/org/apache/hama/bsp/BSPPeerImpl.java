@@ -52,7 +52,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
   public static enum PeerCounter {
-    SUPERSTEP_SUM, SUPERSTEPS
+    SUPERSTEP_SUM, SUPERSTEPS, TASK_INPUT_RECORDS, TASK_OUTPUT_RECORDS,
+    IO_BYTES_READ, MESSAGE_BYTES_TRANSFERED, MESSAGE_BYTES_RECEIVED,
+    TOTAL_MESSAGES_SENT, TOTAL_MESSAGES_RECEIVED, COMPRESSED_BYTES_SENT,
+    COMPRESSED_BYTES_RECEIVED, TIME_IN_SYNC_MS
   }
 
   private final Configuration conf;
@@ -83,7 +86,9 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private RecordWriter<K2, V2> outWriter;
 
   private InetSocketAddress peerAddress;
+
   private Counters counters;
+  private Combiner<M> combiner;
 
   /**
    * Protected default constructor for LocalBSPRunner.
@@ -105,6 +110,18 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   }
 
   /**
+   * For unit test.
+   * 
+   * @param conf is the configuration file.
+   * @param dfs is the Hadoop FileSystem.
+   * @param counters is the counters from outside.
+   */
+  public BSPPeerImpl(final Configuration conf, FileSystem dfs, Counters counters) {
+    this(conf, dfs);
+    this.counters = counters;
+  }
+
+  /**
    * BSPPeer Constructor.
    * 
    * BSPPeer acts on behalf of clients performing bsp() tasks.
@@ -114,6 +131,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
    * @param taskId is the id that current process holds.
    * @throws Exception
    */
+  @SuppressWarnings("unchecked")
   public BSPPeerImpl(BSPJob job, Configuration conf, TaskAttemptID taskId,
       BSPPeerProtocol umbilical, int partition, String splitClass,
       BytesWritable split, Counters counters) throws Exception {
@@ -150,7 +168,13 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         TaskStatus.Phase.STARTING, counters));
 
     messenger = MessageManagerFactory.getMessageManager(conf);
-    messenger.init(conf, peerAddress);
+    messenger.init(this, conf, peerAddress);
+
+    final String combinerName = conf.get("bsp.combiner.class");
+    if (combinerName != null) {
+      combiner = (Combiner<M>) ReflectionUtils.newInstance(
+          conf.getClassByName(combinerName), conf);
+    }
 
   }
 
@@ -200,7 +224,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       if (in != null) {
         in.close();
       }
-      in = bspJob.getInputFormat().getRecordReader(inputSplit, bspJob);
+      in = new TrackedRecordReader<K1, V1>(bspJob.getInputFormat()
+          .getRecordReader(inputSplit, bspJob),
+          getCounter(BSPPeerImpl.PeerCounter.TASK_INPUT_RECORDS),
+          getCounter(BSPPeerImpl.PeerCounter.IO_BYTES_READ));
     }
   }
 
@@ -211,6 +238,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   @Override
   public final void send(String peerName, M msg) throws IOException {
+    incrementCounter(PeerCounter.TOTAL_MESSAGES_SENT, 1L);
     messenger.send(peerName, msg);
   }
 
@@ -266,6 +294,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   @Override
   public final void sync() throws IOException, SyncException,
       InterruptedException {
+    long startBarrier = System.currentTimeMillis();
     enterBarrier();
     Iterator<Entry<InetSocketAddress, LinkedList<M>>> it = messenger
         .getMessageIterator();
@@ -295,7 +324,9 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     leaveBarrier();
 
-    incrCounter(PeerCounter.SUPERSTEP_SUM, 1L);
+    incrementCounter(PeerCounter.TIME_IN_SYNC_MS,
+        (System.currentTimeMillis() - startBarrier));
+    incrementCounter(PeerCounter.SUPERSTEP_SUM, 1L);
 
     currentTaskStatus.setCounters(counters);
 
@@ -305,23 +336,15 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   }
 
   private final BSPMessageBundle<M> combineMessages(Iterable<M> messages) {
-    if (!conf.getClass("bsp.combiner.class", Combiner.class).equals(
-        Combiner.class)) {
-      @SuppressWarnings("unchecked")
-      Combiner<M> combiner = (Combiner<M>) ReflectionUtils.newInstance(
-          conf.getClass("bsp.combiner.class", Combiner.class), conf);
-
-      BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+    BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+    if (combiner != null) {
       bundle.addMessage(combiner.combine(messages));
-      
-      return bundle;
     } else {
-      BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
       for (M message : messages) {
         bundle.addMessage(message);
       }
-      return bundle;
     }
+    return bundle;
   }
 
   protected final void enterBarrier() throws SyncException {
@@ -423,6 +446,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   @Override
   public final void write(K2 key, V2 value) throws IOException {
+    incrementCounter(PeerCounter.TASK_OUTPUT_RECORDS, 1);
     collector.collect(key, value);
   }
 
@@ -461,21 +485,22 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     return counter;
   }
 
+  public Counters getCounters() {
+    return counters;
+  }
+
   @Override
-  public final void incrCounter(Enum<?> key, long amount) {
+  public final void incrementCounter(Enum<?> key, long amount) {
     if (counters != null) {
       counters.incrCounter(key, amount);
     }
   }
 
   @Override
-  public final void incrCounter(String group, String counter, long amount) {
+  public final void incrementCounter(String group, String counter, long amount) {
     if (counters != null) {
       counters.incrCounter(group, counter, amount);
     }
   }
 
-  public Counters getCounters() {
-    return counters;
-  }
 }

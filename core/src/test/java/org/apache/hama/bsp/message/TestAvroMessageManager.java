@@ -23,8 +23,15 @@ import java.util.Random;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.BSPPeerImpl;
+import org.apache.hama.bsp.Counters;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
+import org.apache.hama.bsp.message.compress.SnappyCompressor;
 import org.apache.hama.bsp.messages.BooleanMessage;
 import org.apache.hama.bsp.messages.DoubleMessage;
 import org.apache.hama.bsp.messages.IntegerMessage;
@@ -44,12 +51,18 @@ public class TestAvroMessageManager extends TestCase {
     Configuration conf = new Configuration();
     MessageManager<Writable> messageManager = MessageManagerFactory
         .getMessageManager(conf);
+    conf.set(BSPMessageCompressorFactory.COMPRESSION_CODEC_CLASS,
+        SnappyCompressor.class.getName());
 
     assertTrue(messageManager instanceof AvroMessageManagerImpl);
 
     InetSocketAddress peer = new InetSocketAddress(
         BSPNetUtils.getCanonicalHostname(), BSPNetUtils.getFreePort());
-    messageManager.init(conf, peer);
+
+    BSPPeer<?, ?, ?, ?, Writable> dummyPeer = new BSPPeerImpl<NullWritable, NullWritable, NullWritable, NullWritable, Writable>(
+        conf, FileSystem.get(conf), new Counters());
+
+    messageManager.init(dummyPeer, conf, peer);
 
     messageManager.transfer(peer, randomBundle);
 

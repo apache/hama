@@ -336,8 +336,11 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     private static final ConcurrentHashMap<String, InetSocketAddress> socketCache = new ConcurrentHashMap<String, InetSocketAddress>();
     private final LinkedBlockingDeque<M> localIncomingMessages = new LinkedBlockingDeque<M>();
 
+    private BSPPeer<?, ?, ?, ?, M> peer;
+
     @Override
-    public void init(Configuration conf, InetSocketAddress peerAddress) {
+    public void init(BSPPeer<?, ?, ?, ?, M> peer, Configuration conf, InetSocketAddress peerAddress) {
+      this.peer = peer;
       managerMap.put(peerAddress, this);
     }
 
@@ -367,7 +370,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         msgs = new LinkedList<M>();
       }
       msgs.add(msg);
-
+      peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_SENT, 1L);
       localOutgoingMessages.put(inetSocketAddress, msgs);
     }
 
@@ -377,6 +380,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         throws IOException {
       for (M value : bundle.getMessages()) {
         managerMap.get(addr).localIncomingMessages.add(value);
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, 1L);
       }
     }
 

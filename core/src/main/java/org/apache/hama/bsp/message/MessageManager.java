@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.BSPPeer;
 
 /**
  * This manager takes care of the messaging. It is responsible to launch a
@@ -40,7 +41,8 @@ public interface MessageManager<M extends Writable> {
    * @param conf
    * @param peerAddress
    */
-  public void init(Configuration conf, InetSocketAddress peerAddress);
+  public void init(BSPPeer<?, ?, ?, ?, M> peer, Configuration conf,
+      InetSocketAddress peerAddress);
 
   /**
    * Close is called after a task ran. Should be used to cleanup things e.G.

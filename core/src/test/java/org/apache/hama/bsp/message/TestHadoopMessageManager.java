@@ -25,8 +25,13 @@ import java.util.Map.Entry;
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.BSPPeerImpl;
+import org.apache.hama.bsp.Counters;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestHadoopMessageManager extends TestCase {
@@ -42,7 +47,9 @@ public class TestHadoopMessageManager extends TestCase {
 
     InetSocketAddress peer = new InetSocketAddress(
         BSPNetUtils.getCanonicalHostname(), BSPNetUtils.getFreePort());
-    messageManager.init(conf, peer);
+    BSPPeer<?, ?, ?, ?, IntWritable> dummyPeer = new BSPPeerImpl<NullWritable, NullWritable, NullWritable, NullWritable, IntWritable>(
+        conf, FileSystem.get(conf), new Counters());
+    messageManager.init(dummyPeer, conf, peer);
     String peerName = peer.getHostName() + ":" + peer.getPort();
 
     messageManager.send(peerName, new IntWritable(1337));
