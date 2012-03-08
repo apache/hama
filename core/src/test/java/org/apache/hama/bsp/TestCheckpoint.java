@@ -36,6 +36,7 @@ import org.apache.hama.bsp.messages.ByteMessage;
 import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.util.BSPNetUtils;
 
 public class TestCheckpoint extends TestCase {
 
@@ -89,7 +90,7 @@ public class TestCheckpoint extends TestCase {
 
     conf.setBoolean(Constants.CHECKPOINT_ENABLED, false);
 
-    int port = 54321;
+    int port = BSPNetUtils.getFreePort(5000);
     InetSocketAddress inetAddress = new InetSocketAddress(port);
     MinimalGroomServer groom = new MinimalGroomServer(conf);
     Server workerServer = RPC.getServer(groom, inetAddress.getHostName(),
