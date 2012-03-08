@@ -33,7 +33,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.FileOutputFormat;
@@ -71,8 +70,7 @@ public class CombineExample {
   public static class SumCombiner extends Combiner<IntWritable> {
 
     @Override
-    public BSPMessageBundle<IntWritable> combine(Iterable<IntWritable> messages) {
-      BSPMessageBundle<IntWritable> bundle = new BSPMessageBundle<IntWritable>();
+    public IntWritable combine(Iterable<IntWritable> messages) {
       int sum = 0;
 
       Iterator<IntWritable> it = messages.iterator();
@@ -80,8 +78,7 @@ public class CombineExample {
         sum += it.next().get();
       }
 
-      bundle.addMessage(new IntWritable(sum));
-      return bundle;
+      return new IntWritable(sum);
     }
   }
 
