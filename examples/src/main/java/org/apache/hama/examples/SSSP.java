@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
@@ -67,6 +68,23 @@ public class SSSP {
     }
   }
 
+  public static class MinIntCombiner extends Combiner<IntWritable> {
+
+    @Override
+    public IntWritable combine(Iterable<IntWritable> messages) {
+      int minDist = Integer.MAX_VALUE;
+
+      Iterator<IntWritable> it = messages.iterator();
+      while (it.hasNext()) {
+        int msgValue = it.next().get();
+        if (minDist > msgValue)
+          minDist = msgValue;
+      }
+
+      return new IntWritable(minDist);
+    }
+  }
+
   private static void printUsage() {
     System.out.println("Usage: <startnode> <input> <output> [tasks]");
     System.exit(-1);
@@ -92,6 +110,7 @@ public class SSSP {
     }
 
     ssspJob.setVertexClass(ShortestPathVertex.class);
+    ssspJob.setCombinerClass(MinIntCombiner.class);
     ssspJob.setInputFormat(SequenceFileInputFormat.class);
     ssspJob.setInputKeyClass(VertexWritable.class);
     ssspJob.setInputValueClass(VertexArrayWritable.class);
@@ -100,6 +119,8 @@ public class SSSP {
     ssspJob.setOutputFormat(SequenceFileOutputFormat.class);
     ssspJob.setOutputKeyClass(Text.class);
     ssspJob.setOutputValueClass(IntWritable.class);
+    // Iterate until all the nodes have been reached.
+    ssspJob.setMaxIteration(Integer.MAX_VALUE);
 
     long startTime = System.currentTimeMillis();
     if (ssspJob.waitForCompletion(true)) {

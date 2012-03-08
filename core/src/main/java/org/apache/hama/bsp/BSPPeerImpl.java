@@ -311,7 +311,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       Combiner<M> combiner = (Combiner<M>) ReflectionUtils.newInstance(
           conf.getClass("bsp.combiner.class", Combiner.class), conf);
 
-      return combiner.combine(messages);
+      BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+      bundle.addMessage(combiner.combine(messages));
+      
+      return bundle;
     } else {
       BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
       for (M message : messages) {

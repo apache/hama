@@ -22,11 +22,14 @@ import java.io.IOException;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
+import org.apache.hama.bsp.Combiner;
 
 public class GraphJob extends BSPJob {
   public final static String VERTEX_CLASS_ATTR = "hama.graph.vertex.class";
+  public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
 
-  public GraphJob(HamaConfiguration conf, Class<?> exampleClass) throws IOException {
+  public GraphJob(HamaConfiguration conf, Class<?> exampleClass)
+      throws IOException {
     super(conf);
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
@@ -48,4 +51,11 @@ public class GraphJob extends BSPJob {
     return (Class<? extends Vertex<? extends Writable>>) conf.getClass(
         VERTEX_CLASS_ATTR, Vertex.class);
   }
+
+  @Override
+  public void setCombinerClass(Class<? extends Combiner<? extends Writable>> cls) {
+    ensureState(JobState.DEFINE);
+    conf.setClass(VERTEX_MESSAGE_COMBINER_CLASS_ATTR, cls, Combiner.class);
+  }
+
 }

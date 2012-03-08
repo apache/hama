@@ -27,6 +27,6 @@ public abstract class Combiner<M extends Writable> {
    * @param messages
    * @return the combined message
    */
-  public abstract BSPMessageBundle<M> combine(Iterable<M> messages);
+  public abstract M combine(Iterable<M> messages);
   
 }
