@@ -130,8 +130,8 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 <tr><td>getCurrentMessage()</td><td>Returns a received message.</td></tr>
 <tr><td>getNumCurrentMessages()</td><td>Returns the number of received messages.</td></tr>
 <tr><td>sync()</td><td>Barrier synchronization.</td></tr>
-<tr><td>getPeerName()</td><td>Returns a peer’s hostname.</td></tr>
-<tr><td>getAllPeerNames()</td><td>Returns all peer’s hostname.</td></tr>
+<tr><td>getPeerName()</td><td>Returns a peer's hostname.</td></tr>
+<tr><td>getAllPeerNames()</td><td>Returns all peer's hostname.</td></tr>
 <tr><td>getSuperstepCount()</td><td>Returns the count of supersteps</td></tr>
 </table>
 
