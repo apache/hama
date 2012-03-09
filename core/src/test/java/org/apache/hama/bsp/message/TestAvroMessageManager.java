@@ -39,9 +39,9 @@ import org.apache.hama.util.BSPNetUtils;
 
 public class TestAvroMessageManager extends TestCase {
 
-  private static final int DOUBLE_MSG_COUNT = 400000;
-  private static final int BOOL_MSG_COUNT = 10000;
-  private static final int INT_MSG_COUNT = 500000;
+  private static final int DOUBLE_MSG_COUNT = 4000;
+  private static final int BOOL_MSG_COUNT = 1000;
+  private static final int INT_MSG_COUNT = 5000;
 
   private static final int SUM = DOUBLE_MSG_COUNT + BOOL_MSG_COUNT
       + INT_MSG_COUNT;
