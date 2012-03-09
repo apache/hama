@@ -54,6 +54,7 @@ import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.util.BSPNetUtils;
 
 public class TestBSPTaskFaults extends TestCase {
 
@@ -416,7 +417,7 @@ public class TestBSPTaskFaults extends TestCase {
         LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 
     int testNumber = incrementTestNumber();
-    InetSocketAddress inetAddress = new InetSocketAddress(54321 + testNumber);
+    InetSocketAddress inetAddress = new InetSocketAddress(BSPNetUtils.getFreePort(34321) + testNumber);
     groom = new MinimalGroomServer(conf);
     workerServer = RPC.getServer(groom, inetAddress.getHostName(),
         inetAddress.getPort(), conf);
