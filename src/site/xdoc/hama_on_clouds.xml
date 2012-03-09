@@ -35,7 +35,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
   % export AWS_SECRET_ACCESS_KEY=YOUR_SECKEY
   % ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa_whirr
 
-  % bin/whirr launch-cluster --config recipes/hama-ec2.properties --private -key-file ~/.ssh/id_rsa_whirr</pre>
+  % bin/whirr launch-cluster --config recipes/hama-ec2.properties --private-key-file ~/.ssh/id_rsa_whirr</pre>
     </p>
     <subsection name="Execute Hama Examples"></subsection>
     <pre class="green">
