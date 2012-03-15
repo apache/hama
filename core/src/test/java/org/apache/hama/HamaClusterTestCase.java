@@ -100,6 +100,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
         shutdownDfs(dfsCluster);
       }
       bspCluster.shutdown();
+      zooKeeperCluster.shutdown();
     } catch (Exception e) {
       LOG.error(e);
     }
