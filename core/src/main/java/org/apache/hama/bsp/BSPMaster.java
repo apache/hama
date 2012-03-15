@@ -65,7 +65,7 @@ import org.apache.zookeeper.data.Stat;
  * jobs.
  */
 public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
-    GroomServerManager, Watcher {
+GroomServerManager, Watcher {
 
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
   public static final String localModeMessage = "Local mode detected, no launch of the daemon needed.";
@@ -240,12 +240,12 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
    * Start the BSPMaster process, listen on the indicated hostname/port
    */
   public BSPMaster(HamaConfiguration conf) throws IOException,
-      InterruptedException {
+  InterruptedException {
     this(conf, generateNewIdentifier());
   }
 
   BSPMaster(HamaConfiguration conf, String identifier) throws IOException,
-      InterruptedException {
+  InterruptedException {
     this.conf = conf;
     this.masterIdentifier = identifier;
 
@@ -492,26 +492,42 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     }
   }
 
-  public void clearZKNodes() {
+  /**
+   * Clears all sub-children of node bspRoot 
+   */
+  public void clearZKNodes(){
     try {
-      for (String node : zk.getChildren(bspRoot, this)) {
-        for (String subnode : zk.getChildren(bspRoot + "/" + node, this)) {
-          for (String subnode2 : zk.getChildren(bspRoot + "/" + node, this)) {
-            for (String subnode3 : zk.getChildren(bspRoot + "/" + node + "/"
-                + subnode2, this)) {
-              zk.delete(bspRoot + "/" + node + "/" + subnode + "/" + subnode2
-                  + "/" + subnode3, 0);
-            }
-            zk.delete(bspRoot + "/" + node + "/" + subnode + "/" + subnode2, 0);
-          }
-          zk.delete(bspRoot + "/" + node + "/" + subnode, 0);
-        }
-        zk.delete(bspRoot + "/" + node, 0);
+      Stat s = zk.exists(bspRoot, false);
+      if(s != null){
+        clearZKNodes(bspRoot);
+      }      
+
+    } catch (Exception e) {
+      LOG.warn("Could not clear zookeeper nodes.", e);
+
+    }      
+  }
+
+  /**
+   * Clears all sub-children of node rooted at path.
+   * @param path
+   * @throws InterruptedException 
+   * @throws KeeperException 
+   */
+  private void clearZKNodes(String path) throws KeeperException, InterruptedException{
+    ArrayList<String> list = (ArrayList<String>) zk.getChildren(path, false);
+
+    if(list.size() == 0){
+      return;
+
+    }else{
+      for(String node:list){
+        clearZKNodes(path+"/"+node);
+        zk.delete(path+"/"+node, -1); //delete any version of this node.
       }
-    } catch (KeeperException e) {
-    } catch (InterruptedException e) {
     }
   }
+
 
   public void createJobRoot(String string) {
     try {
