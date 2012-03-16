@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <title>Graph Tutorial</title>
+  <body>
+    <section name="Hama Graph Tutorial"></section>
+    <p>This document describes the Graph computing framework and serves as a tutorial.</p>
+    <subsection name="Overview"></subsection>
+    <p>Hama includes the Graph package for vertex-centric graph computations.
+    Hama's Graph package allows you to program Google's Pregel style applications with simple programming interface.</p>
+
+    <subsection name="Vertex API"></subsection>    
+
+    <p>Writing a Hama graph application involves subclassing the predefined Vertex class. Its template arguments define message value type.</p>
+    <pre class="green">
+  public abstract class Vertex&lt;M extends Writable&gt; implements VertexInterface&lt;M&gt; {
+
+    public void compute(Iterator&lt;MSGTYPE&gt; messages) throws IOException;
+    ..
+
+  }</pre>    
+
+   <p>The user overrides the Compute() method, which will be executed at each active vertex in every superstep. Predefined Vertex methods allow Compute() to query information about the current vertex and its edges, and to send messages to other vertices. Compute() can inspect the value associated with its vertex via GetValue().</p>
+
+   <subsection name="Example: PageRankVertex"></subsection>
+   <p>To solve the Page Rank problem using Hama Graph, you can extends the Vertex class to create a PageRankVertex class.
+In this example, the algorithm described Google's Pregel paper was used. The value of a vertex represents the tentative page rank of the vertex. The graph is intialized with each vertex value equal to 1/numOfVertices. In each of the first 30 supersteps, each vertex sends its tentative page rank along all of its outgoing edges.
+<br/><br/>
+From Superstep 1 to 30, each vertex sums up the values arriving on all its messages and sets its tentative page rank to (1 - 0.85) / numOfVertices + (0.85 * sum).
+   </p>
+
+    <pre class="green">
+  public static class PageRankVertex extends Vertex&lt;DoubleWritable&gt; {
+
+    @Override
+    public void compute(Iterator&lt;DoubleWritable&gt; messages) throws IOException {
+      if (this.getSuperstepCount() == 0) {
+        this.setValue(new DoubleWritable(1.0 / (double) this.getNumVertices()));
+      }
+
+      if (this.getSuperstepCount() &gt;= 1) {
+        double sum = 0;
+        while (messages.hasNext()) {
+          DoubleWritable msg = messages.next();
+          sum += msg.get();
+        }
+
+        double ALPHA = (1 - 0.85) / (double) this.getNumVertices();
+        this.setValue(new DoubleWritable(ALPHA + (0.85 * sum)));
+      }
+
+      if (this.getSuperstepCount() &lt; this.getMaxIteration()) {
+        int numEdges = this.getOutEdges().size();
+        sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
+            / numEdges));
+      }
+    }
+
+    public static void main(String[] args) throws IOException,
+        InterruptedException, ClassNotFoundException {
+      HamaConfiguration conf = new HamaConfiguration(new Configuration());
+      GraphJob pageJob = new GraphJob(conf, PageRank.class);
+      pageJob.setJobName("Pagerank");
+
+      pageJob.setVertexClass(PageRankVertex.class);
+      pageJob.setMaxIteration(30);
+
+      pageJob.setInputPath(new Path(args[0]));
+      pageJob.setOutputPath(new Path(args[1]));
+
+      if (args.length == 3) {
+        pageJob.setNumBspTask(Integer.parseInt(args[2]));
+      }
+
+      pageJob.setInputFormat(SequenceFileInputFormat.class);
+      pageJob.setPartitioner(HashPartitioner.class);
+      pageJob.setOutputFormat(SequenceFileOutputFormat.class);
+      pageJob.setOutputKeyClass(Text.class);
+      pageJob.setOutputValueClass(DoubleWritable.class);
+
+      long startTime = System.currentTimeMillis();
+      if (pageJob.waitForCompletion(true)) {
+        System.out.println("Job Finished in "
+            + (double) (System.currentTimeMillis() - startTime) / 1000.0
+            + " seconds");
+      }
+    }
+  }</pre>
+
+  </body>
+</document>

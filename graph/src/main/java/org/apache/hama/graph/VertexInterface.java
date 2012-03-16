@@ -25,23 +25,31 @@ import org.apache.hadoop.io.Writable;
 
 public interface VertexInterface<MSGTYPE extends Writable> {
 
-  /**
-   * @return the vertex ID.
-   */
+  /** @return the unique identification for the vertex. */
   public String getVertexID();
-
+  /** @return the number of vertices in the input graph. */ 
+  public long getNumVertices();
+  /** The user-defined function */ 
   public void compute(Iterator<MSGTYPE> messages) throws IOException;
-
+  /** @return a list of outgoing edges of this vertex in the input graph. */
   public List<Edge> getOutEdges();
-
+  /** Sends a message to another vertex. */
   public void sendMessage(Edge e, MSGTYPE msg) throws IOException;
-
+  /** Sends a message to neighbors */
   public void sendMessageToNeighbors(MSGTYPE msg) throws IOException;
-
+  /** @return the superstep number of the current superstep (starting from 0). */
   public long getSuperstepCount();
-
+  /**
+   * Sets the vertex value
+   * 
+   * @param value
+   */
   public void setValue(MSGTYPE value);
-
+  /**
+   * Gets the vertex value
+   * 
+   * @return value
+   */
   public MSGTYPE getValue();
 
 }
