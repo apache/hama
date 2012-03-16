@@ -66,6 +66,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         <li><a href="getting_started_with_hama.html">Getting Started</a> with Hama.</li>
         <li><a href="hama_on_clouds.html">Launch a Hama cluster</a> on Clouds.</li>
         <li>Hama <a href="hama_bsp_tutorial.html">BSP Tutorial.</a></li>
+        <li>Hama <a href="hama_graph_tutorial.html">Graph Tutorial.</a></li>
         <li><a href="http://wiki.apache.org/hama">Learn about</a> Hama and BSP by reading the documentation.</li>
       </ul>
     <subsection name="Getting Involved"></subsection>
