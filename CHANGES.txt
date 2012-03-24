@@ -4,6 +4,7 @@ Release 0.5 - Unreleased
 
   NEW FEATURES
 
+   HAMA-503: Chainable computations for fault tolerance (tjungblut)
    HAMA-517: Add documentation for Graph package (edwardyoon)
    HAMA-518: Add MinIntCombiner to SSSP example (edwardyoon)
    HAMA-367: Runtime Compression of BSP Messages to Improve the Performance (Apurv Verma via tjungblut)

@@ -109,6 +109,19 @@ public class BSPJob extends BSPJobContext {
     conf.setClass(WORK_CLASS_ATTR, cls, BSP.class);
   }
 
+  @SuppressWarnings("rawtypes")
+  public void setSupersteps(
+      Class<? extends Superstep>... classes) {
+    ensureState(JobState.DEFINE);
+
+    String clazzString = "";
+    for (Class<? extends Superstep> s : classes)
+      clazzString += s.getName() + ",";
+
+    conf.set("hama.supersteps.class", clazzString);
+    this.setBspClass(SuperstepBSP.class);
+  }
+
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends BSP> getBspClass() {
     return (Class<? extends BSP>) conf.getClass(WORK_CLASS_ATTR, BSP.class);
