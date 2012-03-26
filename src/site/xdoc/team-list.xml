@@ -100,6 +100,13 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">.</td>
           <td align="center">committer</td>
         </tr>
+       <tr valign="top">
+          <td align="center">urajsmenon</td>
+          <td align="center">Suraj Menon</td>
+          <td align="center">Verisign</td>
+          <td align="center">committer</td>
+        </tr>
+
     </table>
       
     <subsection name="Contributors"></subsection>
@@ -110,21 +117,33 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <b>name</b>
         </th>
         <th align="center">
+          <b>organization</b>
+        </th>
+        <th align="center">
           <b>contribution</b>
         </th>
        </tr>
        <tr valign="top">
           <td align="center">Sookyung Kim</td>
+          <td align="center">NHN, corp.</td>
           <td align="center">Hama logo sketch</td>
         </tr>
        <tr valign="top">
           <td align="center">Morakot</td>
+          <td align="center">.</td>
           <td align="center">Hama logo paint</td>
         </tr>
        <tr valign="top">
           <td align="center">Arthur</td>
+          <td align="center">.</td>
           <td align="center">Hama Artwork</td>
         </tr>
+       <tr valign="top">
+          <td align="center">Miklos Erdelyi</td>
+          <td align="center">University of Pannonia</td>
+          <td align="center">Message Bundler and Performance improvement issues</td>
+        </tr>
+
     </table>
   </body>
 </document>
