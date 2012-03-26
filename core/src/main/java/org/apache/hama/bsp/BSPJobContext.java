@@ -43,6 +43,8 @@ public class BSPJobContext {
 
   public BSPJobContext(Configuration conf, BSPJobID jobId) {
     this.conf = conf;
+    conf.set("hadoop.rpc.socket.factory.class.default",
+        "org.apache.hadoop.net.StandardSocketFactory");
     this.jobId = jobId;
   }
 
