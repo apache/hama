@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -69,11 +70,10 @@ GroomServerManager, Watcher {
 
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
   public static final String localModeMessage = "Local mode detected, no launch of the daemon needed.";
-  public static final long GROOMSERVER_EXPIRY_INTERVAL = 10 * 60 * 1000;
   private static final int FS_ACCESS_RETRY_PERIOD = 10000;
 
   private HamaConfiguration conf;
-  private ZooKeeper zk = null;
+  ZooKeeper zk = null;
   private String bspRoot = null;
 
   /**
@@ -86,7 +86,7 @@ GroomServerManager, Watcher {
   static long JOBINIT_SLEEP_INTERVAL = 2000;
 
   // States
-  State state = State.INITIALIZING;
+  final AtomicReference<State> state = new AtomicReference<State>(State.INITIALIZING);
 
   // Attributes
   String masterIdentifier;
@@ -443,13 +443,11 @@ GroomServerManager, Watcher {
 
   public static BSPMaster startMaster(HamaConfiguration conf, String identifier)
       throws IOException, InterruptedException {
-
     BSPMaster result = new BSPMaster(conf, identifier);
+    // init zk root and child nodes
+    result.initZK(conf); // need init zk before scheduler starts
     result.taskScheduler.setGroomServerManager(result);
     result.taskScheduler.start();
-
-    // init zk root and child nodes
-    result.initZK(conf);
 
     return result;
   }
@@ -504,7 +502,6 @@ GroomServerManager, Watcher {
 
     } catch (Exception e) {
       LOG.warn("Could not clear zookeeper nodes.", e);
-
     }      
   }
 
@@ -587,9 +584,7 @@ GroomServerManager, Watcher {
 
     this.masterServer.start();
 
-    synchronized (this) {
-      state = State.RUNNING;
-    }
+    state.set(State.RUNNING);
 
     instructor = new Instructor();
     instructor.bind(ReportGroomStatusDirective.class,
@@ -671,10 +666,10 @@ GroomServerManager, Watcher {
     this.totalTaskCapacity = tasksPerGroom * numGroomServers;
 
     if (detailed) {
-      return new ClusterStatus(groomsMap, totalTasks, totalTaskCapacity, state);
+      return new ClusterStatus(groomsMap, totalTasks, totalTaskCapacity, state.get());
     } else {
       return new ClusterStatus(numGroomServers, totalTasks, totalTaskCapacity,
-          state);
+          state.get());
     }
   }
 
@@ -865,7 +860,7 @@ GroomServerManager, Watcher {
   }
 
   public BSPMaster.State currentState() {
-    return this.state;
+    return this.state.get();
   }
 
   @Override

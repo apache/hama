@@ -47,8 +47,11 @@ public final class Configurator {
     new ConcurrentHashMap<String, Long>();
 
   /**
+   * Configure plugins directory for monitoring GroomServer.
    * @param conf file points out the plugin dir location.
-   * @return Map contains jar path and task to be executed.
+   * @return Map contains jar path and task to be executed; null if 
+   *             plugin directory, default set to $HAMA_HOME/plugins, doesn't 
+   *             exist. 
    */ 
   public static Map<String, Task> configure(HamaConfiguration conf, 
       MonitorListener listener) throws IOException {
@@ -56,6 +59,7 @@ public final class Configurator {
     String pluginPath = conf.get("bsp.monitor.plugins.dir", 
       hamaHome+File.separator+DEFAULT_PLUGINS_DIR);
     File pluginDir = new File(pluginPath);
+    if(null == pluginDir || null == pluginDir.listFiles()) return null; 
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
     Map<String, Task> taskList = new HashMap<String, Task>();
     LOG.debug("Scanning jar files within "+pluginDir+".");

@@ -383,9 +383,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
     }
 
-    if (conf.getBoolean("bsp.monitor.enabled", true)) {
-      // TODO: conf.get("bsp.monitor.class.impl", "Monitor.class")
-      // so user can switch to customized monitor impl if necessary.
+    if (conf.getBoolean("bsp.monitor.enabled", false)) {
       new Monitor(conf, zk, this.groomServerName).start();
     }
 

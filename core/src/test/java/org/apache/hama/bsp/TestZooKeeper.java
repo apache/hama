@@ -44,15 +44,13 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
 
-public class TestBSPMasterGroomServer extends HamaCluster {
+public class TestZooKeeper extends HamaCluster {
 
-  private static Log LOG = LogFactory.getLog(TestBSPMasterGroomServer.class);
-  static String TMP_OUTPUT = "/tmp/test-example/";
-  static Path OUTPUT_PATH = new Path(TMP_OUTPUT + "serialout");
+  private static Log LOG = LogFactory.getLog(TestZooKeeper.class);
 
   private HamaConfiguration configuration;
 
-  public TestBSPMasterGroomServer() {
+  public TestZooKeeper() {
     configuration = new HamaConfiguration();
     configuration.set("bsp.master.address", "localhost");
     assertEquals("Make sure master addr is set to localhost:", "localhost",
@@ -72,72 +70,6 @@ public class TestBSPMasterGroomServer extends HamaCluster {
   public void tearDown() throws Exception {
     super.tearDown();
   }
-
-  /*
-   * BEGIN: Job submission tests.
-   */
-
-  public void testSubmitJob() throws Exception {
-    BSPJob bsp = new BSPJob(configuration,
-        org.apache.hama.examples.ClassSerializePrinting.class);
-    bsp.setJobName("Test Serialize Printing");
-    bsp.setBspClass(org.apache.hama.examples.ClassSerializePrinting.class);
-    bsp.setOutputFormat(SequenceFileOutputFormat.class);
-    bsp.setOutputKeyClass(IntWritable.class);
-    bsp.setOutputValueClass(Text.class);
-    bsp.setOutputPath(OUTPUT_PATH);
-
-    BSPJobClient jobClient = new BSPJobClient(configuration);
-    configuration.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 6000);
-    ClusterStatus cluster = jobClient.getClusterStatus(false);
-    assertEquals(this.numOfGroom, cluster.getGroomServers());
-    bsp.setNumBspTask(2);
-
-    FileSystem fileSys = FileSystem.get(conf);
-
-    if (bsp.waitForCompletion(true)) {
-      checkOutput(fileSys, conf, 2);
-    }
-    LOG.info("Client finishes execution job.");
-  }
-
-  public static void checkOutput(FileSystem fileSys, Configuration conf,
-      int tasks) throws Exception {
-    FileStatus[] listStatus = fileSys.listStatus(OUTPUT_PATH);
-    assertEquals(listStatus.length, tasks);
-    for (FileStatus status : listStatus) {
-      if (!status.isDir()) {
-        SequenceFile.Reader reader = new SequenceFile.Reader(fileSys,
-            status.getPath(), conf);
-        int superStep = 0;
-        int taskstep = 0;
-        IntWritable key = new IntWritable();
-        Text value = new Text();
-        /*
-         * The serialize printing task should write in each superstep
-         * "tasks"-times its superstep, along with the hostname.
-         */
-        while (reader.next(key, value)) {
-          assertEquals(superStep, key.get());
-          taskstep++;
-          if (taskstep % tasks == 0) {
-            superStep++;
-          }
-        }
-        // the maximum should be the number of supersteps defined in the task
-        assertEquals(superStep, ClassSerializePrinting.NUM_SUPERSTEPS);
-      }
-    }
-
-    fileSys.delete(new Path(TMP_OUTPUT), true);
-  }
-
-  /*
-   * END: Job submission tests.
-   */
-
-  /*
-   * BEGIN: ZooKeeper tests.
 
   public void testClearZKNodes() throws IOException, KeeperException,
       InterruptedException {
@@ -193,10 +125,5 @@ public class TestBSPMasterGroomServer extends HamaCluster {
       System.out.println("Node has been removed correctly!");
     }
   }
-   */
-
-  /*
-   * END: ZooKeeper tests.
-   */
 
 }
