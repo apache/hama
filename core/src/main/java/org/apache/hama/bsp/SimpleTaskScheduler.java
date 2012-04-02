@@ -23,12 +23,29 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import static java.util.concurrent.TimeUnit.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.GroomServerStatus;
 import org.apache.hama.ipc.GroomProtocol;
+import org.apache.hama.monitor.Federator;
+import org.apache.hama.monitor.Federator.Act;
+import org.apache.hama.monitor.Federator.CollectorHandler;
+import org.apache.hama.monitor.Metric;
+import org.apache.hama.monitor.MetricsRecord;
+import org.apache.hama.monitor.Monitor;
+import org.apache.hama.monitor.ZKCollector;
+import org.apache.zookeeper.ZooKeeper;
 
 /**
  * A simple task scheduler. 
@@ -41,22 +58,27 @@ class SimpleTaskScheduler extends TaskScheduler {
   public static final String PROCESSING_QUEUE = "processingQueue";
   public static final String FINISHED_QUEUE = "finishedQueue";
 
-  private QueueManager queueManager;
-  private volatile boolean initialized;
-  private JobListener jobListener;
-  private JobProcessor jobProcessor;
+  private final AtomicReference<QueueManager> queueManager = 
+    new AtomicReference<QueueManager>();
+  private AtomicBoolean initialized = new AtomicBoolean(false);
+  private final JobListener jobListener;
+  private final JobProcessor jobProcessor;
+  private final AtomicReference<Federator> federator = 
+    new AtomicReference<Federator>(); 
+  private final ConcurrentMap<String, MetricsRecord> repository = 
+    new ConcurrentHashMap<String, MetricsRecord>();
+  private final ScheduledExecutorService scheduler;
 
   private class JobListener extends JobInProgressListener {
     @Override
     public void jobAdded(JobInProgress job) throws IOException {
-      queueManager.initJob(job); // init task
-      queueManager.addJob(WAIT_QUEUE, job);
+      queueManager.get().initJob(job); // init task
+      queueManager.get().addJob(WAIT_QUEUE, job);
     }
 
     @Override
     public void jobRemoved(JobInProgress job) throws IOException {
-      // queueManager.removeJob(WAIT_QUEUE, job);
-      queueManager.moveJob(PROCESSING_QUEUE, FINISHED_QUEUE, job);
+      queueManager.get().moveJob(PROCESSING_QUEUE, FINISHED_QUEUE, job);
     }
   }
 
@@ -70,19 +92,19 @@ class SimpleTaskScheduler extends TaskScheduler {
      * JobInProgress from Wait Queue to Processing Queue.
      */
     public void run() {
-      if (false == initialized) {
+      if (!initialized.get()) {
         throw new IllegalStateException("SimpleTaskScheduler initialization"
             + " is not yet finished!");
       }
-      while (initialized) {
-        Queue<JobInProgress> queue = queueManager.findQueue(WAIT_QUEUE);
+      while (initialized.get()) {
+        Queue<JobInProgress> queue = queueManager.get().findQueue(WAIT_QUEUE);
         if (null == queue) {
           LOG.error(WAIT_QUEUE + " does not exist.");
           throw new NullPointerException(WAIT_QUEUE + " does not exist.");
         }
         // move a job from the wait queue to the processing queue
         JobInProgress j = queue.removeJob();
-        queueManager.addJob(PROCESSING_QUEUE, j);
+        queueManager.get().addJob(PROCESSING_QUEUE, j);
         // schedule
         Collection<GroomServerStatus> glist = groomServerManager
             .groomServerStatusKeySet();
@@ -161,32 +183,89 @@ class SimpleTaskScheduler extends TaskScheduler {
     }
   }
 
+  /**
+   * Periodically collect metrics info.
+   */
+  private class JvmCollector implements Runnable {
+    final Federator federator;
+    final ZooKeeper zk; 
+    JvmCollector(final Federator federator, final ZooKeeper zk) {
+      this.federator = federator;
+      this.zk = zk;
+    } 
+    public void run() {
+      for(GroomServerStatus status: 
+          groomServerManager.groomServerStatusKeySet()) {
+        final String groom = status.getGroomName();
+        final String jvmPath = Monitor.MONITOR_ROOT_PATH+groom+"/metrics/jvm";
+        final Act act = 
+          new Act(new ZKCollector(zk, "jvm", "Jvm metrics.", jvmPath), 
+                  new CollectorHandler() {
+            public void handle(Future future) {
+              try {
+                MetricsRecord record = (MetricsRecord)future.get();
+                if(null != record) {
+                  if(LOG.isDebugEnabled()) {
+                    for(Metric metric: record.metrics()) {
+                      LOG.debug("Metric name:"+metric.name()+" metric value:"+metric.value());
+                    }
+                  }
+                  repository.put(groom, record);
+                }
+              } catch (InterruptedException ie) {
+                LOG.warn(ie);
+                Thread.currentThread().interrupt();
+              } catch (ExecutionException ee) {
+                LOG.warn(ee.getCause());
+              }
+            }        
+          }); 
+        this.federator.register(act);
+      } 
+    }
+  }
+
   public SimpleTaskScheduler() {
     this.jobListener = new JobListener();
     this.jobProcessor = new JobProcessor();
+    this.scheduler = Executors.newSingleThreadScheduledExecutor();
   }
 
   @Override
   public void start() {
-    this.queueManager = new QueueManager(getConf()); // TODO: need factory?
-    this.queueManager.createFCFSQueue(WAIT_QUEUE);
-    this.queueManager.createFCFSQueue(PROCESSING_QUEUE);
-    this.queueManager.createFCFSQueue(FINISHED_QUEUE);
+    if(initialized.get()) 
+      throw new IllegalStateException(SimpleTaskScheduler.class.getSimpleName()+
+      " is started.");
+    this.queueManager.set(new QueueManager(getConf())); 
+    this.federator.set(new Federator((HamaConfiguration)getConf()));
+    this.queueManager.get().createFCFSQueue(WAIT_QUEUE);
+    this.queueManager.get().createFCFSQueue(PROCESSING_QUEUE);
+    this.queueManager.get().createFCFSQueue(FINISHED_QUEUE);
     groomServerManager.addJobInProgressListener(this.jobListener);
-    this.initialized = true;
+    this.initialized.set(true);
+    if(null != getConf() && 
+       getConf().getBoolean("bsp.federator.enabled", false)) {
+      this.federator.get().start();
+    }
     this.jobProcessor.start();
+    if(null != getConf() && 
+       getConf().getBoolean("bsp.federator.enabled", false)) {
+      this.scheduler.scheduleAtFixedRate(new JvmCollector(federator.get(), 
+      ((BSPMaster)groomServerManager).zk), 5, 5, SECONDS);
+    }
   }
 
   @Override
   public void terminate() {
-    this.initialized = false;
+    this.initialized.set(false);
     if (null != this.jobListener)
       groomServerManager.removeJobInProgressListener(this.jobListener);
+    this.jobProcessor.interrupt();
+    this.federator.get().interrupt();
   }
 
   @Override
   public Collection<JobInProgress> getJobs(String queue) {
-    return (queueManager.findQueue(queue)).jobs();
-    // return jobQueue;
+    return (queueManager.get().findQueue(queue)).jobs();
   }
 }

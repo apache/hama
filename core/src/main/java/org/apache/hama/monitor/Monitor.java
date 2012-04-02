@@ -17,7 +17,8 @@
  */
 package org.apache.hama.monitor;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
 public final class Monitor extends Thread implements MonitorListener { 
 
   public static final Log LOG = LogFactory.getLog(Monitor.class);
+  public static final String MONITOR_ROOT_PATH = "/monitor/";
 
   private final Map<String, TaskWorker> workers =  // <jar path, task worker>
     new ConcurrentHashMap<String, TaskWorker>();
@@ -192,25 +194,32 @@ public final class Monitor extends Thread implements MonitorListener {
     public void handle(Result result) {
       Object obj = result.get(); 
       if(obj instanceof MetricsRecord) {
-        String znode = "/monitor/"+this.groomServerName+"/metrics/"+result.name();
+        String znode = 
+          MONITOR_ROOT_PATH+this.groomServerName+"/metrics/"+result.name();
         ZKUtil.create(zk, znode); // recursively create znode path
         MetricsRecord record = (MetricsRecord) obj;
+        int cnt = 0;
         for(Metric<? extends Number> metric: record.metrics()) {
+          cnt++;
           String name = metric.name();
           Number value = metric.value();
           try {
             // znode must exists so that child (znode/name) can be created.
             if(null != this.zk.exists(znode, false)) { 
-              if(LOG.isDebugEnabled())
-                LOG.debug("Name & value are going to be publish to zk -> ["+name+"] ["+value+"]");
-              if(null == zk.exists(znode+File.separator+name, false)) {
-                String p = this.zk.create(znode+File.separator+name, toBytes(value), 
+              String suffix = suffix(value);;
+              if(LOG.isDebugEnabled()) {
+                LOG.debug("Publish name ["+name+"] and value ["+value+
+                "] to zk.");
+              }
+              final String zpath = znode+ZKUtil.ZK_SEPARATOR+name+suffix;
+              if(null == zk.exists(zpath, false)) {
+                String p = this.zk.create(zpath, toBytes(value), 
                 Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                LOG.debug("Successfully publish data to zk with path to `"+p+"'");
+                LOG.debug("Publish data to zk with path to `"+p+"'");
               } else {
                 // can we just update by increasing 1 version?
-                this.zk.setData(znode+File.separator+name, toBytes(value), -1); 
-                LOG.debug("Successfully update data in znode: "+znode);
+                this.zk.setData(zpath, toBytes(value), -1); 
+                LOG.debug("Update data in znode: "+znode);
               }
             }
           } catch (KeeperException ke) {
@@ -225,21 +234,56 @@ public final class Monitor extends Thread implements MonitorListener {
       }
     }
 
-    byte[] toBytes(Number value) {
-      if(value instanceof Double) {
-        return Bytes.toBytes(value.longValue());
+    String suffix(Number value) {
+      if(value instanceof Byte)  {
+        return "_b";
+      } else if(value instanceof Double) {
+        return "_d";
       } else if(value instanceof Float) {
-        return Bytes.toBytes(value.floatValue());
+        return "_f";
       } else if(value instanceof Integer) {
-        return Bytes.toBytes(value.intValue());
+        return "_i";
       } else if(value instanceof Long) {
-        return Bytes.toBytes(value.longValue());
-      } else if(value instanceof Short) {
-        return Bytes.toBytes(value.shortValue());
+        return "_l";
       } else {
-        LOG.warn("Unknown type for value:"+value);
-        return null;
+        return "_?";
+      } 
+    } 
+
+    byte[] toBytes(Number value) {
+      if(value instanceof Byte) { 
+        return new byte[] { value.byteValue() };
       }
+
+      byte[] bytes = null;
+      ByteArrayOutputStream dout = new ByteArrayOutputStream();
+      DataOutputStream output = new DataOutputStream(dout);
+      try{ 
+        if(value instanceof Double) {
+          output.writeDouble(value.doubleValue());
+        } else if(value instanceof Float) {
+          output.writeFloat(value.floatValue()); 
+        } else if(value instanceof Integer) {
+          output.writeInt(value.intValue()); 
+        } else if(value instanceof Short) {
+          output.writeShort(value.shortValue()); 
+        } else if(value instanceof Long) {
+          output.writeLong(value.longValue()); 
+        } else {
+          LOG.warn("Unkown data type: "+value);
+        }
+        bytes = dout.toByteArray();
+        if(LOG.isDebugEnabled()) {
+          LOG.debug("bytes's length after value ("+value+") is converted: "+
+          ((null!=bytes)?bytes.length:0));
+        }
+      } catch(IOException ioe){
+        LOG.warn("Fail writing data to output stream.", ioe);
+      } finally { 
+        try { output.close(); } catch(IOException ioe) {
+        LOG.warn("Fail closing output stream.", ioe); } 
+      }
+      return bytes;
     }
 
   }
@@ -349,14 +393,16 @@ public final class Monitor extends Thread implements MonitorListener {
         while(!Thread.currentThread().interrupted()) {
           Map<String, Task> tasks = 
             Configurator.configure((HamaConfiguration)this.conf, listener);
-          for(Map.Entry<String, Task> entry: tasks.entrySet()) {
-            String jarPath = entry.getKey();
-            Task t = entry.getValue();
-            TaskWorker old = (TaskWorker)
-              ((ConcurrentMap)this.workers).putIfAbsent(jarPath, new TaskWorker(t));
-            if(null != old) {
-              ((ConcurrentMap)this.workers).replace(jarPath, 
-              new TaskWorker(t));
+          if(null != tasks) {
+            for(Map.Entry<String, Task> entry: tasks.entrySet()) {
+              String jarPath = entry.getKey();
+              Task t = entry.getValue();
+              TaskWorker old = (TaskWorker)
+                ((ConcurrentMap)this.workers).putIfAbsent(jarPath, new TaskWorker(t));
+              if(null != old) {
+                ((ConcurrentMap)this.workers).replace(jarPath, 
+                new TaskWorker(t));
+              }
             }
           }
           LOG.debug("Task worker list's size: "+workers.size());
