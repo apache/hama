@@ -22,29 +22,34 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import static java.util.concurrent.TimeUnit.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.GroomServerStatus;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.monitor.Federator;
-import org.apache.hama.monitor.Federator.Act;
-import org.apache.hama.monitor.Federator.CollectorHandler;
 import org.apache.hama.monitor.Metric;
 import org.apache.hama.monitor.MetricsRecord;
 import org.apache.hama.monitor.Monitor;
 import org.apache.hama.monitor.ZKCollector;
+import org.apache.hama.monitor.Federator.Act;
+import org.apache.hama.monitor.Federator.CollectorHandler;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
@@ -108,8 +113,9 @@ class SimpleTaskScheduler extends TaskScheduler {
         // schedule
         Collection<GroomServerStatus> glist = groomServerManager
             .groomServerStatusKeySet();
-        schedule(j, (GroomServerStatus[]) glist
-            .toArray(new GroomServerStatus[glist.size()]));
+        schedule(j,
+            (GroomServerStatus[]) glist.toArray(new GroomServerStatus[glist
+                .size()]));
       }
     }
 
@@ -124,25 +130,47 @@ class SimpleTaskScheduler extends TaskScheduler {
       ClusterStatus clusterStatus = groomServerManager.getClusterStatus(false);
       final int numGroomServers = clusterStatus.getGroomServers();
       final ScheduledExecutorService sched = Executors
-          .newScheduledThreadPool(statuses.length + 5);
-      for (GroomServerStatus status : statuses) {
-        sched
-            .schedule(new TaskWorker(status, numGroomServers, job), 0, SECONDS);
-      }// for
+          .newScheduledThreadPool(1);// statuses.length + 5);
+
+      ScheduledFuture<Boolean> jobScheduleResult = sched.schedule(
+          new TaskWorker(statuses, numGroomServers, job), 0, SECONDS);
+
+      Boolean jobResult = Boolean.FALSE;
+
+      try {
+        jobResult = jobScheduleResult.get();
+      } catch (InterruptedException e) {
+        // TODO Auto-generated catch block
+        jobResult = Boolean.FALSE;
+        LOG.error("Error submitting job", e);
+      } catch (ExecutionException e) {
+        // TODO Auto-generated catch block
+        jobResult = Boolean.FALSE;
+        LOG.error("Error submitting job", e);
+      }
+      if (Boolean.FALSE.equals(jobResult)) {
+        LOG.error(new StringBuffer(512).append("Scheduling of job ")
+            .append(job.getJobName())
+            .append(" could not be done successfully. Killing it!").toString());
+        job.kill();
+      }
     }
   }
 
-  private class TaskWorker implements Runnable {
-    private final GroomServerStatus stus;
+  private class TaskWorker implements Callable<Boolean> {
+    private final Map<String, GroomServerStatus> groomStatuses;
     private final int groomNum;
     private final JobInProgress jip;
 
-    TaskWorker(final GroomServerStatus stus, final int num,
+    TaskWorker(final GroomServerStatus[] stus, final int num,
         final JobInProgress jip) {
-      this.stus = stus;
+      this.groomStatuses = new HashMap<String, GroomServerStatus>(2 * num);
+      for (GroomServerStatus status : stus) {
+        this.groomStatuses.put(status.hostName, status);
+      }
       this.groomNum = num;
       this.jip = jip;
-      if (null == this.stus)
+      if (null == this.groomStatuses)
         throw new NullPointerException("Target groom server is not "
             + "specified.");
       if (-1 == this.groomNum)
@@ -151,35 +179,71 @@ class SimpleTaskScheduler extends TaskScheduler {
         throw new NullPointerException("No job is specified.");
     }
 
-    public void run() {
-      // obtain tasks
-      List<GroomServerAction> actions = new ArrayList<GroomServerAction>();
+    public Boolean call() {
+
+      // Action to be sent for each task to the respective groom server.
+      Map<GroomServerStatus, List<LaunchTaskAction>> actionMap = 
+          new HashMap<GroomServerStatus, List<LaunchTaskAction>>(
+              2 * this.groomStatuses.size());
+      Set<Task> taskSet = new HashSet<Task>(2 * jip.tasks.length);
       Task t = null;
       int cnt = 0;
-      while((t = jip.obtainNewTask(this.stus, groomNum) ) != null) {
-        actions.add(new LaunchTaskAction(t));
-        cnt++;
-
-        if(cnt > (this.stus.getMaxTasks() - 1))
+      while ((t = jip.obtainNewTask(this.groomStatuses)) != null) {
+        taskSet.add(t);
+        // Scheduled all tasks
+        if (++cnt == this.jip.tasks.length) {
           break;
+        }
       }
-      
+
+      // if all tasks could not be scheduled
+      if (cnt != this.jip.tasks.length) {
+        return Boolean.FALSE;
+      }
+
       // assembly into actions
-      // List<Task> tasks = new ArrayList<Task>();
-      if (jip.getStatus().getRunState() == JobStatus.RUNNING) {
-        GroomProtocol worker = groomServerManager.findGroomServer(this.stus);
+      Iterator<Task> taskIter = taskSet.iterator();
+      while (taskIter.hasNext()) {
+        Task task = taskIter.next();
+        GroomServerStatus groomStatus = jip.getGroomStatusForTask(task);
+        List<LaunchTaskAction> taskActions = actionMap.get(groomStatus);
+        if (taskActions == null) {
+          taskActions = new ArrayList<LaunchTaskAction>(
+              groomStatus.getMaxTasks());
+        }
+        taskActions.add(new LaunchTaskAction(task));
+        actionMap.put(groomStatus, taskActions);
+      }
+
+      Iterator<GroomServerStatus> groomIter = actionMap.keySet().iterator();
+      while (jip.getStatus().getRunState() == JobStatus.RUNNING
+          && groomIter.hasNext()) {
+
+        GroomServerStatus groomStatus = groomIter.next();
+        List<LaunchTaskAction> actionList = actionMap.get(groomStatus);
+
+        GroomProtocol worker = groomServerManager.findGroomServer(groomStatus);
         try {
           // dispatch() to the groom server
-          Directive d1 = new DispatchTasksDirective(actions.toArray(new GroomServerAction[0]));
+          GroomServerAction[] actions = new GroomServerAction[actionList.size()];
+          actionList.toArray(actions);
+          Directive d1 = new DispatchTasksDirective(actions);
           worker.dispatch(d1);
         } catch (IOException ioe) {
-          LOG.error("Fail to dispatch tasks to GroomServer "
-              + this.stus.getGroomName(), ioe);
+          LOG.error(
+              "Fail to dispatch tasks to GroomServer "
+                  + groomStatus.getGroomName(), ioe);
         }
-      } else {
+
+      }
+
+      if (groomIter.hasNext()
+          && jip.getStatus().getRunState() != JobStatus.RUNNING) {
         LOG.warn("Currently master only shcedules job in running state. "
             + "This may be refined in the future. JobId:" + jip.getJobID());
       }
+
+      return Boolean.TRUE;
     }
   }
 

@@ -16,6 +16,8 @@ Release 0.5 - Unreleased
 
   IMPROVEMENTS
 
+    HAMA-543: Make best effort to start BSP Task on the host 
+                where the input split is located. (Suraj Menon via edwardyoon)
     HAMA-527: Update commons-configuration version (edwardyoon)
     HAMA-499: Refactor clearZKNodes() in BSPMaster (Apurv Verma via tjungblut)
     HAMA-485: Fill Counters with useful information (tjungblut)

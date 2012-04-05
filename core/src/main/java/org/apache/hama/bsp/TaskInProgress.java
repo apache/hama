@@ -18,6 +18,8 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -49,6 +51,8 @@ class TaskInProgress {
   private TaskID id;
   private JobInProgress job;
   private int completes = 0;
+  
+  private GroomServerStatus myGroomStatus = null;
 
   // Status
   // private double progress = 0;
@@ -114,7 +118,8 @@ class TaskInProgress {
   /**
    * Return a Task that can be sent to a GroomServer for execution.
    */
-  public Task getTaskToRun(GroomServerStatus status) throws IOException {
+  public Task getTaskToRun(Map<String, GroomServerStatus> grooms, 
+      Map<GroomServerStatus, Integer> tasksInGroomMap) throws IOException {
     Task t = null;
 
     TaskAttemptID taskid = null;
@@ -131,13 +136,42 @@ class TaskInProgress {
     
     String splitClass = null;
     BytesWritable split = null;
+    GroomServerStatus selectedGroom = null;
     if(rawSplit != null){
       splitClass = rawSplit.getClassName();
       split = rawSplit.getBytes();
+      String[] possibleLocations = rawSplit.getLocations();
+      for (int i = 0; i < possibleLocations.length; ++i){
+        String location = possibleLocations[i];
+        GroomServerStatus groom = grooms.get(location);
+        Integer taskInGroom = tasksInGroomMap.get(groom);
+        taskInGroom = (taskInGroom == null)?0:taskInGroom;
+        if(taskInGroom < groom.getMaxTasks() && 
+            location.equals(groom.getGroomHostName())){
+            selectedGroom = groom;
+            t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
+            activeTasks.put(taskid, groom.getGroomName());
+            
+            break;
+        }
+      }
+    }
+    //Failed in attempt to get data locality or there was no input split.
+    if(selectedGroom == null){
+      Iterator<String> groomIter = grooms.keySet().iterator();
+      while(groomIter.hasNext()) {
+        GroomServerStatus groom = grooms.get(groomIter.next());
+        Integer taskInGroom = tasksInGroomMap.get(groom);
+        taskInGroom = (taskInGroom == null)?0:taskInGroom;
+        if(taskInGroom < groom.getMaxTasks()){
+          selectedGroom = groom;
+          t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
+          activeTasks.put(taskid, groom.getGroomName());
+        }
+      }
     }
     
-    t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
-    activeTasks.put(taskid, status.getGroomName());
+    myGroomStatus = selectedGroom;
 
     return t;
   }
@@ -169,6 +203,10 @@ class TaskInProgress {
 
   public TreeMap<TaskAttemptID, String> getTasks() {
     return activeTasks;
+  }
+  
+  public GroomServerStatus getGroomServerStatus(){
+    return myGroomStatus;
   }
 
   /**
