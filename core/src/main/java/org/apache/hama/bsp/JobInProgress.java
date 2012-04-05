@@ -19,6 +19,9 @@ package org.apache.hama.bsp;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -59,6 +62,7 @@ class JobInProgress {
   Path jobFile = null;
   Path localJobFile = null;
   Path localJarFile = null;
+
   private LocalFileSystem localFs;
   // Indicates how many times the job got restarted
   private int restartCount;
@@ -81,6 +85,10 @@ class JobInProgress {
   int clusterSize;
   String jobSplit;
 
+  Map<Task, GroomServerStatus> taskToGroomMap;
+  // Used only for scheduling!
+  Map<GroomServerStatus, Integer> tasksInGroomMap;
+
   public JobInProgress(BSPJobID jobId, Path jobFile, BSPMaster master,
       Configuration conf) throws IOException {
     this.conf = conf;
@@ -88,6 +96,10 @@ class JobInProgress {
     this.localFs = FileSystem.getLocal(conf);
     this.jobFile = jobFile;
     this.master = master;
+
+    this.taskToGroomMap = new HashMap<Task, GroomServerStatus>(2 * tasks.length);
+
+    this.tasksInGroomMap = new HashMap<GroomServerStatus, Integer>();
 
     this.status = new JobStatus(jobId, null, 0L, 0L,
         JobStatus.State.PREP.value(), counters);
@@ -231,9 +243,17 @@ class JobInProgress {
     LOG.info("Job is initialized.");
   }
 
-  public synchronized Task obtainNewTask(GroomServerStatus status,
-      int clusterSize) {
-    this.clusterSize = clusterSize;
+  public Iterator<GroomServerStatus> getGroomsForTask() {
+    return null;
+  }
+
+  public GroomServerStatus getGroomStatusForTask(Task t) {
+    return this.taskToGroomMap.get(t);
+  }
+
+  public synchronized Task obtainNewTask(
+      Map<String, GroomServerStatus> groomStatuses) {
+    this.clusterSize = groomStatuses.size();
 
     if (this.status.getRunState() != JobStatus.RUNNING) {
       LOG.info("Cannot create task split for " + profile.getJobID());
@@ -241,10 +261,18 @@ class JobInProgress {
     }
 
     Task result = null;
+
     try {
       for (int i = 0; i < tasks.length; i++) {
         if (!tasks[i].isRunning() && !tasks[i].isComplete()) {
-          result = tasks[i].getTaskToRun(status);
+          result = tasks[i].getTaskToRun(groomStatuses, tasksInGroomMap);
+          if (result != null)
+            this.taskToGroomMap.put(result, tasks[i].getGroomServerStatus());
+          int taskInGroom = 0;
+          if (tasksInGroomMap.containsKey(tasks[i].getGroomServerStatus())) {
+            taskInGroom = tasksInGroomMap.get(tasks[i].getGroomServerStatus());
+          }
+          tasksInGroomMap.put(tasks[i].getGroomServerStatus(), taskInGroom + 1);
           break;
         }
       }
