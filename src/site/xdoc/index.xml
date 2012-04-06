@@ -35,6 +35,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         <li>Checkpoint recovery.</li>
         <li>Support to run in the Cloud using <a href="hama_on_clouds.html">Apache Whirr</a>.</li>
         <li>Support to run with Hadoop YARN.</li>
+        <li>Support Pregel-style Graph computing framework as a sub-module.</li>
       </ul>
       <br/>
       <table class="green" width="100%" cellspacing="0" cellpadding="5" border="1"> 
