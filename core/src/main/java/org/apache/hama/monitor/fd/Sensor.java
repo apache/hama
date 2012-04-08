@@ -15,24 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.metrics;
 
-import java.util.List;
+package org.apache.hama.monitor.fd;
 
-final class Pair {
-  private final String name;
-  private final List<MetricsRecord> records;
+import java.io.IOException;
 
-  Pair(String name, List<MetricsRecord> records){
-    this.name = name;
-    this.records = records;
-  } 
+/**
+ * Failure detector client, sending heartbeat to supervisor. 
+ */
+public interface Sensor {
 
-  final String name(){
-    return this.name;
-  }
+  /**
+   * The heartbeat function, signifying its existence.
+   */
+  void heartbeat() throws IOException;
 
-  final List<MetricsRecord> records(){
-    return this.records;
-  }
 }
