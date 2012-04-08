@@ -15,16 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.metrics;
+package org.apache.hama.monitor.fd;
 
-import java.util.List;
+/**
+ * A component used by an application to query the target staus.
+ */
+public interface Interpreter {
 
-public interface MetricsSource extends MetricsInfo{
-
-   /**
-    * Collect metrics data.
-    * @param collector is used to collect metrics records.
-    */
-   void snapshot(final List<MetricsRecord> collector);
+  /**
+   * An output value represents the level of a node's status. 
+   * @param address to be checked.
+   * @return true indicates the target node is alive; false otherwise.
+   */
+  boolean isAlive(String address);
 
 }

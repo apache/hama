@@ -15,18 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.metrics;
+package org.apache.hama.monitor.fd;
 
-public interface MetricsSink {
+/**
+ * A simple binary interpreter translates phi value to application
+ * for checking if a specific groom server is alive.
+ */
+public class SimpleBinaryInterpreter implements Interpreter{
+
+  private final Supervisor supervisor;
+
+  public SimpleBinaryInterpreter(Supervisor supervisor){
+    this.supervisor = supervisor;
+    if(null == this.supervisor) 
+      throw new NullPointerException("Supervisor is not provided.");
+  }
 
   /**
-   * Put a metrics reocrd to sink.
-   * @param record to be stored in the sink.
+   * An output value represents the level of a node's status. 
+   * @param address to be checked.
+   * @return true indicates the target node is alive; false otherwise.
    */
-  void putMetrics(final MetricsRecord record);
-
-  /**
-   * Flush buffered metrics.
-   */
-  void flush();
+  public boolean isAlive(String address){
+    if(Double.isInfinite(this.supervisor.suspicionLevel(address))){
+      return false;
+    }
+    return true;
+  }
 }

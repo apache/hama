@@ -15,23 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.metrics;
+
+package org.apache.hama.monitor.fd;
 
 /**
- * A class that holds basic Metrics Information, including name and description.
+ * A failure detector component. It is responsible for receiving the 
+ * heartbeat and output suspicion level for Interpreter.
  */
-public interface MetricsInfo {
+public interface Supervisor {
 
   /**
-   * Name of the MetricsSource.
-   * @return String name of MetricsSource.
+   * The output value represents the level of a node's status. 
+   * @param addr to be checked.
+   * @return double value as the suspicion level of the endpoint.
    */
-  String name();
-
-  /**
-   * Description of the MetricsSource.
-   * @return String that describes MetricsSource.
-   */
-  String description();
+  double suspicionLevel(String addr);
 
 }
