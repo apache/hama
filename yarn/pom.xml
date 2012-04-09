@@ -14,26 +14,27 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <parent>
     <groupId>org.apache.hama</groupId>
     <artifactId>hama-parent</artifactId>
-    <version>0.5.0-incubating</version>
+    <version>0.5.0-incubating-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-yarn</artifactId>
   <name>yarn</name>
-  <version>0.5.0-incubating</version>
+  <version>0.5.0-incubating-SNAPSHOT</version>
   <packaging>jar</packaging>
   <scm>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/server/tags/0.5/server
+      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/server
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/server/tags/0.5/server
+      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/server
     </developerConnection>
   </scm>
 
