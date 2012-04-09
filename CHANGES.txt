@@ -16,6 +16,7 @@ Release 0.5 - Unreleased
 
   IMPROVEMENTS
 
+    HAMA-548: Update 0.23.0-SNAPSHOT to 0.23.1 in pom file of yarn module (edwardyoon)
     HAMA-545: Include the API and other docs in the Hama release (Suraj Menon via edwardyoon)
     HAMA-543: Make best effort to start BSP Task on the host 
                 where the input split is located. (Suraj Menon via edwardyoon)
