@@ -311,6 +311,7 @@
           <excludes>
             <exclude>**/*.asc</exclude>
             <exclude>**/logs/**</exclude>
+            <exclude>**/docs/**</exclude>
             <exclude>CHANGES.txt</exclude>
             <exclude>conf/groomservers</exclude>
             <exclude>src/site/resources/files/hama-eclipse-formatter.xml</exclude>
@@ -343,10 +344,27 @@
               <includes>
                 <include>lib/**</include>
                 <include>logs/**</include>
+                <include>docs/apidocs/**</include>
               </includes>
             </fileset>
           </filesets>
         </configuration>
+      </plugin>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-javadoc-plugin</artifactId>
+	<version>2.6</version>
+	<configuration>
+	  <aggregate>true</aggregate>
+	  <outputDirectory>docs/apidocs</outputDirectory>
+	</configuration>
+	<executions>
+	  <execution>
+	    <goals>
+	      <goal>aggregate-jar</goal>
+	    </goals>
+	  </execution>
+	</executions>
       </plugin>
     </plugins>
   </build>
