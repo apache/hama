@@ -18,3 +18,11 @@ See https://glassfish.dev.java.net/public/CDDLv1.0.html.
 Compression support provided by snappy-java
 See http://code.google.com/p/snappy-java/
 
+This product includes software developed by the Google Guava project.
+Copyright (C) 2009 Google Inc.
+See http://code.google.com/p/guava-libraries/
+
+This product includes software developed by the Jackson project.
+Copyright 2010 FasterXML, LLC
+See http://jackson.codehaus.org/
+
