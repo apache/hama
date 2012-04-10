@@ -76,11 +76,12 @@
     </license>
   </licenses>
   <scm>
+    <url>scm:svn:https://svn.apache.org/repos/asf/incubator/hama/</url>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/incubator/hama
+      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/hama
+      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/trunk
     </developerConnection>
   </scm>
 
