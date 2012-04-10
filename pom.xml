@@ -15,8 +15,7 @@
    limitations under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <parent>
     <groupId>org.apache</groupId>
@@ -28,7 +27,7 @@
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-parent</artifactId>
   <name>Apache Hama parent POM</name>
-  <version>0.5.0-incubating-SNAPSHOT</version>
+  <version>0.5.0-incubating</version>
   <url>http://incubator.apache.org/hama</url>
   <packaging>pom</packaging>
   <prerequisites>
@@ -77,10 +76,10 @@
   </licenses>
   <scm>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/incubator/hama
+      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/tags/0.5-RC1
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/hama
+      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/tags/0.5-RC1
     </developerConnection>
   </scm>
 
