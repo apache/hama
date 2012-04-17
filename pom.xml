@@ -352,28 +352,28 @@
         </configuration>
       </plugin>
       <plugin>
-	<groupId>org.apache.maven.plugins</groupId>
-	<artifactId>maven-javadoc-plugin</artifactId>
-	<version>2.6</version>
-	<configuration>
-	  <aggregate>true</aggregate>
-	  <outputDirectory>docs/apidocs</outputDirectory>
-	</configuration>
-	<executions>
-	  <execution>
-	    <goals>
-	      <goal>aggregate-jar</goal>
-	    </goals>
-	  </execution>
-	</executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.6</version>
+        <configuration>
+          <aggregate>true</aggregate>
+          <outputDirectory>docs/apidocs</outputDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+             <goal>aggregate-jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
   
-    <distributionManagement>
-      <site>
-        <id>apache.website</id>
-        <url>scpexe://people.apache.org/www/incubator.apache.org/content/hama</url>
-      </site>
-    </distributionManagement>
+  <distributionManagement>
+    <site>
+      <id>apache.website</id>
+      <url>scpexe://people.apache.org/www/incubator.apache.org/content/hama</url>
+    </site>
+  </distributionManagement>
 </project>
