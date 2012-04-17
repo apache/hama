@@ -44,19 +44,34 @@
       <artifactId>maven-assembly-plugin</artifactId>
       <executions>
         <execution>
-          <id>core-assembly</id>
+          <id>bin-assembly</id>
           <phase>package</phase>
           <goals>
             <goal>single</goal>
           </goals>
           <configuration>
             <descriptors>
-              <descriptor>src/assemble/core.xml</descriptor>
+              <descriptor>src/assemble/bin.xml</descriptor>
             </descriptors>
             <tarLongFileMode>gnu</tarLongFileMode>
             <appendAssemblyId>false</appendAssemblyId>
           </configuration>
         </execution>
+        <execution>
+          <id>src-assembly</id>
+          <phase>package</phase>
+          <goals>
+            <goal>single</goal>
+          </goals>
+          <configuration>
+            <descriptors>
+              <descriptor>src/assemble/src.xml</descriptor>
+            </descriptors>
+            <tarLongFileMode>gnu</tarLongFileMode>
+            <appendAssemblyId>true</appendAssemblyId>
+          </configuration>
+        </execution>
+
       </executions>
     </plugin>
     </plugins>
