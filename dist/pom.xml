@@ -28,8 +28,6 @@
   <artifactId>hama-dist</artifactId>
 
   <packaging>pom</packaging>
-
-  <name>dist</name>
   
   <!-- NOTE: These dependency declarations are only required to sort this project to the 
        end of the line in the multimodule build. 
