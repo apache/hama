@@ -67,6 +67,7 @@
       <excludes>
         <exclude>*sources.jar</exclude>
         <exclude>*tests.jar</exclude>
+        <exclude>*javadoc.jar</exclude>
       </excludes>
       <outputDirectory>../hama-${project.version}/</outputDirectory>
     </fileSet>
