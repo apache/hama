@@ -346,6 +346,10 @@
                 <include>lib/**</include>
                 <include>logs/**</include>
                 <include>docs/apidocs/**</include>
+                <include>core/docs</include>
+                <include>examples/docs</include>
+                <include>graph/docs</include>
+                <include>yarn/docs</include>
               </includes>
             </fileset>
           </filesets>
