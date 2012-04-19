@@ -44,6 +44,14 @@
     </fileSet>
     
     <fileSet>
+     <directory>../docs</directory>
+     <excludes>
+       <exclude>apidocs</exclude>
+     <excludes>
+     <outputDirectory>../hama-${project.version}/docs</outputDirectory>
+   </fileSet>
+
+    <fileSet>
       <directory>../bin</directory>
       <includes>
         <include>hama</include>
