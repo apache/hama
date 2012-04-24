@@ -58,4 +58,7 @@ public class GraphJob extends BSPJob {
     conf.setClass(VERTEX_MESSAGE_COMBINER_CLASS_ATTR, cls, Combiner.class);
   }
 
+  public void setMaxIteration(int maxIteration) {
+    conf.setInt("hama.graph.max.iteration", maxIteration);
+  }
 }

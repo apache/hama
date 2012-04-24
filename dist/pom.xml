@@ -26,15 +26,8 @@
   </parent>
   
   <artifactId>hama-dist</artifactId>
-
   <packaging>pom</packaging>
   
-  <!-- NOTE: These dependency declarations are only required to sort this project to the 
-       end of the line in the multimodule build. 
-       
-       Since we only include the child1 module in our assembly, we only need to ensure this
-       distribution project builds AFTER that one...
-  -->
 
   <build>
     <plugins>
@@ -53,6 +46,7 @@
             </descriptors>
             <tarLongFileMode>gnu</tarLongFileMode>
             <appendAssemblyId>false</appendAssemblyId>
+            <finalName>hama-${project.version}</finalName>
           </configuration>
         </execution>
         <execution>
@@ -67,6 +61,7 @@
             </descriptors>
             <tarLongFileMode>gnu</tarLongFileMode>
             <appendAssemblyId>true</appendAssemblyId>
+            <finalName>hama-${project.version}</finalName>
           </configuration>
         </execution>
 
