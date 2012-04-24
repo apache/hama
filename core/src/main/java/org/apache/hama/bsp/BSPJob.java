@@ -392,15 +392,11 @@ public class BSPJob extends BSPJobContext {
         conf);
   }
 
-  public void setMaxIteration(int maxIteration) {
-    conf.setInt("hama.graph.max.iteration", maxIteration);
-  }
-
-  public void setCheckPointInterval(int checkPointInterval) {
+  protected void setCheckPointInterval(int checkPointInterval) {
     conf.setInt(Constants.CHECKPOINT_INTERVAL, checkPointInterval);
   }
 
-  public void setCheckPointFlag(boolean enableCheckPoint) {
+  protected void setCheckPointFlag(boolean enableCheckPoint) {
     conf.setBoolean(Constants.CHECKPOINT_ENABLED, enableCheckPoint);
   }
 }
