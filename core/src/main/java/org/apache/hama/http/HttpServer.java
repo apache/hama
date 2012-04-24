@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.log.LogLevel;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.bsp.BSPMaster;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
@@ -110,11 +112,14 @@ public class HttpServer {
     System.setProperty("java.naming.factory.url.pkgs", "org.mortbay.naming");
 
     webAppContext.setContextPath("/");
-    webAppContext.setWar(appDir + "/" + name);
+    String warPath = appDir + "/" + name;
+    if (!warPath.endsWith("/")) {
+      warPath = warPath + "/";
+    }
+    webAppContext.setWar(warPath);
     webServer.addHandler(webAppContext);
 
     addDefaultApps(contexts, appDir);
-
     addDefaultServlets();
   }
 
@@ -282,11 +287,10 @@ public class HttpServer {
    * @throws IOException if 'webapps' directory cannot be found on CLASSPATH.
    */
   protected String getWebAppsPath() throws IOException {
-    // URL url = BSPMaster.class.getClassLoader().getResource("webapps");
-    // if (url == null)
-    // throw new IOException("webapps not found in CLASSPATH");
-    // return url.toString();
-    return "core/src/main/webapp";
+    URL url = BSPMaster.class.getClassLoader().getResource("webapp");
+    if (url == null)
+      throw new IOException("webapps not found in CLASSPATH");
+    return url.toString();
   }
 
   /**
