@@ -52,10 +52,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
   public static enum PeerCounter {
-    SUPERSTEP_SUM, SUPERSTEPS, TASK_INPUT_RECORDS, TASK_OUTPUT_RECORDS,
-    IO_BYTES_READ, MESSAGE_BYTES_TRANSFERED, MESSAGE_BYTES_RECEIVED,
-    TOTAL_MESSAGES_SENT, TOTAL_MESSAGES_RECEIVED, COMPRESSED_BYTES_SENT,
-    COMPRESSED_BYTES_RECEIVED, TIME_IN_SYNC_MS
+    SUPERSTEP_SUM, SUPERSTEPS, TASK_INPUT_RECORDS, TASK_OUTPUT_RECORDS, IO_BYTES_READ, MESSAGE_BYTES_TRANSFERED, MESSAGE_BYTES_RECEIVED, TOTAL_MESSAGES_SENT, TOTAL_MESSAGES_RECEIVED, COMPRESSED_BYTES_SENT, COMPRESSED_BYTES_RECEIVED, TIME_IN_SYNC_MS
   }
 
   private final Configuration conf;
@@ -185,39 +182,40 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     initInput();
 
-    // just output something when the user configured it
+    String outdir = null;
     if (conf.get("bsp.output.dir") != null) {
-      Path outdir = new Path(conf.get("bsp.output.dir"),
-          Task.getOutputName(partition));
-      outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob,
-          outdir.makeQualified(fs).toString());
-      final RecordWriter<K2, V2> finalOut = outWriter;
-
-      collector = new OutputCollector<K2, V2>() {
-        public void collect(K2 key, V2 value) throws IOException {
-          finalOut.write(key, value);
-        }
-      };
+      Path outputDir = new Path(conf.get("bsp.output.dir",
+          "tmp-" + System.currentTimeMillis()), Task.getOutputName(partition));
+      outdir = outputDir.makeQualified(fs).toString();
     }
+    outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob, outdir);
+    final RecordWriter<K2, V2> finalOut = outWriter;
+
+    collector = new OutputCollector<K2, V2>() {
+      public void collect(K2 key, V2 value) throws IOException {
+        finalOut.write(key, value);
+      }
+    };
 
   }
 
   @SuppressWarnings("unchecked")
   public final void initInput() throws IOException {
-    // just read input if the user defined one
-    if (conf.get("bsp.input.dir") != null) {
-      InputSplit inputSplit = null;
-      // reinstantiate the split
-      try {
+    InputSplit inputSplit = null;
+    // reinstantiate the split
+    try {
+      if (splitClass != null) {
         inputSplit = (InputSplit) ReflectionUtils.newInstance(
             getConfiguration().getClassByName(splitClass), getConfiguration());
-      } catch (ClassNotFoundException exp) {
-        IOException wrap = new IOException("Split class " + splitClass
-            + " not found");
-        wrap.initCause(exp);
-        throw wrap;
       }
+    } catch (ClassNotFoundException exp) {
+      IOException wrap = new IOException("Split class " + splitClass
+          + " not found");
+      wrap.initCause(exp);
+      throw wrap;
+    }
 
+    if (inputSplit != null) {
       DataInputBuffer splitBuffer = new DataInputBuffer();
       splitBuffer.reset(split.getBytes(), 0, split.getLength());
       inputSplit.readFields(splitBuffer);

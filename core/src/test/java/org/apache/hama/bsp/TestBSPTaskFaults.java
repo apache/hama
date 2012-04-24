@@ -171,7 +171,7 @@ public class TestBSPTaskFaults extends TestCase {
   private class TestBSPTaskThreadRunner extends Thread {
 
     BSPJob job;
-
+    
     TestBSPTaskThreadRunner(BSPJob jobConf) {
       job = jobConf;
     }
@@ -325,6 +325,9 @@ public class TestBSPTaskFaults extends TestCase {
 
       try {
         BSPJob job = new BSPJob(hamaConf);
+        job.setInputFormat(NullInputFormat.class);
+        job.setOutputFormat(NullOutputFormat.class);
+        
         final BSPPeerProtocol proto = (BSPPeerProtocol) RPC.getProxy(
             BSPPeerProtocol.class, BSPPeerProtocol.versionID,
             new InetSocketAddress("127.0.0.1", port), hamaConf);
