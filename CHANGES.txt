@@ -16,6 +16,7 @@ Release 0.5 - April 10, 2012
 
   IMPROVEMENTS
 
+    HAMA-494: Remove hard-coded webapp path in HttpServer (edwardyoon)
     HAMA-562: Record Reader/Writer objects should be initialized (edwardyoon)
     HAMA-555: Separate bin and src distributions (edwardyoon)
     HAMA-548: Update 0.23.0-SNAPSHOT to 0.23.1 in pom file of yarn module (edwardyoon)
