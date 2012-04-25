@@ -24,8 +24,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyServer;
@@ -37,8 +41,8 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
-import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
+import org.apache.hama.util.BSPNetUtils;
 
 public final class AvroMessageManagerImpl<M extends Writable> extends
     CompressableMessageManager<M> implements Sender<M> {
@@ -46,29 +50,49 @@ public final class AvroMessageManagerImpl<M extends Writable> extends
   private NettyServer server = null;
 
   private final HashMap<InetSocketAddress, Sender<M>> peers = new HashMap<InetSocketAddress, Sender<M>>();
+  private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
+
+  private final HashMap<InetSocketAddress, LinkedList<M>> outgoingQueues = new HashMap<InetSocketAddress, LinkedList<M>>();
+  private Deque<M> localQueue = new LinkedList<M>();
+  // this must be a synchronized implementation: this is accessed per RPC
+  private final ConcurrentLinkedQueue<M> localQueueForNextIteration = new ConcurrentLinkedQueue<M>();
+
+  private BSPPeer<?, ?, ?, ?, M> peer;
 
   @Override
-  public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
-      Configuration conf, InetSocketAddress addr) {
-    super.init(attemptId, peer, conf, addr);
+  public void init(BSPPeer<?, ?, ?, ?, M> peer, Configuration conf,
+      InetSocketAddress addr) {
+    this.peer = peer;
     super.initCompression(conf);
     server = new NettyServer(new SpecificResponder(Sender.class, this), addr);
   }
 
   @Override
   public void close() {
-    super.close();
     server.close();
   }
 
+  @Override
+  public void clearOutgoingQueues() {
+    this.outgoingQueues.clear();
+    localQueue.addAll(localQueueForNextIteration);
+    localQueueForNextIteration.clear();
+  }
+
   public void put(BSPMessageBundle<M> messages) {
-    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
-        messages.getMessages().size());
+    peer.incrementCounter(
+        BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, messages.getMessages()
+            .size());
     Iterator<M> iterator = messages.getMessages().iterator();
     while (iterator.hasNext()) {
       this.localQueueForNextIteration.add(iterator.next());
       iterator.remove();
     }
+  }
+
+  @Override
+  public int getNumCurrentMessages() {
+    return localQueue.size();
   }
 
   @SuppressWarnings("unchecked")
@@ -101,19 +125,42 @@ public final class AvroMessageManagerImpl<M extends Writable> extends
     return null;
   }
 
+  @Override
+  public M getCurrentMessage() throws IOException {
+    return localQueue.poll();
+  }
+
+  @Override
+  public void send(String peerName, M msg) throws IOException {
+    InetSocketAddress targetPeerAddress = null;
+    // Get socket for target peer.
+    if (peerSocketCache.containsKey(peerName)) {
+      targetPeerAddress = peerSocketCache.get(peerName);
+    } else {
+      targetPeerAddress = BSPNetUtils.getAddress(peerName);
+      peerSocketCache.put(peerName, targetPeerAddress);
+    }
+    LinkedList<M> queue = outgoingQueues.get(targetPeerAddress);
+    if (queue == null) {
+      queue = new LinkedList<M>();
+    }
+    queue.add(msg);
+    outgoingQueues.put(targetPeerAddress, queue);
+  }
+
   private final BSPMessageBundle<M> deserializeMessage(ByteBuffer buffer)
       throws IOException {
     BSPMessageBundle<M> msg = new BSPMessageBundle<M>();
     byte[] byteArray = buffer.array();
     if (compressor == null) {
-      peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_RECEIVED,
-          byteArray.length);
+      peer.incrementCounter(
+          BSPPeerImpl.PeerCounter.MESSAGE_BYTES_RECEIVED, byteArray.length);
       ByteArrayInputStream inArray = new ByteArrayInputStream(byteArray);
       DataInputStream in = new DataInputStream(inArray);
       msg.readFields(in);
     } else {
-      peer.incrementCounter(BSPPeerImpl.PeerCounter.COMPRESSED_BYTES_RECEIVED,
-          byteArray.length);
+      peer.incrementCounter(
+          BSPPeerImpl.PeerCounter.COMPRESSED_BYTES_RECEIVED, byteArray.length);
       msg = compressor.decompressBundle(new BSPCompressedBundle(byteArray));
     }
 
@@ -128,16 +175,20 @@ public final class AvroMessageManagerImpl<M extends Writable> extends
       msg.write(out);
       out.close();
       byte[] byteArray = outArray.toByteArray();
-      peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
-          byteArray.length);
+      peer.incrementCounter(
+          BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED, byteArray.length);
       return ByteBuffer.wrap(byteArray);
     } else {
       BSPCompressedBundle compMsgBundle = compressor.compressBundle(msg);
       byte[] data = compMsgBundle.getData();
-      peer.incrementCounter(BSPPeerImpl.PeerCounter.COMPRESSED_BYTES_SENT,
-          data.length);
+      peer.incrementCounter(
+          BSPPeerImpl.PeerCounter.COMPRESSED_BYTES_SENT, data.length);
       return ByteBuffer.wrap(data);
     }
   }
 
+  @Override
+  public Iterator<Entry<InetSocketAddress, LinkedList<M>>> getMessageIterator() {
+    return this.outgoingQueues.entrySet().iterator();
+  }
 }

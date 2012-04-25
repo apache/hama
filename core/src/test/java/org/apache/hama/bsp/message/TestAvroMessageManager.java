@@ -30,7 +30,6 @@ import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.Counters;
-import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
 import org.apache.hama.bsp.message.compress.SnappyCompressor;
 import org.apache.hama.bsp.messages.BooleanMessage;
@@ -46,13 +45,10 @@ public class TestAvroMessageManager extends TestCase {
 
   private static final int SUM = DOUBLE_MSG_COUNT + BOOL_MSG_COUNT
       + INT_MSG_COUNT;
-  
-  public static final String TMP_OUTPUT_PATH = "/tmp/messageQueue";
 
   public void testAvroMessenger() throws Exception {
     BSPMessageBundle<Writable> randomBundle = getRandomBundle();
     Configuration conf = new Configuration();
-    conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     MessageManager<Writable> messageManager = MessageManagerFactory
         .getMessageManager(conf);
     conf.set(BSPMessageCompressorFactory.COMPRESSION_CODEC_CLASS,
@@ -65,8 +61,8 @@ public class TestAvroMessageManager extends TestCase {
 
     BSPPeer<?, ?, ?, ?, Writable> dummyPeer = new BSPPeerImpl<NullWritable, NullWritable, NullWritable, NullWritable, Writable>(
         conf, FileSystem.get(conf), new Counters());
-    TaskAttemptID id = new TaskAttemptID("1", 1, 1, 1);
-    messageManager.init(id, dummyPeer, conf, peer);
+
+    messageManager.init(dummyPeer, conf, peer);
 
     messageManager.transfer(peer, randomBundle);
 

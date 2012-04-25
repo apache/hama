@@ -19,6 +19,7 @@ package org.apache.hama.bsp.message;
 
 import java.net.InetSocketAddress;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import junit.framework.TestCase;
@@ -31,31 +32,12 @@ import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.Counters;
-import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestHadoopMessageManager extends TestCase {
 
-  public static final String TMP_OUTPUT_PATH = "/tmp/messageQueue";
-  // increment is here to solve race conditions in parallel execution to choose
-  // other ports.
-  public static volatile int increment = 1;
-
-  public void testMemoryMessaging() throws Exception {
+  public void testMessaging() throws Exception {
     Configuration conf = new Configuration();
-    conf.set(MessageManager.QUEUE_TYPE_CLASS,
-        MemoryQueue.class.getCanonicalName());
-    conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
-    messagingInternal(conf);
-  }
-
-  public void testDiskMessaging() throws Exception {
-    Configuration conf = new Configuration();
-    conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
-    messagingInternal(conf);
-  }
-
-  private void messagingInternal(Configuration conf) throws Exception {
     conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS,
         "org.apache.hama.bsp.message.HadoopMessageManagerImpl");
     MessageManager<IntWritable> messageManager = MessageManagerFactory
@@ -64,20 +46,18 @@ public class TestHadoopMessageManager extends TestCase {
     assertTrue(messageManager instanceof HadoopMessageManagerImpl);
 
     InetSocketAddress peer = new InetSocketAddress(
-        BSPNetUtils.getCanonicalHostname(), BSPNetUtils.getFreePort()
-            + (increment++));
+        BSPNetUtils.getCanonicalHostname(), BSPNetUtils.getFreePort());
     BSPPeer<?, ?, ?, ?, IntWritable> dummyPeer = new BSPPeerImpl<NullWritable, NullWritable, NullWritable, NullWritable, IntWritable>(
         conf, FileSystem.get(conf), new Counters());
-    TaskAttemptID id = new TaskAttemptID("1", 1, 1, 1);
-    messageManager.init(id, dummyPeer, conf, peer);
+    messageManager.init(dummyPeer, conf, peer);
     String peerName = peer.getHostName() + ":" + peer.getPort();
 
     messageManager.send(peerName, new IntWritable(1337));
 
-    Iterator<Entry<InetSocketAddress, MessageQueue<IntWritable>>> messageIterator = messageManager
+    Iterator<Entry<InetSocketAddress, LinkedList<IntWritable>>> messageIterator = messageManager
         .getMessageIterator();
 
-    Entry<InetSocketAddress, MessageQueue<IntWritable>> entry = messageIterator
+    Entry<InetSocketAddress, LinkedList<IntWritable>> entry = messageIterator
         .next();
 
     assertEquals(entry.getKey(), peer);
@@ -97,6 +77,5 @@ public class TestHadoopMessageManager extends TestCase {
     IntWritable currentMessage = messageManager.getCurrentMessage();
 
     assertEquals(currentMessage.get(), 1337);
-    messageManager.close();
   }
 }
