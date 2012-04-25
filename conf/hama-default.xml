@@ -81,11 +81,6 @@
     <description>Temporary directory on the local filesystem.</description>
   </property>
   <property>
-    <name>bsp.disk.queue.dir</name>
-    <value>${hama.tmp.dir}/messages/</value>
-    <description>Temporary directory on the local message buffer on disk.</description>
-  </property>
-  <property>
     <name>bsp.child.java.opts</name>
     <value>-Xmx512m</value>
     <description>Java opts for the groom server child processes.  

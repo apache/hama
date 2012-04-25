@@ -34,7 +34,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.message.DiskQueue;
 import org.apache.hama.examples.ClassSerializePrinting;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.zookeeper.CreateMode;
@@ -49,7 +48,6 @@ public class TestBSPMasterGroomServer extends HamaCluster {
 
   private static Log LOG = LogFactory.getLog(TestBSPMasterGroomServer.class);
   static String TMP_OUTPUT = "/tmp/test-example/";
-  public static final String TMP_OUTPUT_PATH = "/tmp/messageQueue";
   static Path OUTPUT_PATH = new Path(TMP_OUTPUT + "serialout");
 
   private HamaConfiguration configuration;
@@ -60,7 +58,6 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     assertEquals("Make sure master addr is set to localhost:", "localhost",
         configuration.get("bsp.master.address"));
     configuration.set("bsp.local.dir", "/tmp/hama-test");
-    conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     configuration.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     configuration.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
     configuration.set("hama.sync.client.class",

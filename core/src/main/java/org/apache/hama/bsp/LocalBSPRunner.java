@@ -45,10 +45,8 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJobClient.RawSplit;
 import org.apache.hama.bsp.BSPMaster.State;
-import org.apache.hama.bsp.message.MemoryQueue;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
-import org.apache.hama.bsp.message.MessageQueue;
 import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
@@ -334,15 +332,14 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @SuppressWarnings("rawtypes")
     private static final ConcurrentHashMap<InetSocketAddress, LocalMessageManager> managerMap = new ConcurrentHashMap<InetSocketAddress, LocalBSPRunner.LocalMessageManager>();
 
-    private final HashMap<InetSocketAddress, MessageQueue<M>> localOutgoingMessages = new HashMap<InetSocketAddress, MessageQueue<M>>();
+    private final HashMap<InetSocketAddress, LinkedList<M>> localOutgoingMessages = new HashMap<InetSocketAddress, LinkedList<M>>();
     private static final ConcurrentHashMap<String, InetSocketAddress> socketCache = new ConcurrentHashMap<String, InetSocketAddress>();
     private final LinkedBlockingDeque<M> localIncomingMessages = new LinkedBlockingDeque<M>();
 
     private BSPPeer<?, ?, ?, ?, M> peer;
 
     @Override
-    public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
-        Configuration conf, InetSocketAddress peerAddress) {
+    public void init(BSPPeer<?, ?, ?, ?, M> peer, Configuration conf, InetSocketAddress peerAddress) {
       this.peer = peer;
       managerMap.put(peerAddress, this);
     }
@@ -368,9 +365,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         inetSocketAddress = BSPNetUtils.getAddress(peerName);
         socketCache.put(peerName, inetSocketAddress);
       }
-      MessageQueue<M> msgs = localOutgoingMessages.get(inetSocketAddress);
+      LinkedList<M> msgs = localOutgoingMessages.get(inetSocketAddress);
       if (msgs == null) {
-        msgs = new MemoryQueue<M>();
+        msgs = new LinkedList<M>();
       }
       msgs.add(msg);
       peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_SENT, 1L);
@@ -383,13 +380,12 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         throws IOException {
       for (M value : bundle.getMessages()) {
         managerMap.get(addr).localIncomingMessages.add(value);
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
-            1L);
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, 1L);
       }
     }
 
     @Override
-    public Iterator<Entry<InetSocketAddress, MessageQueue<M>>> getMessageIterator() {
+    public Iterator<Entry<InetSocketAddress, LinkedList<M>>> getMessageIterator() {
       return localOutgoingMessages.entrySet().iterator();
     }
 
@@ -401,12 +397,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public int getNumCurrentMessages() {
       return localIncomingMessages.size();
-    }
-
-    @Override
-    public void finishSendPhase() throws IOException {
-      // TODO Auto-generated method stub
-
     }
 
   }
