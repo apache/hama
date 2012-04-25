@@ -20,7 +20,6 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -37,6 +36,7 @@ import org.apache.hama.Constants;
 import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
+import org.apache.hama.bsp.message.MessageQueue;
 import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
@@ -165,12 +165,12 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         TaskStatus.Phase.STARTING, counters));
 
     messenger = MessageManagerFactory.getMessageManager(conf);
-    messenger.init(this, conf, peerAddress);
+    messenger.init(taskId, this, conf, peerAddress);
 
     final String combinerName = conf.get("bsp.combiner.class");
     if (combinerName != null) {
-      combiner = (Combiner<M>) ReflectionUtils.newInstance(
-          conf.getClassByName(combinerName), conf);
+      combiner = (Combiner<M>) ReflectionUtils.newInstance(conf
+          .getClassByName(combinerName), conf);
     }
 
   }
@@ -184,8 +184,8 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     String outdir = null;
     if (conf.get("bsp.output.dir") != null) {
-      Path outputDir = new Path(conf.get("bsp.output.dir",
-          "tmp-" + System.currentTimeMillis()), Task.getOutputName(partition));
+      Path outputDir = new Path(conf.get("bsp.output.dir", "tmp-"
+          + System.currentTimeMillis()), Task.getOutputName(partition));
       outdir = outputDir.makeQualified(fs).toString();
     }
     outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob, outdir);
@@ -247,12 +247,11 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     checkPointInterval = conf.getInt(Constants.CHECKPOINT_INTERVAL, 1);
     if (LOG.isDebugEnabled())
-      LOG.debug(new StringBuffer(1000).append("Enabled = ")
-          .append(conf.getBoolean(Constants.CHECKPOINT_ENABLED, false))
-          .append(" checkPointInterval = ").append(checkPointInterval)
-          .append(" lastCheckPointStep = ").append(lastCheckPointStep)
-          .append(" getSuperstepCount() = ").append(getSuperstepCount())
-          .toString());
+      LOG.debug(new StringBuffer(1000).append("Enabled = ").append(
+          conf.getBoolean(Constants.CHECKPOINT_ENABLED, false)).append(
+          " checkPointInterval = ").append(checkPointInterval).append(
+          " lastCheckPointStep = ").append(lastCheckPointStep).append(
+          " getSuperstepCount() = ").append(getSuperstepCount()).toString());
 
     return (conf.getBoolean(Constants.CHECKPOINT_ENABLED, false)
         && (checkPointInterval != 0) && (((int) (getSuperstepCount() - lastCheckPointStep)) >= checkPointInterval));
@@ -294,7 +293,9 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       InterruptedException {
     long startBarrier = System.currentTimeMillis();
     enterBarrier();
-    Iterator<Entry<InetSocketAddress, LinkedList<M>>> it = messenger
+    // normally all messages should been send now, finalizing the send phase
+    messenger.finishSendPhase();
+    Iterator<Entry<InetSocketAddress, MessageQueue<M>>> it = messenger
         .getMessageIterator();
 
     boolean shouldCheckPoint = false;
@@ -304,7 +305,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     }
 
     while (it.hasNext()) {
-      Entry<InetSocketAddress, LinkedList<M>> entry = it.next();
+      Entry<InetSocketAddress, MessageQueue<M>> entry = it.next();
       final InetSocketAddress addr = entry.getKey();
       final Iterable<M> messages = entry.getValue();
 
@@ -346,27 +347,44 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   }
 
   protected final void enterBarrier() throws SyncException {
-    syncClient.enterBarrier(taskId.getJobID(), taskId,
-        currentTaskStatus.getSuperstepCount());
+    syncClient.enterBarrier(taskId.getJobID(), taskId, currentTaskStatus
+        .getSuperstepCount());
   }
 
   protected final void leaveBarrier() throws SyncException {
-    syncClient.leaveBarrier(taskId.getJobID(), taskId,
-        currentTaskStatus.getSuperstepCount());
+    syncClient.leaveBarrier(taskId.getJobID(), taskId, currentTaskStatus
+        .getSuperstepCount());
   }
 
   public final void close() throws SyncException, IOException,
       InterruptedException {
+    // there are many catches, because we want to close always every component
+    // even if the one before failed.
     if (in != null) {
-      in.close();
+      try {
+        in.close();
+      } catch (Exception e) {
+        LOG.error(e);
+      }
     }
     if (outWriter != null) {
-      outWriter.close();
+      try {
+        outWriter.close();
+      } catch (Exception e) {
+        LOG.error(e);
+      }
     }
     this.clear();
-    syncClient.close();
-
-    messenger.close();
+    try {
+      syncClient.close();
+    } catch (Exception e) {
+      LOG.error(e);
+    }
+    try {
+      messenger.close();
+    } catch (Exception e) {
+      LOG.error(e);
+    }
   }
 
   @Override
