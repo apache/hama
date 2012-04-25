@@ -27,8 +27,7 @@ import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
  * 
  * @param <M>
  */
-public abstract class CompressableMessageManager<M extends Writable> implements
-    MessageManager<M> {
+public abstract class CompressableMessageManager<M extends Writable> extends AbstractMessageManager<M> {
 
   protected BSPMessageCompressor<M> compressor;
 
