@@ -20,13 +20,13 @@ package org.apache.hama.bsp.message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.TaskAttemptID;
 
 /**
  * This manager takes care of the messaging. It is responsible to launch a
@@ -34,15 +34,16 @@ import org.apache.hama.bsp.BSPPeer;
  * 
  */
 public interface MessageManager<M extends Writable> {
+  
+  public static final String QUEUE_TYPE_CLASS = "hama.messenger.queue.class";
 
   /**
-   * Init can be used to start servers and initialize internal state.
+   * Init can be used to start servers and initialize internal state. If you are
+   * implementing a subclass, please call the super version of this method.
    * 
-   * @param conf
-   * @param peerAddress
    */
-  public void init(BSPPeer<?, ?, ?, ?, M> peer, Configuration conf,
-      InetSocketAddress peerAddress);
+  public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
+      Configuration conf, InetSocketAddress peerAddress);
 
   /**
    * Close is called after a task ran. Should be used to cleanup things e.G.
@@ -53,7 +54,6 @@ public interface MessageManager<M extends Writable> {
   /**
    * Get the current message.
    * 
-   * @return
    * @throws IOException
    */
   public M getCurrentMessage() throws IOException;
@@ -61,25 +61,26 @@ public interface MessageManager<M extends Writable> {
   /**
    * Send a message to the peer.
    * 
-   * @param peerName
-   * @param msg
    * @throws IOException
    */
   public void send(String peerName, M msg) throws IOException;
 
   /**
+   * Should be called when all messages were send with send().
+   * 
+   * @throws IOException
+   */
+  public void finishSendPhase() throws IOException;
+
+  /**
    * Returns an iterator of messages grouped by peer.
    * 
-   * @return
    */
-  public Iterator<Entry<InetSocketAddress, LinkedList<M>>> getMessageIterator();
+  public Iterator<Entry<InetSocketAddress, MessageQueue<M>>> getMessageIterator();
 
   /**
    * This is the real transferring to a host with a bundle.
    * 
-   * @param addr
-   * @param bundle
-   * @throws IOException
    */
   public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException;
@@ -92,7 +93,6 @@ public interface MessageManager<M extends Writable> {
   /**
    * Gets the number of messages in the current queue.
    * 
-   * @return
    */
   public int getNumCurrentMessages();
 
