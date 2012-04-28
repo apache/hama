@@ -20,7 +20,6 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -37,6 +36,7 @@ import org.apache.hama.Constants;
 import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
+import org.apache.hama.bsp.message.MessageQueue;
 import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
@@ -165,7 +165,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         TaskStatus.Phase.STARTING, counters));
 
     messenger = MessageManagerFactory.getMessageManager(conf);
-    messenger.init(this, conf, peerAddress);
+    messenger.init(taskId, this, conf, peerAddress);
 
     final String combinerName = conf.get("bsp.combiner.class");
     if (combinerName != null) {
@@ -294,7 +294,9 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       InterruptedException {
     long startBarrier = System.currentTimeMillis();
     enterBarrier();
-    Iterator<Entry<InetSocketAddress, LinkedList<M>>> it = messenger
+    // normally all messages should been send now, finalizing the send phase
+    messenger.finishSendPhase();
+    Iterator<Entry<InetSocketAddress, MessageQueue<M>>> it = messenger
         .getMessageIterator();
 
     boolean shouldCheckPoint = false;
@@ -304,7 +306,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     }
 
     while (it.hasNext()) {
-      Entry<InetSocketAddress, LinkedList<M>> entry = it.next();
+      Entry<InetSocketAddress, MessageQueue<M>> entry = it.next();
       final InetSocketAddress addr = entry.getKey();
       final Iterable<M> messages = entry.getValue();
 
@@ -357,16 +359,33 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   public final void close() throws SyncException, IOException,
       InterruptedException {
+    // there are many catches, because we want to close always every component
+    // even if the one before failed.
     if (in != null) {
-      in.close();
+      try {
+        in.close();
+      } catch (Exception e) {
+        LOG.error(e);
+      }
     }
     if (outWriter != null) {
-      outWriter.close();
+      try {
+        outWriter.close();
+      } catch (Exception e) {
+        LOG.error(e);
+      }
     }
     this.clear();
-    syncClient.close();
-
-    messenger.close();
+    try {
+      syncClient.close();
+    } catch (Exception e) {
+      LOG.error(e);
+    }
+    try {
+      messenger.close();
+    } catch (Exception e) {
+      LOG.error(e);
+    }
   }
 
   @Override
