@@ -94,7 +94,7 @@ public class SuperstepPiEstimator {
         double pi = 0.0;
         int numPeers = peer.getNumCurrentMessages();
         DoubleMessage received;
-        while ((received = (DoubleMessage) peer.getCurrentMessage()) != null) {
+        while ((received = peer.getCurrentMessage()) != null) {
           pi += received.getData();
         }
 
