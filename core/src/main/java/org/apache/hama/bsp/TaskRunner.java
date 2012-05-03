@@ -252,7 +252,7 @@ public class TaskRunner extends Thread {
   private File createLogDirectory() {
     // our log dir looks following: log/tasklogs/job_id/
     File f = new File(System.getProperty("hama.log.dir") + File.separator
-        + "tasklogs" + File.separator + task.jobId.id);
+        + "tasklogs" + File.separator + task.jobId.toString());
     // TODO if we have attemps: + File.separator+ task.getTaskID());
 
     if (!f.exists()) {
