@@ -15,33 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples;
+package org.apache.hama.graph;
 
-import org.junit.Test;
-
-import static org.junit.Assert.fail;
+import org.apache.hadoop.io.DoubleWritable;
 
 /**
- * Testcase for {@link PiEstimator}
+ * A absolute difference aggregator, it collects values before the compute and
+ * after the compute, then calculates the difference and globally accumulates
+ * (sums them up) them.
  */
-public class PiEstimatorTest {
-  @Test
-  public void testCorrectPiExecution() {
-    try {
-      PiEstimator.main(new String[] { "10" });
-    } catch (Exception e) {
-      fail(e.getLocalizedMessage());
+public class AbsDiffAggregator extends AbstractAggregator<DoubleWritable> {
+
+  double absoluteDifference = 0.0d;
+
+  @Override
+  public void aggregate(DoubleWritable oldValue, DoubleWritable newValue) {
+    // make sure it's nullsafe
+    if (oldValue != null) {
+      absoluteDifference += Math.abs(oldValue.get() - newValue.get());
     }
   }
 
-  @Test
-  public void testPiExecutionWithEmptyArgs() {
-    try {
-      PiEstimator.main(new String[10]);
-      fail("PiEstimator should fail if the argument list has size 0");
-    } catch (Exception e) {
-      // everything ok
-    }
+  @Override
+  public DoubleWritable getValue() {
+    return new DoubleWritable(absoluteDifference);
   }
 
 }

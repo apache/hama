@@ -35,6 +35,7 @@ import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 
 public class SSSP {
+
   public static final String START_VERTEX = "shortest.paths.start.vertex.name";
 
   public static class ShortestPathVertex extends Vertex<IntWritable> {

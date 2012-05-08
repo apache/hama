@@ -29,11 +29,14 @@ public class ExampleDriver {
     ProgramDriver pgd = new ProgramDriver();
     try {
       pgd.addClass("pi", PiEstimator.class, "Pi Estimator");
-      pgd.addClass("sssp-text2seq", SSSPTextToSeq.class, "Generates SSSP input from textfile");
+      pgd.addClass("sssp-text2seq", SSSPTextToSeq.class,
+          "Generates SSSP input from textfile");
       pgd.addClass("sssp", SSSP.class, "Single Shortest Path");
+      pgd.addClass("mdstsearch", MindistSearch.class, "Mindist search / Connected Components");
       pgd.addClass("cmb", CombineExample.class, "Combine");
       pgd.addClass("bench", RandBench.class, "Random Benchmark");
-      pgd.addClass("pagerank-text2seq", PagerankTextToSeq.class, "Generates Pagerank input from textfile");
+      pgd.addClass("pagerank-text2seq", PagerankTextToSeq.class,
+          "Generates Pagerank and mindist search input from textfile");
       pgd.addClass("pagerank", PageRank.class, "PageRank");
       pgd.driver(args);
     } catch (Throwable e) {

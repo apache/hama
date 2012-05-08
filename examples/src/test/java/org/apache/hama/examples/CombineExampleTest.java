@@ -28,7 +28,7 @@ public class CombineExampleTest {
   @Test
   public void testCorrectCombineExecution() {
     try {
-      CombineExample.main(new String[]{});
+      CombineExample.main(new String[] {});
     } catch (Exception e) {
       fail(e.getLocalizedMessage());
     }

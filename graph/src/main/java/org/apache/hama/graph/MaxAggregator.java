@@ -15,33 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples;
+package org.apache.hama.graph;
 
-import org.junit.Test;
+import org.apache.hadoop.io.IntWritable;
 
-import static org.junit.Assert.fail;
+public class MaxAggregator extends AbstractAggregator<IntWritable> {
 
-/**
- * Testcase for {@link PiEstimator}
- */
-public class PiEstimatorTest {
-  @Test
-  public void testCorrectPiExecution() {
-    try {
-      PiEstimator.main(new String[] { "10" });
-    } catch (Exception e) {
-      fail(e.getLocalizedMessage());
+  int max = Integer.MIN_VALUE;
+
+  public void aggregate(IntWritable value) {
+    if (value.get() > max) {
+      max = value.get();
     }
   }
 
-  @Test
-  public void testPiExecutionWithEmptyArgs() {
-    try {
-      PiEstimator.main(new String[10]);
-      fail("PiEstimator should fail if the argument list has size 0");
-    } catch (Exception e) {
-      // everything ok
-    }
+  public IntWritable getValue() {
+    return new IntWritable(max);
   }
 
 }

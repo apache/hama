@@ -20,7 +20,9 @@ package org.apache.hama.examples;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -28,38 +30,28 @@ import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.MindistSearch.MinTextCombiner;
 import org.apache.hama.examples.util.PagerankTextToSeq;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 
-public class PageRankTest extends TestCase {
-  /**
-   * The graph looks like this (adjacency list, [] contains outlinks):<br/>
-   * stackoverflow.com [yahoo.com] <br/>
-   * google.com []<br/>
-   * facebook.com [twitter.com, google.com, nasa.gov]<br/>
-   * yahoo.com [nasa.gov, stackoverflow.com]<br/>
-   * twitter.com [google.com, facebook.com]<br/>
-   * nasa.gov [yahoo.com, stackoverflow.com]<br/>
-   * youtube.com [google.com, yahoo.com]<br/>
-   */
+public class MindistSearchTest extends TestCase {
+
   private static final Map<VertexWritable, VertexArrayWritable> tmp = new HashMap<VertexWritable, VertexArrayWritable>();
+  // mapping of our index of the vertex to the resulting component id
+  private static final String[] resultList = new String[] { "0", "1", "2", "2",
+      "1", "2", "2", "1", "2", "0" };
   static {
-    // our first entry is null, because our indices in hama 3.0 pre calculated
-    // example starts at 1.
-    // FIXME This is really ugly.
-    String[] pages = new String[] { null, "twitter.com", "google.com",
-        "facebook.com", "yahoo.com", "nasa.gov", "stackoverflow.com",
-        "youtube.com" };
-    String[] lineArray = new String[] { "1;2;3", "2", "3;1;2;5", "4;5;6",
-        "5;4;6", "6;4", "7;2;4" };
+    String[] pages = new String[] { "0", "1", "2", "3", "4", "5", "6", "7",
+        "8", "9" };
+    String[] lineArray = new String[] { "0", "1;4;7", "2;3;8", "3;5", "4;1",
+        "5;6", "6", "7", "8;3", "9;0" };
 
     for (int i = 0; i < lineArray.length; i++) {
-
       String[] adjacencyStringArray = lineArray[i].split(";");
       int vertexId = Integer.parseInt(adjacencyStringArray[0]);
       String name = pages[vertexId];
@@ -89,10 +81,7 @@ public class PageRankTest extends TestCase {
   public void testPageRank() throws Exception {
     generateSeqTestData();
     try {
-      // Usage: <input> <output> [damping factor (default 0.85)] [Epsilon
-      // (convergence error, default 0.001)] [Max iterations (default 30)]
-      // [tasks]
-      PageRank.main(new String[] { INPUT, OUTPUT, "0.85", "0.0001", "-1" });
+      MindistSearch.main(new String[] { INPUT, OUTPUT });
 
       verifyResult();
     } finally {
@@ -100,17 +89,27 @@ public class PageRankTest extends TestCase {
     }
   }
 
+  public void testMinTextCombiner() throws Exception {
+    MinTextCombiner combiner = new MinTextCombiner();
+    Text a = new Text("1");
+    Text b = new Text("2");
+    Text d = new Text("4");
+    Text c = new Text("3");
+    List<Text> asList = Arrays.asList(new Text[] { a, b, c, d });
+    Text combine = combiner.combine(asList);
+    assertEquals(combine, a);
+  }
+
   private void verifyResult() throws IOException {
     SequenceFile.Reader reader = new SequenceFile.Reader(fs, new Path(OUTPUT
         + "/part-00000"), conf);
     Text key = new Text();
-    DoubleWritable value = new DoubleWritable();
-    double sum = 0.0;
+    Writable value = new Text();
     while (reader.next(key, value)) {
-      sum += value.get();
+      System.out.println(key + " | " + value);
+      assertEquals(resultList[Integer.parseInt(key.toString())],
+          value.toString());
     }
-    System.out.println("Sum is: " + sum);
-    assertTrue(sum > 0.99d && sum <= 1d);
   }
 
   private void generateSeqTestData() throws IOException {
@@ -128,8 +127,7 @@ public class PageRankTest extends TestCase {
     // <input path> <output path>
     PagerankTextToSeq.main(new String[] { TEXT_INPUT, TEXT_OUTPUT });
     try {
-      PageRank
-          .main(new String[] { TEXT_OUTPUT, OUTPUT, "0.85", "0.0001", "-1" });
+      MindistSearch.main(new String[] { TEXT_OUTPUT, OUTPUT });
 
       verifyResult();
     } finally {
