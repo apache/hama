@@ -25,7 +25,9 @@ import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.Combiner;
 
 public class GraphJob extends BSPJob {
+
   public final static String VERTEX_CLASS_ATTR = "hama.graph.vertex.class";
+  public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";
   public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
 
   public GraphJob(HamaConfiguration conf, Class<?> exampleClass)
@@ -37,13 +39,18 @@ public class GraphJob extends BSPJob {
 
   /**
    * Set the Vertex class for the job.
-   * 
-   * @param cls
-   * @throws IllegalStateException
    */
   public void setVertexClass(Class<? extends Vertex<? extends Writable>> cls)
       throws IllegalStateException {
     conf.setClass(VERTEX_CLASS_ATTR, cls, Vertex.class);
+  }
+
+  /**
+   * Set the aggregator for the job.
+   */
+  public void setAggregatorClass(
+      Class<? extends Aggregator<? extends Writable>> cls) {
+    conf.setClass(AGGREGATOR_CLASS_ATTR, cls, Aggregator.class);
   }
 
   @SuppressWarnings("unchecked")
@@ -58,6 +65,10 @@ public class GraphJob extends BSPJob {
     conf.setClass(VERTEX_MESSAGE_COMBINER_CLASS_ATTR, cls, Combiner.class);
   }
 
+  /**
+   * Sets how many iterations the algorithm should perform, -1 for deactivated
+   * is default value.
+   */
   public void setMaxIteration(int maxIteration) {
     conf.setInt("hama.graph.max.iteration", maxIteration);
   }

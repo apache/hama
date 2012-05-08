@@ -39,7 +39,7 @@ public class VertexWritable implements Writable,
     this.name = name;
     this.weight = 0;
   }
-  
+
   public VertexWritable(int weight, String name) {
     super();
     this.name = name;
@@ -58,7 +58,7 @@ public class VertexWritable implements Writable,
   public String toString() {
     return getName();
   }
-  
+
   @Override
   public void readFields(DataInput in) throws IOException {
     this.name = in.readUTF();

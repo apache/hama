@@ -109,6 +109,7 @@ public class TestCheckpoint extends TestCase {
 
     try {
       BSPJob job = new BSPJob(conf);
+      job.setOutputFormat(NullOutputFormat.class);
       final BSPPeerProtocol proto = (BSPPeerProtocol) RPC.getProxy(
           BSPPeerProtocol.class, BSPPeerProtocol.versionID,
           new InetSocketAddress("127.0.0.1", port), conf);

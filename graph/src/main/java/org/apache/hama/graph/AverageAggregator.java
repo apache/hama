@@ -15,33 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples;
+package org.apache.hama.graph;
 
-import org.junit.Test;
-
-import static org.junit.Assert.fail;
+import org.apache.hadoop.io.DoubleWritable;
 
 /**
- * Testcase for {@link PiEstimator}
+ * Averages the result of the {@link AbsDiffAggregator}.
  */
-public class PiEstimatorTest {
-  @Test
-  public void testCorrectPiExecution() {
-    try {
-      PiEstimator.main(new String[] { "10" });
-    } catch (Exception e) {
-      fail(e.getLocalizedMessage());
-    }
-  }
+public class AverageAggregator extends AbsDiffAggregator {
 
-  @Test
-  public void testPiExecutionWithEmptyArgs() {
-    try {
-      PiEstimator.main(new String[10]);
-      fail("PiEstimator should fail if the argument list has size 0");
-    } catch (Exception e) {
-      // everything ok
-    }
+  @Override
+  public DoubleWritable finalizeAggregation() {
+    return new DoubleWritable(getValue().get()
+        / (double) getTimesAggregated().get());
   }
 
 }

@@ -21,17 +21,19 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
 public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
+
   private M value;
   private String vertexID;
+  protected GraphJobRunner runner;
   protected BSPPeer<?, ?, ?, ?, MapWritable> peer;
   public List<Edge> edges;
-  private long numVertices;
 
   public Configuration getConf() {
     return peer.getConfiguration();
@@ -40,6 +42,10 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
   @Override
   public String getVertexID() {
     return vertexID;
+  }
+
+  @Override
+  public void setup(Configuration conf) {
   }
 
   @Override
@@ -60,7 +66,7 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
 
   @Override
   public long getSuperstepCount() {
-    return peer.getSuperstepCount();
+    return runner.getNumberIterations();
   }
 
   @Override
@@ -83,7 +89,24 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
   }
 
   public int getMaxIteration() {
-    return peer.getConfiguration().getInt("hama.graph.max.iteration", 30);
+    return runner.getMaxIteration();
+  }
+
+  /**
+   * Get the last aggregated value of the defined aggregator, null if nothing
+   * was configured or not returned a result.
+   */
+  @SuppressWarnings("unchecked")
+  public M getLastAggregatedValue() {
+    return (M) runner.getLastAggregatedValue();
+  }
+
+  /**
+   * Get the number of aggregated vertices in the last superstep. Or null if no
+   * aggregator is available.
+   */
+  public IntWritable getNumLastAggregatedVertices() {
+    return runner.getNumLastAggregatedVertices();
   }
 
   public int getNumPeers() {
@@ -91,11 +114,12 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
   }
 
   public long getNumVertices() {
-    return numVertices;
+    return runner.getNumberVertices();
   }
 
-  public void setNumVertices(long NumVertices) {
-    this.numVertices = NumVertices;
+  @Override
+  public String toString() {
+    return getVertexID() + "=" + getValue();
   }
 
 }

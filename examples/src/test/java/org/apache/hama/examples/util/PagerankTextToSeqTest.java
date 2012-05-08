@@ -72,7 +72,6 @@ public class PagerankTextToSeqTest extends TestCase {
     VertexWritable vertex = new VertexWritable();
     VertexArrayWritable vertexArray = new VertexArrayWritable();
 
- 
     while (reader.next(vertex, vertexArray)) {
       int count = 0;
       assertEquals(vertex.getName(), count + "");

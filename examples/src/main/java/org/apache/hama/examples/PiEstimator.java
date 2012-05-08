@@ -41,7 +41,8 @@ import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.bsp.sync.SyncException;
 
 public class PiEstimator {
-  private static Path TMP_OUTPUT = new Path("/tmp/pi-" + System.currentTimeMillis());
+  private static Path TMP_OUTPUT = new Path("/tmp/pi-"
+      + System.currentTimeMillis());
 
   public static class MyEstimator extends
       BSP<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> {
@@ -54,13 +55,11 @@ public class PiEstimator {
         BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
         throws IOException, SyncException, InterruptedException {
 
-      int in = 0, out = 0;
+      int in = 0;
       for (int i = 0; i < iterations; i++) {
         double x = 2.0 * Math.random() - 1.0, y = 2.0 * Math.random() - 1.0;
         if ((Math.sqrt(x * x + y * y) < 1.0)) {
           in++;
-        } else {
-          out++;
         }
       }
 

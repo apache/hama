@@ -78,7 +78,8 @@ public class RandBench {
     public void setup(
         BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable, BytesWritable> peer) {
       this.sizeOfMsg = peer.getConfiguration().getInt(SIZEOFMSG, 1);
-      this.nCommunications = peer.getConfiguration().getInt(N_COMMUNICATIONS, 1);
+      this.nCommunications = peer.getConfiguration()
+          .getInt(N_COMMUNICATIONS, 1);
       this.nSupersteps = peer.getConfiguration().getInt(N_SUPERSTEPS, 1);
     }
   }

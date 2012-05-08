@@ -15,33 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.examples;
+package org.apache.hama.graph;
 
-import org.junit.Test;
-
-import static org.junit.Assert.fail;
+import org.apache.hadoop.io.Writable;
 
 /**
- * Testcase for {@link PiEstimator}
+ * Aggregators are a mechanism for global communication, monitoring, and data.
+ * Each vertex can provide a value to an aggregator in superstep S, the system
+ * combines those values using a reduction operator, and the resulting value is
+ * made available to all vertices in superstep S + 1. <br/>
+ * The result of an aggregator from the last superstep can be picked up by the
+ * vertex itself via {@link Vertex}#getLastAggregatedValue();
  */
-public class PiEstimatorTest {
-  @Test
-  public void testCorrectPiExecution() {
-    try {
-      PiEstimator.main(new String[] { "10" });
-    } catch (Exception e) {
-      fail(e.getLocalizedMessage());
-    }
-  }
+public interface Aggregator<V extends Writable> {
 
-  @Test
-  public void testPiExecutionWithEmptyArgs() {
-    try {
-      PiEstimator.main(new String[10]);
-      fail("PiEstimator should fail if the argument list has size 0");
-    } catch (Exception e) {
-      // everything ok
-    }
-  }
+  /**
+   * Observes a new vertex value.
+   */
+  public void aggregate(V value);
+
+  /**
+   * Gets a vertex value.
+   */
+  public V getValue();
 
 }

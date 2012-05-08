@@ -93,7 +93,8 @@ public class SSSPTextToSeqTest extends TestCase {
 
   public void testArgs() throws Exception {
     writeTextFile();
-    SSSPTextToSeq.main(new String[] { TXT_INPUT, SEQ_OUTPUT, DELIMITER, EDGE_DELIMITER });
+    SSSPTextToSeq.main(new String[] { TXT_INPUT, SEQ_OUTPUT, DELIMITER,
+        EDGE_DELIMITER });
     verifyOutput();
   }
 
