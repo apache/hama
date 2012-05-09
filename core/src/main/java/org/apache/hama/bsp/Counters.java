@@ -220,8 +220,8 @@ public class Counters implements Writable, Iterable<Counters.Group> {
       }
       this.groupName = groupName;
       this.displayName = localize("CounterGroupName", groupName);
-      LOG.debug("Creating group " + groupName + " with "
-          + (bundle == null ? "nothing" : "bundle"));
+      //LOG.debug("Creating group " + groupName + " with "
+      //   + (bundle == null ? "nothing" : "bundle"));
     }
 
     /**
