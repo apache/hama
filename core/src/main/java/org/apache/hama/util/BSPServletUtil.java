@@ -56,7 +56,7 @@ public class BSPServletUtil extends ServletUtil {
   public static String generateJobTable(String label, JobStatus[] jobs,
       int refresh, int rowId) throws IOException {
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
 
     if (jobs.length > 0) {
       sb.append("<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\">\n");
@@ -64,8 +64,7 @@ public class BSPServletUtil extends ServletUtil {
           + "<th>SuperSteps</th>" + "<th>Tasks</th>" + "<th>Starttime</th>"
           + "</tr>\n");
       for (JobStatus status : jobs) {
-        sb.append("<tr><td><a href=\"bspjob.jsp?jobid=" + status.getJobID()
-            + "\">");
+        sb.append("<tr><td><a href=\"bspjob.jsp?jobid=").append(status.getJobID()).append("\">");
         sb.append(status.getJobID());
         sb.append("</a></td><td>");
         sb.append(status.getUsername());
@@ -103,12 +102,11 @@ public class BSPServletUtil extends ServletUtil {
     for (Entry<String, GroomServerStatus> entry : status
         .getActiveGroomServerStatus().entrySet()) {
       sb.append("<tr><td>");
-      sb.append(entry.getKey() + "</td><td>");
-      sb.append(entry.getValue().getGroomHostName() + "</td>" + "<td>"
-          + entry.getValue().getMaxTasks() + "</td><td>");
-      sb.append(entry.getValue().countTasks() + "</td><td>");
-      sb.append(entry.getValue().getFailures() + "</td><td>");
-      sb.append(entry.getValue().getLastSeen() + "</td>");
+      sb.append(entry.getKey()).append("</td><td>");
+      sb.append(entry.getValue().getGroomHostName()).append("</td>").append("<td>").append(entry.getValue().getMaxTasks()).append("</td><td>");
+      sb.append(entry.getValue().countTasks()).append("</td><td>");
+      sb.append(entry.getValue().getFailures()).append("</td><td>");
+      sb.append(entry.getValue().getLastSeen()).append("</td>");
       sb.append("</tr>\n");
     }
     sb.append("</table>\n");

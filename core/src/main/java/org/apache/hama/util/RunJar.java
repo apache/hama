@@ -128,19 +128,20 @@ public class RunJar {
     classPath.add(new File(workDir, "classes/").toURI().toURL());
     File[] libs = new File(workDir, "lib").listFiles();
     if (libs != null) {
-      for (int i = 0; i < libs.length; i++) {
-        classPath.add(libs[i].toURI().toURL());
+      for (File lib : libs) {
+        classPath.add(lib.toURI().toURL());
       }
     }
     ClassLoader loader = new URLClassLoader((URL[]) classPath
-        .toArray(new URL[0]));
+      .toArray(new URL[classPath.size()]));
 
     Thread.currentThread().setContextClassLoader(loader);
     Class<?> mainClass = loader.loadClass(mainClassName);
     Method main = mainClass.getMethod("main", new Class[] { Array.newInstance(
         String.class, 0).getClass() });
-    String[] newArgs = (String[]) Arrays.asList(args).subList(firstArg,
-        args.length).toArray(new String[0]);
+    List<String> var = Arrays.asList(args).subList(firstArg,
+      args.length);
+    String[] newArgs = (String[]) var.toArray(new String[var.size()]);
     try {
       main.invoke(null, new Object[] { newArgs });
     } catch (InvocationTargetException e) {
