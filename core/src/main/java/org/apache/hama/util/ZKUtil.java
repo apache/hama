@@ -60,7 +60,7 @@ public class ZKUtil {
     StringBuilder builder = new StringBuilder();
     for (String part : parts) {
       try {
-        builder.append(ZKUtil.ZK_SEPARATOR + part);
+        builder.append(ZKUtil.ZK_SEPARATOR).append(part);
         if (null == zk.exists(builder.toString(), false)) {
           zk.create(builder.toString(), null, Ids.OPEN_ACL_UNSAFE,
               CreateMode.PERSISTENT);
