@@ -15,25 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.messages;
+package org.apache.hama.bsp.message.type;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a int tag and a double data. 
+ * A message that consists of a string tag and a int data. 
  */
-public class IntegerDoubleMessage extends BSPMessage {
+public class IntegerMessage extends BSPMessage {
 
-  int tag;
-  double data;
+  String tag;
+  int data;
 
-  public IntegerDoubleMessage() {
+  public IntegerMessage() {
     super();
   }
 
-  public IntegerDoubleMessage(int tag, double data) {
+  public IntegerMessage(String tag, int data) {
     super();
     this.tag = tag;
     this.data = data;
@@ -41,34 +41,34 @@ public class IntegerDoubleMessage extends BSPMessage {
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(tag);
-    out.writeDouble(data);
+    out.writeUTF(tag);
+    out.writeInt(data);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    tag = in.readInt();
-    data = in.readDouble();
+    tag = in.readUTF();
+    data = in.readInt();
   }
 
   @Override
-  public Integer getTag() {
+  public String getTag() {
     return tag;
   }
 
   @Override
-  public Double getData() {
+  public Integer getData() {
     return data;
   }
 
   @Override
   public void setTag(Object tag) {
-    this.tag = (Integer) tag;
+    this.tag = (String) tag;
   }
 
   @Override
   public void setData(Object data) {
-    this.data = (Double) data;
+    this.data = (Integer) data;
   }
 
 }

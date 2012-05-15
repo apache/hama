@@ -15,25 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.messages;
+package org.apache.hama.bsp.message.type;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a string tag and a long data.
+ * A message that consists of a string tag and a double data. 
  */
-public class LongMessage extends BSPMessage {
+public class DoubleMessage extends BSPMessage {
 
   private String tag;
-  private long data;
+  private Double data;
 
-  public LongMessage() {
+  public DoubleMessage() {
     super();
   }
 
-  public LongMessage(String tag, long data) {
+  public DoubleMessage(String tag, Double data) {
     super();
     this.data = data;
     this.tag = tag;
@@ -45,20 +45,20 @@ public class LongMessage extends BSPMessage {
   }
 
   @Override
-  public Long getData() {
+  public Double getData() {
     return data;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeUTF(tag);
-    out.writeLong(data);
+    out.writeDouble(data);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     tag = in.readUTF();
-    data = in.readLong();
+    data = in.readDouble();
   }
 
   @Override
@@ -68,7 +68,6 @@ public class LongMessage extends BSPMessage {
 
   @Override
   public void setData(Object data) {
-    this.data = (Long) data;
+    this.data = (Double) data;
   }
-
 }

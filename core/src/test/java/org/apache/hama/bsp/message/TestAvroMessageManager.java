@@ -33,9 +33,9 @@ import org.apache.hama.bsp.Counters;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
 import org.apache.hama.bsp.message.compress.SnappyCompressor;
-import org.apache.hama.bsp.messages.BooleanMessage;
-import org.apache.hama.bsp.messages.DoubleMessage;
-import org.apache.hama.bsp.messages.IntegerMessage;
+import org.apache.hama.bsp.message.type.BooleanMessage;
+import org.apache.hama.bsp.message.type.DoubleMessage;
+import org.apache.hama.bsp.message.type.IntegerMessage;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestAvroMessageManager extends TestCase {
