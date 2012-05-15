@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.messages;
+package org.apache.hama.bsp.message.type;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.Messagable;

@@ -37,7 +37,7 @@ import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.Superstep;
 import org.apache.hama.bsp.SuperstepBSP;
 import org.apache.hama.bsp.TextOutputFormat;
-import org.apache.hama.bsp.messages.DoubleMessage;
+import org.apache.hama.bsp.message.type.DoubleMessage;
 
 /**
  * This PiEstimator uses the new chainable superstep API to be fault tolerant.
