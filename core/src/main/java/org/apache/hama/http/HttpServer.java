@@ -190,7 +190,7 @@ public class HttpServer {
     WebAppContext webAppCtx = new WebAppContext();
     webAppCtx.setContextPath(pathSpec);
     webAppCtx.setWar(dir);
-    addContext(webAppCtx, true);
+    addContext(webAppCtx, isFiltered);
   }
 
   /**
@@ -374,7 +374,7 @@ public class HttpServer {
    */
   public void start() throws IOException {
     try {
-      int port = 0;
+      int port;
       int oriPort = listener.getPort(); // The original requested port
       while (true) {
         try {
