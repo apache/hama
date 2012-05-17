@@ -32,7 +32,14 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.HashPartitioner;
+import org.apache.hama.bsp.SequenceFileInputFormat;
+import org.apache.hama.bsp.SequenceFileOutputFormat;
+import org.apache.hama.examples.PageRank.PageRankVertex;
 import org.apache.hama.examples.util.PagerankTextToSeq;
+import org.apache.hama.graph.AverageAggregator;
+import org.apache.hama.graph.GraphJob;
+import org.apache.hama.graph.GraphJobRunner;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 
@@ -87,7 +94,7 @@ public class PageRankTest extends TestCase {
   }
 
   public void testPageRank() throws Exception {
-    generateSeqTestData();
+    generateSeqTestData(tmp);
     try {
       // Usage: <input> <output> [damping factor (default 0.85)] [Epsilon
       // (convergence error, default 0.001)] [Max iterations (default 30)]
@@ -113,7 +120,8 @@ public class PageRankTest extends TestCase {
     assertTrue(sum > 0.99d && sum <= 1d);
   }
 
-  private void generateSeqTestData() throws IOException {
+  private void generateSeqTestData(Map<VertexWritable, VertexArrayWritable> tmp)
+      throws IOException {
     SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, new Path(
         INPUT), VertexWritable.class, VertexArrayWritable.class);
     for (Map.Entry<VertexWritable, VertexArrayWritable> e : tmp.entrySet()) {
@@ -132,6 +140,47 @@ public class PageRankTest extends TestCase {
           .main(new String[] { TEXT_OUTPUT, OUTPUT, "0.85", "0.0001", "-1" });
 
       verifyResult();
+    } finally {
+      deleteTempDirs();
+    }
+  }
+
+  public void testRepairFunctionality() throws Exception {
+    // make a copy to be safe with parallel test executions
+    final Map<VertexWritable, VertexArrayWritable> map = new HashMap<VertexWritable, VertexArrayWritable>(
+        tmp);
+    // removing google should resulting in creating it and getting the same
+    // result as usual
+    map.remove(new VertexWritable("google.com"));
+    generateSeqTestData(map);
+    try {
+      HamaConfiguration conf = new HamaConfiguration(new Configuration());
+      conf.setBoolean(GraphJobRunner.GRAPH_REPAIR, true);
+      GraphJob pageJob = new GraphJob(conf, PageRank.class);
+      pageJob.setJobName("Pagerank");
+
+      pageJob.setVertexClass(PageRankVertex.class);
+      pageJob.setInputPath(new Path(INPUT));
+      pageJob.setOutputPath(new Path(OUTPUT));
+
+      // set the defaults
+      pageJob.setMaxIteration(30);
+      pageJob.set("hama.pagerank.alpha", "0.85");
+      // we need to include a vertex in its adjacency list,
+      // otherwise the pagerank result has a constant loss
+      pageJob.set("hama.graph.self.ref", "true");
+
+      pageJob.setAggregatorClass(AverageAggregator.class);
+
+      pageJob.setInputFormat(SequenceFileInputFormat.class);
+      pageJob.setPartitioner(HashPartitioner.class);
+      pageJob.setOutputFormat(SequenceFileOutputFormat.class);
+      pageJob.setOutputKeyClass(Text.class);
+      pageJob.setOutputValueClass(DoubleWritable.class);
+
+      if (!pageJob.waitForCompletion(true)) {
+        fail("Job did not complete normally!");
+      }
     } finally {
       deleteTempDirs();
     }

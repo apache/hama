@@ -34,8 +34,14 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.HashPartitioner;
+import org.apache.hama.bsp.SequenceFileInputFormat;
+import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.examples.MindistSearch.MinTextCombiner;
+import org.apache.hama.examples.MindistSearch.MindistSearchVertex;
 import org.apache.hama.examples.util.PagerankTextToSeq;
+import org.apache.hama.graph.GraphJob;
+import org.apache.hama.graph.GraphJobRunner;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 
@@ -78,8 +84,8 @@ public class MindistSearchTest extends TestCase {
     fs = FileSystem.get(conf);
   }
 
-  public void testPageRank() throws Exception {
-    generateSeqTestData();
+  public void testMindistSearch() throws Exception {
+    generateSeqTestData(tmp);
     try {
       MindistSearch.main(new String[] { INPUT, OUTPUT });
 
@@ -112,17 +118,17 @@ public class MindistSearchTest extends TestCase {
     }
   }
 
-  private void generateSeqTestData() throws IOException {
+  private void generateSeqTestData(Map<VertexWritable, VertexArrayWritable> map)
+      throws IOException {
     SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, new Path(
         INPUT), VertexWritable.class, VertexArrayWritable.class);
-    for (Map.Entry<VertexWritable, VertexArrayWritable> e : tmp.entrySet()) {
+    for (Map.Entry<VertexWritable, VertexArrayWritable> e : map.entrySet()) {
       writer.append(e.getKey(), e.getValue());
     }
     writer.close();
   }
 
-  public void testPageRankUtil() throws IOException, InterruptedException,
-      ClassNotFoundException, InstantiationException, IllegalAccessException {
+  public void testPageRankUtil() throws Exception {
     generateTestTextData();
     // <input path> <output path>
     PagerankTextToSeq.main(new String[] { TEXT_INPUT, TEXT_OUTPUT });
@@ -130,6 +136,45 @@ public class MindistSearchTest extends TestCase {
       MindistSearch.main(new String[] { TEXT_OUTPUT, OUTPUT });
 
       verifyResult();
+    } finally {
+      deleteTempDirs();
+    }
+  }
+
+  public void testRepairFunctionality() throws Exception {
+    // make a copy to be safe with parallel test executions
+    final Map<VertexWritable, VertexArrayWritable> map = new HashMap<VertexWritable, VertexArrayWritable>(
+        tmp);
+    // removing 7 should resulting in creating it and getting the same result as
+    // usual
+    map.remove(new VertexWritable("7"));
+    generateSeqTestData(map);
+    try {
+      HamaConfiguration conf = new HamaConfiguration(new Configuration());
+      conf.setBoolean(GraphJobRunner.GRAPH_REPAIR, true);
+      GraphJob connectedComponentsJob = new GraphJob(conf,
+          MindistSearchVertex.class);
+      connectedComponentsJob.setJobName("Mindist Search");
+
+      connectedComponentsJob.setVertexClass(MindistSearchVertex.class);
+      connectedComponentsJob.setInputPath(new Path(INPUT));
+      connectedComponentsJob.setOutputPath(new Path(OUTPUT));
+      // set the min text combiner here
+      connectedComponentsJob.setCombinerClass(MinTextCombiner.class);
+
+      // set the defaults
+      connectedComponentsJob.setMaxIteration(30);
+      connectedComponentsJob.setInputFormat(SequenceFileInputFormat.class);
+      connectedComponentsJob.setPartitioner(HashPartitioner.class);
+      connectedComponentsJob.setOutputFormat(SequenceFileOutputFormat.class);
+      connectedComponentsJob.setOutputKeyClass(Text.class);
+      connectedComponentsJob.setOutputValueClass(Text.class);
+
+      if (connectedComponentsJob.waitForCompletion(true)) {
+        verifyResult();
+      } else {
+        fail("Job not completed correctly!");
+      }
     } finally {
       deleteTempDirs();
     }
