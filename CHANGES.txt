@@ -3,7 +3,8 @@ Hama Change Log
 Release 0.5 - April 10, 2012 
 
   NEW FEATURES
-   
+
+   HAMA-552: Add a sorted message queue (tjungblut)   
    HAMA-556: Graph package to support stopping the interations when the node changes are within the tolerance value as in the case of page rank (tjungblut)
    HAMA-508: Add clean plugin (Mikalai Parafeniuk via edwardyoon)
    HAMA-503: Chainable computations for fault tolerance (tjungblut)
