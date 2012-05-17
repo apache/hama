@@ -17,16 +17,18 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.IOException;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hama.bsp.BSP;
-import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
-
-import java.io.IOException;
 
 public class SuperstepBSP<K1, V1, K2, V2, M extends Writable> extends
     BSP<K1, V1, K2, V2, M> {
+
+  private static final Log LOG = LogFactory.getLog(SuperstepBSP.class);
 
   private Superstep<K1, V1, K2, V2, M>[] supersteps;
   private int startSuperstep;
@@ -36,13 +38,23 @@ public class SuperstepBSP<K1, V1, K2, V2, M extends Writable> extends
   public void setup(BSPPeer<K1, V1, K2, V2, M> peer) throws IOException,
       SyncException, InterruptedException {
     // instantiate our superstep classes
-    Class<?>[] classes = peer.getConfiguration().getClasses(
-        "hama.supersteps.class", Superstep.class);
+    String classList = peer.getConfiguration().get("hama.supersteps.class");
+    String[] classNames = classList.split(",");
 
-    supersteps = new Superstep[classes.length];
-    for (int i = 0; i < classes.length; i++) {
-      Superstep<K1, V1, K2, V2, M> newInstance = (Superstep<K1, V1, K2, V2, M>) ReflectionUtils
-          .newInstance(classes[i], peer.getConfiguration());
+    LOG.debug("Size of classes = " + classNames.length);
+
+    supersteps = new Superstep[classNames.length];
+    Superstep<K1, V1, K2, V2, M> newInstance;
+    for (int i = 0; i < classNames.length; i++) {
+
+      try {
+        newInstance = (Superstep<K1, V1, K2, V2, M>) ReflectionUtils
+            .newInstance(Class.forName(classNames[i]), peer.getConfiguration());
+      } catch (ClassNotFoundException e) {
+        LOG.error((new StringBuffer("Could not instantiate a Superstep class ")
+            .append(classNames[i])).toString(), e);
+        throw new IOException(e);
+      }
       newInstance.setup(peer);
       supersteps[i] = newInstance;
     }
