@@ -61,29 +61,29 @@ import org.apache.hama.util.BSPNetUtils;
  * running BSP's.
  */
 public class LocalBSPRunner implements JobSubmissionProtocol {
-  public static final Log LOG = LogFactory.getLog(LocalBSPRunner.class);
+  private static final Log LOG = LogFactory.getLog(LocalBSPRunner.class);
 
   private static final String IDENTIFIER = "localrunner";
   private static String WORKING_DIR = "/tmp/hama-bsp/";
   private volatile ThreadPoolExecutor threadPool;
 
   @SuppressWarnings("rawtypes")
-  protected static final LinkedList<Future<BSPPeerImpl>> futureList = new LinkedList<Future<BSPPeerImpl>>();
+  private static final LinkedList<Future<BSPPeerImpl>> futureList = new LinkedList<Future<BSPPeerImpl>>();
 
-  protected String jobFile;
-  protected String jobName;
+  private String jobFile;
+  private String jobName;
 
-  protected JobStatus currentJobStatus;
+  private JobStatus currentJobStatus;
 
-  protected Configuration conf;
-  protected FileSystem fs;
+  private final Configuration conf;
+  private FileSystem fs;
 
   private static volatile long superStepCount = 0L;
   private static String[] peerNames;
   private final Counters globalCounters = new Counters();
 
   // this is used for not-input driven job
-  private int maxTasks;
+  private final int maxTasks;
 
   public LocalBSPRunner(Configuration conf) throws IOException {
     super();
@@ -201,7 +201,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   @Override
   public void killJob(BSPJobID jobid) throws IOException {
-    return;
   }
 
   @Override
@@ -214,11 +213,11 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   @SuppressWarnings({ "rawtypes" })
   static class BSPRunner implements Callable<BSPPeerImpl> {
 
-    private Configuration conf;
-    private BSPJob job;
-    private int id;
-    private BSP bsp;
-    private RawSplit[] splits;
+    private final Configuration conf;
+    private final BSPJob job;
+    private final int id;
+    private final BSP bsp;
+    private final RawSplit[] splits;
     private BSPPeerImpl peer;
 
     public BSPRunner(Configuration conf, BSPJob job, int id, RawSplit[] splits) {
@@ -293,7 +292,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   // this thread observes the status of the runners.
   class ThreadObserver implements Runnable {
 
-    JobStatus status;
+    final JobStatus status;
 
     public ThreadObserver(JobStatus currentJobStatus) {
       this.status = currentJobStatus;
