@@ -119,7 +119,8 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
 
   @Override
   public String toString() {
-    return getVertexID() + "=" + getValue();
+    return getVertexID() + (getValue() != null ? " = " + getValue() : "")
+        + " // " + edges;
   }
 
 }

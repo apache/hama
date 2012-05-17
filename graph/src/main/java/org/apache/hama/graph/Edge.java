@@ -44,6 +44,7 @@ public class Edge {
   }
 
   public String toString() {
-    return this.getDestVertexID() + ":" + this.getCost();
+    return this.getName() + " -> " + this.getDestVertexID() + ":"
+        + this.getCost();
   }
 }

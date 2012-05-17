@@ -84,6 +84,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private OutputCollector<K2, V2> collector;
   private RecordReader<K1, V1> in;
   private RecordWriter<K2, V2> outWriter;
+  private final KeyValuePair<K1, V1> cachedPair = new KeyValuePair<K1, V1>();
 
   private InetSocketAddress peerAddress;
 
@@ -480,7 +481,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     K1 k = in.createKey();
     V1 v = in.createValue();
     if (in.next(k, v)) {
-      return new KeyValuePair<K1, V1>(k, v);
+      cachedPair.clear();
+      cachedPair.setKey(k);
+      cachedPair.setValue(v);
+      return cachedPair;
     } else {
       return null;
     }

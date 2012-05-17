@@ -19,6 +19,8 @@ package org.apache.hama.graph;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -57,7 +59,8 @@ public class GraphJobRunner extends BSP {
   private static final Text FLAG_AGGREGATOR_INCREMENT = new Text(
       S_FLAG_AGGREGATOR_INCREMENT);
 
-  private static final String MESSAGE_COMBINER_CLASS = "hama.vertex.message.combiner.class";
+  public static final String MESSAGE_COMBINER_CLASS = "hama.vertex.message.combiner.class";
+  public static final String GRAPH_REPAIR = "hama.graph.repair";
 
   private Configuration conf;
   private Combiner<? extends Writable> combiner;
@@ -81,12 +84,13 @@ public class GraphJobRunner extends BSP {
   private int maxIteration = -1;
   private long iteration;
 
-  // TODO check if our graph is not broken and repair
   public void setup(BSPPeer peer) throws IOException, SyncException,
       InterruptedException {
     this.conf = peer.getConfiguration();
     // Choose one as a master to collect global updates
     this.masterTask = peer.getPeerName(0);
+
+    boolean repairNeeded = conf.getBoolean(GRAPH_REPAIR, false);
 
     if (!conf.getClass(MESSAGE_COMBINER_CLASS, Combiner.class).equals(
         Combiner.class)) {
@@ -110,7 +114,7 @@ public class GraphJobRunner extends BSP {
       }
     }
 
-    loadVertices(peer);
+    loadVertices(peer, repairNeeded);
     numberVertices = vertices.size() * peer.getNumPeers();
     // TODO refactor this to a single step
     for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
@@ -144,8 +148,8 @@ public class GraphJobRunner extends BSP {
 
       // Map <vertexID, messages>
       final Map<String, LinkedList<Writable>> messages = parseMessages(peer);
-      if (isMasterTask(peer) && peer.getSuperstepCount() > 1) {
-
+      // use iterations here, since repair can skew the number of supersteps
+      if (isMasterTask(peer) && iteration > 1) {
         MapWritable updatedCnt = new MapWritable();
         // exit if there's no update made
         if (globalUpdateCounts == 0) {
@@ -173,7 +177,7 @@ public class GraphJobRunner extends BSP {
       }
       // if we have an aggregator defined, we must make an additional sync
       // to have the updated values available on all our peers.
-      if (aggregator != null && peer.getSuperstepCount() > 1) {
+      if (aggregator != null && iteration > 1) {
         peer.sync();
 
         MapWritable updatedValues = (MapWritable) peer.getCurrentMessage();
@@ -273,7 +277,8 @@ public class GraphJobRunner extends BSP {
     return msgMap;
   }
 
-  private void loadVertices(BSPPeer peer) throws IOException {
+  private void loadVertices(BSPPeer peer, boolean repairNeeded)
+      throws IOException {
     LOG.debug("vertex class: " + conf.get("hama.graph.vertex.class"));
     boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
     KeyValuePair<? extends VertexWritable, ? extends VertexArrayWritable> next = null;
@@ -304,6 +309,53 @@ public class GraphJobRunner extends BSP {
       vertex.setup(conf);
       vertices.put(next.getKey().getName(), vertex);
     }
+
+    /*
+     * If the user want to repair the graph, it should traverse through that
+     * local chunk of adjancency list and message the corresponding peer to
+     * check whether that vertex exists. In real-life this may be dead-ending
+     * vertices, since we have no information about outgoing edges. Mainly this
+     * procedure is to prevent NullPointerExceptions from happening.
+     */
+    if (repairNeeded) {
+      LOG.debug("Starting repair of this graph!");
+      final Collection<Vertex> entries = vertices.values();
+      for (Vertex entry : entries) {
+        List<Edge> outEdges = entry.getOutEdges();
+        for (Edge e : outEdges) {
+          peer.send(e.getDestVertexID(), new Text(e.getName()));
+        }
+      }
+      try {
+        peer.sync();
+      } catch (Exception e) {
+        // we can't really recover from that, so fail this task
+        throw new RuntimeException(e);
+      }
+      Text vertexName = null;
+      while ((vertexName = (Text) peer.getCurrentMessage()) != null) {
+        String vName = vertexName.toString();
+        if (!vertices.containsKey(vName)) {
+          Vertex<? extends Writable> vertex = (Vertex<? extends Writable>) ReflectionUtils
+              .newInstance(
+                  conf.getClass("hama.graph.vertex.class", Vertex.class), conf);
+          vertex.peer = peer;
+          vertex.setVertexID(vName);
+          vertex.runner = this;
+          if (selfReference) {
+            String target = peer.getPeerName(Math.abs((vertex.hashCode() % peer
+                .getAllPeerNames().length)));
+            vertex.edges = Collections
+                .singletonList(new Edge(vertex.getVertexID(), target, 0));
+          } else {
+            vertex.edges = Collections.emptyList();
+          }
+          vertex.setup(conf);
+          vertices.put(vName, vertex);
+        }
+      }
+    }
+
   }
 
   /**

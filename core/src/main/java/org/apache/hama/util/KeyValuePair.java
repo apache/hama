@@ -18,15 +18,16 @@
 package org.apache.hama.util;
 
 /**
- * Immutable class for key values.
- * 
- * @param <K>
- * @param <V>
+ * Mutable class for key values.
  */
 public class KeyValuePair<K, V> {
 
-  private final K key;
-  private final V value;
+  private K key;
+  private V value;
+
+  public KeyValuePair() {
+
+  }
 
   public KeyValuePair(K key, V value) {
     super();
@@ -40,6 +41,19 @@ public class KeyValuePair<K, V> {
 
   public V getValue() {
     return value;
+  }
+
+  public void setKey(K key) {
+    this.key = key;
+  }
+
+  public void setValue(V value) {
+    this.value = value;
+  }
+
+  public void clear() {
+    this.key = null;
+    this.value = null;
   }
 
 }

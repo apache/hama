@@ -117,7 +117,8 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
   public boolean readNext(K1 key, V1 value) throws IOException;
 
   /**
-   * Reads the next key value pair and returns it as a pair.
+   * Reads the next key value pair and returns it as a pair. It may reuse a
+   * {@link KeyValuePair} instance to save garbage collection time.
    * 
    * @return null if there are no records left.
    * @throws IOException
@@ -134,7 +135,7 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    * @return the jobs configuration
    */
   public Configuration getConfiguration();
-  
+
   /**
    * Get the {@link Counter} of the given group with the given name.
    * 
@@ -151,26 +152,26 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    * @return the <code>Counter</code> of the given group/name.
    */
   public Counter getCounter(String group, String name);
-  
+
   /**
-   * Increments the counter identified by the key, which can be of
-   * any {@link Enum} type, by the specified amount.
+   * Increments the counter identified by the key, which can be of any
+   * {@link Enum} type, by the specified amount.
    * 
-   * @param key key to identify the counter to be incremented. The key can be
-   *            be any <code>Enum</code>. 
-   * @param amount A non-negative amount by which the counter is to 
-   *               be incremented.
+   * @param key key to identify the counter to be incremented. The key can be be
+   *          any <code>Enum</code>.
+   * @param amount A non-negative amount by which the counter is to be
+   *          incremented.
    */
   public void incrementCounter(Enum<?> key, long amount);
-  
+
   /**
-   * Increments the counter identified by the group and counter name
-   * by the specified amount.
+   * Increments the counter identified by the group and counter name by the
+   * specified amount.
    * 
    * @param group name to identify the group of the counter to be incremented.
    * @param counter name to identify the counter within the group.
-   * @param amount A non-negative amount by which the counter is to 
-   *               be incremented.
+   * @param amount A non-negative amount by which the counter is to be
+   *          incremented.
    */
   public void incrementCounter(String group, String counter, long amount);
 }
