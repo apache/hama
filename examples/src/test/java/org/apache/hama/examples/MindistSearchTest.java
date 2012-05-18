@@ -24,12 +24,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -47,7 +51,7 @@ import org.apache.hama.graph.VertexWritable;
 
 public class MindistSearchTest extends TestCase {
 
-  private static final Map<VertexWritable, VertexArrayWritable> tmp = new HashMap<VertexWritable, VertexArrayWritable>();
+  private static final Map<VertexWritable<Text, IntWritable>, VertexArrayWritable> tmp = new HashMap<VertexWritable<Text, IntWritable>, VertexArrayWritable>();
   // mapping of our index of the vertex to the resulting component id
   private static final String[] resultList = new String[] { "0", "1", "2", "2",
       "1", "2", "2", "1", "2", "0" };
@@ -61,14 +65,17 @@ public class MindistSearchTest extends TestCase {
       String[] adjacencyStringArray = lineArray[i].split(";");
       int vertexId = Integer.parseInt(adjacencyStringArray[0]);
       String name = pages[vertexId];
-      VertexWritable[] arr = new VertexWritable[adjacencyStringArray.length - 1];
+      @SuppressWarnings("unchecked")
+      VertexWritable<Text, IntWritable>[] arr = new VertexWritable[adjacencyStringArray.length - 1];
       for (int j = 1; j < adjacencyStringArray.length; j++) {
-        arr[j - 1] = new VertexWritable(
-            pages[Integer.parseInt(adjacencyStringArray[j])]);
+        arr[j - 1] = new VertexWritable<Text, IntWritable>(new IntWritable(0),
+            new Text(pages[Integer.parseInt(adjacencyStringArray[j])]),
+            Text.class, IntWritable.class);
       }
       VertexArrayWritable wr = new VertexArrayWritable();
       wr.set(arr);
-      tmp.put(new VertexWritable(name), wr);
+      tmp.put(
+          new VertexWritable<Text, IntWritable>(new Text(name), Text.class), wr);
     }
   }
   private static String INPUT = "/tmp/pagerank-tmp.seq";
@@ -107,22 +114,30 @@ public class MindistSearchTest extends TestCase {
   }
 
   private void verifyResult() throws IOException {
-    SequenceFile.Reader reader = new SequenceFile.Reader(fs, new Path(OUTPUT
-        + "/part-00000"), conf);
-    Text key = new Text();
-    Writable value = new Text();
-    while (reader.next(key, value)) {
-      System.out.println(key + " | " + value);
-      assertEquals(resultList[Integer.parseInt(key.toString())],
-          value.toString());
+    FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
+    int itemsRead = 0;
+    for (FileStatus fts : globStatus) {
+      SequenceFile.Reader reader = new SequenceFile.Reader(fs, fts.getPath(),
+          conf);
+      Text key = new Text();
+      Writable value = new Text();
+      while (reader.next(key, value)) {
+        System.out.println(key + " | " + value);
+        assertEquals(resultList[Integer.parseInt(key.toString())],
+            value.toString());
+        itemsRead++;
+      }
     }
+    assertEquals(resultList.length, itemsRead);
   }
 
-  private void generateSeqTestData(Map<VertexWritable, VertexArrayWritable> map)
+  private void generateSeqTestData(
+      Map<VertexWritable<Text, IntWritable>, VertexArrayWritable> tmp)
       throws IOException {
     SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, new Path(
         INPUT), VertexWritable.class, VertexArrayWritable.class);
-    for (Map.Entry<VertexWritable, VertexArrayWritable> e : map.entrySet()) {
+    for (Entry<VertexWritable<Text, IntWritable>, VertexArrayWritable> e : tmp
+        .entrySet()) {
       writer.append(e.getKey(), e.getValue());
     }
     writer.close();
@@ -143,11 +158,10 @@ public class MindistSearchTest extends TestCase {
 
   public void testRepairFunctionality() throws Exception {
     // make a copy to be safe with parallel test executions
-    final Map<VertexWritable, VertexArrayWritable> map = new HashMap<VertexWritable, VertexArrayWritable>(
-        tmp);
+    final Map<VertexWritable<Text, IntWritable>, VertexArrayWritable> map = new HashMap<VertexWritable<Text, IntWritable>, VertexArrayWritable>(tmp);
     // removing 7 should resulting in creating it and getting the same result as
     // usual
-    map.remove(new VertexWritable("7"));
+    map.remove(new VertexWritable<Text, IntWritable>("7"));
     generateSeqTestData(map);
     try {
       HamaConfiguration conf = new HamaConfiguration(new Configuration());
@@ -169,6 +183,10 @@ public class MindistSearchTest extends TestCase {
       connectedComponentsJob.setOutputFormat(SequenceFileOutputFormat.class);
       connectedComponentsJob.setOutputKeyClass(Text.class);
       connectedComponentsJob.setOutputValueClass(Text.class);
+      
+      connectedComponentsJob.setVertexIDClass(Text.class);
+      connectedComponentsJob.setVertexValueClass(Text.class);
+      connectedComponentsJob.setEdgeValueClass(NullWritable.class);
 
       if (connectedComponentsJob.waitForCompletion(true)) {
         verifyResult();
@@ -180,13 +198,16 @@ public class MindistSearchTest extends TestCase {
     }
   }
 
-  private void generateTestTextData() throws IOException {
+  private static void generateTestTextData() throws IOException {
     BufferedWriter writer = new BufferedWriter(new FileWriter(TEXT_INPUT));
-    for (Map.Entry<VertexWritable, VertexArrayWritable> e : tmp.entrySet()) {
+    for (Entry<VertexWritable<Text, IntWritable>, VertexArrayWritable> e : tmp
+        .entrySet()) {
       writer.write(e.getKey() + "\t");
       for (int i = 0; i < e.getValue().get().length; i++) {
-        VertexWritable writable = (VertexWritable) e.getValue().get()[i];
-        writer.write(writable.getName() + "\t");
+        @SuppressWarnings("unchecked")
+        VertexWritable<Text, IntWritable> writable = (VertexWritable<Text, IntWritable>) e
+            .getValue().get()[i];
+        writer.write(writable.getVertexId() + "\t");
       }
       writer.write("\n");
     }

@@ -38,6 +38,7 @@ import org.apache.hama.util.KeyValuePair;
  * Abstract base class for turning a text graph into a sequence file. It offers
  * help for multiple inputs in a directory.
  */
+@SuppressWarnings("rawtypes")
 public abstract class TextToSequenceFile {
 
   protected static final Log LOG = LogFactory.getLog(TextToSequenceFile.class);
@@ -57,6 +58,7 @@ public abstract class TextToSequenceFile {
     this.delimiter = delimiter;
 
     this.conf = new Configuration();
+    VertexWritable.CONFIGURATION = conf;
     this.sourceFs = inPath.getFileSystem(conf);
     this.destFs = outPath.getFileSystem(conf);
   }

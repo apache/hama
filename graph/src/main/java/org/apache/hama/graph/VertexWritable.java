@@ -21,61 +21,104 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.ObjectWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
-public class VertexWritable implements Writable,
-    WritableComparable<VertexWritable> {
+public class VertexWritable<VERTEX_ID, VERTEX_VALUE> implements
+    WritableComparable<VertexWritable<VERTEX_ID, VERTEX_VALUE>>, Configurable {
 
-  public String name;
-  public int weight;
+  /**
+   * This field is static because it doesn't need to be an instance variable. It
+   * is written in upper case, because it is considered constant per launched
+   * process.
+   */
+  public static Configuration CONFIGURATION;
+
+  VERTEX_ID vertexId;
+  VERTEX_VALUE value;
+  Class<VERTEX_ID> idCls;
+  Class<VERTEX_VALUE> valCls;
 
   public VertexWritable() {
     super();
   }
 
-  public VertexWritable(String name) {
-    super();
-    this.name = name;
-    this.weight = 0;
+  @SuppressWarnings("unchecked")
+  public VertexWritable(VERTEX_ID name, Class<VERTEX_ID> idCls) {
+    this.vertexId = name;
+    this.value = (VERTEX_VALUE) new IntWritable(0);
+    this.idCls = idCls;
+    this.valCls = org.apache.hadoop.util.ReflectionUtils.getClass(value);
   }
 
+  @SuppressWarnings("unchecked")
   public VertexWritable(int weight, String name) {
-    super();
-    this.name = name;
-    this.weight = weight;
+    this.vertexId = (VERTEX_ID) new Text(name);
+    this.value = (VERTEX_VALUE) new IntWritable(weight);
+    this.idCls = org.apache.hadoop.util.ReflectionUtils.getClass(vertexId);
+    this.valCls = org.apache.hadoop.util.ReflectionUtils.getClass(value);
   }
 
-  public String getName() {
-    return name;
+  @SuppressWarnings("unchecked")
+  public VertexWritable(String name) {
+    this.vertexId = (VERTEX_ID) new Text(name);
+    this.value = (VERTEX_VALUE) NullWritable.get();
+    this.idCls = org.apache.hadoop.util.ReflectionUtils.getClass(vertexId);
+    this.valCls = org.apache.hadoop.util.ReflectionUtils.getClass(value);
   }
 
-  public int getWeight() {
-    return weight;
+  public VertexWritable(VERTEX_VALUE weight, VERTEX_ID name,
+      Class<VERTEX_ID> idCls, Class<VERTEX_VALUE> valCls) {
+    this.vertexId = name;
+    this.value = weight;
+    this.idCls = idCls;
+    this.valCls = valCls;
+  }
+
+  public VERTEX_ID getVertexId() {
+    return vertexId;
+  }
+
+  public VERTEX_VALUE getVertexValue() {
+    return value;
   }
 
   @Override
   public String toString() {
-    return getName();
+    return getVertexId().toString();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.name = in.readUTF();
-    this.weight = in.readInt();
+    try {
+      idCls = (Class<VERTEX_ID>) CONFIGURATION.getClassByName(in.readUTF());
+      valCls = (Class<VERTEX_VALUE>) CONFIGURATION.getClassByName(in.readUTF());
+    } catch (ClassNotFoundException e) {
+      throw new IOException(e);
+    }
+    vertexId = (VERTEX_ID) ObjectWritable.readObject(in, CONFIGURATION);
+    value = (VERTEX_VALUE) ObjectWritable.readObject(in, CONFIGURATION);
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeUTF(name);
-    out.writeInt(weight);
+    out.writeUTF(idCls.getName());
+    out.writeUTF(valCls.getName());
+    ObjectWritable.writeObject(out, vertexId, idCls, CONFIGURATION);
+    ObjectWritable.writeObject(out, value, valCls, CONFIGURATION);
   }
 
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((name == null) ? 0 : name.hashCode());
+    result = prime * result + ((vertexId == null) ? 0 : vertexId.hashCode());
     return result;
   }
 
@@ -87,19 +130,32 @@ public class VertexWritable implements Writable,
       return false;
     if (getClass() != obj.getClass())
       return false;
-    VertexWritable other = (VertexWritable) obj;
-    if (name == null) {
-      if (other.name != null)
+    @SuppressWarnings("unchecked")
+    VertexWritable<VERTEX_ID, VERTEX_VALUE> other = (VertexWritable<VERTEX_ID, VERTEX_VALUE>) obj;
+    if (vertexId == null) {
+      if (other.vertexId != null)
         return false;
-    } else if (!name.equals(other.name))
+    } else if (!vertexId.equals(other.vertexId))
       return false;
     return true;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public int compareTo(VertexWritable o) {
-    VertexWritable that = (VertexWritable) o;
-    return this.name.compareTo(that.name);
+  public int compareTo(VertexWritable<VERTEX_ID, VERTEX_VALUE> o) {
+    VertexWritable<VERTEX_ID, VERTEX_VALUE> that = o;
+    return ((Comparable<VertexWritable<VERTEX_ID, VERTEX_VALUE>>) this.vertexId)
+        .compareTo((VertexWritable<VERTEX_ID, VERTEX_VALUE>) that.vertexId);
+  }
+
+  @Override
+  public void setConf(Configuration conf) {
+    VertexWritable.CONFIGURATION = conf;
+  }
+
+  @Override
+  public Configuration getConf() {
+    return CONFIGURATION;
   }
 
 }

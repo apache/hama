@@ -22,6 +22,7 @@ import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Combiner;
@@ -40,7 +41,8 @@ public class MindistSearch {
   /*
    * Make sure that you know that you're comparing text, and not integers!
    */
-  public static class MindistSearchVertex extends Vertex<Text> {
+  public static class MindistSearchVertex extends
+      Vertex<Text, Text, NullWritable> {
 
     @Override
     public void compute(Iterator<Text> messages) throws IOException {
@@ -50,10 +52,10 @@ public class MindistSearch {
         // neighbourhood.
         if (currentComponent == null) {
           setValue(new Text(getVertexID()));
-          for (Edge e : edges) {
-            String id = getVertexID();
-            if (id.compareTo(e.getName()) > 0) {
-              setValue(new Text(e.getName()));
+          for (Edge<Text, NullWritable> e : edges) {
+            Text id = getVertexID();
+            if (id.compareTo(e.getDestinationVertexID()) > 0) {
+              setValue(e.getDestinationVertexID());
             }
           }
           sendMessageToNeighbors(getValue());
@@ -118,6 +120,10 @@ public class MindistSearch {
     if (args.length >= 3)
       connectedComponentsJob.setMaxIteration(Integer.parseInt(args[2]));
 
+    connectedComponentsJob.setVertexIDClass(Text.class);
+    connectedComponentsJob.setVertexValueClass(Text.class);
+    connectedComponentsJob.setEdgeValueClass(NullWritable.class);
+
     connectedComponentsJob.setInputFormat(SequenceFileInputFormat.class);
     connectedComponentsJob.setPartitioner(HashPartitioner.class);
     connectedComponentsJob.setOutputFormat(SequenceFileOutputFormat.class);
@@ -127,7 +133,7 @@ public class MindistSearch {
     long startTime = System.currentTimeMillis();
     if (connectedComponentsJob.waitForCompletion(true)) {
       System.out.println("Job Finished in "
-          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
     }
   }

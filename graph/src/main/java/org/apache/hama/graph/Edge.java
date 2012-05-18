@@ -17,34 +17,45 @@
  */
 package org.apache.hama.graph;
 
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Writable;
+
 /**
  * The edge class
  */
-public class Edge {
-  private String sourceVertexID;
-  private String destVertexID;
-  private int cost;
+public class Edge<VERTEX_ID, EDGE_VALUE_TYPE extends Writable> {
 
-  public Edge(String sourceVertexID, String destVertexID, int cost) {
-    this.sourceVertexID = sourceVertexID;
-    this.destVertexID = destVertexID;
-    this.cost = cost;
+  private VERTEX_ID destinationVertexID;
+  // actually the destination peer address
+  private String destinationPeerName;
+  private EDGE_VALUE_TYPE cost;
+
+  public Edge(VERTEX_ID sourceVertexID, String destVertexID,
+      EDGE_VALUE_TYPE cost) {
+    this.destinationVertexID = sourceVertexID;
+    this.destinationPeerName = destVertexID;
+    if (cost instanceof NullWritable) {
+      this.cost = null;
+    } else {
+      this.cost = cost;
+    }
   }
 
-  public String getName() {
-    return sourceVertexID;
+  public VERTEX_ID getDestinationVertexID() {
+    return destinationVertexID;
   }
 
-  public String getDestVertexID() {
-    return destVertexID;
+  public String getDestinationPeerName() {
+    return destinationPeerName;
   }
 
-  public int getCost() {
+  public EDGE_VALUE_TYPE getValue() {
     return cost;
   }
 
+  @Override
   public String toString() {
-    return this.getName() + " -> " + this.getDestVertexID() + ":"
-        + this.getCost();
+    return this.destinationVertexID + ":" + this.getValue() + " (resides on "
+        + destinationPeerName + ")";
   }
 }

@@ -20,7 +20,9 @@ package org.apache.hama.examples.util;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.SequenceFile.Writer;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 import org.apache.hama.util.KeyValuePair;
@@ -40,6 +42,7 @@ import org.apache.hama.util.KeyValuePair;
  *    bin/hama -jar examples.jar pagerank-text2seq /tmp/in /tmp/out ";"
  * </pre>
  */
+@SuppressWarnings("rawtypes")
 public class PagerankTextToSeq extends TextToSequenceFile {
 
   public PagerankTextToSeq(Path inPath, Path outPath, String delimiter)
@@ -47,6 +50,7 @@ public class PagerankTextToSeq extends TextToSequenceFile {
     super(inPath, outPath, delimiter);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   protected KeyValuePair<VertexWritable, VertexArrayWritable> processLine(
       String line) throws IOException {
@@ -54,7 +58,8 @@ public class PagerankTextToSeq extends TextToSequenceFile {
     VertexWritable key = new VertexWritable(split[0]);
     VertexWritable[] v = new VertexWritable[split.length - 1];
     for (int i = 1; i < split.length; i++) {
-      v[i - 1] = new VertexWritable(split[i]);
+      v[i - 1] = new VertexWritable(new DoubleWritable(0.0),
+          new Text(split[i]), Text.class, DoubleWritable.class);
     }
     VertexArrayWritable value = new VertexArrayWritable();
     value.set(v);

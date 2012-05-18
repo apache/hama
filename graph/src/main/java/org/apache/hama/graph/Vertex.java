@@ -23,24 +23,24 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
-public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
+public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable, EDGE_VALUE_TYPE extends Writable>
+    implements VertexInterface<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> {
 
-  private M value;
-  private String vertexID;
-  protected GraphJobRunner runner;
-  protected BSPPeer<?, ?, ?, ?, MapWritable> peer;
-  public List<Edge> edges;
+  private MSG_TYPE value;
+  private ID_TYPE vertexID;
+  protected GraphJobRunner<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> runner;
+  protected BSPPeer<VertexWritable<ID_TYPE, MSG_TYPE>, VertexArrayWritable, Writable, Writable, Writable> peer;
+  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> edges;
 
   public Configuration getConf() {
     return peer.getConfiguration();
   }
 
   @Override
-  public String getVertexID() {
+  public ID_TYPE getVertexID() {
     return vertexID;
   }
 
@@ -49,17 +49,17 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
   }
 
   @Override
-  public void sendMessage(Edge e, M msg) throws IOException {
+  public void sendMessage(Edge<ID_TYPE, EDGE_VALUE_TYPE> e, MSG_TYPE msg)
+      throws IOException {
     MapWritable message = new MapWritable();
-    message.put(new Text(e.getName()), msg);
-
-    peer.send(e.getDestVertexID(), message);
+    message.put(e.getDestinationVertexID(), msg);
+    peer.send(e.getDestinationPeerName(), message);
   }
 
   @Override
-  public void sendMessageToNeighbors(M msg) throws IOException {
-    final List<Edge> outEdges = this.getOutEdges();
-    for (Edge e : outEdges) {
+  public void sendMessageToNeighbors(MSG_TYPE msg) throws IOException {
+    final List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> outEdges = this.getOutEdges();
+    for (Edge<ID_TYPE, EDGE_VALUE_TYPE> e : outEdges) {
       sendMessage(e, msg);
     }
   }
@@ -70,21 +70,21 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
   }
 
   @Override
-  public List<Edge> getOutEdges() {
+  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getOutEdges() {
     return edges;
   }
 
   @Override
-  public M getValue() {
+  public MSG_TYPE getValue() {
     return value;
   }
 
   @Override
-  public void setValue(M value) {
+  public void setValue(MSG_TYPE value) {
     this.value = value;
   }
 
-  public void setVertexID(String vertexID) {
+  public void setVertexID(ID_TYPE vertexID) {
     this.vertexID = vertexID;
   }
 
@@ -97,8 +97,8 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
    * was configured or not returned a result.
    */
   @SuppressWarnings("unchecked")
-  public M getLastAggregatedValue() {
-    return (M) runner.getLastAggregatedValue();
+  public MSG_TYPE getLastAggregatedValue() {
+    return (MSG_TYPE) runner.getLastAggregatedValue();
   }
 
   /**
@@ -113,6 +113,7 @@ public abstract class Vertex<M extends Writable> implements VertexInterface<M> {
     return peer.getNumPeers();
   }
 
+  @Override
   public long getNumVertices() {
     return runner.getNumberVertices();
   }
