@@ -26,8 +26,7 @@ public class AverageAggregator extends AbsDiffAggregator {
 
   @Override
   public DoubleWritable finalizeAggregation() {
-    return new DoubleWritable(getValue().get()
-        / (double) getTimesAggregated().get());
+    return new DoubleWritable(getValue().get() / getTimesAggregated().get());
   }
 
 }

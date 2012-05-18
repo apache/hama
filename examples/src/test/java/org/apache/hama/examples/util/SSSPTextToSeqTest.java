@@ -27,7 +27,9 @@ import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.graph.VertexArrayWritable;
@@ -56,7 +58,7 @@ public class SSSPTextToSeqTest extends TestCase {
     }
   }
 
-  private void writeTextFile() throws IOException {
+  private static void writeTextFile() throws IOException {
     BufferedWriter writer = new BufferedWriter(new FileWriter(TXT_INPUT));
     for (int lines = 0; lines < 10; lines++) {
       writer.append(lines + DELIMITER);
@@ -68,22 +70,25 @@ public class SSSPTextToSeqTest extends TestCase {
     writer.close();
   }
 
+  @SuppressWarnings("unchecked")
   private void verifyOutput() throws IOException {
     SequenceFile.Reader reader = new SequenceFile.Reader(fs,
         new Path(SEQ_INPUT), conf);
-    VertexWritable vertex = new VertexWritable();
+    VertexWritable<Text, IntWritable> vertex = new VertexWritable<Text, IntWritable>();
     VertexArrayWritable vertexArray = new VertexArrayWritable();
 
     int lines = 0;
     while (reader.next(vertex, vertexArray)) {
       int count = 0;
-      assertEquals(vertex.getName(), lines + "");
-      assertEquals(vertex.getWeight(), 0);
+      assertEquals(vertex.getVertexId().toString(), lines + "");
+      assertEquals(vertex.getVertexValue().get(), 0);
       Writable[] writables = vertexArray.get();
       assertEquals(writables.length, 5);
       for (int i = 0; i < 5; i++) {
-        assertEquals(((VertexWritable) writables[i]).getName(), count + "");
-        assertEquals(((VertexWritable) writables[i]).getWeight(), lines);
+        assertEquals(((VertexWritable<Text, IntWritable>) writables[i])
+            .getVertexId().toString(), count + "");
+        assertEquals(((VertexWritable<Text, IntWritable>) writables[i])
+            .getVertexValue().get(), lines);
         count++;
       }
       lines++;

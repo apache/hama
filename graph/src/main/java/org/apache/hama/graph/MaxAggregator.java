@@ -23,12 +23,14 @@ public class MaxAggregator extends AbstractAggregator<IntWritable> {
 
   int max = Integer.MIN_VALUE;
 
+  @Override
   public void aggregate(IntWritable value) {
     if (value.get() > max) {
       max = value.get();
     }
   }
 
+  @Override
   public IntWritable getValue() {
     return new IntWritable(max);
   }

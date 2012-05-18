@@ -112,7 +112,7 @@ public class RandBench {
     long startTime = System.currentTimeMillis();
     if (bsp.waitForCompletion(true)) {
       System.out.println("Job Finished in "
-          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
     }
   }

@@ -118,7 +118,7 @@ public class CombineExample {
     if (bsp.waitForCompletion(true)) {
       printOutput(conf);
       System.out.println("Job Finished in "
-          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
     }
 

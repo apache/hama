@@ -24,7 +24,16 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 
-public interface VertexInterface<MSGTYPE extends Writable> {
+/**
+ * The vertex interface.
+ * 
+ * @param <ID_TYPE> this type must be writable and should also implement equals
+ *          and hashcode.
+ * @param <MSG_TYPE> the type used for messaging, usually the value of a vertex.
+ * @param <EDGE_VALUE_TYPE> the type used for storing edge values, usually the
+ *          value of an edge.
+ */
+public interface VertexInterface<ID_TYPE extends Writable, MSG_TYPE extends Writable, EDGE_VALUE_TYPE extends Writable> {
 
   /**
    * Used to setup a vertex.
@@ -32,22 +41,23 @@ public interface VertexInterface<MSGTYPE extends Writable> {
   public void setup(Configuration conf);
 
   /** @return the unique identification for the vertex. */
-  public String getVertexID();
+  public ID_TYPE getVertexID();
 
   /** @return the number of vertices in the input graph. */
   public long getNumVertices();
 
   /** The user-defined function */
-  public void compute(Iterator<MSGTYPE> messages) throws IOException;
+  public void compute(Iterator<MSG_TYPE> messages) throws IOException;
 
   /** @return a list of outgoing edges of this vertex in the input graph. */
-  public List<Edge> getOutEdges();
+  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getOutEdges();
 
   /** Sends a message to another vertex. */
-  public void sendMessage(Edge e, MSGTYPE msg) throws IOException;
+  public void sendMessage(Edge<ID_TYPE, EDGE_VALUE_TYPE> e, MSG_TYPE msg)
+      throws IOException;
 
   /** Sends a message to neighbors */
-  public void sendMessageToNeighbors(MSGTYPE msg) throws IOException;
+  public void sendMessageToNeighbors(MSG_TYPE msg) throws IOException;
 
   /** @return the superstep number of the current superstep (starting from 0). */
   public long getSuperstepCount();
@@ -57,13 +67,13 @@ public interface VertexInterface<MSGTYPE extends Writable> {
    * 
    * @param value
    */
-  public void setValue(MSGTYPE value);
+  public void setValue(MSG_TYPE value);
 
   /**
    * Gets the vertex value
    * 
    * @return value
    */
-  public MSGTYPE getValue();
+  public MSG_TYPE getValue();
 
 }

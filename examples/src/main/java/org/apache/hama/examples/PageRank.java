@@ -23,6 +23,7 @@ import java.util.Iterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
@@ -34,7 +35,8 @@ import org.apache.hama.graph.Vertex;
 
 public class PageRank {
 
-  public static class PageRankVertex extends Vertex<DoubleWritable> {
+  public static class PageRankVertex extends
+      Vertex<Text, DoubleWritable, NullWritable> {
 
     static double DAMPING_FACTOR = 0.85;
     static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
@@ -58,7 +60,7 @@ public class PageRank {
     public void compute(Iterator<DoubleWritable> messages) throws IOException {
       // initialize this vertex to 1 / count of global vertices in this graph
       if (this.getSuperstepCount() == 0) {
-        this.setValue(new DoubleWritable(1.0 / (double) this.getNumVertices()));
+        this.setValue(new DoubleWritable(1.0 / this.getNumVertices()));
       }
 
       // in the first superstep, there are no messages to check
@@ -68,7 +70,7 @@ public class PageRank {
           DoubleWritable msg = messages.next();
           sum += msg.get();
         }
-        double alpha = (1.0d - DAMPING_FACTOR) / (double) this.getNumVertices();
+        double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
         this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
       }
 
@@ -120,6 +122,10 @@ public class PageRank {
       pageJob.set("hama.pagerank.alpha", args[2]);
 
     pageJob.setAggregatorClass(AverageAggregator.class);
+    
+    pageJob.setVertexIDClass(Text.class);
+    pageJob.setVertexValueClass(DoubleWritable.class);
+    pageJob.setEdgeValueClass(NullWritable.class);
 
     pageJob.setInputFormat(SequenceFileInputFormat.class);
     pageJob.setPartitioner(HashPartitioner.class);
@@ -130,7 +136,7 @@ public class PageRank {
     long startTime = System.currentTimeMillis();
     if (pageJob.waitForCompletion(true)) {
       System.out.println("Job Finished in "
-          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
     }
   }

@@ -22,13 +22,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
@@ -36,13 +39,13 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.examples.PageRank.PageRankVertex;
-import org.apache.hama.examples.util.PagerankTextToSeq;
 import org.apache.hama.graph.AverageAggregator;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.GraphJobRunner;
 import org.apache.hama.graph.VertexArrayWritable;
 import org.apache.hama.graph.VertexWritable;
 
+@SuppressWarnings("unchecked")
 public class PageRankTest extends TestCase {
   /**
    * The graph looks like this (adjacency list, [] contains outlinks):<br/>
@@ -54,8 +57,10 @@ public class PageRankTest extends TestCase {
    * nasa.gov [yahoo.com, stackoverflow.com]<br/>
    * youtube.com [google.com, yahoo.com]<br/>
    */
-  private static final Map<VertexWritable, VertexArrayWritable> tmp = new HashMap<VertexWritable, VertexArrayWritable>();
+  private static final Map<VertexWritable<Text, DoubleWritable>, VertexArrayWritable> tmp = new HashMap<VertexWritable<Text, DoubleWritable>, VertexArrayWritable>();
   static {
+    Configuration conf = new HamaConfiguration();
+    VertexWritable.CONFIGURATION = conf;
     // our first entry is null, because our indices in hama 3.0 pre calculated
     // example starts at 1.
     // FIXME This is really ugly.
@@ -70,14 +75,16 @@ public class PageRankTest extends TestCase {
       String[] adjacencyStringArray = lineArray[i].split(";");
       int vertexId = Integer.parseInt(adjacencyStringArray[0]);
       String name = pages[vertexId];
-      VertexWritable[] arr = new VertexWritable[adjacencyStringArray.length - 1];
+      VertexWritable<Text, DoubleWritable>[] arr = new VertexWritable[adjacencyStringArray.length - 1];
       for (int j = 1; j < adjacencyStringArray.length; j++) {
-        arr[j - 1] = new VertexWritable(
-            pages[Integer.parseInt(adjacencyStringArray[j])]);
+        arr[j - 1] = new VertexWritable<Text, DoubleWritable>(
+            new DoubleWritable(0.0d), new Text(
+                pages[Integer.parseInt(adjacencyStringArray[j])]), Text.class,
+            DoubleWritable.class);
       }
       VertexArrayWritable wr = new VertexArrayWritable();
       wr.set(arr);
-      tmp.put(new VertexWritable(name), wr);
+      tmp.put(new VertexWritable<Text, DoubleWritable>(name), wr);
     }
   }
   private static String INPUT = "/tmp/pagerank-tmp.seq";
@@ -93,65 +100,42 @@ public class PageRankTest extends TestCase {
     fs = FileSystem.get(conf);
   }
 
-  public void testPageRank() throws Exception {
-    generateSeqTestData(tmp);
-    try {
-      // Usage: <input> <output> [damping factor (default 0.85)] [Epsilon
-      // (convergence error, default 0.001)] [Max iterations (default 30)]
-      // [tasks]
-      PageRank.main(new String[] { INPUT, OUTPUT, "0.85", "0.0001", "-1" });
-
-      verifyResult();
-    } finally {
-      deleteTempDirs();
-    }
-  }
-
   private void verifyResult() throws IOException {
-    SequenceFile.Reader reader = new SequenceFile.Reader(fs, new Path(OUTPUT
-        + "/part-00000"), conf);
-    Text key = new Text();
-    DoubleWritable value = new DoubleWritable();
     double sum = 0.0;
-    while (reader.next(key, value)) {
-      sum += value.get();
+    FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
+    for (FileStatus fts : globStatus) {
+      SequenceFile.Reader reader = new SequenceFile.Reader(fs, fts.getPath(),
+          conf);
+      Text key = new Text();
+      DoubleWritable value = new DoubleWritable();
+
+      while (reader.next(key, value)) {
+        sum += value.get();
+      }
     }
     System.out.println("Sum is: " + sum);
-    assertTrue(sum > 0.99d && sum <= 1d);
+    assertTrue(sum > 0.99d && sum <= 1.1d);
   }
 
-  private void generateSeqTestData(Map<VertexWritable, VertexArrayWritable> tmp)
+  private void generateSeqTestData(
+      Map<VertexWritable<Text, DoubleWritable>, VertexArrayWritable> tmp)
       throws IOException {
     SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, new Path(
         INPUT), VertexWritable.class, VertexArrayWritable.class);
-    for (Map.Entry<VertexWritable, VertexArrayWritable> e : tmp.entrySet()) {
+    for (Entry<VertexWritable<Text, DoubleWritable>, VertexArrayWritable> e : tmp
+        .entrySet()) {
       writer.append(e.getKey(), e.getValue());
     }
     writer.close();
   }
 
-  public void testPageRankUtil() throws IOException, InterruptedException,
-      ClassNotFoundException, InstantiationException, IllegalAccessException {
-    generateTestTextData();
-    // <input path> <output path>
-    PagerankTextToSeq.main(new String[] { TEXT_INPUT, TEXT_OUTPUT });
-    try {
-      PageRank
-          .main(new String[] { TEXT_OUTPUT, OUTPUT, "0.85", "0.0001", "-1" });
-
-      verifyResult();
-    } finally {
-      deleteTempDirs();
-    }
-  }
-
   public void testRepairFunctionality() throws Exception {
     // make a copy to be safe with parallel test executions
-    final Map<VertexWritable, VertexArrayWritable> map = new HashMap<VertexWritable, VertexArrayWritable>(
+    final Map<VertexWritable<Text, DoubleWritable>, VertexArrayWritable> map = new HashMap<VertexWritable<Text, DoubleWritable>, VertexArrayWritable>(
         tmp);
     // removing google should resulting in creating it and getting the same
     // result as usual
-    map.remove(new VertexWritable("google.com"));
+    map.remove(new VertexWritable<Text, DoubleWritable>("google.com"));
     generateSeqTestData(map);
     try {
       HamaConfiguration conf = new HamaConfiguration(new Configuration());
@@ -178,21 +162,29 @@ public class PageRankTest extends TestCase {
       pageJob.setOutputKeyClass(Text.class);
       pageJob.setOutputValueClass(DoubleWritable.class);
 
+      pageJob.setVertexIDClass(Text.class);
+      pageJob.setVertexValueClass(DoubleWritable.class);
+      pageJob.setEdgeValueClass(NullWritable.class);
+
       if (!pageJob.waitForCompletion(true)) {
         fail("Job did not complete normally!");
       }
+      verifyResult();
     } finally {
       deleteTempDirs();
     }
   }
 
-  private void generateTestTextData() throws IOException {
+  @SuppressWarnings("unused")
+  private static void generateTestTextData() throws IOException {
     BufferedWriter writer = new BufferedWriter(new FileWriter(TEXT_INPUT));
-    for (Map.Entry<VertexWritable, VertexArrayWritable> e : tmp.entrySet()) {
+    for (Map.Entry<VertexWritable<Text, DoubleWritable>, VertexArrayWritable> e : tmp
+        .entrySet()) {
       writer.write(e.getKey() + "\t");
       for (int i = 0; i < e.getValue().get().length; i++) {
-        VertexWritable writable = (VertexWritable) e.getValue().get()[i];
-        writer.write(writable.getName() + "\t");
+        VertexWritable<Text, DoubleWritable> writable = (VertexWritable<Text, DoubleWritable>) e
+            .getValue().get()[i];
+        writer.write(writable.getVertexId() + "\t");
       }
       writer.write("\n");
     }

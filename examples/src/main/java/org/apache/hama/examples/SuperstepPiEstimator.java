@@ -75,7 +75,7 @@ public class SuperstepPiEstimator {
         }
       }
 
-      double data = 4.0 * (double) in / (double) iterations;
+      double data = 4.0 * in / iterations;
       DoubleMessage estimate = new DoubleMessage(peer.getPeerName(), data);
 
       peer.send(masterTask, estimate);
@@ -159,7 +159,7 @@ public class SuperstepPiEstimator {
     if (bsp.waitForCompletion(true)) {
       printOutput(conf);
       System.out.println("Job Finished in "
-          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
     }
   }

@@ -42,10 +42,18 @@ import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
 
-@SuppressWarnings({ "unchecked", "rawtypes" })
-public class GraphJobRunner extends BSP {
+/**
+ * Fully generic graph job runner.
+ * 
+ * @param <VERTEX_ID> the id type of a vertex.
+ * @param <VERTEX_VALUE> the value type of a vertex.
+ * @param <VERTEX_VALUE> the value type of an edge.
+ */
+public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Writable, EDGE_VALUE_TYPE extends Writable>
+    extends
+    BSP<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> {
 
-  public static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
+  private static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
 
   // make sure that these values don't collide with the vertex names
   private static final String S_FLAG_MESSAGE_COUNTS = "hama.0";
@@ -63,17 +71,17 @@ public class GraphJobRunner extends BSP {
   public static final String GRAPH_REPAIR = "hama.graph.repair";
 
   private Configuration conf;
-  private Combiner<? extends Writable> combiner;
+  private Combiner<VERTEX_VALUE> combiner;
 
-  private Aggregator<Writable> aggregator;
+  private Aggregator<VERTEX_VALUE> aggregator;
   private Writable globalAggregatorResult;
   private IntWritable globalAggregatorIncrement;
   private boolean isAbstractAggregator;
 
   // aggregator on the master side
-  private Aggregator<Writable> masterAggregator;
+  private Aggregator<VERTEX_VALUE> masterAggregator;
 
-  private Map<String, Vertex> vertices = new HashMap<String, Vertex>();
+  private Map<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> vertices = new HashMap<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>();
 
   private String masterTask;
   private boolean updated = true;
@@ -84,11 +92,28 @@ public class GraphJobRunner extends BSP {
   private int maxIteration = -1;
   private long iteration;
 
-  public void setup(BSPPeer peer) throws IOException, SyncException,
-      InterruptedException {
+  // aimed to be accessed by vertex writables to serialize stuff
+  Class<VERTEX_ID> vertexIdClass;
+  Class<VERTEX_VALUE> vertexValueClass;
+  Class<EDGE_VALUE_TYPE> edgeValueClass;
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void setup(
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer)
+      throws IOException, SyncException, InterruptedException {
     this.conf = peer.getConfiguration();
+    VertexWritable.CONFIGURATION = conf;
     // Choose one as a master to collect global updates
     this.masterTask = peer.getPeerName(0);
+
+    vertexIdClass = (Class<VERTEX_ID>) conf.getClass(
+        GraphJob.VERTEX_ID_CLASS_ATTR, Text.class, Writable.class);
+    vertexValueClass = (Class<VERTEX_VALUE>) conf.getClass(
+        GraphJob.VERTEX_VALUE_CLASS_ATTR, IntWritable.class, Writable.class);
+    edgeValueClass = (Class<EDGE_VALUE_TYPE>) conf.getClass(
+        GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR, IntWritable.class,
+        Writable.class);
 
     boolean repairNeeded = conf.getBoolean(GRAPH_REPAIR, false);
 
@@ -96,7 +121,7 @@ public class GraphJobRunner extends BSP {
         Combiner.class)) {
       LOG.debug("Combiner class: " + conf.get(MESSAGE_COMBINER_CLASS));
 
-      combiner = (Combiner<? extends Writable>) ReflectionUtils.newInstance(
+      combiner = (Combiner<VERTEX_VALUE>) ReflectionUtils.newInstance(
           conf.getClass("hama.vertex.message.combiner.class", Combiner.class),
           conf);
     }
@@ -117,16 +142,17 @@ public class GraphJobRunner extends BSP {
     loadVertices(peer, repairNeeded);
     numberVertices = vertices.size() * peer.getNumPeers();
     // TODO refactor this to a single step
-    for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
-      LinkedList<Writable> msgIterator = new LinkedList<Writable>();
-      Vertex v = e.getValue();
+    for (Entry<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> e : vertices
+        .entrySet()) {
+      LinkedList<VERTEX_VALUE> msgIterator = new LinkedList<VERTEX_VALUE>();
+      Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> v = e.getValue();
       msgIterator.add(v.getValue());
-      Writable lastValue = v.getValue();
+      VERTEX_VALUE lastValue = v.getValue();
       v.compute(msgIterator.iterator());
       if (aggregator != null) {
         aggregator.aggregate(v.getValue());
         if (isAbstractAggregator) {
-          AbstractAggregator intern = ((AbstractAggregator) aggregator);
+          AbstractAggregator<VERTEX_VALUE> intern = ((AbstractAggregator<VERTEX_VALUE>) aggregator);
           intern.aggregate(lastValue, v.getValue());
           intern.aggregateInternal();
         }
@@ -136,8 +162,9 @@ public class GraphJobRunner extends BSP {
   }
 
   @Override
-  public void bsp(BSPPeer peer) throws IOException, SyncException,
-      InterruptedException {
+  public void bsp(
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer)
+      throws IOException, SyncException, InterruptedException {
 
     maxIteration = peer.getConfiguration().getInt("hama.graph.max.iteration",
         -1);
@@ -147,7 +174,7 @@ public class GraphJobRunner extends BSP {
       peer.sync();
 
       // Map <vertexID, messages>
-      final Map<String, LinkedList<Writable>> messages = parseMessages(peer);
+      final Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> messages = parseMessages(peer);
       // use iterations here, since repair can skew the number of supersteps
       if (isMasterTask(peer) && iteration > 1) {
         MapWritable updatedCnt = new MapWritable();
@@ -159,7 +186,7 @@ public class GraphJobRunner extends BSP {
           if (aggregator != null) {
             Writable lastAggregatedValue = masterAggregator.getValue();
             if (isAbstractAggregator) {
-              final AbstractAggregator intern = ((AbstractAggregator) aggregator);
+              final AbstractAggregator<VERTEX_VALUE> intern = ((AbstractAggregator<VERTEX_VALUE>) aggregator);
               final Writable finalizeAggregation = intern.finalizeAggregation();
               if (intern.finalizeAggregation() != null) {
                 lastAggregatedValue = finalizeAggregation;
@@ -198,23 +225,24 @@ public class GraphJobRunner extends BSP {
       }
 
       int messagesSize = messages.size();
-      Iterator<Entry<String, LinkedList<Writable>>> iterator = messages
+      Iterator<Entry<VERTEX_ID, LinkedList<VERTEX_VALUE>>> iterator = messages
           .entrySet().iterator();
       while (iterator.hasNext()) {
-        Entry<String, LinkedList<Writable>> e = iterator.next();
-        LinkedList msgs = e.getValue();
+        Entry<VERTEX_ID, LinkedList<VERTEX_VALUE>> e = iterator.next();
+        LinkedList<VERTEX_VALUE> msgs = e.getValue();
         if (combiner != null) {
-          Writable combined = combiner.combine(msgs);
-          msgs = new LinkedList();
+          VERTEX_VALUE combined = combiner.combine(msgs);
+          msgs = new LinkedList<VERTEX_VALUE>();
           msgs.add(combined);
         }
-        Vertex vertex = vertices.get(e.getKey());
-        Writable lastValue = vertex.getValue();
+        Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = vertices
+            .get(e.getKey());
+        VERTEX_VALUE lastValue = vertex.getValue();
         vertex.compute(msgs.iterator());
         if (aggregator != null) {
           aggregator.aggregate(vertex.getValue());
           if (isAbstractAggregator) {
-            AbstractAggregator intern = ((AbstractAggregator) aggregator);
+            AbstractAggregator<VERTEX_VALUE> intern = ((AbstractAggregator<VERTEX_VALUE>) aggregator);
             intern.aggregate(lastValue, vertex.getValue());
             intern.aggregateInternal();
           }
@@ -230,7 +258,8 @@ public class GraphJobRunner extends BSP {
         updatedCnt.put(FLAG_AGGREGATOR_VALUE, aggregator.getValue());
         if (isAbstractAggregator) {
           updatedCnt.put(FLAG_AGGREGATOR_INCREMENT,
-              ((AbstractAggregator) aggregator).getTimesAggregated());
+              ((AbstractAggregator<VERTEX_VALUE>) aggregator)
+                  .getTimesAggregated());
         }
       }
       peer.send(masterTask, updatedCnt);
@@ -238,36 +267,37 @@ public class GraphJobRunner extends BSP {
     }
   }
 
-  private Map<String, LinkedList<Writable>> parseMessages(BSPPeer peer)
+  @SuppressWarnings("unchecked")
+  private Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> parseMessages(
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer)
       throws IOException {
     MapWritable msg = null;
-    Map<String, LinkedList<Writable>> msgMap = new HashMap<String, LinkedList<Writable>>();
+    Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> msgMap = new HashMap<VERTEX_ID, LinkedList<VERTEX_VALUE>>();
     while ((msg = (MapWritable) peer.getCurrentMessage()) != null) {
       for (Entry<Writable, Writable> e : msg.entrySet()) {
-        String vertexID = ((Text) e.getKey()).toString();
-        if (vertexID.equals(S_FLAG_MESSAGE_COUNTS)) {
+        VERTEX_ID vertexID = (VERTEX_ID) e.getKey();
+        if (FLAG_MESSAGE_COUNTS.equals(vertexID)) {
           if (((IntWritable) e.getValue()).get() == Integer.MIN_VALUE) {
             updated = false;
           } else {
             globalUpdateCounts += ((IntWritable) e.getValue()).get();
           }
+        } else if (aggregator != null && FLAG_AGGREGATOR_VALUE.equals(vertexID)) {
+          masterAggregator.aggregate((VERTEX_VALUE) e.getValue());
         } else if (aggregator != null
-            && vertexID.equals(S_FLAG_AGGREGATOR_VALUE)) {
-          masterAggregator.aggregate(e.getValue());
-        } else if (aggregator != null
-            && vertexID.equals(S_FLAG_AGGREGATOR_INCREMENT)) {
+            && FLAG_AGGREGATOR_INCREMENT.equals(vertexID)) {
           if (isAbstractAggregator) {
-            ((AbstractAggregator) masterAggregator)
+            ((AbstractAggregator<VERTEX_VALUE>) masterAggregator)
                 .addTimesAggregated(((IntWritable) e.getValue()).get());
           }
         } else {
-          Writable value = e.getValue();
+          VERTEX_VALUE value = (VERTEX_VALUE) e.getValue();
           if (msgMap.containsKey(vertexID)) {
-            LinkedList<Writable> msgs = msgMap.get(vertexID);
+            LinkedList<VERTEX_VALUE> msgs = msgMap.get(vertexID);
             msgs.add(value);
             msgMap.put(vertexID, msgs);
           } else {
-            LinkedList<Writable> msgs = new LinkedList<Writable>();
+            LinkedList<VERTEX_VALUE> msgs = new LinkedList<VERTEX_VALUE>();
             msgs.add(value);
             msgMap.put(vertexID, msgs);
           }
@@ -277,37 +307,43 @@ public class GraphJobRunner extends BSP {
     return msgMap;
   }
 
-  private void loadVertices(BSPPeer peer, boolean repairNeeded)
-      throws IOException {
+  @SuppressWarnings("unchecked")
+  private void loadVertices(
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer,
+      boolean repairNeeded) throws IOException {
     LOG.debug("vertex class: " + conf.get("hama.graph.vertex.class"));
     boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
-    KeyValuePair<? extends VertexWritable, ? extends VertexArrayWritable> next = null;
+    KeyValuePair<? extends VertexWritable<VERTEX_ID, VERTEX_VALUE>, ? extends VertexArrayWritable> next = null;
     while ((next = peer.readNext()) != null) {
-      Vertex<? extends Writable> vertex = (Vertex<? extends Writable>) ReflectionUtils
+      Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>) ReflectionUtils
           .newInstance(conf.getClass("hama.graph.vertex.class", Vertex.class),
               conf);
 
-      vertex.setVertexID(next.getKey().getName());
+      vertex.setVertexID(next.getKey().getVertexId());
       vertex.peer = peer;
       vertex.runner = this;
 
-      VertexWritable[] arr = (VertexWritable[]) next.getValue().toArray();
+      VertexWritable<VERTEX_ID, VERTEX_VALUE>[] arr = (VertexWritable[]) next
+          .getValue().toArray();
       if (selfReference) {
-        VertexWritable[] tmp = new VertexWritable[arr.length + 1];
+        VertexWritable<VERTEX_ID, VERTEX_VALUE>[] tmp = new VertexWritable[arr.length + 1];
         System.arraycopy(arr, 0, tmp, 0, arr.length);
-        tmp[arr.length] = new VertexWritable(vertex.getVertexID());
+        tmp[arr.length] = new VertexWritable<VERTEX_ID, VERTEX_VALUE>(
+            vertex.getValue(), vertex.getVertexID(), vertexIdClass,
+            vertexValueClass);
         arr = tmp;
       }
-      List<Edge> edges = new ArrayList<Edge>();
-      for (VertexWritable e : arr) {
+      List<Edge<VERTEX_ID, EDGE_VALUE_TYPE>> edges = new ArrayList<Edge<VERTEX_ID, EDGE_VALUE_TYPE>>();
+      for (VertexWritable<VERTEX_ID, VERTEX_VALUE> e : arr) {
         String target = peer.getPeerName(Math.abs((e.hashCode() % peer
             .getAllPeerNames().length)));
-        edges.add(new Edge(e.getName(), target, e.getWeight()));
+        edges.add(new Edge<VERTEX_ID, EDGE_VALUE_TYPE>(e.getVertexId(), target,
+            (EDGE_VALUE_TYPE) e.getVertexValue()));
       }
 
       vertex.edges = edges;
       vertex.setup(conf);
-      vertices.put(next.getKey().getName(), vertex);
+      vertices.put(next.getKey().getVertexId(), vertex);
     }
 
     /*
@@ -319,11 +355,12 @@ public class GraphJobRunner extends BSP {
      */
     if (repairNeeded) {
       LOG.debug("Starting repair of this graph!");
-      final Collection<Vertex> entries = vertices.values();
-      for (Vertex entry : entries) {
-        List<Edge> outEdges = entry.getOutEdges();
-        for (Edge e : outEdges) {
-          peer.send(e.getDestVertexID(), new Text(e.getName()));
+      final Collection<Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> entries = vertices
+          .values();
+      for (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> entry : entries) {
+        List<Edge<VERTEX_ID, EDGE_VALUE_TYPE>> outEdges = entry.getOutEdges();
+        for (Edge<VERTEX_ID, EDGE_VALUE_TYPE> e : outEdges) {
+          peer.send(e.getDestinationPeerName(), e.getDestinationVertexID());
         }
       }
       try {
@@ -332,26 +369,26 @@ public class GraphJobRunner extends BSP {
         // we can't really recover from that, so fail this task
         throw new RuntimeException(e);
       }
-      Text vertexName = null;
-      while ((vertexName = (Text) peer.getCurrentMessage()) != null) {
-        String vName = vertexName.toString();
-        if (!vertices.containsKey(vName)) {
-          Vertex<? extends Writable> vertex = (Vertex<? extends Writable>) ReflectionUtils
+      VERTEX_ID vertexName = null;
+      while ((vertexName = (VERTEX_ID) peer.getCurrentMessage()) != null) {
+        if (!vertices.containsKey(vertexName)) {
+          Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>) ReflectionUtils
               .newInstance(
                   conf.getClass("hama.graph.vertex.class", Vertex.class), conf);
           vertex.peer = peer;
-          vertex.setVertexID(vName);
+          vertex.setVertexID(vertexName);
           vertex.runner = this;
           if (selfReference) {
             String target = peer.getPeerName(Math.abs((vertex.hashCode() % peer
                 .getAllPeerNames().length)));
             vertex.edges = Collections
-                .singletonList(new Edge(vertex.getVertexID(), target, 0));
+                .singletonList(new Edge<VERTEX_ID, EDGE_VALUE_TYPE>(vertex
+                    .getVertexID(), target, null));
           } else {
             vertex.edges = Collections.emptyList();
           }
           vertex.setup(conf);
-          vertices.put(vName, vertex);
+          vertices.put(vertexName, vertex);
         }
       }
     }
@@ -359,20 +396,26 @@ public class GraphJobRunner extends BSP {
   }
 
   /**
-   * Just write <new Text(vertexID), (Writable) value> pair as a result
+   * Just write <ID as Writable, Value as Writable> pair as a result
    */
-  public void cleanup(BSPPeer peer) throws IOException {
-    for (Map.Entry<String, Vertex> e : vertices.entrySet()) {
-      peer.write(new Text(e.getValue().getVertexID()), e.getValue().getValue());
+  @Override
+  public void cleanup(
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer)
+      throws IOException {
+    for (Entry<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> e : vertices
+        .entrySet()) {
+      peer.write(e.getValue().getVertexID(), e.getValue().getValue());
     }
   }
 
-  private Aggregator<Writable> getNewAggregator() {
-    return (Aggregator<Writable>) ReflectionUtils.newInstance(
+  @SuppressWarnings("unchecked")
+  private Aggregator<VERTEX_VALUE> getNewAggregator() {
+    return (Aggregator<VERTEX_VALUE>) ReflectionUtils.newInstance(
         conf.getClass("hama.graph.aggregator.class", Aggregator.class), conf);
   }
 
-  private boolean isMasterTask(BSPPeer peer) {
+  private boolean isMasterTask(
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer) {
     return peer.getPeerName().equals(masterTask);
   }
 

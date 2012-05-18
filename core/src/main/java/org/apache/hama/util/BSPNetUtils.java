@@ -59,7 +59,8 @@ public class BSPNetUtils {
    * 
    * @return a free port.
    */
-  public static int getFreePort(int startPort) {
+  public static int getFreePort(int pStartPort) {
+    int startPort = pStartPort;
     while (!AvailablePortFinder.available(startPort)) {
       startPort++;
     }

@@ -27,7 +27,9 @@ import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.graph.VertexArrayWritable;
@@ -55,7 +57,7 @@ public class PagerankTextToSeqTest extends TestCase {
     }
   }
 
-  private void writeTextFile() throws IOException {
+  private static void writeTextFile() throws IOException {
     BufferedWriter writer = new BufferedWriter(new FileWriter(TXT_INPUT));
     for (int lines = 0; lines < 10; lines++) {
       for (int cols = 0; cols < 5; cols++) {
@@ -66,20 +68,22 @@ public class PagerankTextToSeqTest extends TestCase {
     writer.close();
   }
 
+  @SuppressWarnings("unchecked")
   private void verifyOutput() throws IOException {
     SequenceFile.Reader reader = new SequenceFile.Reader(fs,
         new Path(SEQ_INPUT), conf);
-    VertexWritable vertex = new VertexWritable();
+    VertexWritable<Text, DoubleWritable> vertex = new VertexWritable<Text, DoubleWritable>();
     VertexArrayWritable vertexArray = new VertexArrayWritable();
 
     while (reader.next(vertex, vertexArray)) {
       int count = 0;
-      assertEquals(vertex.getName(), count + "");
+      assertEquals(vertex.getVertexId().toString(), count + "");
       Writable[] writables = vertexArray.get();
       assertEquals(writables.length, 4);
       for (int i = 0; i < 4; i++) {
         count++;
-        assertEquals(((VertexWritable) writables[i]).getName(), count + "");
+        assertEquals(((VertexWritable<Text, DoubleWritable>) writables[i])
+            .getVertexId().toString(), count + "");
       }
     }
     reader.close();

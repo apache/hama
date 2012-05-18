@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,8 +39,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 /**
@@ -48,7 +48,7 @@ import org.apache.zookeeper.data.Stat;
  * 
  */
 public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
-
+  
   /*
    * TODO maybe extract an abstract class and let the subclasses implement
    * enter-/leaveBarrier so we can have multiple implementations, just like
@@ -82,6 +82,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
 
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
+    LOG.info("Start connecting to Zookeeper! At " + peerAddress);
     numBSPTasks = conf.getInt("bsp.peers.num", 1);
   }
 

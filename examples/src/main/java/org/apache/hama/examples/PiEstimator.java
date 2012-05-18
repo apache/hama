@@ -63,7 +63,7 @@ public class PiEstimator {
         }
       }
 
-      double data = 4.0 * (double) in / (double) iterations;
+      double data = 4.0 * in / iterations;
 
       peer.send(masterTask, new DoubleWritable(data));
       peer.sync();
@@ -77,6 +77,7 @@ public class PiEstimator {
       this.masterTask = peer.getPeerName(peer.getNumPeers() / 2);
     }
 
+    @Override
     public void cleanup(
         BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
         throws IOException {
@@ -138,7 +139,7 @@ public class PiEstimator {
     if (bsp.waitForCompletion(true)) {
       printOutput(conf);
       System.out.println("Job Finished in "
-          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
     }
   }

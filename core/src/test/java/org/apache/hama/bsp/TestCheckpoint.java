@@ -47,6 +47,7 @@ public class TestCheckpoint extends TestCase {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void testCheckpoint() throws Exception {
     Configuration config = new HamaConfiguration();
+    config.set(SyncServiceFactory.SYNC_CLIENT_CLASS, LocalBSPRunner.LocalSyncClient.class.getName());
     FileSystem dfs = FileSystem.get(config);
 
     BSPPeerImpl bspTask = new BSPPeerImpl(config, dfs);
@@ -84,7 +85,6 @@ public class TestCheckpoint extends TestCase {
   public void testCheckpointInterval() throws Exception {
 
     HamaConfiguration conf = new HamaConfiguration();
-
     conf.setClass(SyncServiceFactory.SYNC_CLIENT_CLASS,
         LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 

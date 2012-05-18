@@ -38,14 +38,15 @@ public class SSSP {
 
   public static final String START_VERTEX = "shortest.paths.start.vertex.name";
 
-  public static class ShortestPathVertex extends Vertex<IntWritable> {
+  public static class ShortestPathVertex extends
+      Vertex<Text, IntWritable, IntWritable> {
 
     public ShortestPathVertex() {
       this.setValue(new IntWritable(Integer.MAX_VALUE));
     }
 
     public boolean isStartVertex() {
-      String startVertex = getConf().get(START_VERTEX);
+      Text startVertex = new Text(getConf().get(START_VERTEX));
       return (this.getVertexID().equals(startVertex)) ? true : false;
     }
 
@@ -62,8 +63,8 @@ public class SSSP {
 
       if (minDist < this.getValue().get()) {
         this.setValue(new IntWritable(minDist));
-        for (Edge e : this.getOutEdges()) {
-          sendMessage(e, new IntWritable(minDist + e.getCost()));
+        for (Edge<Text, IntWritable> e : this.getOutEdges()) {
+          sendMessage(e, new IntWritable(minDist + e.getValue().get()));
         }
       }
     }
@@ -122,11 +123,16 @@ public class SSSP {
     ssspJob.setOutputValueClass(IntWritable.class);
     // Iterate until all the nodes have been reached.
     ssspJob.setMaxIteration(Integer.MAX_VALUE);
+    
+    ssspJob.setVertexIDClass(Text.class);
+    ssspJob.setVertexValueClass(IntWritable.class);
+    ssspJob.setEdgeValueClass(IntWritable.class);
+    
 
     long startTime = System.currentTimeMillis();
     if (ssspJob.waitForCompletion(true)) {
       System.out.println("Job Finished in "
-          + (double) (System.currentTimeMillis() - startTime) / 1000.0
+          + (System.currentTimeMillis() - startTime) / 1000.0
           + " seconds");
     }
   }

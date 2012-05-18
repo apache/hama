@@ -310,6 +310,7 @@ public class BSPJobClient extends Configured implements Tool {
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
       if (job.getConf().get("bsp.input.partitioner.class") != null) {
         job = partition(job, maxTasks);
+        maxTasks = job.getInt("hama.partition.count", maxTasks);
       }
       job.setNumBspTask(writeSplits(job, submitSplitFile, maxTasks));
       job.set("bsp.job.split.file", submitSplitFile.toString());
@@ -441,7 +442,7 @@ public class BSPJobClient extends Configured implements Tool {
           wr.close();
         }
       }
-
+      job.set("hama.partition.count", writers.size() + "");
       job.setInputFormat(SequenceFileInputFormat.class);
       job.setInputPath(partitionedPath);
     }
@@ -597,7 +598,10 @@ public class BSPJobClient extends Configured implements Tool {
 
     if (job.isSuccessful()) {
       LOG.info("The total number of supersteps: " + info.getSuperstepCount());
-      info.getStatus().getCounter().incrCounter(BSPPeerImpl.PeerCounter.SUPERSTEPS, info.getSuperstepCount());
+      info.getStatus()
+          .getCounter()
+          .incrCounter(BSPPeerImpl.PeerCounter.SUPERSTEPS,
+              info.getSuperstepCount());
       info.getStatus().getCounter().log(LOG);
     } else {
       LOG.info("Job failed.");

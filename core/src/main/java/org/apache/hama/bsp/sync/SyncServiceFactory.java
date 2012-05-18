@@ -26,36 +26,27 @@ public class SyncServiceFactory {
 
   /**
    * Returns a sync client via reflection based on what was configured.
-   * 
-   * @param conf
-   * @return
    */
   public static SyncClient getSyncClient(Configuration conf)
       throws ClassNotFoundException {
-    return (SyncClient) ReflectionUtils.newInstance(conf.getClassByName(conf
-        .get(SYNC_CLIENT_CLASS,
-            org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl.class
-                .getCanonicalName())), conf);
+    return (SyncClient) ReflectionUtils
+        .newInstance(conf.getClassByName(conf.get(SYNC_CLIENT_CLASS,
+            ZooKeeperSyncClientImpl.class.getName())), conf);
   }
 
   /**
    * Returns a sync server via reflection based on what was configured.
-   * 
-   * @param conf
-   * @return
    */
   public static SyncServer getSyncServer(Configuration conf)
       throws ClassNotFoundException {
     return (SyncServer) ReflectionUtils.newInstance(conf.getClassByName(conf
         .get(SYNC_SERVER_CLASS,
-            org.apache.hama.bsp.sync.ZooKeeperSyncServerImpl.class.getCanonicalName())), conf);
+            org.apache.hama.bsp.sync.ZooKeeperSyncServerImpl.class
+                .getCanonicalName())), conf);
   }
 
   /**
    * Returns a sync server runner via reflection based on what was configured.
-   * 
-   * @param conf
-   * @return
    */
   public static SyncServerRunner getSyncServerRunner(Configuration conf) {
     return new SyncServerRunner(conf);
