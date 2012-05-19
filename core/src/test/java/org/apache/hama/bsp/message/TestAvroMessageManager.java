@@ -93,7 +93,7 @@ public class TestAvroMessageManager extends TestCase {
 
   }
 
-  public final BSPMessageBundle<Writable> getRandomBundle() {
+  public final static BSPMessageBundle<Writable> getRandomBundle() {
     BSPMessageBundle<Writable> bundle = new BSPMessageBundle<Writable>();
 
     for (int i = 0; i < INT_MSG_COUNT; i++) {

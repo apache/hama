@@ -31,11 +31,13 @@ public final class AvroBSPMessageBundle<M extends Writable> extends
   @Deprecated
   public java.nio.ByteBuffer data;
 
+  @Override
   public final org.apache.avro.Schema getSchema() {
     return SCHEMA$;
   }
 
   // Used by DatumWriter. Applications should not call.
+  @Override
   public final java.lang.Object get(int field$) {
     switch (field$) {
       case 0:
@@ -46,6 +48,7 @@ public final class AvroBSPMessageBundle<M extends Writable> extends
   }
 
   // Used by DatumReader. Applications should not call.
+  @Override
   public final void put(int field$, java.lang.Object value$) {
     switch (field$) {
       case 0:
@@ -116,12 +119,12 @@ public final class AvroBSPMessageBundle<M extends Writable> extends
     private Builder(AvroBSPMessageBundle<?> other) {
       super(AvroBSPMessageBundle.SCHEMA$);
       if (isValidValue(fields[0], other.data)) {
-        data = (java.nio.ByteBuffer) clone(other.data);
+        data = clone(other.data);
         fieldSetFlags[0] = true;
       }
     }
 
-    public final ByteBuffer clone(ByteBuffer original) {
+    public final static ByteBuffer clone(ByteBuffer original) {
       ByteBuffer clone = ByteBuffer.allocate(original.capacity());
       original.rewind();
       clone.put(original);

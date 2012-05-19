@@ -81,7 +81,7 @@ public final class AvroMessageManagerImpl<M extends Writable> extends
 
     if (sender == null) {
       NettyTransceiver client = new NettyTransceiver(addr);
-      sender = (Sender<M>) SpecificRequestor.getClient(Sender.class, client);
+      sender = SpecificRequestor.getClient(Sender.class, client);
       peers.put(addr, sender);
     }
 

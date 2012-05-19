@@ -32,6 +32,7 @@ import org.apache.hadoop.io.DataOutputBuffer;
 public class TestClusterStatus extends TestCase {
   Random rnd = new Random();
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
   }

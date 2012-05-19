@@ -55,7 +55,7 @@ public class TestHadoopMessageManager extends TestCase {
     messagingInternal(conf);
   }
 
-  private void messagingInternal(Configuration conf) throws Exception {
+  private static void messagingInternal(Configuration conf) throws Exception {
     conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS,
         "org.apache.hama.bsp.message.HadoopMessageManagerImpl");
     MessageManager<IntWritable> messageManager = MessageManagerFactory

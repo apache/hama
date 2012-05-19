@@ -31,6 +31,7 @@ import org.xerial.snappy.SnappyOutputStream;
 public class SnappyCompressor<M extends Writable> implements
     BSPMessageCompressor<M> {
 
+  @Override
   public BSPCompressedBundle compressBundle(BSPMessageBundle<M> bundle) {
     BSPCompressedBundle compMsgBundle = null;
     ByteArrayOutputStream bos = null;
@@ -68,6 +69,7 @@ public class SnappyCompressor<M extends Writable> implements
    * @param compMsgBundle
    * @return
    */
+  @Override
   public BSPMessageBundle<M> decompressBundle(BSPCompressedBundle compMsgBundle) {
     ByteArrayInputStream bis = null;
     SnappyInputStream sis = null;
