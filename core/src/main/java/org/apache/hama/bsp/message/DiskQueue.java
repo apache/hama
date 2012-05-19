@@ -24,41 +24,45 @@ import java.util.Iterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.ObjectWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
- * A disk based queue that is backed by a sequencefile. <br/>
+ * A disk based queue that is backed by a raw file on local disk. <br/>
  * Structure is as follows: <br/>
  * If "bsp.disk.queue.dir" is not defined, "hama.tmp.dir" will be used instead. <br/>
  * ${hama.tmp.dir}/diskqueue/job_id/task_attempt_id/ <br/>
  * An ongoing sequencenumber will be appended to prevent inner collisions,
  * however the job_id dir will never be deleted. So you need a cronjob to do the
  * cleanup for you. <br/>
- * <b>This is currently not intended to be production ready</b>
+ * It is recommended to use the file:// scheme in front of the property, because
+ * writes on DFS are expensive, however your local disk may not have enough
+ * space for your message, so you can easily switch per job via your
+ * configuration. <br/>
+ * <b>It is experimental to use.</b>
  */
 public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
 
   public static final String DISK_QUEUE_PATH_KEY = "bsp.disk.queue.dir";
 
-  private final Log LOG = LogFactory.getLog(DiskQueue.class);
+  private static final int MAX_RETRIES = 4;
+  private static final Log LOG = LogFactory.getLog(DiskQueue.class);
 
   private static volatile int ONGOING_SEQUENCE_NUMBER = 0;
-  private static final int MAX_RETRIES = 4;
-  private static final NullWritable NULL_WRITABLE = NullWritable.get();
 
   private int size = 0;
   // injected via reflection
   private Configuration conf;
   private FileSystem fs;
 
-  private SequenceFile.Writer writer;
-  private SequenceFile.Reader reader;
+  private FSDataOutputStream writer;
+  private FSDataInputStream reader;
+
   private Path queuePath;
   private TaskAttemptID id;
   private final ObjectWritable writable = new ObjectWritable();
@@ -71,17 +75,7 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
       fs = FileSystem.get(conf);
       String configuredQueueDir = conf.get(DISK_QUEUE_PATH_KEY);
       Path queueDir = null;
-      if (configuredQueueDir == null) {
-        String hamaTmpDir = conf.get("hama.tmp.dir");
-        if (hamaTmpDir != null) {
-          queueDir = createDiskQueuePath(id, hamaTmpDir);
-        } else {
-          // use some local tmp dir
-          queueDir = createDiskQueuePath(id, "/tmp/messageStorage/");
-        }
-      } else {
-        queueDir = createDiskQueuePath(id, configuredQueueDir);
-      }
+      queueDir = getQueueDir(conf, id, configuredQueueDir);
       fs.mkdirs(queueDir);
       queuePath = new Path(queueDir, (ONGOING_SEQUENCE_NUMBER++)
           + "_messages.seq");
@@ -109,6 +103,7 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
   private void closeInternal(boolean delete) {
     try {
       if (writer != null) {
+        writer.flush();
         writer.close();
         writer = null;
       }
@@ -124,6 +119,7 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
       }
       if (writer != null) {
         try {
+          writer.flush();
           writer.close();
           writer = null;
         } catch (IOException e) {
@@ -155,7 +151,7 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
     // make sure we've closed
     closeInternal(false);
     try {
-      reader = new SequenceFile.Reader(fs, queuePath, conf);
+      reader = fs.open(queuePath);
     } catch (IOException e) {
       // can't recover from that
       LOG.error(e);
@@ -166,8 +162,7 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
   @Override
   public void prepareWrite() {
     try {
-      writer = new SequenceFile.Writer(fs, conf, queuePath,
-          ObjectWritable.class, NullWritable.class);
+      writer = fs.create(queuePath);
     } catch (IOException e) {
       // can't recover from that
       LOG.error(e);
@@ -194,7 +189,7 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
   public final void add(M item) {
     size++;
     try {
-      writer.append(new ObjectWritable(item), NULL_WRITABLE);
+      new ObjectWritable(item).write(writer);
     } catch (IOException e) {
       LOG.error(e);
     }
@@ -210,16 +205,19 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
   @SuppressWarnings("unchecked")
   @Override
   public final M poll() {
+    if (size == 0) {
+      return null;
+    }
     size--;
     int tries = 1;
     while (tries <= MAX_RETRIES) {
       try {
-        boolean next = reader.next(writable, NULL_WRITABLE);
-        if (next) {
+        writable.readFields(reader);
+        if (size > 0) {
           return (M) writable.get();
         } else {
-          closeInternal(false);
-          return null;
+          closeInternal(true);
+          return (M) writable.get();
         }
       } catch (IOException e) {
         LOG.error("Retrying for the " + tries + "th time!", e);
@@ -277,11 +275,32 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
   }
 
   /**
+   * Creates a path for a queue
+   */
+  public static Path getQueueDir(Configuration conf, TaskAttemptID id,
+      String configuredQueueDir) {
+    Path queueDir;
+    if (configuredQueueDir == null) {
+      String hamaTmpDir = conf.get("hama.tmp.dir");
+      if (hamaTmpDir != null) {
+        queueDir = createDiskQueuePath(id, hamaTmpDir);
+      } else {
+        // use some local tmp dir
+        queueDir = createDiskQueuePath(id, "/tmp/messageStorage/");
+      }
+    } else {
+      queueDir = createDiskQueuePath(id, configuredQueueDir);
+    }
+    return queueDir;
+  }
+
+  /**
    * Creates a generic Path based on the configured path and the task attempt id
    * to store disk sequence files. <br/>
    * Structure is as follows: ${hama.tmp.dir}/diskqueue/job_id/task_attempt_id/
    */
-  public static Path createDiskQueuePath(TaskAttemptID id, String configuredPath) {
+  private static Path createDiskQueuePath(TaskAttemptID id,
+      String configuredPath) {
     return new Path(new Path(new Path(configuredPath, "diskqueue"), id
         .getJobID().toString()), id.getTaskID().toString());
   }

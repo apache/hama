@@ -20,110 +20,34 @@ package org.apache.hama.bsp.message;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
- * A global mutex based synchronized queue.
+ * Synchronized Queue interface. Can be used to implement better synchronized
+ * datastructures.
  */
-public final class SynchronizedQueue<T> {
+public interface SynchronizedQueue<T> extends Configurable {
 
-  private final MessageQueue<T> queue;
-  private final Object mutex;
+  public abstract Iterator<T> iterator();
 
-  private SynchronizedQueue(MessageQueue<T> queue) {
-    this.queue = queue;
-    this.mutex = new Object();
-  }
+  public abstract void init(Configuration conf, TaskAttemptID id);
 
-  private SynchronizedQueue(MessageQueue<T> queue, Object mutex) {
-    this.queue = queue;
-    this.mutex = mutex;
-  }
+  public abstract void close();
 
-  public Iterator<T> iterator() {
-    synchronized (mutex) {
-      return queue.iterator();
-    }
-  }
+  public abstract void prepareRead();
 
-  public void setConf(Configuration conf) {
-    synchronized (mutex) {
-      queue.setConf(conf);
-    }
-  }
+  public abstract void addAll(Collection<T> col);
 
-  public Configuration getConf() {
-    synchronized (mutex) {
-      return queue.getConf();
-    }
-  }
+  public abstract void add(T item);
 
-  public void init(Configuration conf, TaskAttemptID id) {
-    synchronized (mutex) {
-      queue.init(conf, id);
-    }
-  }
+  public abstract void clear();
 
-  public void close() {
-    synchronized (mutex) {
-    }
-    queue.close();
-  }
+  public abstract Object poll();
 
-  public void prepareRead() {
-    synchronized (mutex) {
-      queue.prepareRead();
-    }
-  }
+  public abstract int size();
 
-  public void addAll(Collection<T> col) {
-    synchronized (mutex) {
-      queue.addAll(col);
-    }
-  }
-
-  public void add(T item) {
-    synchronized (mutex) {
-      queue.add(item);
-    }
-  }
-
-  public void clear() {
-    synchronized (mutex) {
-      queue.clear();
-    }
-  }
-
-  public Object poll() {
-    synchronized (mutex) {
-      return queue.poll();
-    }
-  }
-
-  public int size() {
-    synchronized (mutex) {
-      return queue.size();
-    }
-  }
-
-  public MessageQueue<T> getMessageQueue() {
-    synchronized (mutex) {
-      return queue;
-    }
-  }
-
-  /*
-   * static constructor methods to be type safe
-   */
-
-  public static <T> SynchronizedQueue<T> synchronize(MessageQueue<T> queue) {
-    return new SynchronizedQueue<T>(queue);
-  }
-
-  public static <T> SynchronizedQueue<T> synchronize(MessageQueue<T> queue,
-      Object mutex) {
-    return new SynchronizedQueue<T>(queue, mutex);
-  }
+  public abstract MessageQueue<T> getMessageQueue();
 
 }

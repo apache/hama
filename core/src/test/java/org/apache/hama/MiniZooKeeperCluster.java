@@ -117,7 +117,7 @@ public class MiniZooKeeperCluster {
     return clientPort;
   }
 
-  private void recreateDir(File dir) throws IOException {
+  private static void recreateDir(File dir) throws IOException {
     if (dir.exists()) {
       FileUtil.fullyDelete(dir);
     }

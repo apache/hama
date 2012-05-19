@@ -34,6 +34,7 @@ public class Bzip2Compressor<M extends Writable> implements
 
   private final BZip2Codec codec = new BZip2Codec();
 
+  @Override
   public BSPCompressedBundle compressBundle(BSPMessageBundle<M> bundle) {
     BSPCompressedBundle compMsgBundle = null;
     ByteArrayOutputStream bos = null;
@@ -71,6 +72,7 @@ public class Bzip2Compressor<M extends Writable> implements
    * @param compMsgBundle
    * @return
    */
+  @Override
   public BSPMessageBundle<M> decompressBundle(BSPCompressedBundle compMsgBundle) {
     ByteArrayInputStream bis = null;
     CompressionInputStream sis = null;

@@ -32,6 +32,7 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.util.CompressionUtil;
 
 /**
@@ -107,7 +108,7 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
     HadoopMessageManager<M> peer = peers.get(addr);
     if (peer == null) {
       peer = (HadoopMessageManager<M>) RPC.getProxy(HadoopMessageManager.class,
-          HadoopMessageManager.versionID, addr, this.conf);
+          HamaRPCProtocolVersion.versionID, addr, this.conf);
       this.peers.put(addr, peer);
     }
     return peer;

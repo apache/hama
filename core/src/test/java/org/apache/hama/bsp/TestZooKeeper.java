@@ -22,31 +22,19 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.examples.ClassSerializePrinting;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 public class TestZooKeeper extends HamaCluster {
-
-  private static Log LOG = LogFactory.getLog(TestZooKeeper.class);
 
   private HamaConfiguration configuration;
 
@@ -63,10 +51,12 @@ public class TestZooKeeper extends HamaCluster {
             .getCanonicalName());
   }
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
   }
 
+  @Override
   public void tearDown() throws Exception {
     super.tearDown();
   }

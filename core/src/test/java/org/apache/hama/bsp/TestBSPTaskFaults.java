@@ -54,6 +54,7 @@ import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestBSPTaskFaults extends TestCase {
@@ -97,7 +98,7 @@ public class TestBSPTaskFaults extends TestCase {
     @Override
     public long getProtocolVersion(String protocol, long clientVersion)
         throws IOException {
-      return BSPPeerProtocol.versionID;
+      return HamaRPCProtocolVersion.versionID;
     }
 
     @Override
@@ -176,6 +177,7 @@ public class TestBSPTaskFaults extends TestCase {
       job = jobConf;
     }
 
+    @Override
     @SuppressWarnings("rawtypes")
     public void run() {
       BSPTask task = new BSPTask();
@@ -213,7 +215,7 @@ public class TestBSPTaskFaults extends TestCase {
       testPort = port;
     }
 
-    private void readStream(InputStream input) throws IOException {
+    private static void readStream(InputStream input) throws IOException {
       BufferedReader reader = new BufferedReader(new InputStreamReader(input));
       String line;
       while ((line = reader.readLine()) != null) {
@@ -278,6 +280,7 @@ public class TestBSPTaskFaults extends TestCase {
         // We have errorLog and infoLog to prevent block on pipe between
         // child and parent process.
         errorLog = new Thread() {
+          @Override
           public void run() {
             try {
               readStream(bspTaskProcess.getErrorStream());
@@ -289,6 +292,7 @@ public class TestBSPTaskFaults extends TestCase {
         errorLog.start();
 
         infoLog = new Thread() {
+          @Override
           public void run() {
             try {
               readStream(bspTaskProcess.getInputStream());
@@ -329,7 +333,7 @@ public class TestBSPTaskFaults extends TestCase {
         job.setOutputFormat(NullOutputFormat.class);
         
         final BSPPeerProtocol proto = (BSPPeerProtocol) RPC.getProxy(
-            BSPPeerProtocol.class, BSPPeerProtocol.versionID,
+            BSPPeerProtocol.class, HamaRPCProtocolVersion.versionID,
             new InetSocketAddress("127.0.0.1", port), hamaConf);
 
         BSPTask task = new BSPTask();
@@ -339,6 +343,7 @@ public class TestBSPTaskFaults extends TestCase {
             + hamaConf.getInt(TEST_POINT, 0));
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
+          @Override
           public void run() {
             try {
               proto.close();
@@ -430,7 +435,7 @@ public class TestBSPTaskFaults extends TestCase {
     conf.setInt("bsp.groom.rpc.port", inetAddress.getPort());
 
     umbilical = (BSPPeerProtocol) RPC.getProxy(BSPPeerProtocol.class,
-        BSPPeerProtocol.versionID, inetAddress, conf);
+        HamaRPCProtocolVersion.versionID, inetAddress, conf);
     LOG.info("Started the proxy connections");
 
     this.testBSPTaskService = Executors.newScheduledThreadPool(1);

@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.bsp.BSPPeer;
@@ -35,10 +36,15 @@ import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.util.BSPNetUtils;
 
+/**
+ * Abstract baseclass that should contain all information and services needed
+ * for the concrete RPC subclasses. For example it manages how the queues are
+ * managed and it maintains a cache for socket addresses.
+ */
 public abstract class AbstractMessageManager<M extends Writable> implements
     MessageManager<M>, Configurable {
 
-  private static final Log LOG = LogFactory
+  protected static final Log LOG = LogFactory
       .getLog(AbstractMessageManager.class);
 
   // conf is injected via reflection of the factory
@@ -48,12 +54,19 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   protected MessageQueue<M> localQueue;
   // this must be a synchronized implementation: this is accessed per RPC
   protected SynchronizedQueue<M> localQueueForNextIteration;
+  // this peer object is just used for counter incrementation
   protected BSPPeer<?, ?, ?, ?, M> peer;
   // the peer address of this peer
   protected InetSocketAddress peerAddress;
   // the task attempt id
   protected TaskAttemptID attemptId;
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.bsp.message.MessageManager#init(org.apache.hama.bsp.
+   * TaskAttemptID, org.apache.hama.bsp.BSPPeer,
+   * org.apache.hadoop.conf.Configuration, java.net.InetSocketAddress)
+   */
   @Override
   public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
       Configuration conf, InetSocketAddress peerAddress) {
@@ -62,11 +75,13 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     this.conf = conf;
     this.peerAddress = peerAddress;
     localQueue = getQueue();
-    localQueue.init(conf, attemptId);
     localQueueForNextIteration = getSynchronizedQueue();
-    localQueueForNextIteration.init(conf, attemptId);
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.bsp.message.MessageManager#close()
+   */
   @Override
   public void close() {
     Collection<MessageQueue<M>> values = outgoingQueues.values();
@@ -74,8 +89,21 @@ public abstract class AbstractMessageManager<M extends Writable> implements
       msgQueue.close();
     }
     localQueue.close();
+    // remove possible disk queues from the path
+    try {
+      FileSystem.get(conf).delete(
+          DiskQueue.getQueueDir(conf, attemptId,
+              conf.get(DiskQueue.DISK_QUEUE_PATH_KEY)), true);
+    } catch (IOException e) {
+      LOG.warn("Queue dir couldn't be deleted");
+    }
+
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.bsp.message.MessageManager#finishSendPhase()
+   */
   @Override
   public void finishSendPhase() throws IOException {
     Collection<MessageQueue<M>> values = outgoingQueues.values();
@@ -84,29 +112,42 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     }
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.bsp.message.MessageManager#getCurrentMessage()
+   */
   @Override
   public final M getCurrentMessage() throws IOException {
     return localQueue.poll();
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.bsp.message.MessageManager#getNumCurrentMessages()
+   */
   @Override
   public final int getNumCurrentMessages() {
     return localQueue.size();
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.bsp.message.MessageManager#clearOutgoingQueues()
+   */
   @Override
   public final void clearOutgoingQueues() {
-    this.outgoingQueues.clear();
-    localQueueForNextIteration.prepareRead();
-    localQueue.prepareWrite();
-    localQueue.addAll(localQueueForNextIteration.getMessageQueue());
+    localQueue = localQueueForNextIteration.getMessageQueue();
     localQueue.prepareRead();
-    localQueueForNextIteration.clear();
+    localQueueForNextIteration = getSynchronizedQueue();
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.bsp.message.MessageManager#send(java.lang.String,
+   * org.apache.hadoop.io.Writable)
+   */
   @Override
   public void send(String peerName, M msg) throws IOException {
-    LOG.debug("Send message (" + msg.toString() + ") to " + peerName);
     InetSocketAddress targetPeerAddress = null;
     // Get socket for target peer.
     if (peerSocketCache.containsKey(peerName)) {
@@ -124,6 +165,10 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     outgoingQueues.put(targetPeerAddress, queue);
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.bsp.message.MessageManager#getMessageIterator()
+   */
   @Override
   public final Iterator<Entry<InetSocketAddress, MessageQueue<M>>> getMessageIterator() {
     return this.outgoingQueues.entrySet().iterator();
@@ -132,12 +177,14 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   /**
    * Returns a new queue implementation based on what was configured. If nothing
    * has been configured for "hama.messenger.queue.class" then the
-   * {@link MemoryQueue} is used.
+   * {@link MemoryQueue} is used. If you have scalability issues, then better
+   * use {@link DiskQueue}.
    * 
    * @return a <b>new</b> queue implementation.
    */
   protected MessageQueue<M> getQueue() {
     Class<?> queueClass = conf.getClass(QUEUE_TYPE_CLASS, MemoryQueue.class);
+    LOG.debug("Creating new " + queueClass);
     @SuppressWarnings("unchecked")
     MessageQueue<M> newInstance = (MessageQueue<M>) ReflectionUtils
         .newInstance(queueClass, conf);
@@ -146,13 +193,15 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   }
 
   protected SynchronizedQueue<M> getSynchronizedQueue() {
-    return SynchronizedQueue.synchronize(getQueue());
+    return SingleLockQueue.synchronize(getQueue());
   }
 
+  @Override
   public final Configuration getConf() {
     return conf;
   }
 
+  @Override
   public final void setConf(Configuration conf) {
     this.conf = conf;
   }

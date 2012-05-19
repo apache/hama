@@ -36,6 +36,7 @@ import org.apache.hama.bsp.message.type.ByteMessage;
 import org.apache.hama.bsp.sync.SyncClient;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestCheckpoint extends TestCase {
@@ -101,7 +102,7 @@ public class TestCheckpoint extends TestCase {
     conf.setInt("bsp.groom.rpc.port", inetAddress.getPort());
 
     BSPPeerProtocol umbilical = (BSPPeerProtocol) RPC.getProxy(
-        BSPPeerProtocol.class, BSPPeerProtocol.versionID, inetAddress, conf);
+        BSPPeerProtocol.class, HamaRPCProtocolVersion.versionID, inetAddress, conf);
     LOG.info("Started the proxy connections");
 
     TaskAttemptID tid = new TaskAttemptID(new TaskID(new BSPJobID(
@@ -109,9 +110,10 @@ public class TestCheckpoint extends TestCase {
 
     try {
       BSPJob job = new BSPJob(conf);
-      job.setOutputFormat(NullOutputFormat.class);
+      job.setOutputPath(TestBSPMasterGroomServer.OUTPUT_PATH);
+      job.setOutputFormat(TextOutputFormat.class);
       final BSPPeerProtocol proto = (BSPPeerProtocol) RPC.getProxy(
-          BSPPeerProtocol.class, BSPPeerProtocol.versionID,
+          BSPPeerProtocol.class, HamaRPCProtocolVersion.versionID,
           new InetSocketAddress("127.0.0.1", port), conf);
 
       BSPTask task = new BSPTask();
