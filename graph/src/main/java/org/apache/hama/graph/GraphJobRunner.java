@@ -51,7 +51,7 @@ import org.apache.hama.util.KeyValuePair;
  */
 public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Writable, EDGE_VALUE_TYPE extends Writable>
     extends
-    BSP<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> {
+    BSP<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> {
 
   private static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
 
@@ -100,7 +100,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
   @Override
   @SuppressWarnings("unchecked")
   public void setup(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer)
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
     this.conf = peer.getConfiguration();
     VertexWritable.CONFIGURATION = conf;
@@ -114,6 +114,9 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
     edgeValueClass = (Class<EDGE_VALUE_TYPE>) conf.getClass(
         GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR, IntWritable.class,
         Writable.class);
+
+    GraphJobMessage.VERTEX_ID_CLASS = vertexIdClass;
+    GraphJobMessage.VERTEX_VALUE_CLASS = vertexValueClass;
 
     boolean repairNeeded = conf.getBoolean(GRAPH_REPAIR, false);
 
@@ -163,7 +166,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
 
   @Override
   public void bsp(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer)
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
 
     maxIteration = peer.getConfiguration().getInt("hama.graph.max.iteration",
@@ -199,7 +202,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
           }
         }
         for (String peerName : peer.getAllPeerNames()) {
-          peer.send(peerName, updatedCnt);
+          peer.send(peerName, new GraphJobMessage(updatedCnt));
         }
       }
       // if we have an aggregator defined, we must make an additional sync
@@ -207,7 +210,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
       if (aggregator != null && iteration > 1) {
         peer.sync();
 
-        MapWritable updatedValues = (MapWritable) peer.getCurrentMessage();
+        MapWritable updatedValues = peer.getCurrentMessage().getMap();
         globalAggregatorResult = updatedValues.get(FLAG_AGGREGATOR_VALUE);
         globalAggregatorIncrement = (IntWritable) updatedValues
             .get(FLAG_AGGREGATOR_INCREMENT);
@@ -262,54 +265,62 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
                   .getTimesAggregated());
         }
       }
-      peer.send(masterTask, updatedCnt);
+      peer.send(masterTask, new GraphJobMessage(updatedCnt));
       iteration++;
     }
   }
 
   @SuppressWarnings("unchecked")
   private Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> parseMessages(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer)
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
-    MapWritable msg = null;
+    GraphJobMessage msg = null;
     Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> msgMap = new HashMap<VERTEX_ID, LinkedList<VERTEX_VALUE>>();
-    while ((msg = (MapWritable) peer.getCurrentMessage()) != null) {
-      for (Entry<Writable, Writable> e : msg.entrySet()) {
-        VERTEX_ID vertexID = (VERTEX_ID) e.getKey();
-        if (FLAG_MESSAGE_COUNTS.equals(vertexID)) {
-          if (((IntWritable) e.getValue()).get() == Integer.MIN_VALUE) {
-            updated = false;
-          } else {
-            globalUpdateCounts += ((IntWritable) e.getValue()).get();
-          }
-        } else if (aggregator != null && FLAG_AGGREGATOR_VALUE.equals(vertexID)) {
-          masterAggregator.aggregate((VERTEX_VALUE) e.getValue());
-        } else if (aggregator != null
-            && FLAG_AGGREGATOR_INCREMENT.equals(vertexID)) {
-          if (isAbstractAggregator) {
-            ((AbstractAggregator<VERTEX_VALUE>) masterAggregator)
-                .addTimesAggregated(((IntWritable) e.getValue()).get());
-          }
+    while ((msg = peer.getCurrentMessage()) != null) {
+      // either this is a vertex message or a directive that must be read as map
+      if (msg.isVertexMessage()) {
+        VERTEX_ID vertexID = (VERTEX_ID) msg.getVertexId();
+        VERTEX_VALUE value = (VERTEX_VALUE) msg.getVertexValue();
+        if (msgMap.containsKey(vertexID)) {
+          LinkedList<VERTEX_VALUE> msgs = msgMap.get(vertexID);
+          msgs.add(value);
+          msgMap.put(vertexID, msgs);
         } else {
-          VERTEX_VALUE value = (VERTEX_VALUE) e.getValue();
-          if (msgMap.containsKey(vertexID)) {
-            LinkedList<VERTEX_VALUE> msgs = msgMap.get(vertexID);
-            msgs.add(value);
-            msgMap.put(vertexID, msgs);
-          } else {
-            LinkedList<VERTEX_VALUE> msgs = new LinkedList<VERTEX_VALUE>();
-            msgs.add(value);
-            msgMap.put(vertexID, msgs);
+          LinkedList<VERTEX_VALUE> msgs = new LinkedList<VERTEX_VALUE>();
+          msgs.add(value);
+          msgMap.put(vertexID, msgs);
+        }
+      } else if (msg.isMapMessage()) {
+        for (Entry<Writable, Writable> e : msg.getMap().entrySet()) {
+          VERTEX_ID vertexID = (VERTEX_ID) e.getKey();
+          if (FLAG_MESSAGE_COUNTS.equals(vertexID)) {
+            if (((IntWritable) e.getValue()).get() == Integer.MIN_VALUE) {
+              updated = false;
+            } else {
+              globalUpdateCounts += ((IntWritable) e.getValue()).get();
+            }
+          } else if (aggregator != null
+              && FLAG_AGGREGATOR_VALUE.equals(vertexID)) {
+            masterAggregator.aggregate((VERTEX_VALUE) e.getValue());
+          } else if (aggregator != null
+              && FLAG_AGGREGATOR_INCREMENT.equals(vertexID)) {
+            if (isAbstractAggregator) {
+              ((AbstractAggregator<VERTEX_VALUE>) masterAggregator)
+                  .addTimesAggregated(((IntWritable) e.getValue()).get());
+            }
           }
         }
+      } else {
+        throw new UnsupportedOperationException("Unknown message type? " + msg);
       }
+
     }
     return msgMap;
   }
 
   @SuppressWarnings("unchecked")
   private void loadVertices(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer,
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer,
       boolean repairNeeded) throws IOException {
     LOG.debug("vertex class: " + conf.get("hama.graph.vertex.class"));
     boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
@@ -360,7 +371,8 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
       for (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> entry : entries) {
         List<Edge<VERTEX_ID, EDGE_VALUE_TYPE>> outEdges = entry.getOutEdges();
         for (Edge<VERTEX_ID, EDGE_VALUE_TYPE> e : outEdges) {
-          peer.send(e.getDestinationPeerName(), e.getDestinationVertexID());
+          peer.send(e.getDestinationPeerName(),
+              new GraphJobMessage(e.getDestinationVertexID()));
         }
       }
       try {
@@ -369,8 +381,9 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
         // we can't really recover from that, so fail this task
         throw new RuntimeException(e);
       }
-      VERTEX_ID vertexName = null;
-      while ((vertexName = (VERTEX_ID) peer.getCurrentMessage()) != null) {
+      GraphJobMessage msg = null;
+      while ((msg = peer.getCurrentMessage()) != null) {
+        VERTEX_ID vertexName = (VERTEX_ID) msg.getVertexId();
         if (!vertices.containsKey(vertexName)) {
           Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>) ReflectionUtils
               .newInstance(
@@ -400,7 +413,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
    */
   @Override
   public void cleanup(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer)
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     for (Entry<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> e : vertices
         .entrySet()) {
@@ -415,7 +428,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
   }
 
   private boolean isMasterTask(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, Writable> peer) {
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer) {
     return peer.getPeerName().equals(masterTask);
   }
 

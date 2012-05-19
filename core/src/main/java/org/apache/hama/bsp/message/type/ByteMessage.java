@@ -26,8 +26,8 @@ import java.io.IOException;
  */
 public class ByteMessage extends BSPMessage {
 
-  private byte[] tag;
-  private byte[] data;
+  public byte[] tag;
+  public byte[] data;
 
   public ByteMessage() {
     super();

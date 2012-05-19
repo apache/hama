@@ -22,12 +22,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a string tag and a double data. 
+ * A message that consists of a string tag and a double data.
  */
 public class DoubleMessage extends BSPMessage {
 
-  private String tag;
-  private Double data;
+  public String tag;
+  public Double data;
 
   public DoubleMessage() {
     super();

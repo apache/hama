@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
@@ -32,7 +31,7 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
   private MSG_TYPE value;
   private ID_TYPE vertexID;
   protected GraphJobRunner<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> runner;
-  protected BSPPeer<VertexWritable<ID_TYPE, MSG_TYPE>, VertexArrayWritable, Writable, Writable, Writable> peer;
+  protected BSPPeer<VertexWritable<ID_TYPE, MSG_TYPE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer;
   public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> edges;
 
   public Configuration getConf() {
@@ -51,9 +50,8 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
   @Override
   public void sendMessage(Edge<ID_TYPE, EDGE_VALUE_TYPE> e, MSG_TYPE msg)
       throws IOException {
-    MapWritable message = new MapWritable();
-    message.put(e.getDestinationVertexID(), msg);
-    peer.send(e.getDestinationPeerName(), message);
+    peer.send(e.getDestinationPeerName(),
+        new GraphJobMessage(e.getDestinationVertexID(), msg));
   }
 
   @Override
