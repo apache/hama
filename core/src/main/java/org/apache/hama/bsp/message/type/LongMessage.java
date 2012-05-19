@@ -26,8 +26,8 @@ import java.io.IOException;
  */
 public class LongMessage extends BSPMessage {
 
-  private String tag;
-  private long data;
+  public String tag;
+  public long data;
 
   public LongMessage() {
     super();

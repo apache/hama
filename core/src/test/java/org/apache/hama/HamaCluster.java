@@ -37,6 +37,7 @@ public abstract class HamaCluster extends HamaClusterTestCase {
     super(startDfs);
   }
 
+  @Override
   protected void setUp() throws Exception {
     super.setUp();
   }

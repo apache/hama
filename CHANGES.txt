@@ -17,7 +17,8 @@ Release 0.5 - April 10, 2012
   BUG FIXES
 
   IMPROVEMENTS
-
+    
+    HAMA-576: Improve sendMessages in Vertex (tjungblut)
     HAMA-575: Generify graph package (tjungblut)    
     HAMA-571: Provide graph repair function in GraphJobRunner (tjungblut)
     HAMA-521: Improve message buffering to save memory (Thomas Jungblut via edwardyoon)

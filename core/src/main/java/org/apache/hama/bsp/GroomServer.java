@@ -61,6 +61,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.GroomProtocol;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.monitor.Monitor;
 import org.apache.hama.util.BSPNetUtils;
@@ -143,6 +144,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
   private class DispatchTasksHandler implements DirectiveHandler {
 
+    @Override
     public void handle(Directive directive) throws DirectiveException {
       GroomServerAction[] actions = ((DispatchTasksDirective) directive)
           .getActions();
@@ -206,6 +208,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
     }
 
+    @Override
     public void run() {
       while (true) {
         try {
@@ -237,6 +240,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3));
     }
 
+    @Override
     public void run() {
 
       getObliviousTasks(outOfContactTasks);
@@ -353,7 +357,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     // establish the communication link to bsp master
     this.masterClient = (MasterProtocol) RPC.waitForProxy(MasterProtocol.class,
-        MasterProtocol.versionID, bspMasterAddr, conf);
+        HamaRPCProtocolVersion.versionID, bspMasterAddr, conf);
 
     // enroll in bsp master
     if (-1 == rpcPort || null == rpcAddr)
@@ -638,7 +642,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     launchTaskForJob(tip, jobConf);
   }
 
-  private void launchTaskForJob(TaskInProgress tip, BSPJob jobConf) {
+  private static void launchTaskForJob(TaskInProgress tip, BSPJob jobConf) {
     try {
       tip.setJobConf(jobConf);
       tip.launchTask();
@@ -749,6 +753,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     return result;
   }
 
+  @Override
   public void run() {
     try {
       initialize();
@@ -798,6 +803,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     close();
   }
 
+  @Override
   public synchronized void close() throws IOException {
     try {
       zk.close();
@@ -1011,9 +1017,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   public long getProtocolVersion(String protocol, long clientVersion)
       throws IOException {
     if (protocol.equals(GroomProtocol.class.getName())) {
-      return GroomProtocol.versionID;
+      return HamaRPCProtocolVersion.versionID;
     } else if (protocol.equals(BSPPeerProtocol.class.getName())) {
-      return BSPPeerProtocol.versionID;
+      return HamaRPCProtocolVersion.versionID;
     } else {
       throw new IOException("Unknown protocol to GroomServer: " + protocol);
     }
@@ -1068,7 +1074,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
       // //////////////////
       BSPPeerProtocol umbilical = (BSPPeerProtocol) RPC.getProxy(
-          BSPPeerProtocol.class, BSPPeerProtocol.versionID, address,
+          BSPPeerProtocol.class, HamaRPCProtocolVersion.versionID, address,
           defaultConf);
 
       final BSPTask task = (BSPTask) umbilical.getTask(taskid);

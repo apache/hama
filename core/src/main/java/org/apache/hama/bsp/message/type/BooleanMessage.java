@@ -22,12 +22,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a string tag and a boolean value. 
+ * A message that consists of a string tag and a boolean value.
  */
 public class BooleanMessage extends BSPMessage {
 
-  String tag;
-  boolean data;
+  public String tag;
+  public boolean data;
 
   public BooleanMessage() {
     super();

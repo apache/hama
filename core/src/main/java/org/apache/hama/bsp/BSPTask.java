@@ -150,7 +150,7 @@ public final class BSPTask extends Task {
   }
 
   @SuppressWarnings("unchecked")
-  private final <KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable> void runBSP(
+  private final static <KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable> void runBSP(
       final BSPJob job,
       BSPPeerImpl<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> bspPeer,
       final BytesWritable rawSplit, final BSPPeerProtocol umbilical)
@@ -190,10 +190,12 @@ public final class BSPTask extends Task {
     }
   }
 
+  @Override
   public final BSPJob getConf() {
     return conf;
   }
 
+  @Override
   public final void setConf(BSPJob conf) {
     this.conf = conf;
   }

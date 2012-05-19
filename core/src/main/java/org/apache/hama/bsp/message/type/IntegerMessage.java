@@ -22,12 +22,12 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * A message that consists of a string tag and a int data. 
+ * A message that consists of a string tag and a int data.
  */
 public class IntegerMessage extends BSPMessage {
 
-  String tag;
-  int data;
+  public String tag;
+  public int data;
 
   public IntegerMessage() {
     super();

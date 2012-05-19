@@ -58,6 +58,7 @@ public class MiniBSPCluster {
         throw new NullPointerException("No Configuration for BSPMaster.");
     }  
 
+    @Override
     public void run(){
       try{
         LOG.info("Starting BSP Master.");
@@ -97,6 +98,7 @@ public class MiniBSPCluster {
       this.conf = conf;
     }
  
+    @Override
     public void run(){
       try{
         this.gs = GroomServer.constructGroomServer(GroomServer.class, conf);
@@ -203,7 +205,7 @@ public class MiniBSPCluster {
 
   }
 
-  private void randomPort(HamaConfiguration conf){
+  private static void randomPort(HamaConfiguration conf){
     try{
       ServerSocket skt = new ServerSocket(0);
       int p = skt.getLocalPort(); 

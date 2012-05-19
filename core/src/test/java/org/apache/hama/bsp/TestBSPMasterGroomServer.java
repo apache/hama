@@ -19,9 +19,6 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -36,27 +33,20 @@ import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.message.DiskQueue;
 import org.apache.hama.examples.ClassSerializePrinting;
-import org.apache.hama.zookeeper.QuorumPeer;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.data.Stat;
 
 public class TestBSPMasterGroomServer extends HamaCluster {
 
-  private static Log LOG = LogFactory.getLog(TestBSPMasterGroomServer.class);
-  static String TMP_OUTPUT = "/tmp/test-example/";
+  protected static Log LOG = LogFactory.getLog(TestBSPMasterGroomServer.class);
+  public static String TMP_OUTPUT = "/tmp/test-example/";
   public static final String TMP_OUTPUT_PATH = "/tmp/messageQueue";
-  static Path OUTPUT_PATH = new Path(TMP_OUTPUT + "serialout");
+  public static Path OUTPUT_PATH = new Path(TMP_OUTPUT + "serialout");
 
-  private HamaConfiguration configuration;
+  protected HamaConfiguration configuration;
 
   public TestBSPMasterGroomServer() {
     configuration = new HamaConfiguration();
     configuration.set("bsp.master.address", "localhost");
+    configuration.set("hama.child.redirect.log.console", "true");
     assertEquals("Make sure master addr is set to localhost:", "localhost",
         configuration.get("bsp.master.address"));
     configuration.set("bsp.local.dir", "/tmp/hama-test");
@@ -68,10 +58,12 @@ public class TestBSPMasterGroomServer extends HamaCluster {
             .getCanonicalName());
   }
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
   }
 
+  @Override
   public void tearDown() throws Exception {
     super.tearDown();
   }

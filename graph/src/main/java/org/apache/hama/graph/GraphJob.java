@@ -30,7 +30,7 @@ public class GraphJob extends BSPJob {
 
   public final static String VERTEX_CLASS_ATTR = "hama.graph.vertex.class";
   public final static String VERTEX_ID_CLASS_ATTR = "hama.graph.vertex.id.class";
-  public final static String VERTEX_VALUE_CLASS_ATTR = "hama.graph.vertex.id.class";
+  public final static String VERTEX_VALUE_CLASS_ATTR = "hama.graph.vertex.value.class";
   public final static String VERTEX_EDGE_VALUE_CLASS_ATTR = "hama.graph.vertex.edge.value.class";
 
   public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";

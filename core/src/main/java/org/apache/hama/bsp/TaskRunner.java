@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.util.RunJar;
 
 /**
@@ -50,7 +51,7 @@ public class TaskRunner extends Thread {
       .getProperty("path.separator");
 
   private enum LogType {
-    STDOUT, ERROR
+    STDOUT, ERROR, CONSOLE
   }
 
   boolean bspKilled = false;
@@ -59,7 +60,7 @@ public class TaskRunner extends Thread {
   private Thread infoLog;
 
   private final Task task;
-  private final BSPJob conf;
+  private final BSPJob bspJob;
   private final GroomServer groomServer;
 
   private File logDir;
@@ -92,22 +93,29 @@ public class TaskRunner extends Thread {
       this.future.get().get();
     }
 
+    @Override
     public Object call() throws Exception {
+      final boolean consoleRedirect = bspJob.getConf().getBoolean(
+          "hama.child.redirect.log.console", false);
       ProcessBuilder builder = new ProcessBuilder(commands);
       builder.directory(workDir);
       try {
         bspProcess = builder.start();
 
         errorLog = new Thread() {
+          @Override
           public void run() {
-            logStream(bspProcess.getErrorStream(), LogType.ERROR);
+            logStream(bspProcess.getErrorStream(),
+                consoleRedirect ? LogType.CONSOLE : LogType.ERROR);
           }
         };
         errorLog.start();
 
         infoLog = new Thread() {
+          @Override
           public void run() {
-            logStream(bspProcess.getInputStream(), LogType.STDOUT);
+            logStream(bspProcess.getInputStream(),
+                consoleRedirect ? LogType.CONSOLE : LogType.STDOUT);
           }
         };
         infoLog.start();
@@ -130,7 +138,7 @@ public class TaskRunner extends Thread {
 
   public TaskRunner(BSPTask bspTask, GroomServer groom, BSPJob conf) {
     this.task = bspTask;
-    this.conf = conf;
+    this.bspJob = conf;
     this.groomServer = groom;
   }
 
@@ -156,7 +164,7 @@ public class TaskRunner extends Thread {
     return workDir;
   }
 
-  private String assembleClasspath(BSPJob jobConf, File workDir) {
+  private static String assembleClasspath(BSPJob jobConf, File workDir) {
     StringBuffer classPath = new StringBuffer();
     // start with same classpath as parent process
     classPath.append(System.getProperty("java.class.path"));
@@ -222,12 +230,13 @@ public class TaskRunner extends Thread {
   /**
    * Build working environment and launch BSPPeer processes.
    */
+  @Override
   public void run() {
     File workDir = createWorkDirectory();
     logDir = createLogDirectory();
-    String classPath = assembleClasspath(conf, workDir);
+    String classPath = assembleClasspath(bspJob, workDir);
     LOG.debug("Spawned child's classpath " + classPath);
-    List<String> bspArgs = buildJvmArgs(conf, classPath,
+    List<String> bspArgs = buildJvmArgs(bspJob, classPath,
         GroomServer.BSPPeerChild.class);
 
     BspChildRunner bspPeer = new BspChildRunner(bspArgs, workDir);
@@ -285,6 +294,14 @@ public class TaskRunner extends Thread {
    * @param stdout type of the log
    */
   private void logStream(InputStream input, LogType type) {
+    if (type == LogType.CONSOLE) {
+      try {
+        IOUtils.copyBytes(input, System.out, bspJob.getConf());
+      } catch (IOException e) {
+        // gracefully ignore any occuring exceptions here
+      }
+      return;
+    }
     // STDOUT file can be found under LOG_DIR/task_attempt_id.log
     // ERROR file can be found under LOG_DIR/task_attempt_id.err
     File taskLogFile = new File(logDir, task.getTaskAttemptId()
@@ -322,7 +339,7 @@ public class TaskRunner extends Thread {
    * @param type
    * @return an ending, including a dot.
    */
-  private String getFileEndingForType(LogType type) {
+  private static String getFileEndingForType(LogType type) {
     if (type != LogType.ERROR)
       return ".err";
     else

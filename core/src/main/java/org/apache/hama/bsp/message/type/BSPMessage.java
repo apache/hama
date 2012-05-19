@@ -28,7 +28,7 @@ public abstract class BSPMessage implements Messagable, Writable {
 
   public BSPMessage() {
   }
-  
+
   /**
    * BSP messages are typically identified with tags. This allows to get the tag
    * of data.
@@ -43,7 +43,7 @@ public abstract class BSPMessage implements Messagable, Writable {
   public abstract Object getData();
 
   public abstract void setTag(Object tag);
-  
+
   public abstract void setData(Object data);
-  
+
 }
