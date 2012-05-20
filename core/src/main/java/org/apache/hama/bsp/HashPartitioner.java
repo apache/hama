@@ -25,7 +25,7 @@ public class HashPartitioner<K, V> implements Partitioner<K, V> {
 
   @Override
   public int getPartition(K key, V value, int numTasks) {
-    return key.hashCode() % numTasks;
+    return Math.abs(key.hashCode() % numTasks);
   }
 
 }

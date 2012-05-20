@@ -28,8 +28,8 @@ import org.apache.hama.bsp.BSPPeer;
 public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable, EDGE_VALUE_TYPE extends Writable>
     implements VertexInterface<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> {
 
-  private MSG_TYPE value;
   private ID_TYPE vertexID;
+  private MSG_TYPE value;
   protected GraphJobRunner<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> runner;
   protected BSPPeer<VertexWritable<ID_TYPE, MSG_TYPE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer;
   public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> edges;
@@ -114,6 +114,31 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
   @Override
   public long getNumVertices() {
     return runner.getNumberVertices();
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((vertexID == null) ? 0 : vertexID.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Vertex<?, ?, ?> other = (Vertex<?, ?, ?>) obj;
+    if (vertexID == null) {
+      if (other.vertexID != null)
+        return false;
+    } else if (!vertexID.equals(other.vertexID))
+      return false;
+    return true;
   }
 
   @Override
