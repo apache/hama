@@ -49,7 +49,7 @@ import org.apache.hama.util.KeyValuePair;
  * @param <VERTEX_VALUE> the value type of a vertex.
  * @param <VERTEX_VALUE> the value type of an edge.
  */
-public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Writable, EDGE_VALUE_TYPE extends Writable>
+public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Writable, EDGE_VALUE_TYPE extends Writable>
     extends
     BSP<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> {
 
@@ -99,7 +99,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
 
   @Override
   @SuppressWarnings("unchecked")
-  public void setup(
+  public final void setup(
       BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
     this.conf = peer.getConfiguration();
@@ -165,7 +165,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
   }
 
   @Override
-  public void bsp(
+  public final void bsp(
       BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
 
@@ -275,21 +275,18 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
       BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     GraphJobMessage msg = null;
-    Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> msgMap = new HashMap<VERTEX_ID, LinkedList<VERTEX_VALUE>>();
+    final Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> msgMap = new HashMap<VERTEX_ID, LinkedList<VERTEX_VALUE>>();
     while ((msg = peer.getCurrentMessage()) != null) {
       // either this is a vertex message or a directive that must be read as map
       if (msg.isVertexMessage()) {
-        VERTEX_ID vertexID = (VERTEX_ID) msg.getVertexId();
-        VERTEX_VALUE value = (VERTEX_VALUE) msg.getVertexValue();
-        if (msgMap.containsKey(vertexID)) {
-          LinkedList<VERTEX_VALUE> msgs = msgMap.get(vertexID);
-          msgs.add(value);
-          msgMap.put(vertexID, msgs);
-        } else {
-          LinkedList<VERTEX_VALUE> msgs = new LinkedList<VERTEX_VALUE>();
-          msgs.add(value);
+        final VERTEX_ID vertexID = (VERTEX_ID) msg.getVertexId();
+        final VERTEX_VALUE value = (VERTEX_VALUE) msg.getVertexValue();
+        LinkedList<VERTEX_VALUE> msgs = msgMap.get(vertexID);
+        if (msgs == null) {
+          msgs = new LinkedList<VERTEX_VALUE>();
           msgMap.put(vertexID, msgs);
         }
+        msgs.add(value);
       } else if (msg.isMapMessage()) {
         for (Entry<Writable, Writable> e : msg.getMap().entrySet()) {
           VERTEX_ID vertexID = (VERTEX_ID) e.getKey();
@@ -412,7 +409,7 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
    * Just write <ID as Writable, Value as Writable> pair as a result
    */
   @Override
-  public void cleanup(
+  public final void cleanup(
       BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     for (Entry<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> e : vertices
@@ -432,23 +429,23 @@ public class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Wri
     return peer.getPeerName().equals(masterTask);
   }
 
-  public long getNumberVertices() {
+  public final long getNumberVertices() {
     return numberVertices;
   }
 
-  public long getNumberIterations() {
+  public final long getNumberIterations() {
     return iteration;
   }
 
-  public int getMaxIteration() {
+  public final int getMaxIteration() {
     return maxIteration;
   }
 
-  public Writable getLastAggregatedValue() {
+  public final Writable getLastAggregatedValue() {
     return globalAggregatorResult;
   }
 
-  public IntWritable getNumLastAggregatedVertices() {
+  public final IntWritable getNumLastAggregatedVertices() {
     return globalAggregatorIncrement;
   }
 
