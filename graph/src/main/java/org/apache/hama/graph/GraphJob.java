@@ -25,6 +25,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.Combiner;
+import org.apache.hama.bsp.Partitioner;
 
 public class GraphJob extends BSPJob {
 
@@ -35,6 +36,7 @@ public class GraphJob extends BSPJob {
 
   public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";
   public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
+  public final static String VERTEX_GRAPH_RUNTIME_PARTIONING = "hama.graph.runtime.partitioning";
 
   /**
    * Creates a new Graph Job with the given configuration and an exampleClass.
@@ -102,6 +104,13 @@ public class GraphJob extends BSPJob {
   }
 
   @Override
+  public void setPartitioner(@SuppressWarnings("rawtypes")
+  Class<? extends Partitioner> theClass) {
+    super.setPartitioner(theClass);
+    conf.setBoolean(VERTEX_GRAPH_RUNTIME_PARTIONING, true);
+  }
+
+  @Override
   public void setCombinerClass(Class<? extends Combiner<? extends Writable>> cls) {
     ensureState(JobState.DEFINE);
     conf.setClass(VERTEX_MESSAGE_COMBINER_CLASS_ATTR, cls, Combiner.class);
@@ -114,4 +123,5 @@ public class GraphJob extends BSPJob {
   public void setMaxIteration(int maxIteration) {
     conf.setInt("hama.graph.max.iteration", maxIteration);
   }
+
 }

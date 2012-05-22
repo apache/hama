@@ -19,6 +19,7 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -196,6 +197,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     final RecordWriter<K2, V2> finalOut = outWriter;
 
     collector = new OutputCollector<K2, V2>() {
+      @Override
       public void collect(K2 key, V2 value) throws IOException {
         finalOut.write(key, value);
       }
@@ -400,6 +402,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   /**
    * @return the string as host:port of this Peer
    */
+  @Override
   public final String getPeerName() {
     return peerAddress.getHostName() + ":" + peerAddress.getPort();
   }
@@ -414,6 +417,13 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   public final String getPeerName(int index) {
     initPeerNames();
     return allPeers[index];
+  }
+
+  @Override
+  public int getPeerIndex() {
+    initPeerNames();
+    return Arrays
+        .binarySearch(getAllPeerNames(), getPeerName());
   }
 
   @Override
@@ -448,6 +458,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   /**
    * @return the count of current super-step
    */
+  @Override
   public final long getSuperstepCount() {
     return currentTaskStatus.getSuperstepCount();
   }
@@ -457,6 +468,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
    * 
    * @return the conf
    */
+  @Override
   public final Configuration getConfiguration() {
     return conf;
   }

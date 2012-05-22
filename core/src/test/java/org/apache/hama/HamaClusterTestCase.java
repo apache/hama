@@ -54,6 +54,8 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
     this.zooKeeperCluster = new MiniZooKeeperCluster();
     int clientPort = this.zooKeeperCluster.startup(testDir);
     conf.set("hama.zookeeper.property.clientPort", Integer.toString(clientPort));
+    conf.set(Constants.GROOM_RPC_HOST, "localhost");
+    assertEquals(conf.get(Constants.GROOM_RPC_HOST), "localhost");
     bspCluster = new MiniBSPCluster(this.conf, numOfGroom); 
     bspCluster.startBSPCluster();
   }

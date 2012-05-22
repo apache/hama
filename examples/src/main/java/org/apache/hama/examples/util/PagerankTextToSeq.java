@@ -20,7 +20,7 @@ package org.apache.hama.examples.util;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.graph.VertexArrayWritable;
@@ -58,8 +58,8 @@ public class PagerankTextToSeq extends TextToSequenceFile {
     VertexWritable key = new VertexWritable(split[0]);
     VertexWritable[] v = new VertexWritable[split.length - 1];
     for (int i = 1; i < split.length; i++) {
-      v[i - 1] = new VertexWritable(new DoubleWritable(0.0),
-          new Text(split[i]), Text.class, DoubleWritable.class);
+      v[i - 1] = new VertexWritable(NullWritable.get(), new Text(split[i]),
+          Text.class, NullWritable.class);
     }
     VertexArrayWritable value = new VertexArrayWritable();
     value.set(v);

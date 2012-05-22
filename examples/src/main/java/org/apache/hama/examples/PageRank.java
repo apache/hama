@@ -122,7 +122,7 @@ public class PageRank {
       pageJob.set("hama.pagerank.alpha", args[2]);
 
     pageJob.setAggregatorClass(AverageAggregator.class);
-    
+
     pageJob.setVertexIDClass(Text.class);
     pageJob.setVertexValueClass(DoubleWritable.class);
     pageJob.setEdgeValueClass(NullWritable.class);
@@ -136,8 +136,7 @@ public class PageRank {
     long startTime = System.currentTimeMillis();
     if (pageJob.waitForCompletion(true)) {
       System.out.println("Job Finished in "
-          + (System.currentTimeMillis() - startTime) / 1000.0
-          + " seconds");
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
 }

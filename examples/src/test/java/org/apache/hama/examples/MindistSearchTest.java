@@ -158,7 +158,8 @@ public class MindistSearchTest extends TestCase {
 
   public void testRepairFunctionality() throws Exception {
     // make a copy to be safe with parallel test executions
-    final Map<VertexWritable<Text, IntWritable>, VertexArrayWritable> map = new HashMap<VertexWritable<Text, IntWritable>, VertexArrayWritable>(tmp);
+    final Map<VertexWritable<Text, IntWritable>, VertexArrayWritable> map = new HashMap<VertexWritable<Text, IntWritable>, VertexArrayWritable>(
+        tmp);
     // removing 7 should resulting in creating it and getting the same result as
     // usual
     map.remove(new VertexWritable<Text, IntWritable>("7"));
@@ -183,7 +184,7 @@ public class MindistSearchTest extends TestCase {
       connectedComponentsJob.setOutputFormat(SequenceFileOutputFormat.class);
       connectedComponentsJob.setOutputKeyClass(Text.class);
       connectedComponentsJob.setOutputValueClass(Text.class);
-      
+
       connectedComponentsJob.setVertexIDClass(Text.class);
       connectedComponentsJob.setVertexValueClass(Text.class);
       connectedComponentsJob.setEdgeValueClass(NullWritable.class);

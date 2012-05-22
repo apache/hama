@@ -71,10 +71,12 @@ public class FileSplit implements InputSplit {
   }
 
   /** The number of bytes in the file to process. */
+  @Override
   public long getLength() {
     return length;
   }
 
+  @Override
   public String toString() {
     return file + ":" + start + "+" + length;
   }
@@ -83,12 +85,14 @@ public class FileSplit implements InputSplit {
   // Writable methods
   // //////////////////////////////////////////
 
+  @Override
   public void write(DataOutput out) throws IOException {
     Text.writeString(out, file.toString());
     out.writeLong(start);
     out.writeLong(length);
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
     file = new Path(Text.readString(in));
     start = in.readLong();
@@ -96,6 +100,7 @@ public class FileSplit implements InputSplit {
     hosts = null;
   }
 
+  @Override
   public String[] getLocations() throws IOException {
     if (this.hosts == null) {
       return new String[] {};

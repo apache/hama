@@ -67,7 +67,7 @@ public class InlinkCount extends Vertex<Text, IntWritable, NullWritable> {
     inlinkJob.setInputFormat(SequenceFileInputFormat.class);
     inlinkJob.setInputKeyClass(VertexWritable.class);
     inlinkJob.setInputValueClass(VertexArrayWritable.class);
-    
+
     inlinkJob.setVertexIDClass(Text.class);
     inlinkJob.setVertexValueClass(IntWritable.class);
     inlinkJob.setEdgeValueClass(NullWritable.class);
@@ -80,8 +80,7 @@ public class InlinkCount extends Vertex<Text, IntWritable, NullWritable> {
     long startTime = System.currentTimeMillis();
     if (inlinkJob.waitForCompletion(true)) {
       System.out.println("Job Finished in "
-          + (System.currentTimeMillis() - startTime) / 1000.0
-          + " seconds");
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
 }

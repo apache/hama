@@ -123,17 +123,15 @@ public class SSSP {
     ssspJob.setOutputValueClass(IntWritable.class);
     // Iterate until all the nodes have been reached.
     ssspJob.setMaxIteration(Integer.MAX_VALUE);
-    
+
     ssspJob.setVertexIDClass(Text.class);
     ssspJob.setVertexValueClass(IntWritable.class);
     ssspJob.setEdgeValueClass(IntWritable.class);
-    
 
     long startTime = System.currentTimeMillis();
     if (ssspJob.waitForCompletion(true)) {
       System.out.println("Job Finished in "
-          + (System.currentTimeMillis() - startTime) / 1000.0
-          + " seconds");
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
 }

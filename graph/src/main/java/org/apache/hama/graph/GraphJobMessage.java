@@ -20,6 +20,8 @@ package org.apache.hama.graph;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
@@ -35,16 +37,20 @@ public final class GraphJobMessage implements Writable {
   public static final int MAP_FLAG = 0x01;
   public static final int VERTEX_FLAG = 0x02;
   public static final int REPAIR_FLAG = 0x04;
+  public static final int PARTITION_FLAG = 0x08;
 
   // staticly defined because it is process-wide information, therefore in caps
   // considered as a constant
+  public static Class<?> VERTEX_CLASS;
   public static Class<? extends Writable> VERTEX_ID_CLASS;
   public static Class<? extends Writable> VERTEX_VALUE_CLASS;
+  public static Class<? extends Writable> EDGE_VALUE_CLASS;
 
   private int flag = MAP_FLAG;
   private MapWritable map;
   private Writable vertexId;
   private Writable vertexValue;
+  private Vertex<?, ?, ?> vertex;
 
   public GraphJobMessage() {
   }
@@ -65,6 +71,11 @@ public final class GraphJobMessage implements Writable {
     this.vertexValue = vertexValue;
   }
 
+  public GraphJobMessage(Vertex<?, ?, ?> vertex) {
+    this.flag = PARTITION_FLAG;
+    this.vertex = vertex;
+  }
+
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeByte(this.flag);
@@ -75,6 +86,27 @@ public final class GraphJobMessage implements Writable {
       vertexValue.write(out);
     } else if (isMapMessage()) {
       map.write(out);
+    } else if (isPartitioningMessage()) {
+      vertex.getVertexID().write(out);
+      if (vertex.getValue() != null) {
+        out.writeBoolean(true);
+        vertex.getValue().write(out);
+      } else {
+        out.writeBoolean(false);
+      }
+      List<?> outEdges = vertex.getOutEdges();
+      out.writeInt(outEdges.size());
+      for (Object e : outEdges) {
+        Edge<?, ?> edge = (Edge<?, ?>) e;
+        out.writeUTF(edge.getDestinationPeerName());
+        edge.getDestinationVertexID().write(out);
+        if (edge.getValue() != null) {
+          out.writeBoolean(true);
+          edge.getValue().write(out);
+        } else {
+          out.writeBoolean(false);
+        }
+      }
     } else {
       vertexId.write(out);
     }
@@ -92,11 +124,38 @@ public final class GraphJobMessage implements Writable {
     } else if (isMapMessage()) {
       map = new MapWritable();
       map.readFields(in);
+    } else if (isPartitioningMessage()) {
+      Vertex<Writable, Writable, Writable> vertex = GraphJobRunner
+          .newVertexInstance(VERTEX_CLASS, null);
+      Writable vertexId = ReflectionUtils.newInstance(VERTEX_ID_CLASS, null);
+      vertexId.readFields(in);
+      vertex.setVertexID(vertexId);
+      if (in.readBoolean()) {
+        Writable vertexValue = ReflectionUtils.newInstance(VERTEX_VALUE_CLASS,
+            null);
+        vertexValue.readFields(in);
+        vertex.setValue(vertexValue);
+      }
+      int size = in.readInt();
+      vertex.edges = new ArrayList<Edge<Writable, Writable>>(size);
+      for (int i = 0; i < size; i++) {
+        String destination = in.readUTF();
+        Writable edgeVertexID = ReflectionUtils.newInstance(VERTEX_ID_CLASS,
+            null);
+        edgeVertexID.readFields(in);
+        Writable edgeValue = null;
+        if (in.readBoolean()) {
+          edgeValue = ReflectionUtils.newInstance(EDGE_VALUE_CLASS, null);
+          edgeValue.readFields(in);
+        }
+        vertex.edges.add(new Edge<Writable, Writable>(edgeVertexID,
+            destination, edgeValue));
+      }
+      this.vertex = vertex;
     } else {
       vertexId = ReflectionUtils.newInstance(VERTEX_ID_CLASS, null);
       vertexId.readFields(in);
     }
-
   }
 
   public MapWritable getMap() {
@@ -111,6 +170,10 @@ public final class GraphJobMessage implements Writable {
     return vertexValue;
   }
 
+  public Vertex<?, ?, ?> getVertex() {
+    return vertex;
+  }
+
   public boolean isMapMessage() {
     return flag == MAP_FLAG;
   }
@@ -123,10 +186,15 @@ public final class GraphJobMessage implements Writable {
     return flag == REPAIR_FLAG;
   }
 
+  public boolean isPartitioningMessage() {
+    return flag == PARTITION_FLAG;
+  }
+
   @Override
   public String toString() {
     return "GraphJobMessage [flag=" + flag + ", map=" + map + ", vertexId="
-        + vertexId + ", vertexValue=" + vertexValue + "]";
+        + vertexId + ", vertexValue=" + vertexValue + ", vertex=" + vertex
+        + "]";
   }
 
 }
