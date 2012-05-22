@@ -53,6 +53,7 @@ import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 
 /**
@@ -140,6 +141,7 @@ public class BSPJobClient extends Configured implements Tool {
     /**
      * Returns immediately whether the whole job is done yet or not.
      */
+    @Override
     public synchronized boolean isComplete() throws IOException {
       updateStatus();
       return (status.getRunState() == JobStatus.SUCCEEDED
@@ -149,11 +151,13 @@ public class BSPJobClient extends Configured implements Tool {
     /**
      * True if job completed successfully.
      */
+    @Override
     public synchronized boolean isSuccessful() throws IOException {
       updateStatus();
       return status.getRunState() == JobStatus.SUCCEEDED;
     }
 
+    @Override
     public synchronized long getSuperstepCount() throws IOException {
       ensureFreshStatus();
       return status.getSuperstepCount();
@@ -162,6 +166,7 @@ public class BSPJobClient extends Configured implements Tool {
     /**
      * Blocks until the job is finished
      */
+    @Override
     public void waitForCompletion() throws IOException {
       while (!isComplete()) {
         try {
@@ -174,6 +179,7 @@ public class BSPJobClient extends Configured implements Tool {
     /**
      * Tells the service to get the state of the current job.
      */
+    @Override
     public synchronized int getJobState() throws IOException {
       updateStatus();
       return status.getRunState();
@@ -187,6 +193,7 @@ public class BSPJobClient extends Configured implements Tool {
     /**
      * Tells the service to terminate the current job.
      */
+    @Override
     public synchronized void killJob() throws IOException {
       jobSubmitClient.killJob(getID());
     }
@@ -210,7 +217,7 @@ public class BSPJobClient extends Configured implements Tool {
     String masterAdress = conf.get("bsp.master.address");
     if (masterAdress != null && !masterAdress.equals("local")) {
       this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
-          JobSubmissionProtocol.class, JobSubmissionProtocol.versionID,
+          JobSubmissionProtocol.class, HamaRPCProtocolVersion.versionID,
           BSPMaster.getAddress(conf), conf,
           NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
     } else {
@@ -277,8 +284,9 @@ public class BSPJobClient extends Configured implements Tool {
 
   static Random r = new Random();
 
-  public RunningJob submitJobInternal(BSPJob job, BSPJobID jobId)
+  public RunningJob submitJobInternal(BSPJob pJob, BSPJobID jobId)
       throws IOException {
+    BSPJob job = pJob;
     job.setJobID(jobId);
 
     Path submitJobDir = new Path(getSystemDir(), "submit_"
@@ -308,7 +316,9 @@ public class BSPJobClient extends Configured implements Tool {
     if (job.get("bsp.input.dir") != null) {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
-      if (job.getConf().get("bsp.input.partitioner.class") != null) {
+      if (job.getConf().get("bsp.input.partitioner.class") != null
+          && !job.getConf()
+              .getBoolean("hama.graph.runtime.partitioning", false)) {
         job = partition(job, maxTasks);
         maxTasks = job.getInt("hama.partition.count", maxTasks);
       }
@@ -450,11 +460,11 @@ public class BSPJobClient extends Configured implements Tool {
     return job;
   }
 
-  private boolean isProperSize(int numBspTask, int maxTasks) {
+  private static boolean isProperSize(int numBspTask, int maxTasks) {
     return (numBspTask > 1 && numBspTask < maxTasks);
   }
 
-  private String getPartitionName(int i) {
+  private static String getPartitionName(int i) {
     return "part-" + String.valueOf(100000 + i).substring(1, 6);
   }
 
@@ -499,7 +509,7 @@ public class BSPJobClient extends Configured implements Tool {
     return codecClass;
   }
 
-  private int writeSplits(BSPJob job, Path submitSplitFile, int maxTasks)
+  private static int writeSplits(BSPJob job, Path submitSplitFile, int maxTasks)
       throws IOException {
     InputSplit[] splits = job.getInputFormat().getSplits(
         job,
@@ -529,7 +539,7 @@ public class BSPJobClient extends Configured implements Tool {
   private static final int CURRENT_SPLIT_FILE_VERSION = 0;
   private static final byte[] SPLIT_FILE_HEADER = "SPL".getBytes();
 
-  private DataOutputStream writeSplitsFileHeader(Configuration conf,
+  private static DataOutputStream writeSplitsFileHeader(Configuration conf,
       Path filename, int length) throws IOException {
     // write the splits to a file for the bsp master
     FileSystem fs = filename.getFileSystem(conf);
@@ -817,7 +827,7 @@ public class BSPJobClient extends Configured implements Tool {
   /**
    * Display usage of the command-line tool and terminate execution
    */
-  private void displayUsage(String cmd) {
+  private static void displayUsage(String cmd) {
     String prefix = "Usage: hama job ";
     String taskStates = "running, completed";
     if ("-submit".equals(cmd)) {
@@ -986,6 +996,7 @@ public class BSPJobClient extends Configured implements Tool {
       return locations;
     }
 
+    @Override
     public void readFields(DataInput in) throws IOException {
       splitClass = Text.readString(in);
       dataLength = in.readLong();
@@ -997,6 +1008,7 @@ public class BSPJobClient extends Configured implements Tool {
       }
     }
 
+    @Override
     public void write(DataOutput out) throws IOException {
       Text.writeString(out, splitClass);
       out.writeLong(dataLength);

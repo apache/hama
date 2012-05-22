@@ -90,9 +90,9 @@ public class BSPJob extends BSPJobContext {
   // /////////////////////////////////////
   // Setter for Job Submission
   // /////////////////////////////////////
-  public void setWorkingDirectory(Path dir) throws IOException {
+  public void setWorkingDirectory(Path pDir) throws IOException {
     ensureState(JobState.DEFINE);
-    dir = new Path(getWorkingDirectory(), dir);
+    Path dir = new Path(getWorkingDirectory(), pDir);
     conf.set(WORKING_DIR, dir.toString());
   }
 
@@ -253,7 +253,7 @@ public class BSPJob extends BSPJobContext {
 
   @SuppressWarnings({ "rawtypes" })
   public InputFormat getInputFormat() {
-    return (InputFormat) ReflectionUtils.newInstance(conf.getClass(
+    return ReflectionUtils.newInstance(conf.getClass(
         "bsp.input.format.class", TextInputFormat.class, InputFormat.class),
         conf);
   }
@@ -380,14 +380,14 @@ public class BSPJob extends BSPJobContext {
 
   @SuppressWarnings("rawtypes")
   public Partitioner getPartitioner() {
-    return (Partitioner) ReflectionUtils.newInstance(conf
+    return ReflectionUtils.newInstance(conf
         .getClass("bsp.input.partitioner.class", HashPartitioner.class,
             Partitioner.class), conf);
   }
 
   @SuppressWarnings("rawtypes")
   public OutputFormat getOutputFormat() {
-    return (OutputFormat) ReflectionUtils.newInstance(conf.getClass(
+    return ReflectionUtils.newInstance(conf.getClass(
         "bsp.output.format.class", TextOutputFormat.class, OutputFormat.class),
         conf);
   }

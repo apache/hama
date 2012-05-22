@@ -250,7 +250,7 @@ class TaskInProgress {
   private TreeSet<TaskAttemptID> tasksReportedClosed = new TreeSet<TaskAttemptID>();
 
   public boolean shouldCloseForClosedJob(TaskAttemptID taskid) {
-    TaskStatus ts = (TaskStatus) taskStatuses.get(taskid);
+    TaskStatus ts = taskStatuses.get(taskid);
     if ((ts != null) && (!tasksReportedClosed.contains(taskid))
         && (job.getStatus().getRunState() != JobStatus.RUNNING)) {
       tasksReportedClosed.add(taskid);
@@ -263,7 +263,7 @@ class TaskInProgress {
   public void completed(TaskAttemptID taskid) {
     LOG.debug("Task '" + taskid.getTaskID().toString() + "' has completed.");
 
-    TaskStatus status = (TaskStatus) taskStatuses.get(taskid);
+    TaskStatus status = taskStatuses.get(taskid);
     status.setRunState(TaskStatus.State.SUCCEEDED);
     activeTasks.remove(taskid);
 
@@ -282,7 +282,7 @@ class TaskInProgress {
   public void terminated(TaskAttemptID taskid) {
     LOG.info("Task '" + taskid.getTaskID().toString() + "' has failed.");
 
-    TaskStatus status = (TaskStatus) taskStatuses.get(taskid);
+    TaskStatus status = taskStatuses.get(taskid);
     status.setRunState(TaskStatus.State.FAILED);
     activeTasks.remove(taskid);
   }

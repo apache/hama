@@ -49,6 +49,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
 
   private long minSplitSize = 1;
   private static final PathFilter hiddenFileFilter = new PathFilter() {
+    @Override
     public boolean accept(Path p) {
       String name = p.getName();
       return !name.startsWith("_") && !name.startsWith(".");
@@ -71,6 +72,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
       this.filters = filters;
     }
 
+    @Override
     public boolean accept(Path path) {
       for (PathFilter filter : filters) {
         if (!filter.accept(path)) {
@@ -90,6 +92,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     return true;
   }
 
+  @Override
   public abstract RecordReader<K, V> getRecordReader(InputSplit split,
       BSPJob job) throws IOException;
 
@@ -174,6 +177,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   /**
    * Splits files returned by {@link #listStatus(JobConf)} when they're too big.
    */
+  @Override
   public InputSplit[] getSplits(BSPJob job, int numSplits) throws IOException {
     FileStatus[] files = listStatus(job);
 
@@ -332,8 +336,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    * @param path {@link Path} to be added to the list of inputs for the
    *          map-reduce job.
    */
-  public static void addInputPath(BSPJob conf, Path path) {
-    path = new Path(conf.getWorkingDirectory(), path);
+  public static void addInputPath(BSPJob conf, Path p) {
+    Path path = new Path(conf.getWorkingDirectory(), p);
     String dirStr = StringUtils.escapeString(path.toString());
     String dirs = conf.get("bsp.input.dir");
     conf.set("bsp.input.dir", dirs == null ? dirStr : dirs
@@ -395,8 +399,9 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     return result;
   }
 
-  private void sortInDescendingOrder(List<NodeInfo> mylist) {
+  private static void sortInDescendingOrder(List<NodeInfo> mylist) {
     Collections.sort(mylist, new Comparator<NodeInfo>() {
+      @Override
       public int compare(NodeInfo obj1, NodeInfo obj2) {
 
         if (obj1 == null || obj2 == null)
@@ -424,8 +429,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    * @throws IOException
    */
   protected String[] getSplitHosts(BlockLocation[] blkLocations, long offset,
-      long splitSize, NetworkTopology clusterMap) throws IOException {
-
+      long pSplitSize, NetworkTopology clusterMap) throws IOException {
+    long splitSize = pSplitSize;
     int startIndex = getBlockIndex(blkLocations, offset);
 
     long bytesInThisBlock = blkLocations[startIndex].getOffset()
@@ -519,7 +524,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     return identifyHosts(allTopos.length, racksMap);
   }
 
-  private String[] identifyHosts(int replicationFactor,
+  private static String[] identifyHosts(int replicationFactor,
       Map<Node, NodeInfo> racksMap) {
 
     String[] retVal = new String[replicationFactor];
@@ -562,7 +567,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     return retVal;
   }
 
-  private String[] fakeRacks(BlockLocation[] blkLocations, int index)
+  private static String[] fakeRacks(BlockLocation[] blkLocations, int index)
       throws IOException {
     String[] allHosts = blkLocations[index].getHosts();
     String[] allTopos = new String[allHosts.length];

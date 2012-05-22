@@ -133,8 +133,7 @@ public class MindistSearch {
     long startTime = System.currentTimeMillis();
     if (connectedComponentsJob.waitForCompletion(true)) {
       System.out.println("Job Finished in "
-          + (System.currentTimeMillis() - startTime) / 1000.0
-          + " seconds");
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
 

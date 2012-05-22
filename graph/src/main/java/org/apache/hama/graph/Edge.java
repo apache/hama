@@ -23,12 +23,11 @@ import org.apache.hadoop.io.Writable;
 /**
  * The edge class
  */
-public class Edge<VERTEX_ID, EDGE_VALUE_TYPE extends Writable> {
+public final class Edge<VERTEX_ID extends Writable, EDGE_VALUE_TYPE extends Writable> {
 
-  private VERTEX_ID destinationVertexID;
-  // actually the destination peer address
-  private String destinationPeerName;
-  private EDGE_VALUE_TYPE cost;
+  private final VERTEX_ID destinationVertexID;
+  private final String destinationPeerName;
+  private final EDGE_VALUE_TYPE cost;
 
   public Edge(VERTEX_ID sourceVertexID, String destVertexID,
       EDGE_VALUE_TYPE cost) {

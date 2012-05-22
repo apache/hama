@@ -60,12 +60,11 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
       int vertexId = Integer.parseInt(adjacencyStringArray[0]);
       String name = pages[vertexId];
       @SuppressWarnings("unchecked")
-      VertexWritable<Text, DoubleWritable>[] arr = new VertexWritable[adjacencyStringArray.length - 1];
+      VertexWritable<Text, NullWritable>[] arr = new VertexWritable[adjacencyStringArray.length - 1];
       for (int j = 1; j < adjacencyStringArray.length; j++) {
-        arr[j - 1] = new VertexWritable<Text, DoubleWritable>(
-            new DoubleWritable(0.0d), new Text(
-                pages[Integer.parseInt(adjacencyStringArray[j])]), Text.class,
-            DoubleWritable.class);
+        arr[j - 1] = new VertexWritable<Text, NullWritable>(NullWritable.get(),
+            new Text(pages[Integer.parseInt(adjacencyStringArray[j])]),
+            Text.class, NullWritable.class);
       }
       VertexArrayWritable wr = new VertexArrayWritable();
       wr.set(arr);
@@ -113,8 +112,8 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     long startTime = System.currentTimeMillis();
     if (bsp.waitForCompletion(true)) {
       verifyResult();
-      LOG.info("Job Finished in "
-          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+      LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime)
+          / 1000.0 + " seconds");
     } else {
       fail();
     }

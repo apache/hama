@@ -139,8 +139,7 @@ public class PiEstimator {
     if (bsp.waitForCompletion(true)) {
       printOutput(conf);
       System.out.println("Job Finished in "
-          + (System.currentTimeMillis() - startTime) / 1000.0
-          + " seconds");
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
 }
