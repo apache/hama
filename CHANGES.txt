@@ -13,7 +13,7 @@ Release 0.5 - April 10, 2012
    HAMA-518: Add MinIntCombiner to SSSP example (edwardyoon)
    HAMA-367: Runtime Compression of BSP Messages to Improve the Performance (Apurv Verma via tjungblut)
    HAMA-501: Add Avro RPC (tjungblut)
-   HAMA-456: Add basic Graph interfaces and GraphJobRunner (edwardyoon)
+   HAMA-409: Add basic Graph interfaces and GraphJobRunner (edwardyoon)
 
   BUG FIXES
 
