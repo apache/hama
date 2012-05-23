@@ -26,8 +26,8 @@ import org.apache.hadoop.io.Writable;
  * For tracking cases it increments an internal counter on each call of
  * aggregate.
  */
-public abstract class AbstractAggregator<V extends Writable> implements
-    Aggregator<V> {
+public abstract class AbstractAggregator<V extends Writable, VERTEX extends Vertex<?, V, ?>>
+    implements Aggregator<V, VERTEX> {
 
   private int timesAggregated = 0;
 
@@ -48,18 +48,21 @@ public abstract class AbstractAggregator<V extends Writable> implements
   /**
    * Observes a value of a vertex after the compute method. This is intended to
    * be overriden by the user and is just an empty implementation in this class.
+   * Please make sure that you are null-checking vertex, since on a master task
+   * this will always be null.
    */
   @Override
-  public void aggregate(V value) {
+  public void aggregate(VERTEX vertex, V value) {
 
   }
 
   /**
    * Observes the old value of a vertex and the new value at the same time. This
    * is intended to be overridden by the user and is just an empty
-   * implementation in this class.
+   * implementation in this class.Please make sure that you are null-checking
+   * vertex, since on a master task this will always be null.
    */
-  public void aggregate(V oldValue, V newValue) {
+  public void aggregate(VERTEX vertex, V oldValue, V newValue) {
 
   }
 

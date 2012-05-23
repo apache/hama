@@ -92,19 +92,27 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
 
   /**
    * Get the last aggregated value of the defined aggregator, null if nothing
-   * was configured or not returned a result.
+   * was configured or not returned a result. You have to supply an index, the
+   * index is defined by the order you set the aggregator classes in
+   * {@link GraphJob#setAggregatorClass(Class...)}. Index is starting at zero,
+   * so if you have a single aggregator you can retrieve it via
+   * {@link #getLastAggregatedValue}(0).
    */
   @SuppressWarnings("unchecked")
-  public MSG_TYPE getLastAggregatedValue() {
-    return (MSG_TYPE) runner.getLastAggregatedValue();
+  public MSG_TYPE getLastAggregatedValue(int index) {
+    return (MSG_TYPE) runner.getLastAggregatedValue(index);
   }
 
   /**
    * Get the number of aggregated vertices in the last superstep. Or null if no
-   * aggregator is available.
+   * aggregator is available.You have to supply an index, the index is defined
+   * by the order you set the aggregator classes in
+   * {@link GraphJob#setAggregatorClass(Class...)}. Index is starting at zero,
+   * so if you have a single aggregator you can retrieve it via
+   * {@link #getNumLastAggregatedVertices}(0).
    */
-  public IntWritable getNumLastAggregatedVertices() {
-    return runner.getNumLastAggregatedVertices();
+  public IntWritable getNumLastAggregatedVertices(int index) {
+    return runner.getNumLastAggregatedVertices(index);
   }
 
   public int getNumPeers() {

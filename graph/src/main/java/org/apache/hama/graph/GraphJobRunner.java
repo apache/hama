@@ -64,10 +64,6 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
 
   private static final Text FLAG_MESSAGE_COUNTS = new Text(
       S_FLAG_MESSAGE_COUNTS);
-  private static final Text FLAG_AGGREGATOR_VALUE = new Text(
-      S_FLAG_AGGREGATOR_VALUE);
-  private static final Text FLAG_AGGREGATOR_INCREMENT = new Text(
-      S_FLAG_AGGREGATOR_INCREMENT);
 
   public static final String MESSAGE_COMBINER_CLASS = "hama.vertex.message.combiner.class";
   public static final String GRAPH_REPAIR = "hama.graph.repair";
@@ -75,13 +71,16 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
   private Configuration conf;
   private Combiner<VERTEX_VALUE> combiner;
 
-  private Aggregator<VERTEX_VALUE> aggregator;
-  private Writable globalAggregatorResult;
-  private IntWritable globalAggregatorIncrement;
-  private boolean isAbstractAggregator;
-
+  // multiple aggregator arrays
+  private Aggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>[] aggregators;
+  private Writable[] globalAggregatorResult;
+  private IntWritable[] globalAggregatorIncrement;
+  private boolean[] isAbstractAggregator;
+  private String[] aggregatorClassNames;
+  private Text[] aggregatorValueFlag;
+  private Text[] aggregatorIncrementFlag;
   // aggregator on the master side
-  private Aggregator<VERTEX_VALUE> masterAggregator;
+  private Aggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>[] masterAggregator;
 
   private Map<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> vertices = new HashMap<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>();
 
@@ -141,17 +140,31 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
           conf.getClass("hama.vertex.message.combiner.class", Combiner.class),
           conf);
     }
-
-    if (!conf.getClass("hama.graph.aggregator.class", Aggregator.class).equals(
-        Aggregator.class)) {
-      LOG.debug("Aggregator class: " + conf.get(MESSAGE_COMBINER_CLASS));
-
-      aggregator = getNewAggregator();
-      if (aggregator instanceof AbstractAggregator) {
-        isAbstractAggregator = true;
-      }
+    String aggregatorClasses = conf.get(GraphJob.AGGREGATOR_CLASS_ATTR);
+    if (aggregatorClasses != null) {
+      LOG.debug("Aggregator classes: " + aggregatorClasses);
+      aggregatorClassNames = aggregatorClasses.split(";");
+      // init to the split size
+      aggregators = new Aggregator[aggregatorClassNames.length];
+      globalAggregatorResult = new Writable[aggregatorClassNames.length];
+      globalAggregatorIncrement = new IntWritable[aggregatorClassNames.length];
+      isAbstractAggregator = new boolean[aggregatorClassNames.length];
+      aggregatorValueFlag = new Text[aggregatorClassNames.length];
+      aggregatorIncrementFlag = new Text[aggregatorClassNames.length];
       if (isMasterTask(peer)) {
-        masterAggregator = getNewAggregator();
+        masterAggregator = new Aggregator[aggregatorClassNames.length];
+      }
+      for (int i = 0; i < aggregatorClassNames.length; i++) {
+        aggregators[i] = getNewAggregator(aggregatorClassNames[i]);
+        aggregatorValueFlag[i] = new Text(S_FLAG_AGGREGATOR_VALUE + ";" + i);
+        aggregatorIncrementFlag[i] = new Text(S_FLAG_AGGREGATOR_INCREMENT + ";"
+            + i);
+        if (aggregators[i] instanceof AbstractAggregator) {
+          isAbstractAggregator[i] = true;
+        }
+        if (isMasterTask(peer)) {
+          masterAggregator[i] = getNewAggregator(aggregatorClassNames[i]);
+        }
       }
     }
 
@@ -165,15 +178,19 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
       msgIterator.add(v.getValue());
       VERTEX_VALUE lastValue = v.getValue();
       v.compute(msgIterator.iterator());
-      if (aggregator != null) {
-        aggregator.aggregate(v.getValue());
-        if (isAbstractAggregator) {
-          AbstractAggregator<VERTEX_VALUE> intern = ((AbstractAggregator<VERTEX_VALUE>) aggregator);
-          intern.aggregate(lastValue, v.getValue());
-          intern.aggregateInternal();
+      if (this.aggregators != null) {
+        for (int i = 0; i < this.aggregators.length; i++) {
+          Aggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> aggregator = this.aggregators[i];
+          aggregator.aggregate(v, v.getValue());
+          if (isAbstractAggregator[i]) {
+            AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> intern = (AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>) aggregator;
+            intern.aggregate(v, lastValue, v.getValue());
+            intern.aggregateInternal();
+          }
         }
       }
     }
+    runAggregators(peer, 1);
     iteration++;
   }
 
@@ -200,20 +217,23 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
           updatedCnt.put(FLAG_MESSAGE_COUNTS,
               new IntWritable(Integer.MIN_VALUE));
         } else {
-          if (aggregator != null) {
-            Writable lastAggregatedValue = masterAggregator.getValue();
-            if (isAbstractAggregator) {
-              final AbstractAggregator<VERTEX_VALUE> intern = ((AbstractAggregator<VERTEX_VALUE>) aggregator);
-              final Writable finalizeAggregation = intern.finalizeAggregation();
-              if (intern.finalizeAggregation() != null) {
-                lastAggregatedValue = finalizeAggregation;
+          if (aggregators != null) {
+            for (int i = 0; i < masterAggregator.length; i++) {
+              Writable lastAggregatedValue = masterAggregator[i].getValue();
+              if (isAbstractAggregator[i]) {
+                final AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> intern = ((AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>) aggregators[i]);
+                final Writable finalizeAggregation = intern
+                    .finalizeAggregation();
+                if (intern.finalizeAggregation() != null) {
+                  lastAggregatedValue = finalizeAggregation;
+                }
+                // this count is usually the times of active
+                // vertices in the graph
+                updatedCnt.put(aggregatorIncrementFlag[i],
+                    intern.getTimesAggregated());
               }
-              // this count is usually the times of active
-              // vertices in the graph
-              updatedCnt.put(FLAG_AGGREGATOR_INCREMENT,
-                  intern.getTimesAggregated());
+              updatedCnt.put(aggregatorValueFlag[i], lastAggregatedValue);
             }
-            updatedCnt.put(FLAG_AGGREGATOR_VALUE, lastAggregatedValue);
           }
         }
         for (String peerName : peer.getAllPeerNames()) {
@@ -222,17 +242,14 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
       }
       // if we have an aggregator defined, we must make an additional sync
       // to have the updated values available on all our peers.
-      if (aggregator != null && iteration > 1) {
+      if (aggregators != null && iteration > 1) {
         peer.sync();
 
         MapWritable updatedValues = peer.getCurrentMessage().getMap();
-        globalAggregatorResult = updatedValues.get(FLAG_AGGREGATOR_VALUE);
-        globalAggregatorIncrement = (IntWritable) updatedValues
-            .get(FLAG_AGGREGATOR_INCREMENT);
-
-        aggregator = getNewAggregator();
-        if (isMasterTask(peer)) {
-          masterAggregator = getNewAggregator();
+        for (int i = 0; i < aggregators.length; i++) {
+          globalAggregatorResult[i] = updatedValues.get(aggregatorValueFlag[i]);
+          globalAggregatorIncrement[i] = (IntWritable) updatedValues
+              .get(aggregatorIncrementFlag[i]);
         }
         IntWritable count = (IntWritable) updatedValues
             .get(FLAG_MESSAGE_COUNTS);
@@ -257,32 +274,54 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
             .get(e.getKey());
         VERTEX_VALUE lastValue = vertex.getValue();
         vertex.compute(msgs.iterator());
-        if (aggregator != null) {
-          aggregator.aggregate(vertex.getValue());
-          if (isAbstractAggregator) {
-            AbstractAggregator<VERTEX_VALUE> intern = ((AbstractAggregator<VERTEX_VALUE>) aggregator);
-            intern.aggregate(lastValue, vertex.getValue());
-            intern.aggregateInternal();
+        if (aggregators != null) {
+          if (this.aggregators != null) {
+            for (int i = 0; i < this.aggregators.length; i++) {
+              Aggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> aggregator = this.aggregators[i];
+              aggregator.aggregate(vertex, vertex.getValue());
+              if (isAbstractAggregator[i]) {
+                AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> intern = ((AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>) aggregator);
+                intern.aggregate(vertex, lastValue, vertex.getValue());
+                intern.aggregateInternal();
+              }
+            }
           }
         }
         iterator.remove();
       }
 
-      // send msgCounts to the master task
-      MapWritable updatedCnt = new MapWritable();
-      updatedCnt.put(FLAG_MESSAGE_COUNTS, new IntWritable(messagesSize));
-      // also send aggregated values to the master
-      if (aggregator != null) {
-        updatedCnt.put(FLAG_AGGREGATOR_VALUE, aggregator.getValue());
-        if (isAbstractAggregator) {
-          updatedCnt.put(FLAG_AGGREGATOR_INCREMENT,
-              ((AbstractAggregator<VERTEX_VALUE>) aggregator)
-                  .getTimesAggregated());
-        }
-      }
-      peer.send(masterTask, new GraphJobMessage(updatedCnt));
+      runAggregators(peer, messagesSize);
       iteration++;
     }
+  }
+
+  private void runAggregators(
+      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer,
+      int messagesSize) throws IOException {
+    // send msgCounts to the master task
+    MapWritable updatedCnt = new MapWritable();
+    updatedCnt.put(FLAG_MESSAGE_COUNTS, new IntWritable(messagesSize));
+    // also send aggregated values to the master
+    if (aggregators != null) {
+      for (int i = 0; i < this.aggregators.length; i++) {
+        updatedCnt.put(aggregatorValueFlag[i], aggregators[i].getValue());
+        if (isAbstractAggregator[i]) {
+          updatedCnt
+              .put(
+                  aggregatorIncrementFlag[i],
+                  ((AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>) aggregators[i])
+                      .getTimesAggregated());
+        }
+      }
+      for (int i = 0; i < aggregators.length; i++) {
+        // now create new aggregators for the next iteration
+        aggregators[i] = getNewAggregator(aggregatorClassNames[i]);
+        if (isMasterTask(peer)) {
+          masterAggregator[i] = getNewAggregator(aggregatorClassNames[i]);
+        }
+      }
+    }
+    peer.send(masterTask, new GraphJobMessage(updatedCnt));
   }
 
   @SuppressWarnings("unchecked")
@@ -305,20 +344,23 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
         msgs.add(value);
       } else if (msg.isMapMessage()) {
         for (Entry<Writable, Writable> e : msg.getMap().entrySet()) {
-          VERTEX_ID vertexID = (VERTEX_ID) e.getKey();
+          Text vertexID = (Text) e.getKey();
           if (FLAG_MESSAGE_COUNTS.equals(vertexID)) {
             if (((IntWritable) e.getValue()).get() == Integer.MIN_VALUE) {
               updated = false;
             } else {
               globalUpdateCounts += ((IntWritable) e.getValue()).get();
             }
-          } else if (aggregator != null
-              && FLAG_AGGREGATOR_VALUE.equals(vertexID)) {
-            masterAggregator.aggregate((VERTEX_VALUE) e.getValue());
-          } else if (aggregator != null
-              && FLAG_AGGREGATOR_INCREMENT.equals(vertexID)) {
-            if (isAbstractAggregator) {
-              ((AbstractAggregator<VERTEX_VALUE>) masterAggregator)
+          } else if (aggregators != null
+              && vertexID.toString().startsWith(S_FLAG_AGGREGATOR_VALUE)) {
+            int index = Integer.parseInt(vertexID.toString().split(";")[1]);
+            masterAggregator[index]
+                .aggregate(null, (VERTEX_VALUE) e.getValue());
+          } else if (aggregators != null
+              && vertexID.toString().startsWith(S_FLAG_AGGREGATOR_INCREMENT)) {
+            int index = Integer.parseInt(vertexID.toString().split(";")[1]);
+            if (isAbstractAggregator[index]) {
+              ((AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>) masterAggregator[index])
                   .addTimesAggregated(((IntWritable) e.getValue()).get());
             }
           }
@@ -462,9 +504,16 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
   }
 
   @SuppressWarnings("unchecked")
-  private Aggregator<VERTEX_VALUE> getNewAggregator() {
-    return (Aggregator<VERTEX_VALUE>) ReflectionUtils.newInstance(
-        conf.getClass("hama.graph.aggregator.class", Aggregator.class), conf);
+  private Aggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> getNewAggregator(
+      String clsName) {
+    try {
+      return (Aggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>) ReflectionUtils
+          .newInstance(conf.getClassByName(clsName), conf);
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+    throw new IllegalArgumentException("Aggregator class " + clsName
+        + " could not be found or instantiated!");
   }
 
   private boolean isMasterTask(
@@ -484,12 +533,12 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
     return maxIteration;
   }
 
-  public final Writable getLastAggregatedValue() {
-    return globalAggregatorResult;
+  public final Writable getLastAggregatedValue(int index) {
+    return globalAggregatorResult[index];
   }
 
-  public final IntWritable getNumLastAggregatedVertices() {
-    return globalAggregatorIncrement;
+  public final IntWritable getNumLastAggregatedVertices(int index) {
+    return globalAggregatorIncrement[index];
   }
 
 }

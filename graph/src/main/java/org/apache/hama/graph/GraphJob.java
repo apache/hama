@@ -92,9 +92,21 @@ public class GraphJob extends BSPJob {
   /**
    * Set the aggregator for the job.
    */
-  public void setAggregatorClass(@SuppressWarnings("rawtypes")
-  Class<? extends Aggregator> cls) {
-    conf.setClass(AGGREGATOR_CLASS_ATTR, cls, Aggregator.class);
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  public void setAggregatorClass(Class<? extends Aggregator> cls) {
+    this.setAggregatorClass(new Class[] { cls });
+  }
+
+  /**
+   * Sets multiple aggregators for the job.
+   */
+  @SuppressWarnings("rawtypes")
+  public void setAggregatorClass(Class<? extends Aggregator>... cls) {
+    String classNames = "";
+    for (Class<? extends Aggregator> cl : cls) {
+      classNames += cl.getName() + ";";
+    }
+    conf.set(AGGREGATOR_CLASS_ATTR, classNames);
   }
 
   @SuppressWarnings("unchecked")

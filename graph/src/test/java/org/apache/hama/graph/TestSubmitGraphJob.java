@@ -75,6 +75,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   private static String INPUT = "/tmp/pagerank-real-tmp.seq";
   private static String OUTPUT = "/tmp/pagerank-real-out";
 
+  @SuppressWarnings("unchecked")
   @Override
   public void testSubmitJob() throws Exception {
 
@@ -97,7 +98,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     // we need to include a vertex in its adjacency list,
     // otherwise the pagerank result has a constant loss
     bsp.set("hama.graph.self.ref", "true");
-    bsp.setAggregatorClass(AverageAggregator.class);
+    bsp.setAggregatorClass(AverageAggregator.class, SumAggregator.class);
 
     bsp.setVertexIDClass(Text.class);
     bsp.setVertexValueClass(DoubleWritable.class);
