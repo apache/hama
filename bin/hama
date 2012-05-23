@@ -86,13 +86,12 @@ if [ "$JAVA_HOME" = "" ]; then
 fi
 
 JAVA=$JAVA_HOME/bin/java
-JAVA_HEAP_MAX=-Xmx1000m 
 
 # check envvars which might override default args
 if [ "$HAMA_HEAPSIZE" != "" ]; then
   #echo "run with heapsize $HAMA_HEAPSIZE"
   JAVA_HEAP_MAX="-Xmx""$HAMA_HEAPSIZE""m"
-  #echo $JAVA_HEAP_MAX
+  echo $JAVA_HEAP_MAX
 fi
 
 # CLASSPATH initially contains $HAMA_CONF_DIR
