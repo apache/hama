@@ -144,8 +144,8 @@ public class VertexWritable<VERTEX_ID, VERTEX_VALUE> implements
   @Override
   public int compareTo(VertexWritable<VERTEX_ID, VERTEX_VALUE> o) {
     VertexWritable<VERTEX_ID, VERTEX_VALUE> that = o;
-    return ((Comparable<VertexWritable<VERTEX_ID, VERTEX_VALUE>>) this.vertexId)
-        .compareTo((VertexWritable<VERTEX_ID, VERTEX_VALUE>) that.vertexId);
+    return ((Comparable<VERTEX_ID>) this.vertexId)
+        .compareTo((VERTEX_ID) that.vertexId);
   }
 
   @Override
