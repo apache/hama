@@ -27,12 +27,12 @@ import org.apache.hadoop.io.Writable;
  * The result of an aggregator from the last superstep can be picked up by the
  * vertex itself via {@link Vertex}#getLastAggregatedValue();
  */
-public interface Aggregator<V extends Writable> {
+public interface Aggregator<V extends Writable, VERTEX extends Vertex<?, ?, ?>> {
 
   /**
    * Observes a new vertex value.
    */
-  public void aggregate(V value);
+  public void aggregate(VERTEX vertex, V value);
 
   /**
    * Gets a vertex value.

@@ -75,7 +75,7 @@ public class PageRank {
       }
 
       // if we have not reached our global error yet, then proceed.
-      DoubleWritable globalError = getLastAggregatedValue();
+      DoubleWritable globalError = getLastAggregatedValue(0);
       if (globalError != null && this.getSuperstepCount() > 2
           && MAXIMUM_CONVERGENCE_ERROR > globalError.get()) {
         return;

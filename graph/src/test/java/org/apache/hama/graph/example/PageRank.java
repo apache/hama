@@ -64,10 +64,15 @@ public class PageRank {
         }
         double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
         this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
+        if (this.getSuperstepCount() > 1) {
+          if(this.getLastAggregatedValue(1).get() < 0.99 || this.getLastAggregatedValue(1).get() > 1.0){
+            throw new RuntimeException("Sum aggregator hasn't summed correctly! " + this.getLastAggregatedValue(1).get());
+          }
+        }
       }
 
       // if we have not reached our global error yet, then proceed.
-      DoubleWritable globalError = getLastAggregatedValue();
+      DoubleWritable globalError = getLastAggregatedValue(0);
       if (globalError != null && this.getSuperstepCount() > 2
           && MAXIMUM_CONVERGENCE_ERROR > globalError.get()) {
         return;

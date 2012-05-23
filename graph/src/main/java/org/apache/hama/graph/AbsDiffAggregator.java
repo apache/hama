@@ -24,12 +24,14 @@ import org.apache.hadoop.io.DoubleWritable;
  * after the compute, then calculates the difference and globally accumulates
  * (sums them up) them.
  */
-public class AbsDiffAggregator extends AbstractAggregator<DoubleWritable> {
+public class AbsDiffAggregator extends
+    AbstractAggregator<DoubleWritable, Vertex<?, DoubleWritable, ?>> {
 
   double absoluteDifference = 0.0d;
 
   @Override
-  public void aggregate(DoubleWritable oldValue, DoubleWritable newValue) {
+  public void aggregate(Vertex<?, DoubleWritable, ?> v,
+      DoubleWritable oldValue, DoubleWritable newValue) {
     // make sure it's nullsafe
     if (oldValue != null) {
       absoluteDifference += Math.abs(oldValue.get() - newValue.get());
