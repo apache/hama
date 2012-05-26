@@ -22,17 +22,17 @@ import java.util.Iterator;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
+import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
-import org.apache.hama.graph.VertexArrayWritable;
-import org.apache.hama.graph.VertexWritable;
+import org.apache.hama.graph.VertexInputReader;
 
 public class SSSP {
 
@@ -63,7 +63,7 @@ public class SSSP {
 
       if (minDist < this.getValue().get()) {
         this.setValue(new IntWritable(minDist));
-        for (Edge<Text, IntWritable> e : this.getOutEdges()) {
+        for (Edge<Text, IntWritable> e : this.getEdges()) {
           sendMessage(e, new IntWritable(minDist + e.getValue().get()));
         }
       }
@@ -85,6 +85,35 @@ public class SSSP {
 
       return new IntWritable(minDist);
     }
+  }
+
+  public static class SSSPTextReader extends
+      VertexInputReader<LongWritable, Text, Text, IntWritable, IntWritable> {
+
+    /**
+     * The text file essentially should look like: <br/>
+     * VERTEX_ID\t(n-tab separated VERTEX_ID:VERTEX_VALUE pairs)<br/>
+     * E.G:<br/>
+     * 1\t2:25\t3:32\t4:21<br/>
+     * 2\t3:222\t1:922<br/>
+     * etc.
+     */
+    @Override
+    public boolean parseVertex(LongWritable key, Text value,
+        Vertex<Text, IntWritable, IntWritable> vertex) {
+      String[] split = value.toString().split("\t");
+      for (int i = 0; i < split.length; i++) {
+        if (i == 0) {
+          vertex.setVertexID(new Text(split[i]));
+        } else {
+          String[] split2 = split[i].split(":");
+          vertex.addEdge(new Edge<Text, IntWritable>(new Text(split2[0]),
+              new IntWritable(Integer.parseInt(split2[1]))));
+        }
+      }
+      return true;
+    }
+
   }
 
   private static void printUsage() {
@@ -113,12 +142,13 @@ public class SSSP {
 
     ssspJob.setVertexClass(ShortestPathVertex.class);
     ssspJob.setCombinerClass(MinIntCombiner.class);
-    ssspJob.setInputFormat(SequenceFileInputFormat.class);
-    ssspJob.setInputKeyClass(VertexWritable.class);
-    ssspJob.setInputValueClass(VertexArrayWritable.class);
+    ssspJob.setInputFormat(TextInputFormat.class);
+    ssspJob.setInputKeyClass(LongWritable.class);
+    ssspJob.setInputValueClass(Text.class);
 
     ssspJob.setPartitioner(HashPartitioner.class);
     ssspJob.setOutputFormat(SequenceFileOutputFormat.class);
+    ssspJob.setVertexInputReaderClass(SSSPTextReader.class);
     ssspJob.setOutputKeyClass(Text.class);
     ssspJob.setOutputValueClass(IntWritable.class);
     // Iterate until all the nodes have been reached.

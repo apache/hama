@@ -22,9 +22,12 @@ import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.Vertex;
+import org.apache.hama.graph.VertexInputReader;
 
 public class PageRank {
   public static class PageRankVertex extends
@@ -45,7 +48,7 @@ public class PageRank {
       if (val != null) {
         MAXIMUM_CONVERGENCE_ERROR = Double.parseDouble(val);
       }
-      numEdges = this.getOutEdges().size();
+      numEdges = this.getEdges().size();
     }
 
     @Override
@@ -65,8 +68,11 @@ public class PageRank {
         double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
         this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
         if (this.getSuperstepCount() > 1) {
-          if(this.getLastAggregatedValue(1).get() < 0.99 || this.getLastAggregatedValue(1).get() > 1.0){
-            throw new RuntimeException("Sum aggregator hasn't summed correctly! " + this.getLastAggregatedValue(1).get());
+          if (this.getLastAggregatedValue(1).get() < 0.99
+              || this.getLastAggregatedValue(1).get() > 1.1) {
+            throw new RuntimeException(
+                "Sum aggregator hasn't summed correctly! "
+                    + this.getLastAggregatedValue(1).get());
           }
         }
       }
@@ -82,4 +88,33 @@ public class PageRank {
           / numEdges));
     }
   }
+
+  public static class PagerankTextReader extends
+      VertexInputReader<LongWritable, Text, Text, DoubleWritable, NullWritable> {
+
+    /**
+     * The text file essentially should look like: <br/>
+     * VERTEX_ID\t(n-tab separated VERTEX_IDs)<br/>
+     * E.G:<br/>
+     * 1\t2\t3\t4<br/>
+     * 2\t3\t1<br/>
+     * etc.
+     */
+    @Override
+    public boolean parseVertex(LongWritable key, Text value,
+        Vertex<Text, DoubleWritable, NullWritable> vertex) {
+      String[] split = value.toString().split("\t");
+      for (int i = 0; i < split.length; i++) {
+        if (i == 0) {
+          vertex.setVertexID(new Text(split[i]));
+        } else {
+          vertex
+              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
+        }
+      }
+      return true;
+    }
+
+  }
+
 }

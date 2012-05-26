@@ -94,7 +94,7 @@ public final class GraphJobMessage implements Writable {
       } else {
         out.writeBoolean(false);
       }
-      List<?> outEdges = vertex.getOutEdges();
+      List<?> outEdges = vertex.getEdges();
       out.writeInt(outEdges.size());
       for (Object e : outEdges) {
         Edge<?, ?> edge = (Edge<?, ?>) e;
@@ -137,7 +137,7 @@ public final class GraphJobMessage implements Writable {
         vertex.setValue(vertexValue);
       }
       int size = in.readInt();
-      vertex.edges = new ArrayList<Edge<Writable, Writable>>(size);
+      vertex.setEdges(new ArrayList<Edge<Writable, Writable>>(size));
       for (int i = 0; i < size; i++) {
         String destination = in.readUTF();
         Writable edgeVertexID = ReflectionUtils.newInstance(VERTEX_ID_CLASS,
@@ -148,8 +148,8 @@ public final class GraphJobMessage implements Writable {
           edgeValue = ReflectionUtils.newInstance(EDGE_VALUE_CLASS, null);
           edgeValue.readFields(in);
         }
-        vertex.edges.add(new Edge<Writable, Writable>(edgeVertexID,
-            destination, edgeValue));
+        vertex.getEdges().add(
+            new Edge<Writable, Writable>(edgeVertexID, destination, edgeValue));
       }
       this.vertex = vertex;
     } else {

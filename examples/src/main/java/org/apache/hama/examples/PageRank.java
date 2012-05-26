@@ -23,15 +23,18 @@ import java.util.Iterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
+import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.graph.AverageAggregator;
+import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
+import org.apache.hama.graph.VertexInputReader;
 
 public class PageRank {
 
@@ -53,7 +56,7 @@ public class PageRank {
       if (val != null) {
         MAXIMUM_CONVERGENCE_ERROR = Double.parseDouble(val);
       }
-      numEdges = this.getOutEdges().size();
+      numEdges = this.getEdges().size();
     }
 
     @Override
@@ -84,6 +87,34 @@ public class PageRank {
       sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
           / numEdges));
     }
+  }
+
+  public static class PagerankTextReader extends
+      VertexInputReader<LongWritable, Text, Text, DoubleWritable, NullWritable> {
+
+    /**
+     * The text file essentially should look like: <br/>
+     * VERTEX_ID\t(n-tab separated VERTEX_IDs)<br/>
+     * E.G:<br/>
+     * 1\t2\t3\t4<br/>
+     * 2\t3\t1<br/>
+     * etc.
+     */
+    @Override
+    public boolean parseVertex(LongWritable key, Text value,
+        Vertex<Text, DoubleWritable, NullWritable> vertex) {
+      String[] split = value.toString().split("\t");
+      for (int i = 0; i < split.length; i++) {
+        if (i == 0) {
+          vertex.setVertexID(new Text(split[i]));
+        } else {
+          vertex
+              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
+        }
+      }
+      return true;
+    }
+
   }
 
   private static void printUsage() {
@@ -127,7 +158,10 @@ public class PageRank {
     pageJob.setVertexValueClass(DoubleWritable.class);
     pageJob.setEdgeValueClass(NullWritable.class);
 
-    pageJob.setInputFormat(SequenceFileInputFormat.class);
+    pageJob.setInputKeyClass(LongWritable.class);
+    pageJob.setInputValueClass(Text.class);
+    pageJob.setInputFormat(TextInputFormat.class);
+    pageJob.setVertexInputReaderClass(PagerankTextReader.class);
     pageJob.setPartitioner(HashPartitioner.class);
     pageJob.setOutputFormat(SequenceFileOutputFormat.class);
     pageJob.setOutputKeyClass(Text.class);
