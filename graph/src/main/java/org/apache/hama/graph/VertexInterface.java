@@ -50,7 +50,7 @@ public interface VertexInterface<ID_TYPE extends Writable, MSG_TYPE extends Writ
   public void compute(Iterator<MSG_TYPE> messages) throws IOException;
 
   /** @return a list of outgoing edges of this vertex in the input graph. */
-  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getOutEdges();
+  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getEdges();
 
   /** Sends a message to another vertex. */
   public void sendMessage(Edge<ID_TYPE, EDGE_VALUE_TYPE> e, MSG_TYPE msg)

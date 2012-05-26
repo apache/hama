@@ -52,8 +52,7 @@ import org.apache.hama.util.KeyValuePair;
  * @param <VERTEX_VALUE> the value type of an edge.
  */
 public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE extends Writable, EDGE_VALUE_TYPE extends Writable>
-    extends
-    BSP<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> {
+    extends BSP<Writable, Writable, Writable, Writable, GraphJobMessage> {
 
   static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
 
@@ -102,10 +101,9 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
   @Override
   @SuppressWarnings("unchecked")
   public final void setup(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
     this.conf = peer.getConfiguration();
-    VertexWritable.CONFIGURATION = conf;
     // Choose one as a master to collect global updates
     this.masterTask = peer.getPeerName(0);
 
@@ -126,7 +124,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
 
     boolean repairNeeded = conf.getBoolean(GRAPH_REPAIR, false);
     boolean runtimePartitioning = conf.getBoolean(
-        GraphJob.VERTEX_GRAPH_RUNTIME_PARTIONING, false);
+        GraphJob.VERTEX_GRAPH_RUNTIME_PARTIONING, true);
     Partitioner<VERTEX_ID, VERTEX_VALUE> partitioner = (Partitioner<VERTEX_ID, VERTEX_VALUE>) ReflectionUtils
         .newInstance(
             conf.getClass("bsp.input.partitioner.class", HashPartitioner.class),
@@ -168,7 +166,11 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
       }
     }
 
-    loadVertices(peer, repairNeeded, runtimePartitioning, partitioner);
+    VertexInputReader<Writable, Writable, VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> reader = (VertexInputReader<Writable, Writable, VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>) ReflectionUtils
+        .newInstance(conf.getClass(GraphJob.VERTEX_GRAPH_INPUT_READER,
+            VertexInputReader.class), conf);
+
+    loadVertices(peer, repairNeeded, runtimePartitioning, partitioner, reader);
     numberVertices = vertices.size() * peer.getNumPeers();
     // TODO refactor this to a single step
     for (Entry<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> e : vertices
@@ -196,7 +198,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
 
   @Override
   public final void bsp(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
 
     maxIteration = peer.getConfiguration().getInt("hama.graph.max.iteration",
@@ -296,7 +298,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
   }
 
   private void runAggregators(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer,
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
       int messagesSize) throws IOException {
     // send msgCounts to the master task
     MapWritable updatedCnt = new MapWritable();
@@ -326,7 +328,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
 
   @SuppressWarnings("unchecked")
   private Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> parseMessages(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     GraphJobMessage msg = null;
     final Map<VERTEX_ID, LinkedList<VERTEX_VALUE>> msgMap = new HashMap<VERTEX_ID, LinkedList<VERTEX_VALUE>>();
@@ -375,60 +377,66 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
 
   @SuppressWarnings("unchecked")
   private void loadVertices(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer,
-      boolean repairNeeded, boolean runtimePartitioning,
-      Partitioner<VERTEX_ID, VERTEX_VALUE> partitioner) throws IOException,
-      SyncException, InterruptedException {
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
+      boolean repairNeeded,
+      boolean runtimePartitioning,
+      Partitioner<VERTEX_ID, VERTEX_VALUE> partitioner,
+      VertexInputReader<Writable, Writable, VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> reader)
+      throws IOException, SyncException, InterruptedException {
+
     LOG.debug("vertex class: " + vertexClass);
     boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
-    KeyValuePair<? extends VertexWritable<VERTEX_ID, VERTEX_VALUE>, ? extends VertexArrayWritable> next = null;
-    while ((next = peer.readNext()) != null) {
-      Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = newVertexInstance(
-          vertexClass, conf);
-      vertex.setVertexID(next.getKey().getVertexId());
-      vertex.peer = peer;
-      vertex.runner = this;
-
-      VertexWritable<VERTEX_ID, VERTEX_VALUE>[] arr = (VertexWritable[]) next
-          .getValue().toArray();
+    Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = newVertexInstance(
+        vertexClass, conf);
+    vertex.peer = peer;
+    vertex.runner = this;
+    while (true) {
+      KeyValuePair<Writable, Writable> next = peer.readNext();
+      if (next == null) {
+        break;
+      }
+      boolean vertexFinished = reader.parseVertex(next.getKey(),
+          next.getValue(), vertex);
+      if (!vertexFinished) {
+        continue;
+      }
+      if (vertex.getEdges() == null) {
+        vertex.setEdges(new ArrayList<Edge<VERTEX_ID, EDGE_VALUE_TYPE>>(0));
+      }
       if (selfReference) {
-        VertexWritable<VERTEX_ID, VERTEX_VALUE>[] tmp = new VertexWritable[arr.length + 1];
-        System.arraycopy(arr, 0, tmp, 0, arr.length);
-        tmp[arr.length] = new VertexWritable<VERTEX_ID, VERTEX_VALUE>(
-            vertex.getValue(), vertex.getVertexID(), vertexIdClass,
-            vertexValueClass);
-        arr = tmp;
+        vertex.addEdge(new Edge<VERTEX_ID, EDGE_VALUE_TYPE>(vertex
+            .getVertexID(), peer.getPeerName(), null));
       }
-      List<Edge<VERTEX_ID, EDGE_VALUE_TYPE>> edges = new ArrayList<Edge<VERTEX_ID, EDGE_VALUE_TYPE>>();
-      for (VertexWritable<VERTEX_ID, VERTEX_VALUE> e : arr) {
-        int partition = partitioner.getPartition(e.getVertexId(),
-            e.getVertexValue(), peer.getNumPeers());
-        String target = peer.getPeerName(partition);
-        edges.add(new Edge<VERTEX_ID, EDGE_VALUE_TYPE>(e.getVertexId(), target,
-            (EDGE_VALUE_TYPE) e.getVertexValue()));
-      }
-
-      vertex.edges = edges;
       if (runtimePartitioning) {
         int partition = partitioner.getPartition(vertex.getVertexID(),
             vertex.getValue(), peer.getNumPeers());
+        // set the destination name for the edge now
+        for (Edge<VERTEX_ID, EDGE_VALUE_TYPE> edge : vertex.getEdges()) {
+          int edgePartition = partitioner.getPartition(
+              edge.getDestinationVertexID(), (VERTEX_VALUE) edge.getValue(),
+              peer.getNumPeers());
+          edge.destinationPeerName = peer.getPeerName(edgePartition);
+        }
         peer.send(peer.getPeerName(partition), new GraphJobMessage(vertex));
       } else {
         vertex.setup(conf);
-        vertices.put(next.getKey().getVertexId(), vertex);
+        vertices.put(vertex.getVertexID(), vertex);
       }
+      vertex = newVertexInstance(vertexClass, conf);
+      vertex.peer = peer;
+      vertex.runner = this;
     }
 
     if (runtimePartitioning) {
       peer.sync();
       GraphJobMessage msg = null;
       while ((msg = peer.getCurrentMessage()) != null) {
-        Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>) msg
+        Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> messagedVertex = (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>) msg
             .getVertex();
-        vertex.peer = peer;
-        vertex.runner = this;
-        vertex.setup(conf);
-        vertices.put(vertex.getVertexID(), vertex);
+        messagedVertex.peer = peer;
+        messagedVertex.runner = this;
+        messagedVertex.setup(conf);
+        vertices.put(messagedVertex.getVertexID(), messagedVertex);
       }
     }
 
@@ -444,7 +452,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
       final Collection<Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> entries = vertices
           .values();
       for (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> entry : entries) {
-        List<Edge<VERTEX_ID, EDGE_VALUE_TYPE>> outEdges = entry.getOutEdges();
+        List<Edge<VERTEX_ID, EDGE_VALUE_TYPE>> outEdges = entry.getEdges();
         for (Edge<VERTEX_ID, EDGE_VALUE_TYPE> e : outEdges) {
           peer.send(e.getDestinationPeerName(),
               new GraphJobMessage(e.getDestinationVertexID()));
@@ -455,23 +463,24 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
       while ((msg = peer.getCurrentMessage()) != null) {
         VERTEX_ID vertexName = (VERTEX_ID) msg.getVertexId();
         if (!vertices.containsKey(vertexName)) {
-          Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = newVertexInstance(
+          Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> newVertex = newVertexInstance(
               vertexClass, conf);
-          vertex.peer = peer;
-          vertex.setVertexID(vertexName);
-          vertex.runner = this;
+          newVertex.peer = peer;
+          newVertex.setVertexID(vertexName);
+          newVertex.runner = this;
           if (selfReference) {
-            int partition = partitioner.getPartition(vertex.getVertexID(),
-                vertex.getValue(), peer.getNumPeers());
+            int partition = partitioner.getPartition(newVertex.getVertexID(),
+                newVertex.getValue(), peer.getNumPeers());
             String target = peer.getPeerName(partition);
-            vertex.edges = Collections
-                .singletonList(new Edge<VERTEX_ID, EDGE_VALUE_TYPE>(vertex
-                    .getVertexID(), target, null));
+            newVertex.setEdges(Collections
+                .singletonList(new Edge<VERTEX_ID, EDGE_VALUE_TYPE>(newVertex
+                    .getVertexID(), target, null)));
           } else {
-            vertex.edges = Collections.emptyList();
+            newVertex.setEdges(new ArrayList<Edge<VERTEX_ID, EDGE_VALUE_TYPE>>(
+                0));
           }
-          vertex.setup(conf);
-          vertices.put(vertexName, vertex);
+          newVertex.setup(conf);
+          vertices.put(vertexName, newVertex);
         }
       }
     }
@@ -495,7 +504,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
    */
   @Override
   public final void cleanup(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     for (Entry<VERTEX_ID, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> e : vertices
         .entrySet()) {
@@ -517,7 +526,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
   }
 
   private boolean isMasterTask(
-      BSPPeer<VertexWritable<VERTEX_ID, VERTEX_VALUE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer) {
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer) {
     return peer.getPeerName().equals(masterTask);
   }
 

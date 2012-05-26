@@ -33,101 +33,19 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.graph.VertexArrayWritable;
-import org.apache.hama.graph.VertexWritable;
 
 /**
  * Testcase for {@link ShortestPaths}
  */
-
-@SuppressWarnings("unchecked")
 public class SSSPTest extends TestCase {
-
-  private static final Map<VertexWritable<Text, IntWritable>, VertexArrayWritable> testData = new HashMap<VertexWritable<Text, IntWritable>, VertexArrayWritable>();
-
-  static {
-    Configuration conf = new Configuration();
-    VertexWritable.CONFIGURATION = conf;
-    String[] cities = new String[] { "Frankfurt", "Mannheim", "Wuerzburg",
-        "Stuttgart", "Kassel", "Karlsruhe", "Erfurt", "Nuernberg", "Augsburg",
-        "Muenchen" };
-
-    for (String city : cities) {
-      if (city.equals("Frankfurt")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[3];
-        textArr[0] = new VertexWritable<Text, IntWritable>(85, "Mannheim");
-        textArr[1] = new VertexWritable<Text, IntWritable>(173, "Kassel");
-        textArr[2] = new VertexWritable<Text, IntWritable>(217, "Wuerzburg");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Stuttgart")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[1];
-        textArr[0] = new VertexWritable<Text, IntWritable>(183, "Nuernberg");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Kassel")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[2];
-        textArr[0] = new VertexWritable<Text, IntWritable>(502, "Muenchen");
-        textArr[1] = new VertexWritable<Text, IntWritable>(173, "Frankfurt");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Erfurt")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[1];
-        textArr[0] = new VertexWritable<Text, IntWritable>(186, "Wuerzburg");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Wuerzburg")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[3];
-        textArr[0] = new VertexWritable<Text, IntWritable>(217, "Frankfurt");
-        textArr[1] = new VertexWritable<Text, IntWritable>(186, "Erfurt");
-        textArr[2] = new VertexWritable<Text, IntWritable>(103, "Nuernberg");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Mannheim")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[2];
-        textArr[0] = new VertexWritable<Text, IntWritable>(80, "Karlsruhe");
-        textArr[1] = new VertexWritable<Text, IntWritable>(85, "Frankfurt");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Karlsruhe")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[2];
-        textArr[0] = new VertexWritable<Text, IntWritable>(250, "Augsburg");
-        textArr[1] = new VertexWritable<Text, IntWritable>(80, "Mannheim");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Augsburg")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[2];
-        textArr[0] = new VertexWritable<Text, IntWritable>(250, "Karlsruhe");
-        textArr[1] = new VertexWritable<Text, IntWritable>(84, "Muenchen");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Nuernberg")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[3];
-        textArr[0] = new VertexWritable<Text, IntWritable>(183, "Stuttgart");
-        textArr[1] = new VertexWritable<Text, IntWritable>(167, "Muenchen");
-        textArr[2] = new VertexWritable<Text, IntWritable>(103, "Wuerzburg");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      } else if (city.equals("Muenchen")) {
-        VertexWritable<Text, IntWritable>[] textArr = new VertexWritable[3];
-        textArr[0] = new VertexWritable<Text, IntWritable>(167, "Nuernberg");
-        textArr[1] = new VertexWritable<Text, IntWritable>(502, "Kassel");
-        textArr[2] = new VertexWritable<Text, IntWritable>(84, "Augsburg");
-        VertexArrayWritable arr = new VertexArrayWritable();
-        arr.set(textArr);
-        testData.put(new VertexWritable<Text, IntWritable>(0, city), arr);
-      }
-    }
-  }
+  String[] input = new String[] { "1:85\t2:217\t4:173", "0:85\t5:80",
+      "0:217\t6:186\t7:103", 
+      "7:183",
+      "0:173\t9:502", 
+      "1:80\t8:250",
+      "2:186",
+      "3:183\t9:167\t2:103",
+      "5:250\t9:84", "4:502\t7:167\t8:84" };
 
   private static String INPUT = "/tmp/sssp-tmp.seq";
   private static String TEXT_INPUT = "/tmp/sssp.txt";
@@ -145,10 +63,9 @@ public class SSSPTest extends TestCase {
   public void testShortestPaths() throws IOException, InterruptedException,
       ClassNotFoundException, InstantiationException, IllegalAccessException {
 
-    generateTestSequenceFileData();
+    generateTestData();
     try {
-      SSSP.main(new String[] { "Frankfurt", INPUT, OUTPUT });
-
+      SSSP.main(new String[] { "0", INPUT, OUTPUT, "2" });
       verifyResult();
     } finally {
       deleteTempDirs();
@@ -157,16 +74,16 @@ public class SSSPTest extends TestCase {
 
   private void verifyResult() throws IOException {
     Map<String, Integer> rs = new HashMap<String, Integer>();
-    rs.put("Erfurt", 403);
-    rs.put("Mannheim", 85);
-    rs.put("Stuttgart", 503);
-    rs.put("Kassel", 173);
-    rs.put("Nuernberg", 320);
-    rs.put("Augsburg", 415);
-    rs.put("Frankfurt", 0);
-    rs.put("Muenchen", 487);
-    rs.put("Wuerzburg", 217);
-    rs.put("Karlsruhe", 165);
+    rs.put("6", 403);
+    rs.put("1", 85);
+    rs.put("3", 503);
+    rs.put("4", 173);
+    rs.put("7", 320);
+    rs.put("8", 415);
+    rs.put("0", 0);
+    rs.put("9", 487);
+    rs.put("2", 217);
+    rs.put("5", 165);
 
     FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
     for (FileStatus fts : globStatus) {
@@ -180,33 +97,25 @@ public class SSSPTest extends TestCase {
     }
   }
 
-  private void generateTestSequenceFileData() throws IOException {
-    SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, new Path(
-        INPUT), VertexWritable.class, VertexArrayWritable.class);
-    for (Map.Entry<VertexWritable<Text, IntWritable>, VertexArrayWritable> e : testData
-        .entrySet()) {
-      writer.append(e.getKey(), e.getValue());
-    }
-    writer.close();
-  }
-
-  @SuppressWarnings("unused")
-  private static void generateTestTextData() throws IOException {
-    BufferedWriter writer = new BufferedWriter(new FileWriter(TEXT_INPUT));
-    for (Map.Entry<VertexWritable<Text, IntWritable>, VertexArrayWritable> e : testData
-        .entrySet()) {
-      writer.write(e.getKey().getVertexId() + "\t");
-      for (int i = 0; i < e.getValue().get().length; i++) {
-        writer
-            .write(((VertexWritable<Text, IntWritable>) e.getValue().get()[i])
-                .getVertexId()
-                + ":"
-                + ((VertexWritable<Text, IntWritable>) e.getValue().get()[i])
-                    .getVertexValue() + "\t");
+  private void generateTestData() {
+    BufferedWriter bw = null;
+    try {
+      bw = new BufferedWriter(new FileWriter(INPUT));
+      int index = 0;
+      for (String s : input) {
+        bw.write((index++) + "\t" + s + "\n");
       }
-      writer.write("\n");
+    } catch (IOException e) {
+      e.printStackTrace();
+    } finally {
+      if (bw != null) {
+        try {
+          bw.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
     }
-    writer.close();
   }
 
   private void deleteTempDirs() {

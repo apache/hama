@@ -17,19 +17,19 @@
  */
 package org.apache.hama.graph;
 
-import java.util.Arrays;
+import org.apache.hadoop.io.Writable;
 
-import org.apache.hadoop.io.ArrayWritable;
+/**
+ * A reader to read Hama's input files and parses a vertex out of it.
+ */
+public abstract class VertexInputReader<KEY_IN extends Writable, VALUE_IN extends Writable, VERTEX_ID extends Writable, VERTEX_VALUE extends Writable, EDGE_VALUE extends Writable> {
 
-public class VertexArrayWritable extends ArrayWritable {
-
-  public VertexArrayWritable() {
-    super(VertexWritable.class);
-  }
-
-  @Override
-  public String toString() {
-    return Arrays.toString(get());
-  }
+  /**
+   * Parses a given key and value into the given vertex. If returned true, the
+   * given vertex is considered finished and a new instance will be given in the
+   * next call.
+   */
+  public abstract boolean parseVertex(KEY_IN key, VALUE_IN value,
+      Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE> vertex);
 
 }

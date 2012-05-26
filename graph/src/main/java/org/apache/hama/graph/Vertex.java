@@ -18,6 +18,7 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -31,8 +32,8 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
   private ID_TYPE vertexID;
   private MSG_TYPE value;
   protected GraphJobRunner<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> runner;
-  protected BSPPeer<VertexWritable<ID_TYPE, MSG_TYPE>, VertexArrayWritable, Writable, Writable, GraphJobMessage> peer;
-  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> edges;
+  protected BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
+  private List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> edges;
 
   public Configuration getConf() {
     return peer.getConfiguration();
@@ -56,7 +57,7 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
 
   @Override
   public void sendMessageToNeighbors(MSG_TYPE msg) throws IOException {
-    final List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> outEdges = this.getOutEdges();
+    final List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> outEdges = this.getEdges();
     for (Edge<ID_TYPE, EDGE_VALUE_TYPE> e : outEdges) {
       sendMessage(e, msg);
     }
@@ -67,8 +68,19 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
     return runner.getNumberIterations();
   }
 
+  public void setEdges(List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> list) {
+    this.edges = list;
+  }
+
+  public void addEdge(Edge<ID_TYPE, EDGE_VALUE_TYPE> edge) {
+    if (edges == null) {
+      this.edges = new ArrayList<Edge<ID_TYPE, EDGE_VALUE_TYPE>>();
+    }
+    this.edges.add(edge);
+  }
+
   @Override
-  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getOutEdges() {
+  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getEdges() {
     return edges;
   }
 

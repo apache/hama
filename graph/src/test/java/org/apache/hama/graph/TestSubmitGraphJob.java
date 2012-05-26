@@ -17,60 +17,34 @@
  */
 package org.apache.hama.graph;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
-import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TestBSPMasterGroomServer;
+import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.graph.example.PageRank;
 
 public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
 
-  private static final Map<VertexWritable<Text, DoubleWritable>, VertexArrayWritable> tmp = new HashMap<VertexWritable<Text, DoubleWritable>, VertexArrayWritable>();
-  static {
-    Configuration conf = new HamaConfiguration();
-    VertexWritable.CONFIGURATION = conf;
-    // our first entry is null, because our indices in hama 3.0 pre calculated
-    // example starts at 1.
-    // FIXME This is really ugly.
-    String[] pages = new String[] { null, "twitter.com", "google.com",
-        "facebook.com", "yahoo.com", "nasa.gov", "stackoverflow.com",
-        "youtube.com" };
-    String[] lineArray = new String[] { "1;2;3", "2", "3;1;2;5", "4;5;6",
-        "5;4;6", "6;4", "7;2;4" };
-
-    for (int i = 0; i < lineArray.length; i++) {
-
-      String[] adjacencyStringArray = lineArray[i].split(";");
-      int vertexId = Integer.parseInt(adjacencyStringArray[0]);
-      String name = pages[vertexId];
-      @SuppressWarnings("unchecked")
-      VertexWritable<Text, NullWritable>[] arr = new VertexWritable[adjacencyStringArray.length - 1];
-      for (int j = 1; j < adjacencyStringArray.length; j++) {
-        arr[j - 1] = new VertexWritable<Text, NullWritable>(NullWritable.get(),
-            new Text(pages[Integer.parseInt(adjacencyStringArray[j])]),
-            Text.class, NullWritable.class);
-      }
-      VertexArrayWritable wr = new VertexArrayWritable();
-      wr.set(arr);
-      tmp.put(new VertexWritable<Text, DoubleWritable>(name), wr);
-    }
-  }
+  String[] input = new String[] { "stackoverflow.com\tyahoo.com",
+      "facebook.com\ttwitter.com\tgoogle.com\tnasa.gov]",
+      "yahoo.com\tnasa.gov\tstackoverflow.com]",
+      "twitter.com\tgoogle.com\tfacebook.com]",
+      "nasa.gov\tyahoo.com\tstackoverflow.com]",
+      "youtube.com\tgoogle.com\tyahoo.com]" };
 
   private static String INPUT = "/tmp/pagerank-real-tmp.seq";
   private static String OUTPUT = "/tmp/pagerank-real-out";
@@ -79,7 +53,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   @Override
   public void testSubmitJob() throws Exception {
 
-    generateSeqTestData(tmp);
+    generateTestData();
 
     GraphJob bsp = new GraphJob(configuration, PageRank.class);
     bsp.setInputPath(new Path(INPUT));
@@ -98,13 +72,17 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     // we need to include a vertex in its adjacency list,
     // otherwise the pagerank result has a constant loss
     bsp.set("hama.graph.self.ref", "true");
+    bsp.set("hama.graph.repair", "true");
     bsp.setAggregatorClass(AverageAggregator.class, SumAggregator.class);
 
     bsp.setVertexIDClass(Text.class);
     bsp.setVertexValueClass(DoubleWritable.class);
     bsp.setEdgeValueClass(NullWritable.class);
 
-    bsp.setInputFormat(SequenceFileInputFormat.class);
+    bsp.setVertexInputReaderClass(PageRank.PagerankTextReader.class);
+    bsp.setInputFormat(TextInputFormat.class);
+    bsp.setInputKeyClass(LongWritable.class);
+    bsp.setInputValueClass(Text.class);
     bsp.setPartitioner(HashPartitioner.class);
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
     bsp.setOutputKeyClass(Text.class);
@@ -137,15 +115,23 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     assertTrue(sum > 0.99d && sum <= 1.1d);
   }
 
-  private void generateSeqTestData(
-      Map<VertexWritable<Text, DoubleWritable>, VertexArrayWritable> tmp)
-      throws IOException {
-    SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf, new Path(
-        INPUT), VertexWritable.class, VertexArrayWritable.class);
-    for (Entry<VertexWritable<Text, DoubleWritable>, VertexArrayWritable> e : tmp
-        .entrySet()) {
-      writer.append(e.getKey(), e.getValue());
+  private void generateTestData() {
+    BufferedWriter bw = null;
+    try {
+      bw = new BufferedWriter(new FileWriter(INPUT));
+      for (String s : input) {
+        bw.write(s + "\n");
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    } finally {
+      if (bw != null) {
+        try {
+          bw.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
     }
-    writer.close();
   }
 }

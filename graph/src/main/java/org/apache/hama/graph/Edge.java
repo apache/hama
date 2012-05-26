@@ -26,13 +26,22 @@ import org.apache.hadoop.io.Writable;
 public final class Edge<VERTEX_ID extends Writable, EDGE_VALUE_TYPE extends Writable> {
 
   private final VERTEX_ID destinationVertexID;
-  private final String destinationPeerName;
   private final EDGE_VALUE_TYPE cost;
+  String destinationPeerName;
 
-  public Edge(VERTEX_ID sourceVertexID, String destVertexID,
+  public Edge(VERTEX_ID sourceVertexID, EDGE_VALUE_TYPE cost) {
+    this.destinationVertexID = sourceVertexID;
+    if (cost == null || cost instanceof NullWritable) {
+      this.cost = null;
+    } else {
+      this.cost = cost;
+    }
+  }
+
+  public Edge(VERTEX_ID sourceVertexID, String destinationPeer,
       EDGE_VALUE_TYPE cost) {
     this.destinationVertexID = sourceVertexID;
-    this.destinationPeerName = destVertexID;
+    destinationPeerName = destinationPeer;
     if (cost instanceof NullWritable) {
       this.cost = null;
     } else {

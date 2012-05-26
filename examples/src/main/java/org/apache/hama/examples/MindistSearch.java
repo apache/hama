@@ -22,16 +22,18 @@ import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
+import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
+import org.apache.hama.graph.VertexInputReader;
 
 /**
  * Finding the mindist vertex in a connected component.
@@ -52,7 +54,7 @@ public class MindistSearch {
         // neighbourhood.
         if (currentComponent == null) {
           setValue(new Text(getVertexID()));
-          for (Edge<Text, NullWritable> e : edges) {
+          for (Edge<Text, NullWritable> e : getEdges()) {
             Text id = getVertexID();
             if (id.compareTo(e.getDestinationVertexID()) > 0) {
               setValue(e.getDestinationVertexID());
@@ -91,6 +93,34 @@ public class MindistSearch {
 
   }
 
+  public static class MindistSearchCountReader extends
+      VertexInputReader<LongWritable, Text, Text, Text, NullWritable> {
+
+    /**
+     * The text file essentially should look like: <br/>
+     * VERTEX_ID\t(n-tab separated VERTEX_IDs)<br/>
+     * E.G:<br/>
+     * 1\t2\t3\t4<br/>
+     * 2\t3\t1<br/>
+     * etc.
+     */
+    @Override
+    public boolean parseVertex(LongWritable key, Text value,
+        Vertex<Text, Text, NullWritable> vertex) {
+      String[] split = value.toString().split("\t");
+      for (int i = 0; i < split.length; i++) {
+        if (i == 0) {
+          vertex.setVertexID(new Text(split[i]));
+        } else {
+          vertex
+              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
+        }
+      }
+      return true;
+    }
+
+  }
+
   private static void printUsage() {
     System.out
         .println("Usage: <input> <output> [maximum iterations (default 30)] [tasks]");
@@ -103,35 +133,38 @@ public class MindistSearch {
       printUsage();
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
-    GraphJob connectedComponentsJob = new GraphJob(conf,
+    GraphJob job = new GraphJob(conf,
         MindistSearchVertex.class);
-    connectedComponentsJob.setJobName("Mindist Search");
+    job.setJobName("Mindist Search");
 
-    connectedComponentsJob.setVertexClass(MindistSearchVertex.class);
-    connectedComponentsJob.setInputPath(new Path(args[0]));
-    connectedComponentsJob.setOutputPath(new Path(args[1]));
+    job.setVertexClass(MindistSearchVertex.class);
+    job.setInputPath(new Path(args[0]));
+    job.setOutputPath(new Path(args[1]));
     // set the min text combiner here
-    connectedComponentsJob.setCombinerClass(MinTextCombiner.class);
+    job.setCombinerClass(MinTextCombiner.class);
 
     // set the defaults
-    connectedComponentsJob.setMaxIteration(30);
+    job.setMaxIteration(30);
     if (args.length == 4)
-      connectedComponentsJob.setNumBspTask(Integer.parseInt(args[3]));
+      job.setNumBspTask(Integer.parseInt(args[3]));
     if (args.length >= 3)
-      connectedComponentsJob.setMaxIteration(Integer.parseInt(args[2]));
+      job.setMaxIteration(Integer.parseInt(args[2]));
 
-    connectedComponentsJob.setVertexIDClass(Text.class);
-    connectedComponentsJob.setVertexValueClass(Text.class);
-    connectedComponentsJob.setEdgeValueClass(NullWritable.class);
+    job.setVertexIDClass(Text.class);
+    job.setVertexValueClass(Text.class);
+    job.setEdgeValueClass(NullWritable.class);
 
-    connectedComponentsJob.setInputFormat(SequenceFileInputFormat.class);
-    connectedComponentsJob.setPartitioner(HashPartitioner.class);
-    connectedComponentsJob.setOutputFormat(SequenceFileOutputFormat.class);
-    connectedComponentsJob.setOutputKeyClass(Text.class);
-    connectedComponentsJob.setOutputValueClass(Text.class);
+    job.setInputKeyClass(LongWritable.class);
+    job.setInputValueClass(Text.class);
+    job.setInputFormat(TextInputFormat.class);
+    job.setVertexInputReaderClass(MindistSearchCountReader.class);
+    job.setPartitioner(HashPartitioner.class);
+    job.setOutputFormat(SequenceFileOutputFormat.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(Text.class);
 
     long startTime = System.currentTimeMillis();
-    if (connectedComponentsJob.waitForCompletion(true)) {
+    if (job.waitForCompletion(true)) {
       System.out.println("Job Finished in "
           + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }

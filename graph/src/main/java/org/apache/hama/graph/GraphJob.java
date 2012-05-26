@@ -25,7 +25,10 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.Combiner;
+import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
+
+import com.google.common.base.Preconditions;
 
 public class GraphJob extends BSPJob {
 
@@ -37,6 +40,7 @@ public class GraphJob extends BSPJob {
   public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";
   public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
   public final static String VERTEX_GRAPH_RUNTIME_PARTIONING = "hama.graph.runtime.partitioning";
+  public final static String VERTEX_GRAPH_INPUT_READER = "hama.graph.input.reader.class";
 
   /**
    * Creates a new Graph Job with the given configuration and an exampleClass.
@@ -48,12 +52,12 @@ public class GraphJob extends BSPJob {
   public GraphJob(HamaConfiguration conf, Class<?> exampleClass)
       throws IOException {
     super(conf);
-    VertexWritable.CONFIGURATION = conf;
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
     this.setVertexIDClass(Text.class);
     this.setVertexValueClass(IntWritable.class);
     this.setEdgeValueClass(IntWritable.class);
+    this.setPartitioner(HashPartitioner.class);
   }
 
   /**
@@ -109,6 +113,15 @@ public class GraphJob extends BSPJob {
     conf.set(AGGREGATOR_CLASS_ATTR, classNames);
   }
 
+  /**
+   * Sets the input reader for parsing the input to vertices.
+   */
+  public void setVertexInputReaderClass(
+      Class<? extends VertexInputReader<?, ?, ?, ?, ?>> cls) {
+    ensureState(JobState.DEFINE);
+    conf.setClass(VERTEX_GRAPH_INPUT_READER, cls, VertexInputReader.class);
+  }
+
   @SuppressWarnings("unchecked")
   public Class<? extends Vertex<? extends Writable, ? extends Writable, ? extends Writable>> getVertexClass() {
     return (Class<? extends Vertex<? extends Writable, ? extends Writable, ? extends Writable>>) conf
@@ -134,6 +147,27 @@ public class GraphJob extends BSPJob {
    */
   public void setMaxIteration(int maxIteration) {
     conf.setInt("hama.graph.max.iteration", maxIteration);
+  }
+
+  @Override
+  public void submit() throws IOException, InterruptedException {
+    Preconditions.checkArgument(this.getConf().get(VERTEX_CLASS_ATTR) != null,
+        "Please provide a vertex class!");
+    Preconditions.checkArgument(
+        this.getConf().get(VERTEX_ID_CLASS_ATTR) != null,
+        "Please provide an vertex ID class!");
+    Preconditions
+        .checkArgument(
+            this.getConf().get(VERTEX_VALUE_CLASS_ATTR) != null,
+            "Please provide an vertex value class, if you don't need one, use NullWritable!");
+    Preconditions
+        .checkArgument(
+            this.getConf().get(VERTEX_EDGE_VALUE_CLASS_ATTR) != null,
+            "Please provide an edge value class, if you don't need one, use NullWritable!");
+    Preconditions.checkArgument(
+        this.getConf().get(VERTEX_GRAPH_INPUT_READER) != null,
+        "Please provide a vertex input reader!");
+    super.submit();
   }
 
 }
