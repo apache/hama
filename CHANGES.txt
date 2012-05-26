@@ -19,6 +19,7 @@ Release 0.5 - April 10, 2012
 
   IMPROVEMENTS
 
+    HAMA-580: Improve input of graph module (tjungblut)
     HAMA-579: Add multiple aggregators (tjungblut)
     HAMA-576: Improve sendMessages in Vertex (tjungblut)
     HAMA-575: Generify graph package (tjungblut)    
