@@ -38,6 +38,14 @@ public class AbsDiffAggregator extends
     }
   }
 
+  // we a master aggregates he aggregated values, he calls this, so let's just
+  // sum up here.
+  @Override
+  public void aggregate(Vertex<?, DoubleWritable, ?> vertex,
+      DoubleWritable value) {
+    absoluteDifference += value.get();
+  }
+
   @Override
   public DoubleWritable getValue() {
     return new DoubleWritable(absoluteDifference);

@@ -220,10 +220,11 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
               new IntWritable(Integer.MIN_VALUE));
         } else {
           if (aggregators != null) {
+            // work through the master aggregators
             for (int i = 0; i < masterAggregator.length; i++) {
               Writable lastAggregatedValue = masterAggregator[i].getValue();
               if (isAbstractAggregator[i]) {
-                final AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> intern = ((AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>) aggregators[i]);
+                final AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> intern = ((AbstractAggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>) masterAggregator[i]);
                 final Writable finalizeAggregation = intern
                     .finalizeAggregation();
                 if (intern.finalizeAggregation() != null) {

@@ -33,6 +33,7 @@ public class ExampleDriver {
       pgd.addClass("cmb", CombineExample.class, "Combine");
       pgd.addClass("bench", RandBench.class, "Random Benchmark");
       pgd.addClass("pagerank", PageRank.class, "PageRank");
+      pgd.addClass("inlnkcount", InlinkCount.class, "InlinkCount");
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();
