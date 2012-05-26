@@ -77,8 +77,17 @@ public class InlinkCount extends Vertex<Text, IntWritable, NullWritable> {
 
   }
 
+  private static void printUsage() {
+    System.out.println("Usage: <input> <output> [tasks]");
+    System.exit(-1);
+  }
+
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException {
+
+    if (args.length < 2)
+      printUsage();
+
     // Graph job configuration
     HamaConfiguration conf = new HamaConfiguration();
     GraphJob inlinkJob = new GraphJob(conf, InlinkCount.class);
