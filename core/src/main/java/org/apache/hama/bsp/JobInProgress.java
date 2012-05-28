@@ -19,8 +19,10 @@ package org.apache.hama.bsp;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -29,6 +31,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hama.Constants;
 
 /**
  * JobInProgress maintains all the info for keeping a Job on the straight and
@@ -54,7 +57,6 @@ class JobInProgress {
 
   static final Log LOG = LogFactory.getLog(JobInProgress.class);
   boolean tasksInited = false;
-  boolean jobInited = false;
 
   Configuration conf;
   JobProfile profile;
@@ -89,6 +91,8 @@ class JobInProgress {
   // Used only for scheduling!
   Map<GroomServerStatus, Integer> tasksInGroomMap;
 
+  private int taskCompletionEventTracker = 0;
+
   public JobInProgress(BSPJobID jobId, Path jobFile, BSPMaster master,
       Configuration conf) throws IOException {
     this.conf = conf;
@@ -101,8 +105,8 @@ class JobInProgress {
 
     this.tasksInGroomMap = new HashMap<GroomServerStatus, Integer>();
 
-    this.status = new JobStatus(jobId, null, 0L, 0L,
-        JobStatus.State.PREP.value(), counters);
+    this.status = new JobStatus(jobId, null, 0L, 0L, JobStatus.State.PREP
+        .value(), counters);
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -119,9 +123,11 @@ class JobInProgress {
     this.jobSplit = job.getConf().get("bsp.job.split.file");
 
     this.numBSPTasks = job.getNumBspTask();
+    this.taskCompletionEvents = new ArrayList<TaskCompletionEvent>(
+        numBSPTasks + 10);
 
-    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
-        job.getJobName());
+    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
+        .getJobName());
 
     this.setJobName(job.getJobName());
 
@@ -303,9 +309,9 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(),
-          this.profile.getUser(), superstepCounter, superstepCounter,
-          superstepCounter, JobStatus.SUCCEEDED, superstepCounter, counters);
+      this.status = new JobStatus(this.status.getJobID(), this.profile
+          .getUser(), superstepCounter, superstepCounter, superstepCounter,
+          JobStatus.SUCCEEDED, superstepCounter, counters);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
@@ -339,9 +345,8 @@ class JobInProgress {
       // Kill job
       this.kill();
       // Send KillTaskAction to GroomServer
-      this.status = new JobStatus(this.status.getJobID(),
-          this.profile.getUser(), 0L, 0L, 0L, JobStatus.KILLED,
-          superstepCounter, counters);
+      this.status = new JobStatus(this.status.getJobID(), this.profile
+          .getUser(), 0L, 0L, 0L, JobStatus.KILLED, superstepCounter, counters);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
@@ -353,7 +358,39 @@ class JobInProgress {
 
   public synchronized void updateTaskStatus(TaskInProgress tip,
       TaskStatus taskStatus) {
+    TaskAttemptID taskid = taskStatus.getTaskId();
+
     tip.updateStatus(taskStatus); // update tip
+
+    TaskStatus.State state = taskStatus.getRunState();
+    TaskCompletionEvent taskEvent = null;
+    // FIXME port number should be configurable
+    String httpTaskLogLocation = "http://"
+        + tip.getGroomServerStatus().getGroomHostName() + ":"
+        + conf.getInt("bsp.http.groomserver.port", Constants.DEFAULT_GROOM_INFO_SERVER);
+
+    if (state == TaskStatus.State.FAILED || state == TaskStatus.State.KILLED) {
+      int eventNumber;
+      if ((eventNumber = tip.getSuccessEventNumber()) != -1) {
+        TaskCompletionEvent t = this.taskCompletionEvents.get(eventNumber);
+        if (t.getTaskAttemptId().equals(taskid))
+          t.setTaskStatus(TaskCompletionEvent.Status.OBSOLETE);
+      }
+
+      // Did the task failure lead to tip failure?
+      TaskCompletionEvent.Status taskCompletionStatus = (state == TaskStatus.State.FAILED) ? TaskCompletionEvent.Status.FAILED
+          : TaskCompletionEvent.Status.KILLED;
+      if (tip.isFailed()) {
+        taskCompletionStatus = TaskCompletionEvent.Status.TIPFAILED;
+      }
+      taskEvent = new TaskCompletionEvent(taskCompletionEventTracker, taskid,
+          tip.idWithinJob(), taskCompletionStatus, httpTaskLogLocation);
+
+      if (taskEvent != null) {
+        this.taskCompletionEvents.add(taskEvent);
+        taskCompletionEventTracker++;
+      }
+    }
 
     if (superstepCounter < taskStatus.getSuperstepCount()) {
       superstepCounter = taskStatus.getSuperstepCount();
@@ -429,6 +466,24 @@ class JobInProgress {
 
   public Counters getCounters() {
     return counters;
+  }
+
+  List<TaskCompletionEvent> taskCompletionEvents;
+
+  synchronized int getNumTaskCompletionEvents() {
+    return taskCompletionEvents.size();
+  }
+
+  public TaskCompletionEvent[] getTaskCompletionEvents(int fromEventId,
+      int maxEvents) {
+    TaskCompletionEvent[] events = TaskCompletionEvent.EMPTY_ARRAY;
+    if (taskCompletionEvents.size() > fromEventId) {
+      int actualMax = Math.min(maxEvents,
+          (taskCompletionEvents.size() - fromEventId));
+      events = taskCompletionEvents.subList(fromEventId,
+          actualMax + fromEventId).toArray(events);
+    }
+    return events;
   }
 
 }

@@ -37,7 +37,7 @@ public class TaskLog {
   private static final Log LOG = LogFactory.getLog(TaskLog.class.getName());
 
   private static final File LOG_DIR = new File(
-      System.getProperty("hama.log.dir"), "userlogs").getAbsoluteFile();
+      System.getProperty("hama.log.dir"), "tasklogs").getAbsoluteFile();
 
   static {
     if (!LOG_DIR.exists()) {
@@ -46,7 +46,7 @@ public class TaskLog {
   }
 
   public static File getTaskLogFile(TaskAttemptID taskid, LogName filter) {
-    return new File(new File(LOG_DIR, taskid.toString()), filter.toString());
+    return new File(LOG_DIR, taskid.getJobID() + "/" + taskid.toString() + ".log");
   }
 
   /**

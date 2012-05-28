@@ -17,11 +17,19 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,13 +48,12 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.ipc.RPC;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Shell;
@@ -203,6 +210,11 @@ public class BSPJobClient extends Configured implements Tool {
         throws IOException {
       jobSubmitClient.killTask(taskId, shouldFail);
     }
+
+    @Override
+    public TaskCompletionEvent[] getTaskCompletionEvents(int startFrom) {
+      return jobSubmitClient.getTaskCompletionEvents(getID(), startFrom, 10);
+    }
   }
 
   public BSPJobClient(Configuration conf) throws IOException {
@@ -218,8 +230,8 @@ public class BSPJobClient extends Configured implements Tool {
     if (masterAdress != null && !masterAdress.equals("local")) {
       this.jobSubmitClient = (JobSubmissionProtocol) RPC.getProxy(
           JobSubmissionProtocol.class, HamaRPCProtocolVersion.versionID,
-          BSPMaster.getAddress(conf), conf,
-          NetUtils.getSocketFactory(conf, JobSubmissionProtocol.class));
+          BSPMaster.getAddress(conf), conf, NetUtils.getSocketFactory(conf,
+              JobSubmissionProtocol.class));
     } else {
       LOG.debug("Using local BSP runner.");
       this.jobSubmitClient = new LocalBSPRunner(conf);
@@ -377,7 +389,7 @@ public class BSPJobClient extends Configured implements Tool {
     }
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @SuppressWarnings( { "rawtypes", "unchecked" })
   protected BSPJob partition(BSPJob job, int maxTasks) throws IOException {
     InputSplit[] splits = job.getInputFormat().getSplits(
         job,
@@ -416,8 +428,8 @@ public class BSPJobClient extends Configured implements Tool {
           job, null);
       CompressionCodec codec = null;
       if (outputCompressorClass != null) {
-        codec = ReflectionUtils.newInstance(outputCompressorClass,
-            job.getConf());
+        codec = ReflectionUtils.newInstance(outputCompressorClass, job
+            .getConf());
       }
 
       try {
@@ -471,7 +483,7 @@ public class BSPJobClient extends Configured implements Tool {
   /**
    * Get the {@link CompressionType} for the output {@link SequenceFile}.
    * 
-   * @param job the {@link Job}
+   * @param job the {@link BSPJob}
    * @return the {@link CompressionType} for the output {@link SequenceFile},
    *         defaulting to {@link CompressionType#RECORD}
    */
@@ -487,7 +499,7 @@ public class BSPJobClient extends Configured implements Tool {
   /**
    * Get the {@link CompressionCodec} for compressing the job outputs.
    * 
-   * @param job the {@link Job} to look in
+   * @param job the {@link BSPJob} to look in
    * @param defaultValue the {@link CompressionCodec} to return if not set
    * @return the {@link CompressionCodec} to be used to compress the job outputs
    * @throws IllegalArgumentException if the class was specified, but not found
@@ -604,21 +616,75 @@ public class BSPJobClient extends Configured implements Tool {
         LOG.info(report);
         lastReport = report;
       }
+
+      int eventCounter = 0;
+      TaskCompletionEvent[] events = info.getTaskCompletionEvents(eventCounter);
+      eventCounter += events.length;
+      
+      for(TaskCompletionEvent event : events){
+        if (event.getTaskStatus() == 
+          TaskCompletionEvent.Status.FAILED){
+          
+          // Displaying the task logs
+          displayTaskLogs(event.getTaskAttemptId(), event.getGroomServerInfo());
+        }
+      }
     }
 
     if (job.isSuccessful()) {
       LOG.info("The total number of supersteps: " + info.getSuperstepCount());
-      info.getStatus()
-          .getCounter()
-          .incrCounter(BSPPeerImpl.PeerCounter.SUPERSTEPS,
-              info.getSuperstepCount());
+      info.getStatus().getCounter().incrCounter(
+          BSPPeerImpl.PeerCounter.SUPERSTEPS, info.getSuperstepCount());
       info.getStatus().getCounter().log(LOG);
     } else {
       LOG.info("Job failed.");
     }
+    
     return job.isSuccessful();
   }
 
+  static String getTaskLogURL(TaskAttemptID taskId, String baseUrl) {
+    return (baseUrl + "/tasklog?plaintext=true&taskid=" + taskId); 
+  }
+  
+  private void displayTaskLogs(TaskAttemptID taskId,
+ String baseUrl)
+      throws MalformedURLException {
+    // The tasktracker for a 'failed/killed' job might not be around...
+    if (baseUrl != null) {
+      // Construct the url for the tasklogs
+      String taskLogUrl = getTaskLogURL(taskId, baseUrl);
+      
+      // Copy tasks's stdout of the JobClient
+      getTaskLogs(taskId, new URL(taskLogUrl+"&filter=stdout"), System.out);
+    }
+  }
+  
+  private static void getTaskLogs(TaskAttemptID taskId, URL taskLogUrl, 
+                                  OutputStream out) {
+    try {
+      URLConnection connection = taskLogUrl.openConnection();
+      BufferedReader input = 
+        new BufferedReader(new InputStreamReader(connection.getInputStream()));
+      BufferedWriter output = 
+        new BufferedWriter(new OutputStreamWriter(out));
+      try {
+        String logData = null;
+        while ((logData = input.readLine()) != null) {
+          if (logData.length() > 0) {
+            output.write(taskId + ": " + logData + "\n");
+            output.flush();
+          }
+        }
+      } finally {
+        input.close();
+      }
+    }catch(IOException ioe){
+      LOG.warn("Error reading task output" + ioe.getMessage()); 
+    }
+  }    
+
+  
   /**
    * Grab the bspmaster system directory path where job-specific files are to be
    * placed.
@@ -660,7 +726,9 @@ public class BSPJobClient extends Configured implements Tool {
 
     if (running.isSuccessful()) {
       LOG.info("Job complete: " + jobId);
-      LOG.info("The total number of supersteps: " + running.getSuperstepCount());
+      LOG
+          .info("The total number of supersteps: "
+              + running.getSuperstepCount());
       running.getStatus().getCounter().log(LOG);
     } else {
       LOG.info("Job failed.");
@@ -813,9 +881,8 @@ public class BSPJobClient extends Configured implements Tool {
         System.out.println("Job name: " + job.getJobName());
         System.out.printf("States are:\n\tRunning : 1\tSucceded : 2"
             + "\tFailed : 3\tPrep : 4\n");
-        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(),
-            jobStatus.getRunState(), jobStatus.getStartTime(),
-            jobStatus.getUsername());
+        System.out.printf("%s\t%d\t%d\t%s\n", jobStatus.getJobID(), jobStatus
+            .getRunState(), jobStatus.getStartTime(), jobStatus.getUsername());
 
         exitCode = 0;
       }

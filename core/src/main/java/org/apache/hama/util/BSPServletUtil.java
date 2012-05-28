@@ -31,7 +31,7 @@ import org.apache.hama.bsp.JobStatus;
 public class BSPServletUtil extends ServletUtil {
 
   public static final String HTML_TAIL = "<hr />\n"
-      + "<a href='http://incubator.apache.org/hama/'>Hama</a>, "
+      + "<a href='http://hama.apache.org/'>Hama</a>, "
       + Calendar.getInstance().get(Calendar.YEAR) + ".\n" + "</body></html>";
 
   /**
@@ -64,7 +64,8 @@ public class BSPServletUtil extends ServletUtil {
           + "<th>SuperSteps</th>" + "<th>Tasks</th>" + "<th>Starttime</th>"
           + "</tr>\n");
       for (JobStatus status : jobs) {
-        sb.append("<tr><td><a href=\"bspjob.jsp?jobid=").append(status.getJobID()).append("\">");
+        sb.append("<tr><td><a href=\"bspjob.jsp?jobid=").append(
+            status.getJobID()).append("\">");
         sb.append(status.getJobID());
         sb.append("</a></td><td>");
         sb.append(status.getUsername());
@@ -102,8 +103,10 @@ public class BSPServletUtil extends ServletUtil {
     for (Entry<String, GroomServerStatus> entry : status
         .getActiveGroomServerStatus().entrySet()) {
       sb.append("<tr><td>");
-      sb.append(entry.getKey()).append("</td><td>");
-      sb.append(entry.getValue().getGroomHostName()).append("</td>").append("<td>").append(entry.getValue().getMaxTasks()).append("</td><td>");
+      sb.append("<a href='http://" + entry.getKey() + "'>");
+      sb.append(entry.getKey()).append("</a></td><td>");
+      sb.append(entry.getValue().getGroomHostName()).append("</td>").append(
+          "<td>").append(entry.getValue().getMaxTasks()).append("</td><td>");
       sb.append(entry.getValue().countTasks()).append("</td><td>");
       sb.append(entry.getValue().getFailures()).append("</td><td>");
       sb.append(entry.getValue().getLastSeen()).append("</td>");

@@ -529,4 +529,10 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     }
   }
+
+  @Override
+  public TaskCompletionEvent[] getTaskCompletionEvents(BSPJobID id,
+      int startFrom, int i) {
+    return TaskCompletionEvent.EMPTY_ARRAY;
+  }
 }

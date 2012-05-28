@@ -19,11 +19,12 @@ package org.apache.hama.ipc;
 
 import java.io.IOException;
 
-import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.BSPJobID;
+import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.JobProfile;
 import org.apache.hama.bsp.JobStatus;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.TaskCompletionEvent;
 
 /**
  * Protocol that a groom server and the central BSP Master use to communicate.
@@ -119,5 +120,8 @@ public interface JobSubmissionProtocol extends HamaRPCProtocolVersion {
    */
   public boolean killTask(TaskAttemptID taskId, boolean shouldFail)
       throws IOException;
+
+  public TaskCompletionEvent[] getTaskCompletionEvents(BSPJobID id,
+      int startFrom, int i);
 
 }
