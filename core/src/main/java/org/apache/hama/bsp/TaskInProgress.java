@@ -51,13 +51,14 @@ class TaskInProgress {
   private TaskID id;
   private JobInProgress job;
   private int completes = 0;
-  
+
   private GroomServerStatus myGroomStatus = null;
 
   // Status
   // private double progress = 0;
   // private String state = "";
   private long startTime = 0;
+  private int successEventNumber = -1;
 
   // The 'next' usable taskid of this tip
   int nextTaskId = 0;
@@ -81,7 +82,7 @@ class TaskInProgress {
   private BSPJobID jobId;
 
   private RawSplit rawSplit;
-  
+
   /**
    * Constructor for new nexus between BSPMaster and GroomServer.
    * 
@@ -97,8 +98,8 @@ class TaskInProgress {
     init(jobId);
   }
 
-  public TaskInProgress(BSPJobID jobId, String jobFile, RawSplit rawSplit, BSPMaster master,
-      Configuration conf, JobInProgress job, int partition) {
+  public TaskInProgress(BSPJobID jobId, String jobFile, RawSplit rawSplit,
+      BSPMaster master, Configuration conf, JobInProgress job, int partition) {
     this.jobId = jobId;
     this.jobFile = jobFile;
     this.rawSplit = rawSplit;
@@ -114,11 +115,11 @@ class TaskInProgress {
     this.id = new TaskID(jobId, partition);
     this.startTime = System.currentTimeMillis();
   }
-  
+
   /**
    * Return a Task that can be sent to a GroomServer for execution.
    */
-  public Task getTaskToRun(Map<String, GroomServerStatus> grooms, 
+  public Task getTaskToRun(Map<String, GroomServerStatus> grooms,
       Map<GroomServerStatus, Integer> tasksInGroomMap) throws IOException {
     Task t = null;
 
@@ -133,44 +134,44 @@ class TaskInProgress {
           + " attempts for the tip '" + getTIPId() + "'");
       return null;
     }
-    
+
     String splitClass = null;
     BytesWritable split = null;
     GroomServerStatus selectedGroom = null;
-    if(rawSplit != null){
+    if (rawSplit != null) {
       splitClass = rawSplit.getClassName();
       split = rawSplit.getBytes();
       String[] possibleLocations = rawSplit.getLocations();
-      for (int i = 0; i < possibleLocations.length; ++i){
+      for (int i = 0; i < possibleLocations.length; ++i) {
         String location = possibleLocations[i];
         GroomServerStatus groom = grooms.get(location);
         Integer taskInGroom = tasksInGroomMap.get(groom);
-        taskInGroom = (taskInGroom == null)?0:taskInGroom;
-        if(taskInGroom < groom.getMaxTasks() && 
-            location.equals(groom.getGroomHostName())){
-            selectedGroom = groom;
-            t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
-            activeTasks.put(taskid, groom.getGroomName());
-            
-            break;
+        taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+        if (taskInGroom < groom.getMaxTasks()
+            && location.equals(groom.getGroomHostName())) {
+          selectedGroom = groom;
+          t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
+          activeTasks.put(taskid, groom.getGroomName());
+
+          break;
         }
       }
     }
-    //Failed in attempt to get data locality or there was no input split.
-    if(selectedGroom == null){
+    // Failed in attempt to get data locality or there was no input split.
+    if (selectedGroom == null) {
       Iterator<String> groomIter = grooms.keySet().iterator();
-      while(groomIter.hasNext()) {
+      while (groomIter.hasNext()) {
         GroomServerStatus groom = grooms.get(groomIter.next());
         Integer taskInGroom = tasksInGroomMap.get(groom);
-        taskInGroom = (taskInGroom == null)?0:taskInGroom;
-        if(taskInGroom < groom.getMaxTasks()){
+        taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+        if (taskInGroom < groom.getMaxTasks()) {
           selectedGroom = groom;
           t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
           activeTasks.put(taskid, groom.getGroomName());
         }
       }
     }
-    
+
     myGroomStatus = selectedGroom;
 
     return t;
@@ -204,8 +205,8 @@ class TaskInProgress {
   public TreeMap<TaskAttemptID, String> getTasks() {
     return activeTasks;
   }
-  
-  public GroomServerStatus getGroomServerStatus(){
+
+  public GroomServerStatus getGroomServerStatus() {
     return myGroomStatus;
   }
 
@@ -278,7 +279,7 @@ class TaskInProgress {
 
     this.completes++;
   }
-  
+
   public void terminated(TaskAttemptID taskid) {
     LOG.info("Task '" + taskid.getTaskID().toString() + "' has failed.");
 
@@ -337,6 +338,31 @@ class TaskInProgress {
    */
   public BSPMaster getBspMaster() {
     return bspMaster;
+  }
+
+  /**
+   * Set the event number that was raised for this tip
+   */
+  public void setSuccessEventNumber(int eventNumber) {
+    successEventNumber = eventNumber;
+  }
+
+  /**
+   * Get the event number that was raised for this tip
+   */
+  public int getSuccessEventNumber() {
+    return successEventNumber;
+  }
+
+  /**
+   * @return int the tip index
+   */
+  public int idWithinJob() {
+    return partition;
+  }
+
+  public String machineWhereTaskRan(TaskAttemptID taskid) {
+    return taskStatuses.get(taskid).getGroomServer();
   }
 
 }

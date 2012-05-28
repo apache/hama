@@ -118,4 +118,6 @@ public interface RunningJob {
    * @return the latest status of the job.
    */
   public JobStatus getStatus();
+
+  public TaskCompletionEvent[] getTaskCompletionEvents(int eventCounter);
 }

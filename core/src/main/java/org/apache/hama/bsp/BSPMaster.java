@@ -66,7 +66,7 @@ import org.apache.zookeeper.data.Stat;
  * jobs.
  */
 public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
-GroomServerManager, Watcher {
+    GroomServerManager, Watcher {
 
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
   public static final String localModeMessage = "Local mode detected, no launch of the daemon needed.";
@@ -86,7 +86,8 @@ GroomServerManager, Watcher {
   static long JOBINIT_SLEEP_INTERVAL = 2000;
 
   // States
-  final AtomicReference<State> state = new AtomicReference<State>(State.INITIALIZING);
+  final AtomicReference<State> state = new AtomicReference<State>(
+      State.INITIALIZING);
 
   // Attributes
   String masterIdentifier;
@@ -240,12 +241,12 @@ GroomServerManager, Watcher {
    * Start the BSPMaster process, listen on the indicated hostname/port
    */
   public BSPMaster(HamaConfiguration conf) throws IOException,
-  InterruptedException {
+      InterruptedException {
     this(conf, generateNewIdentifier());
   }
 
   BSPMaster(HamaConfiguration conf, String identifier) throws IOException,
-  InterruptedException {
+      InterruptedException {
     this.conf = conf;
     this.masterIdentifier = identifier;
 
@@ -459,8 +460,8 @@ GroomServerManager, Watcher {
    */
   private void initZK(HamaConfiguration conf) {
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
-          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
+          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -491,40 +492,41 @@ GroomServerManager, Watcher {
   }
 
   /**
-   * Clears all sub-children of node bspRoot 
+   * Clears all sub-children of node bspRoot
    */
-  public void clearZKNodes(){
+  public void clearZKNodes() {
     try {
       Stat s = zk.exists(bspRoot, false);
-      if(s != null){
+      if (s != null) {
         clearZKNodes(bspRoot);
-      }      
+      }
 
     } catch (Exception e) {
       LOG.warn("Could not clear zookeeper nodes.", e);
-    }      
+    }
   }
 
   /**
    * Clears all sub-children of node rooted at path.
+   * 
    * @param path
-   * @throws InterruptedException 
-   * @throws KeeperException 
+   * @throws InterruptedException
+   * @throws KeeperException
    */
-  private void clearZKNodes(String path) throws KeeperException, InterruptedException{
+  private void clearZKNodes(String path) throws KeeperException,
+      InterruptedException {
     ArrayList<String> list = (ArrayList<String>) zk.getChildren(path, false);
 
-    if(list.size() == 0){
+    if (list.size() == 0) {
       return;
 
-    }else{
-      for(String node:list){
-        clearZKNodes(path+"/"+node);
-        zk.delete(path+"/"+node, -1); //delete any version of this node.
+    } else {
+      for (String node : list) {
+        clearZKNodes(path + "/" + node);
+        zk.delete(path + "/" + node, -1); // delete any version of this node.
       }
     }
   }
-
 
   public void createJobRoot(String string) {
     try {
@@ -657,8 +659,8 @@ GroomServerManager, Watcher {
       for (Map.Entry<GroomServerStatus, GroomProtocol> entry : groomServers
           .entrySet()) {
         GroomServerStatus s = entry.getKey();
-        groomsMap.put(s.getGroomHostName() + ":" + Constants.DEFAULT_PEER_PORT,
-            s);
+        groomsMap.put(s.getGroomHostName() + ":"
+            + Constants.DEFAULT_GROOM_INFO_SERVER, s);
       }
     }
 
@@ -666,7 +668,8 @@ GroomServerManager, Watcher {
     this.totalTaskCapacity = tasksPerGroom * numGroomServers;
 
     if (detailed) {
-      return new ClusterStatus(groomsMap, totalTasks, totalTaskCapacity, state.get());
+      return new ClusterStatus(groomsMap, totalTasks, totalTaskCapacity, state
+          .get());
     } else {
       return new ClusterStatus(numGroomServers, totalTasks, totalTaskCapacity,
           state.get());
@@ -867,5 +870,23 @@ GroomServerManager, Watcher {
   public void process(WatchedEvent event) {
     // TODO Auto-generated method stub
 
+  }
+
+  TaskCompletionEvent[] EMPTY_EVENTS = new TaskCompletionEvent[0];
+
+  @Override
+  public TaskCompletionEvent[] getTaskCompletionEvents(BSPJobID jobid,
+      int fromEventId, int maxEvents) {
+    synchronized (this) {
+      JobInProgress job = this.jobs.get(jobid);
+      if (null != job) {
+        if (job.areTasksInited()) {
+          return job.getTaskCompletionEvents(fromEventId, maxEvents);
+        } else {
+          return EMPTY_EVENTS;
+        }
+      }
+    }
+    return null;
   }
 }

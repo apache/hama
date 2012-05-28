@@ -109,4 +109,6 @@ public interface Constants {
    * An empty instance.
    */
   static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
+  public static final int DEFAULT_GROOM_INFO_SERVER = 40015;
 }

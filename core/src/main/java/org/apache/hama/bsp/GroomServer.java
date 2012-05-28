@@ -59,6 +59,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.sync.SyncException;
+import org.apache.hama.http.HttpServer;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
@@ -93,6 +94,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     NORMAL, COMPUTE, SYNC, BARRIER, STALE, INTERRUPTED, DENIED
   };
 
+  private HttpServer server;
   private static ZooKeeper zk = null;
 
   // Running States and its related things
@@ -236,8 +238,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     private BSPTasksMonitor() {
 
-      outOfContactTasks = new ArrayList<GroomServer.TaskInProgress>(
-          conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3));
+      outOfContactTasks = new ArrayList<GroomServer.TaskInProgress>(conf
+          .getInt(Constants.MAX_TASKS_PER_GROOM, 3));
     }
 
     @Override
@@ -257,9 +259,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           LOG.debug("Purging task " + tip);
           purgeTask(tip, true);
         } catch (Exception e) {
-          LOG.error(
-              new StringBuilder("Error while removing a timed-out task - ")
-                  .append(tip.toString()), e);
+          LOG.error(new StringBuilder(
+              "Error while removing a timed-out task - ")
+              .append(tip.toString()), e);
 
         }
       }
@@ -283,8 +285,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
 
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
-          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
+          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -296,9 +298,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(
-          conf.get("bsp.dns.interface", "default"),
-          conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
+          "default"), conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(getLocalDirs());
@@ -329,6 +330,20 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
       LOG.info("Worker rpc server --> " + rpcServer);
     }
+
+    server = new HttpServer("groomserver", rpcAddr, conf.getInt(
+        "bsp.http.groomserver.port", Constants.DEFAULT_GROOM_INFO_SERVER),
+        true, conf);
+
+    FileSystem local = FileSystem.getLocal(conf);
+    server.setAttribute("groom.server", this);
+    server.setAttribute("local.file.system", local);
+    server.setAttribute("conf", conf);
+    server.setAttribute("log", LOG);
+    server.addServlet("taskLog", "/tasklog", TaskLogServlet.class);
+
+    LOG.info("starting webserver: " + rpcAddr);
+    server.start();
 
     @SuppressWarnings("deprecation")
     String address = NetUtils.getServerAddress(conf,
@@ -393,6 +408,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     this.running = true;
     this.initialized = true;
+
+    // FIXME
   }
 
   /** Return the port at which the tasktracker bound to */
@@ -687,18 +704,20 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         .entrySet()) {
       TaskInProgress tip = entry.getValue();
       if (LOG.isDebugEnabled())
-        LOG.debug("checking task: "
-            + tip.getTask().getTaskID()
-            + " starttime ="
-            + tip.startTime
-            + " lastping = "
-            + tip.lastPingedTimestamp
-            + " run state = "
-            + tip.taskStatus.getRunState().toString()
-            + " monitorPeriod = "
-            + monitorPeriod
-            + " check = "
-            + (tip.taskStatus.getRunState().equals(TaskStatus.State.RUNNING) && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))));
+        LOG
+            .debug("checking task: "
+                + tip.getTask().getTaskID()
+                + " starttime ="
+                + tip.startTime
+                + " lastping = "
+                + tip.lastPingedTimestamp
+                + " run state = "
+                + tip.taskStatus.getRunState().toString()
+                + " monitorPeriod = "
+                + monitorPeriod
+                + " check = "
+                + (tip.taskStatus.getRunState()
+                    .equals(TaskStatus.State.RUNNING) && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))));
 
       // Task is out of contact if it has not pinged since more than
       // monitorPeriod. A task is given a leeway of 10 times monitorPeriod
@@ -1054,6 +1073,24 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         }
       }
     }
+  }
+
+  public String getGroomServerName() {
+    return this.groomServerName;
+  }
+
+  /**
+   * Get the list of tasks that will be reported back to the job tracker in the
+   * next heartbeat cycle.
+   * 
+   * @return a copy of the list of TaskStatus objects
+   */
+  public synchronized List<TaskStatus> getRunningTaskStatuses() {
+    List<TaskStatus> result = new ArrayList<TaskStatus>(runningTasks.size());
+    for (TaskInProgress tip : runningTasks.values()) {
+      result.add(tip.getStatus());
+    }
+    return result;
   }
 
   /**

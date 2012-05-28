@@ -52,6 +52,12 @@
     </description>
   </property>
   <property>
+    <name>bsp.http.groomserver.port</name>
+    <value>40015</value>
+    <description>The port where the web-interface can be seen.
+    </description>
+  </property>
+  <property>
     <name>bsp.groom.report.address</name>
     <value>127.0.0.1:0</value>
     <description>The interface and port that groom server listens on. 
