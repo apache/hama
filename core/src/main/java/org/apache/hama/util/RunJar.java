@@ -48,7 +48,7 @@ public class RunJar {
     try {
       Enumeration<JarEntry> entries = jar.entries();
       while (entries.hasMoreElements()) {
-        JarEntry entry = (JarEntry) entries.nextElement();
+        JarEntry entry = entries.nextElement();
         if (!entry.isDirectory()) {
           InputStream in = jar.getInputStream(entry);
           try {
@@ -132,7 +132,7 @@ public class RunJar {
         classPath.add(lib.toURI().toURL());
       }
     }
-    ClassLoader loader = new URLClassLoader((URL[]) classPath
+    ClassLoader loader = new URLClassLoader(classPath
       .toArray(new URL[classPath.size()]));
 
     Thread.currentThread().setContextClassLoader(loader);
@@ -141,7 +141,7 @@ public class RunJar {
         String.class, 0).getClass() });
     List<String> var = Arrays.asList(args).subList(firstArg,
       args.length);
-    String[] newArgs = (String[]) var.toArray(new String[var.size()]);
+    String[] newArgs = var.toArray(new String[var.size()]);
     try {
       main.invoke(null, new Object[] { newArgs });
     } catch (InvocationTargetException e) {

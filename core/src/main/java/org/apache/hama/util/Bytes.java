@@ -889,8 +889,7 @@ public class Bytes {
     if (left == null && right == null) {
       return true;
     }
-    return (left == null || right == null || (left.length != right.length) ? false
-        : compareTo(left, right) == 0);
+    return (!(left == null || right == null || (left.length != right.length)) && compareTo(left, right) == 0);
   }
 
   /**

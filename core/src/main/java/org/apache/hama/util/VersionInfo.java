@@ -30,8 +30,8 @@ public class VersionInfo {
 
   private static final Log LOG = LogFactory.getLog(VersionInfo.class);
 
-  private static Package myPackage;
-  private static HamaVersionAnnotation version;
+  private static final Package myPackage;
+  private static final HamaVersionAnnotation version;
 
   static {
     myPackage = HamaVersionAnnotation.class.getPackage();
