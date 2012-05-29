@@ -29,8 +29,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.hadoop.util.StringUtils;
 
+/**
+ * A servlet that is run by the Grooms to provide the task logs via http.
+ */
 public class TaskLogServlet extends HttpServlet {
-  private static final long serialVersionUID = -6615764817774487321L;
+  private static final long serialVersionUID = -8127091686380253950L;
 
   private boolean haveTaskLog(TaskAttemptID taskId, TaskLog.LogName type) {
     File f = TaskLog.getTaskLogFile(taskId, type);
@@ -165,8 +168,8 @@ public class TaskLogServlet extends HttpServlet {
     String logFilter = request.getParameter("filter");
     if (logFilter != null) {
       try {
-        filter = TaskLog.LogName.valueOf(TaskLog.LogName.class, logFilter
-            .toUpperCase());
+        filter = TaskLog.LogName.valueOf(TaskLog.LogName.class,
+            logFilter.toUpperCase());
       } catch (IllegalArgumentException iae) {
         response.sendError(HttpServletResponse.SC_BAD_REQUEST,
             "Illegal value for filter: " + logFilter);
