@@ -4,6 +4,7 @@ Release 0.5 - April 10, 2012
 
   NEW FEATURES
 
+   HAMA-582: Task's error logs should be displayed on client-end when job is failed (edwardyoon)
    HAMA-566: Add disk-based queue (tjungblut)
    HAMA-552: Add a sorted message queue (tjungblut)   
    HAMA-556: Graph package to support stopping the interations when the node changes are within the tolerance value as in the case of page rank (tjungblut)
