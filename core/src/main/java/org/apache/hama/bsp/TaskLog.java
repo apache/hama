@@ -46,6 +46,7 @@ public class TaskLog {
   }
 
   public static File getTaskLogFile(TaskAttemptID taskid, LogName filter) {
+    // TODO clean up the log path and type.
     return new File(LOG_DIR, taskid.getJobID() + "/" + taskid.toString() + ".log");
   }
 

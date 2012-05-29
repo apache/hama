@@ -296,8 +296,19 @@ class TaskInProgress {
     return successfulTaskId;
   }
 
-  public void updateStatus(TaskStatus status) {
-    taskStatuses.put(status.getTaskId(), status);
+  public boolean updateStatus(TaskStatus status) {
+    TaskAttemptID taskid = status.getTaskId();
+    TaskStatus oldStatus = taskStatuses.get(taskid);
+    boolean changed = true;
+    
+    if (oldStatus != null) {
+      TaskStatus.State oldState = oldStatus.getRunState();
+      TaskStatus.State newState = status.getRunState();
+      changed = oldState != newState;
+    }
+    
+    taskStatuses.put(taskid, status);
+    return changed;
   }
 
   public TaskStatus getTaskStatus(TaskAttemptID taskId) {

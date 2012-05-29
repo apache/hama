@@ -105,8 +105,8 @@ class JobInProgress {
 
     this.tasksInGroomMap = new HashMap<GroomServerStatus, Integer>();
 
-    this.status = new JobStatus(jobId, null, 0L, 0L, JobStatus.State.PREP
-        .value(), counters);
+    this.status = new JobStatus(jobId, null, 0L, 0L,
+        JobStatus.State.PREP.value(), counters);
     this.startTime = System.currentTimeMillis();
     this.superstepCounter = 0;
     this.restartCount = 0;
@@ -126,8 +126,8 @@ class JobInProgress {
     this.taskCompletionEvents = new ArrayList<TaskCompletionEvent>(
         numBSPTasks + 10);
 
-    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(), job
-        .getJobName());
+    this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
+        job.getJobName());
 
     this.setJobName(job.getJobName());
 
@@ -309,9 +309,9 @@ class JobInProgress {
     }
 
     if (allDone) {
-      this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), superstepCounter, superstepCounter, superstepCounter,
-          JobStatus.SUCCEEDED, superstepCounter, counters);
+      this.status = new JobStatus(this.status.getJobID(),
+          this.profile.getUser(), superstepCounter, superstepCounter,
+          superstepCounter, JobStatus.SUCCEEDED, superstepCounter, counters);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
@@ -345,8 +345,9 @@ class JobInProgress {
       // Kill job
       this.kill();
       // Send KillTaskAction to GroomServer
-      this.status = new JobStatus(this.status.getJobID(), this.profile
-          .getUser(), 0L, 0L, 0L, JobStatus.KILLED, superstepCounter, counters);
+      this.status = new JobStatus(this.status.getJobID(),
+          this.profile.getUser(), 0L, 0L, 0L, JobStatus.KILLED,
+          superstepCounter, counters);
       this.finishTime = System.currentTimeMillis();
       this.status.setFinishTime(this.finishTime);
 
@@ -359,43 +360,43 @@ class JobInProgress {
   public synchronized void updateTaskStatus(TaskInProgress tip,
       TaskStatus taskStatus) {
     TaskAttemptID taskid = taskStatus.getTaskId();
+    boolean change = tip.updateStatus(taskStatus); // update tip
 
-    tip.updateStatus(taskStatus); // update tip
+    if (change) {
+      TaskStatus.State state = taskStatus.getRunState();
+      TaskCompletionEvent taskEvent = null;
+      String httpTaskLogLocation = "http://"
+          + tip.getGroomServerStatus().getGroomHostName()
+          + ":"
+          + conf.getInt("bsp.http.groomserver.port",
+              Constants.DEFAULT_GROOM_INFO_SERVER);
 
-    TaskStatus.State state = taskStatus.getRunState();
-    TaskCompletionEvent taskEvent = null;
-    // FIXME port number should be configurable
-    String httpTaskLogLocation = "http://"
-        + tip.getGroomServerStatus().getGroomHostName() + ":"
-        + conf.getInt("bsp.http.groomserver.port", Constants.DEFAULT_GROOM_INFO_SERVER);
+      if (state == TaskStatus.State.FAILED || state == TaskStatus.State.KILLED) {
+        int eventNumber;
+        if ((eventNumber = tip.getSuccessEventNumber()) != -1) {
+          TaskCompletionEvent t = this.taskCompletionEvents.get(eventNumber);
+          if (t.getTaskAttemptId().equals(taskid))
+            t.setTaskStatus(TaskCompletionEvent.Status.OBSOLETE);
+        }
 
-    if (state == TaskStatus.State.FAILED || state == TaskStatus.State.KILLED) {
-      int eventNumber;
-      if ((eventNumber = tip.getSuccessEventNumber()) != -1) {
-        TaskCompletionEvent t = this.taskCompletionEvents.get(eventNumber);
-        if (t.getTaskAttemptId().equals(taskid))
-          t.setTaskStatus(TaskCompletionEvent.Status.OBSOLETE);
-      }
+        // Did the task failure lead to tip failure?
+        TaskCompletionEvent.Status taskCompletionStatus = (state == TaskStatus.State.FAILED) ? TaskCompletionEvent.Status.FAILED
+            : TaskCompletionEvent.Status.KILLED;
+        if (tip.isFailed()) {
+          taskCompletionStatus = TaskCompletionEvent.Status.TIPFAILED;
+        }
+        taskEvent = new TaskCompletionEvent(taskCompletionEventTracker, taskid,
+            tip.idWithinJob(), taskCompletionStatus, httpTaskLogLocation);
 
-      // Did the task failure lead to tip failure?
-      TaskCompletionEvent.Status taskCompletionStatus = (state == TaskStatus.State.FAILED) ? TaskCompletionEvent.Status.FAILED
-          : TaskCompletionEvent.Status.KILLED;
-      if (tip.isFailed()) {
-        taskCompletionStatus = TaskCompletionEvent.Status.TIPFAILED;
-      }
-      taskEvent = new TaskCompletionEvent(taskCompletionEventTracker, taskid,
-          tip.idWithinJob(), taskCompletionStatus, httpTaskLogLocation);
-
-      if (taskEvent != null) {
-        this.taskCompletionEvents.add(taskEvent);
-        taskCompletionEventTracker++;
+        if (taskEvent != null) {
+          this.taskCompletionEvents.add(taskEvent);
+          taskCompletionEventTracker++;
+        }
       }
     }
 
     if (superstepCounter < taskStatus.getSuperstepCount()) {
       superstepCounter = taskStatus.getSuperstepCount();
-      // TODO Later, we have to update JobInProgress status here
-
     }
   }
 

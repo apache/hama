@@ -601,10 +601,10 @@ public class BSPJobClient extends Configured implements Tool {
    */
   public boolean monitorAndPrintJob(BSPJob job, RunningJob info)
       throws IOException, InterruptedException {
-
     String lastReport = null;
     LOG.info("Running job: " + info.getID());
-
+    int eventCounter = 0;
+    
     while (!job.isComplete()) {
       Thread.sleep(3000);
       long step = job.progress();
@@ -617,7 +617,6 @@ public class BSPJobClient extends Configured implements Tool {
         lastReport = report;
       }
 
-      int eventCounter = 0;
       TaskCompletionEvent[] events = info.getTaskCompletionEvents(eventCounter);
       eventCounter += events.length;
       

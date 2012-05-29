@@ -78,17 +78,6 @@ public class TaskCompletionEvent implements Writable {
    * Returns task id.
    * 
    * @return task id
-   * @deprecated use {@link #getTaskAttemptId()} instead.
-   */
-  @Deprecated
-  public String getTaskId() {
-    return taskId.toString();
-  }
-
-  /**
-   * Returns task id.
-   * 
-   * @return task id
    */
   public TaskAttemptID getTaskAttemptId() {
     return taskId;
