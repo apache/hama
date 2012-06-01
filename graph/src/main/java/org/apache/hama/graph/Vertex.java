@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.Partitioner;
 
 public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable, EDGE_VALUE_TYPE extends Writable>
     implements VertexInterface<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> {
@@ -32,7 +33,7 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
   private ID_TYPE vertexID;
   private MSG_TYPE value;
   protected GraphJobRunner<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> runner;
-  protected BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
+  private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
   private List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> edges;
 
   public Configuration getConf() {
@@ -61,6 +62,15 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
     for (Edge<ID_TYPE, EDGE_VALUE_TYPE> e : outEdges) {
       sendMessage(e, msg);
     }
+  }
+
+  @Override
+  public void sendMessage(ID_TYPE destinationVertexID, MSG_TYPE msg)
+      throws IOException {
+    int partition = getPartitioner().getPartition(destinationVertexID, msg,
+        peer.getNumPeers());
+    String destPeer = peer.getAllPeerNames()[partition];
+    peer.send(destPeer, new GraphJobMessage(destinationVertexID, msg));
   }
 
   @Override
@@ -129,6 +139,22 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
 
   public int getNumPeers() {
     return peer.getNumPeers();
+  }
+
+  /**
+   * Gives access to the BSP primitives and additional features by a peer.
+   */
+  public BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> getPeer() {
+    return peer;
+  }
+
+  public Partitioner<ID_TYPE, MSG_TYPE> getPartitioner() {
+    return runner.getPartitioner();
+  }
+
+  void setPeer(
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer) {
+    this.peer = peer;
   }
 
   @Override

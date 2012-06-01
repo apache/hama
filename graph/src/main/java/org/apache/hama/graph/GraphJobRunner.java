@@ -69,6 +69,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
 
   private Configuration conf;
   private Combiner<VERTEX_VALUE> combiner;
+  private Partitioner<VERTEX_ID, VERTEX_VALUE> partitioner;
 
   // multiple aggregator arrays
   private Aggregator<VERTEX_VALUE, Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>>[] aggregators;
@@ -92,11 +93,10 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
   private int maxIteration = -1;
   private long iteration;
 
-  // aimed to be accessed by vertex writables to serialize stuff
-  Class<VERTEX_ID> vertexIdClass;
-  Class<VERTEX_VALUE> vertexValueClass;
-  Class<EDGE_VALUE_TYPE> edgeValueClass;
-  Class<Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> vertexClass;
+  private Class<VERTEX_ID> vertexIdClass;
+  private Class<VERTEX_VALUE> vertexValueClass;
+  private Class<EDGE_VALUE_TYPE> edgeValueClass;
+  private Class<Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>> vertexClass;
 
   @Override
   @SuppressWarnings("unchecked")
@@ -125,7 +125,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
     boolean repairNeeded = conf.getBoolean(GRAPH_REPAIR, false);
     boolean runtimePartitioning = conf.getBoolean(
         GraphJob.VERTEX_GRAPH_RUNTIME_PARTIONING, true);
-    Partitioner<VERTEX_ID, VERTEX_VALUE> partitioner = (Partitioner<VERTEX_ID, VERTEX_VALUE>) ReflectionUtils
+    partitioner = (Partitioner<VERTEX_ID, VERTEX_VALUE>) ReflectionUtils
         .newInstance(
             conf.getClass("bsp.input.partitioner.class", HashPartitioner.class),
             conf);
@@ -389,7 +389,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
     boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
     Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = newVertexInstance(
         vertexClass, conf);
-    vertex.peer = peer;
+    vertex.setPeer(peer);
     vertex.runner = this;
     while (true) {
       KeyValuePair<Writable, Writable> next = peer.readNext();
@@ -424,7 +424,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
         vertices.put(vertex.getVertexID(), vertex);
       }
       vertex = newVertexInstance(vertexClass, conf);
-      vertex.peer = peer;
+      vertex.setPeer(peer);
       vertex.runner = this;
     }
 
@@ -434,7 +434,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
       while ((msg = peer.getCurrentMessage()) != null) {
         Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> messagedVertex = (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>) msg
             .getVertex();
-        messagedVertex.peer = peer;
+        messagedVertex.setPeer(peer);
         messagedVertex.runner = this;
         messagedVertex.setup(conf);
         vertices.put(messagedVertex.getVertexID(), messagedVertex);
@@ -466,7 +466,7 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
         if (!vertices.containsKey(vertexName)) {
           Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> newVertex = newVertexInstance(
               vertexClass, conf);
-          newVertex.peer = peer;
+          newVertex.setPeer(peer);
           newVertex.setVertexID(vertexName);
           newVertex.runner = this;
           if (selfReference) {
@@ -541,6 +541,10 @@ public final class GraphJobRunner<VERTEX_ID extends Writable, VERTEX_VALUE exten
 
   public final int getMaxIteration() {
     return maxIteration;
+  }
+
+  public Partitioner<VERTEX_ID, VERTEX_VALUE> getPartitioner() {
+    return partitioner;
   }
 
   public final Writable getLastAggregatedValue(int index) {

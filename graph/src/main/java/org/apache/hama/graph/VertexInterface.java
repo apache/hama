@@ -40,39 +40,55 @@ public interface VertexInterface<ID_TYPE extends Writable, MSG_TYPE extends Writ
    */
   public void setup(Configuration conf);
 
-  /** @return the unique identification for the vertex. */
+  /**
+   * @return the unique identification for the vertex.
+   */
   public ID_TYPE getVertexID();
 
-  /** @return the number of vertices in the input graph. */
+  /**
+   * @return the number of vertices in the input graph.
+   */
   public long getNumVertices();
 
-  /** The user-defined function */
+  /**
+   * The user-defined function
+   */
   public void compute(Iterator<MSG_TYPE> messages) throws IOException;
 
-  /** @return a list of outgoing edges of this vertex in the input graph. */
+  /**
+   * @return a list of outgoing edges of this vertex in the input graph.
+   */
   public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getEdges();
 
-  /** Sends a message to another vertex. */
+  /**
+   * Sends a message to another vertex.
+   */
   public void sendMessage(Edge<ID_TYPE, EDGE_VALUE_TYPE> e, MSG_TYPE msg)
       throws IOException;
 
-  /** Sends a message to neighbors */
+  /**
+   * Sends a message to neighbors
+   */
   public void sendMessageToNeighbors(MSG_TYPE msg) throws IOException;
 
-  /** @return the superstep number of the current superstep (starting from 0). */
+  /**
+   * Sends a message to the given destination vertex by ID and the message value
+   */
+  public void sendMessage(ID_TYPE destinationVertexID, MSG_TYPE msg)
+      throws IOException;
+
+  /**
+   * @return the superstep number of the current superstep (starting from 0).
+   */
   public long getSuperstepCount();
 
   /**
    * Sets the vertex value
-   * 
-   * @param value
    */
   public void setValue(MSG_TYPE value);
 
   /**
    * Gets the vertex value
-   * 
-   * @return value
    */
   public MSG_TYPE getValue();
 
