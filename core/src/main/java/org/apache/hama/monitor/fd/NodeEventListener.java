@@ -15,30 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.monitor.fd;
 
-import java.io.IOException;
+import org.apache.hama.monitor.fd.NodeStatus;
 
 /**
- * Failure detector client, sending heartbeat to supervisor. 
+ * Notify when an event happens.
  */
-public interface Sensor {
+public interface NodeEventListener {
 
   /**
-   * The heartbeat function, signifying its existence.
+   * Notify the node status.
+   * @param status status of the groom server.
+   * @param host name of the groom server.
    */
-  void heartbeat() throws IOException;
+  void notify(NodeStatus status, String host);
 
   /**
-   * Start sensor.
+   * The status that the listener is interested in.
+   * @return the status the listener has interest.
    */
-  void start();
+  NodeStatus[] interest();
 
   /**
-   * Stop sensor.
+   * This listener's name. 
    */
-  void stop();
-
+  String name();
 
 }

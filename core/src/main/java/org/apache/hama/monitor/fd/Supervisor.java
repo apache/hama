@@ -25,10 +25,19 @@ package org.apache.hama.monitor.fd;
 public interface Supervisor {
 
   /**
-   * The output value represents the level of a node's status. 
-   * @param addr to be checked.
-   * @return double value as the suspicion level of the endpoint.
+   * Receive notification if a node fails.
+   * @param listener will be called if a node fails.
    */
-  double suspicionLevel(String addr);
+  void register(NodeEventListener listener);
+  
+  /**
+   * Start supervisor.
+   */
+  void start();
+
+  /**
+   * Shutdown supervisor.
+   */
+  void stop();
 
 }

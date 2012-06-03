@@ -19,6 +19,7 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -30,7 +31,10 @@ import org.apache.hadoop.conf.Configuration;
 abstract class TaskScheduler implements Configurable {
 
   protected Configuration conf;
-  protected GroomServerManager groomServerManager;
+  protected final AtomicReference<GroomServerManager> groomServerManager = 
+    new AtomicReference<GroomServerManager>(null);
+  protected final AtomicReference<MonitorManager> monitorManager = 
+    new AtomicReference<MonitorManager>(null);
 
   public Configuration getConf() {
     return conf;
@@ -40,9 +44,12 @@ abstract class TaskScheduler implements Configurable {
     this.conf = conf;
   }
 
-  public synchronized void setGroomServerManager(
-      GroomServerManager groomServerManager) {
-    this.groomServerManager = groomServerManager;
+  public void setGroomServerManager(final GroomServerManager groomServerManager) {
+    this.groomServerManager.set(groomServerManager);
+  }
+
+  public void setMonitorManager(final MonitorManager monitorManager) {
+    this.monitorManager.set(monitorManager);
   }
 
   /**
@@ -64,8 +71,6 @@ abstract class TaskScheduler implements Configurable {
     // do nothing
   }
 
-  // public abstract void addJob(JobInProgress job);
-
   /**
    * Returns a collection of jobs in an order which is specific to the
    * particular scheduler.
@@ -74,4 +79,11 @@ abstract class TaskScheduler implements Configurable {
    * @return JobInProgress corresponded to the specified queue.
    */
   public abstract Collection<JobInProgress> getJobs(String queue);
+
+  /**
+   * Find a job according to its id.
+   * @param id of the job.
+   * @return job corresponded to the id provided.
+   */
+  public abstract JobInProgress findJobById(BSPJobID id); 
 }

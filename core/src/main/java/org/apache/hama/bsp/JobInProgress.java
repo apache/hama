@@ -290,6 +290,18 @@ class JobInProgress {
     return result;
   }
 
+  /**
+   * Hosts that tasks run on. 
+   * @return groom host name that tasks of a job run on.
+   */
+  public synchronized String[] tasksOnGroomServers() {
+    final String[] list = new String[tasks.length];
+    for(int i=0; i< tasks.length; i++) { 
+      list[i] = tasks[i].getGroomServerStatus().getGroomHostName(); 
+    }
+    return list; 
+  }
+
   public synchronized void completedTask(TaskInProgress tip, TaskStatus status) {
     TaskAttemptID taskid = status.getTaskId();
     updateTaskStatus(tip, status);

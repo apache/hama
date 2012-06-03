@@ -15,30 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.monitor.fd;
 
-import java.io.IOException;
-
-/**
- * Failure detector client, sending heartbeat to supervisor. 
- */
-public interface Sensor {
-
-  /**
-   * The heartbeat function, signifying its existence.
-   */
-  void heartbeat() throws IOException;
-
-  /**
-   * Start sensor.
-   */
-  void start();
-
-  /**
-   * Stop sensor.
-   */
-  void stop();
-
-
+public enum NodeStatus {
+    Alive, Dead
 }
+
