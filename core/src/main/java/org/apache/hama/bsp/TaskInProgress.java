@@ -18,6 +18,7 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -41,7 +42,7 @@ class TaskInProgress {
   // Constants
   static final int MAX_TASK_EXECS = 1;
   int maxTaskAttempts = 4;
-  private boolean failed = false;
+  private AtomicBoolean failed = new AtomicBoolean(false);
   private static final int NUM_ATTEMPTS_PER_RESTART = 1000;
 
   // Job Meta
@@ -316,11 +317,11 @@ class TaskInProgress {
   }
 
   public void kill() {
-    this.failed = true;
+    this.failed.set(true);
   }
 
   public boolean isFailed() {
-    return failed;
+    return failed.get();
   }
 
   /**

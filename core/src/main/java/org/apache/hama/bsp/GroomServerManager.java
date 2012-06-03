@@ -69,4 +69,34 @@ interface GroomServerManager {
    * @param the JobInProgressListener to be removed.
    */
   void removeJobInProgressListener(JobInProgressListener listener);
+
+  /**
+   * Move a specific groom server to black list, marking that groom as dead.
+   * @param host to be blocked.
+   */
+  void moveToBlackList(String host);
+
+  /**
+   * Move a specific groomserver out of black list, marking that groom is back again.
+   * @param host that is back alive.
+   */
+  void removeOutOfBlackList(String host);
+
+  /**
+   * GroomServers that are alive.
+   * @return groom servers alive.
+   */
+  Collection<GroomServerStatus> alive();
+
+  /**
+   * GroomServers that are marked as dead.
+   */
+  Collection<GroomServerStatus> blackList();
+
+  /**
+   * GroomServer in black list.
+   * @return groom server status in black list.
+   */
+  GroomServerStatus findInBlackList(String host);
+
 }

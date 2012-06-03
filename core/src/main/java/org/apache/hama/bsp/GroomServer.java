@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,6 +66,9 @@ import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.monitor.Monitor;
+import org.apache.hama.monitor.fd.FDProvider;
+import org.apache.hama.monitor.fd.Sensor;
+import org.apache.hama.monitor.fd.UDPSensor;
 import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.log4j.LogManager;
@@ -143,6 +147,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
   // Schedule Heartbeats to GroomServer
   private ScheduledExecutorService taskMonitorService;
+
+  private final AtomicReference<Sensor> sensor = new AtomicReference<Sensor>();
 
   private class DispatchTasksHandler implements DirectiveHandler {
 
@@ -280,7 +286,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       LOG.info(BSPMaster.localModeMessage);
       System.exit(0);
     }
-
+    
     // FileSystem local = FileSystem.getLocal(conf);
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
 
@@ -290,6 +296,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
+
+    
   }
 
   public synchronized void initialize() throws IOException {
@@ -404,6 +412,13 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     if (conf.getBoolean("bsp.monitor.enabled", false)) {
       new Monitor(conf, zk, this.groomServerName).start();
+    }
+
+    if(conf.getBoolean("bsp.monitor.fd.enabled", false)) {
+      this.sensor.set(FDProvider.createSensor(conf.
+      getClass("bsp.monitor.fd.sensor.class", UDPSensor.class,
+      Sensor.class), (HamaConfiguration)conf));
+      this.sensor.get().start();
     }
 
     this.running = true;
@@ -830,6 +845,15 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       e.printStackTrace();
     }
 
+    if(null != this.sensor.get()) {
+      this.sensor.get().stop();
+    }
+
+    if (taskMonitorService != null) {
+      taskMonitorService.shutdownNow();
+      taskMonitorService = null;
+    }
+
     this.running = false;
     this.initialized = false;
     cleanupStorage();
@@ -839,11 +863,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       taskReportServer.stop();
       taskReportServer = null;
     }
-
-    if (taskMonitorService != null) {
-      taskMonitorService.shutdownNow();
-      taskMonitorService = null;
-    }
+    
   }
 
   public static Thread startGroomServer(final GroomServer hrs) {

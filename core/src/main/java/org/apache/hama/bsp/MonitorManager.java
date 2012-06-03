@@ -15,30 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.hama.bsp;
 
-package org.apache.hama.monitor.fd;
+import org.apache.hama.monitor.fd.Supervisor;
 
-import java.io.IOException;
-
-/**
- * Failure detector client, sending heartbeat to supervisor. 
- */
-public interface Sensor {
+public interface MonitorManager {
 
   /**
-   * The heartbeat function, signifying its existence.
+   * Provide interface accessing to Supervisor.
    */
-  void heartbeat() throws IOException;
-
-  /**
-   * Start sensor.
-   */
-  void start();
-
-  /**
-   * Stop sensor.
-   */
-  void stop();
-
+  Supervisor supervisor();
 
 }

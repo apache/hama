@@ -25,16 +25,18 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.HamaConfiguration;
 
 /**
  * Failure detector UDP client.
  */
-public class UDPSensor implements Sensor, Runnable{
+public class UDPSensor implements Sensor, Callable {
 
   public static final Log LOG = LogFactory.getLog(UDPSensor.class);
   /** 
@@ -42,30 +44,34 @@ public class UDPSensor implements Sensor, Runnable{
    */
   private static long HEARTBEAT_INTERVAL; 
 
-  /* UDP server address and port */
-  private String address;
+  /* UDP server host and port */
+  private String host;
   private int port;
-  private DatagramChannel channel;
+  private final DatagramChannel channel;
   private AtomicBoolean running = new AtomicBoolean(false);
   private AtomicLong sequence = new AtomicLong(0);
+
+  private final ExecutorService scheduler;
 
   /**
    * Constructor for UDP client. Setting up configuration 
    * and open DatagramSocket.
    */
-  public UDPSensor(Configuration configuration){
-    this.address = 
-      ((HamaConfiguration)configuration).get("bsp.monitor.fd.udp_address", "localhost");
-    this.port = 
-      ((HamaConfiguration)configuration).getInt("bsp.monitor.fd.udp_port", 16384);
-    HEARTBEAT_INTERVAL = ((HamaConfiguration)configuration).getInt(
-      "bsp.monitor.fd.heartbeat_interval", 100);
-    running.set(true);
+  public UDPSensor(HamaConfiguration configuration){
+    this.host = configuration.get("bsp.monitor.fd.udp_host", "localhost");
+    this.port = configuration.getInt("bsp.monitor.fd.udp_port", 16384);
+    HEARTBEAT_INTERVAL = 
+      configuration.getInt("bsp.monitor.fd.heartbeat_interval", 1000);
+    DatagramChannel tmp = null;
     try{
-      channel = DatagramChannel.open();
+      tmp = DatagramChannel.open();
     }catch(IOException ioe){
-      LOG.error("Fail to initialize udp channel.", ioe);
+      LOG.error("Unable to open datagram channel.", ioe);
     }
+    this.channel = tmp;
+    if(null == this.channel)
+      throw new NullPointerException("Fail to open udp channel.");
+    this.scheduler = Executors.newSingleThreadExecutor();
   } 
 
 
@@ -77,15 +83,15 @@ public class UDPSensor implements Sensor, Runnable{
     heartbeat.clear();
     heartbeat.putLong(sequence.incrementAndGet()); 
     heartbeat.flip();
-    channel.send(heartbeat, new InetSocketAddress(InetAddress.getByName(
-      this.address), this.port));
+    channel.send(heartbeat, new InetSocketAddress(this.host, this.port));
     if(LOG.isDebugEnabled()){
-      LOG.debug("Heartbeat sequence "+sequence.get()+ " is sent to "+this.address+":"+ this.port);
+      LOG.debug("Heartbeat sequence "+sequence.get()+ " is sent to "+this.host+
+      ":"+ this.port);
     }
   }
 
-  public String getAddress(){
-    return this.address;
+  public String getHost(){
+    return this.host;
   }
   
   public int getPort(){
@@ -96,7 +102,7 @@ public class UDPSensor implements Sensor, Runnable{
     return HEARTBEAT_INTERVAL;
   }
 
-  public void run(){
+  public Object call() throws Exception {
     while(running.get()){
       try{
         heartbeat();
@@ -108,10 +114,20 @@ public class UDPSensor implements Sensor, Runnable{
         LOG.error("Sensor fails in sending heartbeat.", ioe);
       }
     }
-    LOG.info("Sensor at "+this.address+" stops sending heartbeat.");
+    LOG.info("Sensor at "+this.host+" stops sending heartbeat.");
+    return null;
   }
 
-  public void shutdown(){
+  @Override
+  public void start() {
+    if(!running.compareAndSet(false, true)) {
+      throw new IllegalStateException("Sensor is already started."); 
+    }
+    this.scheduler.submit(this);
+  }
+
+  @Override
+  public void stop(){
     running.set(false);
     if(null != this.channel) {
       try{ 
@@ -121,8 +137,8 @@ public class UDPSensor implements Sensor, Runnable{
         LOG.error("Error closing sensor channel.",ioe); 
       }
     }
+    this.scheduler.shutdown();
   }
-
 
   public boolean isShutdown(){
     return this.channel.socket().isClosed() && !running.get();
