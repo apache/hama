@@ -53,58 +53,40 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         </th>
        </tr>
        <tr valign="top">
-          <td align="center">chanwit</td>
-          <td align="center">Chanwit Kaewkasi</td>
-          <td align="center">The University of Manchester</td>
-          <td align="center">committer</td>
-        </tr>
-       <tr valign="top">
-          <td align="center">ianh</td>
-          <td align="center">Ian Holsman</td>
-          <td align="center">AOL</td>
-          <td align="center">mentor, committer</td>
-        </tr>
-       <tr valign="top">
           <td align="center">tommaso</td>
           <td align="center">Tommaso Teofili</td>
           <td align="center">Adobe</td>
-          <td align="center">mentor, committer</td>
+          <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
           <td align="center">edwardyoon</td>
           <td align="center"><a href="http://blog.udanax.org/">Edward J. Yoon</a></td>
-          <td align="center">Oracle corporation</td>
-          <td align="center">committer</td>
-        </tr>
-       <tr valign="top">
-          <td align="center">jeastman</td>
-          <td align="center">Jeff Eastman</td>
-          <td align="center">Narus</td>
-          <td align="center">mentor, committer</td>
+          <td align="center">Oracle</td>
+          <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
           <td align="center">stevel</td>
           <td align="center">Steve Loughran</td>
-          <td align="center">HP Laboratories</td>
-          <td align="center">mentor, committer</td>
+          <td align="center">Hortonworks</td>
+          <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
           <td align="center">tjungblut</td>
           <td align="center">Thomas Jungblut</td>
           <td align="center">Testberichte.de</td>
-          <td align="center">committer</td>
+          <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
           <td align="center">chl501</td>
           <td align="center">Chia-Hung Lin</td>
           <td align="center">.</td>
-          <td align="center">committer</td>
+          <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
           <td align="center">surajsmenon</td>
           <td align="center">Suraj Menon</td>
           <td align="center">Verisign</td>
-          <td align="center">committer</td>
+          <td align="center">PMC member, committer</td>
         </tr>
 
     </table>

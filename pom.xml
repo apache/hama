@@ -28,8 +28,8 @@
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-parent</artifactId>
   <name>Apache Hama parent POM</name>
-  <version>0.5.0-incubating-SNAPSHOT</version>
-  <url>http://incubator.apache.org/hama</url>
+  <version>0.5.0-SNAPSHOT</version>
+  <url>http://hama.apache.org</url>
   <packaging>pom</packaging>
   <prerequisites>
     <maven>3.0</maven>
@@ -45,26 +45,26 @@
   <mailingLists>
     <mailingList>
       <name>Hama User List</name>
-      <subscribe>hama-user-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>hama-user-unsubscribe@incubator.apache.org</unsubscribe>
+      <subscribe>user-subscribe@hama.apache.org</subscribe>
+      <unsubscribe>user-unsubscribe@hama.apache.org</unsubscribe>
       <archive>
-        http://mail-archives.apache.org/mod_mbox/incubator-hama-user/
+        http://mail-archives.apache.org/mod_mbox/hama-user-hama-user/
       </archive>
     </mailingList>
     <mailingList>
       <name>Hama Developer List</name>
-      <subscribe>hama-dev-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>hama-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <subscribe>dev-subscribe@hama.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@hama.apache.org</unsubscribe>
       <archive>
-        http://mail-archives.apache.org/mod_mbox/incubator-hama-dev/
+        http://mail-archives.apache.org/mod_mbox/hama-dev/
       </archive>
     </mailingList>
     <mailingList>
       <name>Hama Commits List</name>
-      <subscribe>hama-commits-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>hama-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <subscribe>commits-subscribe@hama.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@hama.apache.org</unsubscribe>
       <archive>
-        http://mail-archives.apache.org/mod_mbox/incubator-hama-commits/
+        http://mail-archives.apache.org/mod_mbox/hama-commits/
       </archive>
     </mailingList>
   </mailingLists>
@@ -76,12 +76,12 @@
     </license>
   </licenses>
   <scm>
-    <url>scm:svn:https://svn.apache.org/repos/asf/incubator/hama/</url>
+    <url>scm:svn:https://svn.apache.org/repos/asf/hama/</url>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/incubator/hama/trunk/
+      scm:svn:http://svn.apache.org/repos/asf/hama/trunk/
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/hama/trunk/
+      scm:svn:https://svn.apache.org/repos/asf/hama/trunk/
     </developerConnection>
   </scm>
 
@@ -381,7 +381,7 @@
   <distributionManagement>
     <site>
       <id>apache.website</id>
-      <url>scpexe://people.apache.org/www/incubator.apache.org/content/hama</url>
+      <url>scpexe://people.apache.org/www/hama.apache.org</url>
     </site>
   </distributionManagement>
 </project>

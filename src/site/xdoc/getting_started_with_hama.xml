@@ -121,6 +121,6 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <p>to stop all the daemons running on your cluster.</p>
     <subsection name="Execute Hama Examples"></subsection>
   <pre class="green">
-  % $HAMA_HOME/bin/hama jar hama-examples-0.x.0-incubating.jar [args]</pre>
+  % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar [args]</pre>
     </body>
 </document>

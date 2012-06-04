@@ -28,22 +28,22 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <p>
     If you use Hama, please subscribe to the Hama user mailing list.<br /> 
     The Hama user mailing list is : 
-    <a href="mailto:hama-user@incubator.apache.org">hama-user@incubator.apache.org</a>.
+    <a href="mailto:user@hama.apache.org">user@hama.apache.org</a>.
     </p>
     <ul>
-    <li><a href="mailto:hama-user-subscribe@incubator.apache.org">Subscribe to List</a></li>
-    <li><a href="mailto:hama-user-unsubscribe@incubator.apache.org">Unsubscribe from List</a></li>
+    <li><a href="mailto:user-subscribe@hama.apache.org">Subscribe to List</a></li>
+    <li><a href="mailto:user-unsubscribe@hama.apache.org">Unsubscribe from List</a></li>
     </ul>
     
     <subsection name="Hama Developer List"></subsection>
     <p>
     If you'd like to contribute to Hama, please subscribe to the Hama developer mailing list.<br /> 
     The Hama developer mailing list is : 
-    <a href="mailto:hama-dev@incubator.apache.org">hama-dev@incubator.apache.org</a>.
+    <a href="mailto:dev@hama.apache.org">dev@hama.apache.org</a>.
     </p>
     <ul>
-    <li><a href="mailto:hama-dev-subscribe@incubator.apache.org">Subscribe to List</a></li>
-    <li><a href="mailto:hama-dev-unsubscribe@incubator.apache.org">Unsubscribe from List</a></li>
+    <li><a href="mailto:dev-subscribe@hama.apache.org">Subscribe to List</a></li>
+    <li><a href="mailto:dev-unsubscribe@hama.apache.org">Unsubscribe from List</a></li>
     </ul>
     
     <subsection name="Hama Commit List"></subsection>
@@ -51,11 +51,11 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     If you'd like to see changes made in Hama's version control system  then subscribe 
     to the Hama commit mailing list.<br />
     The Hama commit mailing list is : 
-    <a href="mailto:hama-commits@incubator.apache.org">hama-commits@incubator.apache.org</a>.
+    <a href="mailto:commits@hama.apache.org">commits@hama.apache.org</a>.
     </p>
     <ul>
-    <li><a href="mailto:hama-commits-subscribe@incubator.apache.org">Subscribe to List</a></li>
-    <li><a href="mailto:hama-commits-unsubscribe@incubator.apache.org">Unsubscribe from List</a></li>
+    <li><a href="mailto:commits-subscribe@hama.apache.org">Subscribe to List</a></li>
+    <li><a href="mailto:commits-unsubscribe@hama.apache.org">Unsubscribe from List</a></li>
     </ul>
     
   </body>

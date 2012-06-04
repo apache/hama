@@ -23,12 +23,12 @@ import org.apache.hadoop.io.DoubleWritable;
  * Sums all vertex values globally.
  */
 public class SumAggregator extends
-    AbstractAggregator<DoubleWritable, Vertex<?, DoubleWritable, ?>> {
+    AbstractAggregator<DoubleWritable, Vertex<?, ?, DoubleWritable>> {
 
   double sum = 0.0d;
 
   @Override
-  public void aggregate(Vertex<?, DoubleWritable, ?> vertex,
+  public void aggregate(Vertex<?, ?, DoubleWritable> vertex,
       DoubleWritable value) {
     sum += value.get();
   }
@@ -37,5 +37,4 @@ public class SumAggregator extends
   public DoubleWritable getValue() {
     return new DoubleWritable(sum);
   }
-
 }
