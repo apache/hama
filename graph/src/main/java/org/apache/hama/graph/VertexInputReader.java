@@ -22,7 +22,7 @@ import org.apache.hadoop.io.Writable;
 /**
  * A reader to read Hama's input files and parses a vertex out of it.
  */
-public abstract class VertexInputReader<KEY_IN extends Writable, VALUE_IN extends Writable, VERTEX_ID extends Writable, VERTEX_VALUE extends Writable, EDGE_VALUE extends Writable> {
+public abstract class VertexInputReader<KEY_IN extends Writable, VALUE_IN extends Writable, VERTEX_ID extends Writable, EDGE_VALUE extends Writable, VERTEX_VALUE extends Writable> {
 
   /**
    * Parses a given key and value into the given vertex. If returned true, the
@@ -30,6 +30,6 @@ public abstract class VertexInputReader<KEY_IN extends Writable, VALUE_IN extend
    * next call.
    */
   public abstract boolean parseVertex(KEY_IN key, VALUE_IN value,
-      Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE> vertex);
+      Vertex<VERTEX_ID, EDGE_VALUE, VERTEX_VALUE> vertex);
 
 }

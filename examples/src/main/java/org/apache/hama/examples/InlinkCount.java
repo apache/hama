@@ -34,7 +34,7 @@ import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
 
-public class InlinkCount extends Vertex<Text, IntWritable, NullWritable> {
+public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
 
   @Override
   public void compute(Iterator<IntWritable> messages) throws IOException {
@@ -50,7 +50,7 @@ public class InlinkCount extends Vertex<Text, IntWritable, NullWritable> {
   }
 
   public static class InlinkCountTextReader extends
-      VertexInputReader<LongWritable, Text, Text, IntWritable, NullWritable> {
+      VertexInputReader<LongWritable, Text, Text, NullWritable, IntWritable> {
 
     /**
      * The text file essentially should look like: <br/>
@@ -62,7 +62,7 @@ public class InlinkCount extends Vertex<Text, IntWritable, NullWritable> {
      */
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, IntWritable, NullWritable> vertex) {
+        Vertex<Text, NullWritable, IntWritable> vertex) {
       String[] split = value.toString().split("\t");
       for (int i = 0; i < split.length; i++) {
         if (i == 0) {

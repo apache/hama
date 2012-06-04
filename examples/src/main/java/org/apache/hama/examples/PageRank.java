@@ -39,7 +39,7 @@ import org.apache.hama.graph.VertexInputReader;
 public class PageRank {
 
   public static class PageRankVertex extends
-      Vertex<Text, DoubleWritable, NullWritable> {
+      Vertex<Text, NullWritable, DoubleWritable> {
 
     static double DAMPING_FACTOR = 0.85;
     static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
@@ -90,7 +90,7 @@ public class PageRank {
   }
 
   public static class PagerankTextReader extends
-      VertexInputReader<LongWritable, Text, Text, DoubleWritable, NullWritable> {
+      VertexInputReader<LongWritable, Text, Text, NullWritable, DoubleWritable> {
 
     /**
      * The text file essentially should look like: <br/>
@@ -102,7 +102,7 @@ public class PageRank {
      */
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, DoubleWritable, NullWritable> vertex) {
+        Vertex<Text, NullWritable, DoubleWritable> vertex) {
       String[] split = value.toString().split("\t");
       for (int i = 0; i < split.length; i++) {
         if (i == 0) {

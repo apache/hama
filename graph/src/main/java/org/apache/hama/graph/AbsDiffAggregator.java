@@ -25,12 +25,12 @@ import org.apache.hadoop.io.DoubleWritable;
  * (sums them up) them.
  */
 public class AbsDiffAggregator extends
-    AbstractAggregator<DoubleWritable, Vertex<?, DoubleWritable, ?>> {
+    AbstractAggregator<DoubleWritable, Vertex<?, ?, DoubleWritable>> {
 
   double absoluteDifference = 0.0d;
 
   @Override
-  public void aggregate(Vertex<?, DoubleWritable, ?> v,
+  public void aggregate(Vertex<?, ?, DoubleWritable> v,
       DoubleWritable oldValue, DoubleWritable newValue) {
     // make sure it's nullsafe
     if (oldValue != null) {
@@ -41,7 +41,7 @@ public class AbsDiffAggregator extends
   // we a master aggregates he aggregated values, he calls this, so let's just
   // sum up here.
   @Override
-  public void aggregate(Vertex<?, DoubleWritable, ?> vertex,
+  public void aggregate(Vertex<?, ?, DoubleWritable> vertex,
       DoubleWritable value) {
     absoluteDifference += value.get();
   }

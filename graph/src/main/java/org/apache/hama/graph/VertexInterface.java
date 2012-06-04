@@ -27,13 +27,13 @@ import org.apache.hadoop.io.Writable;
 /**
  * The vertex interface.
  * 
- * @param <ID_TYPE> this type must be writable and should also implement equals
- *          and hashcode.
- * @param <MSG_TYPE> the type used for messaging, usually the value of a vertex.
- * @param <EDGE_VALUE_TYPE> the type used for storing edge values, usually the
- *          value of an edge.
+ * @param <V> this type must be writable and should also implement equals and
+ *          hashcode.
+ * @param <E> the type used for storing edge values, usually the value of an
+ *          edge.
+ * @param <M> the type used for messaging, usually the value of a vertex.
  */
-public interface VertexInterface<ID_TYPE extends Writable, MSG_TYPE extends Writable, EDGE_VALUE_TYPE extends Writable> {
+public interface VertexInterface<V extends Writable, E extends Writable, M extends Writable> {
 
   /**
    * Used to setup a vertex.
@@ -43,7 +43,7 @@ public interface VertexInterface<ID_TYPE extends Writable, MSG_TYPE extends Writ
   /**
    * @return the unique identification for the vertex.
    */
-  public ID_TYPE getVertexID();
+  public V getVertexID();
 
   /**
    * @return the number of vertices in the input graph.
@@ -53,29 +53,27 @@ public interface VertexInterface<ID_TYPE extends Writable, MSG_TYPE extends Writ
   /**
    * The user-defined function
    */
-  public void compute(Iterator<MSG_TYPE> messages) throws IOException;
+  public void compute(Iterator<M> messages) throws IOException;
 
   /**
    * @return a list of outgoing edges of this vertex in the input graph.
    */
-  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getEdges();
+  public List<Edge<V, E>> getEdges();
 
   /**
    * Sends a message to another vertex.
    */
-  public void sendMessage(Edge<ID_TYPE, EDGE_VALUE_TYPE> e, MSG_TYPE msg)
-      throws IOException;
+  public void sendMessage(Edge<V, E> e, M msg) throws IOException;
 
   /**
    * Sends a message to neighbors
    */
-  public void sendMessageToNeighbors(MSG_TYPE msg) throws IOException;
+  public void sendMessageToNeighbors(M msg) throws IOException;
 
   /**
    * Sends a message to the given destination vertex by ID and the message value
    */
-  public void sendMessage(ID_TYPE destinationVertexID, MSG_TYPE msg)
-      throws IOException;
+  public void sendMessage(V destinationVertexID, M msg) throws IOException;
 
   /**
    * @return the superstep number of the current superstep (starting from 0).
@@ -85,11 +83,11 @@ public interface VertexInterface<ID_TYPE extends Writable, MSG_TYPE extends Writ
   /**
    * Sets the vertex value
    */
-  public void setValue(MSG_TYPE value);
+  public void setValue(M value);
 
   /**
    * Gets the vertex value
    */
-  public MSG_TYPE getValue();
+  public M getValue();
 
 }

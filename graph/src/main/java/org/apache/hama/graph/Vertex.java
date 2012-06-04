@@ -27,21 +27,21 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
 
-public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable, EDGE_VALUE_TYPE extends Writable>
-    implements VertexInterface<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> {
+public abstract class Vertex<V extends Writable, E extends Writable, M extends Writable>
+    implements VertexInterface<V, E, M> {
 
-  private ID_TYPE vertexID;
-  private MSG_TYPE value;
-  protected GraphJobRunner<ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE> runner;
+  private V vertexID;
+  private M value;
+  protected GraphJobRunner<V, E, M> runner;
   private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
-  private List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> edges;
+  private List<Edge<V, E>> edges;
 
   public Configuration getConf() {
     return peer.getConfiguration();
   }
 
   @Override
-  public ID_TYPE getVertexID() {
+  public V getVertexID() {
     return vertexID;
   }
 
@@ -50,22 +50,22 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
   }
 
   @Override
-  public void sendMessage(Edge<ID_TYPE, EDGE_VALUE_TYPE> e, MSG_TYPE msg)
+  public void sendMessage(Edge<V, E> e, M msg)
       throws IOException {
     peer.send(e.getDestinationPeerName(),
         new GraphJobMessage(e.getDestinationVertexID(), msg));
   }
 
   @Override
-  public void sendMessageToNeighbors(MSG_TYPE msg) throws IOException {
-    final List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> outEdges = this.getEdges();
-    for (Edge<ID_TYPE, EDGE_VALUE_TYPE> e : outEdges) {
+  public void sendMessageToNeighbors(M msg) throws IOException {
+    final List<Edge<V, E>> outEdges = this.getEdges();
+    for (Edge<V, E> e : outEdges) {
       sendMessage(e, msg);
     }
   }
 
   @Override
-  public void sendMessage(ID_TYPE destinationVertexID, MSG_TYPE msg)
+  public void sendMessage(V destinationVertexID, M msg)
       throws IOException {
     int partition = getPartitioner().getPartition(destinationVertexID, msg,
         peer.getNumPeers());
@@ -78,33 +78,33 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
     return runner.getNumberIterations();
   }
 
-  public void setEdges(List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> list) {
+  public void setEdges(List<Edge<V, E>> list) {
     this.edges = list;
   }
 
-  public void addEdge(Edge<ID_TYPE, EDGE_VALUE_TYPE> edge) {
+  public void addEdge(Edge<V, E> edge) {
     if (edges == null) {
-      this.edges = new ArrayList<Edge<ID_TYPE, EDGE_VALUE_TYPE>>();
+      this.edges = new ArrayList<Edge<V, E>>();
     }
     this.edges.add(edge);
   }
 
   @Override
-  public List<Edge<ID_TYPE, EDGE_VALUE_TYPE>> getEdges() {
+  public List<Edge<V, E>> getEdges() {
     return edges;
   }
 
   @Override
-  public MSG_TYPE getValue() {
+  public M getValue() {
     return value;
   }
 
   @Override
-  public void setValue(MSG_TYPE value) {
+  public void setValue(M value) {
     this.value = value;
   }
 
-  public void setVertexID(ID_TYPE vertexID) {
+  public void setVertexID(V vertexID) {
     this.vertexID = vertexID;
   }
 
@@ -121,8 +121,8 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
    * {@link #getLastAggregatedValue}(0).
    */
   @SuppressWarnings("unchecked")
-  public MSG_TYPE getLastAggregatedValue(int index) {
-    return (MSG_TYPE) runner.getLastAggregatedValue(index);
+  public M getLastAggregatedValue(int index) {
+    return (M) runner.getLastAggregatedValue(index);
   }
 
   /**
@@ -148,7 +148,7 @@ public abstract class Vertex<ID_TYPE extends Writable, MSG_TYPE extends Writable
     return peer;
   }
 
-  public Partitioner<ID_TYPE, MSG_TYPE> getPartitioner() {
+  public Partitioner<V, M> getPartitioner() {
     return runner.getPartitioner();
   }
 

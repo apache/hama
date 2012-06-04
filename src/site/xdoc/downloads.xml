@@ -30,7 +30,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.
     See the NOTICE.txt file contained in each release artifact for applicable copyright attribution notices.
     <br/><br/>
-    <a href="http://www.apache.org/dyn/closer.cgi/incubator/hama">Download a release now!</a>
+    <a href="http://www.apache.org/dyn/closer.cgi/hama">Download a release now!</a>
     </p>
     
     <subsection name="PGP Signatures"></subsection>

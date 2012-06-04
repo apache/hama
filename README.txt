@@ -1,6 +1,6 @@
 For the latest information about Hama, please visit our website at:
 
-   http://incubator.apache.org/hama
+   http://hama.apache.org/
 
 and our wiki, at:
 

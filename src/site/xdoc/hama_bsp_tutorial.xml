@@ -41,7 +41,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     The extending class must override the bsp() method, which is declared like this:
     </p>
     <pre class="green">
-  public abstract void bsp(BSPPeer&lt;K1, V1, K2, V2&gt; peer) throws IOException, 
+  public abstract void bsp(BSPPeer&lt;K1, V1, K2, V2, M extends Writable&gt; peer) throws IOException, 
     SyncException, InterruptedException;</pre>
     
     <p>
@@ -90,7 +90,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <pre class="green">
  @Override
   public final void bsp(
-      BSPPeer&lt;LongWritable, Text, Text, LongWritable&gt; peer)
+      BSPPeer&lt;LongWritable, Text, Text, LongWritable, Text&gt; peer)
       throws IOException, InterruptedException, SyncException {
       
       // this method reads the next key value record from file
@@ -140,11 +140,11 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <pre class="green">
   @Override
   public void bsp(
-      BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable&gt; peer)
+      BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable, Text&gt; peer)
       throws IOException, SyncException, InterruptedException {
     for (String peerName : peer.getAllPeerNames()) {
       peer.send(peerName, 
-        new LongMessage("Hello from " + peer.getPeerName(), System.currentTimeMillis()));
+        new Text("Hello from " + peer.getPeerName(), System.currentTimeMillis()));
     }
 
     peer.sync();
@@ -165,7 +165,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <pre class="green">
   @Override
   public void bsp(
-      BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable&gt; peer)
+      BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable, Text&gt; peer)
       throws IOException, SyncException, InterruptedException {
     for (int i = 0; i &lt; 100; i++) {
       // send some messages
@@ -192,59 +192,55 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <subsection name="Example: Pi Calculation"></subsection>
     <p>Here is an BSP-based Pi Calculation example and submit it to Hama cluster:</p>
     <pre class="green">
-public class PiEstimator {
   private static Path TMP_OUTPUT = new Path("/tmp/pi-" + System.currentTimeMillis());
 
   public static class MyEstimator extends
-      BSP&lt;NullWritable, NullWritable, Text, DoubleWritable&gt; {
+      BSP&lt;NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable&gt; {
     public static final Log LOG = LogFactory.getLog(MyEstimator.class);
     private String masterTask;
     private static final int iterations = 10000;
 
     @Override
     public void bsp(
-        BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable&gt; peer)
+        BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable&gt; peer)
         throws IOException, SyncException, InterruptedException {
 
-      int in = 0, out = 0;
+      int in = 0;
       for (int i = 0; i &lt; iterations; i++) {
         double x = 2.0 * Math.random() - 1.0, y = 2.0 * Math.random() - 1.0;
         if ((Math.sqrt(x * x + y * y) &lt; 1.0)) {
           in++;
-        } else {
-          out++;
         }
       }
 
-      double data = 4.0 * (double) in / (double) iterations;
-      DoubleMessage estimate = new DoubleMessage(peer.getPeerName(), data);
+      double data = 4.0 * in / iterations;
 
-      peer.send(masterTask, estimate);
+      peer.send(masterTask, new DoubleWritable(data));
       peer.sync();
     }
 
     @Override
     public void setup(
-        BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable&gt; peer)
+        BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable&gt; peer)
         throws IOException {
       // Choose one as a master
       this.masterTask = peer.getPeerName(peer.getNumPeers() / 2);
     }
 
+    @Override
     public void cleanup(
-        BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable&gt; peer)
+        BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable&gt; peer)
         throws IOException {
       if (peer.getPeerName().equals(masterTask)) {
         double pi = 0.0;
         int numPeers = peer.getNumCurrentMessages();
-        DoubleMessage received;
-        while ((received = (DoubleMessage) peer.getCurrentMessage()) != null) {
-          pi += received.getData();
+        DoubleWritable received;
+        while ((received = peer.getCurrentMessage()) != null) {
+          pi += received.get();
         }
 
         pi = pi / numPeers;
-        peer
-            .write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
+        peer.write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
       }
     }
   }
@@ -293,10 +289,8 @@ public class PiEstimator {
     if (bsp.waitForCompletion(true)) {
       printOutput(conf);
       System.out.println("Job Finished in "
-          + (double) (System.currentTimeMillis() - startTime) / 1000.0
-          + " seconds");
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
-  }
-}</pre>
+  }</pre>
   </body>
 </document>

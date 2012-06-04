@@ -29,9 +29,10 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
     <subsection name="Vertex API"></subsection>    
 
-    <p>Writing a Hama graph application involves subclassing the predefined Vertex class. Its template arguments define message value type.</p>
+    <p>Writing a Hama graph application involves subclassing the predefined Vertex class. Its template arguments define three value types, associated with vertices, edges, and messages.</p>
     <pre class="green">
-  public abstract class Vertex&lt;M extends Writable&gt; implements VertexInterface&lt;M&gt; {
+  public abstract class Vertex&lt;ID_TYPE extends Writable, MSG_TYPE extends Writable, EDGE_VALUE_TYPE extends Writable&gt;
+      implements VertexInterface&lt;ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE&gt; {
 
     public void compute(Iterator&lt;MSGTYPE&gt; messages) throws IOException;
     ..
@@ -48,60 +49,39 @@ From Superstep 1 to 30, each vertex sums up the values arriving on all its messa
    </p>
 
     <pre class="green">
-  public static class PageRankVertex extends Vertex&lt;DoubleWritable&gt; {
+  public static class PageRankVertex extends
+      Vertex&lt;Text, NullWritable, DoubleWritable&gt; {
+
+    static double DAMPING_FACTOR = 0.85;
+    static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
 
     @Override
     public void compute(Iterator&lt;DoubleWritable&gt; messages) throws IOException {
+      // initialize this vertex to 1 / count of global vertices in this graph
       if (this.getSuperstepCount() == 0) {
-        this.setValue(new DoubleWritable(1.0 / (double) this.getNumVertices()));
+        this.setValue(new DoubleWritable(1.0 / this.getNumVertices()));
       }
 
+      // in the first superstep, there are no messages to check
       if (this.getSuperstepCount() &gt;= 1) {
         double sum = 0;
         while (messages.hasNext()) {
           DoubleWritable msg = messages.next();
           sum += msg.get();
         }
-
-        double ALPHA = (1 - 0.85) / (double) this.getNumVertices();
-        this.setValue(new DoubleWritable(ALPHA + (0.85 * sum)));
+        double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
+        this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
       }
 
-      if (this.getSuperstepCount() &lt; this.getMaxIteration()) {
-        int numEdges = this.getOutEdges().size();
-        sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
-            / numEdges));
+      // if we have not reached our global error yet, then proceed.
+      DoubleWritable globalError = getLastAggregatedValue(0);
+      if (globalError != null &amp;&amp; this.getSuperstepCount() &gt; 2
+          &amp;&amp; MAXIMUM_CONVERGENCE_ERROR &gt; globalError.get()) {
+        return;
       }
-    }
-
-    public static void main(String[] args) throws IOException,
-        InterruptedException, ClassNotFoundException {
-      HamaConfiguration conf = new HamaConfiguration(new Configuration());
-      GraphJob pageJob = new GraphJob(conf, PageRank.class);
-      pageJob.setJobName("Pagerank");
-
-      pageJob.setVertexClass(PageRankVertex.class);
-      pageJob.setMaxIteration(30);
-
-      pageJob.setInputPath(new Path(args[0]));
-      pageJob.setOutputPath(new Path(args[1]));
-
-      if (args.length == 3) {
-        pageJob.setNumBspTask(Integer.parseInt(args[2]));
-      }
-
-      pageJob.setInputFormat(SequenceFileInputFormat.class);
-      pageJob.setPartitioner(HashPartitioner.class);
-      pageJob.setOutputFormat(SequenceFileOutputFormat.class);
-      pageJob.setOutputKeyClass(Text.class);
-      pageJob.setOutputValueClass(DoubleWritable.class);
-
-      long startTime = System.currentTimeMillis();
-      if (pageJob.waitForCompletion(true)) {
-        System.out.println("Job Finished in "
-            + (double) (System.currentTimeMillis() - startTime) / 1000.0
-            + " seconds");
-      }
+      
+      // in each superstep we are going to send a new rank to our neighbours
+      sendMessageToNeighbors(new DoubleWritable(this.getValue().get() / numEdges));
     }
   }</pre>
 

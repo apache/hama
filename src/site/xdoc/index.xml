@@ -23,26 +23,15 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
   <body>
 
     <section name="Apache Hama"></section>
-      <img src="images/hama_art_arthur_300x220.png" align="right" style="margin-top:-20px;margin-left:20px;margin-right:20px;" />
       <p>
       <strong>Apache Hama</strong> is a pure BSP(Bulk Synchronous Parallel) computing framework on top of HDFS (Hadoop Distributed File System) for massive scientific computations 
-      such as matrix, graph and network algorithms. Currently, it has the following features:
-      </p>
-      <ul>
-        <li>Job submission and management interface.</li>
-        <li>Multiple tasks per node.</li>
-        <li>Input/Output Formatter.</li>
-        <li>Checkpoint recovery.</li>
-        <li>Support to run in the Cloud using <a href="hama_on_clouds.html">Apache Whirr</a>.</li>
-        <li>Support to run with Hadoop YARN.</li>
-        <li>Support Pregel-style Graph computing framework as a sub-module.</li>
-      </ul>
-      <br/>
+      such as matrix, graph and network algorithms.</p>
       <table class="green" width="100%" cellspacing="0" cellpadding="5" border="1"> 
       <tr><td> 
           <h3 align="center">Recent News</h3>
           <ul>
-            <li>April 10, 2012: release 0.5.0 available</li>
+            <li>June 31, 2012: release 0.5.0 available [<a href="downloads.html">downloads</a>]</li>
+            <li>May 17, 2012: Apache Hama graduated as a Top Level Project!</li>
             <li>Feb 5, 2012: release 0.4.0 available</li>
             <li>July 28, 2011: release 0.3.0 available</li>
             <li>June 2, 2011: release 0.2.0 available</li>
@@ -80,14 +69,5 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         <li>See our <a href="http://wiki.apache.org/hama/HowToContribute">How to Contribute to Hama</a> page</li>
         <li><a href="http://wiki.apache.org/hama/Jira">Jira usage guidelines</a></li>
       </ul>
-      
-    <subsection name="Disclaimer"></subsection>
-      <p>
-       Apache Hama is an effort undergoing incubation at The Apache Software Foundation (ASF), 
-      sponsored by the Apache Incubator. Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, 
-      communications, and decision making process have stabilized in a manner consistent with other successful ASF projects. 
-      While incubation status is not necessarily a reflection of the completeness or stability of the code, 
-      it does indicate that the project has yet to be fully endorsed by the ASF.
-      </p>
   </body>
 </document>

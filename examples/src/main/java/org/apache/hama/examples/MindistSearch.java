@@ -44,7 +44,7 @@ public class MindistSearch {
    * Make sure that you know that you're comparing text, and not integers!
    */
   public static class MindistSearchVertex extends
-      Vertex<Text, Text, NullWritable> {
+      Vertex<Text, NullWritable, Text> {
 
     @Override
     public void compute(Iterator<Text> messages) throws IOException {
@@ -94,7 +94,7 @@ public class MindistSearch {
   }
 
   public static class MindistSearchCountReader extends
-      VertexInputReader<LongWritable, Text, Text, Text, NullWritable> {
+      VertexInputReader<LongWritable, Text, Text, NullWritable, Text> {
 
     /**
      * The text file essentially should look like: <br/>
@@ -106,7 +106,7 @@ public class MindistSearch {
      */
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, Text, NullWritable> vertex) {
+        Vertex<Text, NullWritable, Text> vertex) {
       String[] split = value.toString().split("\t");
       for (int i = 0; i < split.length; i++) {
         if (i == 0) {
