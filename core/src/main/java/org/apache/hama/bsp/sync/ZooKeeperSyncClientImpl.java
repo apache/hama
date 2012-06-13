@@ -165,7 +165,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
           try {
             zk.delete(getNodeName(taskId, superstep), 0);
           } catch (KeeperException.NoNodeException nne) {
-            LOG.warn(
+            LOG.debug(
                 "+++ (znode size is 1). Ignore because znode may disconnect.",
                 nne);
           }
@@ -205,7 +205,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
               try {
                 zk.delete(getNodeName(taskId, superstep), 0);
               } catch (KeeperException.NoNodeException nne) {
-                LOG.warn("++++ Ignore because node may be dleted.", nne);
+                LOG.debug("++++ Ignore because node may be dleted.", nne);
               }
             }
 
@@ -404,7 +404,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
         try {
           zk.create(path, null, Ids.OPEN_ACL_UNSAFE, mode);
         } catch (KeeperException.NodeExistsException nee) {
-          LOG.warn("Ignore because znode may be already created at " + path,
+          LOG.debug("Ignore because znode may be already created at " + path,
               nee);
         }
       }
