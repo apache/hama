@@ -39,6 +39,8 @@ import org.apache.hama.examples.ClassSerializePrinting;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.Stat;
@@ -152,7 +154,14 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     String connectStr = QuorumPeer.getZKQuorumServersString(configuration);
     String bspRoot = configuration.get(Constants.ZOOKEEPER_ROOT,
         Constants.DEFAULT_ZOOKEEPER_ROOT); // Establishing a zk session.
-    ZooKeeper zk = new ZooKeeper(connectStr, timeout, null);
+    ZooKeeper zk = new ZooKeeper(connectStr, timeout, new Watcher() {
+
+      @Override
+      public void process(WatchedEvent arg0) {
+        // do nothing.
+      }
+      
+    });
     // Creating dummy bspRoot if it doesn't already exist.
 
     Stat s = zk.exists(bspRoot, false);
