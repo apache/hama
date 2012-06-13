@@ -242,6 +242,7 @@
     <module>graph</module>
     <module>examples</module>
     <module>yarn</module>
+    <module>ml</module>
     <module>dist</module>
   </modules>
 
