@@ -112,6 +112,7 @@ public class RunJar {
     workDir.mkdirs();
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
       public void run() {
         try {
           FileUtil.fullyDelete(workDir);

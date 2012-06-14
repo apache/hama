@@ -22,17 +22,17 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} 
- * to the {@link org.apache.hama.bsp.GroomServer} to kill a task.
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
+ * {@link org.apache.hama.bsp.GroomServer} to kill a task.
  */
 class KillTaskAction extends GroomServerAction {
   TaskAttemptID taskId;
-  
+
   public KillTaskAction() {
     super(ActionType.KILL_TASK);
     taskId = new TaskAttemptID();
   }
-  
+
   public KillTaskAction(TaskAttemptID killTaskId) {
     super(ActionType.KILL_TASK);
     this.taskId = killTaskId;
@@ -41,7 +41,7 @@ class KillTaskAction extends GroomServerAction {
   public TaskAttemptID getTaskID() {
     return taskId;
   }
-  
+
   @Override
   public void write(DataOutput out) throws IOException {
     taskId.write(out);

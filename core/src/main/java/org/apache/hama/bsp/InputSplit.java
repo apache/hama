@@ -30,7 +30,7 @@ public interface InputSplit extends Writable {
    * @throws IOException
    */
   long getLength() throws IOException;
-  
+
   /**
    * Get the list of hostnames where the input split is located.
    * 

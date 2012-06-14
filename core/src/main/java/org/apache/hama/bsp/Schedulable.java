@@ -20,16 +20,17 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 
 /**
- * This is the class that schedules commands to GroomServer(s)  
+ * This is the class that schedules commands to GroomServer(s)
  */
-public interface Schedulable{
+public interface Schedulable {
 
   /**
    * Schedule job to designated GroomServer(s) immediately.
-   * @param job to be scheduled. 
+   * 
+   * @param job to be scheduled.
    * @param statuses of GroomServer(s).
    * @throws IOException
    */
-  void schedule(JobInProgress job, GroomServerStatus... statuses) 
+  void schedule(JobInProgress job, GroomServerStatus... statuses)
       throws IOException;
 }

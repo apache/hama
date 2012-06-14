@@ -85,11 +85,11 @@ public class CombineFileSplit implements InputSplit {
     }
   }
 
-
   public Configuration getJob() {
     return job.getConf();
   }
 
+  @Override
   public long getLength() {
     return totLength;
   }
@@ -130,10 +130,12 @@ public class CombineFileSplit implements InputSplit {
   }
 
   /** Returns all the Paths where this input-split resides */
+  @Override
   public String[] getLocations() throws IOException {
     return locations;
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
     totLength = in.readLong();
     int arrLength = in.readInt();
@@ -153,6 +155,7 @@ public class CombineFileSplit implements InputSplit {
     }
   }
 
+  @Override
   public void write(DataOutput out) throws IOException {
     out.writeLong(totLength);
     out.writeInt(lengths.length);

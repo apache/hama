@@ -30,22 +30,21 @@ public class ReflectionUtils {
 
   public static final Log LOG = LogFactory.getLog(ReflectionUtils.class);
 
-  private static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = 
-    new ConcurrentHashMap<Class<?>, Constructor<?>>();
+  private static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new ConcurrentHashMap<Class<?>, Constructor<?>>();
 
   @SuppressWarnings("unchecked")
-  public static <T> T newInstance(String className) 
+  public static <T> T newInstance(String className)
       throws ClassNotFoundException {
     T result;
-    try{
-      Class<T> theClass = (Class<T>)Class.forName(className);
+    try {
+      Class<T> theClass = (Class<T>) Class.forName(className);
       Constructor<T> meth = (Constructor<T>) CONSTRUCTOR_CACHE.get(theClass);
-      if(null == meth) {
+      if (null == meth) {
         meth = theClass.getDeclaredConstructor(new Class[0]);
         CONSTRUCTOR_CACHE.put(theClass, meth);
       }
       result = meth.newInstance();
-    }catch(Exception e){
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
     return result;
@@ -53,38 +52,41 @@ public class ReflectionUtils {
 
   /**
    * Create an instance using class literal name and object values supplied.
+   * 
    * @param className is the string name of the class to be created.
    * @param values supplied in object array.
    * @exception ClassNotFoundException
    */
   @SuppressWarnings("unchecked")
-  public static <T> T newInstance(String className, Object[] values) 
-      throws ClassNotFoundException{
-    return newInstance((Class<T>)Class.forName(className), values);
+  public static <T> T newInstance(String className, Object[] values)
+      throws ClassNotFoundException {
+    return newInstance((Class<T>) Class.forName(className), values);
   }
 
   /**
-   * Create an instance with corresponded class and object values supplied. Constructor
+   * Create an instance with corresponded class and object values supplied.
+   * Constructor
+   * 
    * @param theClass supplies instance to be created.
    * @param values are parameters applied when instance is created.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public static <T> T newInstance(Class<T> theClass, Object[] values) {
     T result;
-    try{
+    try {
       Constructor<T> meth = (Constructor<T>) CONSTRUCTOR_CACHE.get(theClass);
       if (null == meth) {
         Class[] parameters = new Class[values.length];
         int idx = 0;
-        for(Object value: values){
+        for (Object value : values) {
           parameters[idx++] = value.getClass();
-        }     
+        }
         meth = theClass.getDeclaredConstructor(parameters);
         meth.setAccessible(true);
         CONSTRUCTOR_CACHE.put(theClass, meth);
       }
       result = meth.newInstance(values);
-    }catch(Exception e){
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
     return result;
@@ -92,16 +94,18 @@ public class ReflectionUtils {
   }
 
   /**
-   * Create an instance with corresponded class and object values supplied. Constructor
+   * Create an instance with corresponded class and object values supplied.
+   * Constructor
+   * 
    * @param theClass supplies instance to be created.
    * @param parameters are class type of object values supplied.
    * @param values are parameters applied when instance is created.
    */
-  @SuppressWarnings("unchecked")
-  public static <T> T newInstance(Class<T> theClass, Class[] parameters, 
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public static <T> T newInstance(Class<T> theClass, Class[] parameters,
       Object[] values) {
     T result;
-    try{
+    try {
       Constructor<T> meth = (Constructor<T>) CONSTRUCTOR_CACHE.get(theClass);
       if (null == meth) {
         meth = theClass.getDeclaredConstructor(parameters);
@@ -109,7 +113,7 @@ public class ReflectionUtils {
         CONSTRUCTOR_CACHE.put(theClass, meth);
       }
       result = meth.newInstance(values);
-    }catch(Exception e){
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
     return result;

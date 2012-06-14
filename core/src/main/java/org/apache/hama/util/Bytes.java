@@ -430,10 +430,11 @@ public class Bytes {
   /**
    * Convert a long value to a byte array using big-endian.
    * 
-   * @param val value to convert
+   * @param pVal value to convert
    * @return the byte array
    */
-  public static byte[] toBytes(long val) {
+  public static byte[] toBytes(long pVal) {
+    long val = pVal;
     byte[] b = new byte[8];
     for (int i = 7; i > 0; i--) {
       b[i] = (byte) val;
@@ -505,12 +506,13 @@ public class Bytes {
    * 
    * @param bytes the byte array
    * @param offset position in the array
-   * @param val long to write out
+   * @param pVal long to write out
    * @return incremented offset
    * @throws IllegalArgumentException if the byte array given doesn't have
    *           enough room at the offset specified.
    */
-  public static int putLong(byte[] bytes, int offset, long val) {
+  public static int putLong(byte[] bytes, int offset, long pVal) {
+    long val = pVal;
     if (bytes.length - offset < SIZEOF_LONG) {
       throw new IllegalArgumentException("Not enough room to put a long at"
           + " offset " + offset + " in a " + bytes.length + " byte array");
@@ -605,10 +607,11 @@ public class Bytes {
   /**
    * Convert an int value to a byte array
    * 
-   * @param val value
+   * @param pVal value
    * @return the byte array
    */
-  public static byte[] toBytes(int val) {
+  public static byte[] toBytes(int pVal) {
+    int val = pVal;
     byte[] b = new byte[4];
     for (int i = 3; i > 0; i--) {
       b[i] = (byte) val;
@@ -666,12 +669,13 @@ public class Bytes {
    * 
    * @param bytes the byte array
    * @param offset position in the array
-   * @param val int to write out
+   * @param pVal int to write out
    * @return incremented offset
    * @throws IllegalArgumentException if the byte array given doesn't have
    *           enough room at the offset specified.
    */
-  public static int putInt(byte[] bytes, int offset, int val) {
+  public static int putInt(byte[] bytes, int offset, int pVal) {
+    int val = pVal;
     if (bytes.length - offset < SIZEOF_INT) {
       throw new IllegalArgumentException("Not enough room to put an int at"
           + " offset " + offset + " in a " + bytes.length + " byte array");
@@ -687,10 +691,11 @@ public class Bytes {
   /**
    * Convert a short value to a byte array of {@link #SIZEOF_SHORT} bytes long.
    * 
-   * @param val value
+   * @param pVal value
    * @return the byte array
    */
-  public static byte[] toBytes(short val) {
+  public static byte[] toBytes(short pVal) {
+    short val = pVal;
     byte[] b = new byte[SIZEOF_SHORT];
     b[1] = (byte) val;
     val >>= 8;
@@ -745,12 +750,13 @@ public class Bytes {
    * 
    * @param bytes the byte array
    * @param offset position in the array
-   * @param val short to write out
+   * @param pVal short to write out
    * @return incremented offset
    * @throws IllegalArgumentException if the byte array given doesn't have
    *           enough room at the offset specified.
    */
-  public static int putShort(byte[] bytes, int offset, short val) {
+  public static int putShort(byte[] bytes, int offset, short pVal) {
+    short val = pVal;
     if (bytes.length - offset < SIZEOF_SHORT) {
       throw new IllegalArgumentException("Not enough room to put a short at"
           + " offset " + offset + " in a " + bytes.length + " byte array");

@@ -22,13 +22,14 @@ import java.util.Collection;
 import org.apache.hama.ipc.GroomProtocol;
 
 /**
- * Manages information about the {@link GroomServer}s in the cluster 
+ * Manages information about the {@link GroomServer}s in the cluster
  * environment. This interface is not intended to be implemented by users.
  */
 interface GroomServerManager {
 
   /**
    * Get the current status of the cluster
+   * 
    * @param detailed if true then report groom names as well
    * @return summary of the state of the cluster
    */
@@ -37,8 +38,8 @@ interface GroomServerManager {
   /**
    * Find WorkerProtocol with corresponded groom server status
    * 
-   * @param groomId The identification value of GroomServer 
-   * @return GroomServerStatus 
+   * @param groomId The identification value of GroomServer
+   * @return GroomServerStatus
    */
   GroomProtocol findGroomServer(GroomServerStatus status);
 
@@ -51,39 +52,45 @@ interface GroomServerManager {
 
   /**
    * Collection of GroomServerStatus as the key set.
-   *
+   * 
    * @return Collection of GroomServerStatus.
    */
   Collection<GroomServerStatus> groomServerStatusKeySet();
 
   /**
-   * Registers a JobInProgressListener to GroomServerManager. Therefore,
-   * adding a JobInProgress will trigger the jobAdded function.
+   * Registers a JobInProgressListener to GroomServerManager. Therefore, adding
+   * a JobInProgress will trigger the jobAdded function.
+   * 
    * @param the JobInProgressListener listener to be added.
    */
   void addJobInProgressListener(JobInProgressListener listener);
 
   /**
-   * Unregisters a JobInProgressListener to GroomServerManager. Therefore,
-   * the remove of a JobInProgress will trigger the jobRemoved action.
+   * Unregisters a JobInProgressListener to GroomServerManager. Therefore, the
+   * remove of a JobInProgress will trigger the jobRemoved action.
+   * 
    * @param the JobInProgressListener to be removed.
    */
   void removeJobInProgressListener(JobInProgressListener listener);
 
   /**
    * Move a specific groom server to black list, marking that groom as dead.
+   * 
    * @param host to be blocked.
    */
   void moveToBlackList(String host);
 
   /**
-   * Move a specific groomserver out of black list, marking that groom is back again.
+   * Move a specific groomserver out of black list, marking that groom is back
+   * again.
+   * 
    * @param host that is back alive.
    */
   void removeOutOfBlackList(String host);
 
   /**
    * GroomServers that are alive.
+   * 
    * @return groom servers alive.
    */
   Collection<GroomServerStatus> alive();
@@ -95,6 +102,7 @@ interface GroomServerManager {
 
   /**
    * GroomServer in black list.
+   * 
    * @return groom server status in black list.
    */
   GroomServerStatus findInBlackList(String host);

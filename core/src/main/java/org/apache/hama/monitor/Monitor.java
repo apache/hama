@@ -17,113 +17,123 @@
  */
 package org.apache.hama.monitor;
 
+import static org.apache.hama.monitor.Monitor.Destination.ZK;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.apache.hama.monitor.Monitor.Destination.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.util.Bytes;
 import org.apache.hama.util.ZKUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 
 /**
- * Monitor daemon performs tasks in order to monitor GroomServer's status.   
+ * Monitor daemon performs tasks in order to monitor GroomServer's status.
  */
-public final class Monitor extends Thread implements MonitorListener { 
+public final class Monitor extends Thread implements MonitorListener {
 
   public static final Log LOG = LogFactory.getLog(Monitor.class);
   public static final String MONITOR_ROOT_PATH = "/monitor/";
 
-  private final Map<String, TaskWorker> workers =  // <jar path, task worker>
-    new ConcurrentHashMap<String, TaskWorker>();
-  private final BlockingQueue<Result> results = 
-    new LinkedBlockingQueue<Result>();
+  private final Map<String, TaskWorker> workers = // <jar path, task worker>
+  new ConcurrentHashMap<String, TaskWorker>();
+  private final BlockingQueue<Result> results = new LinkedBlockingQueue<Result>();
   private final Publisher publisher;
   private final Collector collector;
   private final Initializer initializer;
   private final Configuration configuration;
-  // TODO: may need zookeeper different from GroomServer 
+  // TODO: may need zookeeper different from GroomServer
   // to alleviate groom server's barrier sync.
-  private final ZooKeeper zookeeper; 
+  private final ZooKeeper zookeeper;
   private final String groomServerName;
 
   /**
    * Destination tells Publisher where to publish the result.
    */
   public static enum Destination {
-    ZK("zk"),
-    HDFS("hdfs"),
-    JMX("jmx");
-  
+    ZK("zk"), HDFS("hdfs"), JMX("jmx");
+
     final String dest;
+
     Destination(String dest) {
       this.dest = dest;
     }
 
-    public String value() { return this.dest; }
+    public String value() {
+      return this.dest;
+    }
   }
-  
+
   /**
    * An interface holds the result executed by a task.
    */
-  public static interface Result { 
- 
+  public static interface Result {
+
     /**
-     * Name of the result. This attribute may be used in namespace as path. 
-     * For instance, when publishing to ZooKeeper, it writes to 
-     * "/monitor/<groom-server-name>/metrics/jvm" where jvm is the name
-     * provided by Result.name() function to identify the metrics record.
-     * So ideally name should be given without space e.g. `jvm', instead of
-     * `Java virtual machine'.
+     * Name of the result. This attribute may be used in namespace as path. For
+     * instance, when publishing to ZooKeeper, it writes to
+     * "/monitor/<groom-server-name>/metrics/jvm" where jvm is the name provided
+     * by Result.name() function to identify the metrics record. So ideally name
+     * should be given without space e.g. `jvm', instead of `Java virtual
+     * machine'.
+     * 
      * @return name.
      */
     String name();
-    
+
     /**
      * Destinations where the result will be handled.
+     * 
      * @return Destination in array.
      */
     Destination[] destinations();
 
     /**
-     * Result after a task is executed. 
+     * Result after a task is executed.
+     * 
      * @return result returned.
      */
     Object get();
   }
 
   /**
-   * When executing task goes worng, TaskException is thrown. 
+   * When executing task goes worng, TaskException is thrown.
    */
   public static class TaskException extends Exception {
-    public TaskException() { super(); } 
-    public TaskException(String message) { super(message); } 
-    public TaskException(Throwable t) { super(t); } 
+    private static final long serialVersionUID = -8982174675196566540L;
+
+    public TaskException() {
+      super();
+    }
+
+    public TaskException(String message) {
+      super(message);
+    }
+
+    public TaskException(Throwable t) {
+      super(t);
+    }
   }
 
   /**
-   * Monitor launchs a worker to run the task. 
+   * Monitor launchs a worker to run the task.
    */
-  static class TaskWorker implements Callable {
+  static class TaskWorker implements Callable<Object> {
 
     final Task task;
 
@@ -131,36 +141,35 @@ public final class Monitor extends Thread implements MonitorListener {
       this.task = task;
     }
 
+    @Override
     public Object call() throws Exception {
       return task.run();
-    }  
-     
+    }
+
   }
 
   /**
-   * Monitor class setup task with results and then task worker
-   * runs the task.
+   * Monitor class setup task with results and then task worker runs the task.
    */
-  public static abstract class Task { 
+  public static abstract class Task {
 
     final String name;
-    final AtomicReference<MonitorListener> listener = 
-      new AtomicReference<MonitorListener>();
+    final AtomicReference<MonitorListener> listener = new AtomicReference<MonitorListener>();
 
     public Task(String name) {
       this.name = name;
     }
 
     /**
-     * This is only used by Configurator so a task can know which monitor
-     * to notify. 
+     * This is only used by Configurator so a task can know which monitor to
+     * notify.
      */
     final void setListener(MonitorListener listener) {
       this.listener.set(listener);
     }
 
     /**
-     * Listener that will notify monitor. 
+     * Listener that will notify monitor.
      */
     public final MonitorListener getListener() {
       return this.listener.get();
@@ -174,12 +183,12 @@ public final class Monitor extends Thread implements MonitorListener {
     }
 
     /**
-     * Actual flow that tells how a task would be executed. Within run()
-     * when an event occurrs, the task should call getListener().notify(Result) 
-     * passing the result so monitor can react accordingly.
+     * Actual flow that tells how a task would be executed. Within run() when an
+     * event occurrs, the task should call getListener().notify(Result) passing
+     * the result so monitor can react accordingly.
      */
-    public abstract Object run() throws TaskException; 
-      
+    public abstract Object run() throws TaskException;
+
   }
 
   public static final class ZKHandler implements PublisherHandler {
@@ -191,97 +200,100 @@ public final class Monitor extends Thread implements MonitorListener {
       this.groomServerName = groomServerName;
     }
 
+    @Override
     public void handle(Result result) {
-      Object obj = result.get(); 
-      if(obj instanceof MetricsRecord) {
-        String znode = 
-          MONITOR_ROOT_PATH+this.groomServerName+"/metrics/"+result.name();
+      Object obj = result.get();
+      if (obj instanceof MetricsRecord) {
+        String znode = MONITOR_ROOT_PATH + this.groomServerName + "/metrics/"
+            + result.name();
         ZKUtil.create(zk, znode); // recursively create znode path
         MetricsRecord record = (MetricsRecord) obj;
-        int cnt = 0;
-        for(Metric<? extends Number> metric: record.metrics()) {
-          cnt++;
+        for (Metric<?> metric : record.metrics()) {
           String name = metric.name();
-          Number value = metric.value();
+          Number value = (Number) metric.value();
           try {
             // znode must exists so that child (znode/name) can be created.
-            if(null != this.zk.exists(znode, false)) { 
-              String suffix = suffix(value);;
-              if(LOG.isDebugEnabled()) {
-                LOG.debug("Publish name ["+name+"] and value ["+value+
-                "] to zk.");
+            if (null != this.zk.exists(znode, false)) {
+              String suffix = suffix(value);
+              ;
+              if (LOG.isDebugEnabled()) {
+                LOG.debug("Publish name [" + name + "] and value [" + value
+                    + "] to zk.");
               }
-              final String zpath = znode+ZKUtil.ZK_SEPARATOR+name+suffix;
-              if(null == zk.exists(zpath, false)) {
-                String p = this.zk.create(zpath, toBytes(value), 
-                Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                LOG.debug("Publish data to zk with path to `"+p+"'");
+              final String zpath = znode + ZKUtil.ZK_SEPARATOR + name + suffix;
+              if (null == zk.exists(zpath, false)) {
+                String p = this.zk.create(zpath, toBytes(value),
+                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                LOG.debug("Publish data to zk with path to `" + p + "'");
               } else {
                 // can we just update by increasing 1 version?
-                this.zk.setData(zpath, toBytes(value), -1); 
-                LOG.debug("Update data in znode: "+znode);
+                this.zk.setData(zpath, toBytes(value), -1);
+                LOG.debug("Update data in znode: " + znode);
               }
             }
           } catch (KeeperException ke) {
             LOG.warn(ke);
-          } catch(InterruptedException ie) {
+          } catch (InterruptedException ie) {
             LOG.warn(ie);
           }
         }
       } else {
-        LOG.warn(ZKHandler.class.getSimpleName()+
-        " don't know how to handle the result."+obj);
+        LOG.warn(ZKHandler.class.getSimpleName()
+            + " don't know how to handle the result." + obj);
       }
     }
 
-    String suffix(Number value) {
-      if(value instanceof Byte)  {
+    static String suffix(Number value) {
+      if (value instanceof Byte) {
         return "_b";
-      } else if(value instanceof Double) {
+      } else if (value instanceof Double) {
         return "_d";
-      } else if(value instanceof Float) {
+      } else if (value instanceof Float) {
         return "_f";
-      } else if(value instanceof Integer) {
+      } else if (value instanceof Integer) {
         return "_i";
-      } else if(value instanceof Long) {
+      } else if (value instanceof Long) {
         return "_l";
       } else {
         return "_?";
-      } 
-    } 
+      }
+    }
 
-    byte[] toBytes(Number value) {
-      if(value instanceof Byte) { 
+    static byte[] toBytes(Number value) {
+      if (value instanceof Byte) {
         return new byte[] { value.byteValue() };
       }
 
       byte[] bytes = null;
       ByteArrayOutputStream dout = new ByteArrayOutputStream();
       DataOutputStream output = new DataOutputStream(dout);
-      try{ 
-        if(value instanceof Double) {
+      try {
+        if (value instanceof Double) {
           output.writeDouble(value.doubleValue());
-        } else if(value instanceof Float) {
-          output.writeFloat(value.floatValue()); 
-        } else if(value instanceof Integer) {
-          output.writeInt(value.intValue()); 
-        } else if(value instanceof Short) {
-          output.writeShort(value.shortValue()); 
-        } else if(value instanceof Long) {
-          output.writeLong(value.longValue()); 
+        } else if (value instanceof Float) {
+          output.writeFloat(value.floatValue());
+        } else if (value instanceof Integer) {
+          output.writeInt(value.intValue());
+        } else if (value instanceof Short) {
+          output.writeShort(value.shortValue());
+        } else if (value instanceof Long) {
+          output.writeLong(value.longValue());
         } else {
-          LOG.warn("Unkown data type: "+value);
+          LOG.warn("Unkown data type: " + value);
         }
         bytes = dout.toByteArray();
-        if(LOG.isDebugEnabled()) {
-          LOG.debug("bytes's length after value ("+value+") is converted: "+
-          ((null!=bytes)?bytes.length:0));
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("bytes's length after value (" + value + ") is converted: "
+              + ((null != bytes) ? bytes.length : 0));
         }
-      } catch(IOException ioe){
+      } catch (IOException ioe) {
         LOG.warn("Fail writing data to output stream.", ioe);
-      } finally { 
-        try { output.close(); } catch(IOException ioe) {
-        LOG.warn("Fail closing output stream.", ioe); } 
+      } finally {
+        try {
+          output.close();
+        } catch (IOException ioe) {
+          LOG.warn("Fail closing output stream.", ioe);
+        }
       }
       return bytes;
     }
@@ -297,8 +309,7 @@ public final class Monitor extends Thread implements MonitorListener {
     final ExecutorService pool;
     final Configuration conf;
     final BlockingQueue<Result> results;
-    final ConcurrentMap<Destination, PublisherHandler> handlers = 
-      new ConcurrentHashMap<Destination, PublisherHandler>();
+    final ConcurrentMap<Destination, PublisherHandler> handlers = new ConcurrentHashMap<Destination, PublisherHandler>();
 
     Publisher(Configuration conf, BlockingQueue<Result> results) {
       pool = Executors.newCachedThreadPool();
@@ -309,30 +320,31 @@ public final class Monitor extends Thread implements MonitorListener {
     }
 
     void bind(Destination dest, PublisherHandler handler) {
-      handlers.putIfAbsent(dest, handler); 
+      handlers.putIfAbsent(dest, handler);
     }
 
     PublisherHandler get(Destination dest) {
       return handlers.get(dest);
     }
 
+    @Override
     public void run() {
       try {
-        while(!Thread.currentThread().interrupted()) {
+        while (!Thread.interrupted()) {
           final Result result = results.take();
-          pool.submit(new Callable() {
+          pool.submit(new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
-              for(Destination dest: result.destinations()) {
-                String name = result.name();
+              for (Destination dest : result.destinations()) {
                 Publisher.this.get(dest).handle(result);
               }// for
               return null;
             }
-          }); 
+          });
           int period = conf.getInt("bsp.monitor.publisher.period", 5);
-          Thread.sleep(period*1000);
+          Thread.sleep(period * 1000);
         }
-      } catch(InterruptedException ie) {
+      } catch (InterruptedException ie) {
         pool.shutdown();
         LOG.warn("Publisher is interrupted.", ie);
         Thread.currentThread().interrupt();
@@ -354,23 +366,26 @@ public final class Monitor extends Thread implements MonitorListener {
       setDaemon(true);
     }
 
+    @Override
     public void run() {
-      try { 
-        while(!Thread.currentThread().interrupted()) {
-          LOG.debug("How many workers will be executed by collector? "+workers.size());
-          for(TaskWorker worker: workers.values()) {
+      try {
+        Thread.currentThread();
+        while (!Thread.interrupted()) {
+          LOG.debug("How many workers will be executed by collector? "
+              + workers.size());
+          for (TaskWorker worker : workers.values()) {
             pool.submit(worker);
           }
           int period = conf.getInt("bsp.monitor.collector.period", 5);
-          Thread.sleep(period*1000);
+          Thread.sleep(period * 1000);
         }
-      } catch(InterruptedException ie) {
+      } catch (InterruptedException ie) {
         pool.shutdown();
-        LOG.warn(this.getClass().getSimpleName()+" is interrupted.", ie);
+        LOG.warn(this.getClass().getSimpleName() + " is interrupted.", ie);
         Thread.currentThread().interrupt();
       }
     }
-  } 
+  }
 
   static final class Initializer extends Thread {
 
@@ -378,91 +393,96 @@ public final class Monitor extends Thread implements MonitorListener {
     final Map<String, TaskWorker> workers;
     final MonitorListener listener;
 
-    Initializer(Map<String, TaskWorker> workers, Configuration conf, 
+    Initializer(Map<String, TaskWorker> workers, Configuration conf,
         MonitorListener listener) {
       this.workers = workers;
       this.conf = conf;
       this.listener = listener;
-    } 
+    }
 
     /**
      * Load jar from plugin directory for executing task.
      */
+    @Override
     public void run() {
       try {
-        while(!Thread.currentThread().interrupted()) {
-          Map<String, Task> tasks = 
-            Configurator.configure((HamaConfiguration)this.conf, listener);
-          if(null != tasks) {
-            for(Map.Entry<String, Task> entry: tasks.entrySet()) {
+        Thread.currentThread();
+        while (!Thread.interrupted()) {
+          Map<String, Task> tasks = Configurator.configure(
+              (HamaConfiguration) this.conf, listener);
+          if (null != tasks) {
+            for (Map.Entry<String, Task> entry : tasks.entrySet()) {
               String jarPath = entry.getKey();
               Task t = entry.getValue();
-              TaskWorker old = (TaskWorker)
-                ((ConcurrentMap)this.workers).putIfAbsent(jarPath, new TaskWorker(t));
-              if(null != old) {
-                ((ConcurrentMap)this.workers).replace(jarPath, 
-                new TaskWorker(t));
+              TaskWorker old = ((ConcurrentMap<String, TaskWorker>) this.workers)
+                  .putIfAbsent(jarPath, new TaskWorker(t));
+              if (null != old) {
+                ((ConcurrentMap<String, TaskWorker>) this.workers).replace(
+                    jarPath, new TaskWorker(t));
               }
             }
           }
-          LOG.debug("Task worker list's size: "+workers.size());
+          LOG.debug("Task worker list's size: " + workers.size());
           int period = conf.getInt("bsp.monitor.initializer.period", 5);
-          Thread.sleep(period*1000);
+          Thread.sleep(period * 1000);
         }// while
-      } catch(InterruptedException ie) {
-        LOG.warn(this.getClass().getSimpleName()+" is interrupted.", ie);
+      } catch (InterruptedException ie) {
+        LOG.warn(this.getClass().getSimpleName() + " is interrupted.", ie);
         Thread.currentThread().interrupt();
       } catch (IOException ioe) {
-        LOG.warn(this.getClass().getSimpleName()+" can not load jar file "+
-                 " from plugin directory.", ioe);
+        LOG.warn(this.getClass().getSimpleName() + " can not load jar file "
+            + " from plugin directory.", ioe);
         Thread.currentThread().interrupt();
       }
     }
   }
-  
+
   /**
-   * Constructor 
+   * Constructor
    */
-  public Monitor(Configuration configuration, ZooKeeper zookeeper, 
+  public Monitor(Configuration configuration, ZooKeeper zookeeper,
       String groomServerName) {
-    this.configuration = configuration;  
-    if(null == this.configuration)
+    this.configuration = configuration;
+    if (null == this.configuration)
       throw new NullPointerException("No configuration is provided.");
     this.zookeeper = zookeeper;
-    if(null == this.zookeeper)
+    if (null == this.zookeeper)
       throw new NullPointerException("ZooKeeper is not provided.");
     this.groomServerName = groomServerName;
-    if(null == this.groomServerName)
+    if (null == this.groomServerName)
       throw new NullPointerException("Groom server name is not provided.");
     this.initializer = new Initializer(workers, configuration, this);
     this.collector = new Collector(configuration, workers);
     this.publisher = new Publisher(configuration, results);
-    this.publisher.bind(ZK, new ZKHandler(this.zookeeper, 
-      this.groomServerName));
+    this.publisher
+        .bind(ZK, new ZKHandler(this.zookeeper, this.groomServerName));
     setName(this.getClass().getSimpleName());
     setDaemon(true);
   }
 
   /**
-   * Monitor class load jar files and initialize tasks.
-   * Dynamic realods if a new task is available.
+   * Monitor class load jar files and initialize tasks. Dynamic realods if a new
+   * task is available.
    */
-  public void initialize() { 
-    initializer.start(); 
+  public void initialize() {
+    initializer.start();
     collector.start();
     publisher.start();
   }
 
+  @Override
   public void notify(Result result) {
     try {
-      results.put(result); 
-      LOG.debug(result.name()+" is put to queue (size is "+results.size()+")");
-    } catch(InterruptedException ie) {
-      LOG.warn(this.getClass().getSimpleName()+" is interrupted.", ie);
+      results.put(result);
+      LOG.debug(result.name() + " is put to queue (size is " + results.size()
+          + ")");
+    } catch (InterruptedException ie) {
+      LOG.warn(this.getClass().getSimpleName() + " is interrupted.", ie);
       Thread.currentThread().interrupt();
     }
   }
 
+  @Override
   public void run() {
     initialize();
   }

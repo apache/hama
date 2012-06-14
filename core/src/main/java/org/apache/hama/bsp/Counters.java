@@ -220,8 +220,8 @@ public class Counters implements Writable, Iterable<Counters.Group> {
       }
       this.groupName = groupName;
       this.displayName = localize("CounterGroupName", groupName);
-      //LOG.debug("Creating group " + groupName + " with "
-      //   + (bundle == null ? "nothing" : "bundle"));
+      // LOG.debug("Creating group " + groupName + " with "
+      // + (bundle == null ? "nothing" : "bundle"));
     }
 
     /**
@@ -378,6 +378,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
       return result;
     }
 
+    @Override
     public synchronized void write(DataOutput out) throws IOException {
       Text.writeString(out, displayName);
       WritableUtils.writeVInt(out, subcounters.size());
@@ -386,6 +387,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
       }
     }
 
+    @Override
     public synchronized void readFields(DataInput in) throws IOException {
       displayName = Text.readString(in);
       subcounters.clear();
@@ -397,6 +399,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
       }
     }
 
+    @Override
     public synchronized Iterator<Counter> iterator() {
       return new ArrayList<Counter>(subcounters.values()).iterator();
     }
@@ -421,6 +424,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
     return counters.keySet();
   }
 
+  @Override
   public synchronized Iterator<Group> iterator() {
     return counters.values().iterator();
   }
@@ -562,6 +566,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
    * 
    * name (false | true displayName) value
    */
+  @Override
   public synchronized void write(DataOutput out) throws IOException {
     out.writeInt(counters.size());
     for (Group group : counters.values()) {
@@ -573,6 +578,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
   /**
    * Read a set of groups.
    */
+  @Override
   public synchronized void readFields(DataInput in) throws IOException {
     int numClasses = in.readInt();
     counters.clear();
@@ -594,9 +600,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
     for (Group group : this) {
       log.info("  " + group.getDisplayName());
       for (Counter counter : group) {
-        log
-            .info("    " + counter.getDisplayName() + "="
-                + counter.getCounter());
+        log.info("    " + counter.getDisplayName() + "=" + counter.getCounter());
       }
     }
   }
@@ -604,6 +608,7 @@ public class Counters implements Writable, Iterable<Counters.Group> {
   /**
    * Return textual representation of the counter values.
    */
+  @Override
   public synchronized String toString() {
     StringBuilder sb = new StringBuilder("Counters: " + size());
     for (Group group : this) {
@@ -663,8 +668,8 @@ public class Counters implements Writable, Iterable<Counters.Group> {
   private static String getBlock(String str, char open, char close,
       IntWritable index) throws ParseException {
     StringBuilder split = new StringBuilder();
-    int next = StringUtils.findNext(str, open, StringUtils.ESCAPE_CHAR, index
-        .get(), split);
+    int next = StringUtils.findNext(str, open, StringUtils.ESCAPE_CHAR,
+        index.get(), split);
     split.setLength(0); // clear the buffer
     if (next >= 0) {
       ++next; // move over '('

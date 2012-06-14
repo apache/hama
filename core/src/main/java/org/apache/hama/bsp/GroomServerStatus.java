@@ -43,6 +43,7 @@ public class GroomServerStatus implements Writable {
   static {
     WritableFactories.setFactory(GroomServerStatus.class,
         new WritableFactory() {
+          @Override
           public Writable newInstance() {
             return new GroomServerStatus();
           }
@@ -63,13 +64,13 @@ public class GroomServerStatus implements Writable {
     taskReports = new CopyOnWriteArrayList<TaskStatus>();
   }
 
-  public GroomServerStatus(String groomName, 
-      List<TaskStatus> taskReports, int failures, int maxTasks) {
+  public GroomServerStatus(String groomName, List<TaskStatus> taskReports,
+      int failures, int maxTasks) {
     this(groomName, taskReports, failures, maxTasks, "", "");
   }
 
-  public GroomServerStatus(String groomName, 
-      List<TaskStatus> taskReports, int failures, int maxTasks, String rpc, String hostName) {
+  public GroomServerStatus(String groomName, List<TaskStatus> taskReports,
+      int failures, int maxTasks, String rpc, String hostName) {
     this.groomName = groomName;
     this.taskReports = new ArrayList<TaskStatus>(taskReports);
     this.failures = failures;
@@ -85,7 +86,7 @@ public class GroomServerStatus implements Writable {
   public String getGroomHostName() {
     return hostName;
   }
-  
+
   public String getRpcServer() {
     return rpcServer;
   }
@@ -184,7 +185,7 @@ public class GroomServerStatus implements Writable {
     this.groomName = Text.readString(in);
     this.rpcServer = Text.readString(in);
     this.hostName = Text.readString(in);
-    
+
     this.failures = in.readInt();
     this.maxTasks = in.readInt();
     taskReports.clear();
@@ -207,7 +208,7 @@ public class GroomServerStatus implements Writable {
     Text.writeString(out, groomName);
     Text.writeString(out, rpcServer);
     Text.writeString(out, hostName);
-    
+
     out.writeInt(failures);
     out.writeInt(maxTasks);
     out.writeInt(taskReports.size());

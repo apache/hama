@@ -85,8 +85,8 @@ public class LineRecordReader implements RecordReader<LongWritable, Text> {
       in = new LineReader(fileIn, job);
     }
     if (skipFirstLine) { // skip first line and re-establish "start".
-      start += in.readLine(new Text(), 0, (int) Math.min(
-          (long) Integer.MAX_VALUE, end - start));
+      start += in.readLine(new Text(), 0,
+          (int) Math.min(Integer.MAX_VALUE, end - start));
     }
     this.pos = start;
   }
@@ -110,23 +110,27 @@ public class LineRecordReader implements RecordReader<LongWritable, Text> {
     this.end = endOffset;
   }
 
+  @Override
   public LongWritable createKey() {
     return new LongWritable();
   }
 
+  @Override
   public Text createValue() {
     return new Text();
   }
 
   /** Read a line. */
+  @Override
   public synchronized boolean next(LongWritable key, Text value)
       throws IOException {
 
     while (pos < end) {
       key.set(pos);
 
-      int newSize = in.readLine(value, maxLineLength, Math.max((int) Math.min(
-          Integer.MAX_VALUE, end - pos), maxLineLength));
+      int newSize = in
+          .readLine(value, maxLineLength, Math.max(
+              (int) Math.min(Integer.MAX_VALUE, end - pos), maxLineLength));
       if (newSize == 0) {
         return false;
       }
@@ -136,9 +140,7 @@ public class LineRecordReader implements RecordReader<LongWritable, Text> {
       }
 
       // line too long. try again
-      LOG
-          .info("Skipped line of size " + newSize + " at pos "
-              + (pos - newSize));
+      LOG.info("Skipped line of size " + newSize + " at pos " + (pos - newSize));
     }
 
     return false;
@@ -147,6 +149,7 @@ public class LineRecordReader implements RecordReader<LongWritable, Text> {
   /**
    * Get the progress within the split
    */
+  @Override
   public float getProgress() {
     if (start == end) {
       return 0.0f;
@@ -155,10 +158,12 @@ public class LineRecordReader implements RecordReader<LongWritable, Text> {
     }
   }
 
+  @Override
   public synchronized long getPos() throws IOException {
     return pos;
   }
 
+  @Override
   public synchronized void close() throws IOException {
     if (in != null) {
       in.close();

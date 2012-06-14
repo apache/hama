@@ -17,36 +17,37 @@
  */
 package org.apache.hama.monitor.fd;
 
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.hama.HamaConfiguration;
 
-public final class FDProvider { 
+public final class FDProvider {
 
-  private static final ConcurrentMap<Class, Object> cache = 
-    new ConcurrentHashMap<Class, Object>();
-  
-  public static Supervisor createSupervisor(Class<? extends Supervisor> key, 
+  private static final ConcurrentMap<Class<? extends Supervisor>, Object> supervisorCache = new ConcurrentHashMap<Class<? extends Supervisor>, Object>();
+  private static final ConcurrentMap<Class<? extends Sensor>, Object> sensorCache = new ConcurrentHashMap<Class<? extends Sensor>, Object>();
+
+  public static Supervisor createSupervisor(Class<? extends Supervisor> key,
       HamaConfiguration conf) {
-    Supervisor supervisor = (Supervisor) cache.get(key);
-    if(null == supervisor) {
+    Supervisor supervisor = (Supervisor) supervisorCache.get(key);
+    if (null == supervisor) {
       supervisor = new UDPSupervisor(conf);
-      Supervisor old = (Supervisor) cache.putIfAbsent(key, supervisor);
-      if(null != old) {
-        supervisor = old; 
+      Supervisor old = (Supervisor) supervisorCache
+          .putIfAbsent(key, supervisor);
+      if (null != old) {
+        supervisor = old;
       }
     }
     return supervisor;
   }
 
-  public static Sensor createSensor(Class<? extends Sensor> key, 
+  public static Sensor createSensor(Class<? extends Sensor> key,
       HamaConfiguration conf) {
-    Sensor sensor = (Sensor)cache.get(key); 
-    if(null == sensor) {
+    Sensor sensor = (Sensor) sensorCache.get(key);
+    if (null == sensor) {
       sensor = new UDPSensor(conf);
-      Sensor old = (Sensor) cache.putIfAbsent(key, sensor);
-      if(null != old) {
+      Sensor old = (Sensor) sensorCache.putIfAbsent(key, sensor);
+      if (null != old) {
         sensor = old;
       }
     }

@@ -23,52 +23,52 @@ public final class Metric<T> {
   private final String description;
   private final T value;
 
-  public Metric(Enum name, T value){
-    this(name.name(), name.name()+" metric.", value);
+  public Metric(Enum<?> name, T value) {
+    this(name.name(), name.name() + " metric.", value);
   }
 
-  public Metric(String name, T value){
-    this(name, name+" metric.", value);
+  public Metric(String name, T value) {
+    this(name, name + " metric.", value);
   }
 
-  public Metric(String name, String description, T value){
+  public Metric(String name, String description, T value) {
     this.name = name;
     this.description = description;
     this.value = value;
   }
 
-  public final String name(){
+  public final String name() {
     return this.name;
-  } 
+  }
 
-  public final String description(){
+  public final String description() {
     return this.description;
   }
 
-  public final T value(){
+  public final T value() {
     return this.value;
   }
 
   @Override
-  public boolean equals(Object target){
-   if (target == this)
+  public boolean equals(Object target) {
+    if (target == this)
       return true;
     if (null == target)
       return false;
     if (getClass() != target.getClass())
       return false;
 
-    Metric m = (Metric) target;
-    if(!name().equals(m.name))
+    Metric<?> m = (Metric<?>) target;
+    if (!name().equals(m.name))
       return false;
-    if(!description().equals(m.description))
+    if (!description().equals(m.description))
       return false;
 
     return true;
   }
 
-  @Override 
-  public int hashCode(){
+  @Override
+  public int hashCode() {
     int result = 17;
     result = 37 * result + name.hashCode();
     result = 37 * result + description.hashCode();

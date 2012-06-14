@@ -244,8 +244,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     private BSPTasksMonitor() {
 
-      outOfContactTasks = new ArrayList<GroomServer.TaskInProgress>(conf
-          .getInt(Constants.MAX_TASKS_PER_GROOM, 3));
+      outOfContactTasks = new ArrayList<GroomServer.TaskInProgress>(
+          conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3));
     }
 
     @Override
@@ -265,9 +265,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           LOG.debug("Purging task " + tip);
           purgeTask(tip, true);
         } catch (Exception e) {
-          LOG.error(new StringBuilder(
-              "Error while removing a timed-out task - ")
-              .append(tip.toString()), e);
+          LOG.error(
+              new StringBuilder("Error while removing a timed-out task - ")
+                  .append(tip.toString()), e);
 
         }
       }
@@ -286,18 +286,17 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       LOG.info(BSPMaster.localModeMessage);
       System.exit(0);
     }
-    
+
     // FileSystem local = FileSystem.getLocal(conf);
     // this.localDirAllocator = new LocalDirAllocator("bsp.local.dir");
 
     try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf), conf
-          .getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
+          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
 
-    
   }
 
   public synchronized void initialize() throws IOException {
@@ -306,8 +305,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
 
     if (localHostname == null) {
-      this.localHostname = DNS.getDefaultHost(conf.get("bsp.dns.interface",
-          "default"), conf.get("bsp.dns.nameserver", "default"));
+      this.localHostname = DNS.getDefaultHost(
+          conf.get("bsp.dns.interface", "default"),
+          conf.get("bsp.dns.nameserver", "default"));
     }
     // check local disk
     checkLocalDirs(getLocalDirs());
@@ -414,10 +414,10 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       new Monitor(conf, zk, this.groomServerName).start();
     }
 
-    if(conf.getBoolean("bsp.monitor.fd.enabled", false)) {
-      this.sensor.set(FDProvider.createSensor(conf.
-      getClass("bsp.monitor.fd.sensor.class", UDPSensor.class,
-      Sensor.class), (HamaConfiguration)conf));
+    if (conf.getBoolean("bsp.monitor.fd.enabled", false)) {
+      this.sensor.set(FDProvider.createSensor(conf.getClass(
+          "bsp.monitor.fd.sensor.class", UDPSensor.class, Sensor.class),
+          (HamaConfiguration) conf));
       this.sensor.get().start();
     }
 
@@ -719,20 +719,18 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         .entrySet()) {
       TaskInProgress tip = entry.getValue();
       if (LOG.isDebugEnabled())
-        LOG
-            .debug("checking task: "
-                + tip.getTask().getTaskID()
-                + " starttime ="
-                + tip.startTime
-                + " lastping = "
-                + tip.lastPingedTimestamp
-                + " run state = "
-                + tip.taskStatus.getRunState().toString()
-                + " monitorPeriod = "
-                + monitorPeriod
-                + " check = "
-                + (tip.taskStatus.getRunState()
-                    .equals(TaskStatus.State.RUNNING) && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))));
+        LOG.debug("checking task: "
+            + tip.getTask().getTaskID()
+            + " starttime ="
+            + tip.startTime
+            + " lastping = "
+            + tip.lastPingedTimestamp
+            + " run state = "
+            + tip.taskStatus.getRunState().toString()
+            + " monitorPeriod = "
+            + monitorPeriod
+            + " check = "
+            + (tip.taskStatus.getRunState().equals(TaskStatus.State.RUNNING) && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))));
 
       // Task is out of contact if it has not pinged since more than
       // monitorPeriod. A task is given a leeway of 10 times monitorPeriod
@@ -845,7 +843,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       e.printStackTrace();
     }
 
-    if(null != this.sensor.get()) {
+    if (null != this.sensor.get()) {
       this.sensor.get().stop();
     }
 
@@ -863,7 +861,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       taskReportServer.stop();
       taskReportServer = null;
     }
-    
+
   }
 
   public static Thread startGroomServer(final GroomServer hrs) {

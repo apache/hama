@@ -20,10 +20,11 @@ package org.apache.hama.bsp;
 /**
  * A DirectiveHandler interface.
  */
-public interface DirectiveHandler{
+public interface DirectiveHandler {
 
   /**
-   * Handle directives on demand. 
+   * Handle directives on demand.
+   * 
    * @param directive to be handled.
    */
   void handle(Directive directive) throws DirectiveException;

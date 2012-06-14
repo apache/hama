@@ -110,8 +110,8 @@ public class TaskID extends ID {
       String[] parts = str.split("_");
       if (parts.length == 5) {
         if (parts[0].equals(TASK)) {
-          return new TaskID(parts[1], Integer.parseInt(parts[2]), Integer
-              .parseInt(parts[4]));
+          return new TaskID(parts[1], Integer.parseInt(parts[2]),
+              Integer.parseInt(parts[4]));
         }
       }
     } catch (Exception ex) {

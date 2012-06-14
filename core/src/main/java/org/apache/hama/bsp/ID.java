@@ -66,14 +66,17 @@ public abstract class ID implements WritableComparable<ID> {
       return false;
   }
 
+  @Override
   public int compareTo(ID that) {
     return this.id - that.id;
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
     this.id = in.readInt();
   }
 
+  @Override
   public void write(DataOutput out) throws IOException {
     out.writeInt(id);
   }

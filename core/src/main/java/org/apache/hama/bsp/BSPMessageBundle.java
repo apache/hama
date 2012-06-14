@@ -37,7 +37,7 @@ import org.apache.hadoop.util.ReflectionUtils;
  * 
  */
 public class BSPMessageBundle<M extends Writable> implements Writable {
-  
+
   public static final Log LOG = LogFactory.getLog(BSPMessageBundle.class);
 
   private HashMap<String, LinkedList<M>> messages = new HashMap<String, LinkedList<M>>();
@@ -73,6 +73,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
     return mergeList;
   }
 
+  @Override
   public void write(DataOutput out) throws IOException {
     // writes the k/v mapping size
     out.writeInt(messages.size());
@@ -88,6 +89,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
     }
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public void readFields(DataInput in) throws IOException {
     if (messages == null) {
@@ -107,7 +109,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
             clazz = (Class<M>) Class.forName(className);
             classCache.put(className, clazz);
           } catch (ClassNotFoundException e) {
-            LOG.error("Class was not found.",e);
+            LOG.error("Class was not found.", e);
           }
         }
 

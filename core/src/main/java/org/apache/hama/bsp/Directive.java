@@ -27,7 +27,7 @@ import org.apache.hadoop.io.Writable;
  * A generic directive from the {@link org.apache.hama.bsp.BSPMaster} to the
  * {@link org.apache.hama.bsp.GroomServer} to take some 'action'.
  */
-public class Directive implements Writable{
+public class Directive implements Writable {
 
   protected long timestamp;
   protected Directive.Type type;
@@ -45,7 +45,8 @@ public class Directive implements Writable{
     }
   };
 
-  public Directive(){}
+  public Directive() {
+  }
 
   public Directive(Directive.Type type) {
     this.timestamp = System.currentTimeMillis();
@@ -61,21 +62,23 @@ public class Directive implements Writable{
   }
 
   /**
-   * Command for BSPMaster or GroomServer to execute.
-  public abstract void execute() throws Exception;
+   * Command for BSPMaster or GroomServer to execute. public abstract void
+   * execute() throws Exception;
    */
 
+  @Override
   public void write(DataOutput out) throws IOException {
     out.writeLong(this.timestamp);
     out.writeInt(this.type.value());
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
     this.timestamp = in.readLong();
     int t = in.readInt();
     if (Directive.Type.Request.value() == t) {
       this.type = Directive.Type.Request;
-    }else{
+    } else {
       this.type = Directive.Type.Response;
     }
   }

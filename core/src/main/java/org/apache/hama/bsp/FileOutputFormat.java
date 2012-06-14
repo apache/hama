@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapred.FileAlreadyExistsException;
 import org.apache.hadoop.mapred.InvalidJobConfException;
+import org.apache.hadoop.mapred.JobConf;
 
 public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
 
@@ -78,8 +79,8 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
     String name = conf.get("bsp.output.compression.codec");
     if (name != null) {
       try {
-        codecClass = conf.getConf().getClassByName(name).asSubclass(
-            CompressionCodec.class);
+        codecClass = conf.getConf().getClassByName(name)
+            .asSubclass(CompressionCodec.class);
       } catch (ClassNotFoundException e) {
         throw new IllegalArgumentException("Compression codec " + name
             + " was not found.", e);
@@ -88,9 +89,7 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
     return codecClass;
   }
 
-  public abstract RecordWriter<K, V> getRecordWriter(FileSystem ignored,
-      BSPJob job, String name) throws IOException;
-
+  @Override
   public void checkOutputSpecs(FileSystem ignored, BSPJob job)
       throws FileAlreadyExistsException, InvalidJobConfException, IOException {
     // Ensure that the output directory is set and not already there
@@ -115,10 +114,11 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
    * Set the {@link Path} of the output directory for the map-reduce job.
    * 
    * @param conf The configuration of the job.
-   * @param outputDir the {@link Path} of the output directory for the
+   * @param pOutputDir the {@link Path} of the output directory for the
    *          map-reduce job.
    */
-  public static void setOutputPath(BSPJob conf, Path outputDir) {
+  public static void setOutputPath(BSPJob conf, Path pOutputDir) {
+    Path outputDir = pOutputDir;
     outputDir = new Path(conf.getWorkingDirectory(), outputDir);
     conf.set("bsp.output.dir", outputDir.toString());
   }
@@ -132,11 +132,12 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
    * </p>
    * 
    * @param conf The configuration of the job.
-   * @param outputDir the {@link Path} of the output directory for the
+   * @param pOutputDir the {@link Path} of the output directory for the
    *          map-reduce job.
    */
 
-  static void setWorkOutputPath(BSPJob conf, Path outputDir) {
+  static void setWorkOutputPath(BSPJob conf, Path pOutputDir) {
+    Path outputDir = pOutputDir;
     outputDir = new Path(conf.getWorkingDirectory(), outputDir);
     conf.set("bsp.work.output.dir", outputDir.toString());
   }

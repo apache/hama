@@ -202,6 +202,7 @@ public class TaskCompletionEvent implements Writable {
   // ////////////////////////////////////////////
   // Writable
   // ////////////////////////////////////////////
+  @Override
   public void write(DataOutput out) throws IOException {
     taskId.write(out);
     WritableUtils.writeVInt(out, idWithinJob);
@@ -211,6 +212,7 @@ public class TaskCompletionEvent implements Writable {
     WritableUtils.writeVInt(out, eventId);
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
     taskId.readFields(in);
     idWithinJob = WritableUtils.readVInt(in);

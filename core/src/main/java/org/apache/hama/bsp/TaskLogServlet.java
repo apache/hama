@@ -35,7 +35,7 @@ import org.apache.hadoop.util.StringUtils;
 public class TaskLogServlet extends HttpServlet {
   private static final long serialVersionUID = -8127091686380253950L;
 
-  private boolean haveTaskLog(TaskAttemptID taskId, TaskLog.LogName type) {
+  private static boolean haveTaskLog(TaskAttemptID taskId, TaskLog.LogName type) {
     File f = TaskLog.getTaskLogFile(taskId, type);
     return f.canRead();
   }
@@ -58,11 +58,12 @@ public class TaskLogServlet extends HttpServlet {
    * Find the next quotable character in the given array.
    * 
    * @param data the bytes to look in
-   * @param offset the first index to look in
+   * @param pOffset the first index to look in
    * @param end the index after the last one to look in
    * @return the index of the quotable character or end if none was found
    */
-  private static int findFirstQuotable(byte[] data, int offset, int end) {
+  private static int findFirstQuotable(byte[] data, int pOffset, int end) {
+    int offset = pOffset;
     while (offset < end) {
       switch (data[offset]) {
         case '<':
@@ -76,8 +77,9 @@ public class TaskLogServlet extends HttpServlet {
     return offset;
   }
 
-  private static void quotedWrite(OutputStream out, byte[] data, int offset,
+  private static void quotedWrite(OutputStream out, byte[] data, int pOffset,
       int length) throws IOException {
+    int offset = pOffset;
     int end = offset + length;
     while (offset < end) {
       int next = findFirstQuotable(data, offset, end);
@@ -103,9 +105,10 @@ public class TaskLogServlet extends HttpServlet {
     }
   }
 
-  private void printTaskLog(HttpServletResponse response, OutputStream out,
-      TaskAttemptID taskId, long start, long end, boolean plainText,
-      TaskLog.LogName filter, boolean isCleanup) throws IOException {
+  private static void printTaskLog(HttpServletResponse response,
+      OutputStream out, TaskAttemptID taskId, long start, long end,
+      boolean plainText, TaskLog.LogName filter, boolean isCleanup)
+      throws IOException {
     if (!plainText) {
       out.write(("<br><b><u>" + filter + " logs</u></b><br>\n" + "<pre>\n")
           .getBytes());
@@ -168,8 +171,7 @@ public class TaskLogServlet extends HttpServlet {
     String logFilter = request.getParameter("filter");
     if (logFilter != null) {
       try {
-        filter = TaskLog.LogName.valueOf(TaskLog.LogName.class,
-            logFilter.toUpperCase());
+        filter = Enum.valueOf(TaskLog.LogName.class, logFilter.toUpperCase());
       } catch (IllegalArgumentException iae) {
         response.sendError(HttpServletResponse.SC_BAD_REQUEST,
             "Illegal value for filter: " + logFilter);

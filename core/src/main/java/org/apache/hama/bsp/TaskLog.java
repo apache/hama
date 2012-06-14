@@ -47,7 +47,8 @@ public class TaskLog {
 
   public static File getTaskLogFile(TaskAttemptID taskid, LogName filter) {
     // TODO clean up the log path and type.
-    return new File(LOG_DIR, taskid.getJobID() + "/" + taskid.toString() + ".log");
+    return new File(LOG_DIR, taskid.getJobID() + "/" + taskid.toString()
+        + ".log");
   }
 
   /**
@@ -88,6 +89,7 @@ public class TaskLog {
       this.purgeTimeStamp = purgeTimeStamp;
     }
 
+    @Override
     public boolean accept(File file) {
       LOG.debug("PurgeFilter - file: " + file + ", mtime: "
           + file.lastModified() + ", purge: " + purgeTimeStamp);
@@ -127,12 +129,14 @@ public class TaskLog {
      * 
      * @param taskid the id of the task to read the log file for
      * @param kind the kind of log to read
-     * @param start the offset to read from (negative is relative to tail)
-     * @param end the offset to read upto (negative is relative to tail)
+     * @param pStart the offset to read from (negative is relative to tail)
+     * @param pEnd the offset to read upto (negative is relative to tail)
      * @throws IOException
      */
-    public Reader(TaskAttemptID taskid, LogName kind, long start, long end)
+    public Reader(TaskAttemptID taskid, LogName kind, long pStart, long pEnd)
         throws IOException {
+      long start = pStart;
+      long end = pEnd;
       // find the right log file
       File filename = getTaskLogFile(taskid, kind);
       // calculate the start and stop
@@ -170,8 +174,8 @@ public class TaskLog {
     }
 
     @Override
-    public int read(byte[] buffer, int offset, int length) throws IOException {
-      length = (int) Math.min(length, bytesRemaining);
+    public int read(byte[] buffer, int offset, int pLength) throws IOException {
+      int length = (int) Math.min(pLength, bytesRemaining);
       int bytes = file.read(buffer, offset, length);
       if (bytes > 0) {
         bytesRemaining -= bytes;
@@ -280,12 +284,13 @@ public class TaskLog {
    * Add quotes to each of the command strings and return as a single string
    * 
    * @param cmd The command to be quoted
-   * @param isExecutable makes shell path if the first argument is executable
+   * @param pIsExecutable makes shell path if the first argument is executable
    * @return returns The quoted string.
    * @throws IOException
    */
-  public static String addCommand(List<String> cmd, boolean isExecutable)
+  public static String addCommand(List<String> cmd, boolean pIsExecutable)
       throws IOException {
+    boolean isExecutable = pIsExecutable;
     StringBuffer command = new StringBuffer();
     for (String s : cmd) {
       command.append('\'');

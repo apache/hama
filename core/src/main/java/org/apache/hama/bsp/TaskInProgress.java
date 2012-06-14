@@ -31,7 +31,7 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hama.bsp.BSPJobClient.RawSplit;
 
 /**
- *TaskInProgress maintains all the info needed for a Task in the lifetime of
+ * TaskInProgress maintains all the info needed for a Task in the lifetime of
  * its owning Job.
  */
 class TaskInProgress {
@@ -301,13 +301,13 @@ class TaskInProgress {
     TaskAttemptID taskid = status.getTaskId();
     TaskStatus oldStatus = taskStatuses.get(taskid);
     boolean changed = true;
-    
+
     if (oldStatus != null) {
       TaskStatus.State oldState = oldStatus.getRunState();
       TaskStatus.State newState = status.getRunState();
       changed = oldState != newState;
     }
-    
+
     taskStatuses.put(taskid, status);
     return changed;
   }

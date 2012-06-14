@@ -21,17 +21,21 @@ import org.apache.hadoop.fs.FileSystem;
 
 public class NullOutputFormat<K, V> implements OutputFormat<K, V> {
 
+  @Override
   public RecordWriter<K, V> getRecordWriter(FileSystem ignored, BSPJob job,
       String name) {
     return new RecordWriter<K, V>() {
+      @Override
       public void write(K key, V value) {
       }
 
+      @Override
       public void close() {
       }
     };
   }
 
+  @Override
   public void checkOutputSpecs(FileSystem ignored, BSPJob job) {
   }
 }

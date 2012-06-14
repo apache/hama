@@ -36,6 +36,7 @@ public class JobStatus implements Writable, Cloneable {
 
   static {
     WritableFactories.setFactory(JobStatus.class, new WritableFactory() {
+      @Override
       public Writable newInstance() {
         return new JobStatus();
       }
@@ -98,14 +99,15 @@ public class JobStatus implements Writable, Cloneable {
   private long superstepCount;
   private String name;
   private int tasks;
-  
+
   private long finishTime;
   private Counters counter;
 
   public JobStatus() {
   }
 
-  public JobStatus(BSPJobID jobid, String user, long progress, int runState, Counters counter) {
+  public JobStatus(BSPJobID jobid, String user, long progress, int runState,
+      Counters counter) {
     this(jobid, user, progress, 0, runState, counter);
   }
 
@@ -120,7 +122,8 @@ public class JobStatus implements Writable, Cloneable {
   }
 
   public JobStatus(BSPJobID jobid, String user, long setupProgress,
-      long progress, long cleanupProgress, int runState, long superstepCount, Counters counter) {
+      long progress, long cleanupProgress, int runState, long superstepCount,
+      Counters counter) {
     this.jobid = jobid;
     this.setupProgress = setupProgress;
     this.progress = progress;
@@ -175,11 +178,11 @@ public class JobStatus implements Writable, Cloneable {
   public synchronized void setRunState(int state) {
     this.runState = state;
   }
-  
+
   public synchronized void setNumOfTasks(int tasks) {
     this.tasks = tasks;
   }
-  
+
   public synchronized int getNumOfTasks() {
     return tasks;
   }
@@ -246,6 +249,7 @@ public class JobStatus implements Writable, Cloneable {
     return (runState == JobStatus.SUCCEEDED || runState == JobStatus.FAILED || runState == JobStatus.KILLED);
   }
 
+  @Override
   public synchronized void write(DataOutput out) throws IOException {
     jobid.write(out);
     out.writeLong(setupProgress);
@@ -260,6 +264,7 @@ public class JobStatus implements Writable, Cloneable {
     counter.write(out);
   }
 
+  @Override
   public synchronized void readFields(DataInput in) throws IOException {
     this.jobid = new BSPJobID();
     jobid.readFields(in);

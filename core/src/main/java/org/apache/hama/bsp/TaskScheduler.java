@@ -31,15 +31,17 @@ import org.apache.hadoop.conf.Configuration;
 abstract class TaskScheduler implements Configurable {
 
   protected Configuration conf;
-  protected final AtomicReference<GroomServerManager> groomServerManager = 
-    new AtomicReference<GroomServerManager>(null);
-  protected final AtomicReference<MonitorManager> monitorManager = 
-    new AtomicReference<MonitorManager>(null);
+  protected final AtomicReference<GroomServerManager> groomServerManager = new AtomicReference<GroomServerManager>(
+      null);
+  protected final AtomicReference<MonitorManager> monitorManager = new AtomicReference<MonitorManager>(
+      null);
 
+  @Override
   public Configuration getConf() {
     return conf;
   }
 
+  @Override
   public void setConf(Configuration conf) {
     this.conf = conf;
   }
@@ -82,8 +84,9 @@ abstract class TaskScheduler implements Configurable {
 
   /**
    * Find a job according to its id.
+   * 
    * @param id of the job.
    * @return job corresponded to the id provided.
    */
-  public abstract JobInProgress findJobById(BSPJobID id); 
+  public abstract JobInProgress findJobById(BSPJobID id);
 }

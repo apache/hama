@@ -21,7 +21,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.SequenceFile;
 
-public class SequenceFileInputFormat<K,V> extends FileInputFormat<K, V> {
+public class SequenceFileInputFormat<K, V> extends FileInputFormat<K, V> {
 
   public SequenceFileInputFormat() {
     setMinSplitSize(SequenceFile.SYNC_INTERVAL);
@@ -30,6 +30,6 @@ public class SequenceFileInputFormat<K,V> extends FileInputFormat<K, V> {
   @Override
   public RecordReader<K, V> getRecordReader(InputSplit split, BSPJob job)
       throws IOException {
-    return new SequenceFileRecordReader<K,V>(job.getConf(),(FileSplit) split);
+    return new SequenceFileRecordReader<K, V>(job.getConf(), (FileSplit) split);
   }
 }

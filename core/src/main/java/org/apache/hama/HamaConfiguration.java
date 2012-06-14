@@ -54,7 +54,7 @@ public class HamaConfiguration extends Configuration {
   /**
    * Adds Hama configuration files to a Configuration
    */
-  private void addHamaResources() {
+  private static void addHamaResources() {
     Configuration.addDefaultResource("hama-default.xml");
     Configuration.addDefaultResource("hama-site.xml");
   }

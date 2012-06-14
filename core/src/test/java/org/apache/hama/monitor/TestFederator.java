@@ -17,17 +17,14 @@
  */
 package org.apache.hama.monitor;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import junit.framework.TestCase;
 
-import static org.junit.Assert.*;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.monitor.Federator.Act;
 import org.apache.hama.monitor.Federator.Collector;
@@ -37,7 +34,7 @@ public class TestFederator extends TestCase {
 
   public static final Log LOG = LogFactory.getLog(TestFederator.class);
 
-  Federator federator; 
+  Federator federator;
 
   final static int expected = 10;
 
@@ -47,46 +44,55 @@ public class TestFederator extends TestCase {
 
     public DummyCollector(int value) {
       sum.set(value);
-    } 
+    }
 
+    @Override
     public Object harvest() throws Exception {
-      assertEquals("Test if value is equal before harvest.", expected, sum.get()); 
-      int result = sum.incrementAndGet(); 
-      Thread.sleep(2*1000); // simulate task execution which takes time.
-      assertEquals("Test if value is equal after harvest.", (expected+1), result); 
+      assertEquals("Test if value is equal before harvest.", expected,
+          sum.get());
+      int result = sum.incrementAndGet();
+      Thread.sleep(2 * 1000); // simulate task execution which takes time.
+      assertEquals("Test if value is equal after harvest.", (expected + 1),
+          result);
       return result;
     }
 
   }
 
+  @Override
   public void setUp() throws Exception {
     this.federator = new Federator(new HamaConfiguration());
     this.federator.start();
   }
 
   public void testExecutionFlow() throws Exception {
-    LOG.info("Value before submitted: "+expected);
+    LOG.info("Value before submitted: " + expected);
     final AtomicInteger finalResult = new AtomicInteger(0);
-    final Act act = new Act(new DummyCollector(expected), new CollectorHandler() {
-      public void handle(Future future) {
-        try {
-          finalResult.set(((Integer)future.get()).intValue());
-          LOG.info("Value after submitted: "+finalResult);
-        } catch (ExecutionException ee) {
-          LOG.error(ee);
-        } catch (InterruptedException ie) {
-          LOG.error(ie);
-          Thread.currentThread().interrupt();
-        }
-      }
-    });
+    final Act act = new Act(new DummyCollector(expected),
+        new CollectorHandler() {
+          @Override
+          public void handle(@SuppressWarnings("rawtypes")
+          Future future) {
+            try {
+              finalResult.set(((Integer) future.get()).intValue());
+              LOG.info("Value after submitted: " + finalResult);
+            } catch (ExecutionException ee) {
+              LOG.error(ee);
+            } catch (InterruptedException ie) {
+              LOG.error(ie);
+              Thread.currentThread().interrupt();
+            }
+          }
+        });
     this.federator.register(act);
-    Thread.sleep(3*1000);
-    assertEquals("Result should be "+(expected+1)+".", finalResult.get(), (expected+1)); 
+    Thread.sleep(3 * 1000);
+    assertEquals("Result should be " + (expected + 1) + ".", finalResult.get(),
+        (expected + 1));
   }
-  
+
+  @Override
   public void tearDown() throws Exception {
     this.federator.interrupt();
   }
-  
+
 }

@@ -34,14 +34,17 @@ public class TrackedRecordReader<K, V> implements RecordReader<K, V> {
     this.inputByteCounter = inputByteCounter;
   }
 
+  @Override
   public K createKey() {
     return rawIn.createKey();
   }
 
+  @Override
   public V createValue() {
     return rawIn.createValue();
   }
 
+  @Override
   public synchronized boolean next(K key, V value) throws IOException {
     boolean ret = moveToNext(key, value);
     if (ret) {
@@ -62,14 +65,17 @@ public class TrackedRecordReader<K, V> implements RecordReader<K, V> {
     return ret;
   }
 
+  @Override
   public long getPos() throws IOException {
     return rawIn.getPos();
   }
 
+  @Override
   public void close() throws IOException {
     rawIn.close();
   }
 
+  @Override
   public float getProgress() throws IOException {
     return rawIn.getProgress();
   }

@@ -194,6 +194,7 @@ class JobInProgress {
     return this.tasksInited;
   }
 
+  @Override
   public String toString() {
     return "jobName:" + profile.getJobName() + "\n" + "submit user:"
         + profile.getUser() + "\n" + "JobId:" + jobId + "\n" + "JobFile:"
@@ -291,15 +292,16 @@ class JobInProgress {
   }
 
   /**
-   * Hosts that tasks run on. 
+   * Hosts that tasks run on.
+   * 
    * @return groom host name that tasks of a job run on.
    */
   public synchronized String[] tasksOnGroomServers() {
     final String[] list = new String[tasks.length];
-    for(int i=0; i< tasks.length; i++) { 
-      list[i] = tasks[i].getGroomServerStatus().getGroomHostName(); 
+    for (int i = 0; i < tasks.length; i++) {
+      list[i] = tasks[i].getGroomServerStatus().getGroomHostName();
     }
-    return list; 
+    return list;
   }
 
   public synchronized void completedTask(TaskInProgress tip, TaskStatus status) {

@@ -42,7 +42,7 @@ public class SequenceFileRecordWriter<K extends Writable, V extends Writable>
         .get("bsp.output.value.class")));
   }
 
-  @Override 
+  @Override
   public void write(K key, V value) throws IOException {
     writer.append(key, value);
   }

@@ -31,9 +31,11 @@ class ReinitGroomAction extends GroomServerAction {
     super(ActionType.REINIT_GROOM);
   }
 
+  @Override
   public void write(DataOutput out) throws IOException {
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
   }
 

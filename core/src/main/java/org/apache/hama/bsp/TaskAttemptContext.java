@@ -60,6 +60,7 @@ public class TaskAttemptContext extends BSPJobContext implements Progressable {
   /**
    * Report progress. The subtypes actually do work in this method.
    */
+  @Override
   public void progress() {
   }
 }

@@ -50,6 +50,7 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.http.HttpServer;
 import org.apache.hama.ipc.GroomProtocol;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.monitor.fd.FDProvider;
@@ -68,12 +69,11 @@ import org.apache.zookeeper.data.Stat;
  * BSPMaster is responsible to control all the groom servers and to manage bsp
  * jobs.
  */
-public class BSPMaster implements JobSubmissionProtocol, MasterProtocol, 
+public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     GroomServerManager, Watcher, MonitorManager {
 
   public static final Log LOG = LogFactory.getLog(BSPMaster.class);
-  public static final String localModeMessage = 
-    "Local mode detected, no launch of the daemon needed.";
+  public static final String localModeMessage = "Local mode detected, no launch of the daemon needed.";
   private static final int FS_ACCESS_RETRY_PERIOD = 10000;
 
   private HamaConfiguration conf;
@@ -122,33 +122,28 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   // Jobs' Meta Data
   private Integer nextJobId = Integer.valueOf(1);
-  private int totalSubmissions = 0; // how many jobs has been submitted by
   // clients
   private int totalTasks = 0; // currnetly running tasks
   private int totalTaskCapacity; // max tasks that groom server can run
 
-  private Map<BSPJobID, JobInProgress> jobs = 
-    new TreeMap<BSPJobID, JobInProgress>();
+  private Map<BSPJobID, JobInProgress> jobs = new TreeMap<BSPJobID, JobInProgress>();
   private TaskScheduler taskScheduler;
 
   // Gorom Server Manager attributes
   // GroomServers cache
-  protected ConcurrentMap<GroomServerStatus, GroomProtocol> groomServers = 
-    new ConcurrentHashMap<GroomServerStatus, GroomProtocol>();
+  protected ConcurrentMap<GroomServerStatus, GroomProtocol> groomServers = new ConcurrentHashMap<GroomServerStatus, GroomProtocol>();
 
-  private final List<GroomServerStatus> blackList = 
-    new CopyOnWriteArrayList<GroomServerStatus>();
+  private final List<GroomServerStatus> blackList = new CopyOnWriteArrayList<GroomServerStatus>();
 
   private Instructor instructor;
 
-  private final List<JobInProgressListener> jobInProgressListeners = 
-    new CopyOnWriteArrayList<JobInProgressListener>();
+  private final List<JobInProgressListener> jobInProgressListeners = new CopyOnWriteArrayList<JobInProgressListener>();
 
-  private final AtomicReference<Supervisor> supervisor = 
-    new AtomicReference<Supervisor>();
+  private final AtomicReference<Supervisor> supervisor = new AtomicReference<Supervisor>();
 
   private class ReportGroomStatusHandler implements DirectiveHandler {
 
+    @Override
     public void handle(Directive directive) throws DirectiveException {
       // update GroomServerStatus held in the groomServers cache.
       GroomServerStatus groomStatus = ((ReportGroomStatusDirective) directive)
@@ -171,8 +166,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
           List<TaskStatus> tlist = tmpStatus.getTaskReports();
           for (TaskStatus ts : tlist) {
             JobInProgress jip = taskScheduler.findJobById(ts.getJobId());
-            TaskInProgress tip = jip.findTaskInProgress(((TaskAttemptID) ts
-                .getTaskId()).getTaskID());
+            TaskInProgress tip = jip.findTaskInProgress(ts.getTaskId()
+                .getTaskID());
 
             if (ts.getRunState() == TaskStatus.State.SUCCEEDED) {
               jip.completedTask(tip, ts);
@@ -220,10 +215,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   }
 
   private class Instructor extends Thread {
-    private final BlockingQueue<Directive> buffer = 
-      new LinkedBlockingQueue<Directive>();
-    private final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = 
-      new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
+    private final BlockingQueue<Directive> buffer = new LinkedBlockingQueue<Directive>();
+    private final ConcurrentMap<Class<? extends Directive>, DirectiveHandler> handlers = new ConcurrentHashMap<Class<? extends Directive>, DirectiveHandler>();
 
     public void bind(Class<? extends Directive> instruction,
         DirectiveHandler handler) {
@@ -238,6 +231,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       }
     }
 
+    @Override
     public void run() {
       while (true) {
         try {
@@ -255,6 +249,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   /**
    * Start the BSPMaster process, listen on the indicated hostname/port
+   * 
    * @param conf provides runtime parameters.
    */
   public BSPMaster(HamaConfiguration conf) throws IOException,
@@ -271,8 +266,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     Class<? extends TaskScheduler> schedulerClass = conf.getClass(
         "bsp.master.taskscheduler", SimpleTaskScheduler.class,
         TaskScheduler.class);
-    this.taskScheduler = (TaskScheduler) ReflectionUtils.newInstance(
-        schedulerClass, conf);
+    this.taskScheduler = ReflectionUtils.newInstance(schedulerClass, conf);
 
     InetSocketAddress inetSocketAddress = getAddress(conf);
     // inetSocketAddress is null if we are in local mode, then we should start
@@ -293,10 +287,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       // starting webserver
       infoServer.start();
 
-      if(conf.getBoolean("bsp.monitor.fd.enabled", false)) {
-        this.supervisor.set(FDProvider.createSupervisor(conf.
-        getClass("bsp.monitor.fd.supervisor.class", UDPSupervisor.class, 
-        Supervisor.class), conf));
+      if (conf.getBoolean("bsp.monitor.fd.enabled", false)) {
+        this.supervisor.set(FDProvider.createSupervisor(conf.getClass(
+            "bsp.monitor.fd.supervisor.class", UDPSupervisor.class,
+            Supervisor.class), conf));
       }
 
       while (!Thread.currentThread().isInterrupted()) {
@@ -364,8 +358,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     Throwable e = null;
     try {
       GroomProtocol wc = (GroomProtocol) RPC.waitForProxy(GroomProtocol.class,
-          GroomProtocol.versionID, resolveWorkerAddress(status.getRpcServer()),
-          this.conf);
+          HamaRPCProtocolVersion.versionID,
+          resolveWorkerAddress(status.getRpcServer()), this.conf);
       if (null == wc) {
         LOG.warn("Fail to create Worker client at host");
         return false;
@@ -460,12 +454,12 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     BSPMaster result = new BSPMaster(conf, identifier);
     // init zk root and child nodes
     // zk is required to be initialized before scheduler is started.
-    result.initZK(conf); 
+    result.initZK(conf);
     result.taskScheduler.setGroomServerManager(result);
     result.taskScheduler.setMonitorManager(result);
-    if(conf.getBoolean("bsp.monitor.fd.enabled", false)) {
+    if (conf.getBoolean("bsp.monitor.fd.enabled", false)) {
       result.supervisor.get().start();
-    } 
+    }
     result.taskScheduler.start();
     return result;
   }
@@ -478,7 +472,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   private void initZK(HamaConfiguration conf) {
     try {
       zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
-           conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
+          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
     } catch (IOException e) {
       LOG.error("Exception during reinitialization!", e);
     }
@@ -624,9 +618,9 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   public long getProtocolVersion(String protocol, long clientVersion)
       throws IOException {
     if (protocol.equals(MasterProtocol.class.getName())) {
-      return MasterProtocol.versionID;
+      return HamaRPCProtocolVersion.versionID;
     } else if (protocol.equals(JobSubmissionProtocol.class.getName())) {
-      return JobSubmissionProtocol.versionID;
+      return HamaRPCProtocolVersion.versionID;
     } else {
       throw new IOException("Unknown protocol to BSPMaster: " + protocol);
     }
@@ -685,8 +679,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     this.totalTaskCapacity = tasksPerGroom * numGroomServers;
 
     if (detailed) {
-      return new ClusterStatus(groomsMap, totalTasks, totalTaskCapacity, state
-          .get());
+      return new ClusterStatus(groomsMap, totalTasks, totalTaskCapacity,
+          state.get());
     } else {
       return new ClusterStatus(numGroomServers, totalTasks, totalTaskCapacity,
           state.get());
@@ -720,29 +714,32 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   @Override
   public void moveToBlackList(String host) {
-    LOG.info("[moveToBlackList()]Host to be moved to black list: "+host);
-    for(GroomServerStatus groomStatus: groomServerStatusKeySet()) {
-      LOG.info("[moveToBlackList()]GroomServerStatus's host name:"+groomStatus.getGroomHostName()+
-        " host:"+host);
-      if(groomStatus.getGroomHostName().equals(host)) {
-        boolean result = 
-          groomServers.remove(groomStatus, findGroomServer(groomStatus));
-        if(!result) {
-          LOG.error("Fail to remove "+host+" out of groom server cache!");
+    LOG.info("[moveToBlackList()]Host to be moved to black list: " + host);
+    for (GroomServerStatus groomStatus : groomServerStatusKeySet()) {
+      LOG.info("[moveToBlackList()]GroomServerStatus's host name:"
+          + groomStatus.getGroomHostName() + " host:" + host);
+      if (groomStatus.getGroomHostName().equals(host)) {
+        boolean result = groomServers.remove(groomStatus,
+            findGroomServer(groomStatus));
+        if (!result) {
+          LOG.error("Fail to remove " + host + " out of groom server cache!");
         }
         blackList.add(groomStatus);
-        LOG.info("[moveToBlackList()] "+host+" is successfully moved to black list.");
+        LOG.info("[moveToBlackList()] " + host
+            + " is successfully moved to black list.");
       }
     }
   }
 
   @Override
   public void removeOutOfBlackList(String host) {
-    for(GroomServerStatus groomStatus: blackList) {
-      if(groomStatus.getGroomHostName().equals(host)) {
+    for (GroomServerStatus groomStatus : blackList) {
+      if (groomStatus.getGroomHostName().equals(host)) {
         boolean result = blackList.remove(groomStatus);
-        if(result) LOG.info("Successfully remove "+host+" out of black list.");
-        else LOG.error("Fail to remove "+host+" out of black list.");
+        if (result)
+          LOG.info("Successfully remove " + host + " out of black list.");
+        else
+          LOG.error("Fail to remove " + host + " out of black list.");
       }
     }
   }
@@ -759,8 +756,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   @Override
   public GroomServerStatus findInBlackList(String host) {
-    for(GroomServerStatus status: blackList) {
-      if(host.equals(status.getGroomHostName())) {
+    for (GroomServerStatus status : blackList) {
+      if (host.equals(status.getGroomHostName())) {
         return status;
       }
     }
@@ -790,7 +787,6 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
    * @param jobId The id for the job submitted which needs to be added
    */
   private synchronized JobStatus addJob(BSPJobID jobId, JobInProgress job) {
-    totalSubmissions++;
     synchronized (jobs) {
       jobs.put(job.getProfile().getJobID(), job);
       for (JobInProgressListener listener : jobInProgressListeners) {
@@ -815,8 +811,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     return getJobStatus(jobs.values(), false);
   }
 
-  private synchronized JobStatus[] getJobStatus(Collection<JobInProgress> jips,
-      boolean toComplete) {
+  private synchronized static JobStatus[] getJobStatus(
+      Collection<JobInProgress> jips, boolean toComplete) {
     if (jips == null) {
       return new JobStatus[] {};
     }
@@ -895,7 +891,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     killJob(job);
   }
 
-  private synchronized void killJob(JobInProgress job) {
+  private synchronized static void killJob(JobInProgress job) {
     LOG.info("Killing job " + job.getJobID());
     job.kill();
   }
@@ -925,7 +921,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-    if(null != this.supervisor.get()) {
+    if (null != this.supervisor.get()) {
       this.supervisor.get().stop();
     }
     this.masterServer.stop();
@@ -939,7 +935,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   public void process(WatchedEvent event) {
   }
 
-  @Override 
+  @Override
   public Supervisor supervisor() {
     return this.supervisor.get();
   }

@@ -21,11 +21,8 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import static org.junit.Assert.*;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.monitor.Monitor.Task;
 

@@ -18,13 +18,9 @@
 
 package org.apache.hama.monitor.fd;
 
-import static java.util.concurrent.TimeUnit.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hama.HamaCluster;
-import org.apache.hama.HamaConfiguration;
 
 /**
  * Test case for Phi accrual fail detector. 

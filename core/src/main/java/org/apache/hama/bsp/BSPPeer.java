@@ -79,7 +79,7 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    * @return the name of n-th peer from sorted array by name.
    */
   public String getPeerName(int index);
-  
+
   /**
    * @return the index of this peer from sorted array by name.
    */

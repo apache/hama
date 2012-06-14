@@ -23,53 +23,52 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 
 /**
- * Represents a record containing multiple metrics. 
+ * Represents a record containing multiple metrics.
  */
-public final class MetricsRecord  {
+public final class MetricsRecord {
 
   private final String name, description;
-  private final List<Metric<? extends Number>> metrics = 
-    new CopyOnWriteArrayList<Metric<? extends Number>>();
+  private final List<Metric<?>> metrics = new CopyOnWriteArrayList<Metric<?>>();
   private final List<MetricsTag> tags = new CopyOnWriteArrayList<MetricsTag>();
 
-  public MetricsRecord(String name, String description){
+  public MetricsRecord(String name, String description) {
     this.name = name;
     this.description = description;
   }
 
-  public MetricsRecord(String name){
-    this(name, name+" record."); 
+  public MetricsRecord(String name) {
+    this(name, name + " record.");
   }
 
-  public final String name(){
+  public final String name() {
     return name;
   }
 
-  public final String description(){
+  public final String description() {
     return description;
   }
 
-  public final void add(Metric<? extends Number> metric){
+  public final void add(Metric<?> metric) {
     metrics.add(metric);
   }
 
-  public final void add(List<Metric<? extends Number>> metrics){
-    metrics.addAll(metrics);
+  public final void add(List<Metric<?>> metrics) {
+    this.metrics.addAll(metrics);
   }
 
-  public final void tag(Enum key, String value){
+  public final void tag(Enum<?> key, String value) {
     tags.add(new MetricsTag(key.toString(), value));
   }
 
-  public final void tag(String key, String value){
+  public final void tag(String key, String value) {
     tags.add(new MetricsTag(key, value));
   }
 
-  public final Collection<MetricsTag> tags(){
+  public final Collection<MetricsTag> tags() {
     return Collections.unmodifiableList(tags);
   }
 
-  public final List<Metric<? extends Number>> metrics(){
+  public final List<Metric<?>> metrics() {
     return Collections.unmodifiableList(metrics);
   }
 }

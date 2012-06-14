@@ -74,6 +74,7 @@ public class TextOutputFormat<K, V> extends FileOutputFormat<K, V> {
       }
     }
 
+    @Override
     public synchronized void write(K key, V value) throws IOException {
 
       boolean nullKey = key == null || key instanceof NullWritable;
@@ -93,11 +94,13 @@ public class TextOutputFormat<K, V> extends FileOutputFormat<K, V> {
       out.write(newline);
     }
 
+    @Override
     public synchronized void close() throws IOException {
       out.close();
     }
   }
 
+  @Override
   public RecordWriter<K, V> getRecordWriter(FileSystem ignored, BSPJob job,
       String name) throws IOException {
     boolean isCompressed = getCompressOutput(job);
@@ -112,15 +115,15 @@ public class TextOutputFormat<K, V> extends FileOutputFormat<K, V> {
       Class<? extends CompressionCodec> codecClass = getOutputCompressorClass(
           job, GzipCodec.class);
       // create the named codec
-      CompressionCodec codec = ReflectionUtils.newInstance(codecClass, job
-          .getConf());
+      CompressionCodec codec = ReflectionUtils.newInstance(codecClass,
+          job.getConf());
       // build the filename including the extension
-      Path file = FileOutputFormat.getTaskOutputPath(job, name
-          + codec.getDefaultExtension());
+      Path file = FileOutputFormat.getTaskOutputPath(job,
+          name + codec.getDefaultExtension());
       FileSystem fs = file.getFileSystem(job.getConf());
       FSDataOutputStream fileOut = fs.create(file);
-      return new LineRecordWriter<K, V>(new DataOutputStream(codec
-          .createOutputStream(fileOut)), keyValueSeparator);
+      return new LineRecordWriter<K, V>(new DataOutputStream(
+          codec.createOutputStream(fileOut)), keyValueSeparator);
     }
   }
 }

@@ -19,22 +19,19 @@ package org.apache.hama.monitor;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hama.monitor.Monitor.Task;
-import org.apache.hama.monitor.Monitor.Result;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.monitor.Monitor.Task;
 
 /**
  * Configurator loads and configure jar files.  

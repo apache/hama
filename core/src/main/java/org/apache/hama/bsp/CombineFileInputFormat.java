@@ -227,7 +227,7 @@ public abstract class CombineFileInputFormat<K, V> extends
   /**
    * Return all the splits in the specified set of paths
    */
-  private void getMoreSplits(BSPJob job, Path[] paths, long maxSize,
+  private static void getMoreSplits(BSPJob job, Path[] paths, long maxSize,
       long minSizeNode, long minSizeRack, List<CombineFileSplit> splits)
       throws IOException {
 
@@ -249,11 +249,9 @@ public abstract class CombineFileInputFormat<K, V> extends
     }
 
     // populate all the blocks for all files
-    long totLength = 0;
     for (int i = 0; i < paths.length; i++) {
       files[i] = new OneFileInfo(paths[i], job, rackToBlocks, blockToNodes,
           nodeToBlocks);
-      totLength += files[i].getLength();
     }
 
     ArrayList<OneBlockInfo> validBlocks = new ArrayList<OneBlockInfo>();
@@ -415,8 +413,9 @@ public abstract class CombineFileInputFormat<K, V> extends
    * Create a single split from the list of blocks specified in validBlocks Add
    * this new split into splitList.
    */
-  private void addCreatedSplit(BSPJob job, List<CombineFileSplit> splitList,
-      List<String> locations, ArrayList<OneBlockInfo> validBlocks) {
+  private static void addCreatedSplit(BSPJob job,
+      List<CombineFileSplit> splitList, List<String> locations,
+      ArrayList<OneBlockInfo> validBlocks) {
     // create an input split
     Path[] fl = new Path[validBlocks.size()];
     long[] offset = new long[validBlocks.size()];
@@ -493,10 +492,6 @@ public abstract class CombineFileInputFormat<K, V> extends
         }
       }
     }
-
-    long getLength() {
-      return fileSize;
-    }
   }
 
   /**
@@ -510,7 +505,8 @@ public abstract class CombineFileInputFormat<K, V> extends
     String[] racks; // network topology of hosts
 
     OneBlockInfo(Path path, long offset, long len, String[] hosts,
-        String[] topologyPaths) {
+        String[] pTopologyPaths) {
+      String[] topologyPaths = pTopologyPaths;
       this.onepath = path;
       this.offset = offset;
       this.hosts = hosts;
@@ -571,6 +567,7 @@ public abstract class CombineFileInputFormat<K, V> extends
       filters.add(one);
     }
 
+    @Override
     public boolean accept(Path path) {
       for (PathFilter filter : filters) {
         if (filter.accept(path)) {
@@ -580,6 +577,7 @@ public abstract class CombineFileInputFormat<K, V> extends
       return false;
     }
 
+    @Override
     public String toString() {
       StringBuffer buf = new StringBuffer();
       buf.append("[");

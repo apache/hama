@@ -33,6 +33,7 @@ public class JobProfile implements Writable {
 
   static { // register actor
     WritableFactories.setFactory(JobProfile.class, new WritableFactory() {
+      @Override
       public Writable newInstance() {
         return new JobProfile();
       }
@@ -95,6 +96,7 @@ public class JobProfile implements Writable {
     return name;
   }
 
+  @Override
   public void write(DataOutput out) throws IOException {
     jobid.write(out);
     Text.writeString(out, jobFile);
@@ -102,6 +104,7 @@ public class JobProfile implements Writable {
     Text.writeString(out, name);
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
     jobid.readFields(in);
     this.jobFile = Text.readString(in);

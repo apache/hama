@@ -48,7 +48,7 @@ import org.apache.zookeeper.data.Stat;
  * 
  */
 public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
-  
+
   /*
    * TODO maybe extract an abstract class and let the subclasses implement
    * enter-/leaveBarrier so we can have multiple implementations, just like
@@ -101,8 +101,6 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
         createZnode(pathToSuperstepZnode);
         BarrierWatcher barrierWatcher = new BarrierWatcher();
 
-        Stat readyStat = zk.exists(pathToSuperstepZnode + "/ready",
-            barrierWatcher);
         zk.create(getNodeName(taskId, superstep), null, Ids.OPEN_ACL_UNSAFE,
             CreateMode.EPHEMERAL);
 
@@ -148,9 +146,8 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
           + taskId.getJobID().toString() + "/" + superstep;
       while (true) {
         List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
-        LOG
-            .debug("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
-                + superstep + " znode:" + znodes);
+        LOG.debug("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
+            + superstep + " znode:" + znodes);
         if (znodes.contains("ready")) {
           znodes.remove("ready");
         }
@@ -347,7 +344,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
 
   @Override
   public void close() throws InterruptedException {
-      zk.close();
+    zk.close();
   }
 
   @Override

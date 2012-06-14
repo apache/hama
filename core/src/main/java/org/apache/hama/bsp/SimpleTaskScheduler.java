@@ -18,6 +18,7 @@
 package org.apache.hama.bsp;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.apache.hama.monitor.fd.NodeStatus.Dead;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,8 +33,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,17 +47,16 @@ import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.monitor.Federator;
 import org.apache.hama.monitor.Federator.Act;
 import org.apache.hama.monitor.Federator.CollectorHandler;
-import org.apache.hama.monitor.fd.NodeEventListener;
-import org.apache.hama.monitor.fd.NodeStatus;
 import org.apache.hama.monitor.Metric;
 import org.apache.hama.monitor.MetricsRecord;
 import org.apache.hama.monitor.Monitor;
 import org.apache.hama.monitor.ZKCollector;
+import org.apache.hama.monitor.fd.NodeEventListener;
+import org.apache.hama.monitor.fd.NodeStatus;
 import org.apache.zookeeper.ZooKeeper;
-import static org.apache.hama.monitor.fd.NodeStatus.*;
 
 /**
- * A simple task scheduler with FCFS processing queue. 
+ * A simple task scheduler with FCFS processing queue.
  */
 class SimpleTaskScheduler extends TaskScheduler {
 
@@ -66,45 +66,41 @@ class SimpleTaskScheduler extends TaskScheduler {
   public static final String PROCESSING_QUEUE = "processingQueue";
   public static final String FINISHED_QUEUE = "finishedQueue";
 
-  private final AtomicReference<QueueManager> queueManager = 
-    new AtomicReference<QueueManager>();
+  private final AtomicReference<QueueManager> queueManager = new AtomicReference<QueueManager>();
   private AtomicBoolean initialized = new AtomicBoolean(false);
   private final JobListener jobListener;
   private final JobProcessor jobProcessor;
-  private final AtomicReference<Federator> federator = 
-    new AtomicReference<Federator>(); 
+  private final AtomicReference<Federator> federator = new AtomicReference<Federator>();
   /** <String, MetricsRecord> maps to <groom server, metrics record> */
-  private final ConcurrentMap<String, MetricsRecord> repository =  
-    new ConcurrentHashMap<String, MetricsRecord>();
+  private final ConcurrentMap<String, MetricsRecord> repository = new ConcurrentHashMap<String, MetricsRecord>();
   private final ScheduledExecutorService scheduler;
-  private final ConcurrentMap<String, Boolean> isNotified = // <host, isNotified> 
-    new ConcurrentHashMap<String, Boolean>();
 
-  final class NodeWatcher implements NodeEventListener {   
+  final class NodeWatcher implements NodeEventListener {
     final GroomServerManager groomManager;
     final TaskScheduler _sched;
 
     NodeWatcher(GroomServerManager groomManager, TaskScheduler _sched) {
       this.groomManager = groomManager;
       this._sched = _sched;
-    } 
+    }
 
     @Override
     public NodeStatus[] interest() {
-      return new NodeStatus[]{ Dead };
+      return new NodeStatus[] { Dead };
     }
 
     @Override
     public String name() {
-      return SimpleTaskScheduler.class.getSimpleName()+"'s "+
-             NodeWatcher.class.getSimpleName();
+      return SimpleTaskScheduler.class.getSimpleName() + "'s "
+          + NodeWatcher.class.getSimpleName();
     }
- 
+
     /**
-     * Trigger to reschedule all tasks running on a failed GroomSever. Note that 
-     * this method is trigger only when a groom server fails (detected by failure 
-     * detector). BSPMaster has no way to send kill directive to the groom server 
-     * because a failed GroomServer can't respond. 
+     * Trigger to reschedule all tasks running on a failed GroomSever. Note that
+     * this method is trigger only when a groom server fails (detected by
+     * failure detector). BSPMaster has no way to send kill directive to the
+     * groom server because a failed GroomServer can't respond.
+     * 
      * @param status of the groom server, reported by failure detector.
      * @param host is the groom server on which tasks run.
      */
@@ -140,6 +136,7 @@ class SimpleTaskScheduler extends TaskScheduler {
      * Main logic of scheduling tasks to GroomServer(s). Also, it will move
      * JobInProgress from Wait Queue to Processing Queue.
      */
+    @Override
     public void run() {
       if (!initialized.get()) {
         throw new IllegalStateException("SimpleTaskScheduler initialization"
@@ -155,10 +152,9 @@ class SimpleTaskScheduler extends TaskScheduler {
         JobInProgress job = queue.removeJob();
         queueManager.get().addJob(PROCESSING_QUEUE, job);
         // schedule
-        Collection<GroomServerStatus> glist = groomServerManager.get().
-            groomServerStatusKeySet();
-        schedule(job, (GroomServerStatus[]) glist.
-                 toArray(new GroomServerStatus[glist.size()]));
+        Collection<GroomServerStatus> glist = groomServerManager.get()
+            .groomServerStatusKeySet();
+        schedule(job, glist.toArray(new GroomServerStatus[glist.size()]));
       }
     }
 
@@ -170,11 +166,12 @@ class SimpleTaskScheduler extends TaskScheduler {
      */
     @Override
     public void schedule(JobInProgress job, GroomServerStatus... statuses) {
-      ClusterStatus clusterStatus = groomServerManager.get().getClusterStatus(false);
+      ClusterStatus clusterStatus = groomServerManager.get().getClusterStatus(
+          false);
       final int numGroomServers = clusterStatus.getGroomServers();
 
-      Future<Boolean> jobScheduleResult = 
-        sched.submit(new TaskWorker(statuses, numGroomServers, job));
+      Future<Boolean> jobScheduleResult = sched.submit(new TaskWorker(statuses,
+          numGroomServers, job));
 
       Boolean jobResult = Boolean.FALSE;
 
@@ -224,12 +221,12 @@ class SimpleTaskScheduler extends TaskScheduler {
         throw new NullPointerException("No job is specified.");
     }
 
+    @Override
     public Boolean call() {
 
       // Action to be sent for each task to the respective groom server.
-      Map<GroomServerStatus, List<LaunchTaskAction>> actionMap = 
-          new HashMap<GroomServerStatus, List<LaunchTaskAction>>(
-              2 * this.groomStatuses.size());
+      Map<GroomServerStatus, List<LaunchTaskAction>> actionMap = new HashMap<GroomServerStatus, List<LaunchTaskAction>>(
+          2 * this.groomStatuses.size());
       Set<Task> taskSet = new HashSet<Task>(2 * jip.tasks.length);
       Task t = null;
       int cnt = 0;
@@ -267,7 +264,8 @@ class SimpleTaskScheduler extends TaskScheduler {
         GroomServerStatus groomStatus = groomIter.next();
         List<LaunchTaskAction> actionList = actionMap.get(groomStatus);
 
-        GroomProtocol worker = groomServerManager.get().findGroomServer(groomStatus);
+        GroomProtocol worker = groomServerManager.get().findGroomServer(
+            groomStatus);
         try {
           // dispatch() to the groom server
           GroomServerAction[] actions = new GroomServerAction[actionList.size()];
@@ -297,40 +295,47 @@ class SimpleTaskScheduler extends TaskScheduler {
    */
   private class JvmCollector implements Runnable {
     final Federator federator;
-    final ZooKeeper zk; 
+    final ZooKeeper zk;
+
     JvmCollector(final Federator federator, final ZooKeeper zk) {
       this.federator = federator;
       this.zk = zk;
-    } 
+    }
+
+    @Override
     public void run() {
-      for(GroomServerStatus status: 
-          groomServerManager.get().groomServerStatusKeySet()) {
+      for (GroomServerStatus status : groomServerManager.get()
+          .groomServerStatusKeySet()) {
         final String groom = status.getGroomName();
-        final String jvmPath = Monitor.MONITOR_ROOT_PATH+groom+"/metrics/jvm";
-        final Act act = 
-          new Act(new ZKCollector(zk, "jvm", "Jvm metrics.", jvmPath), 
-                  new CollectorHandler() {
-            public void handle(Future future) {
-              try {
-                MetricsRecord record = (MetricsRecord)future.get();
-                if(null != record) {
-                  if(LOG.isDebugEnabled()) {
-                    for(Metric metric: record.metrics()) {
-                      LOG.debug("Metric name:"+metric.name()+" metric value:"+metric.value());
-                    }
+        final String jvmPath = Monitor.MONITOR_ROOT_PATH + groom
+            + "/metrics/jvm";
+        final Act act = new Act(new ZKCollector(zk, "jvm", "Jvm metrics.",
+            jvmPath), new CollectorHandler() {
+          @Override
+          public void handle(@SuppressWarnings("rawtypes")
+          Future future) {
+            try {
+              MetricsRecord record = (MetricsRecord) future.get();
+              if (null != record) {
+                if (LOG.isDebugEnabled()) {
+                  for (@SuppressWarnings("rawtypes")
+                  Metric metric : record.metrics()) {
+                    LOG.debug("Metric name:" + metric.name() + " metric value:"
+                        + metric.value());
                   }
-                  repository.put(groom, record);
                 }
-              } catch (InterruptedException ie) {
-                LOG.warn(ie);
-                Thread.currentThread().interrupt();
-              } catch (ExecutionException ee) {
-                LOG.warn(ee.getCause());
+                repository.put(groom, record);
               }
-            }        
-          }); 
+            } catch (InterruptedException ie) {
+              LOG.warn(ie);
+              Thread.currentThread().interrupt();
+            } catch (ExecutionException ee) {
+              LOG.warn(ee.getCause());
+            }
+          }
+        });
         this.federator.register(act);
-      } 
+      }
     }
   }
 
@@ -342,32 +347,32 @@ class SimpleTaskScheduler extends TaskScheduler {
 
   @Override
   public void start() {
-    if(!initialized.compareAndSet(false, true)) {
-      throw new IllegalStateException(SimpleTaskScheduler.class.getSimpleName()+
-      " is started.");
+    if (!initialized.compareAndSet(false, true)) {
+      throw new IllegalStateException(SimpleTaskScheduler.class.getSimpleName()
+          + " is started.");
     }
-    this.queueManager.set(new QueueManager(getConf())); 
-    this.federator.set(new Federator((HamaConfiguration)getConf()));
+    this.queueManager.set(new QueueManager(getConf()));
+    this.federator.set(new Federator((HamaConfiguration) getConf()));
     this.queueManager.get().createFCFSQueue(WAIT_QUEUE);
     this.queueManager.get().createFCFSQueue(PROCESSING_QUEUE);
     this.queueManager.get().createFCFSQueue(FINISHED_QUEUE);
     groomServerManager.get().addJobInProgressListener(this.jobListener);
 
-    if(null != getConf() && 
-       getConf().getBoolean("bsp.federator.enabled", false)) {
+    if (null != getConf()
+        && getConf().getBoolean("bsp.federator.enabled", false)) {
       this.federator.get().start();
     }
     this.jobProcessor.start();
-    if(null != getConf() && 
-       getConf().getBoolean("bsp.federator.enabled", false)) {
-      this.scheduler.scheduleAtFixedRate(new JvmCollector(federator.get(), 
-      ((BSPMaster)groomServerManager.get()).zk), 5, 5, SECONDS);
+    if (null != getConf()
+        && getConf().getBoolean("bsp.federator.enabled", false)) {
+      this.scheduler.scheduleAtFixedRate(new JvmCollector(federator.get(),
+          ((BSPMaster) groomServerManager.get()).zk), 5, 5, SECONDS);
     }
 
-    if(null != monitorManager.get()) {
-      if(null != monitorManager.get().supervisor()) {
-        monitorManager.get().supervisor().
-        register(new NodeWatcher(groomServerManager.get(), this));
+    if (null != monitorManager.get()) {
+      if (null != monitorManager.get().supervisor()) {
+        monitorManager.get().supervisor()
+            .register(new NodeWatcher(groomServerManager.get(), this));
       }
     }
   }

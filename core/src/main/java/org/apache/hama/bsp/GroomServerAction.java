@@ -25,90 +25,89 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
 /**
- * A generic directive from the {@link org.apache.hama.bsp.BSPMaster}
- * to the {@link org.apache.hama.bsp.GroomServer} to take some 'action'. 
+ * A generic directive from the {@link org.apache.hama.bsp.BSPMaster} to the
+ * {@link org.apache.hama.bsp.GroomServer} to take some 'action'.
  */
 abstract class GroomServerAction implements Writable {
-  
+
   /**
-   * Ennumeration of various 'actions' that the {@link BSPMaster}
-   * directs the {@link GroomServer} to perform periodically.
+   * Ennumeration of various 'actions' that the {@link BSPMaster} directs the
+   * {@link GroomServer} to perform periodically.
    * 
    */
   public static enum ActionType {
     /** Launch a new task. */
     LAUNCH_TASK,
-    
+
     /** Kill a task. */
     KILL_TASK,
-    
+
     /** Kill any tasks of this job and cleanup. */
     KILL_JOB,
-    
+
     /** Reinitialize the groomserver. */
     REINIT_GROOM,
 
     /** Ask a task to save its output. */
     COMMIT_TASK
   };
-  
+
   /**
-   * A factory-method to create objects of given {@link ActionType}. 
+   * A factory-method to create objects of given {@link ActionType}.
+   * 
    * @param actionType the {@link ActionType} of object to create.
    * @return an object of {@link ActionType}.
    */
   public static GroomServerAction createAction(ActionType actionType) {
     GroomServerAction action = null;
-    
+
     switch (actionType) {
-    case LAUNCH_TASK:
-      {
+      case LAUNCH_TASK: {
         action = new LaunchTaskAction();
       }
-      break;
-    case KILL_TASK:
-      {
+        break;
+      case KILL_TASK: {
         action = new KillTaskAction();
       }
-      break;
-    case KILL_JOB:
-      {
+        break;
+      case KILL_JOB: {
         action = new KillJobAction();
       }
-      break;
-    case REINIT_GROOM:
-      {
+        break;
+      case REINIT_GROOM: {
         action = new ReinitGroomAction();
       }
-      break;
-    case COMMIT_TASK:
-      {
+        break;
+      case COMMIT_TASK: {
         action = new CommitTaskAction();
       }
-      break;
+        break;
     }
 
     return action;
   }
-  
+
   private ActionType actionType;
-  
+
   protected GroomServerAction(ActionType actionType) {
     this.actionType = actionType;
   }
-  
+
   /**
    * Return the {@link ActionType}.
+   * 
    * @return the {@link ActionType}.
    */
   ActionType getActionType() {
     return actionType;
   }
 
+  @Override
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeEnum(out, actionType);
   }
-  
+
+  @Override
   public void readFields(DataInput in) throws IOException {
     actionType = WritableUtils.readEnum(in, ActionType.class);
   }

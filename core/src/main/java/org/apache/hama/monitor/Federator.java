@@ -17,11 +17,10 @@
  */
 package org.apache.hama.monitor;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -32,14 +31,11 @@ import org.apache.hama.HamaConfiguration;
 public final class Federator extends Thread {
 
   public static final Log LOG = LogFactory.getLog(Federator.class);
- 
-  private final HamaConfiguration configuration;
 
   private final ExecutorService workers;
-
   private final BlockingQueue<Act> commands = new LinkedBlockingQueue<Act>();
 
-  private static class ServiceWorker implements Callable {
+  private static class ServiceWorker implements Callable<Object> {
 
     final Collector collector;
 
@@ -53,7 +49,7 @@ public final class Federator extends Thread {
     }
 
   }
- 
+
   /**
    * A token binds collector and handler together.
    */
@@ -84,12 +80,12 @@ public final class Federator extends Thread {
     /**
      * Handle the result.
      */
-    void handle(Future future); 
+    void handle(Future<Object> future);
 
   }
-  
+
   /**
-   * Collect GroomServer information from repository. 
+   * Collect GroomServer information from repository.
    */
   public static interface Collector {
 
@@ -102,7 +98,6 @@ public final class Federator extends Thread {
   }
 
   public Federator(final HamaConfiguration configuration) {
-    this.configuration = configuration;
     this.workers = Executors.newCachedThreadPool();
     setName(Federator.class.getSimpleName());
     setDaemon(true);
@@ -110,9 +105,9 @@ public final class Federator extends Thread {
 
   public final void register(final Act act) {
     try {
-      if(null == act || null == act.collector() || null == act.handler())
-        throw new NullPointerException("Collector or CollectorHandler "+
-        " is not provided."); 
+      if (null == act || null == act.collector() || null == act.handler())
+        throw new NullPointerException("Collector or CollectorHandler "
+            + " is not provided.");
       commands.put(act);
     } catch (InterruptedException ie) {
       LOG.error(ie);
@@ -120,11 +115,13 @@ public final class Federator extends Thread {
     }
   }
 
+  @Override
   public void run() {
     try {
-      while(!Thread.currentThread().interrupted()) {
+      while (!Thread.interrupted()) {
         Act act = commands.take();
-        act.handler().handle(workers.submit(new ServiceWorker(act.collector())));
+        act.handler()
+            .handle(workers.submit(new ServiceWorker(act.collector())));
       }
     } catch (InterruptedException ie) {
       LOG.error(ie);

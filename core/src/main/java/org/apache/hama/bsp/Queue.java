@@ -21,37 +21,42 @@ import java.util.Collection;
 
 /**
  * Job Queue interface.
- *  
+ * 
  * @param <T>
  */
-public interface Queue<T>{
+public interface Queue<T> {
 
   /**
    * The queue name.
+   * 
    * @return the name of current queue.
-   */ 
+   */
   String getName();
 
   /**
    * Add a job to a queue.
+   * 
    * @param job to be added to the queue.
    */
   void addJob(T job);
 
   /**
    * Remove a job from the queue.
+   * 
    * @param job to be removed from the queue.
    */
   void removeJob(T job);
 
   /**
    * Get a job
+   * 
    * @return job that is removed from the queue.
    */
   T removeJob();
 
   /**
    * Return all data stored in this queue.
+   * 
    * @return Collection of jobs.
    */
   public Collection<T> jobs();

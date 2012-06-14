@@ -42,7 +42,8 @@ public class TaskStatus implements Writable, Cloneable {
 
   // what state is the task in?
   public static enum State {
-    RUNNING, SUCCEEDED, FAILED, UNASSIGNED, KILLED, COMMIT_PENDING, FAILED_UNCLEAN, KILLED_UNCLEAN
+    RUNNING, SUCCEEDED, FAILED, UNASSIGNED, KILLED, COMMIT_PENDING,
+    FAILED_UNCLEAN, KILLED_UNCLEAN
   }
 
   private BSPJobID jobId;
@@ -58,7 +59,7 @@ public class TaskStatus implements Writable, Cloneable {
   private volatile Phase phase = Phase.STARTING;
 
   private Counters counters;
-  
+
   /**
    * 
    */
@@ -68,7 +69,8 @@ public class TaskStatus implements Writable, Cloneable {
   }
 
   public TaskStatus(BSPJobID jobId, TaskAttemptID taskId, float progress,
-      State runState, String stateString, String groomServer, Phase phase, Counters counters) {
+      State runState, String stateString, String groomServer, Phase phase,
+      Counters counters) {
     this.jobId = jobId;
     this.taskId = taskId;
     this.progress = progress;
@@ -173,14 +175,16 @@ public class TaskStatus implements Writable, Cloneable {
   public Counters getCounters() {
     return counters;
   }
+
   /**
    * Set the task's counters.
+   * 
    * @param counters
    */
   public void setCounters(Counters counters) {
     this.counters = counters;
   }
-  
+
   /**
    * Update the status of the task.
    * 
@@ -203,7 +207,7 @@ public class TaskStatus implements Writable, Cloneable {
    */
   synchronized void statusUpdate(TaskStatus status) {
     this.counters = status.getCounters();
-    
+
     this.progress = status.getProgress();
     this.runState = status.getRunState();
     this.stateString = status.getStateString();
@@ -272,7 +276,7 @@ public class TaskStatus implements Writable, Cloneable {
     this.phase = WritableUtils.readEnum(in, Phase.class);
     this.startTime = in.readLong();
     this.finishTime = in.readLong();
-    
+
     counters = new Counters();
     this.counters.readFields(in);
   }
@@ -287,7 +291,7 @@ public class TaskStatus implements Writable, Cloneable {
     WritableUtils.writeEnum(out, phase);
     out.writeLong(startTime);
     out.writeLong(finishTime);
-    
+
     counters.write(out);
   }
 }

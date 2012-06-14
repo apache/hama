@@ -27,16 +27,18 @@ abstract class JobInProgressListener {
 
   /**
    * Invoked when a new job has been added to the {@link BSPMaster}.
+   * 
    * @param job The job to be added.
-   * @throws IOException 
+   * @throws IOException
    */
   public abstract void jobAdded(JobInProgress job) throws IOException;
 
   /**
    * Invoked when a job has been removed from the {@link BSPMaster}.
+   * 
    * @param job The job to be removed .
    * @throws IOException
    */
   public abstract void jobRemoved(JobInProgress job) throws IOException;
-  
+
 }

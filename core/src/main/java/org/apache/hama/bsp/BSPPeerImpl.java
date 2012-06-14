@@ -422,8 +422,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   @Override
   public int getPeerIndex() {
     initPeerNames();
-    return Arrays
-        .binarySearch(getAllPeerNames(), getPeerName());
+    return Arrays.binarySearch(getAllPeerNames(), getPeerName());
   }
 
   @Override

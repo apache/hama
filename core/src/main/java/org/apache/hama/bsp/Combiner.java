@@ -28,5 +28,5 @@ public abstract class Combiner<M extends Writable> {
    * @return the combined message
    */
   public abstract M combine(Iterable<M> messages);
-  
+
 }

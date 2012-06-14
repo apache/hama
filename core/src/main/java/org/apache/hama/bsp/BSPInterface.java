@@ -17,7 +17,6 @@
  */
 package org.apache.hama.bsp;
 
-
 /**
  * Interface BSP defines the basic operations needed to implement the BSP
  * algorithm.

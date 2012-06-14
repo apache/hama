@@ -20,7 +20,7 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 
 public interface RecordReader<K, V> {
-  
+
   /**
    * Reads the next key/value pair from the input for processing.
    * 

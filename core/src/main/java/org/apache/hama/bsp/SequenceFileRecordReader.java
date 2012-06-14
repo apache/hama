@@ -65,16 +65,19 @@ public class SequenceFileRecordReader<K, V> implements RecordReader<K, V> {
     return in.getValueClass();
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public K createKey() {
     return (K) ReflectionUtils.newInstance(getKeyClass(), conf);
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public V createValue() {
     return (V) ReflectionUtils.newInstance(getValueClass(), conf);
   }
 
+  @Override
   public synchronized boolean next(K key, V value) throws IOException {
     if (!more)
       return false;
@@ -113,6 +116,7 @@ public class SequenceFileRecordReader<K, V> implements RecordReader<K, V> {
    * 
    * @return 0.0 to 1.0 of the input byte range
    */
+  @Override
   public float getProgress() throws IOException {
     if (end == start) {
       return 0.0f;
@@ -121,6 +125,7 @@ public class SequenceFileRecordReader<K, V> implements RecordReader<K, V> {
     }
   }
 
+  @Override
   public synchronized long getPos() throws IOException {
     return in.getPosition();
   }
@@ -129,6 +134,7 @@ public class SequenceFileRecordReader<K, V> implements RecordReader<K, V> {
     in.seek(pos);
   }
 
+  @Override
   public synchronized void close() throws IOException {
     in.close();
   }

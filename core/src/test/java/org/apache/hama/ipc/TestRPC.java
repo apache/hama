@@ -67,29 +67,36 @@ public class TestRPC extends TestCase {
 
   public class TestImpl implements TestProtocol {
 
+    @Override
     public long getProtocolVersion(String protocol, long clientVersion) {
       return TestProtocol.versionID;
     }
 
+    @Override
     public void ping() {
     }
 
+    @Override
     public String echo(String value) throws IOException {
       return value;
     }
 
+    @Override
     public String[] echo(String[] values) throws IOException {
       return values;
     }
 
+    @Override
     public Writable echo(Writable writable) {
       return writable;
     }
 
+    @Override
     public int add(int v1, int v2) {
       return v1 + v2;
     }
 
+    @Override
     public int add(int[] values) {
       int sum = 0;
       for (int i = 0; i < values.length; i++) {
@@ -98,10 +105,12 @@ public class TestRPC extends TestCase {
       return sum;
     }
 
+    @Override
     public int error() throws IOException {
       throw new IOException("bobo");
     }
 
+    @Override
     public void testServerGet() throws IOException {
       if (!(Server.get() instanceof RPC.Server)) {
         throw new IOException("Server.get() failed");
@@ -157,7 +166,7 @@ public class TestRPC extends TestCase {
     assertTrue(Arrays.equals(strings, new String[] { "a", "b" }));
 
     Method ping = TestProtocol.class.getMethod("ping", new Class[] {});
-    Object[] voids = (Object[]) RPC.call(ping, new Object[][] { {}, {} },
+    Object[] voids = RPC.call(ping, new Object[][] { {}, {} },
         new InetSocketAddress[] { addr, addr }, null, conf);
     assertEquals(voids, null);
 

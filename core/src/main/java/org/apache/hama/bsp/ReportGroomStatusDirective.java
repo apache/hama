@@ -29,12 +29,15 @@ import org.apache.hadoop.io.Writable;
  * Reports status of GroomServer.
  */
 public class ReportGroomStatusDirective extends Directive implements Writable {
-  public static final Log LOG = LogFactory.getLog(ReportGroomStatusDirective.class);
+  public static final Log LOG = LogFactory
+      .getLog(ReportGroomStatusDirective.class);
 
   private GroomServerStatus status;
 
-  public ReportGroomStatusDirective(){ super(); }
-  
+  public ReportGroomStatusDirective() {
+    super();
+  }
+
   public ReportGroomStatusDirective(GroomServerStatus status) {
     super(Directive.Type.Response);
     this.status = status;
@@ -44,11 +47,13 @@ public class ReportGroomStatusDirective extends Directive implements Writable {
     return this.status;
   }
 
+  @Override
   public void write(DataOutput out) throws IOException {
     super.write(out);
     this.status.write(out);
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
     super.readFields(in);
     this.status = new GroomServerStatus();

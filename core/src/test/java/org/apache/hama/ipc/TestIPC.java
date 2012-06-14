@@ -84,10 +84,12 @@ public class TestIPC extends TestCase {
       this.count = count;
     }
 
+    @Override
     public void run() {
       for (int i = 0; i < count; i++) {
         try {
           LongWritable param = new LongWritable(RANDOM.nextLong());
+          @SuppressWarnings("deprecation")
           LongWritable value = (LongWritable) client.call(param, server);
           if (!param.equals(value)) {
             LOG.fatal("Call failed!");
@@ -115,12 +117,14 @@ public class TestIPC extends TestCase {
       this.count = count;
     }
 
+    @Override
     public void run() {
       for (int i = 0; i < count; i++) {
         try {
           Writable[] params = new Writable[addresses.length];
           for (int j = 0; j < addresses.length; j++)
             params[j] = new LongWritable(RANDOM.nextLong());
+          @SuppressWarnings("deprecation")
           Writable[] values = client.call(params, addresses, null, null);
           for (int j = 0; j < addresses.length; j++) {
             if (!params[j].equals(values[j])) {
@@ -208,6 +212,7 @@ public class TestIPC extends TestCase {
     }
   }
 
+  @SuppressWarnings("deprecation")
   public void testStandAloneClient() throws Exception {
     testParallel(10, false, 2, 4, 2, 4, 100);
     Client client = new Client(LongWritable.class, conf);

@@ -22,31 +22,32 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} 
- * to the {@link org.apache.hama.bsp.GroomServer} to commit the output
- * of the task.
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
+ * {@link org.apache.hama.bsp.GroomServer} to commit the output of the task.
  */
 class CommitTaskAction extends GroomServerAction {
   private TaskAttemptID taskId;
-  
+
   public CommitTaskAction() {
     super(ActionType.COMMIT_TASK);
     taskId = new TaskAttemptID();
   }
-  
+
   public CommitTaskAction(TaskAttemptID taskId) {
     super(ActionType.COMMIT_TASK);
     this.taskId = taskId;
   }
-  
+
   public TaskAttemptID getTaskID() {
     return taskId;
   }
-  
+
+  @Override
   public void write(DataOutput out) throws IOException {
     taskId.write(out);
   }
 
+  @Override
   public void readFields(DataInput in) throws IOException {
     taskId.readFields(in);
   }

@@ -83,18 +83,22 @@ public class NullInputFormat implements InputFormat<NullWritable, NullWritable> 
   }
 
   public static class NullInputSplit implements InputSplit {
+    @Override
     public long getLength() {
       return 0;
     }
 
+    @Override
     public String[] getLocations() {
       String[] locs = {};
       return locs;
     }
 
+    @Override
     public void readFields(DataInput in) throws IOException {
     }
 
+    @Override
     public void write(DataOutput out) throws IOException {
     }
   }

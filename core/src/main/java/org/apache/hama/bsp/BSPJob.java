@@ -110,8 +110,7 @@ public class BSPJob extends BSPJobContext {
   }
 
   @SuppressWarnings("rawtypes")
-  public void setSupersteps(
-      Class<? extends Superstep>... classes) {
+  public void setSupersteps(Class<? extends Superstep>... classes) {
     ensureState(JobState.DEFINE);
 
     String clazzString = "";
@@ -253,9 +252,8 @@ public class BSPJob extends BSPJobContext {
 
   @SuppressWarnings({ "rawtypes" })
   public InputFormat getInputFormat() {
-    return ReflectionUtils.newInstance(conf.getClass(
-        "bsp.input.format.class", TextInputFormat.class, InputFormat.class),
-        conf);
+    return ReflectionUtils.newInstance(conf.getClass("bsp.input.format.class",
+        TextInputFormat.class, InputFormat.class), conf);
   }
 
   @SuppressWarnings({ "rawtypes" })
@@ -387,9 +385,8 @@ public class BSPJob extends BSPJobContext {
 
   @SuppressWarnings("rawtypes")
   public OutputFormat getOutputFormat() {
-    return ReflectionUtils.newInstance(conf.getClass(
-        "bsp.output.format.class", TextOutputFormat.class, OutputFormat.class),
-        conf);
+    return ReflectionUtils.newInstance(conf.getClass("bsp.output.format.class",
+        TextOutputFormat.class, OutputFormat.class), conf);
   }
 
   protected void setCheckPointInterval(int checkPointInterval) {

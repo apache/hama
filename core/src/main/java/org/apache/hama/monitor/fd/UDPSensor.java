@@ -19,15 +19,14 @@
 package org.apache.hama.monitor.fd;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,7 +35,7 @@ import org.apache.hama.HamaConfiguration;
 /**
  * Failure detector UDP client.
  */
-public class UDPSensor implements Sensor, Callable {
+public class UDPSensor implements Sensor, Callable<Object> {
 
   public static final Log LOG = LogFactory.getLog(UDPSensor.class);
   /** 
@@ -78,6 +77,7 @@ public class UDPSensor implements Sensor, Callable {
   /**
    * The heartbeat function, signifying its existence.
    */
+  @Override
   public void heartbeat() throws IOException{
     ByteBuffer heartbeat = ByteBuffer.allocate(8);
     heartbeat.clear();
@@ -102,6 +102,7 @@ public class UDPSensor implements Sensor, Callable {
     return HEARTBEAT_INTERVAL;
   }
 
+  @Override
   public Object call() throws Exception {
     while(running.get()){
       try{
