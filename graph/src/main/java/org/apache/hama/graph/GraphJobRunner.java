@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -259,33 +258,39 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       }
 
       int messagesSize = messages.size();
-      Iterator<Entry<V, LinkedList<M>>> iterator = messages.entrySet()
-          .iterator();
-      while (iterator.hasNext()) {
-        Entry<V, LinkedList<M>> e = iterator.next();
-        LinkedList<M> msgs = e.getValue();
-        if (combiner != null) {
-          M combined = combiner.combine(msgs);
-          msgs = new LinkedList<M>();
-          msgs.add(combined);
+
+      for (Vertex<V, E, M> vertex : vertices.values()) {
+        LinkedList<M> msgs = messages.get(vertex.getVertexID());
+        if (vertex.isHalted() && msgs != null) {
+          vertex.votedToHalt = false;
         }
-        Vertex<V, E, M> vertex = vertices.get(e.getKey());
-        M lastValue = vertex.getValue();
-        vertex.compute(msgs.iterator());
-        if (aggregators != null) {
-          if (this.aggregators != null) {
-            for (int i = 0; i < this.aggregators.length; i++) {
-              Aggregator<M, Vertex<V, E, M>> aggregator = this.aggregators[i];
-              aggregator.aggregate(vertex, vertex.getValue());
-              if (isAbstractAggregator[i]) {
-                AbstractAggregator<M, Vertex<V, E, M>> intern = ((AbstractAggregator<M, Vertex<V, E, M>>) aggregator);
-                intern.aggregate(vertex, lastValue, vertex.getValue());
-                intern.aggregateInternal();
+        if (msgs == null) {
+          msgs = new LinkedList<M>();
+        }
+        
+        if (!vertex.isHalted()) {
+          if (combiner != null) {
+            M combined = combiner.combine(msgs);
+            msgs = new LinkedList<M>();
+            msgs.add(combined);
+          }
+          M lastValue = vertex.getValue();
+          vertex.compute(msgs.iterator());
+
+          if (aggregators != null) {
+            if (this.aggregators != null) {
+              for (int i = 0; i < this.aggregators.length; i++) {
+                Aggregator<M, Vertex<V, E, M>> aggregator = this.aggregators[i];
+                aggregator.aggregate(vertex, vertex.getValue());
+                if (isAbstractAggregator[i]) {
+                  AbstractAggregator<M, Vertex<V, E, M>> intern = ((AbstractAggregator<M, Vertex<V, E, M>>) aggregator);
+                  intern.aggregate(vertex, lastValue, vertex.getValue());
+                  intern.aggregateInternal();
+                }
               }
             }
           }
         }
-        iterator.remove();
       }
 
       runAggregators(peer, messagesSize);
@@ -476,11 +481,11 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   /**
    * @return a new vertex instance
    */
-  public static <VERTEX_ID extends Writable, VERTEX_VALUE extends Writable, EDGE_VALUE_TYPE extends Writable> Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> newVertexInstance(
+  public static <V extends Writable, E extends Writable, M extends Writable> Vertex<V, E, M> newVertexInstance(
       Class<?> vertexClass, Configuration conf) {
     @SuppressWarnings("unchecked")
-    Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE> vertex = (Vertex<VERTEX_ID, VERTEX_VALUE, EDGE_VALUE_TYPE>) ReflectionUtils
-        .newInstance(vertexClass, conf);
+    Vertex<V, E, M> vertex = (Vertex<V, E, M>) ReflectionUtils.newInstance(
+      vertexClass, conf);
     return vertex;
   }
 

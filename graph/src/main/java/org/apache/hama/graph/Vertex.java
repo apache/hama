@@ -36,6 +36,8 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
   private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
   private List<Edge<V, E>> edges;
 
+  protected boolean votedToHalt = false;
+
   public Configuration getConf() {
     return peer.getConfiguration();
   }
@@ -160,6 +162,15 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
   @Override
   public long getNumVertices() {
     return runner.getNumberVertices();
+  }
+
+  @Override
+  public void voteToHalt() {
+    this.votedToHalt = true;  
+  }
+  
+  public boolean isHalted() {
+    return votedToHalt;  
   }
 
   @Override
