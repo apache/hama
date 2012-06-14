@@ -81,6 +81,11 @@ public interface VertexInterface<V extends Writable, E extends Writable, M exten
   public long getSuperstepCount();
 
   /**
+   * Vote to halt.
+   */
+  public void voteToHalt();
+
+  /**
    * Sets the vertex value
    */
   public void setValue(M value);

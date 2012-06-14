@@ -66,10 +66,14 @@ public class MindistSearch {
         boolean updated = false;
         while (messages.hasNext()) {
           Text next = messages.next();
-          if (currentComponent.compareTo(next) > 0) {
-            updated = true;
-            setValue(next);
-          }
+          if(currentComponent != null && next != null) {
+            if (currentComponent.compareTo(next) > 0) {
+              updated = true;
+              setValue(next);
+            }
+          } else {
+            this.voteToHalt();
+          } 
         }
         if (updated) {
           sendMessageToNeighbors(getValue());

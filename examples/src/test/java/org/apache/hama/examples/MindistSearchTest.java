@@ -42,10 +42,10 @@ public class MindistSearchTest extends TestCase {
   String[] input = new String[] { "0", "1\t4\t7", "2\t3\t8", "3\t5", "4\t1", "5\t6",
       "6", "7", "8\t3", "9\t0" };
 
-  private static String INPUT = "/tmp/pagerank-tmp.seq";
-  private static String TEXT_INPUT = "/tmp/pagerank.txt";
-  private static String TEXT_OUTPUT = INPUT + "pagerank.txt.seq";
-  private static String OUTPUT = "/tmp/pagerank-out";
+  private static String INPUT = "/tmp/mdst-tmp.seq";
+  private static String TEXT_INPUT = "/tmp/mdst.txt";
+  private static String TEXT_OUTPUT = INPUT + "mdst.txt.seq";
+  private static String OUTPUT = "/tmp/mdst-out";
   private Configuration conf = new HamaConfiguration();
   private FileSystem fs;
 
@@ -58,7 +58,7 @@ public class MindistSearchTest extends TestCase {
   public void testMindistSearch() throws Exception {
     generateTestData();
     try {
-      MindistSearch.main(new String[] { INPUT, OUTPUT });
+      MindistSearch.main(new String[] { INPUT, OUTPUT, "30", "2" });
 
       verifyResult();
     } finally {
