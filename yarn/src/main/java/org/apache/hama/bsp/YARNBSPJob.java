@@ -95,7 +95,7 @@ public class YARNBSPJob extends BSPJob {
       this.submit();
     }
 
-    client = (BSPClient) RPC.waitForProxy(BSPClient.class, BSPClient.versionID,
+    client = RPC.waitForProxy(BSPClient.class, BSPClient.versionID,
         NetUtils.createSocketAddr(report.getHost(), report.getRpcPort()), conf);
     GetApplicationReportRequest reportRequest = Records
         .newRecord(GetApplicationReportRequest.class);

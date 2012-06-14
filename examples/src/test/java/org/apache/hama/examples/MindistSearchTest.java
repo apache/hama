@@ -39,8 +39,8 @@ public class MindistSearchTest extends TestCase {
 
   String[] resultList = new String[] { "0", "1", "2", "2", "1", "2", "2", "1",
       "2", "0" };
-  String[] input = new String[] { "0", "1\t4\t7", "2\t3\t8", "3\t5", "4\t1", "5\t6",
-      "6", "7", "8\t3", "9\t0" };
+  String[] input = new String[] { "0", "1\t4\t7", "2\t3\t8", "3\t5", "4\t1",
+      "5\t6", "6", "7", "8\t3", "9\t0" };
 
   private static String INPUT = "/tmp/mdst-tmp.seq";
   private static String TEXT_INPUT = "/tmp/mdst.txt";

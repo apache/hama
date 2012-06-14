@@ -58,7 +58,7 @@ public class YARNBSPJobClient extends BSPJobClient {
 
   @Override
   protected RunningJob launchJob(BSPJobID jobId, BSPJob normalJob,
-      Path submitJobFile, FileSystem fs) throws IOException {
+      Path submitJobFile, FileSystem pFs) throws IOException {
 
     YARNBSPJob job = (YARNBSPJob) normalJob;
 
@@ -66,7 +66,7 @@ public class YARNBSPJobClient extends BSPJobClient {
     if (getConf().get("bsp.child.mem.in.mb") == null) {
       LOG.warn("BSP Child memory has not been set, YARN will guess your needs or use default values.");
     }
-
+    FileSystem fs = pFs;
     if (fs == null) {
       fs = FileSystem.get(getConf());
     }

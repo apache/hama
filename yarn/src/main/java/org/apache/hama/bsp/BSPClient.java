@@ -23,7 +23,7 @@ import org.apache.hadoop.ipc.VersionedProtocol;
 public interface BSPClient extends VersionedProtocol {
 
   public static final int versionID = 1;
-  
-  public LongWritable getCurrentSuperStep(); 
-  
+
+  public LongWritable getCurrentSuperStep();
+
 }

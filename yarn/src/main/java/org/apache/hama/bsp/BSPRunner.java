@@ -30,6 +30,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.util.BSPNetUtils;
 
 public class BSPRunner {
@@ -68,8 +69,8 @@ public class BSPRunner {
     InetSocketAddress address = new InetSocketAddress(hostPort[0],
         Integer.valueOf(hostPort[1]));
 
-    BSPPeerProtocol umbilical = (BSPPeerProtocol) RPC.getProxy(
-        BSPPeerProtocol.class, BSPPeerProtocol.versionID, address, conf);
+    BSPPeerProtocol umbilical = RPC.getProxy(BSPPeerProtocol.class,
+        HamaRPCProtocolVersion.versionID, address, conf);
 
     BSPJob job = new BSPJob(new HamaConfiguration(conf));
 

@@ -105,7 +105,7 @@ public class JobImpl implements Job {
   }
 
   // This really needs a testcase
-  private int getMemoryFromOptString(String opts) {
+  private static int getMemoryFromOptString(String opts) {
     if (!opts.contains("-Xmx")) {
       LOG.info("No \"-Xmx\" option found in child opts, using default amount of memory!");
       return DEFAULT_MEMORY_MB;
@@ -160,8 +160,6 @@ public class JobImpl implements Job {
 
     LOG.info("Got " + allocatedContainers.size() + " containers!");
 
-    int launchedBSPTasks = 0;
-
     int id = 0;
     for (Container allocatedContainer : allocatedContainers) {
       LOG.info("Launching task on a new container." + ", containerId="
@@ -186,7 +184,6 @@ public class JobImpl implements Job {
       runnableLaunchContainer.start();
       completionQueue.add(runnableLaunchContainer);
       id++;
-      launchedBSPTasks++;
     }
     LOG.info("Waiting for tasks to finish...");
     state = JobState.RUNNING;

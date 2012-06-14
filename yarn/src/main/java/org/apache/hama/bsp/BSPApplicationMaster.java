@@ -55,6 +55,7 @@ import org.apache.hama.bsp.Job.JobState;
 import org.apache.hama.bsp.sync.SyncServerRunner;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.util.BSPNetUtils;
 
 /**
@@ -203,10 +204,8 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   /**
    * Registers this application master with the Resource Manager and retrieves a
    * response which is used to launch additional containers.
-   * 
-   * @throws YarnRemoteException
    */
-  private RegisterApplicationMasterResponse registerApplicationMaster(
+  private static RegisterApplicationMasterResponse registerApplicationMaster(
       AMRMProtocol resourceManager, ApplicationAttemptId appAttemptID,
       String appMasterHostName, int appMasterRpcPort,
       String appMasterTrackingUrl) throws YarnRemoteException {
@@ -232,7 +231,8 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
    * @return a new ApplicationAttemptId which is unique and identifies this
    *         task.
    */
-  private ApplicationAttemptId getApplicationAttemptId() throws IOException {
+  private static ApplicationAttemptId getApplicationAttemptId()
+      throws IOException {
     Map<String, String> envs = System.getenv();
     if (!envs.containsKey(ApplicationConstants.AM_CONTAINER_ID_ENV)) {
       throw new IllegalArgumentException(
@@ -308,7 +308,7 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   /**
    * Reads the configuration from the given path.
    */
-  private Configuration getSubmitConfiguration(String path) {
+  private static Configuration getSubmitConfiguration(String path) {
     Path jobSubmitPath = new Path(path);
     Configuration jobConf = new HamaConfiguration();
     jobConf.addResource(jobSubmitPath);
@@ -318,10 +318,8 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   /**
    * Writes the current configuration to a given path to reflect changes. For
    * example the sync server address is put after the file has been written.
-   * 
-   * @throws IOException
    */
-  private void rewriteSubmitConfiguration(String path, Configuration conf)
+  private static void rewriteSubmitConfiguration(String path, Configuration conf)
       throws IOException {
     Path jobSubmitPath = new Path(path);
     FileSystem fs = FileSystem.get(conf);
@@ -344,7 +342,7 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   @Override
   public ProtocolSignature getProtocolSignature(String protocol,
       long clientVersion, int clientMethodsHash) throws IOException {
-    return new ProtocolSignature(BSPPeerProtocol.versionID, null);
+    return new ProtocolSignature(HamaRPCProtocolVersion.versionID, null);
   }
 
   @Override
