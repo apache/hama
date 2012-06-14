@@ -47,6 +47,7 @@ public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
         IntWritable msg = messages.next();
         this.setValue(new IntWritable(this.getValue().get() + msg.get()));
       }
+      voteToHalt();
     }
   }
 

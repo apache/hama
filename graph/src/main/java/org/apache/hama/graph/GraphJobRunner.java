@@ -124,15 +124,17 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     boolean repairNeeded = conf.getBoolean(GRAPH_REPAIR, false);
     boolean runtimePartitioning = conf.getBoolean(
         GraphJob.VERTEX_GRAPH_RUNTIME_PARTIONING, true);
-    partitioner = (Partitioner<V, M>) ReflectionUtils.newInstance(conf
-        .getClass("bsp.input.partitioner.class", HashPartitioner.class), conf);
+    partitioner = (Partitioner<V, M>) ReflectionUtils.newInstance(
+        conf.getClass("bsp.input.partitioner.class", HashPartitioner.class),
+        conf);
 
     if (!conf.getClass(MESSAGE_COMBINER_CLASS, Combiner.class).equals(
         Combiner.class)) {
       LOG.debug("Combiner class: " + conf.get(MESSAGE_COMBINER_CLASS));
 
-      combiner = (Combiner<M>) ReflectionUtils.newInstance(conf.getClass(
-          "hama.vertex.message.combiner.class", Combiner.class), conf);
+      combiner = (Combiner<M>) ReflectionUtils.newInstance(
+          conf.getClass("hama.vertex.message.combiner.class", Combiner.class),
+          conf);
     }
     String aggregatorClasses = conf.get(GraphJob.AGGREGATOR_CLASS_ATTR);
     if (aggregatorClasses != null) {
@@ -227,8 +229,8 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
                 }
                 // this count is usually the times of active
                 // vertices in the graph
-                updatedCnt.put(aggregatorIncrementFlag[i], intern
-                    .getTimesAggregated());
+                updatedCnt.put(aggregatorIncrementFlag[i],
+                    intern.getTimesAggregated());
               }
               updatedCnt.put(aggregatorValueFlag[i], lastAggregatedValue);
             }
@@ -257,18 +259,17 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
         }
       }
 
-      int messagesSize = messages.size();
-
+      int activeVertices = 0;
       for (Vertex<V, E, M> vertex : vertices.values()) {
         LinkedList<M> msgs = messages.get(vertex.getVertexID());
         // If there are newly received messages, restart.
         if (vertex.isHalted() && msgs != null) {
-          vertex.votedToHalt = false;
+          vertex.setActive();
         }
         if (msgs == null) {
           msgs = new LinkedList<M>();
         }
-        
+
         if (!vertex.isHalted()) {
           if (combiner != null) {
             M combined = combiner.combine(msgs);
@@ -291,21 +292,23 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
               }
             }
           }
+          if (!vertex.isHalted()) {
+            activeVertices++;
+          }
         }
-        // TODO count the number of vertices that have voted to halt.
       }
 
-      runAggregators(peer, messagesSize);
+      runAggregators(peer, activeVertices);
       iteration++;
     }
   }
 
   private void runAggregators(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
-      int messagesSize) throws IOException {
+      int activeVertices) throws IOException {
     // send msgCounts to the master task
     MapWritable updatedCnt = new MapWritable();
-    updatedCnt.put(FLAG_MESSAGE_COUNTS, new IntWritable(messagesSize));
+    updatedCnt.put(FLAG_MESSAGE_COUNTS, new IntWritable(activeVertices));
     // also send aggregated values to the master
     if (aggregators != null) {
       for (int i = 0; i < this.aggregators.length; i++) {
@@ -393,8 +396,8 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       if (next == null) {
         break;
       }
-      boolean vertexFinished = reader.parseVertex(next.getKey(), next
-          .getValue(), vertex);
+      boolean vertexFinished = reader.parseVertex(next.getKey(),
+          next.getValue(), vertex);
       if (!vertexFinished) {
         continue;
       }
@@ -406,13 +409,13 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
             null));
       }
       if (runtimePartitioning) {
-        int partition = partitioner.getPartition(vertex.getVertexID(), vertex
-            .getValue(), peer.getNumPeers());
+        int partition = partitioner.getPartition(vertex.getVertexID(),
+            vertex.getValue(), peer.getNumPeers());
         // set the destination name for the edge now
         for (Edge<V, E> edge : vertex.getEdges()) {
-          int edgePartition = partitioner.getPartition(edge
-              .getDestinationVertexID(), (M) edge.getValue(), peer
-              .getNumPeers());
+          int edgePartition = partitioner.getPartition(
+              edge.getDestinationVertexID(), (M) edge.getValue(),
+              peer.getNumPeers());
           edge.destinationPeerName = peer.getPeerName(edgePartition);
         }
         peer.send(peer.getPeerName(partition), new GraphJobMessage(vertex));
@@ -450,8 +453,8 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       for (Vertex<V, E, M> entry : entries) {
         List<Edge<V, E>> outEdges = entry.getEdges();
         for (Edge<V, E> e : outEdges) {
-          peer.send(e.getDestinationPeerName(), new GraphJobMessage(e
-              .getDestinationVertexID()));
+          peer.send(e.getDestinationPeerName(),
+              new GraphJobMessage(e.getDestinationVertexID()));
         }
       }
       peer.sync();
@@ -487,7 +490,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       Class<?> vertexClass, Configuration conf) {
     @SuppressWarnings("unchecked")
     Vertex<V, E, M> vertex = (Vertex<V, E, M>) ReflectionUtils.newInstance(
-      vertexClass, conf);
+        vertexClass, conf);
     return vertex;
   }
 
@@ -507,8 +510,8 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   @SuppressWarnings("unchecked")
   private Aggregator<M, Vertex<V, E, M>> getNewAggregator(String clsName) {
     try {
-      return (Aggregator<M, Vertex<V, E, M>>) ReflectionUtils.newInstance(conf
-          .getClassByName(clsName), conf);
+      return (Aggregator<M, Vertex<V, E, M>>) ReflectionUtils.newInstance(
+          conf.getClassByName(clsName), conf);
     } catch (ClassNotFoundException e) {
       e.printStackTrace();
     }

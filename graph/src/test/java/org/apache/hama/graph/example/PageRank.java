@@ -81,6 +81,7 @@ public class PageRank {
       DoubleWritable globalError = getLastAggregatedValue(0);
       if (globalError != null && this.getSuperstepCount() > 2
           && MAXIMUM_CONVERGENCE_ERROR > globalError.get()) {
+        voteToHalt();
         return;
       }
       // in each superstep we are going to send a new rank to our neighbours

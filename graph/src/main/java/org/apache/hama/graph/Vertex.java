@@ -36,7 +36,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
   private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
   private List<Edge<V, E>> edges;
 
-  protected boolean votedToHalt = false;
+  private boolean votedToHalt = false;
 
   public Configuration getConf() {
     return peer.getConfiguration();
@@ -52,8 +52,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
   }
 
   @Override
-  public void sendMessage(Edge<V, E> e, M msg)
-      throws IOException {
+  public void sendMessage(Edge<V, E> e, M msg) throws IOException {
     peer.send(e.getDestinationPeerName(),
         new GraphJobMessage(e.getDestinationVertexID(), msg));
   }
@@ -67,8 +66,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
   }
 
   @Override
-  public void sendMessage(V destinationVertexID, M msg)
-      throws IOException {
+  public void sendMessage(V destinationVertexID, M msg) throws IOException {
     int partition = getPartitioner().getPartition(destinationVertexID, msg,
         peer.getNumPeers());
     String destPeer = peer.getAllPeerNames()[partition];
@@ -166,11 +164,15 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
 
   @Override
   public void voteToHalt() {
-    this.votedToHalt = true;  
+    this.votedToHalt = true;
   }
-  
+
+  void setActive() {
+    this.votedToHalt = false;
+  }
+
   public boolean isHalted() {
-    return votedToHalt;  
+    return votedToHalt;
   }
 
   @Override

@@ -66,17 +66,17 @@ public class MindistSearch {
         boolean updated = false;
         while (messages.hasNext()) {
           Text next = messages.next();
-          if(currentComponent != null && next != null) {
+          if (currentComponent != null && next != null) {
             if (currentComponent.compareTo(next) > 0) {
               updated = true;
               setValue(next);
             }
-          } else {
-            this.voteToHalt();
-          } 
+          }
         }
         if (updated) {
           sendMessageToNeighbors(getValue());
+        } else {
+          this.voteToHalt();
         }
       }
     }
@@ -137,8 +137,7 @@ public class MindistSearch {
       printUsage();
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
-    GraphJob job = new GraphJob(conf,
-        MindistSearchVertex.class);
+    GraphJob job = new GraphJob(conf, MindistSearchVertex.class);
     job.setJobName("Mindist Search");
 
     job.setVertexClass(MindistSearchVertex.class);
