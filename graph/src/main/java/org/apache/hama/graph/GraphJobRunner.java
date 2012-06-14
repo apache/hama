@@ -261,6 +261,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
 
       for (Vertex<V, E, M> vertex : vertices.values()) {
         LinkedList<M> msgs = messages.get(vertex.getVertexID());
+        // If there are newly received messages, restart.
         if (vertex.isHalted() && msgs != null) {
           vertex.votedToHalt = false;
         }
@@ -291,6 +292,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
             }
           }
         }
+        // TODO count the number of vertices that have voted to halt.
       }
 
       runAggregators(peer, messagesSize);
