@@ -103,7 +103,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
     for (FileStatus fts : globStatus) {
       SequenceFile.Reader reader = new SequenceFile.Reader(fs, fts.getPath(),
-          conf);
+          configuration);
       Text key = new Text();
       DoubleWritable value = new DoubleWritable();
 

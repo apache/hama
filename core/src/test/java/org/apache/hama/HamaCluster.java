@@ -27,7 +27,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class HamaCluster extends HamaClusterTestCase {
   public static final Log LOG = LogFactory.getLog(HamaCluster.class);
-  protected final static HamaConfiguration conf = new HamaConfiguration();
+  private final static HamaConfiguration conf = new HamaConfiguration();
 
   public HamaCluster(){
     super();

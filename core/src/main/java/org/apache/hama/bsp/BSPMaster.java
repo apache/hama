@@ -497,7 +497,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
           LOG.error(e);
         }
       } else {
-        this.clearZKNodes();
+        this.clearZKNodes(zk);
       }
     }
   }
@@ -505,11 +505,15 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   /**
    * Clears all sub-children of node bspRoot
    */
-  public void clearZKNodes() {
+  public void clearZKNodes(ZooKeeper zk) {
+    clearZKNodes(zk, bspRoot);
+  }
+
+  public static void clearZKNodes(ZooKeeper zk, String path) {
     try {
-      Stat s = zk.exists(bspRoot, false);
+      Stat s = zk.exists(path, false);
       if (s != null) {
-        clearZKNodes(bspRoot);
+        clearZKNodesInternal(zk, path);
       }
 
     } catch (Exception e) {
@@ -519,13 +523,9 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   /**
    * Clears all sub-children of node rooted at path.
-   * 
-   * @param path
-   * @throws InterruptedException
-   * @throws KeeperException
    */
-  private void clearZKNodes(String path) throws KeeperException,
-      InterruptedException {
+  private static void clearZKNodesInternal(ZooKeeper zk, String path)
+      throws KeeperException, InterruptedException {
     ArrayList<String> list = (ArrayList<String>) zk.getChildren(path, false);
 
     if (list.size() == 0) {
@@ -533,7 +533,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
     } else {
       for (String node : list) {
-        clearZKNodes(path + "/" + node);
+        clearZKNodes(zk, path + "/" + node);
         zk.delete(path + "/" + node, -1); // delete any version of this node.
       }
     }

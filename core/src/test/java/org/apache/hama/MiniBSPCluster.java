@@ -35,7 +35,6 @@ import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.bsp.GroomServer;
 import org.apache.hama.HamaConfiguration;
 
-
 public class MiniBSPCluster {
 
   public static final Log LOG = LogFactory.getLog(MiniBSPCluster.class);
@@ -44,85 +43,94 @@ public class MiniBSPCluster {
 
   private HamaConfiguration configuration;
   private BSPMasterRunner master;
-  private List<GroomServerRunner> groomServerList = 
-    new CopyOnWriteArrayList<GroomServerRunner>();
+  private List<GroomServerRunner> groomServerList = new CopyOnWriteArrayList<GroomServerRunner>();
   private int grooms;
 
-  public class BSPMasterRunner implements Runnable{
+  public class BSPMasterRunner implements Runnable {
     BSPMaster bspm;
     HamaConfiguration conf;
 
-    public BSPMasterRunner(HamaConfiguration conf){
+    public BSPMasterRunner(HamaConfiguration conf) {
       this.conf = conf;
-      if(null == this.conf) 
+      if (null == this.conf)
         throw new NullPointerException("No Configuration for BSPMaster.");
-    }  
+    }
 
     @Override
-    public void run(){
-      try{
+    public void run() {
+      try {
         LOG.info("Starting BSP Master.");
-        this.bspm = BSPMaster.startMaster(this.conf); 
+        this.bspm = BSPMaster.startMaster(this.conf);
         this.bspm.offerService();
-      }catch(IOException ioe){
+      } catch (IOException ioe) {
         LOG.error("Fail to startup BSP Master.", ioe);
-      }catch(InterruptedException ie){
+      } catch (InterruptedException ie) {
         LOG.error("BSP Master fails in offerService().", ie);
         Thread.currentThread().interrupt();
       }
     }
 
-    public void shutdown(){
-      if(null != this.bspm) this.bspm.shutdown();
+    public void shutdown() {
+      if (null != this.bspm)
+        this.bspm.shutdown();
     }
 
-    public boolean isRunning(){
-      if(null == this.bspm) return false;
+    public boolean isRunning() {
+      if (null == this.bspm)
+        return false;
 
-      if(this.bspm.currentState().equals(BSPMaster.State.RUNNING)){
+      if (this.bspm.currentState().equals(BSPMaster.State.RUNNING)) {
         return true;
-      } 
+      }
       return false;
     }
 
-    public BSPMaster getMaster(){
+    public BSPMaster getMaster() {
       return this.bspm;
     }
   }
 
-  public class GroomServerRunner implements Runnable{
+  public class GroomServerRunner implements Runnable {
     GroomServer gs;
     HamaConfiguration conf;
 
-    public GroomServerRunner(HamaConfiguration conf){
+    public GroomServerRunner(HamaConfiguration conf) {
       this.conf = conf;
     }
- 
+
     @Override
-    public void run(){
-      try{
+    public void run() {
+      try {
         this.gs = GroomServer.constructGroomServer(GroomServer.class, conf);
         GroomServer.startGroomServer(this.gs).join();
-      }catch(InterruptedException ie){
+      } catch (InterruptedException ie) {
         LOG.error("Fail to start GroomServer. ", ie);
         Thread.currentThread().interrupt();
+      } finally {
+        try {
+          gs.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
       }
     }
 
-    public void shutdown(){
-      try{
-        if(null != this.gs) this.gs.shutdown();
-      }catch(IOException ioe){
+    public void shutdown() {
+      try {
+        if (null != this.gs)
+          this.gs.shutdown();
+      } catch (IOException ioe) {
         LOG.info("Fail to shutdown GroomServer.", ioe);
       }
     }
-    
-    public boolean isRunning(){
-      if(null == this.gs) return false;
-      return this.gs.isRunning(); 
+
+    public boolean isRunning() {
+      if (null == this.gs)
+        return false;
+      return this.gs.isRunning();
     }
 
-    public GroomServer getGroomServer(){
+    public GroomServer getGroomServer() {
       return this.gs;
     }
   }
@@ -130,73 +138,73 @@ public class MiniBSPCluster {
   public MiniBSPCluster(HamaConfiguration conf, int groomServers) {
     this.configuration = conf;
     this.grooms = groomServers;
-    if(1 > this.grooms) {
-      this.grooms = 2;  
+    if (1 > this.grooms) {
+      this.grooms = 2;
     }
-    LOG.info("Groom server number "+this.grooms);
+    LOG.info("Groom server number " + this.grooms);
     int threadpool = conf.getInt("bsp.test.threadpool", 10);
-    LOG.info("Thread pool value "+threadpool);
+    LOG.info("Thread pool value " + threadpool);
     scheduler = Executors.newScheduledThreadPool(threadpool);
   }
 
-  public void startBSPCluster(){
+  public void startBSPCluster() {
     startMaster();
     startGroomServers();
   }
 
-  public void shutdownBSPCluster(){
-    if(null != this.master && this.master.isRunning())
+  public void shutdownBSPCluster() {
+    if (null != this.master && this.master.isRunning())
       this.master.shutdown();
-    if(0 < groomServerList.size()){
-      for(GroomServerRunner groom: groomServerList){
-        if(groom.isRunning()) groom.shutdown();
+    if (0 < groomServerList.size()) {
+      for (GroomServerRunner groom : groomServerList) {
+        if (groom.isRunning())
+          groom.shutdown();
       }
     }
   }
 
-
-  public void startMaster(){
-    if(null == this.scheduler) 
+  public void startMaster() {
+    if (null == this.scheduler)
       throw new NullPointerException("No ScheduledExecutorService exists.");
     this.master = new BSPMasterRunner(this.configuration);
     scheduler.schedule(this.master, 0, SECONDS);
   }
 
-  public void startGroomServers(){
-    if(null == this.scheduler) 
+  public void startGroomServers() {
+    if (null == this.scheduler)
       throw new NullPointerException("No ScheduledExecutorService exists.");
-    if(null == this.master) 
+    if (null == this.master)
       throw new NullPointerException("No BSPMaster exists.");
-    int cnt=0;
-    while(!this.master.isRunning()){
+    int cnt = 0;
+    while (!this.master.isRunning()) {
       LOG.info("Waiting BSPMaster up.");
-      try{
+      try {
         Thread.sleep(1000);
         cnt++;
-        if(100 < cnt){
+        if (100 < cnt) {
           fail("Fail to launch BSPMaster.");
         }
-      }catch(InterruptedException ie){
+      } catch (InterruptedException ie) {
         LOG.error("Fail to check BSP Master's state.", ie);
         Thread.currentThread().interrupt();
       }
     }
-    for(int i=0; i < this.grooms; i++){
+    for (int i = 0; i < this.grooms; i++) {
       HamaConfiguration c = new HamaConfiguration(this.configuration);
       randomPort(c);
       GroomServerRunner gsr = new GroomServerRunner(c);
       groomServerList.add(gsr);
       scheduler.schedule(gsr, 0, SECONDS);
       cnt = 0;
-      while(!gsr.isRunning()){
+      while (!gsr.isRunning()) {
         LOG.info("Waitin for GroomServer up.");
-        try{
+        try {
           Thread.sleep(1000);
           cnt++;
-          if(10 < cnt){
+          if (10 < cnt) {
             fail("Fail to launch groom server.");
           }
-        }catch(InterruptedException ie){
+        } catch (InterruptedException ie) {
           LOG.error("Fail to check Groom Server's state.", ie);
           Thread.currentThread().interrupt();
         }
@@ -205,14 +213,14 @@ public class MiniBSPCluster {
 
   }
 
-  private static void randomPort(HamaConfiguration conf){
-    try{
+  private static void randomPort(HamaConfiguration conf) {
+    try {
       ServerSocket skt = new ServerSocket(0);
-      int p = skt.getLocalPort(); 
+      int p = skt.getLocalPort();
       skt.close();
       conf.set(Constants.PEER_PORT, new Integer(p).toString());
-      conf.setInt(Constants.GROOM_RPC_PORT, p+100);
-    }catch(IOException ioe){
+      conf.setInt(Constants.GROOM_RPC_PORT, p + 100);
+    } catch (IOException ioe) {
       LOG.error("Can not find a free port for BSPPeer.", ioe);
     }
   }
@@ -224,7 +232,7 @@ public class MiniBSPCluster {
 
   public List<Thread> getGroomServerThreads() {
     List<Thread> list = new ArrayList<Thread>();
-    for(GroomServerRunner gsr: groomServerList){
+    for (GroomServerRunner gsr : groomServerList) {
       list.add(new Thread(gsr));
     }
     return list;
@@ -234,21 +242,21 @@ public class MiniBSPCluster {
     return new Thread(this.master);
   }
 
-  public List<GroomServer> getGroomServers(){
+  public List<GroomServer> getGroomServers() {
     List<GroomServer> list = new ArrayList<GroomServer>();
-    for(GroomServerRunner gsr: groomServerList){
+    for (GroomServerRunner gsr : groomServerList) {
       list.add(gsr.getGroomServer());
     }
     return list;
   }
 
-  public BSPMaster getBSPMaster(){
-    if(null != this.master)
+  public BSPMaster getBSPMaster() {
+    if (null != this.master)
       return this.master.getMaster();
     return null;
   }
 
-  public ScheduledExecutorService getScheduler(){
+  public ScheduledExecutorService getScheduler() {
     return this.scheduler;
   }
 }

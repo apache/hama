@@ -242,8 +242,8 @@ class JobInProgress {
     this.status = new JobStatus(this.status.getJobID(), this.profile.getUser(),
         0L, 0L, JobStatus.RUNNING, counters);
 
-    // delete all nodes before start
-    master.clearZKNodes();
+    // delete all nodes belonging to that job before start
+    BSPMaster.clearZKNodes(master.zk, this.getJobID().toString());
     master.createJobRoot(this.getJobID().toString());
 
     tasksInited = true;

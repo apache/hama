@@ -47,8 +47,10 @@ public class TestCheckpoint extends TestCase {
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void testCheckpoint() throws Exception {
-    Configuration config = new HamaConfiguration();
-    config.set(SyncServiceFactory.SYNC_CLIENT_CLASS, LocalBSPRunner.LocalSyncClient.class.getName());
+    Configuration config = new Configuration();
+    config.set(SyncServiceFactory.SYNC_CLIENT_CLASS,
+        LocalBSPRunner.LocalSyncClient.class.getName());
+    config.set("bsp.output.dir", "/tmp/hama-test_out");
     FileSystem dfs = FileSystem.get(config);
 
     BSPPeerImpl bspTask = new BSPPeerImpl(config, dfs);
@@ -85,7 +87,8 @@ public class TestCheckpoint extends TestCase {
 
   public void testCheckpointInterval() throws Exception {
 
-    HamaConfiguration conf = new HamaConfiguration();
+    Configuration conf = new Configuration();
+    conf.set("bsp.output.dir", "/tmp/hama-test_out");
     conf.setClass(SyncServiceFactory.SYNC_CLIENT_CLASS,
         LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 
@@ -100,16 +103,18 @@ public class TestCheckpoint extends TestCase {
 
     LOG.info("Started RPC server");
     conf.setInt("bsp.groom.rpc.port", inetAddress.getPort());
+    conf.setInt("bsp.peers.num", 1);
 
     BSPPeerProtocol umbilical = (BSPPeerProtocol) RPC.getProxy(
-        BSPPeerProtocol.class, HamaRPCProtocolVersion.versionID, inetAddress, conf);
+        BSPPeerProtocol.class, HamaRPCProtocolVersion.versionID, inetAddress,
+        conf);
     LOG.info("Started the proxy connections");
 
     TaskAttemptID tid = new TaskAttemptID(new TaskID(new BSPJobID(
         "job_201110102255", 1), 1), 1);
 
     try {
-      BSPJob job = new BSPJob(conf);
+      BSPJob job = new BSPJob(new HamaConfiguration(conf));
       job.setOutputPath(TestBSPMasterGroomServer.OUTPUT_PATH);
       job.setOutputFormat(TextOutputFormat.class);
       final BSPPeerProtocol proto = (BSPPeerProtocol) RPC.getProxy(
@@ -154,7 +159,7 @@ public class TestCheckpoint extends TestCase {
       bspPeer.sync();
       LOG.info("Is Ready = " + bspPeer.isReadyToCheckpoint() + " at step "
           + bspPeer.getSuperstepCount());
-      assertEquals(bspPeer.isReadyToCheckpoint(), true);
+      assertEquals(bspPeer.isReadyToCheckpoint(), false);
 
     } catch (Exception e) {
       LOG.error("Error testing BSPPeer.", e);

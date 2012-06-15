@@ -99,7 +99,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   };
 
   private HttpServer server;
-  private static ZooKeeper zk = null;
+  private ZooKeeper zk = null;
 
   // Running States and its related things
   volatile boolean initialized = false;
@@ -621,7 +621,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     synchronized (rjob) {
       if (!rjob.localized) {
-
+        FileSystem dfs = FileSystem.get(conf);
         FileSystem localFs = FileSystem.getLocal(conf);
         Path jobDir = localJobFile.getParent();
         if (localFs.exists(jobDir)) {
@@ -634,7 +634,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
         Path localJarFile = defaultJobConf.getLocalPath(SUBDIR + "/"
             + task.getTaskID() + "/" + "job.jar");
-        systemFS.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
+        dfs.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
 
         HamaConfiguration conf = new HamaConfiguration();
         conf.addResource(localJobFile);
@@ -650,7 +650,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         jobConf.setJar(localJarFile.toString());
 
         if (jarFile != null) {
-          systemFS.copyToLocalFile(jarFile, localJarFile);
+          dfs.copyToLocalFile(jarFile, localJarFile);
 
           // also unjar the job.jar files in workdir
           File workDir = new File(
@@ -908,7 +908,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           + task.getTaskID() + "/job.jar");
 
       String jobFile = task.getJobFile();
-      systemFS.copyToLocalFile(new Path(jobFile), localJobFile);
+      FileSystem.get(conf).copyToLocalFile(new Path(jobFile), localJobFile);
       task.setJobFile(localJobFile.toString());
 
       localJobConf = new BSPJob(task.getJobID(), localJobFile.toString());
@@ -916,7 +916,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       String jarFile = localJobConf.getJar();
 
       if (jarFile != null) {
-        systemFS.copyToLocalFile(new Path(jarFile), localJarFile);
+        FileSystem.get(conf).copyToLocalFile(new Path(jarFile), localJarFile);
         localJobConf.setJar(localJarFile.toString());
       }
 

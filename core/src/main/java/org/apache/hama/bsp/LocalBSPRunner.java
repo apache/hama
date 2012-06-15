@@ -526,7 +526,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     @Override
     public void close() throws InterruptedException {
-
+      barrier = null;
     }
   }
 
