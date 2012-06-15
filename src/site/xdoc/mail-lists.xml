@@ -48,7 +48,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     
     <subsection name="Hama Commit List"></subsection>
     <p>
-    If you'd like to see changes made in Hama's version control system  then subscribe 
+    If you'd like to see changes made in Hama's version control system then subscribe 
     to the Hama commit mailing list.<br />
     The Hama commit mailing list is : 
     <a href="mailto:commits@hama.apache.org">commits@hama.apache.org</a>.
