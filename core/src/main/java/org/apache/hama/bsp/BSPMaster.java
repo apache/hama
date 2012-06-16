@@ -509,7 +509,12 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     clearZKNodes(zk, bspRoot);
   }
 
-  public static void clearZKNodes(ZooKeeper zk, String path) {
+  public static void clearZKNodes(ZooKeeper zk, String pPath) {
+    String path = pPath;
+    if (!path.startsWith("/")) {
+      path = "/" + path;
+      LOG.warn("Path did not start with /, adding it: " + path);
+    }
     try {
       Stat s = zk.exists(path, false);
       if (s != null) {
