@@ -147,9 +147,8 @@ class TaskInProgress {
         String location = possibleLocations[i];
         GroomServerStatus groom = grooms.get(location);
         if (groom == null) {
-          LOG.error("Could not find groom for location: "
-              + rawSplit.getLocations() + " ; active grooms: "
-              + grooms.keySet());
+          LOG.error("Could not find groom for location: " + location
+              + " ; active grooms: " + grooms.keySet());
         }
         Integer taskInGroom = tasksInGroomMap.get(groom);
         taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
