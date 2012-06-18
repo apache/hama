@@ -305,7 +305,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     Iterator<Entry<InetSocketAddress, MessageQueue<M>>> it = messenger
         .getMessageIterator();
 
-    boolean shouldCheckPoint = false;
+    boolean shouldCheckPoint;
 
     if ((shouldCheckPoint = isReadyToCheckpoint())) {
       lastCheckPointStep = getSuperstepCount();
@@ -363,8 +363,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         currentTaskStatus.getSuperstepCount());
   }
 
-  public final void close() throws SyncException, IOException,
-      InterruptedException {
+  public final void close() {
     // there are many catches, because we want to close always every component
     // even if the one before failed.
     if (in != null) {
@@ -448,7 +447,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   /**
    * Sets the current status
    * 
-   * @param currentTaskStatus
+   * @param currentTaskStatus the new task status to set
    */
   public final void setCurrentTaskStatus(TaskStatus currentTaskStatus) {
     this.currentTaskStatus = currentTaskStatus;
