@@ -31,10 +31,10 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
     <p>Writing a Hama graph application involves subclassing the predefined Vertex class. Its template arguments define three value types, associated with vertices, edges, and messages.</p>
     <pre class="green">
-  public abstract class Vertex&lt;ID_TYPE extends Writable, MSG_TYPE extends Writable, EDGE_VALUE_TYPE extends Writable&gt;
-      implements VertexInterface&lt;ID_TYPE, MSG_TYPE, EDGE_VALUE_TYPE&gt; {
+  public abstract class Vertex&lt;V extends Writable, E extends Writable, M extends Writable&gt;
+      implements VertexInterface&lt;V, E, M&gt; {
 
-    public void compute(Iterator&lt;MSGTYPE&gt; messages) throws IOException;
+    public void compute(Iterator&lt;M&gt; messages) throws IOException;
     ..
 
   }</pre>    
@@ -52,36 +52,28 @@ From Superstep 1 to 30, each vertex sums up the values arriving on all its messa
   public static class PageRankVertex extends
       Vertex&lt;Text, NullWritable, DoubleWritable&gt; {
 
-    static double DAMPING_FACTOR = 0.85;
-    static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
-
     @Override
     public void compute(Iterator&lt;DoubleWritable&gt; messages) throws IOException {
-      // initialize this vertex to 1 / count of global vertices in this graph
       if (this.getSuperstepCount() == 0) {
-        this.setValue(new DoubleWritable(1.0 / this.getNumVertices()));
+        this.setValue(new DoubleWritable(1.0 / (double) this.getNumVertices()));
       }
 
-      // in the first superstep, there are no messages to check
-      if (this.getSuperstepCount() &gt;= 1) {
+      if (this.getSuperstepCount() >= 1) {
         double sum = 0;
         while (messages.hasNext()) {
           DoubleWritable msg = messages.next();
           sum += msg.get();
         }
-        double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
-        this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
+
+        double ALPHA = (1 - 0.85) / (double) this.getNumVertices();
+        this.setValue(new DoubleWritable(ALPHA + (0.85 * sum)));
       }
 
-      // if we have not reached our global error yet, then proceed.
-      DoubleWritable globalError = getLastAggregatedValue(0);
-      if (globalError != null &amp;&amp; this.getSuperstepCount() &gt; 2
-          &amp;&amp; MAXIMUM_CONVERGENCE_ERROR &gt; globalError.get()) {
-        return;
+      if (this.getSuperstepCount() &lt; this.getMaxIteration()) {
+        int numEdges = this.getOutEdges().size();
+        sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
+            / numEdges));
       }
-      
-      // in each superstep we are going to send a new rank to our neighbours
-      sendMessageToNeighbors(new DoubleWritable(this.getValue().get() / numEdges));
     }
   }</pre>
 
