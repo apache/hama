@@ -30,6 +30,7 @@ import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
 
 public class PageRank {
+
   public static class PageRankVertex extends
       Vertex<Text, NullWritable, DoubleWritable> {
 
@@ -56,24 +57,21 @@ public class PageRank {
       // initialize this vertex to 1 / count of global vertices in this graph
       if (this.getSuperstepCount() == 0) {
         this.setValue(new DoubleWritable(1.0 / this.getNumVertices()));
-      }
-
-      // in the first superstep, there are no messages to check
-      if (this.getSuperstepCount() >= 1) {
+      } else if (this.getSuperstepCount() >= 1) {
+        DoubleWritable danglingNodeContribution = getLastAggregatedValue(1);
         double sum = 0;
         while (messages.hasNext()) {
           DoubleWritable msg = messages.next();
           sum += msg.get();
         }
-        double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
-        this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
-        if (this.getSuperstepCount() > 1) {
-          if (this.getLastAggregatedValue(1).get() < 0.99
-              || this.getLastAggregatedValue(1).get() > 1.1) {
-            throw new RuntimeException(
-                "Sum aggregator hasn't summed correctly! "
-                    + this.getLastAggregatedValue(1).get());
-          }
+        if (danglingNodeContribution == null) {
+          double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
+          this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
+        } else {
+          double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
+          this.setValue(new DoubleWritable(alpha
+              + (DAMPING_FACTOR * (sum + danglingNodeContribution.get()
+                  / this.getNumVertices()))));
         }
       }
 

@@ -30,12 +30,16 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TextInputFormat;
+import org.apache.hama.graph.AbstractAggregator;
 import org.apache.hama.graph.AverageAggregator;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
 
+/**
+ * Real pagerank with dangling node contribution.
+ */
 public class PageRank {
 
   public static class PageRankVertex extends
@@ -64,17 +68,22 @@ public class PageRank {
       // initialize this vertex to 1 / count of global vertices in this graph
       if (this.getSuperstepCount() == 0) {
         this.setValue(new DoubleWritable(1.0 / this.getNumVertices()));
-      }
-
-      // in the first superstep, there are no messages to check
-      if (this.getSuperstepCount() >= 1) {
+      } else if (this.getSuperstepCount() >= 1) {
+        DoubleWritable danglingNodeContribution = getLastAggregatedValue(1);
         double sum = 0;
         while (messages.hasNext()) {
           DoubleWritable msg = messages.next();
           sum += msg.get();
         }
-        double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
-        this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
+        if (danglingNodeContribution == null) {
+          double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
+          this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
+        } else {
+          double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
+          this.setValue(new DoubleWritable(alpha
+              + (DAMPING_FACTOR * (sum + danglingNodeContribution.get()
+                  / this.getNumVertices()))));
+        }
       }
 
       // if we have not reached our global error yet, then proceed.
@@ -130,6 +139,18 @@ public class PageRank {
       printUsage();
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
+    GraphJob pageJob = createJob(args, conf);
+
+    long startTime = System.currentTimeMillis();
+    if (pageJob.waitForCompletion(true)) {
+      System.out.println("Job Finished in "
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static GraphJob createJob(String[] args, HamaConfiguration conf)
+      throws IOException {
     GraphJob pageJob = new GraphJob(conf, PageRank.class);
     pageJob.setJobName("Pagerank");
 
@@ -140,9 +161,6 @@ public class PageRank {
     // set the defaults
     pageJob.setMaxIteration(30);
     pageJob.set("hama.pagerank.alpha", "0.85");
-    // we need to include a vertex in its adjacency list,
-    // otherwise the pagerank result has a constant loss
-    pageJob.set("hama.graph.self.ref", "true");
 
     if (args.length == 6)
       pageJob.setNumBspTask(Integer.parseInt(args[5]));
@@ -153,7 +171,9 @@ public class PageRank {
     if (args.length >= 3)
       pageJob.set("hama.pagerank.alpha", args[2]);
 
-    pageJob.setAggregatorClass(AverageAggregator.class);
+    // error, dangling node probability sum
+    pageJob.setAggregatorClass(AverageAggregator.class,
+        DanglingNodeAggregator.class);
 
     pageJob.setVertexIDClass(Text.class);
     pageJob.setVertexValueClass(DoubleWritable.class);
@@ -167,11 +187,31 @@ public class PageRank {
     pageJob.setOutputFormat(SequenceFileOutputFormat.class);
     pageJob.setOutputKeyClass(Text.class);
     pageJob.setOutputValueClass(DoubleWritable.class);
+    return pageJob;
+  }
 
-    long startTime = System.currentTimeMillis();
-    if (pageJob.waitForCompletion(true)) {
-      System.out.println("Job Finished in "
-          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+  public static class DanglingNodeAggregator
+      extends
+      AbstractAggregator<DoubleWritable, Vertex<Text, NullWritable, DoubleWritable>> {
+
+    double danglingNodeSum;
+
+    @Override
+    public void aggregate(Vertex<Text, NullWritable, DoubleWritable> vertex,
+        DoubleWritable value) {
+      if (vertex != null) {
+        if (vertex.getEdges().size() == 0) {
+          danglingNodeSum += value.get();
+        }
+      } else {
+        danglingNodeSum += value.get();
+      }
     }
+
+    @Override
+    public DoubleWritable getValue() {
+      return new DoubleWritable(danglingNodeSum);
+    }
+
   }
 }

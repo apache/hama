@@ -28,16 +28,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileOutputFormat;
-import org.apache.hama.bsp.TextInputFormat;
-import org.apache.hama.examples.PageRank.PageRankVertex;
-import org.apache.hama.graph.AverageAggregator;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.GraphJobRunner;
 
@@ -55,11 +48,11 @@ public class PageRankTest extends TestCase {
    * functionality.
    */
   String[] input = new String[] { "stackoverflow.com\tyahoo.com",
-      "facebook.com\ttwitter.com\tgoogle.com\tnasa.gov]",
-      "yahoo.com\tnasa.gov\tstackoverflow.com]",
-      "twitter.com\tgoogle.com\tfacebook.com]",
-      "nasa.gov\tyahoo.com\tstackoverflow.com]",
-      "youtube.com\tgoogle.com\tyahoo.com]" };
+      "facebook.com\ttwitter.com\tgoogle.com\tnasa.gov",
+      "yahoo.com\tnasa.gov\tstackoverflow.com",
+      "twitter.com\tgoogle.com\tfacebook.com",
+      "nasa.gov\tyahoo.com\tstackoverflow.com",
+      "youtube.com\tgoogle.com\tyahoo.com" };
 
   private static String INPUT = "/tmp/pagerank-tmp.seq";
   private static String TEXT_INPUT = "/tmp/pagerank.txt";
@@ -84,6 +77,7 @@ public class PageRankTest extends TestCase {
       DoubleWritable value = new DoubleWritable();
 
       while (reader.next(key, value)) {
+        System.out.println(key + " / " + value);
         sum += value.get();
       }
     }
@@ -95,33 +89,10 @@ public class PageRankTest extends TestCase {
     generateTestData();
     try {
       HamaConfiguration conf = new HamaConfiguration(new Configuration());
+      conf.set("bsp.local.tasks.maximum", "1"); 
       conf.setBoolean(GraphJobRunner.GRAPH_REPAIR, true);
-      GraphJob pageJob = new GraphJob(conf, PageRank.class);
-      pageJob.setJobName("Pagerank");
-
-      pageJob.setVertexClass(PageRankVertex.class);
-      pageJob.setInputPath(new Path(INPUT));
-      pageJob.setOutputPath(new Path(OUTPUT));
-      pageJob.setNumBspTask(2);
-      // set the defaults
-      pageJob.setMaxIteration(30);
-      pageJob.set("hama.pagerank.alpha", "0.85");
-      // we need to include a vertex in its adjacency list,
-      // otherwise the pagerank result has a constant loss
-      pageJob.set("hama.graph.self.ref", "true");
-
-      pageJob.setAggregatorClass(AverageAggregator.class);
-      pageJob.setInputKeyClass(LongWritable.class);
-      pageJob.setInputValueClass(Text.class);
-      pageJob.setInputFormat(TextInputFormat.class);
-      pageJob.setPartitioner(HashPartitioner.class);
-      pageJob.setOutputFormat(SequenceFileOutputFormat.class);
-      pageJob.setOutputKeyClass(Text.class);
-      pageJob.setOutputValueClass(DoubleWritable.class);
-      pageJob.setVertexInputReaderClass(PageRank.PagerankTextReader.class);
-      pageJob.setVertexIDClass(Text.class);
-      pageJob.setVertexValueClass(DoubleWritable.class);
-      pageJob.setEdgeValueClass(NullWritable.class);
+      GraphJob pageJob = PageRank.createJob(new String[] { INPUT, OUTPUT },
+          conf);
 
       if (!pageJob.waitForCompletion(true)) {
         fail("Job did not complete normally!");
