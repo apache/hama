@@ -24,7 +24,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
     <section name="Apache Hama"></section>
       <p>
-      <strong>Apache Hama</strong> is a pure BSP(Bulk Synchronous Parallel) computing framework on top of HDFS (Hadoop Distributed File System) for massive scientific computations 
+      <strong>Apache Hama</strong> is a pure BSP (Bulk Synchronous Parallel) computing framework on top of HDFS (Hadoop Distributed File System) for massive scientific computations 
       such as matrix, graph and network algorithms.</p>
       <table class="green" width="100%" cellspacing="0" cellpadding="5" border="1"> 
       <tr><td> 
