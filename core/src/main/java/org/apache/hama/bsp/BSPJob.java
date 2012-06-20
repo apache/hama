@@ -41,7 +41,7 @@ import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
 public class BSPJob extends BSPJobContext {
   public static enum JobState {
     DEFINE, RUNNING
-  };
+  }
 
   private JobState state = JobState.DEFINE;
   private BSPJobClient jobClient;
@@ -90,7 +90,7 @@ public class BSPJob extends BSPJobContext {
   // /////////////////////////////////////
   // Setter for Job Submission
   // /////////////////////////////////////
-  public void setWorkingDirectory(Path pDir) throws IOException {
+  public void setWorkingDirectory(Path pDir) {
     ensureState(JobState.DEFINE);
     Path dir = new Path(getWorkingDirectory(), pDir);
     conf.set(WORKING_DIR, dir.toString());
@@ -99,7 +99,7 @@ public class BSPJob extends BSPJobContext {
   /**
    * Set the BSP algorithm class for the job.
    * 
-   * @param cls
+   * @param cls the class implementing the BSP job
    * @throws IllegalStateException
    */
   @SuppressWarnings("rawtypes")
