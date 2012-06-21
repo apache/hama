@@ -25,6 +25,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.graph.AbstractAggregator;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
@@ -112,6 +113,31 @@ public class PageRank {
         }
       }
       return true;
+    }
+
+  }
+
+  public static class DanglingNodeAggregator
+      extends
+      AbstractAggregator<DoubleWritable, Vertex<Text, NullWritable, DoubleWritable>> {
+
+    double danglingNodeSum;
+
+    @Override
+    public void aggregate(Vertex<Text, NullWritable, DoubleWritable> vertex,
+        DoubleWritable value) {
+      if (vertex != null) {
+        if (vertex.getEdges().size() == 0) {
+          danglingNodeSum += value.get();
+        }
+      } else {
+        danglingNodeSum += value.get();
+      }
+    }
+
+    @Override
+    public DoubleWritable getValue() {
+      return new DoubleWritable(danglingNodeSum);
     }
 
   }

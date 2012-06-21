@@ -69,11 +69,8 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     // set the defaults
     bsp.setMaxIteration(30);
     bsp.set("hama.pagerank.alpha", "0.85");
-    // we need to include a vertex in its adjacency list,
-    // otherwise the pagerank result has a constant loss
-    bsp.set("hama.graph.self.ref", "true");
     bsp.set("hama.graph.repair", "true");
-    bsp.setAggregatorClass(AverageAggregator.class, SumAggregator.class);
+    bsp.setAggregatorClass(AverageAggregator.class, PageRank.DanglingNodeAggregator.class);
 
     bsp.setVertexIDClass(Text.class);
     bsp.setVertexValueClass(DoubleWritable.class);
