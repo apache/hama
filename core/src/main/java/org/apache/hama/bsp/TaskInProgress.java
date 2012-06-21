@@ -149,6 +149,7 @@ class TaskInProgress {
         if (groom == null) {
           LOG.error("Could not find groom for location: " + location
               + " ; active grooms: " + grooms.keySet());
+          continue;
         }
         Integer taskInGroom = tasksInGroomMap.get(groom);
         taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
