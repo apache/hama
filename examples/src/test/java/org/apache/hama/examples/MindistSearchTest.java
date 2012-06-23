@@ -17,9 +17,11 @@
  */
 package org.apache.hama.examples;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,9 +31,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.examples.MindistSearch.MinTextCombiner;
 
@@ -81,14 +81,13 @@ public class MindistSearchTest extends TestCase {
     FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
     int itemsRead = 0;
     for (FileStatus fts : globStatus) {
-      SequenceFile.Reader reader = new SequenceFile.Reader(fs, fts.getPath(),
-          conf);
-      Text key = new Text();
-      Writable value = new Text();
-      while (reader.next(key, value)) {
-        System.out.println(key + " | " + value);
-        assertEquals(resultList[Integer.parseInt(key.toString())],
-            value.toString());
+      BufferedReader reader = new BufferedReader(new InputStreamReader(
+          fs.open(fts.getPath())));
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        String[] split = line.split("\t");
+        System.out.println(split[0] + " | " + split[1]);
+        assertEquals(resultList[Integer.parseInt(split[0])], split[1]);
         itemsRead++;
       }
     }

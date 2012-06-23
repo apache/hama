@@ -17,9 +17,11 @@
  */
 package org.apache.hama.examples;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import junit.framework.TestCase;
 
@@ -27,9 +29,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.GraphJobRunner;
@@ -71,14 +70,13 @@ public class PageRankTest extends TestCase {
     double sum = 0.0;
     FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
     for (FileStatus fts : globStatus) {
-      SequenceFile.Reader reader = new SequenceFile.Reader(fs, fts.getPath(),
-          conf);
-      Text key = new Text();
-      DoubleWritable value = new DoubleWritable();
-
-      while (reader.next(key, value)) {
-        System.out.println(key + " / " + value);
-        sum += value.get();
+      BufferedReader reader = new BufferedReader(new InputStreamReader(
+          fs.open(fts.getPath())));
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        String[] split = line.split("\t");
+        System.out.println(split[0] + " / " + split[1]);
+        sum += Double.parseDouble(split[1]);
       }
     }
     System.out.println("Sum is: " + sum);
@@ -89,7 +87,7 @@ public class PageRankTest extends TestCase {
     generateTestData();
     try {
       HamaConfiguration conf = new HamaConfiguration(new Configuration());
-      conf.set("bsp.local.tasks.maximum", "1"); 
+      conf.set("bsp.local.tasks.maximum", "1");
       conf.setBoolean(GraphJobRunner.GRAPH_REPAIR, true);
       GraphJob pageJob = PageRank.createJob(new String[] { INPUT, OUTPUT },
           conf);

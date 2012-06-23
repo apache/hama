@@ -28,8 +28,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TextInputFormat;
+import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
@@ -162,7 +162,7 @@ public class MindistSearch {
     job.setInputFormat(TextInputFormat.class);
     job.setVertexInputReaderClass(MindistSearchCountReader.class);
     job.setPartitioner(HashPartitioner.class);
-    job.setOutputFormat(SequenceFileOutputFormat.class);
+    job.setOutputFormat(TextOutputFormat.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(Text.class);
 

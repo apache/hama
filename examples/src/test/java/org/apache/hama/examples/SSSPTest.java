@@ -17,9 +17,11 @@
  */
 package org.apache.hama.examples;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,9 +31,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 
 /**
@@ -82,12 +81,12 @@ public class SSSPTest extends TestCase {
 
     FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
     for (FileStatus fts : globStatus) {
-      SequenceFile.Reader reader = new SequenceFile.Reader(fs, fts.getPath(),
-          conf);
-      Text key = new Text();
-      IntWritable value = new IntWritable();
-      while (reader.next(key, value)) {
-        assertEquals(value.get(), (int) rs.get(key.toString()));
+      BufferedReader reader = new BufferedReader(new InputStreamReader(
+          fs.open(fts.getPath())));
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        String[] split = line.split("\t");
+        assertEquals(Integer.parseInt(split[1]), (int) rs.get(split[0]));
       }
     }
   }

@@ -27,8 +27,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TextInputFormat;
+import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
@@ -149,7 +149,7 @@ public class SSSP {
     ssspJob.setInputValueClass(Text.class);
 
     ssspJob.setPartitioner(HashPartitioner.class);
-    ssspJob.setOutputFormat(SequenceFileOutputFormat.class);
+    ssspJob.setOutputFormat(TextOutputFormat.class);
     ssspJob.setVertexInputReaderClass(SSSPTextReader.class);
     ssspJob.setOutputKeyClass(Text.class);
     ssspJob.setOutputValueClass(IntWritable.class);

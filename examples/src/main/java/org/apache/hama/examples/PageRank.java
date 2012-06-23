@@ -28,8 +28,8 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TextInputFormat;
+import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.AbstractAggregator;
 import org.apache.hama.graph.AverageAggregator;
 import org.apache.hama.graph.Edge;
@@ -184,7 +184,7 @@ public class PageRank {
     pageJob.setInputFormat(TextInputFormat.class);
     pageJob.setVertexInputReaderClass(PagerankTextReader.class);
     pageJob.setPartitioner(HashPartitioner.class);
-    pageJob.setOutputFormat(SequenceFileOutputFormat.class);
+    pageJob.setOutputFormat(TextOutputFormat.class);
     pageJob.setOutputKeyClass(Text.class);
     pageJob.setOutputValueClass(DoubleWritable.class);
     return pageJob;
