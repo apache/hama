@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.Constants;
+import org.apache.hama.bsp.sync.MasterSyncClient;
 
 /**
  * JobInProgress maintains all the info for keeping a Job on the straight and
@@ -243,8 +244,8 @@ class JobInProgress {
         0L, 0L, JobStatus.RUNNING, counters);
 
     // delete all nodes belonging to that job before start
-    BSPMaster.clearZKNodes(master.zk, this.getJobID().toString());
-    master.createJobRoot(this.getJobID().toString());
+    MasterSyncClient syncClient = master.getSyncClient();
+    syncClient.registerJob(this.getJobID().toString());
 
     tasksInited = true;
     LOG.info("Job is initialized.");
@@ -332,7 +333,7 @@ class JobInProgress {
       LOG.info("Job successfully done.");
 
       // delete job root
-      master.deleteJobRoot(this.getJobID().toString());
+      master.getSyncClient().deregisterJob(this.getJobID().toString());
 
       garbageCollect();
     }

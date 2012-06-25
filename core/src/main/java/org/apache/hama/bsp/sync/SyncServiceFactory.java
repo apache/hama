@@ -22,16 +22,25 @@ import org.apache.hadoop.util.ReflectionUtils;
 
 public class SyncServiceFactory {
   public static final String SYNC_SERVER_CLASS = "hama.sync.server.class";
-  public static final String SYNC_CLIENT_CLASS = "hama.sync.client.class";
+  public static final String SYNC_PEER_CLASS = "hama.sync.peer.class";
+  public static final String SYNC_MASTER_CLASS = "hama.sync.master.class";
 
   /**
    * Returns a sync client via reflection based on what was configured.
    */
-  public static SyncClient getSyncClient(Configuration conf)
+  public static PeerSyncClient getPeerSyncClient(Configuration conf)
       throws ClassNotFoundException {
-    return (SyncClient) ReflectionUtils
-        .newInstance(conf.getClassByName(conf.get(SYNC_CLIENT_CLASS,
+    return (PeerSyncClient) ReflectionUtils
+        .newInstance(conf.getClassByName(conf.get(SYNC_PEER_CLASS,
             ZooKeeperSyncClientImpl.class.getName())), conf);
+  }
+
+  
+  public static SyncClient getMasterSyncClient(Configuration conf)
+		  throws ClassNotFoundException {
+	  return (SyncClient) ReflectionUtils
+			  .newInstance(conf.getClassByName(conf.get(SYNC_MASTER_CLASS,
+					  ZKSyncBSPMasterClient.class.getName())), conf);
   }
 
   /**

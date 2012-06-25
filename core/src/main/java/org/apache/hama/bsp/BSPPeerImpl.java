@@ -31,6 +31,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
@@ -38,7 +39,10 @@ import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
 import org.apache.hama.bsp.message.MessageQueue;
+import org.apache.hama.bsp.sync.BSPPeerSyncClient;
+import org.apache.hama.bsp.sync.PeerSyncClient;
 import org.apache.hama.bsp.sync.SyncClient;
+import org.apache.hama.bsp.sync.SyncEventListener;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
@@ -71,7 +75,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private String[] allPeers;
 
   // SYNC
-  private SyncClient syncClient;
+  private PeerSyncClient syncClient;
   private MessageManager<M> messenger;
 
   // A checkpoint is initiated at the <checkPointInterval>th interval.
@@ -182,7 +186,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   @SuppressWarnings("unchecked")
   public final void initialize() throws Exception {
-    syncClient = SyncServiceFactory.getSyncClient(conf);
+    syncClient = SyncServiceFactory.getPeerSyncClient(conf);
     syncClient.init(conf, taskId.getJobID(), taskId);
 
     initInput();

@@ -48,6 +48,9 @@ import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.sync.BSPMasterSyncClient;
+import org.apache.hama.bsp.sync.MasterSyncClient;
+import org.apache.hama.bsp.sync.ZKSyncBSPMasterClient;
 import org.apache.hama.http.HttpServer;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
@@ -79,6 +82,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   private HamaConfiguration conf;
   ZooKeeper zk = null;
   private String bspRoot = null;
+  MasterSyncClient syncClient = null;
 
   /**
    * Constants for BSPMaster's status.
@@ -465,108 +469,20 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   }
 
   /**
-   * When start the cluster, cleans all zk nodes up.
-   * 
-   * @param conf
+   * Initialize the global synchronization client.
+   * @param conf Hama configuration.
    */
   private void initZK(HamaConfiguration conf) {
-    try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
-          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
-    } catch (IOException e) {
-      LOG.error("Exception during reinitialization!", e);
-    }
-
-    bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
-        Constants.DEFAULT_ZOOKEEPER_ROOT);
-    Stat s = null;
-    if (zk != null) {
-      try {
-        s = zk.exists(bspRoot, false);
-      } catch (Exception e) {
-        LOG.error(s, e);
-      }
-
-      if (s == null) {
-        try {
-          zk.create(bspRoot, new byte[0], Ids.OPEN_ACL_UNSAFE,
-              CreateMode.PERSISTENT);
-        } catch (KeeperException e) {
-          LOG.error(e);
-        } catch (InterruptedException e) {
-          LOG.error(e);
-        }
-      } else {
-        this.clearZKNodes(zk);
-      }
-    }
+    this.syncClient = new ZKSyncBSPMasterClient();
+    this.syncClient.init(conf);
   }
 
   /**
-   * Clears all sub-children of node bspRoot
+   * Get a handle of the global synchronization client used by BSPMaster.
+   * @return The synchronization client.
    */
-  public void clearZKNodes(ZooKeeper zk) {
-    clearZKNodes(zk, bspRoot);
-  }
-
-  public static void clearZKNodes(ZooKeeper zk, String pPath) {
-    String path = pPath;
-    if (!path.startsWith("/")) {
-      path = "/" + path;
-      LOG.warn("Path did not start with /, adding it: " + path);
-    }
-    try {
-      Stat s = zk.exists(path, false);
-      if (s != null) {
-        clearZKNodesInternal(zk, path);
-      }
-
-    } catch (Exception e) {
-      LOG.warn("Could not clear zookeeper nodes.", e);
-    }
-  }
-
-  /**
-   * Clears all sub-children of node rooted at path.
-   */
-  private static void clearZKNodesInternal(ZooKeeper zk, String path)
-      throws KeeperException, InterruptedException {
-    ArrayList<String> list = (ArrayList<String>) zk.getChildren(path, false);
-
-    if (list.size() == 0) {
-      return;
-
-    } else {
-      for (String node : list) {
-        clearZKNodes(zk, path + "/" + node);
-        zk.delete(path + "/" + node, -1); // delete any version of this node.
-      }
-    }
-  }
-
-  public void createJobRoot(String string) {
-    try {
-      zk.create("/" + string, new byte[0], Ids.OPEN_ACL_UNSAFE,
-          CreateMode.PERSISTENT);
-    } catch (KeeperException e) {
-      LOG.error(e);
-    } catch (InterruptedException e) {
-      LOG.error(e);
-    }
-  }
-
-  public void deleteJobRoot(String string) {
-    try {
-      for (String node : zk.getChildren("/" + string, this)) {
-        zk.delete("/" + string + "/" + node, 0);
-      }
-
-      zk.delete("/" + string, 0);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (KeeperException e) {
-      e.printStackTrace();
-    }
+  public MasterSyncClient getSyncClient(){
+    return this.syncClient;
   }
 
   /**

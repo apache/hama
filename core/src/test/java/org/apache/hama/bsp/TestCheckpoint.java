@@ -48,7 +48,7 @@ public class TestCheckpoint extends TestCase {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void testCheckpoint() throws Exception {
     Configuration config = new Configuration();
-    config.set(SyncServiceFactory.SYNC_CLIENT_CLASS,
+    config.set(SyncServiceFactory.SYNC_PEER_CLASS,
         LocalBSPRunner.LocalSyncClient.class.getName());
     config.set("bsp.output.dir", "/tmp/hama-test_out");
     FileSystem dfs = FileSystem.get(config);
@@ -89,7 +89,7 @@ public class TestCheckpoint extends TestCase {
 
     Configuration conf = new Configuration();
     conf.set("bsp.output.dir", "/tmp/hama-test_out");
-    conf.setClass(SyncServiceFactory.SYNC_CLIENT_CLASS,
+    conf.setClass(SyncServiceFactory.SYNC_PEER_CLASS,
         LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 
     conf.setBoolean(Constants.CHECKPOINT_ENABLED, false);

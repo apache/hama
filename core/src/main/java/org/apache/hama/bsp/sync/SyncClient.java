@@ -17,9 +17,8 @@
  */
 package org.apache.hama.bsp.sync;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPJobID;
-import org.apache.hama.bsp.TaskAttemptID;
 
 /**
  * Basic interface for a client that connects to a sync server.
@@ -28,82 +27,72 @@ import org.apache.hama.bsp.TaskAttemptID;
 public interface SyncClient {
 
   /**
-   * Init will be called within a spawned task, it should be used to initialize
-   * the inner structure and fields, e.G. a zookeeper client or an rpc
-   * connection to the real sync daemon.
-   * 
-   * @throws Exception
+   * Construct key in the format required by the SyncClient for storing and 
+   * retrieving information. This function is recommended to use to construct
+   * keys for storing keys.
+   * @param jobId The BSP Job Id.
+   * @param args The list of String objects that would be used to construct key
+   * @return The key consisting of entities provided in the required format.
    */
-  public void init(Configuration conf, BSPJobID jobId, TaskAttemptID taskId)
-      throws Exception;
+  public String constructKey(BSPJobID jobId, String ... args);
 
   /**
-   * Enters the barrier before the message sending in each superstep.
-   * 
-   * @param jobId the jobs ID
-   * @param taskId the tasks ID
-   * @param superstep the superstep of the task
-   * @throws SyncException
+   * Stores value for the specified key.
+   * @param key The key for which value should be stored. It is recommended to use 
+   * <code>constructKey</code> to create key object.
+   * @param value The value to be stored.
+   * @param permanent true if the value should be persisted after end of session.
+   * @param Listener object that provides asynchronous updates on the state 
+   * of information stored under the key.
+   * @return true if the operation was successful.
    */
-  public void enterBarrier(BSPJobID jobId, TaskAttemptID taskId, long superstep)
-      throws SyncException;
+  public boolean storeInformation(String key, Writable value, 
+      boolean permanent, SyncEventListener listener);
 
   /**
-   * Leaves the barrier after all communication has been done, this is usually
-   * the end of a superstep.
-   * 
-   * @param jobId the jobs ID
-   * @param taskId the tasks ID
-   * @param superstep the superstep of the task
-   * @throws SyncException
+   * Retrieve value previously store for the key.
+   * @param key The key for which value was stored.
+   * @param classType The expected class instance of value to be extracted
+   * @return the value if found. Returns null if there was any error of if there
+   * was no value stored for the key.
    */
-  public void leaveBarrier(BSPJobID jobId, TaskAttemptID taskId, long superstep)
-      throws SyncException;
+  public Writable getInformation(String key, Class<? extends Writable> classType);
 
   /**
-   * Registers a specific task with a its host and port to the sync daemon.
-   * 
-   * @param jobId the jobs ID
-   * @param taskId the tasks ID
-   * @param hostAddress the host where the sync server resides
-   * @param port the port where the sync server is up
+   * Store new key in key set.
+   * @param key The key to be saved in key set. It is recommended to use 
+   * <code>constructKey</code> to create key object. 
+   * @param permanent true if the value should be persisted after end of session.
+   * @param listener Listener object that asynchronously notifies the events 
+   * related to the key.
+   * @return true if operation was successful.
    */
-  public void register(BSPJobID jobId, TaskAttemptID taskId,
-      String hostAddress, long port);
+  public boolean addKey(String key, boolean permanent, SyncEventListener listener);
 
   /**
-   * Returns all registered tasks within the sync daemon. They have to be
-   * ordered ascending by their task id.
-   * 
-   * @param taskId the tasks ID
-   * @return an <b>ordered</b> string array of host:port pairs of all tasks
-   *         connected to the daemon.
+   * Check if key was previously stored.
+   * @param key The value of the key. 
+   * @return true if the key exists.
    */
-  public String[] getAllPeerNames(TaskAttemptID taskId);
+  public boolean hasKey(String key);
+  
+  /**
+  * Get list of child keys stored under the key provided.
+  * @param key The key whose child key set are to be found.
+  * @param listener Listener object that asynchronously notifies the changes 
+  * under the provided key
+  * @return Array of child keys.
+  */
+  public String[] getChildKeySet(String key, SyncEventListener listener);
 
   /**
-   * TODO this has currently no use. Could later be used to deregister tasks
-   * from the barrier during runtime if they are finished. Something equal to
-   * voteToHalt() in Pregel.
-   * 
-   * @param jobId
-   * @param taskId
-   * @param hostAddress
-   * @param port
+   * Register a listener for events on the key.
+   * @param key The key on which an event listener should be registered.
+   * @param event for which the listener is registered for.
+   * @param listener The event listener that defines how to process the event.
+   * @return true if the operation is successful.
    */
-  public void deregisterFromBarrier(BSPJobID jobId, TaskAttemptID taskId,
-      String hostAddress, long port);
-
-  /**
-   * This stops the sync daemon. Only used in YARN.
-   */
-  public void stopServer();
-
-  /**
-   * This method should close all used resources, e.G. a ZooKeeper instance.
-   * 
-   * @throws InterruptedException
-   */
-  public void close() throws InterruptedException;
+  public boolean registerListener(String key, SyncEvent event,
+      SyncEventListener listener);
 
 }
