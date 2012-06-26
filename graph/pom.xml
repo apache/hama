@@ -40,8 +40,6 @@
     <dependency>
       <groupId>org.apache.hama</groupId>
       <artifactId>hama-core</artifactId>
-      <type>test-jar</type>
-      <scope>test</scope>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
