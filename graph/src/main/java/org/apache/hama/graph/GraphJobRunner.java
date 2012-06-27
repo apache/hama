@@ -429,7 +429,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       vertex.runner = this;
       
       lines++;
-      if((lines % 50000) == 0) {
+      if((lines % 100000) == 0) {
         peer.sync();
         GraphJobMessage msg = null;
         while ((msg = peer.getCurrentMessage()) != null) {
