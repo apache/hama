@@ -391,16 +391,16 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     Vertex<V, E, M> vertex = newVertexInstance(vertexClass, conf);
     vertex.setPeer(peer);
     vertex.runner = this;
-    while (true) {
-      KeyValuePair<Writable, Writable> next = peer.readNext();
-      if (next == null) {
-        break;
-      }
+    
+    KeyValuePair<Writable, Writable> next = null;
+    int lines = 0;
+    while ((next = peer.readNext()) != null) {
       boolean vertexFinished = reader.parseVertex(next.getKey(),
           next.getValue(), vertex);
       if (!vertexFinished) {
         continue;
       }
+      
       if (vertex.getEdges() == null) {
         vertex.setEdges(new ArrayList<Edge<V, E>>(0));
       }
@@ -420,12 +420,26 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
         }
         peer.send(peer.getPeerName(partition), new GraphJobMessage(vertex));
       } else {
+        // FIXME need to set destination names
         vertex.setup(conf);
         vertices.put(vertex.getVertexID(), vertex);
       }
       vertex = newVertexInstance(vertexClass, conf);
       vertex.setPeer(peer);
       vertex.runner = this;
+      
+      lines++;
+      if((lines % 50000) == 0) {
+        peer.sync();
+        GraphJobMessage msg = null;
+        while ((msg = peer.getCurrentMessage()) != null) {
+          Vertex<V, E, M> messagedVertex = (Vertex<V, E, M>) msg.getVertex();
+          messagedVertex.setPeer(peer);
+          messagedVertex.runner = this;
+          messagedVertex.setup(conf);
+          vertices.put(messagedVertex.getVertexID(), messagedVertex);
+        }
+      }
     }
 
     if (runtimePartitioning) {
@@ -440,6 +454,8 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       }
     }
 
+    LOG.info("Loading finished at " + peer.getSuperstepCount() + " steps.");
+    
     /*
      * If the user want to repair the graph, it should traverse through that
      * local chunk of adjancency list and message the corresponding peer to
