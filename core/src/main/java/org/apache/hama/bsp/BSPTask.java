@@ -121,7 +121,6 @@ public final class BSPTask extends Task {
       if (pingPeriod > 0) {
         pingService.scheduleWithFixedDelay(new PingGroomServer(umbilical,
             taskId), 0, pingPeriod, TimeUnit.MILLISECONDS);
-        LOG.error("Started pinging to groom");
       }
     } catch (Exception e) {
       LOG.error("Error scheduling ping service", e);
