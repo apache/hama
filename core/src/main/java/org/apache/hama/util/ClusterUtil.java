@@ -17,15 +17,15 @@
  */
 package org.apache.hama.util;
 
-import java.io.IOException;
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.bsp.GroomServer;
+
+import java.io.IOException;
+import java.util.List;
 
 public class ClusterUtil {
   private static final Log LOG = LogFactory.getLog(ClusterUtil.class);
@@ -86,9 +86,9 @@ public class ClusterUtil {
 
   /**
    * Start the cluster.
-   * @param m
-   * @param conf 
-   * @param groomservers
+   * @param m the BSP master
+   * @param conf cluster configuration to be used
+   * @param groomservers list of threads holding groom servers
    * @return Address to use contacting master.
    * @throws InterruptedException 
    * @throws IOException 

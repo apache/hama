@@ -40,7 +40,7 @@ public class VersionInfo {
 
   /**
    * Get the meta-data for the Hama package.
-   * @return
+   * @return the current package
    */
   static Package getPackage() {
     return myPackage;
