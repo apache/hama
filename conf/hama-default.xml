@@ -130,7 +130,11 @@
     <value>1</value>
     <description>If bsp.checkpoint.enabled is set to true, the checkpointing is initiated on the valueth synchronization process of BSP tasks.</description>
   </property>
-
+  <property>
+    <name>bsp.groomserver.pingperiod</name>
+    <value>10000</value>
+    <description>The default timeout period for checking groom server health.</description>
+  </property>
   
   <!--
   Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.
