@@ -80,5 +80,8 @@
     <menu name="Art works">
       <item name="Artwork and Clothing" href="artwork.html" />
     </menu>
+    <footer>
+      <div class="row span16">Apache Hama, Apache, the Apache feather logo, and the Apache Hama project logos are trademarks of The Apache Software Foundation. All other marks mentioned may be trademarks or registered trademarks of their respective owners.</div>
+    </footer>
   </body>
 </project>
