@@ -36,7 +36,7 @@ h2, h3, h4, h5 {
 
 h5 {
   font-size: 15px;
-  margin-top: -0.8em;
+  margin-top: -0.1em;
 }
 
 table {
@@ -56,11 +56,17 @@ ul {
  background: #edf7f4;
  background-color: #edf7f4;
 }
+
+pre {
+ width: 95%;
+ margin: 20px 20px 20px 20px;
+}
+
 .green a:link, .green a:active, .green a:visited { color: #0a4d39; }
 .green a:hover { color: #888800; }
 .green h3 {
   margin-bottom:-5px;
-  margin-top:-2px;
+  margin-top:5px;
   padding: 0px 0px 0px 0px;
   border: 0px;
   color: #74240f;
@@ -90,3 +96,15 @@ ul {
   padding-left: 1em;
   list-style-position: inside;
 }
+
+#leftColumn li.none{
+  text-indent:-1em;
+  margin-left:-1em;
+}
+
+#leftColumn h3 {
+  font-size: 16px;
+  margin-left:-0.7em;
+}
+
+body.topBarDisabled{padding-top:0px;}

@@ -26,8 +26,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
       <p>
       <strong>Apache Hama</strong> is a pure BSP (Bulk Synchronous Parallel) computing framework on top of HDFS (Hadoop Distributed File System) for massive scientific computations 
       such as matrix, graph and network algorithms.</p>
-      <table class="green" width="100%" cellspacing="0" cellpadding="5" border="1"> 
-      <tr><td> 
+      <div class="green">
           <h3 align="center">Recent News</h3>
           <ul>
             <li>June 31, 2012: release 0.5.0 available [<a href="downloads.html">downloads</a>]</li>
@@ -37,7 +36,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
             <li>June 2, 2011: release 0.2.0 available</li>
             <li>Apr 30, 2010: Introduced in the <a href="http://www.bsp-worldwide.org/bspww3000.html">BSP Worldwide</a></li>
           </ul>
-      </td></tr></table>
+      </div>
     <subsection name="Why Hama and BSP?"></subsection>
     <p>Today, many practical data processing applications require a more flexible programming abstraction model that is compatible to run on highly scalable and massive data systems (e.g., HDFS, HBase, etc). A message passing paradigm beyond Map-Reduce framework would increase its flexibility in its communication capability. Bulk Synchronous Parallel (BSP) model fills the bill appropriately. Some of its significant advantages over MapReduce and MPI are:</p>
     <ul>

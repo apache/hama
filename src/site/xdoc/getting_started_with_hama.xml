@@ -62,7 +62,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <ul><li>BSPMaster and Zookeeper settings - Figure out where to run your HDFS namenode and BSPMaster. Set the variable bsp.master.address to the BSPMaster's intended host:port. Set the variable fs.default.name to the HDFS Namenode's intended host:port.</li></ul>
     <p>Here's an example of a hama-site.xml file:</p>
 
-<pre class="green">
+<pre>
   &lt;?xml version="1.0"?&gt;
   &lt;?xml-stylesheet type="text/xsl" href="configuration.xsl"?&gt;
   &lt;configuration&gt;
@@ -99,7 +99,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
 <p>If you are managing your own ZooKeeper, you have to specify the port number as below:</p>
 
-<pre class="green">
+<pre>
   &lt;property&gt;
     &lt;name&gt;hama.zookeeper.property.clientPort&lt;/name&gt;
     &lt;value&gt;2181&lt;/value&gt;
@@ -111,16 +111,16 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <p>NOTE: Skip this step if you're in Local Mode.
     <br/>Run the command:</p>
     
-  <pre class="green">
+  <pre>
   % $HAMA_HOME/bin/start-bspd.sh</pre>
     <p>This will startup a BSPMaster, GroomServers and Zookeeper on your machine.</p>
     <p>Run the command:</p>
-  <pre class="green">
+  <pre>
   % $HAMA_HOME/bin/stop-bspd.sh</pre>
 
     <p>to stop all the daemons running on your cluster.</p>
     <subsection name="Execute Hama Examples"></subsection>
-  <pre class="green">
+  <pre>
   % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar [args]</pre>
     </body>
 </document>

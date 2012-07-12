@@ -30,7 +30,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <subsection name="Vertex API"></subsection>    
 
     <p>Writing a Hama graph application involves subclassing the predefined Vertex class. Its template arguments define three value types, associated with vertices, edges, and messages.</p>
-    <pre class="green">
+    <pre>
   public abstract class Vertex&lt;V extends Writable, E extends Writable, M extends Writable&gt;
       implements VertexInterface&lt;V, E, M&gt; {
 
@@ -48,7 +48,7 @@ In this example, the algorithm described Google's Pregel paper was used. The val
 From Superstep 1 to 30, each vertex sums up the values arriving on all its messages and sets its tentative page rank to (1 - 0.85) / numOfVertices + (0.85 * sum).
    </p>
 
-    <pre class="green">
+    <pre>
   public static class PageRankVertex extends
       Vertex&lt;Text, NullWritable, DoubleWritable&gt; {
 
