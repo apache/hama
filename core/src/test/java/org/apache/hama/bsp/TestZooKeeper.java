@@ -23,7 +23,9 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
@@ -41,6 +43,7 @@ public class TestZooKeeper extends TestCase {
 
   public TestZooKeeper() {
     configuration = new HamaConfiguration();
+    System.setProperty("user.dir", "/tmp");
     configuration.set("bsp.master.address", "localhost");
     assertEquals("Make sure master addr is set to localhost:", "localhost",
         configuration.get("bsp.master.address"));
@@ -144,12 +147,32 @@ public class TestZooKeeper extends TestCase {
 
       Log.info("Passed the key presence test");
 
-      Writable value = masterClient
-          .getInformation(masterClient.constructKey(jobID, "info", "level2"),
-              IntWritable.class);
+      boolean result = masterClient
+          .getInformation(masterClient.constructKey(jobID, "info", "level3"),
+              new IntWritable());
 
-      assertEquals(null, value);
-      Log.info("Passed the null value check.");
+      assertEquals(false, result);
+      
+      Writable[] writableArr = new Writable[2];
+      writableArr[0] = new LongWritable(3L);
+      writableArr[1] = new LongWritable(5L);
+      ArrayWritable arrWritable = new ArrayWritable(LongWritable.class);
+      arrWritable.set(writableArr);
+      masterClient.storeInformation(
+          masterClient.constructKey(jobID, "info", "level3"), 
+          arrWritable, true, null);
+      
+      ArrayWritable valueHolder = new ArrayWritable(LongWritable.class);
+      
+      boolean getResult = masterClient.getInformation(
+          masterClient.constructKey(jobID, "info", "level3"), valueHolder);
+      
+      assertTrue(getResult);
+      
+      assertEquals(arrWritable.get()[0], valueHolder.get()[0]);
+      assertEquals(arrWritable.get()[1], valueHolder.get()[1]);
+      
+      Log.info("Passed array writable test");
       done = true;
 
     } catch (Exception e) {

@@ -122,8 +122,9 @@ public class TaskRunner extends Thread {
 
         int exit_code = bspProcess.waitFor();
         if (!bspKilled && exit_code != 0) {
+          
           throw new IOException("BSP task process exit with nonzero status of "
-              + exit_code + ".");
+              + exit_code + ". command = " + commands);
         }
       } catch (InterruptedException e) {
         LOG.warn("Thread is interrupted when execeuting BSP process.", e);
@@ -223,6 +224,17 @@ public class TaskRunner extends Thread {
       vargs.add(Integer.toString(addr.getPort()));
       vargs.add(task.getTaskID().toString());
       vargs.add(groomServer.groomHostName);
+      vargs.add(Long.toString(groomServer.getStartSuperstep(task.getTaskID())));
+      TaskStatus status = groomServer.getTaskStatus(task.getTaskID());
+      
+      if(status != null && 
+          TaskStatus.State.RECOVERING.equals(status.getRunState())){
+        vargs.add(TaskStatus.State.RECOVERING.name());
+      }
+      else{
+        vargs.add(TaskStatus.State.RUNNING.name());
+      }
+      
     }
     return vargs;
   }
@@ -285,6 +297,7 @@ public class TaskRunner extends Thread {
     if (bspProcess != null) {
       bspProcess.destroy();
     }
+    
   }
 
   /**

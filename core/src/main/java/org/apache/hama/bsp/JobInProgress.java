@@ -21,9 +21,11 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,14 +34,21 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.Constants;
+import org.apache.hama.bsp.ft.AsyncRcvdMsgCheckpointImpl;
+import org.apache.hama.bsp.ft.BSPFaultTolerantService;
+import org.apache.hama.bsp.ft.FaultTolerantMasterService;
 import org.apache.hama.bsp.sync.MasterSyncClient;
+import org.apache.hama.bsp.taskallocation.BSPResource;
+import org.apache.hama.bsp.taskallocation.BestEffortDataLocalTaskAllocator;
+import org.apache.hama.bsp.taskallocation.TaskAllocationStrategy;
+import org.apache.hama.util.ReflectionUtils;
 
 /**
  * JobInProgress maintains all the info for keeping a Job on the straight and
  * narrow. It keeps its JobProfile and its latest JobStatus, plus a set of
  * tables for doing bookkeeping of its Tasks.ss
  */
-class JobInProgress {
+public class JobInProgress {
 
   /**
    * Used when the a kill is issued to a job which is initializing.
@@ -74,6 +83,8 @@ class JobInProgress {
   long launchTime;
   long finishTime;
 
+  int maxTaskAttempts;
+
   private String jobName;
 
   // private LocalFileSystem localFs;
@@ -89,10 +100,37 @@ class JobInProgress {
   String jobSplit;
 
   Map<Task, GroomServerStatus> taskToGroomMap;
+
   // Used only for scheduling!
-  Map<GroomServerStatus, Integer> tasksInGroomMap;
+  Map<GroomServerStatus, Integer> taskCountInGroomMap;
+
+  // If the task does not exist as key, it implies that the task did not fail
+  // before.
+  // Value in the map implies the attempt ID for which the key(task) was
+  // re-attempted before.
+  Map<Task, Integer> taskReattemptMap;
+
+  Set<TaskInProgress> recoveryTasks;
+
+  // This set keeps track of the tasks that have failed.
+  Set<Task> failedTasksTillNow;
 
   private int taskCompletionEventTracker = 0;
+
+  private TaskAllocationStrategy taskAllocationStrategy;
+
+  private FaultTolerantMasterService faultToleranceService;
+  
+  /**
+   * Used only for unit tests.
+   * @param jobId
+   * @param conf
+   */
+  public JobInProgress(BSPJobID jobId, Configuration conf){
+    this.conf = conf;
+    this.jobId = jobId;
+    master = null;
+  }
 
   public JobInProgress(BSPJobID jobId, Path jobFile, BSPMaster master,
       Configuration conf) throws IOException {
@@ -101,10 +139,6 @@ class JobInProgress {
     this.localFs = FileSystem.getLocal(conf);
     this.jobFile = jobFile;
     this.master = master;
-
-    this.taskToGroomMap = new HashMap<Task, GroomServerStatus>(2 * tasks.length);
-
-    this.tasksInGroomMap = new HashMap<GroomServerStatus, Integer>();
 
     this.status = new JobStatus(jobId, null, 0L, 0L,
         JobStatus.State.PREP.value(), counters);
@@ -127,6 +161,9 @@ class JobInProgress {
     this.taskCompletionEvents = new ArrayList<TaskCompletionEvent>(
         numBSPTasks + 10);
 
+    this.maxTaskAttempts = job.getConf().getInt(Constants.MAX_TASK_ATTEMPTS,
+        Constants.DEFAULT_MAX_TASK_ATTEMPTS);
+
     this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
         job.getJobName());
 
@@ -139,6 +176,8 @@ class JobInProgress {
     if (jarFile != null) {
       fs.copyToLocalFile(new Path(jarFile), localJarFile);
     }
+
+    failedTasksTillNow = new HashSet<Task>(2 * tasks.length);
 
   }
 
@@ -229,15 +268,20 @@ class JobInProgress {
       this.tasks = new TaskInProgress[numBSPTasks];
       for (int i = 0; i < numBSPTasks; i++) {
         tasks[i] = new TaskInProgress(getJobID(), this.jobFile.toString(),
-            splits[i], this.master, this.conf, this, i);
+            splits[i], this.conf, this, i);
       }
     } else {
       this.tasks = new TaskInProgress[numBSPTasks];
       for (int i = 0; i < numBSPTasks; i++) {
         tasks[i] = new TaskInProgress(getJobID(), this.jobFile.toString(),
-            null, this.master, this.conf, this, i);
+            null, this.conf, this, i);
       }
     }
+    this.taskToGroomMap = new HashMap<Task, GroomServerStatus>(2 * tasks.length);
+
+    this.taskCountInGroomMap = new HashMap<GroomServerStatus, Integer>();
+
+    this.recoveryTasks = new HashSet<TaskInProgress>(2 * tasks.length);
 
     // Update job status
     this.status = new JobStatus(this.status.getJobID(), this.profile.getUser(),
@@ -248,6 +292,31 @@ class JobInProgress {
     syncClient.registerJob(this.getJobID().toString());
 
     tasksInited = true;
+
+    Class<?> taskAllocatorClass = conf.getClass(Constants.TASK_ALLOCATOR_CLASS,
+        BestEffortDataLocalTaskAllocator.class, TaskAllocationStrategy.class);
+    this.taskAllocationStrategy = (TaskAllocationStrategy) ReflectionUtils
+        .newInstance(taskAllocatorClass, new Object[0]);
+
+    if (conf.getBoolean(Constants.FAULT_TOLERANCE_FLAG, false)) {
+
+      Class<?> ftClass = conf.getClass(Constants.FAULT_TOLERANCE_CLASS, 
+          AsyncRcvdMsgCheckpointImpl.class ,
+          BSPFaultTolerantService.class);
+      if (ftClass != null) {
+        try {
+          faultToleranceService = ((BSPFaultTolerantService<?>) ReflectionUtils
+              .newInstance(ftClass, new Object[0]))
+              .constructMasterFaultTolerance(jobId, maxTaskAttempts, tasks,
+                  conf, master.getSyncClient(), taskAllocationStrategy);
+          LOG.info("Initialized fault tolerance service with "
+              + ftClass.getCanonicalName());
+        } catch (Exception e) {
+          throw new IOException(e);
+        }
+      }
+    }
+
     LOG.info("Job is initialized.");
   }
 
@@ -269,27 +338,52 @@ class JobInProgress {
     }
 
     Task result = null;
+    BSPResource[] resources = new BSPResource[0];
 
-    try {
-      for (int i = 0; i < tasks.length; i++) {
-        if (!tasks[i].isRunning() && !tasks[i].isComplete()) {
-          result = tasks[i].getTaskToRun(groomStatuses, tasksInGroomMap);
-          if (result != null)
-            this.taskToGroomMap.put(result, tasks[i].getGroomServerStatus());
-          int taskInGroom = 0;
-          if (tasksInGroomMap.containsKey(tasks[i].getGroomServerStatus())) {
-            taskInGroom = tasksInGroomMap.get(tasks[i].getGroomServerStatus());
-          }
-          tasksInGroomMap.put(tasks[i].getGroomServerStatus(), taskInGroom + 1);
-          break;
+    for (int i = 0; i < tasks.length; i++) {
+      if (!tasks[i].isRunning() && !tasks[i].isComplete()) {
+
+        String[] selectedGrooms = taskAllocationStrategy.selectGrooms(
+            groomStatuses, taskCountInGroomMap, resources, tasks[i]);
+        GroomServerStatus groomStatus = taskAllocationStrategy
+            .getGroomToAllocate(groomStatuses, selectedGrooms,
+                taskCountInGroomMap, resources, tasks[i]);
+        if (groomStatus != null)
+          result = tasks[i].constructTask(groomStatus);
+        if (result != null) {
+          updateGroomTaskDetails(tasks[i].getGroomServerStatus(), result);
         }
+        break;
       }
-
-    } catch (IOException e) {
-      LOG.error("Exception while obtaining new task!", e);
     }
+
     counters.incrCounter(JobCounter.LAUNCHED_TASKS, 1L);
     return result;
+  }
+
+  public void recoverTasks(Map<String, GroomServerStatus> groomStatuses,
+      Map<GroomServerStatus, List<GroomServerAction>> actionMap)
+      throws IOException {
+
+    if (this.faultToleranceService == null)
+      return;
+
+    try {
+      this.faultToleranceService.recoverTasks(this, groomStatuses,
+          fetchAndClearTasksToRecover(), tasks, taskCountInGroomMap, actionMap);
+    } catch (IOException e) {
+      throw e;
+    }
+  }
+
+  private void updateGroomTaskDetails(GroomServerStatus groomStatus, Task task) {
+    taskToGroomMap.put(task, groomStatus);
+    int tasksInGroom = 0;
+
+    if (taskCountInGroomMap.containsKey(groomStatus)) {
+      tasksInGroom = taskCountInGroomMap.get(groomStatus);
+    }
+    taskCountInGroomMap.put(groomStatus, tasksInGroom + 1);
   }
 
   /**
@@ -305,6 +399,14 @@ class JobInProgress {
     return list;
   }
 
+  /**
+   * Mark the completed task status. If all the tasks are completed the status
+   * of the job is updated to notify the client on the completion of the whole
+   * job.
+   * 
+   * @param tip <code>TaskInProgress</code> object representing task.
+   * @param status The completed task status
+   */
   public synchronized void completedTask(TaskInProgress tip, TaskStatus status) {
     TaskAttemptID taskid = status.getTaskId();
     updateTaskStatus(tip, status);
@@ -339,6 +441,12 @@ class JobInProgress {
     }
   }
 
+  /**
+   * Mark failure of a task.
+   * 
+   * @param tip <code>TaskInProgress</code> object representing task.
+   * @param status The failed task status
+   */
   public void failedTask(TaskInProgress tip, TaskStatus status) {
     TaskAttemptID taskid = status.getTaskId();
     updateTaskStatus(tip, status);
@@ -353,8 +461,6 @@ class JobInProgress {
         break;
       }
     }
-
-    // TODO
 
     if (!allDone) {
       // Kill job
@@ -372,6 +478,12 @@ class JobInProgress {
     }
   }
 
+  /**
+   * Updates the task status of the task.
+   * 
+   * @param tip <code>TaskInProgress</code> representing task
+   * @param taskStatus The status of the task.
+   */
   public synchronized void updateTaskStatus(TaskInProgress tip,
       TaskStatus taskStatus) {
     TaskAttemptID taskid = taskStatus.getTaskId();
@@ -415,6 +527,9 @@ class JobInProgress {
     }
   }
 
+  /**
+   * Kill the job.
+   */
   public synchronized void kill() {
     if (status.getRunState() != JobStatus.KILLED) {
       this.status = new JobStatus(status.getJobID(), this.profile.getUser(),
@@ -439,6 +554,12 @@ class JobInProgress {
    */
   synchronized void garbageCollect() {
     try {
+      
+      if(LOG.isDebugEnabled()){
+        LOG.debug("Removing " + localJobFile + " and " + localJarFile
+            + " getJobFile = " + profile.getJobFile());
+      }
+      
       // Definitely remove the local-disk copy of the job file
       if (localJobFile != null) {
         localFs.delete(localJobFile, true);
@@ -500,6 +621,64 @@ class JobInProgress {
           actualMax + fromEventId).toArray(events);
     }
     return events;
+  }
+
+  /**
+   * Returns the configured maximum number of times the task could be
+   * re-attempted.
+   */
+  int getMaximumReAttempts() {
+    return maxTaskAttempts;
+  }
+
+  /**
+   * Returns true if the task should be restarted on failure. It also causes
+   * JobInProgress object to maintain state of the restart request.
+   */
+  synchronized boolean handleFailure(TaskInProgress tip) {
+    if (this.faultToleranceService == null
+        || (!faultToleranceService.isRecoveryPossible(tip)))
+      return false;
+
+    if (!faultToleranceService.isAlreadyRecovered(tip)) {
+      if(LOG.isDebugEnabled()){
+        LOG.debug("Adding recovery task " + tip.getCurrentTaskAttemptId());
+      }
+      recoveryTasks.add(tip);
+      status.setRunState(JobStatus.RECOVERING);
+      return true;
+    }
+    else if(LOG.isDebugEnabled()){
+      LOG.debug("Avoiding recovery task " + tip.getCurrentTaskAttemptId());
+    }
+    return false;
+    
+  }
+  
+  
+  /**
+   * 
+   * @return Returns the list of tasks in progress that has to be recovered.
+   */
+  synchronized TaskInProgress[] fetchAndClearTasksToRecover() {
+    TaskInProgress[] failedTasksInProgress = new TaskInProgress[recoveryTasks
+        .size()];
+    recoveryTasks.toArray(failedTasksInProgress);
+
+    recoveryTasks.clear();
+    return failedTasksInProgress;
+  }
+
+  public boolean isRecoveryPending() {
+    return recoveryTasks.size() != 0;
+  }
+
+  public Set<Task> getTaskSet() {
+    return taskToGroomMap.keySet();
+  }
+
+  public FaultTolerantMasterService getFaultToleranceService() {
+    return this.faultToleranceService;
   }
 
 }

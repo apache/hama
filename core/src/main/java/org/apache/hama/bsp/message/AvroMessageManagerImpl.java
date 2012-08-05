@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyServer;
@@ -61,14 +60,8 @@ public final class AvroMessageManagerImpl<M extends Writable> extends
     server.close();
   }
 
-  public void put(BSPMessageBundle<M> messages) {
-    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
-        messages.getMessages().size());
-    Iterator<M> iterator = messages.getMessages().iterator();
-    while (iterator.hasNext()) {
-      this.localQueueForNextIteration.add(iterator.next());
-      iterator.remove();
-    }
+  public void put(BSPMessageBundle<M> messages) throws IOException {
+    this.loopBackMessages(messages);
   }
 
   @SuppressWarnings("unchecked")
@@ -139,5 +132,4 @@ public final class AvroMessageManagerImpl<M extends Writable> extends
       return ByteBuffer.wrap(data);
     }
   }
-
 }

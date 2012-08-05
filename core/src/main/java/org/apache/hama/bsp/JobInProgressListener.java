@@ -40,5 +40,13 @@ abstract class JobInProgressListener {
    * @throws IOException
    */
   public abstract void jobRemoved(JobInProgress job) throws IOException;
+  
+  /**
+   * Invoked when a task in job has to be recovered by {@link BSPMaster}.
+   * @param job The job to which the task belongs to.
+   * @param task that has to be recovered
+   * @throws IOException
+   */
+  public abstract void recoverTaskInJob(JobInProgress job) throws IOException;
 
 }

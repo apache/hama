@@ -34,7 +34,7 @@ import org.apache.hama.bsp.BSPJobClient.RawSplit;
  * TaskInProgress maintains all the info needed for a Task in the lifetime of
  * its owning Job.
  */
-class TaskInProgress {
+public class TaskInProgress {
   public static final Log LOG = LogFactory.getLog(TaskInProgress.class);
 
   private Configuration conf;
@@ -48,7 +48,6 @@ class TaskInProgress {
   // Job Meta
   private String jobFile = null;
   private int partition;
-  private BSPMaster bspMaster;
   private TaskID id;
   private JobInProgress job;
   private int completes = 0;
@@ -69,6 +68,8 @@ class TaskInProgress {
 
   // The first taskid of this tip
   private TaskAttemptID firstTaskId;
+  
+  private TaskAttemptID currentTaskId;
 
   // Map from task Id -> GroomServer Id, contains tasks that are
   // currently runnings
@@ -83,6 +84,8 @@ class TaskInProgress {
   private BSPJobID jobId;
 
   private RawSplit rawSplit;
+
+  private int mySuperstep = -1;
 
   /**
    * Constructor for new nexus between BSPMaster and GroomServer.
@@ -99,12 +102,20 @@ class TaskInProgress {
     init(jobId);
   }
 
+  /**
+   * 
+   * @param jobId
+   * @param jobFile
+   * @param rawSplit
+   * @param conf
+   * @param job
+   * @param partition
+   */
   public TaskInProgress(BSPJobID jobId, String jobFile, RawSplit rawSplit,
-      BSPMaster master, Configuration conf, JobInProgress job, int partition) {
+      Configuration conf, JobInProgress job, int partition) {
     this.jobId = jobId;
     this.jobFile = jobFile;
     this.rawSplit = rawSplit;
-    this.setBspMaster(master);
     this.job = job;
     this.setConf(conf);
     this.partition = partition;
@@ -112,18 +123,178 @@ class TaskInProgress {
     init(jobId);
   }
 
+  /**
+   * 
+   * @param jobId
+   */
   private void init(BSPJobID jobId) {
     this.id = new TaskID(jobId, partition);
     this.startTime = System.currentTimeMillis();
   }
 
   /**
-   * Return a Task that can be sent to a GroomServer for execution.
+   * 
+   * @param taskid
+   * @param grooms
+   * @param tasksInGroomMap
+   * @param possibleLocations
+   * @return
    */
-  public Task getTaskToRun(Map<String, GroomServerStatus> grooms,
-      Map<GroomServerStatus, Integer> tasksInGroomMap) throws IOException {
-    Task t = null;
+  private String getGroomToSchedule(TaskAttemptID taskid,
+      Map<String, GroomServerStatus> grooms,
+      Map<GroomServerStatus, Integer> tasksInGroomMap,
+      String[] possibleLocations) {
 
+    for (int i = 0; i < possibleLocations.length; ++i) {
+      String location = possibleLocations[i];
+      GroomServerStatus groom = grooms.get(location);
+      if (groom == null)
+        continue;
+      Integer taskInGroom = tasksInGroomMap.get(groom);
+      taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+      if (taskInGroom < groom.getMaxTasks()
+          && location.equals(groom.getGroomHostName())) {
+        return groom.getGroomHostName();
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 
+   * @param grooms
+   * @param tasksInGroomMap
+   * @return
+   */
+  private String getAnyGroomToSchedule(Map<String, GroomServerStatus> grooms,
+      Map<GroomServerStatus, Integer> tasksInGroomMap) {
+
+    Iterator<String> groomIter = grooms.keySet().iterator();
+    while (groomIter.hasNext()) {
+      GroomServerStatus groom = grooms.get(groomIter.next());
+      if (groom == null)
+        continue;
+      Integer taskInGroom = tasksInGroomMap.get(groom);
+      taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+      if (taskInGroom < groom.getMaxTasks()) {
+        return groom.getGroomHostName();
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 
+   * @param groomStatus
+   * @param grooms
+   * @return
+   */
+  public Task constructTask(GroomServerStatus groomStatus) {
+    if(groomStatus == null){
+      return null;
+    }
+    TaskAttemptID taskId = computeTaskId();
+    if (taskId == null) {
+      return null;
+    } else {
+      String splitClass = null;
+      BytesWritable split = null;
+      currentTaskId = taskId;
+      String groomName = groomStatus.getGroomHostName();
+      Task t = new BSPTask(jobId, jobFile, taskId, partition, splitClass, split);
+      activeTasks.put(taskId, groomName);
+      myGroomStatus = groomStatus;
+      return t;
+    }
+
+  }
+
+  // /* Remove */
+  // private Task getGroomForTask(TaskAttemptID taskid,
+  // Map<String, GroomServerStatus> grooms,
+  // Map<GroomServerStatus, Integer> tasksInGroomMap) {
+  // String splitClass = null;
+  // BytesWritable split = null;
+  // Task t = null;
+  // if (rawSplit != null) {
+  // splitClass = rawSplit.getClassName();
+  // split = rawSplit.getBytes();
+  // String[] possibleLocations = rawSplit.getLocations();
+  // String groomName = getGroomToSchedule(taskid, grooms, tasksInGroomMap,
+  // possibleLocations);
+  // if (groomName != null) {
+  // t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
+  // activeTasks.put(taskid, groomName);
+  // myGroomStatus = grooms.get(groomName);
+  // }
+  // }
+  //
+  // if (t == null) {
+  // String groomName = getAnyGroomToSchedule(grooms, tasksInGroomMap);
+  // if (groomName != null) {
+  // t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
+  // activeTasks.put(taskid, groomName);
+  // myGroomStatus = grooms.get(groomName);
+  // }
+  // }
+  //
+  // return t;
+  // }
+
+  private Task getGroomForRecoverTaskInHosts(TaskAttemptID taskid,
+      Map<String, GroomServerStatus> grooms,
+      Map<GroomServerStatus, Integer> tasksInGroomMap,
+      String[] possibleLocations) {
+    String splitClass = null;
+    BytesWritable split = null;
+    Task t = null;
+    String groomName = getGroomToSchedule(taskid, grooms, tasksInGroomMap,
+        possibleLocations);
+    if (groomName != null) {
+      t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
+      activeTasks.put(taskid, groomName);
+      myGroomStatus = grooms.get(groomName);
+    }
+
+    if (t == null) {
+      groomName = getAnyGroomToSchedule(grooms, tasksInGroomMap);
+      if (groomName != null) {
+        t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
+        activeTasks.put(taskid, groomName);
+        myGroomStatus = grooms.get(groomName);
+      }
+    }
+
+    return t;
+  }
+
+  public Task getRecoveryTask(Map<String, GroomServerStatus> grooms,
+      Map<GroomServerStatus, Integer> tasksInGroomMap, String[] hostNames)
+      throws IOException {
+    Integer count = tasksInGroomMap.get(myGroomStatus);
+    if (count != null) {
+      tasksInGroomMap.put(myGroomStatus, count - 1);
+    }
+
+    TaskAttemptID taskId = computeTaskId();
+    LOG.debug("Recovering task = " + String.valueOf(taskId));
+    if (taskId == null) {
+      return null;
+    } else {
+      return getGroomForRecoverTaskInHosts(taskId, grooms, tasksInGroomMap,
+          hostNames);
+    }
+  }
+
+  /**
+   * 
+   * @return
+   */
+  public boolean canStartTask() {
+    return (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts));
+  }
+
+  private TaskAttemptID computeTaskId() {
     TaskAttemptID taskid = null;
     if (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts)) {
       int attemptId = job.getNumRestarts() * NUM_ATTEMPTS_PER_RESTART
@@ -135,53 +306,19 @@ class TaskInProgress {
           + " attempts for the tip '" + getTIPId() + "'");
       return null;
     }
-
-    String splitClass = null;
-    BytesWritable split = null;
-    GroomServerStatus selectedGroom = null;
-    if (rawSplit != null) {
-      splitClass = rawSplit.getClassName();
-      split = rawSplit.getBytes();
-      String[] possibleLocations = rawSplit.getLocations();
-      for (int i = 0; i < possibleLocations.length; ++i) {
-        String location = possibleLocations[i];
-        GroomServerStatus groom = grooms.get(location);
-        if (groom == null) {
-          LOG.error("Could not find groom for location: " + location
-              + " ; active grooms: " + grooms.keySet());
-          continue;
-        }
-        Integer taskInGroom = tasksInGroomMap.get(groom);
-        taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
-        if (taskInGroom < groom.getMaxTasks()
-            && location.equals(groom.getGroomHostName())) {
-          selectedGroom = groom;
-          t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
-          activeTasks.put(taskid, groom.getGroomName());
-
-          break;
-        }
-      }
-    }
-    // Failed in attempt to get data locality or there was no input split.
-    if (selectedGroom == null) {
-      Iterator<String> groomIter = grooms.keySet().iterator();
-      while (groomIter.hasNext()) {
-        GroomServerStatus groom = grooms.get(groomIter.next());
-        Integer taskInGroom = tasksInGroomMap.get(groom);
-        taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
-        if (taskInGroom < groom.getMaxTasks()) {
-          selectedGroom = groom;
-          t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
-          activeTasks.put(taskid, groom.getGroomName());
-        }
-      }
-    }
-
-    myGroomStatus = selectedGroom;
-
-    return t;
+    return taskid;
   }
+
+  // /** Remove */
+  // public Task getTaskToRun(Map<String, GroomServerStatus> grooms,
+  // Map<GroomServerStatus, Integer> tasksInGroomMap) throws IOException {
+  // TaskAttemptID taskId = computeTaskId();
+  // if (taskId == null) {
+  // return null;
+  // } else {
+  // return getGroomForTask(taskId, grooms, tasksInGroomMap);
+  // }
+  // }
 
   // //////////////////////////////////
   // Accessors
@@ -344,20 +481,6 @@ class TaskInProgress {
   }
 
   /**
-   * @param bspMaster the bspMaster to set
-   */
-  public void setBspMaster(BSPMaster bspMaster) {
-    this.bspMaster = bspMaster;
-  }
-
-  /**
-   * @return the bspMaster
-   */
-  public BSPMaster getBspMaster() {
-    return bspMaster;
-  }
-
-  /**
    * Set the event number that was raised for this tip
    */
   public void setSuccessEventNumber(int eventNumber) {
@@ -380,6 +503,24 @@ class TaskInProgress {
 
   public String machineWhereTaskRan(TaskAttemptID taskid) {
     return taskStatuses.get(taskid).getGroomServer();
+  }
+
+  public int getSuperstep() {
+    return mySuperstep;
+  }
+
+  public void setSuperstep(int mySuperstep) {
+    this.mySuperstep = mySuperstep;
+  }
+
+  // TODO: In future this should be extended to the list of resources that the
+  // task requires.
+  public RawSplit getFileSplit() {
+    return this.rawSplit;
+  }
+  
+  public TaskAttemptID getCurrentTaskAttemptId(){
+    return this.currentTaskId;
   }
 
 }

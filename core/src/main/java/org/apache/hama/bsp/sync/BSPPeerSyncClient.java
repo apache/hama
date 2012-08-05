@@ -17,6 +17,8 @@
  */
 package org.apache.hama.bsp.sync;
 
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.BSPJobID;
 import org.apache.hama.bsp.TaskAttemptID;
@@ -100,7 +102,7 @@ public abstract class BSPPeerSyncClient implements PeerSyncClient{
    * 
    * @throws InterruptedException
    */
-  public abstract void close() throws InterruptedException;
+  public abstract void close() throws IOException;
 
 
 }

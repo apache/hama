@@ -100,12 +100,4 @@ public interface PeerSyncClient extends SyncClient{
    */
   public void stopServer();
 
-  /**
-   * This method should close all used resources, e.G. a ZooKeeper instance.
-   * 
-   * @throws InterruptedException
-   */
-  public void close() throws InterruptedException;
-
-
 }

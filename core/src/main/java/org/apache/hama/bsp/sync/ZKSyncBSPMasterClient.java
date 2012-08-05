@@ -18,7 +18,6 @@
 package org.apache.hama.bsp.sync;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -81,45 +80,6 @@ public class ZKSyncBSPMasterClient extends ZKSyncClient implements
 
   }
 
-  /**
-   * Clears all sub-children of node bspRoot
-   */
-  private void clearZKNodes() {
-    try {
-      Stat s = zk.exists(bspRoot, false);
-      if (s != null) {
-        clearZKNodes(bspRoot);
-      }
-
-    } catch (Exception e) {
-      LOG.warn("Could not clear zookeeper nodes.", e);
-    }
-  }
-
-  /**
-   * Clears all sub-children of node rooted at path.
-   * 
-   * @param path
-   * @throws InterruptedException
-   * @throws KeeperException
-   */
-  private void clearZKNodes(String path) throws KeeperException,
-      InterruptedException {
-    ArrayList<String> list = (ArrayList<String>) zk.getChildren(path, false);
-
-    if (list.size() == 0) {
-      return;
-
-    } else {
-      for (String node : list) {
-        clearZKNodes(path + "/" + node);
-        LOG.info("Deleting " + path + "/" + node);
-        zk.delete(path + "/" + node, -1); // delete any version of this
-        // node.
-      }
-    }
-  }
-
   private void createJobRoot(String string) {
     writeNode(string, null, true, null);
   }
@@ -164,4 +124,9 @@ public class ZKSyncBSPMasterClient extends ZKSyncClient implements
     LOG.debug("Processing event type " + arg0.getType().toString());
 
   }
+
+  public ZooKeeper getZK() {
+    return this.zk;
+  }
+
 }

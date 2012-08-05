@@ -17,6 +17,8 @@
  */
 package org.apache.hama.bsp.message;
 
+import java.io.IOException;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
@@ -35,7 +37,7 @@ public interface HadoopMessageManager<M extends Writable> extends
    * 
    * @param msg
    */
-  public void put(M msg);
+  public void put(M msg) throws IOException;
 
   /**
    * This method puts a messagebundle for the next iteration. Accessed
@@ -43,7 +45,7 @@ public interface HadoopMessageManager<M extends Writable> extends
    * 
    * @param messages
    */
-  public void put(BSPMessageBundle<M> messages);
+  public void put(BSPMessageBundle<M> messages) throws IOException;
 
   /**
    * This method puts a compressed message bundle for the next iteration.
@@ -51,6 +53,6 @@ public interface HadoopMessageManager<M extends Writable> extends
    * 
    * @param compMsgBundle
    */
-  public void put(BSPCompressedBundle compMsgBundle);
+  public void put(BSPCompressedBundle compMsgBundle) throws IOException;
 
 }

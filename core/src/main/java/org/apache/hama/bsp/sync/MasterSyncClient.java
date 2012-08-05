@@ -31,28 +31,23 @@ public interface MasterSyncClient extends SyncClient{
    * 
    * @param conf The configuration parameters to initialize the client.
    */
-  public abstract void init(HamaConfiguration conf);
+  public void init(HamaConfiguration conf);
   
   /**
    * Clears all information stored.
    */
-  public abstract void clear();
+  public void clear();
   
   /**
    * Register a newly added job 
    * @param string
    */
-  public abstract void registerJob(String string);
+  public void registerJob(String string);
 
   /**
    * Deregister the job from the system.
    * @param string
    */
-  public abstract void deregisterJob(String string);
+  public void deregisterJob(String string);
     
-  /**
-   * Closes the client.
-   */
-  public abstract void close();
-
 }

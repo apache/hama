@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,9 +32,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPJobID;
 import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.util.ReflectionUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
@@ -77,11 +78,14 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
    *         created.
    */
   protected String getNodeName(TaskAttemptID taskId, long superstep) {
-    return bspRoot + "/" + taskId.getJobID().toString() + "/" + superstep + "/"
-        + taskId.toString();
+    return constructKey(taskId.getJobID(), "sync", "" + superstep,
+        taskId.toString());
+    //
+    // bspRoot + "/" + taskId.getJobID().toString() + "/" + superstep + "/"
+    // + taskId.toString();
   }
-  
-  private String correctKey(String key){
+
+  private String correctKey(String key) {
     if (!key.startsWith("/")) {
       key = "/" + key;
     }
@@ -114,7 +118,7 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
    * @throws InterruptedException
    */
   protected Stat getStat(final String path) throws KeeperException,
-  InterruptedException {
+      InterruptedException {
     synchronized (zk) {
       return zk.exists(path, false);
     }
@@ -125,10 +129,17 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
       InterruptedException {
 
     synchronized (zk) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Checking node " + path);
+      }
       Stat s = zk.exists(path, false);
       if (null == s) {
         try {
           zk.create(path, data, Ids.OPEN_ACL_UNSAFE, mode);
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Created node " + path);
+          }
+
         } catch (KeeperException.NodeExistsException nee) {
           LOG.debug("Ignore because znode may be already created at " + path,
               nee);
@@ -170,29 +181,26 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
 
   /**
    * Utility function to read Writable object value from byte array.
+   * 
    * @param data The byte array
    * @param classType The Class object of expected Writable object.
-   * @return The instance of Writable object. 
+   * @return The instance of Writable object.
    * @throws IOException
    */
-  protected Writable getValueFromBytes(
-      byte[] data, Class<? extends Writable> classType) throws IOException{
-    Writable value = null;
+  protected boolean getValueFromBytes(byte[] data,
+      Writable valueHolder) throws IOException {
     if (data != null) {
       ByteArrayInputStream istream = new ByteArrayInputStream(data);
-      value = ReflectionUtils
-          .newInstance(classType, new Object[0]);
       DataInputStream diStream = new DataInputStream(istream);
       try {
-        value.readFields(diStream);
-      }
-      finally {
+        valueHolder.readFields(diStream);
+      } finally {
         diStream.close();
       }
+      return true;
     }
-    return value;
+    return false;
   }
-
 
   /**
    * Read value stored in the Zookeeper node.
@@ -202,23 +210,21 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
    * @return The Writable object constructed from the value read from the
    *         Zookeeper node.
    */
-  protected Writable extractData(String path,
-      Class<? extends Writable> classType) {
+  protected boolean extractData(String path,
+      Writable valueHolder) {
     try {
       Stat stat = getStat(path);
       if (stat != null) {
         byte[] data = this.zk.getData(path, false, stat);
-        Writable value = null;
-        try{
-          value = getValueFromBytes(data, classType);
-        }
-        catch (IOException e) {
+        try {
+          getValueFromBytes(data, valueHolder);
+        } catch (IOException e) {
           LOG.error(
               new StringBuffer(200).append("Error getting data from path ")
-              .append(path).toString(), e);
-          value = null;
+                  .append(path).toString(), e);
+          return false;
         }
-        return value;
+        return true;
       }
 
     } catch (KeeperException e) {
@@ -230,7 +236,7 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
           .append(path).toString(), e);
 
     }
-    return null;
+    return false;
 
   }
 
@@ -277,7 +283,7 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
               watcher);
         }
         pathBuffer.append("/")
-        .append(pathComponents[pathComponents.length - 1]);
+            .append(pathComponents[pathComponents.length - 1]);
         CreateMode mode = CreateMode.EPHEMERAL;
         if (persistent) {
           mode = CreateMode.PERSISTENT;
@@ -331,10 +337,10 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
   }
 
   @Override
-  public Writable getInformation(String key, Class<? extends Writable> classType) {
+  public boolean getInformation(String key, Writable valueHolder) {
     key = correctKey(key);
     final String path = key;
-    return extractData(path, classType);
+    return extractData(path, valueHolder);
   }
 
   @Override
@@ -426,7 +432,74 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
     return children;
   }
 
-  
-  
+  /**
+   * Clears all sub-children of node bspRoot
+   */
+  protected void clearZKNodes() {
+    try {
+      Stat s = zk.exists(bspRoot, false);
+      if (s != null) {
+        clearZKNodes(bspRoot);
+      }
+
+    } catch (Exception e) {
+      LOG.warn("Could not clear zookeeper nodes.", e);
+    }
+  }
+
+  /**
+   * Clears all sub-children of node rooted at path.
+   * 
+   * @param path
+   * @throws InterruptedException
+   * @throws KeeperException
+   */
+  protected void clearZKNodes(String path) throws KeeperException,
+      InterruptedException {
+    ArrayList<String> list = (ArrayList<String>) zk.getChildren(path, false);
+
+    if (list.size() == 0) {
+      return;
+
+    } else {
+      for (String node : list) {
+        clearZKNodes(path + "/" + node);
+        LOG.info("Deleting " + path + "/" + node);
+        zk.delete(path + "/" + node, -1); // delete any version of this
+        // node.
+      }
+    }
+  }
+
+  @Override
+  public void process(WatchedEvent arg0) {
+  }
+
+  @Override
+  public boolean remove(String key, SyncEventListener listener) {
+    key = correctKey(key);
+    try {
+      clearZKNodes(key);
+      this.zk.delete(key, -1);
+      return true;
+    } catch (KeeperException e) {
+      LOG.error("Error deleting key " + key);
+    } catch (InterruptedException e) {
+      LOG.error("Error deleting key " + key);
+    }
+    return false;
+
+  }
+
+  @Override
+  public void close() throws IOException {
+
+    try {
+      this.zk.close();
+    } catch (InterruptedException e) {
+      throw new IOException(e);
+    }
+
+  }
 
 }

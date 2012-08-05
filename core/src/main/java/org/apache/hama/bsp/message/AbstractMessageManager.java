@@ -22,7 +22,9 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map.Entry;
+import java.util.Queue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,6 +33,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
@@ -61,6 +64,9 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   // the task attempt id
   protected TaskAttemptID attemptId;
 
+  // List of listeners for all the sent messages
+  protected Queue<MessageEventListener<M>> messageListenerQueue;
+
   /*
    * (non-Javadoc)
    * @see org.apache.hama.bsp.message.MessageManager#init(org.apache.hama.bsp.
@@ -70,12 +76,14 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   @Override
   public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
       Configuration conf, InetSocketAddress peerAddress) {
+    this.messageListenerQueue = new LinkedList<MessageEventListener<M>>();
     this.attemptId = attemptId;
     this.peer = peer;
     this.conf = conf;
     this.peerAddress = peerAddress;
     localQueue = getQueue();
     localQueueForNextIteration = getSynchronizedQueue();
+    
   }
 
   /*
@@ -84,18 +92,22 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    */
   @Override
   public void close() {
-    Collection<MessageQueue<M>> values = outgoingQueues.values();
-    for (MessageQueue<M> msgQueue : values) {
-      msgQueue.close();
-    }
-    localQueue.close();
-    // remove possible disk queues from the path
     try {
-      FileSystem.get(conf).delete(
-          DiskQueue.getQueueDir(conf, attemptId,
-              conf.get(DiskQueue.DISK_QUEUE_PATH_KEY)), true);
-    } catch (IOException e) {
-      LOG.warn("Queue dir couldn't be deleted");
+      Collection<MessageQueue<M>> values = outgoingQueues.values();
+      for (MessageQueue<M> msgQueue : values) {
+        msgQueue.close();
+      }
+      localQueue.close();
+      // remove possible disk queues from the path
+      try {
+        FileSystem.get(conf).delete(
+            DiskQueue.getQueueDir(conf, attemptId,
+                conf.get(DiskQueue.DISK_QUEUE_PATH_KEY)), true);
+      } catch (IOException e) {
+        LOG.warn("Queue dir couldn't be deleted");
+      }
+    } finally {
+      notifyClose();
     }
 
   }
@@ -139,6 +151,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     localQueue = localQueueForNextIteration.getMessageQueue();
     localQueue.prepareRead();
     localQueueForNextIteration = getSynchronizedQueue();
+    notifyInit();
   }
 
   /*
@@ -163,6 +176,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     queue.add(msg);
     peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_SENT, 1L);
     outgoingQueues.put(targetPeerAddress, queue);
+    notifySentMessage(peerName, msg);
   }
 
   /*
@@ -205,5 +219,69 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   public final void setConf(Configuration conf) {
     this.conf = conf;
   }
+
+  private void notifySentMessage(String peerName, M message) {
+    Iterator<MessageEventListener<M>> iterator = this.messageListenerQueue
+        .iterator();
+    while (iterator.hasNext()) {
+      iterator.next().onMessageSent(peerName, message);
+    }
+  }
+
+  private void notifyReceivedMessage(M message) throws IOException {
+    Iterator<MessageEventListener<M>> iterator = this.messageListenerQueue
+        .iterator();
+    while (iterator.hasNext()) {
+      iterator.next().onMessageReceived(message);
+    }
+  }
+
+  private void notifyInit() {
+    Iterator<MessageEventListener<M>> iterator = this.messageListenerQueue
+        .iterator();
+    while (iterator.hasNext()) {
+      iterator.next().onInitialized();
+    }
+  }
+
+  private void notifyClose() {
+    Iterator<MessageEventListener<M>> iterator = this.messageListenerQueue
+        .iterator();
+    while (iterator.hasNext()) {
+      iterator.next().onClose();
+    }
+  }
+
+  
+
+  @Override
+  public void registerListener(MessageEventListener<M> listener)
+      throws IOException {
+    if(listener != null)
+      this.messageListenerQueue.add(listener);
+    
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle) throws IOException{
+    for (Writable message : bundle.getMessages()) {
+      loopBackMessage((M)message);
+    }
+    
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void loopBackMessage(Writable message) throws IOException{
+    this.localQueueForNextIteration.add((M)message);
+    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, 1L);
+    notifyReceivedMessage((M)message);
+    
+  }
+  
+  
+  
+  
 
 }

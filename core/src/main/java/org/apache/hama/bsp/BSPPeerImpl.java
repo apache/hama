@@ -19,30 +19,27 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataInputBuffer;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.Counters.Counter;
+import org.apache.hama.bsp.ft.AsyncRcvdMsgCheckpointImpl;
+import org.apache.hama.bsp.ft.BSPFaultTolerantService;
+import org.apache.hama.bsp.ft.FaultTolerantPeerService;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
 import org.apache.hama.bsp.message.MessageQueue;
-import org.apache.hama.bsp.sync.BSPPeerSyncClient;
 import org.apache.hama.bsp.sync.PeerSyncClient;
-import org.apache.hama.bsp.sync.SyncClient;
-import org.apache.hama.bsp.sync.SyncEventListener;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
@@ -57,10 +54,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
   public static enum PeerCounter {
-    SUPERSTEP_SUM, SUPERSTEPS, TASK_INPUT_RECORDS, TASK_OUTPUT_RECORDS,
-    IO_BYTES_READ, MESSAGE_BYTES_TRANSFERED, MESSAGE_BYTES_RECEIVED,
-    TOTAL_MESSAGES_SENT, TOTAL_MESSAGES_RECEIVED, COMPRESSED_BYTES_SENT,
-    COMPRESSED_BYTES_RECEIVED, TIME_IN_SYNC_MS
+    SUPERSTEP_SUM, SUPERSTEPS, TASK_INPUT_RECORDS, TASK_OUTPUT_RECORDS, IO_BYTES_READ, MESSAGE_BYTES_TRANSFERED, MESSAGE_BYTES_RECEIVED, TOTAL_MESSAGES_SENT, TOTAL_MESSAGES_RECEIVED, COMPRESSED_BYTES_SENT, COMPRESSED_BYTES_RECEIVED, TIME_IN_SYNC_MS
   }
 
   private final Configuration conf;
@@ -78,10 +72,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private PeerSyncClient syncClient;
   private MessageManager<M> messenger;
 
-  // A checkpoint is initiated at the <checkPointInterval>th interval.
-  private int checkPointInterval;
-  private long lastCheckPointStep;
-
   // IO
   private int partition;
   private String splitClass;
@@ -95,6 +85,8 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   private Counters counters;
   private Combiner<M> combiner;
+
+  private FaultTolerantPeerService<M> faultToleranceService;
 
   /**
    * Protected default constructor for LocalBSPRunner.
@@ -127,6 +119,13 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     this.counters = counters;
   }
 
+  public BSPPeerImpl(BSPJob job, Configuration conf, TaskAttemptID taskId,
+      BSPPeerProtocol umbilical, int partition, String splitClass,
+      BytesWritable split, Counters counters) throws Exception {
+    this(job, conf, taskId, umbilical, partition, splitClass, split, counters,
+        -1, TaskStatus.State.RUNNING);
+  }
+
   /**
    * BSPPeer Constructor.
    * 
@@ -140,7 +139,8 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   @SuppressWarnings("unchecked")
   public BSPPeerImpl(BSPJob job, Configuration conf, TaskAttemptID taskId,
       BSPPeerProtocol umbilical, int partition, String splitClass,
-      BytesWritable split, Counters counters) throws Exception {
+      BytesWritable split, Counters counters, long superstep,
+      TaskStatus.State state) throws Exception {
     this.conf = conf;
     this.taskId = taskId;
     this.umbilical = umbilical;
@@ -153,28 +153,29 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     this.fs = FileSystem.get(conf);
 
-    this.checkPointInterval = conf.getInt(Constants.CHECKPOINT_INTERVAL,
-        Constants.DEFAULT_CHECKPOINT_INTERVAL);
-    this.lastCheckPointStep = 0;
-
     String bindAddress = conf.get(Constants.PEER_HOST,
         Constants.DEFAULT_PEER_HOST);
     int bindPort = conf
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
-    initialize();
-    syncClient.register(taskId.getJobID(), taskId, peerAddress.getHostName(),
-        peerAddress.getPort());
-    // initial barrier syncing to get all the hosts to the same point, to get
-    // consistent peernames.
-    syncClient.enterBarrier(taskId.getJobID(), taskId, -1);
-    syncClient.leaveBarrier(taskId.getJobID(), taskId, -1);
-    setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 1.0f,
-        TaskStatus.State.RUNNING, "running", peerAddress.getHostName(),
-        TaskStatus.Phase.STARTING, counters));
 
-    messenger = MessageManagerFactory.getMessageManager(conf);
-    messenger.init(taskId, this, conf, peerAddress);
+    initializeIO();
+    initializeSyncService(superstep, state);
+
+    TaskStatus.Phase phase = TaskStatus.Phase.STARTING;
+    String stateString = "running";
+    if (state == TaskStatus.State.RECOVERING) {
+      phase = TaskStatus.Phase.RECOVERING;
+      stateString = "recovering";
+    }
+
+    setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 1.0f, state,
+        stateString, peerAddress.getHostName(), phase, counters));
+
+    initilizeMessaging();
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Initialized Messaging service.");
+    }
 
     final String combinerName = conf.get("bsp.combiner.class");
     if (combinerName != null) {
@@ -182,12 +183,57 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
           conf.getClassByName(combinerName), conf);
     }
 
+    if (conf.getBoolean(Constants.FAULT_TOLERANCE_FLAG, false)) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Fault tolerance enabled.");
+      }
+      if (superstep > 0)
+        conf.setInt("attempt.superstep", (int) superstep);
+      Class<?> ftClass = conf.getClass(Constants.FAULT_TOLERANCE_CLASS,
+          AsyncRcvdMsgCheckpointImpl.class, BSPFaultTolerantService.class);
+      if (ftClass != null) {
+        if (superstep > 0) {
+          counters.incrCounter(PeerCounter.SUPERSTEP_SUM, superstep);
+        }
+
+        this.faultToleranceService = ((BSPFaultTolerantService<M>) ReflectionUtils
+            .newInstance(ftClass, null)).constructPeerFaultTolerance(job, this,
+            syncClient, peerAddress, this.taskId, superstep, conf, messenger);
+        TaskStatus.State newState = this.faultToleranceService
+            .onPeerInitialized(state);
+
+        if (state == TaskStatus.State.RECOVERING) {
+          if (newState == TaskStatus.State.RUNNING) {
+            phase = TaskStatus.Phase.STARTING;
+            stateString = "running";
+            state = newState;
+          }
+
+          setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 1.0f,
+              state, stateString, peerAddress.getHostName(), phase, counters));
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("State after FT service initialization - "
+                + newState.toString());
+          }
+
+        }
+
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Initialized fault tolerance service");
+        }
+      }
+    }
+    doFirstSync(superstep);
+
+    if (LOG.isDebugEnabled()) {
+      LOG.info(new StringBuffer("BSP Peer successfully initialized for ")
+          .append(this.taskId.toString()).append(" ").append(superstep)
+          .toString());
+    }
   }
 
   @SuppressWarnings("unchecked")
   public final void initialize() throws Exception {
-    syncClient = SyncServiceFactory.getPeerSyncClient(conf);
-    syncClient.init(conf, taskId.getJobID(), taskId);
 
     initInput();
 
@@ -239,6 +285,50 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     }
   }
 
+  public final void initilizeMessaging() throws ClassNotFoundException {
+    messenger = MessageManagerFactory.getMessageManager(conf);
+    messenger.init(taskId, this, conf, peerAddress);
+  }
+
+  public final void initializeSyncService(long superstep, TaskStatus.State state)
+      throws Exception {
+
+    syncClient = SyncServiceFactory.getPeerSyncClient(conf);
+    syncClient.init(conf, taskId.getJobID(), taskId);
+    syncClient.register(taskId.getJobID(), taskId, peerAddress.getHostName(),
+        peerAddress.getPort());
+  }
+
+  private void doFirstSync(long superstep) throws SyncException {
+    if (superstep > 0)
+      --superstep;
+    syncClient.enterBarrier(taskId.getJobID(), taskId, superstep);
+    syncClient.leaveBarrier(taskId.getJobID(), taskId, superstep);
+  }
+
+  @SuppressWarnings("unchecked")
+  public final void initializeIO() throws Exception {
+
+    initInput();
+
+    String outdir = null;
+    if (conf.get("bsp.output.dir") != null) {
+      Path outputDir = new Path(conf.get("bsp.output.dir",
+          "tmp-" + System.currentTimeMillis()), Task.getOutputName(partition));
+      outdir = outputDir.makeQualified(fs).toString();
+    }
+    outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob, outdir);
+    final RecordWriter<K2, V2> finalOut = outWriter;
+
+    collector = new OutputCollector<K2, V2>() {
+      @Override
+      public void collect(K2 key, V2 value) throws IOException {
+        finalOut.write(key, value);
+      }
+    };
+
+  }
+
   @Override
   public final M getCurrentMessage() throws IOException {
     return messenger.getCurrentMessage();
@@ -251,69 +341,17 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   }
 
   /*
-   * returns true if the peer would checkpoint in the next sync.
-   */
-  public final boolean isReadyToCheckpoint() {
-
-    checkPointInterval = conf.getInt(Constants.CHECKPOINT_INTERVAL, 1);
-    if (LOG.isDebugEnabled())
-      LOG.debug(new StringBuffer(1000).append("Enabled = ")
-          .append(conf.getBoolean(Constants.CHECKPOINT_ENABLED, false))
-          .append(" checkPointInterval = ").append(checkPointInterval)
-          .append(" lastCheckPointStep = ").append(lastCheckPointStep)
-          .append(" getSuperstepCount() = ").append(getSuperstepCount())
-          .toString());
-
-    return (conf.getBoolean(Constants.CHECKPOINT_ENABLED, false)
-        && (checkPointInterval != 0) && (((int) (getSuperstepCount() - lastCheckPointStep)) >= checkPointInterval));
-
-  }
-
-  private final String checkpointedPath() {
-    String backup = conf.get("bsp.checkpoint.prefix_path", "/checkpoint/");
-    String ckptPath = backup + bspJob.getJobID().toString() + "/"
-        + getSuperstepCount() + "/" + this.taskId.toString();
-    if (LOG.isDebugEnabled())
-      LOG.debug("Messages are to be saved to " + ckptPath);
-    return ckptPath;
-  }
-
-  final void checkpoint(String checkpointedPath, BSPMessageBundle<M> bundle) {
-    FSDataOutputStream out = null;
-    try {
-      out = this.fs.create(new Path(checkpointedPath));
-      bundle.write(out);
-    } catch (IOException ioe) {
-      LOG.warn("Fail checkpointing messages to " + checkpointedPath, ioe);
-    } finally {
-      try {
-        if (null != out)
-          out.close();
-      } catch (IOException e) {
-        LOG.warn("Fail to close dfs output stream while checkpointing.", e);
-      }
-    }
-  }
-
-  /*
    * (non-Javadoc)
    * @see org.apache.hama.bsp.BSPPeerInterface#sync()
    */
   @Override
   public final void sync() throws IOException, SyncException,
       InterruptedException {
-    long startBarrier = System.currentTimeMillis();
-    enterBarrier();
+
     // normally all messages should been send now, finalizing the send phase
     messenger.finishSendPhase();
     Iterator<Entry<InetSocketAddress, MessageQueue<M>>> it = messenger
         .getMessageIterator();
-
-    boolean shouldCheckPoint;
-
-    if ((shouldCheckPoint = isReadyToCheckpoint())) {
-      lastCheckPointStep = getSuperstepCount();
-    }
 
     while (it.hasNext()) {
       Entry<InetSocketAddress, MessageQueue<M>> entry = it.next();
@@ -321,15 +359,32 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       final Iterable<M> messages = entry.getValue();
 
       final BSPMessageBundle<M> bundle = combineMessages(messages);
-
-      if (shouldCheckPoint) {
-        checkpoint(checkpointedPath(), bundle);
-      }
-
       // remove this message during runtime to save a bit of memory
       it.remove();
+      try {
+        messenger.transfer(addr, bundle);
+      } catch (Exception e) {
+        LOG.error("Error while sending messages", e);
+      }
+    }
 
-      messenger.transfer(addr, bundle);
+    if (this.faultToleranceService != null) {
+      try {
+        this.faultToleranceService.beforeBarrier();
+      } catch (Exception e) {
+        throw new IOException(e);
+      }
+    }
+
+    long startBarrier = System.currentTimeMillis();
+    enterBarrier();
+
+    if (this.faultToleranceService != null) {
+      try {
+        this.faultToleranceService.duringBarrier();
+      } catch (Exception e) {
+        throw new IOException(e);
+      }
     }
 
     leaveBarrier();
@@ -340,9 +395,38 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     currentTaskStatus.setCounters(counters);
 
+    if (this.faultToleranceService != null) {
+      try {
+        this.faultToleranceService.afterBarrier();
+      } catch (Exception e) {
+        throw new IOException(e);
+      }
+    }
+
     umbilical.statusUpdate(taskId, currentTaskStatus);
     // Clear outgoing queues.
     messenger.clearOutgoingQueues();
+
+    // int msgsCount = -1;
+    // if (shouldCheckPoint) {
+    // msgsCount = checkpointReceivedMessages(checkpointedReceivePath());
+    // }
+    //
+    // this.syncClient.storeInformation(this.syncClient.constructKey(
+    // this.bspJob.getJobID(), "checkpoint", String.valueOf(getPeerIndex())),
+    // new IntWritable(msgsCount), false, null);
+
+    // if (msgsCount >= 0) {
+    // ArrayWritable writableArray = new ArrayWritable(IntWritable.class);
+    // Writable[] writeArr = new Writable[2];
+    // writeArr[0] = new IntWritable((int) getSuperstepCount());
+    // writeArr[1] = new IntWritable(msgsCount);
+    // writableArray.set(writeArr);
+    // this.syncClient.storeInformation(
+    // this.syncClient.constructKey(this.bspJob.getJobID(), "checkpoint",
+    // String.valueOf(getPeerIndex())), writableArray, true, null);
+    // }
+
   }
 
   private final BSPMessageBundle<M> combineMessages(Iterable<M> messages) {
@@ -424,8 +508,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   @Override
   public int getPeerIndex() {
-    initPeerNames();
-    return Arrays.binarySearch(getAllPeerNames(), getPeerName());
+    return this.taskId.getTaskID().getId();
   }
 
   @Override

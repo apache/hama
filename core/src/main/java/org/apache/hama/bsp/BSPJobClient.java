@@ -1025,7 +1025,7 @@ public class BSPJobClient extends Configured implements Tool {
     return tokens;
   }
 
-  static class RawSplit implements Writable {
+  public static class RawSplit implements Writable {
     private String splitClass;
     private BytesWritable bytes = new BytesWritable();
     private String[] locations;

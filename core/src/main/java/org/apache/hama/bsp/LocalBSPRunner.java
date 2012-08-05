@@ -46,6 +46,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJobClient.RawSplit;
 import org.apache.hama.bsp.BSPMaster.State;
 import org.apache.hama.bsp.message.MemoryQueue;
+import org.apache.hama.bsp.message.MessageEventListener;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
 import org.apache.hama.bsp.message.MessageQueue;
@@ -407,9 +408,30 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     @Override
     public void finishSendPhase() throws IOException {
-      // TODO Auto-generated method stub
-
     }
+
+    @Override
+    public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle) {
+      for (Writable value : bundle.getMessages()) {
+        loopBackMessage(value);
+      }
+      
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void loopBackMessage(Writable message) {
+      localIncomingMessages.add((M)message);
+      peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
+          1L);
+    }
+
+    @Override
+    public void registerListener(MessageEventListener<M> listener)
+        throws IOException {
+    }
+    
+    
 
   }
 
@@ -528,39 +550,33 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() throws IOException {
       barrier = null;
     }
     @Override
-    public Writable getInformation(String key,
-        Class<? extends Writable> classType) {
-      // TODO Auto-generated method stub
-      return null;
+    public boolean getInformation(String key, Writable writableVal) {
+      return false;
     }
 
     @Override
     public String constructKey(BSPJobID jobId, String... args) {
-      // TODO Auto-generated method stub
       return null;
     }
 
     @Override
     public boolean storeInformation(String key, Writable value,
         boolean permanent, SyncEventListener listener) {
-      // TODO Auto-generated method stub
       return false;
     }
 
     @Override
     public boolean addKey(String key, boolean permanent,
         SyncEventListener listener) {
-      // TODO Auto-generated method stub
       return false;
     }
 
     @Override
     public boolean hasKey(String key) {
-      // TODO Auto-generated method stub
       return false;
     }
 
@@ -568,14 +584,17 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     public boolean registerListener(String key,
         SyncEvent event,
         SyncEventListener listener) {
-      // TODO Auto-generated method stub
       return false;
     }
 
     @Override
     public String[] getChildKeySet(String key, SyncEventListener listener) {
-      // TODO Auto-generated method stub
       return null;
+    }
+
+    @Override
+    public boolean remove(String key, SyncEventListener listener) {
+      return false;
     }
 
 	

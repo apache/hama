@@ -44,7 +44,7 @@ public class JobStatus implements Writable, Cloneable {
   }
 
   public static enum State {
-    RUNNING(1), SUCCEEDED(2), FAILED(3), PREP(4), KILLED(5);
+    RUNNING(1), SUCCEEDED(2), FAILED(3), PREP(4), KILLED(5), RECOVERING(6);
     int s;
 
     State(int s) {
@@ -74,6 +74,9 @@ public class JobStatus implements Writable, Cloneable {
         case KILLED:
           name = "KILLED";
           break;
+        case RECOVERING:
+          name = "RECOVERING";
+          break;
       }
 
       return name;
@@ -86,6 +89,7 @@ public class JobStatus implements Writable, Cloneable {
   public static final int FAILED = 3;
   public static final int PREP = 4;
   public static final int KILLED = 5;
+  public static final int RECOVERING = 6;
 
   private BSPJobID jobid;
   private long progress;

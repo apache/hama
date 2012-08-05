@@ -17,7 +17,6 @@
  */
 package org.apache.hama.bsp.sync;
 
-import java.io.File;
 import java.util.concurrent.Executors;
 
 import junit.framework.TestCase;
@@ -36,38 +35,36 @@ import org.apache.hama.util.BSPNetUtils;
 public class TestSyncServiceFactory extends TestCase {
 
   public static final Log LOG = LogFactory.getLog(TestCase.class);
-  
-  public static class ListenerTest extends ZKSyncEventListener{
+
+  public static class ListenerTest extends ZKSyncEventListener {
 
     private Text value;
-    
-    public ListenerTest(){
+
+    public ListenerTest() {
       value = new Text("init");
     }
-    
-    public String getValue(){
+
+    public String getValue() {
       return value.toString();
     }
-    
+
     @Override
     public void onDelete() {
-      // TODO Auto-generated method stub
-      
+
     }
 
     @Override
     public void onChange() {
       LOG.info("ZK value changed event triggered.");
       value.set("Changed");
-      
+
     }
 
     @Override
     public void onChildKeySetChange() {
-      // TODO Auto-generated method stub
-      
+
     }
-    
+
   }
 
   public void testClientInstantiation() throws Exception {
@@ -96,7 +93,6 @@ public class TestSyncServiceFactory extends TestCase {
 
     @Override
     public void run() {
-      // TODO Auto-generated method stub
       try {
         server.start();
       } catch (Exception e) {
@@ -109,10 +105,13 @@ public class TestSyncServiceFactory extends TestCase {
   public void testZKSyncStore() throws Exception {
     Configuration conf = new Configuration();
     int zkPort = BSPNetUtils.getFreePort(21811);
+    conf.set("bsp.local.dir", "/tmp/hama-test");
+    conf.set("bsp.output.dir", "/tmp/hama-test_out");
     conf.setInt(Constants.PEER_PORT, zkPort);
     conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     conf.setInt(Constants.ZOOKEEPER_CLIENT_PORT, zkPort);
     conf.set(Constants.ZOOKEEPER_SESSION_TIMEOUT, "12000");
+    System.setProperty("user.dir", "/tmp");
     // given null, should return zookeeper
     final SyncServer syncServer = SyncServiceFactory.getSyncServer(conf);
     syncServer.init(conf);
@@ -123,8 +122,8 @@ public class TestSyncServiceFactory extends TestCase {
 
     Thread.sleep(1000);
 
-    final PeerSyncClient syncClient = (PeerSyncClient)
-    		SyncServiceFactory.getPeerSyncClient(conf);
+    final PeerSyncClient syncClient = (PeerSyncClient) SyncServiceFactory
+        .getPeerSyncClient(conf);
     assertTrue(syncClient instanceof ZooKeeperSyncClientImpl);
     BSPJobID jobId = new BSPJobID("abc", 1);
     TaskAttemptID taskId = new TaskAttemptID(new TaskID(jobId, 1), 1);
@@ -142,69 +141,45 @@ public class TestSyncServiceFactory extends TestCase {
       }
     });
 
-    try {
-      IntWritable data = new IntWritable(5);
-      syncClient.storeInformation(
-          syncClient.constructKey(jobId, String.valueOf(1L), "test"), data,
-          true, null);
-      
-      ListenerTest listenerTest = new ListenerTest();
-      
-      
-      syncClient.registerListener(
-          syncClient.constructKey(jobId, String.valueOf(1L), "test"), 
-          ZKSyncEventFactory.getValueChangeEvent(),
-          listenerTest);
-      
-      IntWritable value = (IntWritable) syncClient.getInformation(
-          syncClient.constructKey(jobId, String.valueOf(1L), "test"),
-          IntWritable.class);
-      assertTrue(value != null);
-      int intVal = value == null ? 0 : value.get();
-      assertTrue(intVal == data.get());
-      
-      data.set(6);
-      syncClient.storeInformation(
-          syncClient.constructKey(jobId, String.valueOf(1L), "test"), data,
-          true, null);
-      value = (IntWritable) syncClient.getInformation(
-          syncClient.constructKey(jobId, String.valueOf(1L), "test"),
-          IntWritable.class);
+    IntWritable data = new IntWritable(5);
+    syncClient.storeInformation(
+        syncClient.constructKey(jobId, String.valueOf(1L), "test"), data, true,
+        null);
 
-      
-      intVal = value == null ? 0 : value.get();
-      assertTrue(intVal == data.get());
-      
-      Thread.sleep(5000);
-      
-      assertEquals(true, listenerTest.getValue().equals("Changed"));
-      
-      
-      syncServer.stopServer();
-    } finally {
+    ListenerTest listenerTest = new ListenerTest();
 
-      String dir = System.getProperty("user.dir");
-      LOG.info("Deleting zookeeper files in " + dir);
-      File zookeeperDir = new File(dir + File.separator + "nullzookeeper");
-      if (zookeeperDir.exists()) {
-        File[] files = zookeeperDir.listFiles();
-        for (File file : files) {
-          if (file.isDirectory()) {
-            File[] childFiles = file.listFiles();
-            for (File childFile : childFiles) {
-              LOG.info("Deleting zookeeper file - "
-                  + childFile.getAbsolutePath());
-              childFile.delete();
-            }
-          } else {
-            LOG.info("Deleting zookeeper file - " + file.getAbsolutePath());
-            file.delete();
-          }
-        }
-        zookeeperDir.delete();
+    syncClient.registerListener(
+        syncClient.constructKey(jobId, String.valueOf(1L), "test"),
+        ZKSyncEventFactory.getValueChangeEvent(), listenerTest);
 
-      }
-    }
+    IntWritable valueHolder = new IntWritable();
+    boolean result = syncClient
+        .getInformation(
+            syncClient.constructKey(jobId, String.valueOf(1L), "test"),
+            valueHolder);
+    assertTrue(result);
+    int intVal = valueHolder.get();
+    assertTrue(intVal == data.get());
+
+    data.set(6);
+    syncClient.storeInformation(
+        syncClient.constructKey(jobId, String.valueOf(1L), "test"), data, true,
+        null);
+    valueHolder = new IntWritable();
+    result = syncClient
+        .getInformation(
+            syncClient.constructKey(jobId, String.valueOf(1L), "test"),
+            valueHolder);
+
+    assertTrue(result);
+    intVal = valueHolder.get();
+    assertTrue(intVal == data.get());
+
+    Thread.sleep(5000);
+
+    assertEquals(true, listenerTest.getValue().equals("Changed"));
+
+    syncServer.stopServer();
 
   }
 

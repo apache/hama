@@ -34,7 +34,7 @@ import org.apache.hama.bsp.TaskAttemptID;
  * 
  */
 public interface MessageManager<M extends Writable> {
-  
+
   public static final String QUEUE_TYPE_CLASS = "hama.messenger.queue.class";
 
   /**
@@ -95,5 +95,26 @@ public interface MessageManager<M extends Writable> {
    * 
    */
   public int getNumCurrentMessages();
+
+  /**
+   * Send the messages to self to receive in the next superstep.
+   */
+  public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle) throws IOException;
+  
+  /**
+   * Send the message to self to receive in the next superstep.
+   */
+  public void loopBackMessage(Writable message) throws IOException;
+
+  /**
+   * Register a listener for the events in message manager.
+   * 
+   * @param listener <code>MessageEventListener</code> object that processes the
+   *          messages sent to remote peer.
+   * @throws IOException
+   */
+  public void registerListener(MessageEventListener<M> listener)
+      throws IOException;
+  
 
 }

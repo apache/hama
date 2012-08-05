@@ -17,6 +17,8 @@
  */
 package org.apache.hama.bsp.sync;
 
+import java.io.IOException;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPJobID;
 
@@ -56,7 +58,7 @@ public interface SyncClient {
    * @return the value if found. Returns null if there was any error of if there
    * was no value stored for the key.
    */
-  public Writable getInformation(String key, Class<? extends Writable> classType);
+  public boolean getInformation(String key, Writable valueHolder);
 
   /**
    * Store new key in key set.
@@ -95,4 +97,17 @@ public interface SyncClient {
   public boolean registerListener(String key, SyncEvent event,
       SyncEventListener listener);
 
+  /**
+   * Delete the key and the information stored under it.
+   * @param key
+   * @param listener
+   * @return
+   */
+  public boolean remove(String key, SyncEventListener listener);
+  
+  /**
+   * 
+   */
+  public void close() throws IOException;
+  
 }
