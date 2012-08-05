@@ -69,7 +69,7 @@ public final class BSPTask extends Task {
       boolean shouldKillSelf = false;
       try {
         if (LOG.isDebugEnabled())
-          LOG.debug("Pinging at time " + Calendar.getInstance().toString());
+          LOG.debug("Pinging at time " + Calendar.getInstance().getTimeInMillis());
         // if the RPC call returns false, it means that groomserver does not
         // have knowledge of this task.
         shouldKillSelf = !(pingRPC.ping(taskId) && bspThread.isAlive());

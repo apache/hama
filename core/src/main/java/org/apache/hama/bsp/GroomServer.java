@@ -163,19 +163,20 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
 
       if (actions != null) {
-        assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
+        // assignedPeerNames = new HashMap<TaskAttemptID, Integer>();
         int prevPort = Constants.DEFAULT_PEER_PORT;
 
         for (GroomServerAction action : actions) {
           if (action instanceof LaunchTaskAction) {
             Task t = ((LaunchTaskAction) action).getTask();
 
-            prevPort = BSPNetUtils.getNextAvailable(prevPort);
-            assignedPeerNames.put(t.getTaskID(), prevPort);
-
+            synchronized (assignedPeerNames) {
+              prevPort = BSPNetUtils.getNextAvailable(prevPort);
+              assignedPeerNames.put(t.getTaskID(), prevPort);
+            }
             LOG.info("Launch " + actions.length + " tasks.");
             startNewTask((LaunchTaskAction) action);
-          } else {
+          } else if (action instanceof KillTaskAction) {
 
             // TODO Use the cleanup thread
             // tasksToCleanup.put(action);
@@ -187,10 +188,29 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
               tip.taskStatus.setRunState(TaskStatus.State.FAILED);
               try {
                 tip.killAndCleanup(false);
+                tasks.remove(killAction.getTaskID());
+                runningTasks.remove(killAction.getTaskID());
               } catch (IOException ioe) {
                 throw new DirectiveException("Error when killing a "
                     + "TaskInProgress.", ioe);
               }
+            }
+          } else if (action instanceof RecoverTaskAction) {
+            LOG.info("Recovery action task.");
+            RecoverTaskAction recoverAction = (RecoverTaskAction) action;
+            Task t = recoverAction.getTask();
+            LOG.info("Recovery action task." + t.getTaskID());
+            synchronized (assignedPeerNames) {
+              prevPort = BSPNetUtils.getNextAvailable(prevPort);
+              assignedPeerNames.put(t.getTaskID(), prevPort);
+            }
+            try {
+              startRecoveryTask(recoverAction);
+            } catch (IOException e) {
+              throw new DirectiveException(
+                  new StringBuffer().append("Error starting the recovery task")
+                  .append(t.getTaskID()).toString(),
+                  e);
             }
           }
         }
@@ -321,6 +341,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     this.conf.set(Constants.PEER_HOST, localHostname);
     this.conf.set(Constants.GROOM_RPC_HOST, localHostname);
     this.maxCurrentTasks = conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3);
+    this.assignedPeerNames = new HashMap<TaskAttemptID, Integer>(
+        2 * this.maxCurrentTasks);
 
     int rpcPort = -1;
     String rpcAddr = null;
@@ -571,6 +593,61 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
   }
 
+  private void startRecoveryTask(RecoverTaskAction action) throws IOException {
+    Task t = action.getTask();
+    BSPJob jobConf = null;
+    try {
+      jobConf = new BSPJob(t.getJobID(), t.getJobFile());
+    } catch (IOException e1) {
+      LOG.error(e1);
+      throw e1;
+    }
+
+    TaskInProgress tip = new TaskInProgress(t, jobConf, this.groomServerName);
+    tip.markAsRecoveryTask(action.getSuperstepCount());
+    synchronized (this) {
+      if (tasks.containsKey(t.getTaskID())) {
+        TaskInProgress oldTip = tasks.get(t.getTaskID());
+        try {
+          oldTip.killRunner();
+        } catch (IOException e) {
+          LOG.error("Error killing the current process for " + t.getTaskID(), e);
+          throw e;
+        }
+      }
+
+      Iterator<TaskAttemptID> taskIterator = tasks.keySet().iterator();
+      while(taskIterator.hasNext()){
+        TaskAttemptID taskAttId = taskIterator.next();
+        if(taskAttId.getTaskID().equals(t.getTaskID().getTaskID())){
+          if(LOG.isDebugEnabled()){
+            LOG.debug("Removing tasks with id = " + t.getTaskID().getTaskID());
+          }
+          taskIterator.remove();
+          runningTasks.remove(taskAttId);
+        }
+      }
+      
+      tasks.put(t.getTaskID(), tip);
+      runningTasks.put(t.getTaskID(), tip);
+    }
+    try {
+      localizeJob(tip);
+    } catch (Throwable e) {
+      String msg = ("Error initializing " + tip.getTask().getTaskID() + ":\n" + StringUtils
+          .stringifyException(e));
+      LOG.warn(msg);
+      
+      try {
+        tip.killAndCleanup(true);
+      } catch (IOException ie2) {
+        LOG.info("Error cleaning up " + tip.getTask().getTaskID() + ":\n"
+            + StringUtils.stringifyException(ie2));
+      }
+      throw new IOException("Errro localizing the job.",e);
+    }
+  }
+
   /**
    * Update and report refresh status back to BSPMaster.
    */
@@ -730,13 +807,20 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             + " monitorPeriod = "
             + monitorPeriod
             + " check = "
-            + (tip.taskStatus.getRunState().equals(TaskStatus.State.RUNNING) && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))));
+            + (tip.taskStatus.getRunState().equals(TaskStatus.State.RUNNING) && 
+                (((tip.lastPingedTimestamp == 0 && 
+                ((currentTime - tip.startTime) > 10 * monitorPeriod)) || 
+                ((tip.lastPingedTimestamp > 0) && 
+                    (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))));
 
       // Task is out of contact if it has not pinged since more than
       // monitorPeriod. A task is given a leeway of 10 times monitorPeriod
       // to get started.
       if (tip.taskStatus.getRunState().equals(TaskStatus.State.RUNNING)
-          && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))) {
+          && (((tip.lastPingedTimestamp == 0 
+          && ((currentTime - tip.startTime) > 10 * monitorPeriod)) 
+            || ((tip.lastPingedTimestamp > 0) 
+                && (currentTime - tip.lastPingedTimestamp) > monitorPeriod)))) {
 
         LOG.info("adding purge task: " + tip.getTask().getTaskID());
 
@@ -891,6 +975,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
     private long startTime = 0L;
     private volatile long lastPingedTimestamp = 0L;
+    private long startSuperstepCount = -1;
 
     public TaskInProgress(Task task, BSPJob jobConf, String groomServer) {
       this.task = task;
@@ -899,6 +984,15 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       this.taskStatus = new TaskStatus(task.getJobID(), task.getTaskID(), 0,
           TaskStatus.State.UNASSIGNED, "init", groomServer,
           TaskStatus.Phase.STARTING, task.getCounters());
+    }
+
+    public void markAsRecoveryTask(long superstepNumber) {
+      if (this.taskStatus.getRunState() != TaskStatus.State.FAILED) {
+        this.taskStatus.setRunState(TaskStatus.State.RECOVERING);
+        this.taskStatus.setPhase(TaskStatus.Phase.RECOVERING);
+        this.taskStatus.setStateString("recovering");
+      }
+      this.startSuperstepCount = superstepNumber;
     }
 
     private void localizeTask(Task task) throws IOException {
@@ -954,8 +1048,22 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
       // runner could be null if task-cleanup attempt is not localized yet
       if (runner != null) {
+        if(LOG.isDebugEnabled()){
+          LOG.debug("Killing process for " + this.task.getTaskID());
+        }
         runner.killBsp();
       }
+      runner = null;
+    }
+
+    public synchronized void killRunner() throws IOException {
+      if (runner != null) {
+        if(LOG.isDebugEnabled()){
+          LOG.debug("Killing process for " + this.task.getTaskID());
+        }
+        runner.killBsp();
+      }
+      runner = null;
     }
 
     /**
@@ -1143,6 +1251,11 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         defaultConf.setInt("bsp.checkpoint.port", Integer.parseInt(args[4]));
       }
       defaultConf.setInt(Constants.PEER_PORT, peerPort);
+      
+      long superstep = Long.parseLong(args[4]);
+      TaskStatus.State state = TaskStatus.State.valueOf(args[5]);
+      LOG.debug("Starting peer for sstep " + superstep + " state = " + state);
+
 
       try {
         // use job-specified working directory
@@ -1153,7 +1266,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         @SuppressWarnings("rawtypes")
         final BSPPeerImpl<?, ?, ?, ?, ?> bspPeer = new BSPPeerImpl(job,
             defaultConf, taskid, umbilical, task.partition, task.splitClass,
-            task.split, task.getCounters());
+            task.split, task.getCounters(), superstep, state);
 
         task.run(job, bspPeer, umbilical); // run the task
 
@@ -1195,6 +1308,24 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     }
   }
 
+  public TaskStatus getTaskStatus(TaskAttemptID taskid) {
+    TaskInProgress tip = tasks.get(taskid);
+    if (tip != null) {
+      return tip.getStatus();
+    } else {
+      return null;
+    }
+  }
+
+  public long getStartSuperstep(TaskAttemptID taskid) {
+    TaskInProgress tip = tasks.get(taskid);
+    if (tip != null) {
+      return tip.startSuperstepCount;
+    } else {
+      return -1L;
+    }
+  }
+
   @Override
   public boolean ping(TaskAttemptID taskid) throws IOException {
     TaskInProgress tip = runningTasks.get(taskid);
@@ -1220,8 +1351,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   @Override
   public void fsError(TaskAttemptID taskId, String message) throws IOException {
     LOG.fatal("Task: " + taskId + " - Killed due to FSError: " + message);
-    // TODO
-
   }
 
   @Override
@@ -1254,8 +1383,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
   @Override
   public void process(WatchedEvent event) {
-    // TODO Auto-generated method stub
-
   }
 
 }

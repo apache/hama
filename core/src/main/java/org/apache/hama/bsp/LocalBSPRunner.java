@@ -44,7 +44,10 @@ import org.apache.hama.bsp.BSPMaster.State;
 import org.apache.hama.bsp.message.AbstractMessageManager;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
+import org.apache.hama.bsp.sync.BSPPeerSyncClient;
 import org.apache.hama.bsp.sync.SyncClient;
+import org.apache.hama.bsp.sync.SyncEvent;
+import org.apache.hama.bsp.sync.SyncEventListener;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
@@ -118,7 +121,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     conf.setClass(MessageManagerFactory.MESSAGE_MANAGER_CLASS,
         LocalMessageManager.class, MessageManager.class);
-    conf.setClass(SyncServiceFactory.SYNC_CLIENT_CLASS, LocalSyncClient.class,
+    conf.setClass(SyncServiceFactory.SYNC_PEER_CLASS, LocalSyncClient.class,
         SyncClient.class);
 
     BSPJob job = new BSPJob(new HamaConfiguration(conf), jobID);
@@ -399,7 +402,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   }
 
-  public static class LocalSyncClient implements SyncClient {
+  public static class LocalSyncClient extends BSPPeerSyncClient {
     // note that this is static, because we will have multiple peers
     private static CyclicBarrier barrier;
     private int tasks;
@@ -461,8 +464,51 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
       barrier = null;
+    }
+
+    @Override
+    public String constructKey(BSPJobID jobId, String... args) {
+      return null;
+    }
+
+    @Override
+    public boolean storeInformation(String key, Writable value,
+        boolean permanent, SyncEventListener listener) {
+      return false;
+    }
+
+    @Override
+    public boolean getInformation(String key, Writable valueHolder) {
+      return false;
+    }
+
+    @Override
+    public boolean addKey(String key, boolean permanent,
+        SyncEventListener listener) {
+      return false;
+    }
+
+    @Override
+    public boolean hasKey(String key) {
+      return false;
+    }
+
+    @Override
+    public String[] getChildKeySet(String key, SyncEventListener listener) {
+      return null;
+    }
+
+    @Override
+    public boolean registerListener(String key, SyncEvent event,
+        SyncEventListener listener) {
+      return false;
+    }
+
+    @Override
+    public boolean remove(String key, SyncEventListener listener) {
+      return false;
     }
   }
 

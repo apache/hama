@@ -17,10 +17,6 @@
  */
 package org.apache.hama.bsp.sync;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -47,7 +43,8 @@ import org.apache.zookeeper.data.Stat;
  * This client class abstracts the use of our zookeeper sync code.
  * 
  */
-public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
+public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
+    PeerSyncClient {
 
   /*
    * TODO maybe extract an abstract class and let the subclasses implement
@@ -81,6 +78,8 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
     int bindPort = conf
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
 
+    initialize(this.zk, bspRoot);
+
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
     LOG.info("Start connecting to Zookeeper! At " + peerAddress);
     numBSPTasks = conf.getInt("bsp.peers.num", 1);
@@ -93,14 +92,14 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
 
     try {
       synchronized (zk) {
-        createZnode(bspRoot);
-        final String pathToJobIdZnode = bspRoot + "/"
-            + taskId.getJobID().toString();
-        createZnode(pathToJobIdZnode);
-        final String pathToSuperstepZnode = pathToJobIdZnode + "/" + superstep;
-        createZnode(pathToSuperstepZnode);
+
+        final String pathToSuperstepZnode = 
+            constructKey(taskId.getJobID(), "sync", ""+superstep);
+        
+        writeNode(pathToSuperstepZnode, null, true, null);
         BarrierWatcher barrierWatcher = new BarrierWatcher();
-        // this is really needed to register the barrier watcher, don't remove this line!
+        // this is really needed to register the barrier watcher, don't remove
+        // this line!
         zk.exists(pathToSuperstepZnode + "/ready", barrierWatcher);
         zk.create(getNodeName(taskId, superstep), null, Ids.OPEN_ACL_UNSAFE,
             CreateMode.EPHEMERAL);
@@ -131,7 +130,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
         } else {
           LOG.debug("---> at superstep: " + superstep
               + " task that is creating /ready znode:" + taskId.toString());
-          createEphemeralZnode(pathToSuperstepZnode + "/ready");
+          writeNode(pathToSuperstepZnode + "/ready", null, false, null);
         }
       }
     } catch (Exception e) {
@@ -143,8 +142,10 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
   public void leaveBarrier(final BSPJobID jobId, final TaskAttemptID taskId,
       final long superstep) throws SyncException {
     try {
-      final String pathToSuperstepZnode = bspRoot + "/"
-          + taskId.getJobID().toString() + "/" + superstep;
+//      final String pathToSuperstepZnode = bspRoot + "/"
+//          + taskId.getJobID().toString() + "/" + superstep;
+      final String pathToSuperstepZnode = 
+          constructKey(taskId.getJobID(), "sync", ""+superstep);
       while (true) {
         List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
         LOG.debug("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
@@ -236,8 +237,9 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
   public void register(BSPJobID jobId, TaskAttemptID taskId,
       String hostAddress, long port) {
     try {
-      if (zk.exists("/" + jobId.toString(), false) == null) {
-        zk.create("/" + jobId.toString(), new byte[0], Ids.OPEN_ACL_UNSAFE,
+      String jobRegisterKey = constructKey(jobId, "peers");
+      if (zk.exists(jobRegisterKey, false) == null) {
+        zk.create(jobRegisterKey, new byte[0], Ids.OPEN_ACL_UNSAFE,
             CreateMode.PERSISTENT);
       }
     } catch (KeeperException e) {
@@ -245,7 +247,7 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
     } catch (InterruptedException e) {
       LOG.error(e);
     }
-    registerTask(zk, jobId, hostAddress, port, taskId);
+    registerTask(jobId, hostAddress, port, taskId);
   }
 
   /**
@@ -259,54 +261,14 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
    * @param port
    * @param taskId
    */
-  public static void registerTask(ZooKeeper zk, BSPJobID jobId,
-      String hostAddress, long port, TaskAttemptID taskId) {
+  public void registerTask(BSPJobID jobId, String hostAddress, long port,
+      TaskAttemptID taskId) {
 
-    byte[] taskIdBytes = serializeTaskId(taskId);
+    // byte[] taskIdBytes = serializeTaskId(taskId);
+    String taskRegisterKey = constructKey(jobId, "peers", hostAddress + ":"
+        + port);
+    writeNode(taskRegisterKey, taskId, false, null);
 
-    try {
-      zk.create("/" + jobId.toString() + "/" + hostAddress + ":" + port,
-          taskIdBytes, Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-    } catch (KeeperException e) {
-      LOG.error(e);
-    } catch (InterruptedException e) {
-      LOG.error(e);
-    }
-  }
-
-  private static byte[] serializeTaskId(TaskAttemptID taskId) {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    DataOutputStream out = new DataOutputStream(bos);
-    try {
-      taskId.write(out);
-    } catch (IOException e) {
-      LOG.error(e);
-    } finally {
-      try {
-        out.close();
-      } catch (IOException e) {
-        LOG.error(e);
-      }
-    }
-    return bos.toByteArray();
-  }
-
-  public static TaskAttemptID deserializeTaskId(byte[] arr) {
-    ByteArrayInputStream bis = new ByteArrayInputStream(arr);
-    DataInputStream in = new DataInputStream(bis);
-    TaskAttemptID id = new TaskAttemptID();
-    try {
-      id.readFields(in);
-    } catch (IOException e) {
-      LOG.error(e);
-    } finally {
-      try {
-        in.close();
-      } catch (IOException e) {
-        LOG.error(e);
-      }
-    }
-    return id;
   }
 
   @Override
@@ -314,16 +276,22 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
     if (allPeers == null) {
       TreeMap<Integer, String> sortedMap = new TreeMap<Integer, String>();
       try {
-        allPeers = zk.getChildren("/" + taskId.getJobID().toString(), this)
-            .toArray(new String[0]);
+        allPeers = zk.getChildren(constructKey(taskId.getJobID(), "peers"),
+            this).toArray(new String[0]);
 
         for (String s : allPeers) {
-          byte[] data = zk.getData(
-              "/" + taskId.getJobID().toString() + "/" + s, this, null);
-          TaskAttemptID thatTask = deserializeTaskId(data);
-          LOG.debug("TASK mapping from zookeeper: " + thatTask + " ID:"
-              + thatTask.getTaskID().getId() + " : " + s);
-          sortedMap.put(thatTask.getTaskID().getId(), s);
+          byte[] data = zk.getData(constructKey(taskId.getJobID(), "peers", s),
+              this, null);
+          TaskAttemptID thatTask = new TaskAttemptID(); 
+          boolean result = getValueFromBytes(data, thatTask);
+
+          if(result){
+            LOG.debug("TASK mapping from zookeeper: " + thatTask + " ID:"
+                + thatTask.getTaskID().getId() + " : " + s);
+            sortedMap.put(thatTask.getTaskID().getId(), s);
+          }
+
+
         }
 
       } catch (Exception e) {
@@ -344,8 +312,13 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
   }
 
   @Override
-  public void close() throws InterruptedException {
-    zk.close();
+  public void close() throws IOException {
+    try{
+      zk.close();
+    }
+    catch(InterruptedException e){
+      throw new IOException(e);
+    }
   }
 
   @Override
@@ -377,36 +350,6 @@ public class ZooKeeperSyncClientImpl implements SyncClient, Watcher {
    */
   public String getPeerName() {
     return peerAddress.getHostName() + ":" + peerAddress.getPort();
-  }
-
-  private String getNodeName(TaskAttemptID taskId, long superstep) {
-    return bspRoot + "/" + taskId.getJobID().toString() + "/" + superstep + "/"
-        + taskId.toString();
-  }
-
-  private void createZnode(final String path) throws KeeperException,
-      InterruptedException {
-    createZnode(path, CreateMode.PERSISTENT);
-  }
-
-  private void createEphemeralZnode(final String path) throws KeeperException,
-      InterruptedException {
-    createZnode(path, CreateMode.EPHEMERAL);
-  }
-
-  private void createZnode(final String path, final CreateMode mode)
-      throws KeeperException, InterruptedException {
-    synchronized (zk) {
-      Stat s = zk.exists(path, false);
-      if (null == s) {
-        try {
-          zk.create(path, null, Ids.OPEN_ACL_UNSAFE, mode);
-        } catch (KeeperException.NodeExistsException nee) {
-          LOG.debug("Ignore because znode may be already created at " + path,
-              nee);
-        }
-      }
-    }
   }
 
   /*

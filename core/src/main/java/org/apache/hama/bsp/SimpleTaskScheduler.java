@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.sync.ZKSyncBSPMasterClient;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.monitor.Federator;
 import org.apache.hama.monitor.Federator.Act;
@@ -121,6 +122,12 @@ class SimpleTaskScheduler extends TaskScheduler {
     public void jobRemoved(JobInProgress job) throws IOException {
       queueManager.get().moveJob(PROCESSING_QUEUE, FINISHED_QUEUE, job);
     }
+
+    @Override
+    public void recoverTaskInJob(JobInProgress job) throws IOException {
+      queueManager.get().addJob(WAIT_QUEUE, job);
+    }
+
   }
 
   private class JobProcessor extends Thread implements Schedulable {
@@ -221,11 +228,10 @@ class SimpleTaskScheduler extends TaskScheduler {
         throw new NullPointerException("No job is specified.");
     }
 
-    @Override
-    public Boolean call() {
+    private Boolean scheduleNewTasks() {
 
       // Action to be sent for each task to the respective groom server.
-      Map<GroomServerStatus, List<LaunchTaskAction>> actionMap = new HashMap<GroomServerStatus, List<LaunchTaskAction>>(
+      Map<GroomServerStatus, List<GroomServerAction>> actionMap = new HashMap<GroomServerStatus, List<GroomServerAction>>(
           2 * this.groomStatuses.size());
       Set<Task> taskSet = new HashSet<Task>(2 * jip.tasks.length);
       Task t = null;
@@ -240,6 +246,7 @@ class SimpleTaskScheduler extends TaskScheduler {
 
       // if all tasks could not be scheduled
       if (cnt != this.jip.tasks.length) {
+        LOG.error("Could not schedule all tasks!");
         return Boolean.FALSE;
       }
 
@@ -248,21 +255,49 @@ class SimpleTaskScheduler extends TaskScheduler {
       while (taskIter.hasNext()) {
         Task task = taskIter.next();
         GroomServerStatus groomStatus = jip.getGroomStatusForTask(task);
-        List<LaunchTaskAction> taskActions = actionMap.get(groomStatus);
+        List<GroomServerAction> taskActions = actionMap.get(groomStatus);
         if (taskActions == null) {
-          taskActions = new ArrayList<LaunchTaskAction>(
+          taskActions = new ArrayList<GroomServerAction>(
               groomStatus.getMaxTasks());
         }
         taskActions.add(new LaunchTaskAction(task));
         actionMap.put(groomStatus, taskActions);
       }
 
+      sendDirectivesToGrooms(actionMap);
+
+      return Boolean.TRUE;
+    }
+
+    /**
+     * Schedule recovery tasks.
+     * 
+     * @return TRUE object if scheduling is successful else returns FALSE
+     */
+    private Boolean scheduleRecoveryTasks() {
+
+      // Action to be sent for each task to the respective groom server.
+      Map<GroomServerStatus, List<GroomServerAction>> actionMap = new HashMap<GroomServerStatus, List<GroomServerAction>>(
+          2 * this.groomStatuses.size());
+
+      try {
+        jip.recoverTasks(groomStatuses, actionMap);
+      } catch (IOException e) {
+        return Boolean.FALSE;
+      }
+      return sendDirectivesToGrooms(actionMap);
+
+    }
+
+    private Boolean sendDirectivesToGrooms(
+        Map<GroomServerStatus, List<GroomServerAction>> actionMap) {
       Iterator<GroomServerStatus> groomIter = actionMap.keySet().iterator();
-      while (jip.getStatus().getRunState() == JobStatus.RUNNING
+      while ((jip.getStatus().getRunState() == JobStatus.RUNNING || jip
+          .getStatus().getRunState() == JobStatus.RECOVERING)
           && groomIter.hasNext()) {
 
         GroomServerStatus groomStatus = groomIter.next();
-        List<LaunchTaskAction> actionList = actionMap.get(groomStatus);
+        List<GroomServerAction> actionList = actionMap.get(groomStatus);
 
         GroomProtocol worker = groomServerManager.get().findGroomServer(
             groomStatus);
@@ -276,17 +311,28 @@ class SimpleTaskScheduler extends TaskScheduler {
           LOG.error(
               "Fail to dispatch tasks to GroomServer "
                   + groomStatus.getGroomName(), ioe);
+          return Boolean.FALSE;
         }
 
       }
 
       if (groomIter.hasNext()
-          && jip.getStatus().getRunState() != JobStatus.RUNNING) {
+          && (jip.getStatus().getRunState() != JobStatus.RUNNING || jip
+              .getStatus().getRunState() != JobStatus.RECOVERING)) {
         LOG.warn("Currently master only shcedules job in running state. "
             + "This may be refined in the future. JobId:" + jip.getJobID());
+        return Boolean.FALSE;
       }
 
       return Boolean.TRUE;
+    }
+
+    public Boolean call() {
+      if (jip.isRecoveryPending()) {
+        return scheduleRecoveryTasks();
+      } else {
+        return scheduleNewTasks();
+      }
     }
   }
 
@@ -365,8 +411,10 @@ class SimpleTaskScheduler extends TaskScheduler {
     this.jobProcessor.start();
     if (null != getConf()
         && getConf().getBoolean("bsp.federator.enabled", false)) {
-      this.scheduler.scheduleAtFixedRate(new JvmCollector(federator.get(),
-          ((BSPMaster) groomServerManager.get()).zk), 5, 5, SECONDS);
+      this.scheduler.scheduleAtFixedRate(
+          new JvmCollector(federator.get(),
+              ((ZKSyncBSPMasterClient) ((BSPMaster) groomServerManager.get())
+                  .getSyncClient()).getZK()), 5, 5, SECONDS);
     }
 
     if (null != monitorManager.get()) {

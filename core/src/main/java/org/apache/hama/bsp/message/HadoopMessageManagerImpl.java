@@ -29,7 +29,6 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
-import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
@@ -115,24 +114,19 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
   }
 
   @Override
-  public final void put(M msg) {
-    this.localQueueForNextIteration.add(msg);
-    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, 1L);
+  public final void put(M msg) throws IOException {
+    loopBackMessage(msg);
   }
 
   @Override
-  public final void put(BSPMessageBundle<M> messages) {
-    for (M message : messages.getMessages()) {
-      this.localQueueForNextIteration.add(message);
-    }
+  public final void put(BSPMessageBundle<M> messages) throws IOException {
+    loopBackMessages(messages);
   }
 
   @Override
-  public final void put(BSPCompressedBundle compMsgBundle) {
+  public final void put(BSPCompressedBundle compMsgBundle) throws IOException {
     BSPMessageBundle<M> bundle = compressor.decompressBundle(compMsgBundle);
-    for (M message : bundle.getMessages()) {
-      this.localQueueForNextIteration.add(message);
-    }
+    loopBackMessages(bundle);
   }
 
   @Override
@@ -141,4 +135,5 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
     return versionID;
   }
 
+  
 }

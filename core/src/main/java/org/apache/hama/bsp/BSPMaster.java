@@ -28,12 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,6 +48,8 @@ import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.sync.MasterSyncClient;
+import org.apache.hama.bsp.sync.ZKSyncBSPMasterClient;
 import org.apache.hama.http.HttpServer;
 import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
@@ -56,18 +58,23 @@ import org.apache.hama.ipc.MasterProtocol;
 import org.apache.hama.monitor.fd.FDProvider;
 import org.apache.hama.monitor.fd.Supervisor;
 import org.apache.hama.monitor.fd.UDPSupervisor;
-import org.apache.hama.zookeeper.QuorumPeer;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs.Ids;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 
 /**
  * BSPMaster is responsible to control all the groom servers and to manage bsp
- * jobs.
+ * jobs. It has the following responsibilities:
+ * <ol>
+ * <li> <b>Job submission</b>. BSPMaster is responsible for accepting new job
+ * requests and assigning the job to scheduler for scheduling BSP Tasks defined
+ * for the job.
+ * <li> <b>GroomServer monitoring</b> BSPMaster keeps track of all the groom 
+ * servers in the cluster. It is responsible for adding new grooms to the 
+ * cluster and keeping a tab on all the grooms and could blacklist a groom if 
+ * it get fails the availability requirement.
+ * <li> BSPMaster keeps track of all the task status for each job and handles
+ * the failure of job as requested by the jobs.  
+ * </ol>
  */
 public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     GroomServerManager, Watcher, MonitorManager {
@@ -77,8 +84,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   private static final int FS_ACCESS_RETRY_PERIOD = 10000;
 
   private HamaConfiguration conf;
-  ZooKeeper zk = null;
-  private String bspRoot = null;
+  MasterSyncClient syncClient = null;
 
   /**
    * Constants for BSPMaster's status.
@@ -122,7 +128,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   // Jobs' Meta Data
   private Integer nextJobId = Integer.valueOf(1);
-  // clients
+  private int totalSubmissions = 0; // how many jobs has been submitted by clients
   private int totalTasks = 0; // currnetly running tasks
   private int totalTaskCapacity; // max tasks that groom server can run
 
@@ -141,6 +147,13 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   private final AtomicReference<Supervisor> supervisor = new AtomicReference<Supervisor>();
 
+  /**
+   * ReportGroomStatusHandler keeps track of the status reported by each 
+   * Groomservers on the task they are executing currently. Based on the 
+   * status reported, it is responsible for issuing task recovery requests, 
+   * updating the job progress and other book keeping on currently running
+   * jobs. 
+   */
   private class ReportGroomStatusHandler implements DirectiveHandler {
 
     @Override
@@ -177,8 +190,13 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               jip.getStatus().setProgress(ts.getSuperstepCount());
               jip.getStatus().setSuperstepCount(ts.getSuperstepCount());
             } else if (ts.getRunState() == TaskStatus.State.FAILED) {
-              jip.status.setRunState(JobStatus.FAILED);
-              jip.failedTask(tip, ts);
+              if(jip.handleFailure(tip)){
+                recoverTask(jip);
+              }
+              else {
+                jip.status.setRunState(JobStatus.FAILED);
+                jip.failedTask(tip, ts);
+              }
             }
             if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
               for (JobInProgressListener listener : jobInProgressListeners) {
@@ -192,6 +210,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               jip.getStatus().setProgress(ts.getSuperstepCount());
               jip.getStatus().setSuperstepCount(ts.getSuperstepCount());
             } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
+              
               GroomProtocol worker = findGroomServer(tmpStatus);
               Directive d1 = new DispatchTasksDirective(
                   new GroomServerAction[] { new KillTaskAction(ts.getTaskId()) });
@@ -444,11 +463,26 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     return conf.getLocalPath("bsp.local.dir", pathString);
   }
 
+  /**
+   * Starts the BSP Master process.
+   * @param conf The Hama configuration.
+   * @return an instance of BSPMaster
+   * @throws IOException
+   * @throws InterruptedException
+   */
   public static BSPMaster startMaster(HamaConfiguration conf)
       throws IOException, InterruptedException {
     return startMaster(conf, generateNewIdentifier());
   }
 
+  /**
+   * Starts the BSP Master process
+   * @param conf The Hama configuration
+   * @param identifier Identifier for the job.
+   * @return
+   * @throws IOException
+   * @throws InterruptedException
+   */
   public static BSPMaster startMaster(HamaConfiguration conf, String identifier)
       throws IOException, InterruptedException {
     BSPMaster result = new BSPMaster(conf, identifier);
@@ -465,108 +499,20 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   }
 
   /**
-   * When start the cluster, cleans all zk nodes up.
-   * 
-   * @param conf
+   * Initialize the global synchronization client.
+   * @param conf Hama configuration.
    */
   private void initZK(HamaConfiguration conf) {
-    try {
-      zk = new ZooKeeper(QuorumPeer.getZKQuorumServersString(conf),
-          conf.getInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 1200000), this);
-    } catch (IOException e) {
-      LOG.error("Exception during reinitialization!", e);
-    }
-
-    bspRoot = conf.get(Constants.ZOOKEEPER_ROOT,
-        Constants.DEFAULT_ZOOKEEPER_ROOT);
-    Stat s = null;
-    if (zk != null) {
-      try {
-        s = zk.exists(bspRoot, false);
-      } catch (Exception e) {
-        LOG.error(s, e);
-      }
-
-      if (s == null) {
-        try {
-          zk.create(bspRoot, new byte[0], Ids.OPEN_ACL_UNSAFE,
-              CreateMode.PERSISTENT);
-        } catch (KeeperException e) {
-          LOG.error(e);
-        } catch (InterruptedException e) {
-          LOG.error(e);
-        }
-      } else {
-        this.clearZKNodes(zk);
-      }
-    }
+    this.syncClient = new ZKSyncBSPMasterClient();
+    this.syncClient.init(conf);
   }
 
   /**
-   * Clears all sub-children of node bspRoot
+   * Get a handle of the global synchronization client used by BSPMaster.
+   * @return The synchronization client.
    */
-  public void clearZKNodes(ZooKeeper zk) {
-    clearZKNodes(zk, bspRoot);
-  }
-
-  public static void clearZKNodes(ZooKeeper zk, String pPath) {
-    String path = pPath;
-    if (!path.startsWith("/")) {
-      path = "/" + path;
-      LOG.warn("Path did not start with /, adding it: " + path);
-    }
-    try {
-      Stat s = zk.exists(path, false);
-      if (s != null) {
-        clearZKNodesInternal(zk, path);
-      }
-
-    } catch (Exception e) {
-      LOG.warn("Could not clear zookeeper nodes.", e);
-    }
-  }
-
-  /**
-   * Clears all sub-children of node rooted at path.
-   */
-  private static void clearZKNodesInternal(ZooKeeper zk, String path)
-      throws KeeperException, InterruptedException {
-    ArrayList<String> list = (ArrayList<String>) zk.getChildren(path, false);
-
-    if (list.size() == 0) {
-      return;
-
-    } else {
-      for (String node : list) {
-        clearZKNodes(zk, path + "/" + node);
-        zk.delete(path + "/" + node, -1); // delete any version of this node.
-      }
-    }
-  }
-
-  public void createJobRoot(String string) {
-    try {
-      zk.create("/" + string, new byte[0], Ids.OPEN_ACL_UNSAFE,
-          CreateMode.PERSISTENT);
-    } catch (KeeperException e) {
-      LOG.error(e);
-    } catch (InterruptedException e) {
-      LOG.error(e);
-    }
-  }
-
-  public void deleteJobRoot(String string) {
-    try {
-      for (String node : zk.getChildren("/" + string, this)) {
-        zk.delete("/" + string + "/" + node, 0);
-      }
-
-      zk.delete("/" + string, 0);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } catch (KeeperException e) {
-      e.printStackTrace();
-    }
+  public MasterSyncClient getSyncClient(){
+    return this.syncClient;
   }
 
   /**
@@ -657,6 +603,11 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
     JobInProgress job = new JobInProgress(jobID, new Path(jobFile), this,
         this.conf);
+    ++totalSubmissions;
+    if(LOG.isDebugEnabled()){
+      LOG.debug("Submitting job number = " + totalSubmissions + 
+          " id = " + job.getJobID());
+    }
     return addJob(jobID, job);
   }
 
@@ -804,6 +755,21 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     }
     return job.getStatus();
   }
+  
+  /**
+   * Recovers task in job. To be called when a particular task in a job has failed 
+   * and there is a need to schedule it on a machine.
+   */
+  private synchronized void recoverTask(JobInProgress job) {
+    ++totalSubmissions;
+    for (JobInProgressListener listener : jobInProgressListeners) {
+      try {
+        listener.recoverTaskInJob(job);
+      } catch (IOException ioe) {
+        LOG.error("Fail to alter Scheduler a job is added.", ioe);
+      }
+    }
+  }
 
   @Override
   public JobStatus[] jobsToComplete() throws IOException {
@@ -920,11 +886,14 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     }
   }
 
+  /**
+   * Shuts down the BSP Process and does the necessary clean up.
+   */
   public void shutdown() {
     try {
-      this.zk.close();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+      this.syncClient.close();
+    } catch (IOException e) {
+      LOG.error("Error closing the sync client",e);
     }
     if (null != this.supervisor.get()) {
       this.supervisor.get().stop();

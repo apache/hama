@@ -21,35 +21,54 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.hadoop.io.Text;
+
 /**
- * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
- * {@link org.apache.hama.bsp.GroomServer} to launch a recovery task.
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} 
+ * to the {@link org.apache.hama.bsp.GroomServer} to kill a task.
  */
-class LaunchTaskAction extends GroomServerAction {
-  private Task task;
-
-  public LaunchTaskAction() {
-    super(ActionType.LAUNCH_TASK);
+class UpdatePeerAction extends GroomServerAction {
+  TaskAttemptID taskId;
+  TaskAttemptID peerTaskId;
+  Text groomName;
+  
+  public UpdatePeerAction() {
+    super(ActionType.UPDATE_PEER);
+    taskId = new TaskAttemptID();
+    groomName = new Text("");
+  }
+  
+  public UpdatePeerAction(TaskAttemptID taskId, TaskAttemptID peerTaskId, 
+      String groom) {
+    super(ActionType.UPDATE_PEER);
+    this.taskId = taskId;
+    this.peerTaskId = peerTaskId;
+    this.groomName = new Text(groom);
   }
 
-  public LaunchTaskAction(Task task) {
-    super(ActionType.LAUNCH_TASK);
-    this.task = task;
+  public TaskAttemptID getTaskID() {
+    return taskId;
   }
-
-  public Task getTask() {
-    return task;
+  
+  public TaskAttemptID getPeerTaskID(){
+    return peerTaskId;
   }
-
+  
+  public String getGroomName(){
+    return groomName.toString();
+  }
+  
   @Override
   public void write(DataOutput out) throws IOException {
-    task.write(out);
+    taskId.write(out);
+    peerTaskId.write(out);
+    groomName.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    task = new BSPTask();
-    task.readFields(in);
+    taskId.readFields(in);
+    peerTaskId.readFields(in);
+    groomName.readFields(in);
   }
-
 }

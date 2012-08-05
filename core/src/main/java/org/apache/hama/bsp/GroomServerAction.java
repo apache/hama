@@ -28,7 +28,7 @@ import org.apache.hadoop.io.WritableUtils;
  * A generic directive from the {@link org.apache.hama.bsp.BSPMaster} to the
  * {@link org.apache.hama.bsp.GroomServer} to take some 'action'.
  */
-abstract class GroomServerAction implements Writable {
+public abstract class GroomServerAction implements Writable {
 
   /**
    * Ennumeration of various 'actions' that the {@link BSPMaster} directs the
@@ -49,7 +49,13 @@ abstract class GroomServerAction implements Writable {
     REINIT_GROOM,
 
     /** Ask a task to save its output. */
-    COMMIT_TASK
+    COMMIT_TASK,
+
+    /** Recover a task from failure. */
+    RECOVER_TASK,
+
+    /** Update information on a peer. */
+    UPDATE_PEER
   };
 
   /**
@@ -73,7 +79,17 @@ abstract class GroomServerAction implements Writable {
       case KILL_JOB: {
         action = new KillJobAction();
       }
-        break;
+      break;
+      case RECOVER_TASK:
+      {
+        action = new RecoverTaskAction();
+      }
+      break;
+      case UPDATE_PEER:
+      {
+        action = new UpdatePeerAction();
+      }
+      break;
       case REINIT_GROOM: {
         action = new ReinitGroomAction();
       }

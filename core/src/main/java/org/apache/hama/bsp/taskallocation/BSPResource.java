@@ -15,41 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp;
+package org.apache.hama.bsp.taskallocation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import org.apache.hama.bsp.TaskInProgress;
 
 /**
- * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
- * {@link org.apache.hama.bsp.GroomServer} to launch a recovery task.
+ * <code>BSPResource defines a resource entity that would be used as a factor
+ * for allocating tasks on groom-servers.
  */
-class LaunchTaskAction extends GroomServerAction {
-  private Task task;
+public abstract class BSPResource {
 
-  public LaunchTaskAction() {
-    super(ActionType.LAUNCH_TASK);
-  }
-
-  public LaunchTaskAction(Task task) {
-    super(ActionType.LAUNCH_TASK);
-    this.task = task;
-  }
-
-  public Task getTask() {
-    return task;
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    task.write(out);
-  }
-
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    task = new BSPTask();
-    task.readFields(in);
-  }
+  /**
+   * Returns the list of grooms on which the current resource is available or
+   * local or is best chosen for the task.
+   * 
+   * @param tip The <code>TaskInProgress</code> representing the task to
+   *          schedule.
+   * @return The list of groomserver host names.
+   */
+  public abstract String[] getGrooms(TaskInProgress tip);
 
 }

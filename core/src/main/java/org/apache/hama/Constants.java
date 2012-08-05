@@ -60,6 +60,24 @@ public interface Constants {
   public static final String UTF8_ENCODING = "UTF-8";
 
   public static final String MAX_TASKS_PER_GROOM = "bsp.tasks.maximum";
+  
+  public static final String MAX_TASK_ATTEMPTS = "bsp.tasks.max.attempts";
+
+  public static final int DEFAULT_MAX_TASK_ATTEMPTS = 2;
+
+  ////////////////////////////////////////
+  // Task scheduler related constants
+  // //////////////////////////////////////
+  
+  public static final String TASK_ALLOCATOR_CLASS = "bsp.taskalloc.class";
+  
+  // //////////////////////////////////////
+  // Fault tolerance related constants
+  // //////////////////////////////////////
+
+  public static final String FAULT_TOLERANCE_FLAG = "bsp.ft.enabled";
+  
+  public static final String FAULT_TOLERANCE_CLASS = "bsp.ft.class";
 
   // //////////////////////////////////////
   // Checkpointing related constants

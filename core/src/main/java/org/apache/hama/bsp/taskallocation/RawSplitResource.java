@@ -15,41 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp;
+package org.apache.hama.bsp.taskallocation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import org.apache.hama.bsp.BSPJobClient.RawSplit;
+import org.apache.hama.bsp.TaskInProgress;
 
 /**
- * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
- * {@link org.apache.hama.bsp.GroomServer} to launch a recovery task.
+ * <code>RawSplitResource</code> defines the data block resource that could be
+ * used to find which groom to schedule for data-locality. 
  */
-class LaunchTaskAction extends GroomServerAction {
-  private Task task;
+public class RawSplitResource extends BSPResource{
 
-  public LaunchTaskAction() {
-    super(ActionType.LAUNCH_TASK);
+  private RawSplit split;
+  
+  public RawSplitResource(){
+    
   }
-
-  public LaunchTaskAction(Task task) {
-    super(ActionType.LAUNCH_TASK);
-    this.task = task;
+  
+  /**
+   * Initialize the resource with data block split information.
+   * @param split The data-split provided by <code>BSPJobClient</client>
+   */
+  public RawSplitResource(RawSplit split){
+    this.split = split;
   }
-
-  public Task getTask() {
-    return task;
-  }
-
+  
   @Override
-  public void write(DataOutput out) throws IOException {
-    task.write(out);
-  }
-
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    task = new BSPTask();
-    task.readFields(in);
+  public String[] getGrooms(TaskInProgress tip) {
+    return split.getLocations();
   }
 
 }

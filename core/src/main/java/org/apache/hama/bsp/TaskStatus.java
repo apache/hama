@@ -37,13 +37,14 @@ public class TaskStatus implements Writable, Cloneable {
 
   // enumeration for reporting current phase of a task.
   public static enum Phase {
-    STARTING, COMPUTE, BARRIER_SYNC, CLEANUP
+    STARTING, COMPUTE, BARRIER_SYNC, CLEANUP, RECOVERING
   }
 
   // what state is the task in?
   public static enum State {
     RUNNING, SUCCEEDED, FAILED, UNASSIGNED, KILLED, COMMIT_PENDING,
-    FAILED_UNCLEAN, KILLED_UNCLEAN
+    FAILED_UNCLEAN, KILLED_UNCLEAN, FAULT_NOTIFIED, RECOVERY_SCHEDULING,
+    RECOVERY_SCHEDULED, RECOVERING
   }
 
   private BSPJobID jobId;
