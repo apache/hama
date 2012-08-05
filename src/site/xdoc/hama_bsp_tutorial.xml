@@ -40,7 +40,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <br/>
     The extending class must override the bsp() method, which is declared like this:
     </p>
-    <pre class="green">
+    <pre>
   public abstract void bsp(BSPPeer&lt;K1, V1, K2, V2, M extends Writable&gt; peer) throws IOException, 
     SyncException, InterruptedException;</pre>
     
@@ -56,7 +56,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <br/><br/>
     After your own BSP is created, you will need to configure a <b>BSPJob</b> and submit it to Hama cluster to execute a job.
     The BSP job configuration and submission interfaces is almost the same as the MapReduce job configuration:</p>
-    <pre class="green">
+    <pre>
   HamaConfiguration conf = new HamaConfiguration();
   BSPJob job = new BSPJob(conf, MyBSP.class);
   job.setJobName("My BSP program");
@@ -68,9 +68,9 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <p>See the below section for more detailed description of BSP user interfaces.</p>
     
     <subsection name="User Interfaces"></subsection>
-    <h5>Inputs and Outputs</h5>
+    <h4>Inputs and Outputs</h4>
     <p>When setting up a BSPJob, you can provide a Input/OutputFormat and Paths like this:</p>
-    <pre class="green">
+    <pre>
   job.setInputPath(new Path("/tmp/sequence.dat");
   job.setInputFormat(org.apache.hama.bsp.SequenceFileInputFormat.class);
   or,
@@ -87,7 +87,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <p>Then, you can read the input and write the output from the methods in BSP class which has "BSPPeer" which contains an communication, counters, and IO interfaces as parameter.
     In this case we read a normal text file:</p>
 
-    <pre class="green">
+    <pre>
  @Override
   public final void bsp(
       BSPPeer&lt;LongWritable, Text, Text, LongWritable, Text&gt; peer)
@@ -108,7 +108,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     There is also a function which allows you to re-read the input from the beginning.
     This snippet reads the input five times:
     </p>
-    <pre class="green">
+    <pre>
   for(int i = 0; i &lt; 5; i++){
     LongWritable key = new LongWritable();
     Text value = new Text();
@@ -119,7 +119,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     peer.reopenInput()
   }</pre>
   
-    <h5>Communication</h5>
+    <h4>Communication</h4>
     <p>Hama BSP provides simple but powerful communication APIs for many purposes. 
     We tried to follow the standard library of BSP world as much as possible. 
     The following table describes all the methods you can use:</p>
@@ -137,7 +137,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
     <p>The send() and all the other functions are very flexible. Here is an example that sends a message to all peers:</p>
     
-    <pre class="green">
+    <pre>
   @Override
   public void bsp(
       BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable, Text&gt; peer)
@@ -150,7 +150,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     peer.sync();
   }</pre>
     
-    <h5>Synchronization</h5>
+    <h4>Synchronization</h4>
 
     <p>When all the processes have entered the barrier via the sync() method, 
     the Hama proceeds to the next superstep. 
@@ -162,7 +162,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     For example, the sync() method also can be called in a for loop 
     so that you can use to program the iterative methods sequentially:</p>
     
-    <pre class="green">
+    <pre>
   @Override
   public void bsp(
       BSPPeer&lt;NullWritable, NullWritable, Text, DoubleWritable, Text&gt; peer)
@@ -191,7 +191,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
     <subsection name="Example: Pi Calculation"></subsection>
     <p>Here is an BSP-based Pi Calculation example and submit it to Hama cluster:</p>
-    <pre class="green">
+    <pre>
   private static Path TMP_OUTPUT = new Path("/tmp/pi-" + System.currentTimeMillis());
 
   public static class MyEstimator extends

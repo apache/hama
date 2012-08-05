@@ -31,8 +31,7 @@ public class RandomVariable {
    * @return a double between 0 and 1.
    */
   public static double rand() {
-    double x = Math.random();
-    return x;
+    return Math.random();
   }
 
   /**
@@ -44,8 +43,7 @@ public class RandomVariable {
    */
   public static int randInt(int i0, int i1) {
     double x = rand();
-    int i = i0 + (int) Math.floor((i1 - i0 + 1) * x);
-    return i;
+    return i0 + (int) Math.floor((i1 - i0 + 1) * x);
   }
   
   /**
@@ -74,8 +72,7 @@ public class RandomVariable {
    * @return a double.
    */
   public static double uniform(double min, double max) {
-    double x = min + (max - min) * rand();
-    return x;
+    return min + (max - min) * rand();
   }
 
   /**
@@ -109,9 +106,8 @@ public class RandomVariable {
    * @return a double.
    */
   public static double normal(double mu, double sigma) {
-    double x = mu + sigma * Math.cos(2 * Math.PI * rand())
+    return mu + sigma * Math.cos(2 * Math.PI * rand())
         * Math.sqrt(-2 * Math.log(rand()));
-    return x;
   }
 
   /**
@@ -137,9 +133,8 @@ public class RandomVariable {
    * @return a double.
    */
   public static double logNormal(double mu, double sigma) {
-    double x = mu + sigma * Math.cos(2 * Math.PI * rand())
+    return mu + sigma * Math.cos(2 * Math.PI * rand())
         * Math.sqrt(-2 * Math.log(rand()));
-    return x;
   }
 
   /**
@@ -150,8 +145,7 @@ public class RandomVariable {
    * @return a double.
    */
   public static double exponential(double lambda) {
-    double x = -1 / lambda * Math.log(rand());
-    return x;
+    return -1 / lambda * Math.log(rand());
   }
 
   /**
@@ -162,9 +156,8 @@ public class RandomVariable {
    * @return a double.
    */
   public static double triangular(double min, double max) {
-    double x = min / 2 + (max - min) * rand() / 2 + min / 2 + (max - min)
+    return min / 2 + (max - min) * rand() / 2 + min / 2 + (max - min)
         * rand() / 2;
-    return x;
   }
 
   /**
@@ -177,10 +170,9 @@ public class RandomVariable {
    */
   public static double triangular(double min, double med, double max) {
     double y = rand();
-    double x = (y < ((med - min) / (max - min))) ? (min + Math.sqrt(y
+    return (y < ((med - min) / (max - min))) ? (min + Math.sqrt(y
         * (max - min) * (med - min))) : (max - Math.sqrt((1 - y) * (max - min)
         * (max - med)));
-    return x;
   }
 
   /**
@@ -209,8 +201,7 @@ public class RandomVariable {
    * @return a double.
    */
   public static double cauchy(double mu, double sigma) {
-    double x = sigma * Math.tan(Math.PI * (rand() - 0.5)) + mu;
-    return x;
+    return sigma * Math.tan(Math.PI * (rand() - 0.5)) + mu;
   }
 
   /**
@@ -221,7 +212,6 @@ public class RandomVariable {
    * @return a double.
    */
   public static double weibull(double lambda, double c) {
-    double x = Math.pow(-Math.log(1 - rand()), 1 / c) / lambda;
-    return x;
+    return Math.pow(-Math.log(1 - rand()), 1 / c) / lambda;
   }
 }

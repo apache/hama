@@ -27,7 +27,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     
     <subsection name="Deploy a Hama cluster on EC2"></subsection>
     <p>The following commands install Whirr and start a 5 node Hama cluster on Amazon EC2 in 5 minutes or less.
-    <pre class="green">
+    <pre>
   % curl -O http://www.apache.org/dist/whirr/whirr-0.x.0/whirr-0.x.0.tar.gz
   % tar zxf whirr-0.x.0.tar.gz; cd whirr-0.x.0
 
@@ -38,7 +38,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
   % bin/whirr launch-cluster --config recipes/hama-ec2.properties --private-key-file ~/.ssh/id_rsa_whirr</pre>
     </p>
     <subsection name="Execute Hama Examples"></subsection>
-    <pre class="green">
+    <pre>
   % cd /usr/local/hama-0.x.0
   % bin/hama jar hama-examples-x.x.x.jar [args]</pre>
     </body>

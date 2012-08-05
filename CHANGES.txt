@@ -1,5 +1,15 @@
 Hama Change Log
 
+Release 0.6 (unreleased changes)
+
+  NEW FEATURES
+
+  BUG FIXES
+
+   HAMA-608: LocalRunner should honor the configured queues (tjungblut)
+
+  IMPROVEMENTS
+
 Release 0.5 - April 10, 2012 
 
   NEW FEATURES

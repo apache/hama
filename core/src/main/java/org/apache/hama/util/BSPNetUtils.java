@@ -17,16 +17,12 @@
  */
 package org.apache.hama.util;
 
-import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.UnknownHostException;
-import java.util.NoSuchElementException;
-
 import org.apache.hama.Constants;
 import org.apache.mina.util.AvailablePortFinder;
+
+import java.io.IOException;
+import java.net.*;
+import java.util.NoSuchElementException;
 
 /**
  * NetUtils for our needs.
@@ -37,7 +33,7 @@ public class BSPNetUtils {
   /**
    * Gets the canonical hostname of this machine.
    * 
-   * @return
+   * @return String representing host canonical host name
    * @throws UnknownHostException
    */
   public static String getCanonicalHostname() throws UnknownHostException {
@@ -71,8 +67,8 @@ public class BSPNetUtils {
    * Gets a new InetSocketAddress from the given peerName. peerName must contain
    * a colon to distinct between host and port.
    * 
-   * @param peerName
-   * @return
+   * @param peerName the name as a String of the BSP peer to get the address from
+   * @return the InetSocketAddress of the given BSP peer
    */
   public static InetSocketAddress getAddress(String peerName) {
     String[] peerAddrParts = peerName.split(":");

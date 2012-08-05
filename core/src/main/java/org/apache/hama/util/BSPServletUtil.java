@@ -17,16 +17,16 @@
  */
 package org.apache.hama.util;
 
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map.Entry;
-
 import org.apache.hadoop.util.ServletUtil;
 import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.GroomServerStatus;
 import org.apache.hama.bsp.JobStatus;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map.Entry;
 
 public class BSPServletUtil extends ServletUtil {
 
@@ -103,7 +103,7 @@ public class BSPServletUtil extends ServletUtil {
     for (Entry<String, GroomServerStatus> entry : status
         .getActiveGroomServerStatus().entrySet()) {
       sb.append("<tr><td>");
-      sb.append("<a href='http://" + entry.getKey() + "'>");
+      sb.append("<a href='http://").append(entry.getKey()).append("'>");
       sb.append(entry.getKey()).append("</a></td><td>");
       sb.append(entry.getValue().getGroomHostName()).append("</td>").append(
           "<td>").append(entry.getValue().getMaxTasks()).append("</td><td>");
