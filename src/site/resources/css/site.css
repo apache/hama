@@ -80,7 +80,7 @@ pre {
 }
 
 #leftColumn {
- width: 170px;
+ max-width: 180px;
  float:left;
  overflow: auto;
 }
