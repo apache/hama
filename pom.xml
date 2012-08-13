@@ -269,7 +269,7 @@
         <version>2.6</version>
         <configuration>
           <parallel>methods</parallel>
-          <threadCount>1</threadCount>
+          <threadCount>10</threadCount>
           <forkMode>pertest</forkMode>
         </configuration>
       </plugin>

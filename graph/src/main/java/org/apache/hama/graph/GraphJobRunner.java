@@ -391,7 +391,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     Vertex<V, E, M> vertex = newVertexInstance(vertexClass, conf);
     vertex.setPeer(peer);
     vertex.runner = this;
-    
+
     KeyValuePair<Writable, Writable> next = null;
     int lines = 0;
     while ((next = peer.readNext()) != null) {
@@ -400,7 +400,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       if (!vertexFinished) {
         continue;
       }
-      
+
       if (vertex.getEdges() == null) {
         vertex.setEdges(new ArrayList<Edge<V, E>>(0));
       }
@@ -427,9 +427,9 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       vertex = newVertexInstance(vertexClass, conf);
       vertex.setPeer(peer);
       vertex.runner = this;
-      
+
       lines++;
-      if((lines % 100000) == 0) {
+      if ((lines % 100000) == 0) {
         peer.sync();
         GraphJobMessage msg = null;
         while ((msg = peer.getCurrentMessage()) != null) {
@@ -455,7 +455,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     }
 
     LOG.info("Loading finished at " + peer.getSuperstepCount() + " steps.");
-    
+
     /*
      * If the user want to repair the graph, it should traverse through that
      * local chunk of adjancency list and message the corresponding peer to

@@ -46,7 +46,8 @@ public final class GraphJobMessage implements Writable {
   public static Class<? extends Writable> VERTEX_VALUE_CLASS;
   public static Class<? extends Writable> EDGE_VALUE_CLASS;
 
-  private int flag = MAP_FLAG;
+  // default flag to -1 "unknown"
+  private int flag = -1;
   private MapWritable map;
   private Writable vertexId;
   private Writable vertexValue;
