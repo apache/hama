@@ -199,6 +199,10 @@ public class TaskInProgress {
     } else {
       String splitClass = null;
       BytesWritable split = null;
+      if (rawSplit != null) {
+    	  splitClass = rawSplit.getClassName();
+    	  split = rawSplit.getBytes();
+      }
       currentTaskId = taskId;
       String groomName = groomStatus.getGroomHostName();
       Task t = new BSPTask(jobId, jobFile, taskId, partition, splitClass, split);
@@ -209,44 +213,16 @@ public class TaskInProgress {
 
   }
 
-  // /* Remove */
-  // private Task getGroomForTask(TaskAttemptID taskid,
-  // Map<String, GroomServerStatus> grooms,
-  // Map<GroomServerStatus, Integer> tasksInGroomMap) {
-  // String splitClass = null;
-  // BytesWritable split = null;
-  // Task t = null;
-  // if (rawSplit != null) {
-  // splitClass = rawSplit.getClassName();
-  // split = rawSplit.getBytes();
-  // String[] possibleLocations = rawSplit.getLocations();
-  // String groomName = getGroomToSchedule(taskid, grooms, tasksInGroomMap,
-  // possibleLocations);
-  // if (groomName != null) {
-  // t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
-  // activeTasks.put(taskid, groomName);
-  // myGroomStatus = grooms.get(groomName);
-  // }
-  // }
-  //
-  // if (t == null) {
-  // String groomName = getAnyGroomToSchedule(grooms, tasksInGroomMap);
-  // if (groomName != null) {
-  // t = new BSPTask(jobId, jobFile, taskid, partition, splitClass, split);
-  // activeTasks.put(taskid, groomName);
-  // myGroomStatus = grooms.get(groomName);
-  // }
-  // }
-  //
-  // return t;
-  // }
-
   private Task getGroomForRecoverTaskInHosts(TaskAttemptID taskid,
       Map<String, GroomServerStatus> grooms,
       Map<GroomServerStatus, Integer> tasksInGroomMap,
       String[] possibleLocations) {
     String splitClass = null;
     BytesWritable split = null;
+    if (rawSplit != null) {
+  	  splitClass = rawSplit.getClassName();
+  	  split = rawSplit.getBytes();
+    }
     Task t = null;
     String groomName = getGroomToSchedule(taskid, grooms, tasksInGroomMap,
         possibleLocations);

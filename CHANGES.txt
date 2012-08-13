@@ -30,11 +30,12 @@ Release 0.5 - April 10, 2012
 
   BUG FIXES
 
+   HAMA-621: Input Splits are not initialized for a job (surajmenon via tjungblut)
    HAMA-595: Fix NullPointerException in Task Scheduler (surajmenon)
 
   IMPROVEMENTS
 
-    HAMA-584: Change Pagerank IO format to human-readable text for easy debug (tjungblut vai edwardyoon)
+    HAMA-584: Change Pagerank IO format to human-readable text for easy debug (tjungblut via edwardyoon)
     HAMA-590: Fix TestSubmitGraphJob tests (tjungblut)
     HAMA-582: Task's error logs should be displayed on client-end when job is failed (edwardyoon)
     HAMA-580: Improve input of graph module (tjungblut)

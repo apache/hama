@@ -464,7 +464,7 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
     } else {
       for (String node : list) {
         clearZKNodes(path + "/" + node);
-        LOG.info("Deleting " + path + "/" + node);
+        LOG.debug("Deleting " + path + "/" + node);
         zk.delete(path + "/" + node, -1); // delete any version of this
         // node.
       }

@@ -348,8 +348,12 @@ public class JobInProgress {
         GroomServerStatus groomStatus = taskAllocationStrategy
             .getGroomToAllocate(groomStatuses, selectedGrooms,
                 taskCountInGroomMap, resources, tasks[i]);
-        if (groomStatus != null)
+        if (groomStatus != null){
           result = tasks[i].constructTask(groomStatus);
+        }
+        else if (LOG.isDebugEnabled()){
+        	LOG.debug("Could not find a groom to schedule task");
+        }
         if (result != null) {
           updateGroomTaskDetails(tasks[i].getGroomServerStatus(), result);
         }

@@ -83,14 +83,25 @@ public class BestEffortDataLocalTaskAllocator implements TaskAllocationStrategy 
     for (int i = 0; i < possibleLocations.length; ++i) {
       String location = possibleLocations[i];
       GroomServerStatus groom = grooms.get(location);
-      if (groom == null)
+      if (groom == null){
+        if(LOG.isDebugEnabled()){
+          LOG.debug("Could not find groom for location " + location);
+        }
         continue;
+      }
       Integer taskInGroom = tasksInGroomMap.get(groom);
       taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+      if(LOG.isDebugEnabled()){
+        LOG.debug("taskInGroom = " + taskInGroom + " max tasks = " + groom.getMaxTasks()
+            + " location = " + location + " groomhostname = " + groom.getGroomHostName());
+      }
       if (taskInGroom < groom.getMaxTasks()
           && location.equals(groom.getGroomHostName())) {
         return groom.getGroomHostName();
       }
+    }
+    if(LOG.isDebugEnabled()){
+      LOG.debug("Returning null");
     }
     return null;
   }
@@ -100,8 +111,12 @@ public class BestEffortDataLocalTaskAllocator implements TaskAllocationStrategy 
       Map<String, GroomServerStatus> groomStatuses, String[] selectedGrooms,
       Map<GroomServerStatus, Integer> taskCountInGroomMap,
       BSPResource[] resources, TaskInProgress taskInProgress) {
-    if (!taskInProgress.canStartTask())
+    if (!taskInProgress.canStartTask()) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Exceeded allowed attempts.");
+      }
       return null;
+    }
 
     String groomName = null;
     if (selectedGrooms != null) {
