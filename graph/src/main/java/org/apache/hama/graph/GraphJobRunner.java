@@ -365,7 +365,11 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
               && vertexID.toString().startsWith(S_FLAG_AGGREGATOR_INCREMENT)) {
             int index = Integer.parseInt(vertexID.toString().split(";")[1]);
             if (isAbstractAggregator[index]) {
-              LOG.info("_________ " + index + " / " + e.getKey() + " / " + e.getValue());
+              LOG.info("_________ " + index + " / " + e.getKey() + " / "
+                  + e.getValue());
+              LOG.info("_________+ "
+                  + (masterAggregator == null ? "NULL! " : " ")
+                  + isMasterTask(peer) + " " + peer.getPeerName());
               LOG.info("_________++ " + masterAggregator[index]);
               ((AbstractAggregator<M, Vertex<V, E, M>>) masterAggregator[index])
                   .addTimesAggregated(((IntWritable) e.getValue()).get());
