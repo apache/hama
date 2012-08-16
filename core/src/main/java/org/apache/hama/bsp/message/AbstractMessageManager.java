@@ -64,6 +64,9 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   // the task attempt id
   protected TaskAttemptID attemptId;
 
+  // to maximum cached connections in the concrete message manager
+  protected int maxCachedConnections = 100;
+
   // List of listeners for all the sent messages
   protected Queue<MessageEventListener<M>> messageListenerQueue;
 
@@ -81,9 +84,9 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     this.peer = peer;
     this.conf = conf;
     this.peerAddress = peerAddress;
-    localQueue = getQueue();
-    localQueueForNextIteration = getSynchronizedQueue();
-    
+    this.localQueue = getQueue();
+    this.localQueueForNextIteration = getSynchronizedQueue();
+    this.maxCachedConnections = conf.getInt(MAX_CACHED_CONNECTIONS_KEY, 100);
   }
 
   /*
@@ -252,36 +255,30 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     }
   }
 
-  
-
   @Override
   public void registerListener(MessageEventListener<M> listener)
       throws IOException {
-    if(listener != null)
+    if (listener != null)
       this.messageListenerQueue.add(listener);
-    
+
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-  public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle) throws IOException{
+  public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle)
+      throws IOException {
     for (Writable message : bundle.getMessages()) {
-      loopBackMessage((M)message);
+      loopBackMessage(message);
     }
-    
+
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public void loopBackMessage(Writable message) throws IOException{
-    this.localQueueForNextIteration.add((M)message);
+  public void loopBackMessage(Writable message) throws IOException {
+    this.localQueueForNextIteration.add((M) message);
     peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, 1L);
-    notifyReceivedMessage((M)message);
-    
+    notifyReceivedMessage((M) message);
+
   }
-  
-  
-  
-  
 
 }

@@ -140,6 +140,16 @@
     <value>10000</value>
     <description>The default timeout period for checking groom server health.</description>
   </property>
+
+  <property>
+    <name>hama.messenger.max.cached.connections</name>
+    <value>100</value>
+    <description>This changes the maximum number of connections that are cached
+    between the peers, normally a LRU cache is used. This affects the memory
+    consumption per task and the performance. Increasing it will give you a speed-up
+    but it trades more memory.
+    </description>
+  </property>
   
   <!--
   Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.

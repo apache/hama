@@ -34,7 +34,8 @@ Release 0.5 - April 10, 2012
    HAMA-595: Fix NullPointerException in Task Scheduler (surajmenon)
 
   IMPROVEMENTS
-
+   
+    HAMA-593: Improve RPC scalability (Mayank Mishra via tjungblut)
     HAMA-584: Change Pagerank IO format to human-readable text for easy debug (tjungblut via edwardyoon)
     HAMA-590: Fix TestSubmitGraphJob tests (tjungblut)
     HAMA-582: Task's error logs should be displayed on client-end when job is failed (edwardyoon)

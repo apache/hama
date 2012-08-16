@@ -20,7 +20,7 @@ package org.apache.hama.bsp.message;
 import org.apache.hadoop.io.Writable;
 
 public interface Sender<M extends Writable> {
-  
+
   public static final org.apache.avro.Protocol PROTOCOL = org.apache.avro.Protocol
       .parse("{\"protocol\":\"Sender\",\"namespace\":\"de.jungblut.avro\",\"types\":[{\"type\":\"record\",\"name\":\"AvroBSPMessageBundle\",\"fields\":[{\"name\":\"data\",\"type\":\"bytes\"}]}],\"messages\":{\"transfer\":{\"request\":[{\"name\":\"messagebundle\",\"type\":\"AvroBSPMessageBundle\"}],\"response\":\"null\"}}}");
 

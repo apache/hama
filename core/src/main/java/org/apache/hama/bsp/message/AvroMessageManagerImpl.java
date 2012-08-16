@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.avro.AvroRemoteException;
 import org.apache.avro.ipc.NettyServer;
@@ -38,20 +39,39 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
+import org.apache.hama.util.LRUCache;
 
 public final class AvroMessageManagerImpl<M extends Writable> extends
     CompressableMessageManager<M> implements Sender<M> {
 
   private NettyServer server = null;
 
+  // also cache the senders, getting a new sender from a transceiver generates
+  // exceptions
   private final HashMap<InetSocketAddress, Sender<M>> peers = new HashMap<InetSocketAddress, Sender<M>>();
+  private LRUCache<InetSocketAddress, NettyTransceiver> peersLRUCache;
 
+  @SuppressWarnings("serial")
   @Override
   public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
       Configuration conf, InetSocketAddress addr) {
     super.init(attemptId, peer, conf, addr);
     super.initCompression(conf);
     server = new NettyServer(new SpecificResponder(Sender.class, this), addr);
+    peersLRUCache = new LRUCache<InetSocketAddress, NettyTransceiver>(
+        maxCachedConnections) {
+      @Override
+      protected final boolean removeEldestEntry(
+          Map.Entry<InetSocketAddress, NettyTransceiver> eldest) {
+        if (size() > this.capacity) {
+          NettyTransceiver client = eldest.getValue();
+          client.close();
+          peers.remove(eldest.getKey());
+          return true;
+        }
+        return false;
+      }
+    };
   }
 
   @Override
@@ -64,21 +84,32 @@ public final class AvroMessageManagerImpl<M extends Writable> extends
     this.loopBackMessages(messages);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException {
     AvroBSPMessageBundle<M> msg = new AvroBSPMessageBundle<M>();
     msg.setData(serializeMessage(bundle));
-    Sender<M> sender = peers.get(addr);
+    Sender<M> sender = getSender(addr);
+    sender.transfer(msg);
+  }
 
-    if (sender == null) {
-      NettyTransceiver client = new NettyTransceiver(addr);
-      sender = SpecificRequestor.getClient(Sender.class, client);
+  /**
+   * @param addr, socket address to which BSP Peer Connection will be
+   *          established
+   * @return BSP Peer Connection, tried to return cached connection, else
+   *         returns a new connection and caches it
+   * @throws IOException
+   */
+  @SuppressWarnings("unchecked")
+  private final Sender<M> getSender(InetSocketAddress addr) throws IOException {
+    NettyTransceiver client = peersLRUCache.get(addr);
+    if (client == null) {
+      client = new NettyTransceiver(addr);
+      Sender<M> sender = SpecificRequestor.getClient(Sender.class, client);
+      peersLRUCache.put(addr, client);
       peers.put(addr, sender);
     }
-
-    sender.transfer(msg);
+    return peers.get(addr);
   }
 
   @Override

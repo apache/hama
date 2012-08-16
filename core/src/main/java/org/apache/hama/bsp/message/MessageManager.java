@@ -36,6 +36,7 @@ import org.apache.hama.bsp.TaskAttemptID;
 public interface MessageManager<M extends Writable> {
 
   public static final String QUEUE_TYPE_CLASS = "hama.messenger.queue.class";
+  public static final String MAX_CACHED_CONNECTIONS_KEY = "hama.messenger.max.cached.connections";
 
   /**
    * Init can be used to start servers and initialize internal state. If you are
@@ -99,8 +100,9 @@ public interface MessageManager<M extends Writable> {
   /**
    * Send the messages to self to receive in the next superstep.
    */
-  public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle) throws IOException;
-  
+  public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle)
+      throws IOException;
+
   /**
    * Send the message to self to receive in the next superstep.
    */
@@ -115,6 +117,5 @@ public interface MessageManager<M extends Writable> {
    */
   public void registerListener(MessageEventListener<M> listener)
       throws IOException;
-  
 
 }
