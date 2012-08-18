@@ -29,7 +29,8 @@ Release 0.5 - April 10, 2012
    HAMA-409: Add basic Graph interfaces and GraphJobRunner (edwardyoon)
 
   BUG FIXES
-
+   
+   HAMA-628: DistributedCache - getLocalCacheFiles returns NULL in Pseudo Distributed Mode (Martin Illecker via tjungblut)
    HAMA-621: Input Splits are not initialized for a job (surajmenon via tjungblut)
    HAMA-595: Fix NullPointerException in Task Scheduler (surajmenon)
 
