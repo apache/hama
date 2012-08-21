@@ -90,6 +90,7 @@
     <commons-cli.version>1.2</commons-cli.version>
     <commons-configuration>1.7</commons-configuration>
     <commons-lang>2.6</commons-lang>
+    <commons-httpclient>3.0.1</commons-httpclient>
     <hadoop.version>1.0.0</hadoop.version>
     <jetty.version>6.1.14</jetty.version>
     <junit.version>4.8.1</junit.version>
@@ -131,6 +132,11 @@
         <groupId>commons-lang</groupId>
         <artifactId>commons-lang</artifactId>
         <version>${commons-lang}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-httpclient</groupId>
+        <artifactId>commons-httpclient</artifactId>
+        <version>${commons-httpclient}</version>
       </dependency>
       <dependency>
         <groupId>org.mortbay.jetty</groupId>
