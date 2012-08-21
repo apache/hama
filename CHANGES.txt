@@ -15,6 +15,7 @@ Release 0.5 - April 10, 2012
 
   NEW FEATURES
 
+   HAMA-547: Add K-Means to ML package (tjungblut)
    HAMA-591: Improve Pagerank (tjungblut) 
    HAMA-550: Implementation of Bipartite Matching (Apurv Verma via tjungblut)
    HAMA-588: Add voteToHalt() mechanism in Graph API (edwardyoon)

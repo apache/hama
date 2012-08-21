@@ -99,27 +99,9 @@ public final class VectorWritable implements WritableComparable<VectorWritable> 
 
   public static void writeVector(DoubleVector vector, DataOutput out)
       throws IOException {
-    out.writeBoolean(vector.isSparse());
     out.writeInt(vector.getLength());
-    if (vector.isSparse()) {
-      out.writeInt(vector.getDimension());
-      Iterator<DoubleVector.DoubleVectorElement> iterateNonZero = vector
-          .iterateNonZero();
-      while (iterateNonZero.hasNext()) {
-        DoubleVector.DoubleVectorElement next = iterateNonZero.next();
-        out.writeInt(next.getIndex());
-        out.writeDouble(next.getValue());
-      }
-    } else {
-      for (int i = 0; i < vector.getDimension(); i++) {
-        out.writeDouble(vector.get(i));
-      }
-    }
-    if (vector.isNamed() && vector.getName() != null) {
-      out.writeBoolean(true);
-      out.writeUTF(vector.getName());
-    } else {
-      out.writeBoolean(false);
+    for (int i = 0; i < vector.getDimension(); i++) {
+      out.writeDouble(vector.get(i));
     }
   }
 

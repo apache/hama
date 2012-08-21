@@ -36,6 +36,8 @@ public class ExampleDriver {
       pgd.addClass("inlnkcount", InlinkCount.class, "InlinkCount");
       pgd.addClass("bipartite", BipartiteMatching.class, 
           "Bipartite Matching");
+      pgd.addClass("kmeans", Kmeans.class, 
+          "K-Means Clustering");
       pgd.driver(args);
     } catch (Throwable e) {
       e.printStackTrace();
