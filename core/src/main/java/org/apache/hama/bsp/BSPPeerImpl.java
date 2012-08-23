@@ -440,8 +440,11 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       }
     }
 
-    leaveBarrier();
+    // Clear outgoing queues.
+    messenger.clearOutgoingQueues();
 
+    leaveBarrier();
+    
     incrementCounter(PeerCounter.TIME_IN_SYNC_MS,
         (System.currentTimeMillis() - startBarrier));
     incrementCounter(PeerCounter.SUPERSTEP_SUM, 1L);
@@ -457,29 +460,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     }
 
     umbilical.statusUpdate(taskId, currentTaskStatus);
-    // Clear outgoing queues.
-    messenger.clearOutgoingQueues();
-
-    // int msgsCount = -1;
-    // if (shouldCheckPoint) {
-    // msgsCount = checkpointReceivedMessages(checkpointedReceivePath());
-    // }
-    //
-    // this.syncClient.storeInformation(this.syncClient.constructKey(
-    // this.bspJob.getJobID(), "checkpoint", String.valueOf(getPeerIndex())),
-    // new IntWritable(msgsCount), false, null);
-
-    // if (msgsCount >= 0) {
-    // ArrayWritable writableArray = new ArrayWritable(IntWritable.class);
-    // Writable[] writeArr = new Writable[2];
-    // writeArr[0] = new IntWritable((int) getSuperstepCount());
-    // writeArr[1] = new IntWritable(msgsCount);
-    // writableArray.set(writeArr);
-    // this.syncClient.storeInformation(
-    // this.syncClient.constructKey(this.bspJob.getJobID(), "checkpoint",
-    // String.valueOf(getPeerIndex())), writableArray, true, null);
-    // }
-
+    
   }
 
   private final BSPMessageBundle<M> combineMessages(Iterable<M> messages) {

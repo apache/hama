@@ -108,10 +108,10 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
       while (reader.next(key, value)) {
         sum += value.get();
       }
+      reader.close();
     }
     LOG.info("Sum is: " + sum);
-    // TODO this actually means that the check for convergence is turned off
-    assertTrue(sum > 0.0d && sum <= 1.1d);
+    assertTrue(sum > 0.9d && sum <= 1.1d);
   }
 
   private void generateTestData() {

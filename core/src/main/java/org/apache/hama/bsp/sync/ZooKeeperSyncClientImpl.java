@@ -93,9 +93,9 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
     try {
       synchronized (zk) {
 
-        final String pathToSuperstepZnode = 
-            constructKey(taskId.getJobID(), "sync", ""+superstep);
-        
+        final String pathToSuperstepZnode = constructKey(taskId.getJobID(),
+            "sync", "" + superstep);
+
         writeNode(pathToSuperstepZnode, null, true, null);
         BarrierWatcher barrierWatcher = new BarrierWatcher();
         // this is really needed to register the barrier watcher, don't remove
@@ -142,10 +142,10 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
   public void leaveBarrier(final BSPJobID jobId, final TaskAttemptID taskId,
       final long superstep) throws SyncException {
     try {
-//      final String pathToSuperstepZnode = bspRoot + "/"
-//          + taskId.getJobID().toString() + "/" + superstep;
-      final String pathToSuperstepZnode = 
-          constructKey(taskId.getJobID(), "sync", ""+superstep);
+      // final String pathToSuperstepZnode = bspRoot + "/"
+      // + taskId.getJobID().toString() + "/" + superstep;
+      final String pathToSuperstepZnode = constructKey(taskId.getJobID(),
+          "sync", "" + superstep);
       while (true) {
         List<String> znodes = zk.getChildren(pathToSuperstepZnode, false);
         LOG.debug("leaveBarrier() !!! checking znodes contnains /ready node or not: at superstep:"
@@ -229,7 +229,7 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
         }
       }
     } catch (Exception e) {
-      throw new SyncException(e.toString());
+      throw new SyncException(e.getMessage());
     }
   }
 
@@ -282,15 +282,14 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
         for (String s : allPeers) {
           byte[] data = zk.getData(constructKey(taskId.getJobID(), "peers", s),
               this, null);
-          TaskAttemptID thatTask = new TaskAttemptID(); 
+          TaskAttemptID thatTask = new TaskAttemptID();
           boolean result = getValueFromBytes(data, thatTask);
 
-          if(result){
+          if (result) {
             LOG.debug("TASK mapping from zookeeper: " + thatTask + " ID:"
                 + thatTask.getTaskID().getId() + " : " + s);
             sortedMap.put(thatTask.getTaskID().getId(), s);
           }
-
 
         }
 
@@ -313,10 +312,9 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
 
   @Override
   public void close() throws IOException {
-    try{
+    try {
       zk.close();
-    }
-    catch(InterruptedException e){
+    } catch (InterruptedException e) {
       throw new IOException(e);
     }
   }
