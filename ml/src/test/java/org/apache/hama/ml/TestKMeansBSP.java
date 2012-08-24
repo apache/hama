@@ -33,54 +33,55 @@ import org.apache.hama.ml.math.DoubleVector;
 public class TestKMeansBSP extends TestCase {
 
   public void testRunJob() throws Exception {
-
     Configuration conf = new Configuration();
     Path in = new Path("/tmp/clustering/in/in.txt");
     Path out = new Path("/tmp/clustering/out/");
     FileSystem fs = FileSystem.get(conf);
     Path center = null;
-    if (fs.isFile(in))
+
+    try {
       center = new Path(in.getParent(), "center/cen.seq");
-    else
-      center = new Path(in, "center/cen.seq");
-    Path centerOut = new Path(out, "center/center_output.seq");
-    conf.set(KMeansBSP.CENTER_IN_PATH, center.toString());
-    conf.set(KMeansBSP.CENTER_OUT_PATH, centerOut.toString());
-    int iterations = 10;
-    conf.setInt(KMeansBSP.MAX_ITERATIONS_KEY, iterations);
-    int k = 1;
 
-    FSDataOutputStream create = fs.create(in);
-    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(create));
-    StringBuilder sb = new StringBuilder();
+      Path centerOut = new Path(out, "center/center_output.seq");
+      conf.set(KMeansBSP.CENTER_IN_PATH, center.toString());
+      conf.set(KMeansBSP.CENTER_OUT_PATH, centerOut.toString());
+      int iterations = 10;
+      conf.setInt(KMeansBSP.MAX_ITERATIONS_KEY, iterations);
+      int k = 1;
 
-    for (int i = 0; i < 100; i++) {
-      sb.append(i);
-      sb.append('\t');
-      sb.append(i);
-      sb.append('\n');
+      FSDataOutputStream create = fs.create(in);
+      BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(create));
+      StringBuilder sb = new StringBuilder();
+
+      for (int i = 0; i < 100; i++) {
+        sb.append(i);
+        sb.append('\t');
+        sb.append(i);
+        sb.append('\n');
+      }
+
+      bw.write(sb.toString());
+      bw.close();
+
+      in = KMeansBSP.prepareInputText(k, conf, in, center, out, fs);
+
+      BSPJob job = KMeansBSP.createJob(conf, in, out, true);
+
+      // just submit the job
+      boolean result = job.waitForCompletion(true);
+
+      assertEquals(true, result);
+
+      HashMap<Integer, DoubleVector> centerMap = KMeansBSP.readOutput(conf,
+          out, centerOut, fs);
+      System.out.println(centerMap);
+      assertEquals(1, centerMap.size());
+      DoubleVector doubleVector = centerMap.get(0);
+      assertTrue(doubleVector.get(0) > 50 && doubleVector.get(0) < 51);
+      assertTrue(doubleVector.get(1) > 50 && doubleVector.get(1) < 51);
+    } finally {
+      fs.delete(new Path("/tmp/clustering"), true);
     }
-
-    bw.write(sb.toString());
-    bw.close();
-
-    in = KMeansBSP.prepareInputText(k, conf, in, center, out, fs);
-
-    BSPJob job = KMeansBSP.createJob(conf, in, out, true);
-
-    // just submit the job
-    boolean result = job.waitForCompletion(true);
-
-    assertEquals(true, result);
-
-    HashMap<Integer, DoubleVector> centerMap = KMeansBSP.readOutput(conf, out,
-        centerOut, fs);
-    System.out.println(centerMap);
-    assertEquals(1, centerMap.size());
-    DoubleVector doubleVector = centerMap.get(0);
-    assertTrue(doubleVector.get(0) > 50 && doubleVector.get(0) < 51);
-    assertTrue(doubleVector.get(1) > 50 && doubleVector.get(1) < 51);
-
   }
 
 }
