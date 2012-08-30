@@ -12,6 +12,8 @@ Release 0.6 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-599: Improvement of network-based runtime partitioner (edwardyoon)
+  
 Release 0.5 - April 10, 2012 
 
   NEW FEATURES

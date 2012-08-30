@@ -181,4 +181,15 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    *          incremented.
    */
   public void incrementCounter(String group, String counter, long amount);
+
+  /**
+   * @return the size of assigned split
+   */
+  public long getSplitSize();
+  
+  /**
+   * @return the current position of the file read pointer
+   * @throws IOException
+   */
+  public long getPos() throws IOException;
 }

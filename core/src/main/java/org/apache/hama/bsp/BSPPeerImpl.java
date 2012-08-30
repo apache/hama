@@ -95,6 +95,8 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   private FaultTolerantPeerService<M> faultToleranceService;
 
+  private long splitSize = 0L;
+  
   /**
    * Protected default constructor for LocalBSPRunner.
    */
@@ -335,9 +337,21 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
           .getRecordReader(inputSplit, bspJob),
           getCounter(BSPPeerImpl.PeerCounter.TASK_INPUT_RECORDS),
           getCounter(BSPPeerImpl.PeerCounter.IO_BYTES_READ));
+      this.splitSize = inputSplit.getLength();
     }
   }
 
+  /**
+   * @return the size of assigned split
+   */
+  public long getSplitSize() {
+    return splitSize;
+  }
+  
+  public long getPos() throws IOException {
+    return in.getPos();
+  }
+  
   public final void initilizeMessaging() throws ClassNotFoundException {
     messenger = MessageManagerFactory.getMessageManager(conf);
     messenger.init(taskId, this, conf, peerAddress);

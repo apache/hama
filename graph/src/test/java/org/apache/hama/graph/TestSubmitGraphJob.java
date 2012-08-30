@@ -18,6 +18,7 @@
 package org.apache.hama.graph;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -54,7 +55,10 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   public void testSubmitJob() throws Exception {
 
     generateTestData();
-
+    
+    // Set multi-step partitioning interval to 30 bytes
+    configuration.setInt("hama.graph.multi.step.partitioning.interval", 30);
+    
     GraphJob bsp = new GraphJob(configuration, PageRank.class);
     bsp.setInputPath(new Path(INPUT));
     bsp.setOutputPath(new Path(OUTPUT));
@@ -127,6 +131,10 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
       if (bw != null) {
         try {
           bw.close();
+          
+          File file = new File(INPUT);
+          LOG.info("Temp file length: " + file.length());
+          
         } catch (IOException e) {
           e.printStackTrace();
         }

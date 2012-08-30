@@ -286,6 +286,18 @@ public class TestCheckpoint extends TestCase {
 
     }
 
+    @Override
+    public long getSplitSize() {
+      // TODO Auto-generated method stub
+      return 0;
+    }
+
+    @Override
+    public long getPos() throws IOException {
+      // TODO Auto-generated method stub
+      return 0;
+    }
+
   }
 
   public static class TempSyncClient extends BSPPeerSyncClient {
