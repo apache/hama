@@ -87,7 +87,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   private boolean updated = true;
   private int globalUpdateCounts = 0;
 
-  private long numberVertices;
+  private long numberVertices = 0;
   // -1 is deactivated
   private int maxIteration = -1;
   private long iteration;
@@ -169,7 +169,19 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
             VertexInputReader.class), conf);
 
     loadVertices(peer, repairNeeded, runtimePartitioning, partitioner, reader);
-    numberVertices = vertices.size() * peer.getNumPeers();
+   
+    for (String peerName : peer.getAllPeerNames()) {
+      peer.send(peerName, new GraphJobMessage(new IntWritable(vertices.size())));
+    }
+    
+    peer.sync();
+
+    GraphJobMessage msg = null;
+    while ((msg = peer.getCurrentMessage()) != null) {
+      if (msg.isVerticesSizeMessage()) {
+        numberVertices += msg.getVerticesSize().get();
+      }
+    }
     // TODO refactor this to a single step
     for (Entry<V, Vertex<V, E, M>> e : vertices.entrySet()) {
       LinkedList<M> msgIterator = new LinkedList<M>();

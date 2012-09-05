@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -38,6 +39,7 @@ public final class GraphJobMessage implements Writable {
   public static final int VERTEX_FLAG = 0x02;
   public static final int REPAIR_FLAG = 0x04;
   public static final int PARTITION_FLAG = 0x08;
+  public static final int VERTICES_SIZE_FLAG = 0x10;
 
   // staticly defined because it is process-wide information, therefore in caps
   // considered as a constant
@@ -52,6 +54,7 @@ public final class GraphJobMessage implements Writable {
   private Writable vertexId;
   private Writable vertexValue;
   private Vertex<?, ?, ?> vertex;
+  private IntWritable vertices_size;
 
   public GraphJobMessage() {
   }
@@ -75,6 +78,11 @@ public final class GraphJobMessage implements Writable {
   public GraphJobMessage(Vertex<?, ?, ?> vertex) {
     this.flag = PARTITION_FLAG;
     this.vertex = vertex;
+  }
+
+  public GraphJobMessage(IntWritable size) {
+    this.flag = VERTICES_SIZE_FLAG;
+    this.vertices_size = size;
   }
 
   @Override
@@ -108,6 +116,8 @@ public final class GraphJobMessage implements Writable {
           out.writeBoolean(false);
         }
       }
+    } else if (isVerticesSizeMessage()) {
+      vertices_size.write(out);
     } else {
       vertexId.write(out);
     }
@@ -153,6 +163,9 @@ public final class GraphJobMessage implements Writable {
             new Edge<Writable, Writable>(edgeVertexID, destination, edgeValue));
       }
       this.vertex = vertex;
+    } else if (isVerticesSizeMessage()) {
+      vertices_size = new IntWritable();
+      vertices_size.readFields(in);
     } else {
       vertexId = ReflectionUtils.newInstance(VERTEX_ID_CLASS, null);
       vertexId.readFields(in);
@@ -175,6 +188,10 @@ public final class GraphJobMessage implements Writable {
     return vertex;
   }
 
+  public IntWritable getVerticesSize() {
+    return vertices_size;
+  }
+
   public boolean isMapMessage() {
     return flag == MAP_FLAG;
   }
@@ -189,6 +206,10 @@ public final class GraphJobMessage implements Writable {
 
   public boolean isPartitioningMessage() {
     return flag == PARTITION_FLAG;
+  }
+
+  public boolean isVerticesSizeMessage() {
+    return flag == VERTICES_SIZE_FLAG;
   }
 
   @Override
