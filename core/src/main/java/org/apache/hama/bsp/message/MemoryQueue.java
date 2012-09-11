@@ -17,10 +17,10 @@
  */
 package org.apache.hama.bsp.message;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.LinkedList;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
@@ -31,7 +31,7 @@ import org.apache.hama.bsp.TaskAttemptID;
  */
 public final class MemoryQueue<M extends Writable> implements MessageQueue<M> {
 
-  private final Deque<M> deque = new LinkedList<M>();
+  private final Deque<M> deque = new ArrayDeque<M>();
   private Configuration conf;
 
   @Override

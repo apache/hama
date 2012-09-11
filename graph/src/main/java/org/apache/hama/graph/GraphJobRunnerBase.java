@@ -89,6 +89,8 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
   protected Class<E> edgeValueClass;
   protected Class<Vertex<V, E, M>> vertexClass;
 
+  protected BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
+
   @SuppressWarnings("unchecked")
   protected void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
@@ -107,7 +109,6 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
     LOG.debug("vertex class: " + vertexClass);
     boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
     Vertex<V, E, M> vertex = newVertexInstance(vertexClass, conf);
-    vertex.setPeer(peer);
     vertex.runner = graphJobRunner;
 
     long startPos = peer.getPos();
@@ -127,27 +128,17 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
         vertex.setEdges(new ArrayList<Edge<V, E>>(0));
       }
       if (selfReference) {
-        vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), peer.getPeerName(),
-            null));
+        vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
       }
       if (runtimePartitioning) {
         int partition = partitioner.getPartition(vertex.getVertexID(),
             vertex.getValue(), peer.getNumPeers());
-        // set the destination name for the edge now
-        for (Edge<V, E> edge : vertex.getEdges()) {
-          int edgePartition = partitioner.getPartition(
-              edge.getDestinationVertexID(), (M) edge.getValue(),
-              peer.getNumPeers());
-          edge.destinationPeerName = peer.getPeerName(edgePartition);
-        }
         peer.send(peer.getPeerName(partition), new GraphJobMessage(vertex));
       } else {
-        // FIXME need to set destination names
         vertex.setup(conf);
         vertices.put(vertex.getVertexID(), vertex);
       }
       vertex = newVertexInstance(vertexClass, conf);
-      vertex.setPeer(peer);
       vertex.runner = graphJobRunner;
 
       if (runtimePartitioning) {
@@ -157,7 +148,6 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
           GraphJobMessage msg = null;
           while ((msg = peer.getCurrentMessage()) != null) {
             Vertex<V, E, M> messagedVertex = (Vertex<V, E, M>) msg.getVertex();
-            messagedVertex.setPeer(peer);
             messagedVertex.runner = graphJobRunner;
             messagedVertex.setup(conf);
             vertices.put(messagedVertex.getVertexID(), messagedVertex);
@@ -173,7 +163,6 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
       GraphJobMessage msg = null;
       while ((msg = peer.getCurrentMessage()) != null) {
         Vertex<V, E, M> messagedVertex = (Vertex<V, E, M>) msg.getVertex();
-        messagedVertex.setPeer(peer);
         messagedVertex.runner = graphJobRunner;
         messagedVertex.setup(conf);
         vertices.put(messagedVertex.getVertexID(), messagedVertex);
@@ -238,8 +227,9 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
       int i = 0;
       int syncs = 0;
       for (V v : keys) {
+        Vertex<V, E, M> vertex2 = vertices.get(v);
         for (Edge<V, E> e : vertices.get(v).getEdges()) {
-          peer.send(e.getDestinationPeerName(),
+          peer.send(vertex2.getDestinationPeerName(e),
               new GraphJobMessage(e.getDestinationVertexID()));
         }
 
@@ -251,16 +241,11 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
             V vertexName = (V) msg.getVertexId();
             if (!vertices.containsKey(vertexName)) {
               Vertex<V, E, M> newVertex = newVertexInstance(vertexClass, conf);
-              newVertex.setPeer(peer);
               newVertex.setVertexID(vertexName);
               newVertex.runner = graphJobRunner;
               if (selfReference) {
-                int partition = partitioner.getPartition(
-                    newVertex.getVertexID(), newVertex.getValue(),
-                    peer.getNumPeers());
-                String target = peer.getPeerName(partition);
                 newVertex.setEdges(Collections.singletonList(new Edge<V, E>(
-                    newVertex.getVertexID(), target, null)));
+                    newVertex.getVertexID(), null)));
               } else {
                 newVertex.setEdges(new ArrayList<Edge<V, E>>(0));
               }
@@ -278,15 +263,11 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
         V vertexName = (V) msg.getVertexId();
         if (!vertices.containsKey(vertexName)) {
           Vertex<V, E, M> newVertex = newVertexInstance(vertexClass, conf);
-          newVertex.setPeer(peer);
           newVertex.setVertexID(vertexName);
           newVertex.runner = graphJobRunner;
           if (selfReference) {
-            int partition = partitioner.getPartition(newVertex.getVertexID(),
-                newVertex.getValue(), peer.getNumPeers());
-            String target = peer.getPeerName(partition);
             newVertex.setEdges(Collections.singletonList(new Edge<V, E>(
-                newVertex.getVertexID(), target, null)));
+                newVertex.getVertexID(), null)));
           } else {
             newVertex.setEdges(new ArrayList<Edge<V, E>>(0));
           }
@@ -475,6 +456,10 @@ public abstract class GraphJobRunnerBase<V extends Writable, E extends Writable,
 
   public final IntWritable getNumLastAggregatedVertices(int index) {
     return globalAggregatorIncrement[index];
+  }
+
+  public BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> getPeer() {
+    return peer;
   }
 
 }

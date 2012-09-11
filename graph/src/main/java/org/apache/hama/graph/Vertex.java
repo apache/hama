@@ -30,16 +30,16 @@ import org.apache.hama.bsp.Partitioner;
 public abstract class Vertex<V extends Writable, E extends Writable, M extends Writable>
     implements VertexInterface<V, E, M> {
 
+  GraphJobRunner<?, ?, ?> runner;
+
   private V vertexID;
   private M value;
-  protected GraphJobRunner<V, E, M> runner;
-  private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
   private List<Edge<V, E>> edges;
 
   private boolean votedToHalt = false;
 
   public Configuration getConf() {
-    return peer.getConfiguration();
+    return runner.getPeer().getConfiguration();
   }
 
   @Override
@@ -53,8 +53,26 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
 
   @Override
   public void sendMessage(Edge<V, E> e, M msg) throws IOException {
-    peer.send(e.getDestinationPeerName(),
+    runner.getPeer().send(getDestinationPeerName(e),
         new GraphJobMessage(e.getDestinationVertexID(), msg));
+  }
+
+  /**
+   * @return the destination peer name of the destination of the given directed
+   *         edge.
+   */
+  public String getDestinationPeerName(Edge<V, E> edge) {
+    return getDestinationPeerName(edge.getDestinationVertexID());
+  }
+
+  /**
+   * @return the destination peer name of the given vertex id, determined by the
+   *         partitioner.
+   */
+  public String getDestinationPeerName(V vertexId) {
+    return runner.getPeer().getPeerName(
+        getPartitioner().getPartition(vertexId, value,
+            runner.getPeer().getNumPeers()));
   }
 
   @Override
@@ -68,9 +86,10 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
   @Override
   public void sendMessage(V destinationVertexID, M msg) throws IOException {
     int partition = getPartitioner().getPartition(destinationVertexID, msg,
-        peer.getNumPeers());
-    String destPeer = peer.getAllPeerNames()[partition];
-    peer.send(destPeer, new GraphJobMessage(destinationVertexID, msg));
+        runner.getPeer().getNumPeers());
+    String destPeer = runner.getPeer().getAllPeerNames()[partition];
+    runner.getPeer().send(destPeer,
+        new GraphJobMessage(destinationVertexID, msg));
   }
 
   @Override
@@ -84,7 +103,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
 
   public void addEdge(Edge<V, E> edge) {
     if (edges == null) {
-      this.edges = new ArrayList<Edge<V, E>>();
+      this.edges = new ArrayList<Edge<V, E>>(1);
     }
     this.edges.add(edge);
   }
@@ -138,23 +157,22 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
   }
 
   public int getNumPeers() {
-    return peer.getNumPeers();
+    return runner.getPeer().getNumPeers();
   }
 
   /**
    * Gives access to the BSP primitives and additional features by a peer.
    */
   public BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> getPeer() {
-    return peer;
+    return runner.getPeer();
   }
 
+  /**
+   * @return the configured partitioner instance to message vertices.
+   */
+  @SuppressWarnings("unchecked")
   public Partitioner<V, M> getPartitioner() {
-    return runner.getPartitioner();
-  }
-
-  void setPeer(
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer) {
-    this.peer = peer;
+    return (Partitioner<V, M>) runner.getPartitioner();
   }
 
   @Override

@@ -107,7 +107,6 @@ public final class GraphJobMessage implements Writable {
       out.writeInt(outEdges.size());
       for (Object e : outEdges) {
         Edge<?, ?> edge = (Edge<?, ?>) e;
-        out.writeUTF(edge.getDestinationPeerName());
         edge.getDestinationVertexID().write(out);
         if (edge.getValue() != null) {
           out.writeBoolean(true);
@@ -136,7 +135,7 @@ public final class GraphJobMessage implements Writable {
       map = new MapWritable();
       map.readFields(in);
     } else if (isPartitioningMessage()) {
-      Vertex<Writable, Writable, Writable> vertex = GraphJobRunner
+      Vertex<Writable, Writable, Writable> vertex = GraphJobRunnerBase
           .newVertexInstance(VERTEX_CLASS, null);
       Writable vertexId = ReflectionUtils.newInstance(VERTEX_ID_CLASS, null);
       vertexId.readFields(in);
@@ -150,7 +149,6 @@ public final class GraphJobMessage implements Writable {
       int size = in.readInt();
       vertex.setEdges(new ArrayList<Edge<Writable, Writable>>(size));
       for (int i = 0; i < size; i++) {
-        String destination = in.readUTF();
         Writable edgeVertexID = ReflectionUtils.newInstance(VERTEX_ID_CLASS,
             null);
         edgeVertexID.readFields(in);
@@ -160,7 +158,7 @@ public final class GraphJobMessage implements Writable {
           edgeValue.readFields(in);
         }
         vertex.getEdges().add(
-            new Edge<Writable, Writable>(edgeVertexID, destination, edgeValue));
+            new Edge<Writable, Writable>(edgeVertexID, edgeValue));
       }
       this.vertex = vertex;
     } else if (isVerticesSizeMessage()) {

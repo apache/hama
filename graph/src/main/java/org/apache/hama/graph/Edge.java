@@ -27,7 +27,6 @@ public final class Edge<VERTEX_ID extends Writable, EDGE_VALUE_TYPE extends Writ
 
   private final VERTEX_ID destinationVertexID;
   private final EDGE_VALUE_TYPE cost;
-  String destinationPeerName;
 
   public Edge(VERTEX_ID sourceVertexID, EDGE_VALUE_TYPE cost) {
     this.destinationVertexID = sourceVertexID;
@@ -38,23 +37,8 @@ public final class Edge<VERTEX_ID extends Writable, EDGE_VALUE_TYPE extends Writ
     }
   }
 
-  public Edge(VERTEX_ID sourceVertexID, String destinationPeer,
-      EDGE_VALUE_TYPE cost) {
-    this.destinationVertexID = sourceVertexID;
-    destinationPeerName = destinationPeer;
-    if (cost instanceof NullWritable) {
-      this.cost = null;
-    } else {
-      this.cost = cost;
-    }
-  }
-
   public VERTEX_ID getDestinationVertexID() {
     return destinationVertexID;
-  }
-
-  public String getDestinationPeerName() {
-    return destinationPeerName;
   }
 
   public EDGE_VALUE_TYPE getValue() {
@@ -63,7 +47,6 @@ public final class Edge<VERTEX_ID extends Writable, EDGE_VALUE_TYPE extends Writ
 
   @Override
   public String toString() {
-    return this.destinationVertexID + ":" + this.getValue() + " (resides on "
-        + destinationPeerName + ")";
+    return this.destinationVertexID + ":" + this.getValue();
   }
 }

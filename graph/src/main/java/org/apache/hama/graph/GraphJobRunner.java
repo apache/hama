@@ -48,6 +48,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   public final void setup(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
+    this.peer = peer;
     this.conf = peer.getConfiguration();
     // Choose one as a master to collect global updates
     this.masterTask = peer.getPeerName(0);
@@ -116,8 +117,9 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
         .newInstance(conf.getClass(GraphJob.VERTEX_GRAPH_INPUT_READER,
             VertexInputReader.class), conf);
 
-    loadVertices(peer, repairNeeded, runtimePartitioning, partitioner, reader, this);
-    
+    loadVertices(peer, repairNeeded, runtimePartitioning, partitioner, reader,
+        this);
+
     for (String peerName : peer.getAllPeerNames()) {
       peer.send(peerName, new GraphJobMessage(new IntWritable(vertices.size())));
     }
@@ -130,7 +132,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
         numberVertices += msg.getVerticesSize().get();
       }
     }
-    
+
     // TODO refactor this to a single step
     for (Entry<V, Vertex<V, E, M>> e : vertices.entrySet()) {
       LinkedList<M> msgIterator = new LinkedList<M>();

@@ -344,10 +344,15 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   /**
    * @return the size of assigned split
    */
+  @Override
   public long getSplitSize() {
     return splitSize;
   }
   
+  /**
+   * @return the position in the input stream.
+   */
+  @Override
   public long getPos() throws IOException {
     return in.getPos();
   }

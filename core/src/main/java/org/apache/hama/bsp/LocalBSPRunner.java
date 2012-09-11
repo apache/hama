@@ -20,11 +20,10 @@ package org.apache.hama.bsp;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.LinkedList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -63,9 +62,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   private static final String IDENTIFIER = "localrunner";
   private static String WORKING_DIR = "/tmp/hama-bsp/";
   private volatile ThreadPoolExecutor threadPool;
-
-  @SuppressWarnings("rawtypes")
-  private static final LinkedList<Future<BSPPeerImpl>> FUTURE_LIST = new LinkedList<Future<BSPPeerImpl>>();
 
   private String jobFile;
   private String jobName;
@@ -145,16 +141,19 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(numBspTask);
+    @SuppressWarnings("rawtypes")
+    ExecutorCompletionService<BSPPeerImpl> completionService = new ExecutorCompletionService<BSPPeerImpl>(
+        threadPool);
 
     peerNames = new String[numBspTask];
     for (int i = 0; i < numBspTask; i++) {
       peerNames[i] = "local:" + i;
-      FUTURE_LIST.add(threadPool.submit(new BSPRunner(new Configuration(conf),
-          job, i, splits)));
+      completionService.submit(new BSPRunner(new Configuration(conf), job, i,
+          splits));
       globalCounters.incrCounter(JobInProgress.JobCounter.LAUNCHED_TASKS, 1L);
     }
 
-    new Thread(new ThreadObserver(currentJobStatus)).start();
+    new Thread(new ThreadObserver(numBspTask, completionService)).start();
     return currentJobStatus;
   }
 
@@ -233,7 +232,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     }
 
-    // deprecated until 0.5.0, then it will be removed.
     @SuppressWarnings("unchecked")
     public void run() throws Exception {
 
@@ -287,29 +285,34 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   }
 
   // this thread observes the status of the runners.
+  @SuppressWarnings("rawtypes")
   class ThreadObserver implements Runnable {
 
-    final JobStatus status;
+    private final ExecutorCompletionService<BSPPeerImpl> completionService;
+    private final int numTasks;
 
-    public ThreadObserver(JobStatus currentJobStatus) {
-      this.status = currentJobStatus;
+    public ThreadObserver(int numTasks,
+
+    ExecutorCompletionService<BSPPeerImpl> completionService) {
+      this.numTasks = numTasks;
+      this.completionService = completionService;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public void run() {
       boolean success = true;
-      for (Future<BSPPeerImpl> future : FUTURE_LIST) {
+
+      for (int i = 0; i < numTasks; i++) {
         try {
-          BSPPeerImpl bspPeerImpl = future.get();
-          currentJobStatus.getCounter().incrAllCounters(
-              bspPeerImpl.getCounters());
-        } catch (InterruptedException e) {
+          Future<BSPPeerImpl> take = completionService.take();
+          if (take != null) {
+            currentJobStatus.getCounter().incrAllCounters(
+                take.get().getCounters());
+          }
+        } catch (Exception e) {
           LOG.error("Exception during BSP execution!", e);
           success = false;
-        } catch (ExecutionException e) {
-          LOG.error("Exception during BSP execution!", e);
-          success = false;
+          break;
         }
       }
       if (success) {
@@ -321,7 +324,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       }
       threadPool.shutdownNow();
     }
-
   }
 
   public static class LocalMessageManager<M extends Writable> extends
