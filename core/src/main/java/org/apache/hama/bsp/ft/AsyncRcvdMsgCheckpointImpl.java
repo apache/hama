@@ -478,7 +478,7 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
         checkpointMessageCount = 0;
       }
 
-      LOG.info("checkpoingNext = " + checkpointState
+      LOG.info("checkpointNext = " + checkpointState
           + " checkpointMessageCount = " + checkpointMessageCount);
     }
 
