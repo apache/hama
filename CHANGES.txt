@@ -13,6 +13,10 @@ Release 0.6 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-557: Implement Checkpointing service in Hama (surajmenon)
+   HAMA-587: Synchronization Client should provide API's to store and retrieve information among peers and BSPMaster (surajmenon)
+   HAMA-610: Provision to define the task allocation strategy as a feature of job. (surajmenon)
+   HAMA-611: Add loopbackMessage API call for MessageManager (surajmenon)
    HAMA-596: Optimize memory usage of graph job (tjungblut)
    HAMA-599: Improvement of network-based runtime partitioner (edwardyoon)
   
