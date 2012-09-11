@@ -135,7 +135,7 @@ public final class GraphJobMessage implements Writable {
       map = new MapWritable();
       map.readFields(in);
     } else if (isPartitioningMessage()) {
-      Vertex<Writable, Writable, Writable> vertex = GraphJobRunnerBase
+      Vertex<Writable, Writable, Writable> vertex = GraphJobRunner
           .newVertexInstance(VERTEX_CLASS, null);
       Writable vertexId = ReflectionUtils.newInstance(VERTEX_ID_CLASS, null);
       vertexId.readFields(in);
