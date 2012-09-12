@@ -122,7 +122,7 @@ public class TestSyncServiceFactory extends TestCase {
 
     Thread.sleep(1000);
 
-    final PeerSyncClient syncClient = (PeerSyncClient) SyncServiceFactory
+    final PeerSyncClient syncClient = SyncServiceFactory
         .getPeerSyncClient(conf);
     assertTrue(syncClient instanceof ZooKeeperSyncClientImpl);
     BSPJobID jobId = new BSPJobID("abc", 1);

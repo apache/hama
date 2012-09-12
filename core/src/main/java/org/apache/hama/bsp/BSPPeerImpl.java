@@ -96,7 +96,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private FaultTolerantPeerService<M> faultToleranceService;
 
   private long splitSize = 0L;
-  
+
   /**
    * Protected default constructor for LocalBSPRunner.
    */
@@ -232,6 +232,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         }
       }
     }
+
+    // init the internal state
+    initialize();
+
     doFirstSync(superstep);
 
     if (LOG.isDebugEnabled()) {
@@ -281,7 +285,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   }
 
   @SuppressWarnings("unchecked")
-  public final void initialize() throws Exception {
+  private final void initialize() throws Exception {
 
     initInput();
 
@@ -348,7 +352,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   public long getSplitSize() {
     return splitSize;
   }
-  
+
   /**
    * @return the position in the input stream.
    */
@@ -356,7 +360,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   public long getPos() throws IOException {
     return in.getPos();
   }
-  
+
   public final void initilizeMessaging() throws ClassNotFoundException {
     messenger = MessageManagerFactory.getMessageManager(conf);
     messenger.init(taskId, this, conf, peerAddress);
@@ -463,7 +467,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     messenger.clearOutgoingQueues();
 
     leaveBarrier();
-    
+
     incrementCounter(PeerCounter.TIME_IN_SYNC_MS,
         (System.currentTimeMillis() - startBarrier));
     incrementCounter(PeerCounter.SUPERSTEP_SUM, 1L);
@@ -479,7 +483,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     }
 
     umbilical.statusUpdate(taskId, currentTaskStatus);
-    
+
   }
 
   private final BSPMessageBundle<M> combineMessages(Iterable<M> messages) {
@@ -700,6 +704,11 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     if (counters != null) {
       counters.incrCounter(group, counter, amount);
     }
+  }
+
+  @Override
+  public TaskAttemptID getTaskId() {
+    return taskId;
   }
 
 }

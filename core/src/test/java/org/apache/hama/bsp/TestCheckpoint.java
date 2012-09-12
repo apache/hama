@@ -169,10 +169,9 @@ public class TestCheckpoint extends TestCase {
         superstepCount = 0L;
 
       try {
-        fService = (new AsyncRcvdMsgCheckpointImpl<Text>()).constructPeerFaultTolerance(
-            job, (BSPPeer<?, ?, ?, ?, Text>) this,
-            (BSPPeerSyncClient) syncClient, null, taskId, superstep, conf,
-            messenger);
+        fService = (new AsyncRcvdMsgCheckpointImpl<Text>())
+            .constructPeerFaultTolerance(job, this, syncClient, null, taskId,
+                superstep, conf, messenger);
         this.fService.onPeerInitialized(state);
       } catch (Exception e) {
         e.printStackTrace();
@@ -288,14 +287,17 @@ public class TestCheckpoint extends TestCase {
 
     @Override
     public long getSplitSize() {
-      // TODO Auto-generated method stub
       return 0;
     }
 
     @Override
     public long getPos() throws IOException {
-      // TODO Auto-generated method stub
       return 0;
+    }
+
+    @Override
+    public TaskAttemptID getTaskId() {
+      return null;
     }
 
   }
@@ -328,13 +330,12 @@ public class TestCheckpoint extends TestCase {
     }
 
     @Override
-    public boolean getInformation(String key,
-        Writable valueHolder) {
+    public boolean getInformation(String key, Writable valueHolder) {
       LOG.info("Getting value for key " + key);
-      if(!valueMap.containsKey(key)){
+      if (!valueMap.containsKey(key)) {
         return false;
       }
-      Writable value =  valueMap.get(key);
+      Writable value = valueMap.get(key);
       ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
       DataOutputStream outputStream = new DataOutputStream(byteStream);
       byte[] data = null;
@@ -440,19 +441,19 @@ public class TestCheckpoint extends TestCase {
 
   }
 
-  private void checkSuperstepMsgCount(PeerSyncClient syncClient,
+  private static void checkSuperstepMsgCount(PeerSyncClient syncClient,
       @SuppressWarnings("rawtypes")
       BSPPeer bspTask, BSPJob job, long step, long count) {
-    
+
     ArrayWritable writableVal = new ArrayWritable(LongWritable.class);
-    
+
     boolean result = syncClient.getInformation(
         syncClient.constructKey(job.getJobID(), "checkpoint",
             "" + bspTask.getPeerIndex()), writableVal);
-    
+
     assertTrue(result);
 
-    LongWritable superstepNo = (LongWritable) writableVal.get()[0]; 
+    LongWritable superstepNo = (LongWritable) writableVal.get()[0];
     LongWritable msgCount = (LongWritable) writableVal.get()[1];
 
     assertEquals(step, superstepNo.get());
@@ -477,8 +478,7 @@ public class TestCheckpoint extends TestCase {
     TaskAttemptID taskId = new TaskAttemptID(new TaskID(job.getJobID(), 1), 1);
 
     TestMessageManager messenger = new TestMessageManager();
-    PeerSyncClient syncClient = (TempSyncClient) SyncServiceFactory
-        .getPeerSyncClient(config);
+    PeerSyncClient syncClient = SyncServiceFactory.getPeerSyncClient(config);
     @SuppressWarnings("rawtypes")
     BSPPeer bspTask = new TestBSPPeer(job, config, taskId, new Counters(), -1L,
         (BSPPeerSyncClient) syncClient, messenger, TaskStatus.State.RUNNING);
@@ -489,15 +489,15 @@ public class TestCheckpoint extends TestCase {
     int port = BSPNetUtils.getFreePort(12502);
     LOG.info("Got port = " + port);
 
-    boolean result = syncClient.getInformation(
-            syncClient.constructKey(job.getJobID(), "checkpoint",
-                "" + bspTask.getPeerIndex()), new ArrayWritable(LongWritable.class));
+    boolean result = syncClient
+        .getInformation(syncClient.constructKey(job.getJobID(), "checkpoint",
+            "" + bspTask.getPeerIndex()), new ArrayWritable(LongWritable.class));
 
     assertFalse(result);
 
     bspTask.sync();
     // Superstep 1
-  
+
     checkSuperstepMsgCount(syncClient, bspTask, job, 1L, 0L);
 
     Text txtMessage = new Text("data");
@@ -559,8 +559,7 @@ public class TestCheckpoint extends TestCase {
     TaskAttemptID taskId = new TaskAttemptID(new TaskID(job.getJobID(), 1), 1);
 
     TestMessageManager messenger = new TestMessageManager();
-    PeerSyncClient syncClient = (TempSyncClient) SyncServiceFactory
-        .getPeerSyncClient(config);
+    PeerSyncClient syncClient = SyncServiceFactory.getPeerSyncClient(config);
     BSPPeer bspTask = new TestBSPPeer(job, config, taskId, new Counters(), -1L,
         (BSPPeerSyncClient) syncClient, messenger, TaskStatus.State.RUNNING);
 
@@ -578,7 +577,7 @@ public class TestCheckpoint extends TestCase {
 
     Text txtMessage = new Text("data");
     messenger.addMessage(txtMessage);
-    
+
     bspTask.sync();
 
     LOG.info("Completed second sync.");
@@ -620,8 +619,7 @@ public class TestCheckpoint extends TestCase {
     TaskAttemptID taskId = new TaskAttemptID(new TaskID(job.getJobID(), 1), 1);
 
     TestMessageManager messenger = new TestMessageManager();
-    PeerSyncClient syncClient = (TempSyncClient) SyncServiceFactory
-        .getPeerSyncClient(config);
+    PeerSyncClient syncClient = SyncServiceFactory.getPeerSyncClient(config);
 
     Text txtMessage = new Text("data");
     String writeKey = "job_checkpttest_0001/checkpoint/1/";

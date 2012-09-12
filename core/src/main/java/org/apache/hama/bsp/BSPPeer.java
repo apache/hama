@@ -27,10 +27,9 @@ import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
 
 /**
- * BSP communication interface.
- * Reads key-value inputs, with K1 typed keys and V1 typed values.
- * Collects key-value outputs, with k2 typed keys and V2 typed values.
- * Exchange messages with other {@link BSPPeer}s via messages of type M.
+ * BSP communication interface. Reads key-value inputs, with K1 typed keys and
+ * V1 typed values. Collects key-value outputs, with k2 typed keys and V2 typed
+ * values. Exchange messages with other {@link BSPPeer}s via messages of type M.
  */
 public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
 
@@ -186,10 +185,15 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    * @return the size of assigned split
    */
   public long getSplitSize();
-  
+
   /**
    * @return the current position of the file read pointer
    * @throws IOException
    */
   public long getPos() throws IOException;
+
+  /**
+   * @return the task id of this task.
+   */
+  public TaskAttemptID getTaskId();
 }
