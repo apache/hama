@@ -50,7 +50,7 @@ public class BestEffortDataLocalTaskAllocator implements TaskAllocationStrategy 
    * @param tasksInGroomMap
    * @return
    */
-  private String getAnyGroomToSchedule(Map<String, GroomServerStatus> grooms,
+  private static String getAnyGroomToSchedule(Map<String, GroomServerStatus> grooms,
       Map<GroomServerStatus, Integer> tasksInGroomMap) {
 
     Iterator<String> groomIter = grooms.keySet().iterator();

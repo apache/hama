@@ -233,9 +233,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       }
     }
 
-    // init the internal state
-    initialize();
-
     doFirstSync(superstep);
 
     if (LOG.isDebugEnabled()) {
@@ -252,7 +249,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
    * 
    * @throws IOException If a DistributedCache file cannot be found.
    */
-  public final void moveLocalFiles() throws IOException {
+  public final void moveCacheFiles() throws IOException {
     StringBuilder files = new StringBuilder();
     boolean first = true;
     if (DistributedCache.getCacheFiles(conf) != null) {
@@ -281,36 +278,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     }
     if (files.length() > 0) {
       DistributedCache.addLocalFiles(conf, files.toString());
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private final void initialize() throws Exception {
-
-    initInput();
-
-    String outdir = null;
-    if (conf.get("bsp.output.dir") != null) {
-      Path outputDir = new Path(conf.get("bsp.output.dir",
-          "tmp-" + System.currentTimeMillis()), Task.getOutputName(partition));
-      outdir = outputDir.makeQualified(fs).toString();
-    }
-    outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob, outdir);
-    final RecordWriter<K2, V2> finalOut = outWriter;
-
-    collector = new OutputCollector<K2, V2>() {
-      @Override
-      public void collect(K2 key, V2 value) throws IOException {
-        finalOut.write(key, value);
-      }
-    };
-
-    // Move files from DistributedCache to the local cache
-    // and set DistributedCache.LocalFiles
-    try {
-      moveLocalFiles();
-    } catch (Exception e) {
-      LOG.error(e);
     }
   }
 
@@ -402,6 +369,12 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         finalOut.write(key, value);
       }
     };
+
+    try {
+      moveCacheFiles();
+    } catch (Exception e) {
+      LOG.error(e);
+    }
 
   }
 

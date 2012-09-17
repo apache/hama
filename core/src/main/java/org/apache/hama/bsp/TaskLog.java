@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hama.HamaConfiguration;
 
@@ -261,21 +262,37 @@ public class TaskLog {
       mergedCmd.append(tailCommand);
       mergedCmd.append(" -c ");
       mergedCmd.append(tailLength);
-      mergedCmd.append(" >> ");
+      mergedCmd.append(" > ");
       mergedCmd.append(stdout);
       mergedCmd.append(" ; exit $PIPESTATUS ) 2>&1 | ");
       mergedCmd.append(tailCommand);
       mergedCmd.append(" -c ");
       mergedCmd.append(tailLength);
-      mergedCmd.append(" >> ");
+      mergedCmd.append(" > ");
       mergedCmd.append(stderr);
       mergedCmd.append(" ; exit $PIPESTATUS");
     } else {
-      mergedCmd.append(" 1>> ");
+      mergedCmd.append(" 1> ");
       mergedCmd.append(stdout);
-      mergedCmd.append(" 2>> ");
+      mergedCmd.append(" 2> ");
       mergedCmd.append(stderr);
     }
+    result.add(mergedCmd.toString());
+    return result;
+  }
+
+  public static List<String> captureOutAndErrorTee(List<String> setup,
+      List<String> cmd, File stdoutFilename, File stderrFilename,
+      long tailLength) throws IOException {
+    String stdout = FileUtil.makeShellPath(stdoutFilename);
+    List<String> result = new ArrayList<String>(3);
+    result.add(bashCommand);
+    result.add("-c");
+    StringBuilder mergedCmd = new StringBuilder();
+
+    mergedCmd.append(addCommand(cmd, true));
+    mergedCmd.append(" 2>&1 | tee " + stdout);
+
     result.add(mergedCmd.toString());
     return result;
   }
@@ -344,6 +361,16 @@ public class TaskLog {
     mergedCmd.append(" 2>&1 ");
     result.add(mergedCmd.toString());
     return result;
+  }
+
+  /**
+   * Get the desired maximum length of task's logs.
+   * 
+   * @param conf the job to look in
+   * @return the number of bytes to cap the log files at
+   */
+  public static long getTaskLogLength(Configuration conf) {
+    return conf.getLong("bsp.userlog.limit.kb", 100) * 1024;
   }
 
 } // TaskLog
