@@ -20,6 +20,7 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -276,6 +277,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         }
       }
     }
+    LOG.info("Moving to local cache files: " + files.toString() +" INITIALLY IT WAS: " + Arrays.toString(DistributedCache.getCacheFiles(conf)));
     if (files.length() > 0) {
       DistributedCache.addLocalFiles(conf, files.toString());
     }

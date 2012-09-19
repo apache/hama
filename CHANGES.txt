@@ -4,6 +4,8 @@ Release 0.6 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-601: Hama Streaming (tjungblut)
+
   BUG FIXES
 
    HAMA-635: Number of vertices value is inconsistent among tasks (Yuesheng Hu via tjungblut)
