@@ -208,7 +208,7 @@
   
   <property>
     <name>hama.messenger.class</name>
-    <value>org.apache.hama.bsp.message.AvroMessageManagerImpl</value>
+    <value>org.apache.hama.bsp.message.HadoopMessageManagerImpl</value>
   </property>
   
   <property>
