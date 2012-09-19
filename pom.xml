@@ -248,6 +248,7 @@
     <module>examples</module>
     <module>yarn</module>
     <module>ml</module>
+    <module>jdbm</module>
     <module>dist</module>
   </modules>
 

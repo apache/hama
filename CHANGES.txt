@@ -12,7 +12,8 @@ Release 0.6 (unreleased changes)
    HAMA-608: LocalRunner should honor the configured queues (tjungblut)
 
   IMPROVEMENTS
-
+ 
+   HAMA-642: Make GraphRunner disk based (tjungblut)
    HAMA-597: Split a GraphJobRunner into multiple classes (edwardyoon & tjungblut) 
    HAMA-557: Implement Checkpointing service in Hama (surajmenon)
    HAMA-587: Synchronization Client should provide API's to store and retrieve information among peers and BSPMaster (surajmenon)

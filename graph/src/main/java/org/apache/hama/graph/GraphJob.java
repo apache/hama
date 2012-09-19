@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.Combiner;
@@ -72,7 +73,8 @@ public class GraphJob extends BSPJob {
   /**
    * Set the Vertex ID class for the job.
    */
-  public void setVertexIDClass(Class<? extends Writable> cls)
+  public void setVertexIDClass(
+      @SuppressWarnings("rawtypes") Class<? extends WritableComparable> cls)
       throws IllegalStateException {
     conf.setClass(VERTEX_ID_CLASS_ATTR, cls, Writable.class);
   }
@@ -129,8 +131,8 @@ public class GraphJob extends BSPJob {
   }
 
   @Override
-  public void setPartitioner(@SuppressWarnings("rawtypes")
-  Class<? extends Partitioner> theClass) {
+  public void setPartitioner(
+      @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
     conf.setBoolean(VERTEX_GRAPH_RUNTIME_PARTIONING, true);
   }

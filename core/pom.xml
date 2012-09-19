@@ -150,6 +150,11 @@
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.hama</groupId>
+      <artifactId>hama-jdbm</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

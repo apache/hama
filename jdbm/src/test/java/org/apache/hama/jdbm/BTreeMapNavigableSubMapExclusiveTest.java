@@ -1,0 +1,37 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.hama.jdbm;
+
+public class BTreeMapNavigableSubMapExclusiveTest extends
+    BTreeMapNavigable2Test {
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    map.put(-1, "-one");
+    map.put(0, "zero");
+    map.put(11, "eleven");
+    map.put(12, "twelve");
+    map = map.subMap(0, false, 11, false);
+  }
+
+  @Override
+  public void testPut() {
+    // this test is not run on submaps
+  }
+}
