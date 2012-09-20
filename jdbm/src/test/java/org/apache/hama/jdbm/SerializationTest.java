@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.Vector;
 
 import junit.framework.TestCase;

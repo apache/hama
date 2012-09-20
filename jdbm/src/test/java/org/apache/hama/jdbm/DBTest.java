@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -244,7 +245,7 @@ public class DBTest extends TestCaseWithTestFile {
 
   public void testGetCollections() throws IOException {
     DB db = newDBCache();
-    db.createTreeMap("treemap");
+    NavigableMap<String, Object> createTreeMap = db.createTreeMap("treemap");
     db.createHashMap("hashmap");
     db.createTreeSet("treeset");
     db.createHashSet("hashset");
@@ -323,7 +324,7 @@ public class DBTest extends TestCaseWithTestFile {
                                                // map are initilaized
     d.commit();
     long recCount = d.countRecords();
-    Map l = d.createTreeMap("test");
+    NavigableMap<String,String> l = d.createTreeMap("test");
     l.put("1", "b");
     l.put("2", "b");
     d.commit();
@@ -369,7 +370,7 @@ public class DBTest extends TestCaseWithTestFile {
                                                // map are initilaized
     d.commit();
     long recCount = d.countRecords();
-    Map l = d.createTreeMap("test");
+    NavigableMap<String,String> l = d.createTreeMap("test");
     d.commit();
     assertFalse(recCount == d.countRecords());
     d.deleteCollection("test");
@@ -417,7 +418,7 @@ public class DBTest extends TestCaseWithTestFile {
   public void testCollectionSize() throws IOException {
     DB d = newDBNoCache();
 
-    Map tm = d.createTreeMap("t1");
+    Map<Integer,Integer> tm = d.createTreeMap("t1");
     tm.put(1, 1);
     tm.put(2, 2);
     assertEquals(d.collectionSize(tm), 2);

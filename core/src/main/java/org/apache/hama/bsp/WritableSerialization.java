@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.graph;
+package org.apache.hama.bsp;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -47,6 +48,8 @@ public class WritableSerialization<K extends Writable> implements
   protected transient Writable instance;
   protected transient int writableClassIndex;
 
+  protected transient Configuration conf;
+
   public WritableSerialization() {
   }
 
@@ -58,6 +61,11 @@ public class WritableSerialization<K extends Writable> implements
       LOOKUP_LIST.add(writableClazz);
     }
     this.writableClassIndex = integer;
+  }
+
+  public WritableSerialization(Class<?> writableClazz, Configuration conf) {
+    this(writableClazz);
+    this.conf = conf;
   }
 
   @Override
@@ -77,7 +85,7 @@ public class WritableSerialization<K extends Writable> implements
 
   public Writable newInstance() {
     return (Writable) ReflectionUtils.newInstance(
-        LOOKUP_LIST.get(writableClassIndex), null);
+        LOOKUP_LIST.get(writableClassIndex), conf);
   }
 
   @Override

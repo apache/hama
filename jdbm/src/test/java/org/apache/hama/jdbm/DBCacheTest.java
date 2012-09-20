@@ -17,7 +17,7 @@
  */
 package org.apache.hama.jdbm;
 
-import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
 
 public class DBCacheTest extends TestCaseWithTestFile {
@@ -50,7 +50,7 @@ public class DBCacheTest extends TestCaseWithTestFile {
   public void test_issue_xyz() {
     org.apache.hama.jdbm.DB db = DBMaker.openFile(newTestFile()).enableSoftCache()
         .make();
-    Map m = db.createTreeMap("test");
+    NavigableMap<String,String> m = db.createTreeMap("test");
 
     for (int i = 0; i < 1e5; i++) {
       m.put("test" + i, "test" + i);

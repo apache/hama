@@ -46,6 +46,8 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.bsp.WritableComparator;
+import org.apache.hama.bsp.WritableSerialization;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.jdbm.DB;
 import org.apache.hama.jdbm.DBMaker;
@@ -312,7 +314,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
 
       Comparator<V> writableComparator = new WritableComparator<V>();
       vertices = db.createTreeMap("graph-db", writableComparator,
-          new WritableSerialization<V>(vertexIdClass),
+          new WritableSerialization<V>(vertexIdClass, peer.getConfiguration()),
           new VertexWritableSerialization<Vertex<V, E, M>>(vertexClass, this));
     } else {
       vertices = new HashMap<V, Vertex<V, E, M>>();

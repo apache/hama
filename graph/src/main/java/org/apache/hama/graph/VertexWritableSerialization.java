@@ -19,6 +19,7 @@ package org.apache.hama.graph;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.bsp.WritableSerialization;
 
 import com.google.common.base.Preconditions;
 
@@ -54,7 +55,7 @@ public final class VertexWritableSerialization<K extends Writable> extends
   @Override
   public Writable newInstance() {
     Writable newInstance = (Writable) ReflectionUtils.newInstance(
-        LOOKUP_LIST.get(writableClassIndex), null);
+        LOOKUP_LIST.get(writableClassIndex), conf);
     ((Vertex) newInstance).runner = this.runner;
     return newInstance;
   }
