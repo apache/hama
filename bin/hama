@@ -60,7 +60,6 @@ if [ $# = 0 ]; then
   echo "  zookeeper            run a Zookeeper server"
   echo "  job                  manipulate BSP jobs"
   echo "  jar <jar>            run a jar file"
-  echo "  pipes	               run a pipe job"
   echo " or"
   echo "  CLASSNAME            run the class named CLASSNAME"
   echo "Most commands print help when invoked w/o parameters."
@@ -161,8 +160,6 @@ elif [ "$COMMAND" = "zookeeper" ] ; then
   CLASS='org.apache.hama.ZooKeeperRunner'
 elif [ "$COMMAND" = "job" ] ; then
   CLASS='org.apache.hama.bsp.BSPJobClient'
-elif [ "$COMMAND" = "pipes" ] ; then
-  CLASS='org.apache.hama.pipes.Submitter'
 elif [ "$COMMAND" = "jar" ] ; then
   CLASS=org.apache.hama.util.RunJar
   BSP_OPTS="$BSP_OPTS"

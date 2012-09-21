@@ -248,7 +248,6 @@
     <module>examples</module>
     <module>yarn</module>
     <module>ml</module>
-    <module>jdbm</module>
     <module>dist</module>
   </modules>
 
@@ -322,8 +321,6 @@
             <exclude>.classpath/**</exclude>
             <exclude>.project</exclude>
             <exclude>**/*.asc</exclude>
-	    <exclude>**/target/*</exclude>
-            <exclude>**/bin/**</exclude>
             <exclude>**/logs/**</exclude>
             <exclude>**/docs/**</exclude>
             <exclude>CHANGES.txt</exclude>

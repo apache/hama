@@ -4,8 +4,6 @@ Release 0.6 (unreleased changes)
 
   NEW FEATURES
 
-   HAMA-601: Hama Streaming (tjungblut)
-
   BUG FIXES
 
    HAMA-635: Number of vertices value is inconsistent among tasks (Yuesheng Hu via tjungblut)
@@ -14,8 +12,7 @@ Release 0.6 (unreleased changes)
    HAMA-608: LocalRunner should honor the configured queues (tjungblut)
 
   IMPROVEMENTS
- 
-   HAMA-642: Make GraphRunner disk based (tjungblut)
+
    HAMA-597: Split a GraphJobRunner into multiple classes (edwardyoon & tjungblut) 
    HAMA-557: Implement Checkpointing service in Hama (surajmenon)
    HAMA-587: Synchronization Client should provide API's to store and retrieve information among peers and BSPMaster (surajmenon)
@@ -51,34 +48,34 @@ Release 0.5 - April 10, 2012
 
   IMPROVEMENTS
    
-    HAMA-593: Improve RPC scalability (Mayank Mishra via tjungblut)
-    HAMA-584: Change Pagerank IO format to human-readable text for easy debug (tjungblut via edwardyoon)
-    HAMA-590: Fix TestSubmitGraphJob tests (tjungblut)
-    HAMA-582: Task's error logs should be displayed on client-end when job is failed (edwardyoon)
-    HAMA-580: Improve input of graph module (tjungblut)
-    HAMA-579: Add multiple aggregators (tjungblut)
-    HAMA-576: Improve sendMessages in Vertex (tjungblut)
-    HAMA-575: Generify graph package (tjungblut)    
-    HAMA-571: Provide graph repair function in GraphJobRunner (tjungblut)
-    HAMA-521: Improve message buffering to save memory (Thomas Jungblut via edwardyoon)
-    HAMA-494: Remove hard-coded webapp path in HttpServer (edwardyoon)
-    HAMA-562: Record Reader/Writer objects should be initialized (edwardyoon)
-    HAMA-555: Separate bin and src distributions (edwardyoon)
-    HAMA-548: Update 0.23.0-SNAPSHOT to 0.23.1 in pom file of yarn module (edwardyoon)
-    HAMA-545: Include the API and other docs in the Hama release (Suraj Menon via edwardyoon)
-    HAMA-543: Make best effort to start BSP Task on the host where the input split is located. (Suraj Menon via edwardyoon)
-    HAMA-527: Update commons-configuration version (edwardyoon)
-    HAMA-499: Refactor clearZKNodes() in BSPMaster (Apurv Verma via tjungblut)
-    HAMA-485: Fill Counters with useful information (tjungblut)
-    HAMA-497: Switch the trunk to Hadoop 1.0 based (edwardyoon) 
-    HAMA-445: Make configurable checkpointing (Suraj Menon via edwardyoon)
-    HAMA-498: BSPTask should periodically ping its parent (Suraj Menon via edwardyoon)
-    HAMA-513: Move message classes to somewhere from bsp package. (tjungblut)
-    HAMA-484: Counters should be accessible in client (tjungblut)    
-    HAMA-483: Remove old and deprecated BSP API (tjungblut)    
-    HAMA-514: Add maven-gpg-plugin to parent POM file (edwardyoon)
-    HAMA-510: Add sendMessageToNeighbors() to Vertex (tjungblut)
-    HAMA-502: Message API Improvement (edwardyoon)
+   HAMA-593: Improve RPC scalability (Mayank Mishra via tjungblut)
+   HAMA-584: Change Pagerank IO format to human-readable text for easy debug (tjungblut via edwardyoon)
+   HAMA-590: Fix TestSubmitGraphJob tests (tjungblut)
+   HAMA-582: Task's error logs should be displayed on client-end when job is failed (edwardyoon)
+   HAMA-580: Improve input of graph module (tjungblut)
+   HAMA-579: Add multiple aggregators (tjungblut)
+   HAMA-576: Improve sendMessages in Vertex (tjungblut)
+   HAMA-575: Generify graph package (tjungblut)    
+   HAMA-571: Provide graph repair function in GraphJobRunner (tjungblut)
+   HAMA-521: Improve message buffering to save memory (Thomas Jungblut via edwardyoon)
+   HAMA-494: Remove hard-coded webapp path in HttpServer (edwardyoon)
+   HAMA-562: Record Reader/Writer objects should be initialized (edwardyoon)
+   HAMA-555: Separate bin and src distributions (edwardyoon)
+   HAMA-548: Update 0.23.0-SNAPSHOT to 0.23.1 in pom file of yarn module (edwardyoon)
+   HAMA-545: Include the API and other docs in the Hama release (Suraj Menon via edwardyoon)
+   HAMA-543: Make best effort to start BSP Task on the host where the input split is located. (Suraj Menon via edwardyoon)
+   HAMA-527: Update commons-configuration version (edwardyoon)
+   HAMA-499: Refactor clearZKNodes() in BSPMaster (Apurv Verma via tjungblut)
+   HAMA-485: Fill Counters with useful information (tjungblut)
+   HAMA-497: Switch the trunk to Hadoop 1.0 based (edwardyoon) 
+   HAMA-445: Make configurable checkpointing (Suraj Menon via edwardyoon)
+   HAMA-498: BSPTask should periodically ping its parent (Suraj Menon via edwardyoon)
+   HAMA-513: Move message classes to somewhere from bsp package. (tjungblut)
+   HAMA-484: Counters should be accessible in client (tjungblut)    
+   HAMA-483: Remove old and deprecated BSP API (tjungblut)    
+   HAMA-514: Add maven-gpg-plugin to parent POM file (edwardyoon)
+   HAMA-510: Add sendMessageToNeighbors() to Vertex (tjungblut)
+   HAMA-502: Message API Improvement (edwardyoon)
   
 Release 0.4 - February 5, 2012
 

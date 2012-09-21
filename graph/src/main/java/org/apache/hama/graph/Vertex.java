@@ -17,8 +17,6 @@
  */
 package org.apache.hama.graph;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,15 +24,13 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
 
 public abstract class Vertex<V extends Writable, E extends Writable, M extends Writable>
-    implements VertexInterface<V, E, M>, Writable {
+    implements VertexInterface<V, E, M> {
 
-  transient GraphJobRunner<?, ?, ?> runner;
+  GraphJobRunner<?, ?, ?> runner;
 
   private V vertexID;
   private M value;
@@ -220,81 +216,6 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
     } else if (!vertexID.equals(other.vertexID))
       return false;
     return true;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void readFields(DataInput in) throws IOException {
-    votedToHalt = in.readBoolean();
-    vertexID = (V) ReflectionUtils.newInstance(runner.vertexIdClass, null);
-    vertexID.readFields(in);
-    if (in.readBoolean()) {
-      value = (M) ReflectionUtils.newInstance(runner.vertexValueClass, null);
-      value.readFields(in);
-    }
-
-    int edges = WritableUtils.readVInt(in);
-    ArrayList<Edge<V, E>> list = new ArrayList<Edge<V, E>>(edges);
-    for (int i = 0; i < edges; i++) {
-      V adjacentId = (V) ReflectionUtils
-          .newInstance(runner.vertexIdClass, null);
-      adjacentId.readFields(in);
-      E edgeValue = null;
-      if (in.readBoolean()) {
-        edgeValue = (E) ReflectionUtils
-            .newInstance(runner.edgeValueClass, null);
-        edgeValue.readFields(in);
-      }
-      list.add(new Edge<V, E>(adjacentId, edgeValue));
-    }
-
-    this.setEdges(list);
-    readInternal(in);
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    out.writeBoolean(votedToHalt);
-    V vId = getVertexID();
-    vId.write(out);
-    M val = getValue();
-    serializeNull(out, val);
-
-    List<Edge<V, E>> edges = getEdges();
-    int length = edges == null ? 0 : edges.size();
-    WritableUtils.writeVInt(out, length);
-    for (Edge<V, E> edge : edges) {
-      edge.getDestinationVertexID().write(out);
-      serializeNull(out, edge.getValue());
-    }
-
-    writeInternal(out);
-  }
-
-  /**
-   * A write method to let the user save its own state in the vertex class.
-   */
-  protected void writeInternal(DataOutput out) throws IOException {
-  }
-
-  /**
-   * A read method to let the user save its own state in the vertex class.
-   */
-  protected void readInternal(DataInput out) throws IOException {
-  }
-
-  /**
-   * Serializes data null-safe by writing a boolean that is only true when the
-   * given writable is not null.
-   */
-  protected static void serializeNull(DataOutput out, Writable writable)
-      throws IOException {
-    if (writable == null) {
-      out.writeBoolean(false);
-    } else {
-      out.writeBoolean(true);
-      writable.write(out);
-    }
   }
 
   @Override

@@ -57,10 +57,6 @@ import org.apache.hama.ipc.JobSubmissionProtocol;
  * running BSP's.
  */
 public class LocalBSPRunner implements JobSubmissionProtocol {
-  
-  public static final String BSP_LOCAL_DIR = "bsp.local.dir";
-  public static final String BSP_LOCAL_TASKS_MAXIMUM = "bsp.local.tasks.maximum";
-  
   private static final Log LOG = LogFactory.getLog(LocalBSPRunner.class);
 
   private static final String IDENTIFIER = "localrunner";
@@ -86,9 +82,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     super();
     this.conf = conf;
 
-    maxTasks = conf.getInt(BSP_LOCAL_TASKS_MAXIMUM, 20);
+    maxTasks = conf.getInt("bsp.local.tasks.maximum", 20);
 
-    String path = conf.get(BSP_LOCAL_DIR);
+    String path = conf.get("bsp.local.dir");
     if (path != null && !path.isEmpty()) {
       WORKING_DIR = path;
     }

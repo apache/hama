@@ -140,6 +140,7 @@
     <value>10000</value>
     <description>The default timeout period for checking groom server health.</description>
   </property>
+
   <property>
     <name>hama.messenger.max.cached.connections</name>
     <value>100</value>
@@ -149,20 +150,7 @@
     but it trades more memory.
     </description>
   </property>
-  <property>
-    <name>hama.graph.in.memory</name>
-    <value>false</value>
-    <description>true if the graph should completely stored in memory (in a map), 
-    default is false, so it will be stored on disk under the configured "hama.graph.storage.path".
-    </description>
-  </property>
-  <property>
-    <name>hama.graph.storage.path</name>
-    <value>/tmp/graph_storage/</value>
-    <description>The default place where the graph (vertices, edges etc) is stored on each node's hdd.
-    </description>
-  </property>
-
+  
   <!--
   Beginning of properties that are directly mapped from ZooKeeper's zoo.cfg.
   All properties with an "hama.zookeeper.property." prefix are converted for

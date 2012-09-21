@@ -18,10 +18,8 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,26 +29,18 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
-import org.apache.hama.bsp.WritableComparator;
-import org.apache.hama.bsp.WritableSerialization;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.jdbm.DB;
-import org.apache.hama.jdbm.DBMaker;
 import org.apache.hama.util.KeyValuePair;
 
 /**
@@ -60,20 +50,8 @@ import org.apache.hama.util.KeyValuePair;
  * @param <E> the value type of an edge.
  * @param <M> the value type of a vertex.
  */
-public final class GraphJobRunner<V extends WritableComparable<V>, E extends Writable, M extends Writable>
-    extends BSP<Writable, Writable, Writable, Writable, GraphJobMessage>
-    implements Serializable {
-
-  public static final String HAMA_GRAPH_MULTI_STEP_PARTITIONING_INTERVAL = "hama.graph.partitioning.batch.bytes";
-  public static final String HAMA_GRAPH_SELF_REF = "hama.graph.self.ref";
-  public static final String HAMA_GRAPH_STORAGE_PATH = "hama.graph.storage.path";
-  public static final String HAMA_GRAPH_IN_MEMORY = "hama.graph.in.memory";
-  public static final String HAMA_GRAPH_VERTEX_CLASS = "hama.graph.vertex.class";
-  public static final String HAMA_GRAPH_MAX_ITERATION = "hama.graph.max.iteration";
-  public static final String MESSAGE_COMBINER_CLASS = "hama.vertex.message.combiner.class";
-  public static final String GRAPH_REPAIR = "hama.graph.repair";
-
-  private static final long serialVersionUID = 1L;
+public final class GraphJobRunner<V extends Writable, E extends Writable, M extends Writable>
+    extends BSP<Writable, Writable, Writable, Writable, GraphJobMessage> {
 
   private static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
 
@@ -83,12 +61,14 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
   public static final String S_FLAG_AGGREGATOR_INCREMENT = "hama.2";
   public static final Text FLAG_MESSAGE_COUNTS = new Text(S_FLAG_MESSAGE_COUNTS);
 
-  private transient Configuration conf;
-  private transient Combiner<M> combiner;
-  private transient Partitioner<V, M> partitioner;
+  public static final String MESSAGE_COMBINER_CLASS = "hama.vertex.message.combiner.class";
+  public static final String GRAPH_REPAIR = "hama.graph.repair";
 
-  private transient Map<V, Vertex<V, E, M>> vertices;
-  private transient DB db;
+  private Configuration conf;
+  private Combiner<M> combiner;
+  private Partitioner<V, M> partitioner;
+
+  private Map<V, Vertex<V, E, M>> vertices = new HashMap<V, Vertex<V, E, M>>();
 
   private boolean updated = true;
   private int globalUpdateCounts = 0;
@@ -98,14 +78,14 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
   private int maxIteration = -1;
   private long iteration;
 
-  Class<V> vertexIdClass;
-  Class<M> vertexValueClass;
-  Class<E> edgeValueClass;
-  Class<Vertex<V, E, M>> vertexClass;
+  private Class<V> vertexIdClass;
+  private Class<M> vertexValueClass;
+  private Class<E> edgeValueClass;
+  private Class<Vertex<V, E, M>> vertexClass;
 
-  private transient AggregationRunner<V, E, M> aggregationRunner;
+  private AggregationRunner<V, E, M> aggregationRunner;
 
-  private transient BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
+  private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
 
   @Override
   public final void setup(
@@ -145,32 +125,18 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
       // loop over vertices and do their computation
       doSuperstep(messages, peer);
     }
-
-    write(peer);
   }
 
   /**
    * Just write <ID as Writable, Value as Writable> pair as a result. Note that
    * this will also be executed when failure happened.
    */
-  private void write(
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
-      throws IOException {
-
-    Set<V> keySet = vertices.keySet();
-    for (V value : keySet) {
-      Vertex<V, E, M> e = vertices.get(value);
-      peer.write(e.getVertexID(), e.getValue());
-    }
-  }
-
   @Override
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
-    // remove the DB files if they exist
-    if (db != null) {
-      db.close();
+    for (Entry<V, Vertex<V, E, M>> e : vertices.entrySet()) {
+      peer.write(e.getValue().getVertexID(), e.getValue().getValue());
     }
   }
 
@@ -205,9 +171,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     int activeVertices = 0;
-    Set<V> keySet = vertices.keySet();
-    for (V key : keySet) {
-      Vertex<V, E, M> vertex = vertices.get(key);
+    for (Vertex<V, E, M> vertex : vertices.values()) {
       List<M> msgs = messages.get(vertex.getVertexID());
       // If there are newly received messages, restart.
       if (vertex.isHalted() && msgs != null) {
@@ -243,9 +207,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
   private void doInitialSuperstep(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
-    Set<V> keySet = vertices.keySet();
-    for (V key : keySet) {
-      Vertex<V, E, M> vertex = vertices.get(key);
+    for (Vertex<V, E, M> vertex : vertices.values()) {
       List<M> singletonList = Collections.singletonList(vertex.getValue());
       M lastValue = vertex.getValue();
       vertex.compute(singletonList.iterator());
@@ -260,7 +222,8 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer) {
     this.peer = peer;
     this.conf = peer.getConfiguration();
-    maxIteration = peer.getConfiguration().getInt(HAMA_GRAPH_MAX_ITERATION, -1);
+    maxIteration = peer.getConfiguration().getInt("hama.graph.max.iteration",
+        -1);
 
     vertexIdClass = (Class<V>) conf.getClass(GraphJob.VERTEX_ID_CLASS_ATTR,
         Text.class, Writable.class);
@@ -270,7 +233,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
         GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR, IntWritable.class,
         Writable.class);
     vertexClass = (Class<Vertex<V, E, M>>) conf.getClass(
-        HAMA_GRAPH_VERTEX_CLASS, Vertex.class);
+        "hama.graph.vertex.class", Vertex.class);
 
     // set the classes statically, so we can save memory per message
     GraphJobMessage.VERTEX_ID_CLASS = vertexIdClass;
@@ -289,35 +252,6 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
       combiner = (Combiner<M>) ReflectionUtils.newInstance(
           conf.getClass("hama.vertex.message.combiner.class", Combiner.class),
           conf);
-    }
-
-    if (!conf.getBoolean(HAMA_GRAPH_IN_MEMORY, false)) {
-
-      String storagePath = conf.get(HAMA_GRAPH_STORAGE_PATH);
-      if (storagePath == null) {
-        storagePath = "/tmp/graph_storage/";
-      }
-
-      storagePath += peer.getTaskId().toString();
-
-      try {
-        LocalFileSystem local = FileSystem.getLocal(conf);
-        local.mkdirs(new Path(storagePath));
-      } catch (IOException e) {
-        throw new RuntimeException("Could not create \"" + storagePath
-            + "\", nested exception was: ", e);
-      }
-
-      db = DBMaker.openFile(storagePath + "/graph.db").disableLocking()
-          .disableTransactions().deleteFilesAfterClose().useRandomAccessFile()
-          .make();
-
-      Comparator<V> writableComparator = new WritableComparator<V>();
-      vertices = db.createTreeMap("graph-db", writableComparator,
-          new WritableSerialization<V>(vertexIdClass, peer.getConfiguration()),
-          new VertexWritableSerialization<Vertex<V, E, M>>(vertexClass, this));
-    } else {
-      vertices = new HashMap<V, Vertex<V, E, M>>();
     }
 
     aggregationRunner = new AggregationRunner<V, E, M>();
@@ -348,7 +282,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
     final int partitioningSteps = partitionMultiSteps(peer, splitSize);
     final long interval = splitSize / partitioningSteps;
 
-    final boolean selfReference = conf.getBoolean(HAMA_GRAPH_SELF_REF, false);
+    final boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
 
     /*
      * Several partitioning constants end
@@ -569,7 +503,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
       }
 
       int steps = (int) (maxSplitSize / conf.getInt( // 20 mb
-          HAMA_GRAPH_MULTI_STEP_PARTITIONING_INTERVAL, 20000000)) + 1;
+          "hama.graph.multi.step.partitioning.interval", 20000000)) + 1;
 
       for (String peerName : peer.getAllPeerNames()) {
         MapWritable temp = new MapWritable();
@@ -584,7 +518,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
     for (Entry<Writable, Writable> e : x.entrySet()) {
       multiSteps = ((IntWritable) e.getValue()).get();
     }
-    LOG.info(peer.getPeerName() + ": Number of partitioning supersteps: " + multiSteps);
+    LOG.info(peer.getPeerName() + ": " + multiSteps);
     return multiSteps;
   }
 

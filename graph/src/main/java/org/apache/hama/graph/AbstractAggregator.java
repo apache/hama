@@ -87,7 +87,7 @@ public abstract class AbstractAggregator<M extends Writable, VERTEX extends Vert
   public IntWritable getTimesAggregated() {
     return new IntWritable(timesAggregated);
   }
-
+  
   @Override
   public String toString() {
     return "VAL=" + getValue();
