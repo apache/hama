@@ -55,10 +55,10 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   public void testSubmitJob() throws Exception {
 
     generateTestData();
-    
+
     // Set multi-step partitioning interval to 30 bytes
     configuration.setInt("hama.graph.multi.step.partitioning.interval", 30);
-    
+
     GraphJob bsp = new GraphJob(configuration, PageRank.class);
     bsp.setInputPath(new Path(INPUT));
     bsp.setOutputPath(new Path(OUTPUT));
@@ -91,12 +91,16 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     bsp.setOutputValueClass(DoubleWritable.class);
 
     long startTime = System.currentTimeMillis();
-    if (bsp.waitForCompletion(true)) {
-      verifyResult();
-      LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime)
-          / 1000.0 + " seconds");
-    } else {
-      fail();
+    try {
+      if (bsp.waitForCompletion(true)) {
+        verifyResult();
+        LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime)
+            / 1000.0 + " seconds");
+      } else {
+        fail();
+      }
+    } finally {
+      deleteTempDirs();
     }
   }
 
@@ -131,14 +135,25 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
       if (bw != null) {
         try {
           bw.close();
-          
+
           File file = new File(INPUT);
           LOG.info("Temp file length: " + file.length());
-          
+
         } catch (IOException e) {
           e.printStackTrace();
         }
       }
+    }
+  }
+
+  private void deleteTempDirs() {
+    try {
+      if (fs.exists(new Path(INPUT)))
+        fs.delete(new Path(INPUT), true);
+      if (fs.exists(new Path(OUTPUT)))
+        fs.delete(new Path(OUTPUT), true);
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 }
