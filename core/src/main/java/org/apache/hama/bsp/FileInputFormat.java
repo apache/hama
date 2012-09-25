@@ -97,7 +97,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
       BSPJob job) throws IOException;
 
   /**
-   * Set a PathFilter to be applied to the input paths for the map-reduce job.
+   * Set a PathFilter to be applied to the input paths for the BSP job.
    * 
    * @param filter the PathFilter class use for filtering the input paths.
    */
@@ -205,6 +205,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     }
 
     ArrayList<FileSplit> splits = new ArrayList<FileSplit>(numSplits);
+    long goalSize = 0;
     // take the short circuit path if we have already partitioned
     if (numSplits == files.length) {
       for (FileStatus file : files) {
@@ -214,9 +215,13 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
         }
       }
       return splits.toArray(new FileSplit[splits.size()]);
+    } else if (files.length == 1) {
+      goalSize = totalSize / (numSplits == 0 ? 1 : numSplits - 1);
+    } else {
+      goalSize = totalSize
+          / (numSplits == 0 ? 1 : numSplits - files.length / 2 + 1);
     }
-
-    long goalSize = totalSize / (numSplits == 0 ? 1 : numSplits);
+    LOG.debug("numSplits: " + numSplits); 
     long minSize = Math.max(job.getConf().getLong("bsp.min.split.size", 1),
         minSplitSize);
 
@@ -232,7 +237,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
         if ((length != 0) && isSplitable(fs, path)) {
           long blockSize = file.getBlockSize();
           long splitSize = computeSplitSize(goalSize, minSize, blockSize);
-          LOG.debug("computeSplitSize: " + splitSize + " (" + goalSize + ", "
+          LOG.info("computeSplitSize: " + splitSize + " (" + goalSize + ", "
               + minSize + ", " + blockSize + ")");
 
           long bytesRemaining = length;
@@ -264,7 +269,11 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   protected long computeSplitSize(long goalSize, long minSize, long blockSize) {
-    return Math.max(minSize, Math.min(goalSize, blockSize));
+    if (goalSize > blockSize) {
+      return Math.max(minSize, Math.max(goalSize, blockSize));
+    } else {
+      return Math.max(minSize, Math.min(goalSize, blockSize));
+    }
   }
 
   protected int getBlockIndex(BlockLocation[] blkLocations, long offset) {
@@ -283,12 +292,11 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   /**
-   * Sets the given comma separated paths as the list of inputs for the
-   * map-reduce job.
+   * Sets the given comma separated paths as the list of inputs for the BSP job.
    * 
    * @param conf Configuration of the job
    * @param commaSeparatedPaths Comma separated paths to be set as the list of
-   *          inputs for the map-reduce job.
+   *          inputs for the BSP job.
    */
   public static void setInputPaths(BSPJob conf, String commaSeparatedPaths) {
     setInputPaths(conf,
@@ -296,12 +304,11 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   /**
-   * Add the given comma separated paths to the list of inputs for the
-   * map-reduce job.
+   * Add the given comma separated paths to the list of inputs for the BSP job.
    * 
    * @param conf The configuration of the job
    * @param commaSeparatedPaths Comma separated paths to be added to the list of
-   *          inputs for the map-reduce job.
+   *          inputs for the BSP job.
    */
   public static void addInputPaths(BSPJob conf, String commaSeparatedPaths) {
     for (String str : getPathStrings(commaSeparatedPaths)) {
@@ -310,12 +317,11 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   /**
-   * Set the array of {@link Path}s as the list of inputs for the map-reduce
-   * job.
+   * Set the array of {@link Path}s as the list of inputs for the BSP job.
    * 
    * @param conf Configuration of the job.
    * @param inputPaths the {@link Path}s of the input directories/files for the
-   *          map-reduce job.
+   *          BSP job.
    */
   public static void setInputPaths(BSPJob conf, Path... inputPaths) {
     Path path = new Path(conf.getWorkingDirectory(), inputPaths[0]);
@@ -330,11 +336,10 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   /**
-   * Add a {@link Path} to the list of inputs for the map-reduce job.
+   * Add a {@link Path} to the list of inputs for the BSP job.
    * 
    * @param conf The configuration of the job
-   * @param path {@link Path} to be added to the list of inputs for the
-   *          map-reduce job.
+   * @param path {@link Path} to be added to the list of inputs for the BSP job.
    */
   public static void addInputPath(BSPJob conf, Path p) {
     Path path = new Path(conf.getWorkingDirectory(), p);
@@ -384,10 +389,10 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   /**
-   * Get the list of input {@link Path}s for the map-reduce job.
+   * Get the list of input {@link Path}s for the BSP job.
    * 
    * @param conf The configuration of the job
-   * @return the list of input {@link Path}s for the map-reduce job.
+   * @return the list of input {@link Path}s for the BSP job.
    */
   public static Path[] getInputPaths(BSPJob conf) {
     String dirs = conf.getConf().get("bsp.input.dir", "");

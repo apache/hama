@@ -8,6 +8,7 @@ Release 0.6 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-647: Make the input spliter robustly (Yuesheng Hu via edwardyoon)
    HAMA-635: Number of vertices value is inconsistent among tasks (Yuesheng Hu via tjungblut)
    HAMA-633: Fix CI Failures (tjungblut)
    HAMA-631: Add "commons-httpclient-3.1.jar" (Paul Gyuho Song via edwardyoon)
