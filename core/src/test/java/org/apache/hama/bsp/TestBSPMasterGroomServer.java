@@ -124,6 +124,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
             superStep++;
           }
         }
+        reader.close();
         // the maximum should be the number of supersteps defined in the task
         assertEquals(superStep, ClassSerializePrinting.NUM_SUPERSTEPS);
       }
