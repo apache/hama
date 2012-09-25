@@ -46,6 +46,12 @@ public class ClassSerializePrinting extends
 
         bspPeer.send(otherPeer, map);
       }
+      
+      // Test superstep counter
+      if (i != bspPeer.getSuperstepCount()) {
+        throw new IOException();
+      }
+      
       bspPeer.sync();
 
       MapWritable msg = null;
