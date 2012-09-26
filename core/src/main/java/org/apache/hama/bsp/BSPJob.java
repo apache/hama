@@ -264,7 +264,8 @@ public class BSPJob extends BSPJobContext {
   /**
    * Sets the compression codec that should be used to compress messages.
    */
-  public void setCompressionCodec(Class<? extends BSPMessageCompressor<?>> clazz) {
+  @SuppressWarnings({ "rawtypes" })
+  public void setCompressionCodec(Class<? extends BSPMessageCompressor> clazz) {
     conf.setClass(BSPMessageCompressorFactory.COMPRESSION_CODEC_CLASS, clazz,
         BSPMessageCompressor.class);
   }
@@ -395,5 +396,14 @@ public class BSPJob extends BSPJobContext {
 
   protected void setCheckPointFlag(boolean enableCheckPoint) {
     conf.setBoolean(Constants.CHECKPOINT_ENABLED, enableCheckPoint);
+  }
+
+  /**
+   * Set compression threshold in bytes.
+   * 
+   * @param ct
+   */
+  public void setCompressionThreshold(long ct) {
+    conf.setLong("hama.messenger.compression.threshold", ct);
   }
 }

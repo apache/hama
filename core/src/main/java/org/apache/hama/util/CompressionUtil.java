@@ -50,4 +50,15 @@ public class CompressionUtil {
     return (compLen / bos.toByteArray().length);
   }
 
+  public static long getBundleSize(BSPMessageBundle<?> bundle)
+      throws IOException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(bos);
+    bundle.write(dos);
+
+    dos.close();
+    bos.close();
+
+    return bos.toByteArray().length;
+  }
 }

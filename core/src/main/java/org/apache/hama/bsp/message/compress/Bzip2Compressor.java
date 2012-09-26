@@ -29,7 +29,7 @@ import org.apache.hadoop.io.compress.CompressionInputStream;
 import org.apache.hadoop.io.compress.CompressionOutputStream;
 import org.apache.hama.bsp.BSPMessageBundle;
 
-public class Bzip2Compressor<M extends Writable> implements
+public class Bzip2Compressor<M extends Writable> extends
     BSPMessageCompressor<M> {
 
   private final BZip2Codec codec = new BZip2Codec();

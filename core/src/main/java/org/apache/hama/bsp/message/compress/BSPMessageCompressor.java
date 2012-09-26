@@ -26,7 +26,7 @@ import org.apache.hama.bsp.BSPMessageBundle;
  * Provides utilities for compressing and decompressing BSPMessageBundle.
  * 
  */
-public interface BSPMessageCompressor<M extends Writable> {
+public abstract class BSPMessageCompressor<M extends Writable> {
 
   public static final Log LOG = LogFactory.getLog(BSPMessageCompressor.class);
 
@@ -37,7 +37,7 @@ public interface BSPMessageCompressor<M extends Writable> {
    * @param bundle
    * @return
    */
-  public BSPCompressedBundle compressBundle(BSPMessageBundle<M> bundle);
+  public abstract BSPCompressedBundle compressBundle(BSPMessageBundle<M> bundle);
 
   /**
    * Decompresses a BSPCompressedBundle and returns the corresponding
@@ -46,5 +46,5 @@ public interface BSPMessageCompressor<M extends Writable> {
    * @param compMsgBundle
    * @return
    */
-  public BSPMessageBundle<M> decompressBundle(BSPCompressedBundle compMsgBundle);
+  public abstract BSPMessageBundle<M> decompressBundle(BSPCompressedBundle compMsgBundle);
 }

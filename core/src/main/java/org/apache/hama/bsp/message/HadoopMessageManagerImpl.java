@@ -96,13 +96,14 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
   @Override
   public final void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException {
-
     HadoopMessageManager<M> bspPeerConnection = this.getBSPPeerConnection(addr);
     if (bspPeerConnection == null) {
       throw new IllegalArgumentException("Can not find " + addr.toString()
           + " to transfer messages to!");
     } else {
-      if (compressor != null) {
+      if (compressor != null
+          && CompressionUtil.getBundleSize(bundle) > conf.getLong(
+              "hama.messenger.compression.threshold", 1048576)) {
         BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
         if (CompressionUtil.getCompressionRatio(compMsgBundle, bundle) < 1.0) {
           bspPeerConnection.put(compMsgBundle);

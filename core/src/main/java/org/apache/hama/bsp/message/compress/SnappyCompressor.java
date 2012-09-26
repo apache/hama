@@ -28,7 +28,7 @@ import org.apache.hama.bsp.BSPMessageBundle;
 import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
-public class SnappyCompressor<M extends Writable> implements
+public class SnappyCompressor<M extends Writable> extends
     BSPMessageCompressor<M> {
 
   @Override
