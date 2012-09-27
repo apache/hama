@@ -22,7 +22,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 
 public class CompressionUtil {
 
@@ -30,35 +29,22 @@ public class CompressionUtil {
    * Calculates the compression ratio. A compression ratio of less than 1 is
    * desirable.
    * 
-   * @param compMsgBundle
-   * @param bundle
-   * @return
+   * @param compressedSize
+   * @param bundleSize
+   * @return the compression ratio
    * @throws IOException
    */
-  public static float getCompressionRatio(BSPCompressedBundle compMsgBundle,
-      BSPMessageBundle<?> bundle) throws IOException {
-
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(bos);
-    bundle.write(dos);
-
-    dos.close();
-    bos.close();
-
-    float compLen = compMsgBundle.getData().length;
-
-    return (compLen / bos.toByteArray().length);
+  public static float getCompressionRatio(float compressedSize, float bundleSize)
+      throws IOException {
+    return (compressedSize / bundleSize);
   }
 
-  public static long getBundleSize(BSPMessageBundle<?> bundle)
+  public static float getBundleSize(BSPMessageBundle<?> bundle)
       throws IOException {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(bos);
+    DataOutputStream dos = new DataOutputStream(new ByteArrayOutputStream());
     bundle.write(dos);
-
     dos.close();
-    bos.close();
 
-    return bos.toByteArray().length;
+    return dos.size();
   }
 }

@@ -101,14 +101,17 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
       throw new IllegalArgumentException("Can not find " + addr.toString()
           + " to transfer messages to!");
     } else {
-      if (compressor != null
-          && CompressionUtil.getBundleSize(bundle) > conf.getLong(
-              "hama.messenger.compression.threshold", 1048576)) {
-        BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
-        if (CompressionUtil.getCompressionRatio(compMsgBundle, bundle) < 1.0) {
-          bspPeerConnection.put(compMsgBundle);
-        } else {
-          bspPeerConnection.put(bundle);
+      if (compressor != null) {
+        float bundleSize = CompressionUtil.getBundleSize(bundle);
+        if (CompressionUtil.getBundleSize(bundle) > conf.getLong(
+            "hama.messenger.compression.threshold", 1048576)) {
+          BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
+          if (CompressionUtil.getCompressionRatio(
+              (float) compMsgBundle.getData().length, bundleSize) < 1.0) {
+            bspPeerConnection.put(compMsgBundle);
+          } else {
+            bspPeerConnection.put(bundle);
+          }
         }
       } else {
         bspPeerConnection.put(bundle);
