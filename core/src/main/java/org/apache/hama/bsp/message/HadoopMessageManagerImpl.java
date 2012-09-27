@@ -103,8 +103,8 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
     } else {
       if (compressor != null) {
         float bundleSize = CompressionUtil.getBundleSize(bundle);
-        if (CompressionUtil.getBundleSize(bundle) > conf.getLong(
-            "hama.messenger.compression.threshold", 1048576)) {
+        if (bundleSize > conf.getLong("hama.messenger.compression.threshold",
+            1048576)) {
           BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
           if (CompressionUtil.getCompressionRatio(
               (float) compMsgBundle.getData().length, bundleSize) < 1.0) {
