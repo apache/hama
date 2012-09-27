@@ -46,12 +46,14 @@ public class TestAvroMessageManager extends TestCase {
 
   private static final int SUM = DOUBLE_MSG_COUNT + BOOL_MSG_COUNT
       + INT_MSG_COUNT;
-  
+
   public static final String TMP_OUTPUT_PATH = "/tmp/messageQueue";
 
   public void testAvroMessenger() throws Exception {
     BSPMessageBundle<Writable> randomBundle = getRandomBundle();
     Configuration conf = new Configuration();
+    conf.set("hama.messenger.class",
+        "org.apache.hama.bsp.message.AvroMessageManagerImpl");
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     MessageManager<Writable> messageManager = MessageManagerFactory
         .getMessageManager(conf);
