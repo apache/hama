@@ -175,37 +175,17 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   /**
-   * Splits files returned by {@link #listStatus(JobConf)} when they're too big.
+   * Splits files returned by {@link #listStatus(BSPJob)} when they're too big.
    */
   @Override
   public InputSplit[] getSplits(BSPJob job, int numSplits) throws IOException {
     FileStatus[] files = listStatus(job);
 
-    long totalSize = 0; // compute total size
-    for (int i = 0; i < files.length; i++) { // check we have valid files
-      FileStatus file = files[i];
-      if (file.isDir()) {
-        final Path path = file.getPath();
-        if (path.getName().equals("hama-partitions")
-            || (job.get("bsp.partitioning.dir") != null && path.getName()
-                .equals(job.get("bsp.partitioning.dir")))) {
-          // if we find the partitioning dir, just remove it.
-          LOG.warn("Removing already existing partitioning directory " + path);
-          FileSystem fileSystem = path.getFileSystem(job.getConf());
-          if (!fileSystem.delete(path, true)) {
-            LOG.error("Remove failed.");
-          }
-          // remove this file from our initial list
-          files[i] = null;
-        } else {
-          throw new IOException("Not a file (dir): " + path);
-        }
-      }
-      totalSize += file.getLen();
-    }
+    long totalSize = computeTotalSize(job, files);
+    long goalSize = computeGoalSize(numSplits, totalSize);
 
     ArrayList<FileSplit> splits = new ArrayList<FileSplit>(numSplits);
-    long goalSize = 0;
+
     // take the short circuit path if we have already partitioned
     if (numSplits == files.length) {
       for (FileStatus file : files) {
@@ -215,13 +195,9 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
         }
       }
       return splits.toArray(new FileSplit[splits.size()]);
-    } else if (files.length == 1) {
-      goalSize = totalSize / (numSplits == 0 ? 1 : numSplits - 1);
-    } else {
-      goalSize = totalSize
-          / (numSplits == 0 ? 1 : numSplits - files.length / 2 + 1);
     }
-    LOG.debug("numSplits: " + numSplits); 
+
+    LOG.info("numSplits: " + numSplits);
     long minSize = Math.max(job.getConf().getLong("bsp.min.split.size", 1),
         minSplitSize);
 
@@ -266,6 +242,37 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     }
     LOG.info("Total # of splits: " + splits.size());
     return splits.toArray(new FileSplit[splits.size()]);
+  }
+
+  protected long computeTotalSize(BSPJob job, FileStatus[] files)
+      throws IOException {
+    long totalSize = 0L;
+    for (int i = 0; i < files.length; i++) { // check we have valid files
+      FileStatus file = files[i];
+      if (file.isDir()) {
+        final Path path = file.getPath();
+        if (path.getName().equals("hama-partitions")
+            || (job.get("bsp.partitioning.dir") != null && path.getName()
+                .equals(job.get("bsp.partitioning.dir")))) {
+          // if we find the partitioning dir, just remove it.
+          LOG.warn("Removing already existing partitioning directory " + path);
+          FileSystem fileSystem = path.getFileSystem(job.getConf());
+          if (!fileSystem.delete(path, true)) {
+            LOG.error("Remove failed.");
+          }
+          // remove this file from our initial list
+          files[i] = null;
+        } else {
+          throw new IOException("Not a file (dir): " + path);
+        }
+      }
+      totalSize += file.getLen();
+    }
+    return totalSize;
+  }
+
+  protected long computeGoalSize(int numSplits, long totalSize) {
+    return totalSize / (numSplits == 0 ? 1 : numSplits);
   }
 
   protected long computeSplitSize(long goalSize, long minSize, long blockSize) {
