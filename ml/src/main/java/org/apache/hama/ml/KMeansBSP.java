@@ -106,14 +106,18 @@ public final class KMeansBSP
         "Centers file must contain at least a single center!");
     this.centers = centers.toArray(new DoubleVector[centers.size()]);
 
-    distanceMeasurer = new EuclidianDistance();
+
     String distanceClass = peer.getConfiguration().get(DISTANCE_MEASURE_CLASS);
     if (distanceClass != null) {
       try {
         distanceMeasurer = ReflectionUtils.newInstance(distanceClass);
       } catch (ClassNotFoundException e) {
-        e.printStackTrace();
+        throw new RuntimeException(new StringBuilder("Wrong DistanceMeasurer implementation ").
+            append(distanceClass).append(" provided").toString());
       }
+    }
+    else {
+      distanceMeasurer = new EuclidianDistance();
     }
 
     maxIterations = peer.getConfiguration().getInt(MAX_ITERATIONS_KEY, -1);
@@ -386,7 +390,7 @@ public final class KMeansBSP
   public static Path prepareInputText(int k, Configuration conf, Path txtIn,
       Path center, Path out, FileSystem fs) throws IOException {
 
-    Path in = null;
+    Path in;
     if (fs.isFile(txtIn)) {
       in = new Path(txtIn.getParent(), "textinput/in.seq");
     } else {
@@ -424,7 +428,8 @@ public final class KMeansBSP
       VectorWritable vector = new VectorWritable(vec);
       dataWriter.append(vector, value);
       if (k > i) {
-        centerWriter.append(vector, value);
+          assert centerWriter != null;
+          centerWriter.append(vector, value);
       } else {
         if (centerWriter != null) {
           centerWriter.close();
