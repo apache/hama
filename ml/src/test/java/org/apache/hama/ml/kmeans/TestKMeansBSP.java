@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ml;
+package org.apache.hama.ml.kmeans;
 
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.bsp.BSPJob;
+import org.apache.hama.ml.kmeans.KMeansBSP;
 import org.apache.hama.ml.math.DoubleVector;
 
 public class TestKMeansBSP extends TestCase {
