@@ -35,7 +35,7 @@ import java.io.IOException;
  * A gradient descent (see <code>http://en.wikipedia.org/wiki/Gradient_descent</code>) BSP based abstract implementation.
  * Each extending class should implement the #hypothesis(DoubleVector theta, DoubleVector x) method for a specific
  */
-public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, NullWritable, NullWritable, VectorWritable> {
+public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> {
 
   private static final Logger log = LoggerFactory.getLogger(GradientDescentBSP.class);
   static final String INITIAL_THETA_VALUES = "initial.theta.values";
@@ -45,12 +45,12 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
   private DoubleVector theta;
 
   @Override
-  public void setup(BSPPeer<VectorWritable, DoubleWritable, NullWritable, NullWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
+  public void setup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
     master = peer.getPeerIndex() == peer.getNumPeers() / 2;
   }
 
   @Override
-  public void bsp(BSPPeer<VectorWritable, DoubleWritable, NullWritable, NullWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
+  public void bsp(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
 
     while (true) {
 
@@ -137,6 +137,10 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
         if (log.isInfoEnabled()) {
           log.info("new theta for cost " + totalCost + " is " + theta.toArray().toString());
         }
+        // master writes down the output
+        if (master) {
+          peer.write(new VectorWritable(theta), new DoubleWritable(totalCost));
+        }
       }
       peer.sync();
 
@@ -159,7 +163,7 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
   public abstract double hypothesis(DoubleVector theta, DoubleVector x);
 
 
-  public void getTheta(BSPPeer<VectorWritable, DoubleWritable, NullWritable, NullWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
+  public void getTheta(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
     if (master && theta == null) {
       int size = getXSize(peer);
       theta = new DenseDoubleVector(size, peer.getConfiguration().getInt(INITIAL_THETA_VALUES, 10));
@@ -174,7 +178,7 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
     }
   }
 
-  private int getXSize(BSPPeer<VectorWritable, DoubleWritable, NullWritable, NullWritable, VectorWritable> peer) throws IOException {
+  private int getXSize(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException {
     VectorWritable key = null;
     peer.readNext(key, null);
     peer.reopenInput(); // reset input to start
