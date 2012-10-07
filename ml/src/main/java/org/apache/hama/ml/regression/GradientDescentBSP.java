@@ -42,10 +42,16 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
 
   private boolean master;
   private DoubleVector theta;
+  private double cost;
+  private double threshold;
+  private float alpha;
 
   @Override
   public void setup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
     master = peer.getPeerIndex() == peer.getNumPeers() / 2;
+    cost = Integer.MAX_VALUE;
+    threshold = peer.getConfiguration().getFloat("threashold", 0.01f);
+    alpha = peer.getConfiguration().getFloat(ALPHA, 0.3f);
   }
 
   @Override
@@ -93,9 +99,23 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
 
       totalCost /= numRead;
 
-      if (log.isInfoEnabled()) {
-        log.info("cost is " + totalCost);
+      if (cost - totalCost < 0){
+        throw new RuntimeException("gradient descent failed to converge with alpha " + alpha);
       }
+      else if (totalCost == 0 || cost - totalCost < threshold) {
+        cost = totalCost;
+        break;
+      }
+      else {
+        cost = totalCost;
+      }
+
+
+      if (log.isInfoEnabled()) {
+        log.info("cost is " + cost);
+      }
+
+
 
       peer.sync();
 
@@ -130,7 +150,7 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
         }
 
         for (int j = 0; j < theta.getLength(); j++) {
-          newTheta[j] = theta.get(j) - newTheta[j] * peer.getConfiguration().getFloat(ALPHA, 0.3f);
+          newTheta[j] = theta.get(j) - newTheta[j] * alpha;
         }
 
         theta = new DenseDoubleVector(newTheta);
@@ -145,11 +165,6 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
       }
       peer.sync();
 
-      // eventually break execution !?
-      if (totalCost == 0) {
-        // TODO change this as just 0 is too strict
-        break;
-      }
     }
 
   }
