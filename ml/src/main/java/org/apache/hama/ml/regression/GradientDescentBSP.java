@@ -31,8 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
- * A gradient descent (see <code>http://en.wikipedia.org/wiki/Gradient_descent</code>) BSP based abstract implementation.
- * Each extending class should implement the #applyHypothesis(DoubleVector theta, DoubleVector x) method for a specific
+ * A gradient descent (see <code>http://en.wikipedia.org/wiki/Gradient_descent</code>) BSP based implementation.
  */
 public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> {
 
