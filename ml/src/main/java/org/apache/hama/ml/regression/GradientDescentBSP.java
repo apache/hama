@@ -34,7 +34,7 @@ import java.io.IOException;
  * A gradient descent (see <code>http://en.wikipedia.org/wiki/Gradient_descent</code>) BSP based abstract implementation.
  * Each extending class should implement the #applyHypothesis(DoubleVector theta, DoubleVector x) method for a specific
  */
-public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> {
+public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> {
 
   private static final Logger log = LoggerFactory.getLogger(GradientDescentBSP.class);
   static final String INITIAL_THETA_VALUES = "initial.theta.values";
@@ -45,6 +45,7 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
   private double cost;
   private double threshold;
   private float alpha;
+  private RegressionModel regressionModel;
 
   @Override
   public void setup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
@@ -52,6 +53,11 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
     cost = Integer.MAX_VALUE;
     threshold = peer.getConfiguration().getFloat("threashold", 0.01f);
     alpha = peer.getConfiguration().getFloat(ALPHA, 0.3f);
+    try {
+      regressionModel = ((Class<? extends RegressionModel>)peer.getConfiguration().getClass("regression.model", LinearRegressionModel.class)).newInstance();
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
   }
 
   @Override
@@ -74,7 +80,7 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
         // calculate cost for given input
         double y = kvp.getValue().get();
         DoubleVector x = kvp.getKey().getVector();
-        double costForX = calculateCostForItem(y, x, theta);
+        double costForX = regressionModel.calculateCostForItem(x, y, theta);
 
         // adds to local cost
         localCost += costForX;
@@ -127,7 +133,7 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
       while ((kvp = peer.readNext()) != null) {
         DoubleVector x = kvp.getKey().getVector();
         double y = kvp.getValue().get();
-        double difference = applyHypothesis(theta, x) - y;
+        double difference = regressionModel.applyHypothesis(theta, x) - y;
         for (int j = 0; j < theta.getLength(); j++) {
           thetaDelta[j] += difference * x.get(j);
         }
@@ -168,25 +174,6 @@ public abstract class GradientDescentBSP extends BSP<VectorWritable, DoubleWrita
     }
 
   }
-
-  /**
-   * Calculates the cost function for a given item (input x, output y)
-   * @param y the learned output for x
-   * @param x the input vector
-   * @param theta the parameters vector theta
-   * @return the calculated cost for input x and output y
-  */
-  protected abstract double calculateCostForItem(double y, DoubleVector x, DoubleVector theta);
-
-  /**
-   * Applies the applyHypothesis given a set of parameters theta to a given input x
-   *
-   * @param theta the parameters vector
-   * @param x     the input
-   * @return a <code>double</code> number
-   */
-  public abstract double applyHypothesis(DoubleVector theta, DoubleVector x);
-
 
   public void getTheta(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
     if (master && theta == null) {
