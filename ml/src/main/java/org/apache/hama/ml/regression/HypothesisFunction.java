@@ -24,13 +24,13 @@ import org.apache.hama.ml.math.DoubleVector;
  */
 public interface HypothesisFunction {
 
-    /**
-     * Applies the applyHypothesis given a set of parameters theta to a given input x
-     *
-     * @param theta the parameters vector
-     * @param x     the input
-     * @return a <code>double</code> number
-     */
-    public double applyHypothesis(DoubleVector theta, DoubleVector x);
+  /**
+   * Applies the applyHypothesis given a set of parameters theta to a given input x
+   *
+   * @param theta the parameters vector
+   * @param x     the input
+   * @return a <code>double</code> number
+   */
+  public double applyHypothesis(DoubleVector theta, DoubleVector x);
 
 }
