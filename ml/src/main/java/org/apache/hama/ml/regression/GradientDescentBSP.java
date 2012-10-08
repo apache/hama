@@ -55,7 +55,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
     threshold = peer.getConfiguration().getFloat(THRESHOLD, 0.01f);
     alpha = peer.getConfiguration().getFloat(ALPHA, 0.3f);
     try {
-      regressionModel = ((Class<? extends RegressionModel>)peer.getConfiguration().getClass(REGRESSION_MODEL_CLASS, LinearRegressionModel.class)).newInstance();
+      regressionModel = ((Class<? extends RegressionModel>) peer.getConfiguration().getClass(REGRESSION_MODEL_CLASS, LinearRegressionModel.class)).newInstance();
     } catch (Exception e) {
       throw new IOException(e);
     }
@@ -106,14 +106,12 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
       totalCost /= numRead;
 
-      if (cost - totalCost < 0){
+      if (cost - totalCost < 0) {
         throw new RuntimeException("gradient descent failed to converge with alpha " + alpha);
-      }
-      else if (totalCost == 0 || cost - totalCost < threshold) {
+      } else if (totalCost == 0 || cost - totalCost < threshold) {
         cost = totalCost;
         break;
-      }
-      else {
+      } else {
         cost = totalCost;
       }
 
@@ -121,7 +119,6 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
       if (log.isInfoEnabled()) {
         log.info("cost is " + cost);
       }
-
 
 
       peer.sync();

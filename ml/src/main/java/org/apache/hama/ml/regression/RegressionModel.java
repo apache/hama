@@ -27,8 +27,9 @@ public interface RegressionModel extends HypothesisFunction {
   /**
    * Calculates the cost function for a given item (input x, output y) and
    * the model's parameters defined by the vector theta
-   * @param x the input vector
-   * @param y the learned output for x
+   *
+   * @param x     the input vector
+   * @param y     the learned output for x
    * @param theta the parameters vector theta
    * @return the calculated cost for input x and output y
    */

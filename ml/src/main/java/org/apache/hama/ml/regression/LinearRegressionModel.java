@@ -30,7 +30,7 @@ public class LinearRegressionModel implements RegressionModel {
     costFunction = new CostFunction() {
       @Override
       public double calculateCostForItem(DoubleVector x, double y, DoubleVector theta, HypothesisFunction hypothesis) {
-       return y * Math.pow(applyHypothesis(theta, x) - y, 2) / 2;
+        return y * Math.pow(applyHypothesis(theta, x) - y, 2) / 2;
       }
     };
   }

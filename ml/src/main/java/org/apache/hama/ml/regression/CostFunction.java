@@ -27,9 +27,10 @@ public interface CostFunction {
   /**
    * Calculates the cost function for a given item (input x, output y), a model
    * defined by the hypothesis parametrized by the vector theta
-   * @param x the input vector
-   * @param y the learned output for x
-   * @param theta the parameters vector theta
+   *
+   * @param x          the input vector
+   * @param y          the learned output for x
+   * @param theta      the parameters vector theta
    * @param hypothesis the hypothesis function to model the problem
    * @return the calculated cost for input x and output y
    */
