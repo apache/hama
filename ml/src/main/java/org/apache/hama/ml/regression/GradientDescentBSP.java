@@ -38,6 +38,8 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
   private static final Logger log = LoggerFactory.getLogger(GradientDescentBSP.class);
   static final String INITIAL_THETA_VALUES = "initial.theta.values";
   static final String ALPHA = "alpha";
+  static final String THRESHOLD = "threshold";
+  static final String REGRESSION_MODEL_CLASS = "regression.model.class";
 
   private boolean master;
   private DoubleVector theta;
@@ -50,10 +52,10 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
   public void setup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
     master = peer.getPeerIndex() == peer.getNumPeers() / 2;
     cost = Integer.MAX_VALUE;
-    threshold = peer.getConfiguration().getFloat("threashold", 0.01f);
+    threshold = peer.getConfiguration().getFloat(THRESHOLD, 0.01f);
     alpha = peer.getConfiguration().getFloat(ALPHA, 0.3f);
     try {
-      regressionModel = ((Class<? extends RegressionModel>)peer.getConfiguration().getClass("regression.model", LinearRegressionModel.class)).newInstance();
+      regressionModel = ((Class<? extends RegressionModel>)peer.getConfiguration().getClass(REGRESSION_MODEL_CLASS, LinearRegressionModel.class)).newInstance();
     } catch (Exception e) {
       throw new IOException(e);
     }
