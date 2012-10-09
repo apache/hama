@@ -160,17 +160,28 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
         theta = new DenseDoubleVector(newTheta);
 
         if (log.isInfoEnabled()) {
-          log.info("new theta for cost " + totalCost + " is " + theta.toArray().toString());
+          log.info("new theta for cost " + cost + " is " + theta.toArray().toString());
         }
         // master writes down the output
         if (master) {
-          peer.write(new VectorWritable(theta), new DoubleWritable(totalCost));
+          peer.write(new VectorWritable(theta), new DoubleWritable(cost));
         }
       }
       peer.sync();
 
     }
 
+  }
+
+  @Override
+  public void cleanup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException {
+    if (log.isInfoEnabled()) {
+        log.info("computation finished with cost " + cost + " for theta " + theta);
+    }
+    // master writes down the final output
+    if (master) {
+        peer.write(new VectorWritable(theta), new DoubleWritable(cost));
+    }
   }
 
   public void getTheta(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
