@@ -104,7 +104,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
         numRead += costResult.getVector().get(1);
       }
 
-      totalCost /= numRead;
+      totalCost /= numRead; // TODO : remove this and incorporate the 1/m element in RegressionModel#calculateCostForItem
 
       if (cost - totalCost < 0) {
         throw new RuntimeException("gradient descent failed to converge with alpha " + alpha);
@@ -123,7 +123,9 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
       peer.sync();
 
-      peer.reopenInput();
+      if (master) { // TODO : check if this has to be done only by the master
+        peer.reopenInput();
+      }
 
       double[] thetaDelta = new double[theta.getLength()];
 
