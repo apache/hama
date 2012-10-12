@@ -36,10 +36,10 @@ import java.io.IOException;
 public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> {
 
   private static final Logger log = LoggerFactory.getLogger(GradientDescentBSP.class);
-  static final String INITIAL_THETA_VALUES = "initial.theta.values";
-  static final String ALPHA = "alpha";
-  static final String THRESHOLD = "threshold";
-  static final String REGRESSION_MODEL_CLASS = "regression.model.class";
+  public static final String INITIAL_THETA_VALUES = "gd.initial.theta";
+  public static final String ALPHA = "gd.alpha";
+  public static final String THRESHOLD = "gd.threshold";
+  public static final String REGRESSION_MODEL_CLASS = "gd.regression.model";
 
   private boolean master;
   private DoubleVector theta;
@@ -107,15 +107,15 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
       // cost check
       if (cost - totalCost < 0) {
-        throw new RuntimeException("gradient descent failed to converge with alpha " + alpha);
+        throw new RuntimeException(new StringBuilder("gradient descent failed to converge with alpha ").
+                append(alpha).toString());
       } else if (totalCost == 0 || totalCost < threshold) {
-        log.info(peer.getPeerName()+": finishing!");
         cost = totalCost;
         break;
       } else {
         cost = totalCost;
-        if (log.isInfoEnabled()) {
-          log.info(peer.getPeerName()+": cost is " + cost);
+        if (log.isDebugEnabled()) {
+          log.debug(peer.getPeerName()+": cost is " + cost);
         }
       }
 
@@ -156,8 +156,9 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
       }
       theta = new DenseDoubleVector(newTheta);
 
-      if (log.isInfoEnabled()) {
-        log.info(peer.getPeerName()+": new theta for cost " + cost + " is " + theta.toString());
+      if (log.isDebugEnabled()) {
+        log.debug(new StringBuilder(peer.getPeerName()).append(": new theta for cost ").
+                append(cost).append(" is ").append(theta.toString()).toString());
       }
       // master writes down the output
       if (master) {
@@ -173,12 +174,13 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
   @Override
   public void cleanup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException {
-    if (log.isInfoEnabled()) {
-        log.info(peer.getPeerName()+":computation finished with cost " + cost + " for theta " + theta);
-    }
     // master writes down the final output
     if (master) {
         peer.write(new VectorWritable(theta), new DoubleWritable(cost));
+        if (log.isInfoEnabled()) {
+            log.info(new StringBuilder(peer.getPeerName()).append(":computation finished with cost ").
+                    append(cost).append(" for theta ").append(theta).toString());
+        }
     }
   }
 
@@ -190,10 +192,14 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
             for (String peerName : peer.getAllPeerNames()) {
                 peer.send(peerName, new VectorWritable(theta));
             }
-            log.info(peer.getPeerName() + ": sending theta");
+            if (log.isDebugEnabled()) {
+              log.debug(new StringBuilder(peer.getPeerName()).append(": sending theta").toString());
+            }
             peer.sync();
         } else {
-            log.info(peer.getPeerName() + ": getting theta");
+            if (log.isDebugEnabled()) {
+              log.debug(new StringBuilder(peer.getPeerName()).append(": getting theta").toString());
+            }
             peer.sync();
             VectorWritable vectorWritable = peer.getCurrentMessage();
             theta = vectorWritable.getVector();
