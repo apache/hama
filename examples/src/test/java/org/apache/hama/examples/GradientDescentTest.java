@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
 public class GradientDescentTest {
   @Test
   public void testCorrectGDExecution() throws Exception {
-    GradientDescentExample.main(new String[]{"src/test/resources/gd_file_format.txt"});
+    GradientDescentExample.main(new String[]{"src/test/resources/gd_file_sample.txt"});
   }
 
   @Test

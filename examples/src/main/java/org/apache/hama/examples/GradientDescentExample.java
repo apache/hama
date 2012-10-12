@@ -43,6 +43,8 @@ public class GradientDescentExample {
         IOException, ClassNotFoundException {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
+    conf.setFloat(GradientDescentBSP.ALPHA, 0.002f);
+    conf.setFloat(GradientDescentBSP.THRESHOLD, 0.2f);
 
     BSPJob bsp = new BSPJob(conf, GradientDescentExample.class);
     // Set the job name
