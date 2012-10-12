@@ -38,21 +38,24 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
   private static final Logger log = LoggerFactory.getLogger(GradientDescentBSP.class);
   public static final String INITIAL_THETA_VALUES = "gd.initial.theta";
   public static final String ALPHA = "gd.alpha";
-  public static final String THRESHOLD = "gd.threshold";
+  public static final String COST_THRESHOLD = "gd.cost.threshold";
+  public static final String ITERATIONS_THRESHOLD = "gd.iterations.threshold";
   public static final String REGRESSION_MODEL_CLASS = "gd.regression.model";
 
   private boolean master;
   private DoubleVector theta;
   private double cost;
-  private double threshold;
+  private double costThreshold;
   private float alpha;
   private RegressionModel regressionModel;
+  private int iterationsThreshold;
 
   @Override
   public void setup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
     master = peer.getPeerIndex() == peer.getNumPeers() / 2;
     cost = Integer.MAX_VALUE;
-    threshold = peer.getConfiguration().getFloat(THRESHOLD, 0.1f);
+    costThreshold = peer.getConfiguration().getFloat(COST_THRESHOLD, 0.1f);
+    iterationsThreshold = peer.getConfiguration().getInt(ITERATIONS_THRESHOLD, 10000);
     alpha = peer.getConfiguration().getFloat(ALPHA, 0.003f);
     try {
       regressionModel = ((Class<? extends RegressionModel>) peer.getConfiguration().getClass(REGRESSION_MODEL_CLASS, LinearRegressionModel.class)).newInstance();
@@ -63,7 +66,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
   @Override
   public void bsp(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
-
+    int iterations = 0;
     while (true) {
 
       getTheta(peer);
@@ -109,7 +112,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
       if (cost - totalCost < 0) {
         throw new RuntimeException(new StringBuilder("gradient descent failed to converge with alpha ").
                 append(alpha).toString());
-      } else if (totalCost == 0 || totalCost < threshold) {
+      } else if (totalCost == 0 || totalCost < costThreshold || iterations >= iterationsThreshold) {
         cost = totalCost;
         break;
       } else {
@@ -168,8 +171,8 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
       peer.reopenInput();
       peer.sync();
 
+      iterations++;
     }
-
   }
 
   @Override

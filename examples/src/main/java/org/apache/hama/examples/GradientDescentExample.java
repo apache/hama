@@ -44,7 +44,8 @@ public class GradientDescentExample {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
     conf.setFloat(GradientDescentBSP.ALPHA, 0.002f);
-    conf.setFloat(GradientDescentBSP.THRESHOLD, 0.2f);
+    conf.setFloat(GradientDescentBSP.COST_THRESHOLD, 0.5f);
+    conf.setInt(GradientDescentBSP.ITERATIONS_THRESHOLD, 300);
 
     BSPJob bsp = new BSPJob(conf, GradientDescentExample.class);
     // Set the job name
