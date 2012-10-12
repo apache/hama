@@ -127,4 +127,8 @@ public final class VectorWritable implements WritableComparable<VectorWritable> 
   public static VectorWritable wrap(DoubleVector a) {
     return new VectorWritable(a);
   }
+
+  public void set(DoubleVector vector) {
+    this.vector = vector;
+  }
 }
