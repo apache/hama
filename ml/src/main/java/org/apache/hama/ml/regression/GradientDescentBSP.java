@@ -215,7 +215,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
     DoubleWritable value = new DoubleWritable();
     peer.readNext(key, value);
     peer.reopenInput(); // reset input to start
-    if (key == null) {
+    if (key.getVector() == null) {
       throw new IOException("cannot read input vector size");
     }
     return key.getVector().getLength();

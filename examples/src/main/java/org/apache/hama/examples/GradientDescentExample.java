@@ -17,8 +17,6 @@
  */
 package org.apache.hama.examples;
 
-import java.io.IOException;
-
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -32,6 +30,8 @@ import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.ml.regression.GradientDescentBSP;
 import org.apache.hama.ml.regression.VectorDoubleFileInputFormat;
 import org.apache.hama.ml.writable.VectorWritable;
+
+import java.io.IOException;
 
 /**
  * A {@link GradientDescentBSP} job example
@@ -59,7 +59,6 @@ public class GradientDescentExample {
     bsp.setOutputValueClass(DoubleWritable.class);
     bsp.setOutputFormat(TextOutputFormat.class);
     FileOutputFormat.setOutputPath(bsp, TMP_OUTPUT);
-    bsp.setNumBspTask(3);
 
     long startTime = System.currentTimeMillis();
     if (bsp.waitForCompletion(true)) {
