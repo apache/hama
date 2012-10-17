@@ -112,6 +112,8 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
           } else {
             bspPeerConnection.put(bundle);
           }
+        } else {
+          bspPeerConnection.put(bundle); 
         }
       } else {
         bspPeerConnection.put(bundle);
