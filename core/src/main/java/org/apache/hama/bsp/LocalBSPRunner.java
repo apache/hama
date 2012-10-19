@@ -77,6 +77,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   // this is used for not-input driven job
   private final int maxTasks;
+  // currently running tasks
+  private final int totalTasks = 0;
 
   public LocalBSPRunner(Configuration conf) throws IOException {
     super();
@@ -159,7 +161,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
   @Override
   public ClusterStatus getClusterStatus(boolean detailed) throws IOException {
-    return new ClusterStatus(maxTasks, maxTasks, maxTasks, State.RUNNING);
+    return new ClusterStatus(maxTasks, totalTasks, maxTasks, State.RUNNING);
   }
 
   @Override

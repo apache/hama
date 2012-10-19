@@ -319,9 +319,10 @@ public class BSPJobClient extends Configured implements Tool {
     short replication = (short) job.getInt("bsp.submit.replication", 10);
 
     ClusterStatus clusterStatus = getClusterStatus(true);
-    int maxTasks = clusterStatus.getMaxTasks();
+    int maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
     if (maxTasks < job.getNumBspTask()) {
-      job.setNumBspTask(maxTasks);
+      LOG.error("Job failed! No more taks slots available");
+      System.exit(-1);
     }
 
     // only create the splits if we have an input
