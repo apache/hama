@@ -37,13 +37,13 @@ public class GroomServerRunner extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     StringUtils.startupShutdownMessage(GroomServer.class, args, LOG);
 
-    if (args.length != 0) {
-      System.out.println("usage: GroomServerRunner");
-      System.exit(-1);
-    }
-
     try {
       Configuration conf = new HamaConfiguration(getConf());
+
+      if (args.length == 1) {
+        conf.set("bsp.peer.hostname", args[0]);
+      }
+
       GroomServer groom = GroomServer.constructGroomServer(GroomServer.class,
           conf);
       GroomServer.startGroomServer(groom).join();

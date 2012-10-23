@@ -58,7 +58,7 @@ if [ "$HOSTLIST" = "" ]; then
 fi
 
 for groom in `cat "$HOSTLIST"|sed  "s/#.*$//;/^$/d"`; do
- ssh $HAMA_SSH_OPTS $groom $"${@// /\\ }" \
+ ssh $HAMA_SSH_OPTS $groom $"${@// /\\ }" $groom \
    2>&1 | sed "s/^/$groom: /" &
  if [ "$HAMA_GROOM_SLEEP" != "" ]; then
    sleep $HAMA_GROOM_SLEEP
