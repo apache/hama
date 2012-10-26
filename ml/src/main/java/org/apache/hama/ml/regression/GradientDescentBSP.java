@@ -99,7 +99,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
       peer.sync();
 
       // second superstep : aggregate cost calculation
-      double  totalCost = localCost;
+      double totalCost = localCost;
       VectorWritable costResult;
       while ((costResult = peer.getCurrentMessage()) != null) {
         totalCost += costResult.getVector().get(0);
@@ -111,14 +111,14 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
       // cost check
       if (cost - totalCost < 0) {
         throw new RuntimeException(new StringBuilder("gradient descent failed to converge with alpha ").
-                append(alpha).toString());
+          append(alpha).toString());
       } else if (totalCost == 0 || totalCost < costThreshold || iterations >= iterationsThreshold) {
         cost = totalCost;
         break;
       } else {
         cost = totalCost;
         if (log.isDebugEnabled()) {
-          log.debug(peer.getPeerName()+": cost is " + cost);
+          log.debug(peer.getPeerName() + ": cost is " + cost);
         }
       }
 
@@ -161,7 +161,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
       if (log.isDebugEnabled()) {
         log.debug(new StringBuilder(peer.getPeerName()).append(": new theta for cost ").
-                append(cost).append(" is ").append(theta.toString()).toString());
+          append(cost).append(" is ").append(theta.toString()).toString());
       }
       // master writes down the output
       if (master) {
@@ -179,34 +179,34 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
   public void cleanup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException {
     // master writes down the final output
     if (master) {
-        peer.write(new VectorWritable(theta), new DoubleWritable(cost));
-        if (log.isInfoEnabled()) {
-            log.info(new StringBuilder(peer.getPeerName()).append(":computation finished with cost ").
-                    append(cost).append(" for theta ").append(theta).toString());
-        }
+      peer.write(new VectorWritable(theta), new DoubleWritable(cost));
+      if (log.isInfoEnabled()) {
+        log.info(new StringBuilder(peer.getPeerName()).append(":computation finished with cost ").
+          append(cost).append(" for theta ").append(theta).toString());
+      }
     }
   }
 
   public void getTheta(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
     if (theta == null) {
-        if (master) {
-            int size = getXSize(peer);
-            theta = new DenseDoubleVector(size, peer.getConfiguration().getInt(INITIAL_THETA_VALUES, 10));
-            for (String peerName : peer.getAllPeerNames()) {
-                peer.send(peerName, new VectorWritable(theta));
-            }
-            if (log.isDebugEnabled()) {
-              log.debug(new StringBuilder(peer.getPeerName()).append(": sending theta").toString());
-            }
-            peer.sync();
-        } else {
-            if (log.isDebugEnabled()) {
-              log.debug(new StringBuilder(peer.getPeerName()).append(": getting theta").toString());
-            }
-            peer.sync();
-            VectorWritable vectorWritable = peer.getCurrentMessage();
-            theta = vectorWritable.getVector();
+      if (master) {
+        int size = getXSize(peer);
+        theta = new DenseDoubleVector(size, peer.getConfiguration().getInt(INITIAL_THETA_VALUES, 10));
+        for (String peerName : peer.getAllPeerNames()) {
+          peer.send(peerName, new VectorWritable(theta));
         }
+        if (log.isDebugEnabled()) {
+          log.debug(new StringBuilder(peer.getPeerName()).append(": sending theta").toString());
+        }
+        peer.sync();
+      } else {
+        if (log.isDebugEnabled()) {
+          log.debug(new StringBuilder(peer.getPeerName()).append(": getting theta").toString());
+        }
+        peer.sync();
+        VectorWritable vectorWritable = peer.getCurrentMessage();
+        theta = vectorWritable.getVector();
+      }
     }
   }
 

@@ -27,9 +27,7 @@ import org.apache.hama.ml.math.DenseDoubleVector;
 import org.apache.hama.ml.writable.VectorWritable;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Testcase for {@link VectorDoubleFileInputFormat}
@@ -42,7 +40,7 @@ public class VectorDoubleFileInputFormatTest {
     Path file = new Path("src/test/resources/vd_file_sample.txt");
     InputSplit split = new FileSplit(file, 0, 1000, new String[]{"localhost"});
     BSPJob job = new BSPJob();
-    RecordReader<VectorWritable,DoubleWritable> recordReader = inputFormat.getRecordReader(split, job);
+    RecordReader<VectorWritable, DoubleWritable> recordReader = inputFormat.getRecordReader(split, job);
     assertNotNull(recordReader);
     VectorWritable key = recordReader.createKey();
     assertNotNull(key);
