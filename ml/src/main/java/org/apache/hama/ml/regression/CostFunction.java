@@ -30,10 +30,11 @@ public interface CostFunction {
    *
    * @param x          the input vector
    * @param y          the learned output for x
+   * @param m          the number of existing items
    * @param theta      the parameters vector theta
    * @param hypothesis the hypothesis function to model the problem
    * @return the calculated cost for input x and output y
    */
-  public double calculateCostForItem(DoubleVector x, double y, DoubleVector theta, HypothesisFunction hypothesis);
+  public double calculateCostForItem(DoubleVector x, double y, int m, DoubleVector theta, HypothesisFunction hypothesis);
 
 }

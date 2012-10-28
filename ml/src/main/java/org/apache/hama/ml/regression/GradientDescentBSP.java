@@ -49,6 +49,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
   private float alpha;
   private RegressionModel regressionModel;
   private int iterationsThreshold;
+  private int m;
 
   @Override
   public void setup(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
@@ -66,6 +67,30 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
   @Override
   public void bsp(BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer) throws IOException, SyncException, InterruptedException {
+    // 0 superstep : count items
+
+    int itemCount = 0;
+    while (peer.readNext() != null) {
+      // increment counter
+      itemCount++;
+    }
+    for (String peerName : peer.getAllPeerNames()) {
+      if (!peerName.equals(peer.getPeerName())) { // avoid sending to oneself
+        peer.send(peerName, new VectorWritable(new DenseDoubleVector(new double[]{itemCount})));
+      }
+    }
+    peer.sync();
+
+    // aggregate number of items
+    VectorWritable itemsResult;
+    while ((itemsResult = peer.getCurrentMessage()) != null) {
+      itemCount += itemsResult.getVector().get(0);
+    }
+
+    m = itemCount;
+
+    peer.reopenInput();
+
     int iterations = 0;
     while (true) {
 
@@ -75,25 +100,22 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
       double localCost = 0d;
 
-      int numRead = 0;
-
-      // read an input
+      // read an item
       KeyValuePair<VectorWritable, DoubleWritable> kvp;
       while ((kvp = peer.readNext()) != null) {
         // calculate cost for given input
         double y = kvp.getValue().get();
         DoubleVector x = kvp.getKey().getVector();
-        double costForX = regressionModel.calculateCostForItem(x, y, theta);
+        double costForX = regressionModel.calculateCostForItem(x, y, m, theta);
 
         // adds to local cost
         localCost += costForX;
-        numRead++;
       }
 
       // cost is sent and aggregated by each
       for (String peerName : peer.getAllPeerNames()) {
         if (!peerName.equals(peer.getPeerName())) { // avoid sending to oneself
-          peer.send(peerName, new VectorWritable(new DenseDoubleVector(new double[]{localCost, numRead})));
+          peer.send(peerName, new VectorWritable(new DenseDoubleVector(new double[]{localCost})));
         }
       }
       peer.sync();
@@ -103,10 +125,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
       VectorWritable costResult;
       while ((costResult = peer.getCurrentMessage()) != null) {
         totalCost += costResult.getVector().get(0);
-        numRead += costResult.getVector().get(1);
       }
-
-      totalCost /= numRead; // TODO : remove this and incorporate the 1/m element in RegressionModel#calculateCostForItem
 
       // cost check
       if (cost - totalCost < 0) {

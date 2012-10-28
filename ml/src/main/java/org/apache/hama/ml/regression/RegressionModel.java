@@ -30,9 +30,10 @@ public interface RegressionModel extends HypothesisFunction {
    *
    * @param x     the input vector
    * @param y     the learned output for x
+   * @param m     the total number of existing items
    * @param theta the parameters vector theta
    * @return the calculated cost for input x and output y
    */
-  public double calculateCostForItem(DoubleVector x, double y, DoubleVector theta);
+  public double calculateCostForItem(DoubleVector x, double y, int m, DoubleVector theta);
 
 }

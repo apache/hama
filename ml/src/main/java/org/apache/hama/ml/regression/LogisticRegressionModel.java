@@ -29,8 +29,8 @@ public class LogisticRegressionModel implements RegressionModel {
   public LogisticRegressionModel() {
     costFunction = new CostFunction() {
       @Override
-      public double calculateCostForItem(DoubleVector x, double y, DoubleVector theta, HypothesisFunction hypothesis) {
-        return -1 * y * Math.log(applyHypothesis(theta, x)) + (1 - y) * Math.log(1 - applyHypothesis(theta, x));
+      public double calculateCostForItem(DoubleVector x, double y, int m, DoubleVector theta, HypothesisFunction hypothesis) {
+        return (-1 * y * Math.log(applyHypothesis(theta, x)) + (1 - y) * Math.log(1 - applyHypothesis(theta, x))) / m;
       }
     };
   }
@@ -41,7 +41,7 @@ public class LogisticRegressionModel implements RegressionModel {
   }
 
   @Override
-  public double calculateCostForItem(DoubleVector x, double y, DoubleVector theta) {
-    return costFunction.calculateCostForItem(x, y, theta, this);
+  public double calculateCostForItem(DoubleVector x, double y, int m, DoubleVector theta) {
+    return costFunction.calculateCostForItem(x, y, m, theta, this);
   }
 }
