@@ -3,7 +3,8 @@ Hama Change Log
 Release 0.6 (unreleased changes)
 
   NEW FEATURES
- 
+
+   HAMA-651: Add a gradient descent BSP (Tommaso Teofili) 
    HAMA-601: Hama Streaming (tjungblut)
 
   BUG FIXES
@@ -17,6 +18,7 @@ Release 0.6 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-655: Add Exception handling for parsing of vertex (edwardyoon)
    HAMA-646: Add deleting temporary files method in TestSubmitGraphJob (Yuesheng Hu via edwardyoon)
    HAMA-597: Split a GraphJobRunner into multiple classes (edwardyoon & tjungblut) 
    HAMA-557: Implement Checkpointing service in Hama (surajmenon)
