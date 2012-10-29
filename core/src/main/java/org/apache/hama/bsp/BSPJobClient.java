@@ -301,6 +301,13 @@ public class BSPJobClient extends Configured implements Tool {
     BSPJob job = pJob;
     job.setJobID(jobId);
 
+    ClusterStatus clusterStatus = getClusterStatus(true);
+    int maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
+    
+    if (maxTasks < job.getNumBspTask()) {
+      throw new IOException("Job failed! No more taks slots available");
+    }
+    
     Path submitJobDir = new Path(getSystemDir(), "submit_"
         + Integer.toString(Math.abs(r.nextInt()), 36));
     Path submitSplitFile = new Path(submitJobDir, "job.split");
@@ -317,13 +324,6 @@ public class BSPJobClient extends Configured implements Tool {
     FileSystem.mkdirs(fs, submitJobDir, bspSysPerms);
     fs.mkdirs(submitJobDir);
     short replication = (short) job.getInt("bsp.submit.replication", 10);
-
-    ClusterStatus clusterStatus = getClusterStatus(true);
-    int maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
-    if (maxTasks < job.getNumBspTask()) {
-      LOG.error("Job failed! No more taks slots available");
-      System.exit(-1);
-    }
 
     // only create the splits if we have an input
     if (job.get("bsp.input.dir") != null) {
