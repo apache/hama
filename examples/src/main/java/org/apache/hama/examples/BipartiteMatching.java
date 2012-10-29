@@ -175,7 +175,7 @@ public final class BipartiteMatching {
 
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, NullWritable, TextPair> vertex) {
+        Vertex<Text, NullWritable, TextPair> vertex) throws Exception {
 
       String[] tokenArray = value.toString().split(":");
       String[] adjArray = tokenArray[1].trim().split(" ");

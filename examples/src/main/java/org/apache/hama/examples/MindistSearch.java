@@ -110,7 +110,7 @@ public class MindistSearch {
      */
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, NullWritable, Text> vertex) {
+        Vertex<Text, NullWritable, Text> vertex) throws Exception {
       String[] split = value.toString().split("\t");
       for (int i = 0; i < split.length; i++) {
         if (i == 0) {

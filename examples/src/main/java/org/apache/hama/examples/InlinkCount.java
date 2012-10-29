@@ -64,7 +64,7 @@ public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
      */
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, NullWritable, IntWritable> vertex) {
+        Vertex<Text, NullWritable, IntWritable> vertex) throws Exception {
       String[] split = value.toString().split("\t");
       for (int i = 0; i < split.length; i++) {
         if (i == 0) {

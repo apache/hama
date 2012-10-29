@@ -102,7 +102,7 @@ public class SSSP {
      */
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, IntWritable, IntWritable> vertex) {
+        Vertex<Text, IntWritable, IntWritable> vertex) throws Exception {
       String[] split = value.toString().split("\t");
       for (int i = 0; i < split.length; i++) {
         if (i == 0) {

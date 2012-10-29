@@ -299,8 +299,15 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     KeyValuePair<Writable, Writable> next = null;
     int steps = 1;
     while ((next = peer.readNext()) != null) {
-      boolean vertexFinished = reader.parseVertex(next.getKey(),
-          next.getValue(), vertex);
+      boolean vertexFinished = false;
+      try {
+        vertexFinished = reader.parseVertex(next.getKey(), next.getValue(),
+            vertex);
+      } catch (Exception e) {
+        //LOG.error("exception occured during parsing vertex!" + e.toString());
+        throw new IOException("exception occured during parsing vertex!" + e.toString());
+      }
+      
       if (!vertexFinished) {
         continue;
       }

@@ -30,6 +30,6 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
    * next call.
    */
   public abstract boolean parseVertex(KEYIN key, VALUEIN value,
-      Vertex<V, E, M> vertex);
+      Vertex<V, E, M> vertex) throws Exception;
 
 }

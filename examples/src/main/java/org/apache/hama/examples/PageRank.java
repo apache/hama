@@ -112,7 +112,7 @@ public class PageRank {
      */
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, NullWritable, DoubleWritable> vertex) {
+        Vertex<Text, NullWritable, DoubleWritable> vertex) throws Exception {
       String[] split = value.toString().split("\t");
       for (int i = 0; i < split.length; i++) {
         if (i == 0) {
