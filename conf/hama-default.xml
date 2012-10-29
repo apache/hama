@@ -116,6 +116,13 @@
     by a groom server.</description>
   </property>
   <property>
+    <name>bsp.max.tasks.per.job</name>
+    <value></value>
+    <description>The maximum number of BSP tasks per job. 
+    By default, This limit is switched off.
+    </description>
+  </property>
+  <property>
     <name>bsp.ft.enabled</name>
     <value>false</value>
     <description>Enable Fault Tolerance in BSP Task execution.</description>

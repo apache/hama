@@ -4,6 +4,7 @@ Release 0.6 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-626: If number of bsp tasks are not specified, the bsp job cannot assume to get all the tasks in the cluster (edwardyoon)
    HAMA-651: Add a gradient descent BSP (Tommaso Teofili) 
    HAMA-601: Hama Streaming (tjungblut)
 

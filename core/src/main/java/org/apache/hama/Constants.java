@@ -63,6 +63,8 @@ public interface Constants {
   
   public static final String MAX_TASK_ATTEMPTS = "bsp.tasks.max.attempts";
 
+  public static final String MAX_TASKS_PER_JOB = "bsp.max.tasks.per.job";
+  
   public static final int DEFAULT_MAX_TASK_ATTEMPTS = 2;
 
   ////////////////////////////////////////

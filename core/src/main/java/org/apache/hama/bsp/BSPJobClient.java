@@ -48,10 +48,10 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
@@ -59,6 +59,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.JobSubmissionProtocol;
@@ -300,12 +301,19 @@ public class BSPJobClient extends Configured implements Tool {
       throws IOException {
     BSPJob job = pJob;
     job.setJobID(jobId);
-
+    int maxTasks = 0;
+    int limitTasks = job.getConf().getInt(Constants.MAX_TASKS_PER_JOB, 0);
+    
     ClusterStatus clusterStatus = getClusterStatus(true);
-    int maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
+    
+    if(limitTasks > 0) {
+      maxTasks = limitTasks;
+    } else {
+      maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
+    }
     
     if (maxTasks < job.getNumBspTask()) {
-      throw new IOException("Job failed! No more taks slots available");
+      throw new IOException("Job failed! The number of tasks has exceeded the maximum allowed.");
     }
     
     Path submitJobDir = new Path(getSystemDir(), "submit_"
