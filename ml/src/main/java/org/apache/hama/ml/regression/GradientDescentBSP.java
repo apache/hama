@@ -158,7 +158,9 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
 
       // send thetaDelta to the each peer
       for (String peerName : peer.getAllPeerNames()) {
-        peer.send(peerName, new VectorWritable(new DenseDoubleVector(thetaDelta)));
+        if (!peerName.equals(peer.getPeerName())) { // avoid sending to oneself
+          peer.send(peerName, new VectorWritable(new DenseDoubleVector(thetaDelta)));
+        }
       }
 
       peer.sync();
