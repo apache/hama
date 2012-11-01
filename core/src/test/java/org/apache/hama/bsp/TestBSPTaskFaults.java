@@ -64,8 +64,7 @@ public class TestBSPTaskFaults extends TestCase {
   public static final String TEST_POINT = "bsp.ft.test.point";
   public static final String TEST_GROOM_PORT = "bsp.ft.test.groomport";
   private static int TEST_NUMBER = 0;
-  
-  
+
   private volatile MinimalGroomServer groom;
   private volatile BSPPeerProtocol umbilical;
   private Server workerServer;
@@ -75,8 +74,8 @@ public class TestBSPTaskFaults extends TestCase {
   public volatile HamaConfiguration conf;
 
   private ScheduledExecutorService testBSPTaskService;
-  
-  private static synchronized int incrementTestNumber(){
+
+  private static synchronized int incrementTestNumber() {
     return ++TEST_NUMBER;
   }
 
@@ -104,7 +103,6 @@ public class TestBSPTaskFaults extends TestCase {
     @Override
     public void close() throws IOException {
       isShutDown = true;
-
     }
 
     @Override
@@ -172,7 +170,7 @@ public class TestBSPTaskFaults extends TestCase {
   private class TestBSPTaskThreadRunner extends Thread {
 
     BSPJob job;
-    
+
     TestBSPTaskThreadRunner(BSPJob jobConf) {
       job = jobConf;
     }
@@ -240,7 +238,8 @@ public class TestBSPTaskFaults extends TestCase {
     }
 
     public void destroyProcess() {
-
+      bspTaskProcess.destroy();
+      sched.shutdown();
     }
 
     @Override
@@ -265,8 +264,7 @@ public class TestBSPTaskFaults extends TestCase {
 
       commands.add(TestBSPProcessRunner.class.getName());
 
-      LOG.info("starting process for failure case - "
-          + testPoint);
+      LOG.info("starting process for failure case - " + testPoint);
       commands.add("" + testPoint);
       commands.add("" + testPort);
 
@@ -331,7 +329,7 @@ public class TestBSPTaskFaults extends TestCase {
         BSPJob job = new BSPJob(hamaConf);
         job.setInputFormat(NullInputFormat.class);
         job.setOutputFormat(NullOutputFormat.class);
-        
+
         final BSPPeerProtocol proto = (BSPPeerProtocol) RPC.getProxy(
             BSPPeerProtocol.class, HamaRPCProtocolVersion.versionID,
             new InetSocketAddress("127.0.0.1", port), hamaConf);
@@ -425,7 +423,8 @@ public class TestBSPTaskFaults extends TestCase {
         LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 
     int testNumber = incrementTestNumber();
-    InetSocketAddress inetAddress = new InetSocketAddress(BSPNetUtils.getFreePort(34321) + testNumber);
+    InetSocketAddress inetAddress = new InetSocketAddress(
+        BSPNetUtils.getFreePort(34321) + testNumber);
     groom = new MinimalGroomServer(conf);
     workerServer = RPC.getServer(groom, inetAddress.getHostName(),
         inetAddress.getPort(), conf);
@@ -462,8 +461,10 @@ public class TestBSPTaskFaults extends TestCase {
 
     CompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(
         this.testBSPTaskService);
-    Future<Integer> future = completionService
-        .submit(new TestBSPProcessRunner(0, workerServer.getListenerAddress().getPort()));
+    TestBSPProcessRunner runner = new TestBSPProcessRunner(0, workerServer
+        .getListenerAddress().getPort());
+
+    Future<Integer> future = completionService.submit(runner);
 
     try {
       future.get(20000, TimeUnit.MILLISECONDS);
@@ -478,7 +479,7 @@ public class TestBSPTaskFaults extends TestCase {
     checkIfPingTestPassed();
     groom.setPingCount(0);
     this.testBSPTaskService.shutdownNow();
-
+    runner.destroyProcess();
   }
 
   /*
@@ -490,11 +491,11 @@ public class TestBSPTaskFaults extends TestCase {
     LOG.info("Testing ping failure case - 1");
     conf.setInt(TEST_POINT, 1);
 
-    CompletionService<Integer> completionService = 
-        new ExecutorCompletionService<Integer>(this.testBSPTaskService);
-    Future<Integer> future = completionService
-        .submit(new TestBSPProcessRunner(1, 
-            workerServer.getListenerAddress().getPort()));
+    CompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(
+        this.testBSPTaskService);
+    TestBSPProcessRunner runner = new TestBSPProcessRunner(1, workerServer
+        .getListenerAddress().getPort());
+    Future<Integer> future = completionService.submit(runner);
 
     try {
       future.get(20000, TimeUnit.MILLISECONDS);
@@ -509,18 +510,18 @@ public class TestBSPTaskFaults extends TestCase {
     checkIfPingTestPassed();
     groom.setPingCount(0);
     this.testBSPTaskService.shutdownNow();
-
+    runner.destroyProcess();
   }
 
   public void testPingOnTaskExecFailure() {
 
     LOG.info("Testing ping failure case - 2");
     conf.setInt(TEST_POINT, 2);
-    CompletionService<Integer> completionService = 
-        new ExecutorCompletionService<Integer>(this.testBSPTaskService);
-    Future<Integer> future = completionService
-        .submit(new TestBSPProcessRunner(2, 
-            workerServer.getListenerAddress().getPort()));
+    CompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(
+        this.testBSPTaskService);
+    TestBSPProcessRunner runner = new TestBSPProcessRunner(2, workerServer
+        .getListenerAddress().getPort());
+    Future<Integer> future = completionService.submit(runner);
 
     try {
       future.get(20000, TimeUnit.MILLISECONDS);
@@ -535,7 +536,7 @@ public class TestBSPTaskFaults extends TestCase {
     checkIfPingTestPassed();
     groom.setPingCount(0);
     this.testBSPTaskService.shutdownNow();
-
+    runner.destroyProcess();
   }
 
   public void testPingOnTaskCleanupFailure() {
@@ -543,12 +544,12 @@ public class TestBSPTaskFaults extends TestCase {
     LOG.info("Testing ping failure case - 3");
 
     conf.setInt(TEST_POINT, 3);
-    CompletionService<Integer> completionService = 
-        new ExecutorCompletionService<Integer>(this.testBSPTaskService);
-    
-    Future<Integer> future = completionService
-        .submit(new TestBSPProcessRunner(3, 
-            workerServer.getListenerAddress().getPort()));
+    CompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(
+        this.testBSPTaskService);
+    TestBSPProcessRunner runner = new TestBSPProcessRunner(3, workerServer
+        .getListenerAddress().getPort());
+
+    Future<Integer> future = completionService.submit(runner);
 
     try {
       future.get(20000, TimeUnit.MILLISECONDS);
@@ -563,17 +564,18 @@ public class TestBSPTaskFaults extends TestCase {
     checkIfPingTestPassed();
     groom.setPingCount(0);
     this.testBSPTaskService.shutdownNow();
-
+    runner.destroyProcess();
   }
 
   public void testBSPTaskSelfDestroy() {
     LOG.info("Testing self kill on lost contact.");
 
-    CompletionService<Integer> completionService = 
-        new ExecutorCompletionService<Integer>(this.testBSPTaskService);
-    Future<Integer> future = completionService
-        .submit(new TestBSPProcessRunner(0, 
-            workerServer.getListenerAddress().getPort()));
+    CompletionService<Integer> completionService = new ExecutorCompletionService<Integer>(
+        this.testBSPTaskService);
+    TestBSPProcessRunner runner = new TestBSPProcessRunner(0, workerServer
+        .getListenerAddress().getPort());
+
+    Future<Integer> future = completionService.submit(runner);
 
     try {
       while (groom.pingCount == 0) {
@@ -598,12 +600,13 @@ public class TestBSPTaskFaults extends TestCase {
     }
 
     assertEquals(69, exitValue.intValue());
+    runner.destroyProcess();
   }
 
   @Override
   protected void tearDown() throws Exception {
-
     super.tearDown();
+
     if (groom != null)
       groom.setPingCount(0);
     if (umbilical != null) {
