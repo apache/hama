@@ -120,7 +120,8 @@ public class TestSyncServiceFactory extends TestCase {
     ZKServerThread serverThread = new ZKServerThread(syncServer);
     Executors.newFixedThreadPool(1).submit(serverThread);
 
-    Thread.sleep(1000);
+    // FIXME wait for syncServer is up
+    Thread.sleep(5000);
 
     final PeerSyncClient syncClient = SyncServiceFactory
         .getPeerSyncClient(conf);
