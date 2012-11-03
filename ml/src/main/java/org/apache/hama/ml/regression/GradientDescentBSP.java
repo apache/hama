@@ -212,7 +212,7 @@ public class GradientDescentBSP extends BSP<VectorWritable, DoubleWritable, Vect
     if (theta == null) {
       if (master) {
         int size = getXSize(peer);
-        theta = new DenseDoubleVector(size, peer.getConfiguration().getInt(INITIAL_THETA_VALUES, 10));
+        theta = new DenseDoubleVector(size, peer.getConfiguration().getInt(INITIAL_THETA_VALUES, 1));
         for (String peerName : peer.getAllPeerNames()) {
           peer.send(peerName, new VectorWritable(theta));
         }
