@@ -387,7 +387,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   @Override
   public final void send(String peerName, M msg) throws IOException {
-    incrementCounter(PeerCounter.TOTAL_MESSAGES_SENT, 1L);
     messenger.send(peerName, msg);
   }
 
