@@ -28,9 +28,25 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import org.apache.hadoop.io.BytesWritable;;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.IntWritable;
 
 public class TestBSPMessageBundle extends TestCase {
+
+  public void testApproximateSize() throws IOException {
+    BSPMessageBundle<IntWritable> bundle = new BSPMessageBundle<IntWritable>();
+    for (int i = 0; i < 100; i++) {
+      bundle.addMessage(new IntWritable(i));
+    }
+
+    assertTrue(bundle.getApproximateSize() > 400
+        && bundle.getApproximateSize() < 500);
+
+    bundle = new BSPMessageBundle<IntWritable>();
+    bundle.addMessage(new IntWritable(1));
+    assertTrue(bundle.getApproximateSize() > 40
+        && bundle.getApproximateSize() < 50);
+  }
 
   public void testEmpty() throws IOException {
     BSPMessageBundle<BytesWritable> bundle = new BSPMessageBundle<BytesWritable>();

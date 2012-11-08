@@ -17,13 +17,16 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -58,6 +61,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
       LinkedList<M> list = new LinkedList<M>();
       list.add(message);
       messages.put(className, list);
+      list = null;
     } else {
       messages.get(className).add(message);
     }
@@ -71,6 +75,42 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
       mergeList.addAll(c);
     }
     return mergeList;
+  }
+
+  /**
+   * @return the approximate size of bundle object
+   * @throws IOException
+   */
+  public long getApproximateSize() throws IOException {
+    int sample = 20;
+    int sum = 0;
+    int totalMsgs = 0;
+    int classNames = 0;
+    DataOutputStream dos = null;
+
+    for (Map.Entry<String, LinkedList<M>> e : messages.entrySet()) {
+      classNames += e.getKey().length();
+      LinkedList<M> c = e.getValue();
+
+      if (messages.size() == 1 && c.size() < sample) {
+        dos = new DataOutputStream(new ByteArrayOutputStream());
+        write(dos);
+        dos.close();
+        return dos.size();
+      }
+
+      totalMsgs += c.size();
+      for (int i = 0; i < sample; i++) {
+        int idx = (int) (Math.random() * (c.size() - 1));
+        dos = new DataOutputStream(new ByteArrayOutputStream());
+        c.get(idx).write(dos);
+        dos.close();
+        sum += dos.size();
+      }
+    }
+
+    int avgSize = sum / (sample * messages.size());
+    return (totalMsgs * avgSize) + classNames + 4;
   }
 
   @Override

@@ -32,7 +32,6 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
-import org.apache.hama.util.CompressionUtil;
 import org.apache.hama.util.LRUCache;
 
 /**
@@ -102,18 +101,12 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
           + " to transfer messages to!");
     } else {
       if (compressor != null) {
-        float bundleSize = CompressionUtil.getBundleSize(bundle);
-        if (bundleSize > conf.getLong("hama.messenger.compression.threshold",
-            1048576)) {
+        if (bundle.getApproximateSize() > conf.getLong(
+            "hama.messenger.compression.threshold", 1048576)) {
           BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
-          if (CompressionUtil.getCompressionRatio(
-              (float) compMsgBundle.getData().length, bundleSize) < 1.0) {
-            bspPeerConnection.put(compMsgBundle);
-          } else {
-            bspPeerConnection.put(bundle);
-          }
+          bspPeerConnection.put(compMsgBundle);
         } else {
-          bspPeerConnection.put(bundle); 
+          bspPeerConnection.put(bundle);
         }
       } else {
         bspPeerConnection.put(bundle);

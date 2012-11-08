@@ -19,6 +19,7 @@ Release 0.6 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-644: Add getApproximateSize to BSPMessageBundle (edwardyoon)
    HAMA-655: Add Exception handling for parsing of vertex (edwardyoon)
    HAMA-646: Add deleting temporary files method in TestSubmitGraphJob (Yuesheng Hu via edwardyoon)
    HAMA-597: Split a GraphJobRunner into multiple classes (edwardyoon & tjungblut) 
