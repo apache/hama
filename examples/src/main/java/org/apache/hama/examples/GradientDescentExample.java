@@ -28,6 +28,8 @@ import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.ml.regression.GradientDescentBSP;
+import org.apache.hama.ml.regression.LogisticRegressionModel;
+import org.apache.hama.ml.regression.RegressionModel;
 import org.apache.hama.ml.regression.VectorDoubleFileInputFormat;
 import org.apache.hama.ml.writable.VectorWritable;
 
@@ -46,6 +48,10 @@ public class GradientDescentExample {
     conf.setFloat(GradientDescentBSP.ALPHA, 0.002f);
     conf.setFloat(GradientDescentBSP.COST_THRESHOLD, 0.5f);
     conf.setInt(GradientDescentBSP.ITERATIONS_THRESHOLD, 300);
+    conf.setInt(GradientDescentBSP.INITIAL_THETA_VALUES, 10);
+    if (args.length > 1 && args[1]!=null && args[1].equals("logistic")) {
+      conf.setClass(GradientDescentBSP.REGRESSION_MODEL_CLASS, LogisticRegressionModel.class, RegressionModel.class);
+    }
 
     BSPJob bsp = new BSPJob(conf, GradientDescentExample.class);
     // Set the job name
@@ -62,9 +68,9 @@ public class GradientDescentExample {
 
     long startTime = System.currentTimeMillis();
     if (bsp.waitForCompletion(true)) {
-        printOutput(conf);
-        System.out.println("Job Finished in "
-                + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+      printOutput(conf);
+      System.out.println("Job Finished in "
+              + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
 
   }
@@ -73,12 +79,12 @@ public class GradientDescentExample {
     FileSystem fs = FileSystem.get(conf);
     FileStatus[] files = fs.listStatus(TMP_OUTPUT);
     for (int i = 0; i < files.length; i++) {
-        if (files[i].getLen() > 0) {
-            FSDataInputStream in = fs.open(files[i].getPath());
-            IOUtils.copyBytes(in, System.out, conf, false);
-            in.close();
-            break;
-        }
+      if (files[i].getLen() > 0) {
+        FSDataInputStream in = fs.open(files[i].getPath());
+        IOUtils.copyBytes(in, System.out, conf, false);
+        in.close();
+        break;
+      }
     }
 
     fs.delete(TMP_OUTPUT, true);

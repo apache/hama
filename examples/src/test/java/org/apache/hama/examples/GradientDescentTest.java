@@ -26,17 +26,17 @@ import static org.junit.Assert.fail;
  */
 public class GradientDescentTest {
   @Test
-  public void testCorrectGDExecution() throws Exception {
+  public void testCorrectGDWithLinearRegressionExecution() throws Exception {
     GradientDescentExample.main(new String[]{"src/test/resources/gd_file_sample.txt"});
   }
 
   @Test
   public void testWrongGDExecutionWithEmptyArgs() {
     try {
-        GradientDescentExample.main(new String[0]);
-        fail("GradientDescentExample should fail if the argument list has size 0");
+      GradientDescentExample.main(new String[0]);
+      fail("GradientDescentExample should fail if the argument list has size 0");
     } catch (Exception e) {
-        // everything ok
+      // everything ok
     }
   }
 
