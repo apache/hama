@@ -30,7 +30,10 @@ public class LogisticRegressionModel implements RegressionModel {
     costFunction = new CostFunction() {
       @Override
       public double calculateCostForItem(DoubleVector x, double y, int m, DoubleVector theta, HypothesisFunction hypothesis) {
-        return (-1 * y * Math.log(applyHypothesis(theta, x)) + (1 - y) * Math.log(1 - applyHypothesis(theta, x))) / m;
+          double h = applyHypothesis(theta, x);
+          assert h > 0 && h < 1 : new StringBuilder("cannot calculate the log of a number equal to / less than zero [h:").
+                  append(h).append(" in log(h) and log(1-h)]").toString();
+          return (-1 * y * Math.log(h) + (1 - y) * Math.log(1 - h)) / m;
       }
     };
   }
