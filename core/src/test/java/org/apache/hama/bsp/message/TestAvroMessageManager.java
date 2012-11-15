@@ -37,6 +37,7 @@ import org.apache.hama.bsp.message.type.BooleanMessage;
 import org.apache.hama.bsp.message.type.DoubleMessage;
 import org.apache.hama.bsp.message.type.IntegerMessage;
 import org.apache.hama.util.BSPNetUtils;
+import org.junit.Test;
 
 public class TestAvroMessageManager extends TestCase {
 
@@ -49,6 +50,7 @@ public class TestAvroMessageManager extends TestCase {
 
   public static final String TMP_OUTPUT_PATH = "/tmp/messageQueue";
 
+  @Test
   public void testAvroMessenger() throws Exception {
     BSPMessageBundle<Writable> randomBundle = getRandomBundle();
     Configuration conf = new Configuration();
@@ -95,7 +97,7 @@ public class TestAvroMessageManager extends TestCase {
 
   }
 
-  public final static BSPMessageBundle<Writable> getRandomBundle() {
+  private final static BSPMessageBundle<Writable> getRandomBundle() {
     BSPMessageBundle<Writable> bundle = new BSPMessageBundle<Writable>();
 
     for (int i = 0; i < INT_MSG_COUNT; i++) {

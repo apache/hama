@@ -17,7 +17,9 @@
  */
 package org.apache.hama.bsp.sync;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 
@@ -31,6 +33,7 @@ import org.apache.hama.bsp.BSPJobID;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.TaskID;
 import org.apache.hama.util.BSPNetUtils;
+import org.junit.Test;
 
 public class TestSyncServiceFactory extends TestCase {
 
@@ -67,6 +70,7 @@ public class TestSyncServiceFactory extends TestCase {
 
   }
 
+  @Test
   public void testClientInstantiation() throws Exception {
 
     Configuration conf = new Configuration();
@@ -75,6 +79,7 @@ public class TestSyncServiceFactory extends TestCase {
     assertTrue(syncClient instanceof ZooKeeperSyncClientImpl);
   }
 
+  @Test
   public void testServerInstantiation() throws Exception {
 
     Configuration conf = new Configuration();
@@ -102,6 +107,7 @@ public class TestSyncServiceFactory extends TestCase {
 
   }
 
+  @Test
   public void testZKSyncStore() throws Exception {
     Configuration conf = new Configuration();
     int zkPort = BSPNetUtils.getFreePort(21811);
@@ -118,10 +124,10 @@ public class TestSyncServiceFactory extends TestCase {
     assertTrue(syncServer instanceof ZooKeeperSyncServerImpl);
 
     ZKServerThread serverThread = new ZKServerThread(syncServer);
-    Executors.newFixedThreadPool(1).submit(serverThread);
+    ExecutorService executorService = Executors.newFixedThreadPool(1);
+    executorService.submit(serverThread);
 
-    // FIXME wait for syncServer is up
-    Thread.sleep(5000);
+    executorService.awaitTermination(10, TimeUnit.SECONDS);
 
     final PeerSyncClient syncClient = SyncServiceFactory
         .getPeerSyncClient(conf);

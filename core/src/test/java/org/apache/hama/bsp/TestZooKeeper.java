@@ -20,6 +20,9 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 
@@ -35,6 +38,7 @@ import org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl;
 import org.apache.hama.bsp.sync.ZooKeeperSyncServerImpl;
 import org.apache.hama.util.BSPNetUtils;
 import org.apache.zookeeper.KeeperException;
+import org.junit.Test;
 import org.mortbay.log.Log;
 
 public class TestZooKeeper extends TestCase {
@@ -57,25 +61,26 @@ public class TestZooKeeper extends TestCase {
             .getCanonicalName());
   }
 
+  @Test
   public void testClearZKNodes() throws IOException, KeeperException,
       InterruptedException {
     final ZooKeeperSyncServerImpl server = new ZooKeeperSyncServerImpl();
     boolean done = false;
     try {
       server.init(configuration);
-      new Thread(new Runnable() {
-
+      ExecutorService executorService = Executors.newCachedThreadPool();
+      executorService.submit(new Runnable() {
         @Override
         public void run() {
-          try {
-            server.start();
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
+            try {
+                server.start();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-      }).start();
+      });
 
-      Thread.sleep(1000);
+      executorService.awaitTermination(10, TimeUnit.SECONDS);
 
       String bspRoot = "/bsp";
 
