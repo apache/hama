@@ -24,7 +24,7 @@ public class TestFileInputFormat extends TestCase {
   public void testComputeGoalSize() throws Exception {
 
     TextInputFormat input = new TextInputFormat();
-    assertEquals(1000, input.computeGoalSize(10, 10000));
+    assertTrue(1000 < input.computeGoalSize(10, 10000) && 1200 > input.computeGoalSize(10, 10000));
     
   }
 }
