@@ -272,7 +272,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   protected long computeGoalSize(int numSplits, long totalSize) {
-    return totalSize / (numSplits == 0 ? 1 : numSplits);
+    // The minus 1 is for the remainder.
+    return totalSize / (numSplits <= 1 ? 1 : numSplits - 1);
   }
 
   protected long computeSplitSize(long goalSize, long minSize, long blockSize) {
