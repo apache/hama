@@ -327,6 +327,7 @@ class SimpleTaskScheduler extends TaskScheduler {
       return Boolean.TRUE;
     }
 
+    @Override
     public Boolean call() {
       if (jip.isRecoveryPending()) {
         return scheduleRecoveryTasks();

@@ -36,6 +36,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.mapred.InvalidInputException;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.net.NetworkTopology;
 import org.apache.hadoop.net.Node;
 import org.apache.hadoop.net.NodeBase;
@@ -47,7 +48,6 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
 
   private static final double SPLIT_SLOP = 1.1; // 10% slop
 
-  private long minSplitSize = 1;
   private static final PathFilter hiddenFileFilter = new PathFilter() {
     @Override
     public boolean accept(Path p) {
@@ -55,10 +55,6 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
       return !name.startsWith("_") && !name.startsWith(".");
     }
   };
-
-  protected void setMinSplitSize(long minSplitSize) {
-    this.minSplitSize = minSplitSize;
-  }
 
   /**
    * Proxy PathFilter that accepts a path only if all filters given in the
@@ -83,15 +79,6 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     }
   }
 
-  /**
-   * @param fs the file system that the file is on
-   * @param filename the file name to check
-   * @return is this file splitable?
-   */
-  protected boolean isSplitable(FileSystem fs, Path filename) {
-    return true;
-  }
-
   @Override
   public abstract RecordReader<K, V> getRecordReader(InputSplit split,
       BSPJob job) throws IOException;
@@ -103,7 +90,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    */
   public static void setInputPathFilter(BSPJob conf,
       Class<? extends PathFilter> filter) {
-    conf.getConf().setClass("bsp.input.pathFilter.class", filter,
+    conf.getConfiguration().setClass("bsp.input.pathFilter.class", filter,
         PathFilter.class);
   }
 
@@ -113,10 +100,10 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    * @return the PathFilter instance set for the job, NULL if none has been set.
    */
   public static PathFilter getInputPathFilter(BSPJob conf) {
-    Class<? extends PathFilter> filterClass = conf.getConf().getClass(
+    Class<? extends PathFilter> filterClass = conf.getConfiguration().getClass(
         "bsp.input.pathFilter.class", null, PathFilter.class);
     return (filterClass != null) ? ReflectionUtils.newInstance(filterClass,
-        conf.getConf()) : null;
+        conf.getConfiguration()) : null;
   }
 
   /**
@@ -147,7 +134,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     PathFilter inputFilter = new MultiPathFilter(filters);
 
     for (Path p : dirs) {
-      FileSystem fs = p.getFileSystem(job.getConf());
+      FileSystem fs = p.getFileSystem(job.getConfiguration());
       FileStatus[] matches = fs.globStatus(p, inputFilter);
       if (matches == null) {
         errors.add(new IOException("Input path does not exist: " + p));
@@ -175,73 +162,109 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   }
 
   /**
-   * Splits files returned by {@link #listStatus(BSPJob)} when they're too big.
+   * Splits files returned by {@link #listStatus(BSPJob)} when they're too big. <br/>
+   * numSplits will be ignored by the framework.
    */
   @Override
   public InputSplit[] getSplits(BSPJob job, int numSplits) throws IOException {
-    FileStatus[] files = listStatus(job);
-
-    long totalSize = computeTotalSize(job, files);
-    long goalSize = computeGoalSize(numSplits, totalSize);
-
-    ArrayList<FileSplit> splits = new ArrayList<FileSplit>(numSplits);
-
-    // take the short circuit path if we have already partitioned
-    if (numSplits == files.length) {
-      for (FileStatus file : files) {
-        if (file != null) {
-          splits.add(new FileSplit(file.getPath(), 0, file.getLen(),
-              new String[0]));
-        }
-      }
-      return splits.toArray(new FileSplit[splits.size()]);
-    }
-
-    LOG.info("numSplits: " + numSplits);
-    long minSize = Math.max(job.getConf().getLong("bsp.min.split.size", 1),
-        minSplitSize);
+    long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
+    long maxSize = getMaxSplitSize(job);
 
     // generate splits
-    NetworkTopology clusterMap = new NetworkTopology();
+    List<InputSplit> splits = new ArrayList<InputSplit>();
+    FileStatus[] files = listStatus(job);
     for (FileStatus file : files) {
-      if (file != null) {
-        Path path = file.getPath();
-        FileSystem fs = path.getFileSystem(job.getConf());
-        long length = file.getLen();
-        BlockLocation[] blkLocations = fs
-            .getFileBlockLocations(file, 0, length);
-        if ((length != 0) && isSplitable(fs, path)) {
-          long blockSize = file.getBlockSize();
-          long splitSize = computeSplitSize(goalSize, minSize, blockSize);
-          LOG.info("computeSplitSize: " + splitSize + " (" + goalSize + ", "
-              + minSize + ", " + blockSize + ")");
+      Path path = file.getPath();
+      FileSystem fs = path.getFileSystem(job.getConfiguration());
+      long length = file.getLen();
+      BlockLocation[] blkLocations = fs.getFileBlockLocations(file, 0, length);
+      if ((length != 0) && isSplitable(job, path)) {
+        long blockSize = file.getBlockSize();
+        long splitSize = computeSplitSize(blockSize, minSize, maxSize);
 
-          long bytesRemaining = length;
-          while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
-            String[] splitHosts = getSplitHosts(blkLocations, length
-                - bytesRemaining, splitSize, clusterMap);
-            splits.add(new FileSplit(path, length - bytesRemaining, splitSize,
-                splitHosts));
-            bytesRemaining -= splitSize;
-          }
-
-          if (bytesRemaining != 0) {
-            splits.add(new FileSplit(path, length - bytesRemaining,
-                bytesRemaining, blkLocations[blkLocations.length - 1]
-                    .getHosts()));
-          }
-        } else if (length != 0) {
-          String[] splitHosts = getSplitHosts(blkLocations, 0, length,
-              clusterMap);
-          splits.add(new FileSplit(path, 0, length, splitHosts));
-        } else {
-          // Create empty hosts array for zero length files
-          splits.add(new FileSplit(path, 0, length, new String[0]));
+        long bytesRemaining = length;
+        while (((double) bytesRemaining) / splitSize > SPLIT_SLOP) {
+          int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
+          splits.add(new FileSplit(path, length - bytesRemaining, splitSize,
+              blkLocations[blkIndex].getHosts()));
+          bytesRemaining -= splitSize;
         }
+
+        if (bytesRemaining != 0) {
+          splits
+              .add(new FileSplit(path, length - bytesRemaining, bytesRemaining,
+                  blkLocations[blkLocations.length - 1].getHosts()));
+        }
+      } else if (length != 0) {
+        splits.add(new FileSplit(path, 0, length, blkLocations[0].getHosts()));
+      } else {
+        // Create empty hosts array for zero length files
+        splits.add(new FileSplit(path, 0, length, new String[0]));
       }
     }
-    LOG.info("Total # of splits: " + splits.size());
-    return splits.toArray(new FileSplit[splits.size()]);
+
+    // Save the number of input files in the job-conf
+    job.getConfiguration().setLong("bsp.input.files", files.length);
+
+    LOG.debug("Total # of splits: " + splits.size());
+    return splits.toArray(new InputSplit[splits.size()]);
+  }
+
+  /**
+   * @return true if the file is splittable (default), false if not.
+   */
+  protected boolean isSplitable(BSPJob job, Path path) {
+    return true;
+  }
+
+  /**
+   * Get the lower bound on split size imposed by the format.
+   * 
+   * @return the number of bytes of the minimal split for this format
+   */
+  protected long getFormatMinSplitSize() {
+    return 1;
+  }
+
+  /**
+   * Set the minimum input split size
+   * 
+   * @param job the job to modify
+   * @param size the minimum size
+   */
+  public static void setMinInputSplitSize(Job job, long size) {
+    job.getConfiguration().setLong("bsp.min.split.size", size);
+  }
+
+  /**
+   * Get the minimum split size
+   * 
+   * @param job the job
+   * @return the minimum number of bytes that can be in a split
+   */
+  public static long getMinSplitSize(BSPJob job) {
+    return job.getConfiguration().getLong("bsp.min.split.size", 1L);
+  }
+
+  /**
+   * Set the maximum split size
+   * 
+   * @param job the job to modify
+   * @param size the maximum split size
+   */
+  public static void setMaxInputSplitSize(Job job, long size) {
+    job.getConfiguration().setLong("bsp.max.split.size", size);
+  }
+
+  /**
+   * Get the maximum split size.
+   * 
+   * @param context the job to look at.
+   * @return the maximum number of bytes a split can include
+   */
+  public static long getMaxSplitSize(BSPJob context) {
+    return context.getConfiguration().getLong("bsp.max.split.size",
+        Long.MAX_VALUE);
   }
 
   protected long computeTotalSize(BSPJob job, FileStatus[] files)
@@ -256,7 +279,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
                 .equals(job.get("bsp.partitioning.dir")))) {
           // if we find the partitioning dir, just remove it.
           LOG.warn("Removing already existing partitioning directory " + path);
-          FileSystem fileSystem = path.getFileSystem(job.getConf());
+          FileSystem fileSystem = path.getFileSystem(job.getConfiguration());
           if (!fileSystem.delete(path, true)) {
             LOG.error("Remove failed.");
           }
@@ -403,7 +426,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    * @return the list of input {@link Path}s for the BSP job.
    */
   public static Path[] getInputPaths(BSPJob conf) {
-    String dirs = conf.getConf().get("bsp.input.dir", "");
+    String dirs = conf.getConfiguration().get("bsp.input.dir", "");
     String[] list = StringUtils.split(dirs);
     Path[] result = new Path[list.length];
     for (int i = 0; i < list.length; i++) {

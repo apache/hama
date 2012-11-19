@@ -10,6 +10,7 @@ Release 0.6 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-678: Fix input splitting (tjungblut)
    HAMA-613: Scheduler kills job too silently when out of slots (Yuesheng Hu via edwardyoon)
    HAMA-647: Make the input spliter robustly (Yuesheng Hu via edwardyoon)
    HAMA-635: Number of vertices value is inconsistent among tasks (Yuesheng Hu via tjungblut)

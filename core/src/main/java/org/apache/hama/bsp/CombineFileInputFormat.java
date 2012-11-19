@@ -140,7 +140,7 @@ public abstract class CombineFileInputFormat<K, V> extends
   public InputSplit[] getSplits(BSPJob bspJob, int numSplits)
       throws IOException {
 
-    Configuration job = bspJob.getConf();
+    Configuration job = bspJob.getConfiguration();
 
     long minSizeNode = 0;
     long minSizeRack = 0;
@@ -446,7 +446,7 @@ public abstract class CombineFileInputFormat<K, V> extends
       this.fileSize = 0;
 
       // get block locations from file system
-      FileSystem fs = path.getFileSystem(job.getConf());
+      FileSystem fs = path.getFileSystem(job.getConfiguration());
       FileStatus stat = fs.getFileStatus(path);
       BlockLocation[] locations = fs.getFileBlockLocations(stat, 0,
           stat.getLen());

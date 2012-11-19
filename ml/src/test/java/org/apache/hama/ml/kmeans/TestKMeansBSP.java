@@ -78,8 +78,8 @@ public class TestKMeansBSP extends TestCase {
       System.out.println(centerMap);
       assertEquals(1, centerMap.size());
       DoubleVector doubleVector = centerMap.get(0);
-      assertTrue(doubleVector.get(0) > 50 && doubleVector.get(0) < 51);
-      assertTrue(doubleVector.get(1) > 50 && doubleVector.get(1) < 51);
+      assertTrue(doubleVector.get(0) >= 50 && doubleVector.get(0) < 51);
+      assertTrue(doubleVector.get(1) >= 50 && doubleVector.get(1) < 51);
     } finally {
       fs.delete(new Path("/tmp/clustering"), true);
     }

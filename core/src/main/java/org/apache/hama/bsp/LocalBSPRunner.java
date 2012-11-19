@@ -230,7 +230,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       conf.set(Constants.PEER_HOST, "local");
 
       bsp = (BSP) ReflectionUtils.newInstance(
-          job.getConf().getClass("bsp.work.class", BSP.class), job.getConf());
+          job.getConfiguration().getClass("bsp.work.class", BSP.class), job.getConfiguration());
 
     }
 

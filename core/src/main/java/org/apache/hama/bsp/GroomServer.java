@@ -1259,7 +1259,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
       try {
         // use job-specified working directory
-        FileSystem.get(job.getConf()).setWorkingDirectory(
+        FileSystem.get(job.getConfiguration()).setWorkingDirectory(
             job.getWorkingDirectory());
 
         // instantiate and init our peer

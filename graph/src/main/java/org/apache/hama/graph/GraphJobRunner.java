@@ -509,7 +509,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
         }
       }
 
-      int steps = (int) (maxSplitSize / conf.getInt( // 20 mb
+      int steps = (int) (maxSplitSize / conf.getLong( // 20 mb
           "hama.graph.multi.step.partitioning.interval", 20000000)) + 1;
 
       for (String peerName : peer.getAllPeerNames()) {

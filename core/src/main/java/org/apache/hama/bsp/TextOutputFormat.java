@@ -104,11 +104,11 @@ public class TextOutputFormat<K, V> extends FileOutputFormat<K, V> {
   public RecordWriter<K, V> getRecordWriter(FileSystem ignored, BSPJob job,
       String name) throws IOException {
     boolean isCompressed = getCompressOutput(job);
-    String keyValueSeparator = job.getConf().get(
+    String keyValueSeparator = job.getConfiguration().get(
         "bsp.textoutputformat.separator", "\t");
     if (!isCompressed) {
       Path file = FileOutputFormat.getTaskOutputPath(job, name);
-      FileSystem fs = file.getFileSystem(job.getConf());
+      FileSystem fs = file.getFileSystem(job.getConfiguration());
       FSDataOutputStream fileOut = fs.create(file);
       return new LineRecordWriter<K, V>(fileOut, keyValueSeparator);
     } else {
@@ -116,11 +116,11 @@ public class TextOutputFormat<K, V> extends FileOutputFormat<K, V> {
           job, GzipCodec.class);
       // create the named codec
       CompressionCodec codec = ReflectionUtils.newInstance(codecClass,
-          job.getConf());
+          job.getConfiguration());
       // build the filename including the extension
       Path file = FileOutputFormat.getTaskOutputPath(job,
           name + codec.getDefaultExtension());
-      FileSystem fs = file.getFileSystem(job.getConf());
+      FileSystem fs = file.getFileSystem(job.getConfiguration());
       FSDataOutputStream fileOut = fs.create(file);
       return new LineRecordWriter<K, V>(new DataOutputStream(
           codec.createOutputStream(fileOut)), keyValueSeparator);

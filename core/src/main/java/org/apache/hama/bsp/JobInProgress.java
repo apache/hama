@@ -155,13 +155,13 @@ public class JobInProgress {
     FileSystem fs = jobDir.getFileSystem(conf);
     fs.copyToLocalFile(jobFile, localJobFile);
     BSPJob job = new BSPJob(jobId, localJobFile.toString());
-    this.jobSplit = job.getConf().get("bsp.job.split.file");
+    this.jobSplit = job.getConfiguration().get("bsp.job.split.file");
 
     this.numBSPTasks = job.getNumBspTask();
     this.taskCompletionEvents = new ArrayList<TaskCompletionEvent>(
         numBSPTasks + 10);
 
-    this.maxTaskAttempts = job.getConf().getInt(Constants.MAX_TASK_ATTEMPTS,
+    this.maxTaskAttempts = job.getConfiguration().getInt(Constants.MAX_TASK_ATTEMPTS,
         Constants.DEFAULT_MAX_TASK_ATTEMPTS);
 
     this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),

@@ -36,7 +36,7 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
    * @param compress should the output of the job be compressed?
    */
   public static void setCompressOutput(BSPJob conf, boolean compress) {
-    conf.getConf().setBoolean("bsp.output.compress", compress);
+    conf.getConfiguration().setBoolean("bsp.output.compress", compress);
   }
 
   /**
@@ -47,7 +47,7 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
    *         <code>false</code> otherwise
    */
   public static boolean getCompressOutput(BSPJob conf) {
-    return conf.getConf().getBoolean("bsp.output.compress", false);
+    return conf.getConfiguration().getBoolean("bsp.output.compress", false);
   }
 
   /**
@@ -60,7 +60,7 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
   public static void setOutputCompressorClass(BSPJob conf,
       Class<? extends CompressionCodec> codecClass) {
     setCompressOutput(conf, true);
-    conf.getConf().setClass("bsp.output.compression.codec", codecClass,
+    conf.getConfiguration().setClass("bsp.output.compression.codec", codecClass,
         CompressionCodec.class);
   }
 
@@ -79,7 +79,7 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
     String name = conf.get("bsp.output.compression.codec");
     if (name != null) {
       try {
-        codecClass = conf.getConf().getClassByName(name)
+        codecClass = conf.getConfiguration().getClassByName(name)
             .asSubclass(CompressionCodec.class);
       } catch (ClassNotFoundException e) {
         throw new IllegalArgumentException("Compression codec " + name
@@ -98,7 +98,7 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
       throw new InvalidJobConfException("Output directory not set in JobConf.");
     }
     if (outDir != null) {
-      FileSystem fs = outDir.getFileSystem(job.getConf());
+      FileSystem fs = outDir.getFileSystem(job.getConfiguration());
       // normalize the output directory
       outDir = fs.makeQualified(outDir);
       setOutputPath(job, outDir);

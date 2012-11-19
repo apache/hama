@@ -31,12 +31,14 @@ public abstract class BSP<K1, V1, K2, V2, M extends Writable> implements
     /**
      * {@inheritDoc}
      */
+    @Override
     public abstract void bsp(BSPPeer<K1, V1, K2, V2, M> peer) throws IOException,
       SyncException, InterruptedException;
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setup(BSPPeer<K1, V1, K2, V2, M> peer) throws IOException,
       SyncException, InterruptedException {
 
@@ -45,6 +47,7 @@ public abstract class BSP<K1, V1, K2, V2, M extends Writable> implements
     /**
      * {@inheritDoc}
      */
+    @Override
     public void cleanup(BSPPeer<K1, V1, K2, V2, M> peer) throws IOException {
 
   }

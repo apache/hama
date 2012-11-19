@@ -114,7 +114,7 @@ public final class BSPTask extends Task {
 
   private void startPingingGroom(BSPJob job, BSPPeerProtocol umbilical) {
 
-    long pingPeriod = job.getConf().getLong(Constants.GROOM_PING_PERIOD,
+    long pingPeriod = job.getConfiguration().getLong(Constants.GROOM_PING_PERIOD,
         Constants.DEFAULT_GROOM_PING_PERIOD) / 2;
 
     try {
@@ -156,8 +156,8 @@ public final class BSPTask extends Task {
       throws Exception {
 
     BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> bsp = (BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M>) ReflectionUtils
-        .newInstance(job.getConf().getClass("bsp.work.class", BSP.class),
-            job.getConf());
+        .newInstance(job.getConfiguration().getClass("bsp.work.class", BSP.class),
+            job.getConfiguration());
 
     // The policy is to throw the first exception and log the remaining.
     Exception firstException = null;

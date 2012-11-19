@@ -19,17 +19,41 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.SequenceFile;
 
 public class SequenceFileInputFormat<K, V> extends FileInputFormat<K, V> {
 
-  public SequenceFileInputFormat() {
-    setMinSplitSize(SequenceFile.SYNC_INTERVAL);
-  }
-
   @Override
   public RecordReader<K, V> getRecordReader(InputSplit split, BSPJob job)
       throws IOException {
-    return new SequenceFileRecordReader<K, V>(job.getConf(), (FileSplit) split);
+    return new SequenceFileRecordReader<K, V>(job.getConfiguration(),
+        (FileSplit) split);
   }
+
+  @Override
+  protected long getFormatMinSplitSize() {
+    return SequenceFile.SYNC_INTERVAL;
+  }
+
+  @Override
+  protected FileStatus[] listStatus(BSPJob job) throws IOException {
+
+    FileStatus[] files = super.listStatus(job);
+    int len = files.length;
+    for (int i = 0; i < len; ++i) {
+      FileStatus file = files[i];
+      if (file.isDir()) { // it's a MapFile
+        Path p = file.getPath();
+        FileSystem fs = p.getFileSystem(job.getConfiguration());
+        // use the data file
+        files[i] = fs.getFileStatus(new Path(p, MapFile.DATA_FILE_NAME));
+      }
+    }
+    return files;
+  }
+
 }

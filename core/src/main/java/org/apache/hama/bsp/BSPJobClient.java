@@ -301,20 +301,8 @@ public class BSPJobClient extends Configured implements Tool {
       throws IOException {
     BSPJob job = pJob;
     job.setJobID(jobId);
-    int maxTasks = 0;
-    int limitTasks = job.getConf().getInt(Constants.MAX_TASKS_PER_JOB, 0);
-    
-    ClusterStatus clusterStatus = getClusterStatus(true);
-    
-    if(limitTasks > 0) {
-      maxTasks = limitTasks;
-    } else {
-      maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
-    }
-    
-    if (maxTasks < job.getNumBspTask()) {
-      throw new IOException("Job failed! The number of tasks has exceeded the maximum allowed.");
-    }
+    int limitTasks = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB, 0);
+    int maxTasks = checkTaskLimits(job, limitTasks);
     
     Path submitJobDir = new Path(getSystemDir(), "submit_"
         + Integer.toString(Math.abs(r.nextInt()), 36));
@@ -337,8 +325,8 @@ public class BSPJobClient extends Configured implements Tool {
     if (job.get("bsp.input.dir") != null) {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
-      if (job.getConf().get("bsp.input.partitioner.class") != null
-          && !job.getConf()
+      if (job.getConfiguration().get("bsp.input.partitioner.class") != null
+          && !job.getConfiguration()
               .getBoolean("hama.graph.runtime.partitioning", false)) {
         job = partition(job, maxTasks);
         maxTasks = job.getInt("hama.partition.count", maxTasks);
@@ -384,6 +372,22 @@ public class BSPJobClient extends Configured implements Tool {
     return launchJob(jobId, job, submitJobFile, fs);
   }
 
+  protected int checkTaskLimits(BSPJob job, int limitTasks) throws IOException {
+    int maxTasks;
+    ClusterStatus clusterStatus = getClusterStatus(true);
+    
+    if(limitTasks > 0) {
+      maxTasks = limitTasks;
+    } else {
+      maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
+    }
+    
+    if (maxTasks < job.getNumBspTask()) {
+      throw new IOException("Job failed! The number of tasks has exceeded the maximum allowed.");
+    }
+    return maxTasks;
+  }
+
   protected RunningJob launchJob(BSPJobID jobId, BSPJob job,
       Path submitJobFile, FileSystem fs) throws IOException {
     //
@@ -405,7 +409,7 @@ public class BSPJobClient extends Configured implements Tool {
         (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
             : maxTasks);
 
-    String input = job.getConf().get("bsp.input.dir");
+    String input = job.getConfiguration().get("bsp.input.dir");
 
     if (input != null) {
       InputFormat<?, ?> inputFormat = job.getInputFormat();
@@ -438,18 +442,18 @@ public class BSPJobClient extends Configured implements Tool {
       CompressionCodec codec = null;
       if (outputCompressorClass != null) {
         codec = ReflectionUtils.newInstance(outputCompressorClass,
-            job.getConf());
+            job.getConfiguration());
       }
 
       try {
         for (int i = 0; i < splits.length; i++) {
           Path p = new Path(partitionedPath, getPartitionName(i));
           if (codec == null) {
-            writers.add(SequenceFile.createWriter(fs, job.getConf(), p,
+            writers.add(SequenceFile.createWriter(fs, job.getConfiguration(), p,
                 sampleReader.createKey().getClass(), sampleReader.createValue()
                     .getClass(), CompressionType.NONE));
           } else {
-            writers.add(SequenceFile.createWriter(fs, job.getConf(), p,
+            writers.add(SequenceFile.createWriter(fs, job.getConfiguration(), p,
                 sampleReader.createKey().getClass(), sampleReader.createValue()
                     .getClass(), compressionType, codec));
           }
@@ -516,7 +520,7 @@ public class BSPJobClient extends Configured implements Tool {
   static Class<? extends CompressionCodec> getOutputCompressorClass(BSPJob job,
       Class<? extends CompressionCodec> defaultValue) {
     Class<? extends CompressionCodec> codecClass = defaultValue;
-    Configuration conf = job.getConf();
+    Configuration conf = job.getConfiguration();
     String name = conf.get("bsp.partitioning.compression.codec");
     if (name != null) {
       try {
@@ -537,7 +541,7 @@ public class BSPJobClient extends Configured implements Tool {
         (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
             : maxTasks);
 
-    final DataOutputStream out = writeSplitsFileHeader(job.getConf(),
+    final DataOutputStream out = writeSplitsFileHeader(job.getConfiguration(),
         submitSplitFile, splits.length);
     try {
       DataOutputBuffer buffer = new DataOutputBuffer();
@@ -706,7 +710,7 @@ public class BSPJobClient extends Configured implements Tool {
 
   public static void runJob(BSPJob job) throws FileNotFoundException,
       IOException {
-    BSPJobClient jc = new BSPJobClient(job.getConf());
+    BSPJobClient jc = new BSPJobClient(job.getConfiguration());
 
     if (job.getNumBspTask() == 0
         || job.getNumBspTask() > jc.getClusterStatus(false).getMaxTasks()) {

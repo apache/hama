@@ -190,6 +190,11 @@ public class YARNBSPJobClient extends BSPJobClient {
   }
 
   @Override
+  protected int checkTaskLimits(BSPJob job, int limitTasks) throws IOException {
+    return Math.max(1, limitTasks);
+  }
+
+  @Override
   public Path getSystemDir() {
     return new Path(getConf().get("bsp.local.dir", "/tmp/hama-yarn/"));
   }

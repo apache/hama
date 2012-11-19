@@ -95,7 +95,7 @@ public class TaskRunner extends Thread {
 
     @Override
     public Object call() throws Exception {
-      final boolean consoleRedirect = bspJob.getConf().getBoolean(
+      final boolean consoleRedirect = bspJob.getConfiguration().getBoolean(
           "hama.child.redirect.log.console", false);
       ProcessBuilder builder = new ProcessBuilder(commands);
       builder.directory(workDir);
@@ -203,7 +203,7 @@ public class TaskRunner extends Thread {
     vargs.add(jvm.toString());
 
     // bsp.child.java.opts
-    String javaOpts = jobConf.getConf().get("bsp.child.java.opts", "-Xmx200m");
+    String javaOpts = jobConf.getConfiguration().get("bsp.child.java.opts", "-Xmx200m");
     javaOpts = javaOpts.replace("@taskid@", task.getTaskID().toString());
 
     String[] javaOptsSplit = javaOpts.split(" ");
@@ -309,7 +309,7 @@ public class TaskRunner extends Thread {
   private void logStream(InputStream input, LogType type) {
     if (type == LogType.CONSOLE) {
       try {
-        IOUtils.copyBytes(input, System.out, bspJob.getConf());
+        IOUtils.copyBytes(input, System.out, bspJob.getConfiguration());
       } catch (IOException e) {
         // gracefully ignore any occuring exceptions here
       }

@@ -35,7 +35,7 @@ public class SequenceFileRecordWriter<K extends Writable, V extends Writable>
 
   public SequenceFileRecordWriter(FileSystem fs, BSPJob job, String name)
       throws IOException, ClassNotFoundException {
-    Configuration conf = job.getConf();
+    Configuration conf = job.getConfiguration();
     writer = new SequenceFile.Writer(fs, conf, new Path(
         conf.get("bsp.output.dir"), name), conf.getClassByName(conf
         .get("bsp.output.key.class")), conf.getClassByName(conf

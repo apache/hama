@@ -86,7 +86,7 @@ public class CombineFileSplit implements InputSplit {
   }
 
   public Configuration getJob() {
-    return job.getConf();
+    return job.getConfiguration();
   }
 
   @Override

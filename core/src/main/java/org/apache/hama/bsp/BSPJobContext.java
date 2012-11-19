@@ -102,7 +102,15 @@ public class BSPJobContext {
     conf.writeXml(out);
   }
 
+  /**
+   * @deprecated use {@link #getConfiguration()} instead.
+   */
+  @Deprecated
   public Configuration getConf() {
+    return this.conf;
+  }
+
+  public Configuration getConfiguration() {
     return this.conf;
   }
 

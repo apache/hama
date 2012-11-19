@@ -19,15 +19,25 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 
 public class TextInputFormat extends FileInputFormat<LongWritable, Text> {
 
   @Override
   public RecordReader<LongWritable, Text> getRecordReader(InputSplit split,
       BSPJob job) throws IOException {
-    return new LineRecordReader(job.getConf(), (FileSplit) split);
+    return new LineRecordReader(job.getConfiguration(), (FileSplit) split);
+  }
+
+  @Override
+  protected boolean isSplitable(BSPJob job, Path path) {
+    CompressionCodec codec = new CompressionCodecFactory(job.getConfiguration())
+        .getCodec(path);
+    return codec == null;
   }
 
 }
