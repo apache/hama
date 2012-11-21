@@ -27,6 +27,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.message.queue.MessageQueue;
 
 /**
  * This manager takes care of the messaging. It is responsible to launch a

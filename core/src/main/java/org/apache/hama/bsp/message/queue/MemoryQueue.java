@@ -15,29 +15,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message;
+package org.apache.hama.bsp.message.queue;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.Iterator;
-import java.util.PriorityQueue;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
- * Heap (Java's priority queue) based message queue implementation that supports
- * sorted receive and send.
+ * LinkedList backed queue structure for bookkeeping messages.
  */
-public final class SortedMessageQueue<M extends WritableComparable<M>>
-    implements MessageQueue<M> {
+public final class MemoryQueue<M extends Writable> implements MessageQueue<M> {
 
-  private final PriorityQueue<M> queue = new PriorityQueue<M>();
+  private final Deque<M> deque = new ArrayDeque<M>();
   private Configuration conf;
 
   @Override
-  public Iterator<M> iterator() {
-    return queue.iterator();
+  public final void addAll(Collection<M> col) {
+    deque.addAll(col);
+  }
+
+  @Override
+  public void addAll(MessageQueue<M> otherqueue) {
+    M poll = null;
+    while ((poll = otherqueue.poll()) != null) {
+      deque.add(poll);
+    }
+  }
+
+  @Override
+  public final void add(M item) {
+    deque.add(item);
+  }
+
+  @Override
+  public final void clear() {
+    deque.clear();
+  }
+
+  @Override
+  public final M poll() {
+    return deque.poll();
+  }
+
+  @Override
+  public final int size() {
+    return deque.size();
+  }
+
+  @Override
+  public final Iterator<M> iterator() {
+    return deque.iterator();
   }
 
   @Override
@@ -50,41 +82,7 @@ public final class SortedMessageQueue<M extends WritableComparable<M>>
     return conf;
   }
 
-  @Override
-  public void addAll(Collection<M> col) {
-    queue.addAll(col);
-  }
-
-  @Override
-  public void addAll(MessageQueue<M> otherqueue) {
-    M poll = null;
-    while ((poll = otherqueue.poll()) != null) {
-      queue.add(poll);
-    }
-  }
-
-  @Override
-  public void add(M item) {
-    queue.add(item);
-  }
-
-  @Override
-  public void clear() {
-    queue.clear();
-  }
-
-  @Override
-  public M poll() {
-    return queue.poll();
-  }
-
-  @Override
-  public int size() {
-    return queue.size();
-  }
-
-  // empty, not needed to implement
-
+  // not doing much here
   @Override
   public void init(Configuration conf, TaskAttemptID id) {
 

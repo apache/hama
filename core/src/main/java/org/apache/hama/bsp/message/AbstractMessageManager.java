@@ -37,6 +37,11 @@ import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.message.queue.DiskQueue;
+import org.apache.hama.bsp.message.queue.MemoryQueue;
+import org.apache.hama.bsp.message.queue.MessageQueue;
+import org.apache.hama.bsp.message.queue.SingleLockQueue;
+import org.apache.hama.bsp.message.queue.SynchronizedQueue;
 import org.apache.hama.util.BSPNetUtils;
 
 /**

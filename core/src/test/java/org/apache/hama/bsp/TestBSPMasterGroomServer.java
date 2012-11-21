@@ -31,8 +31,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.message.DiskQueue;
 import org.apache.hama.bsp.message.compress.SnappyCompressor;
+import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.examples.ClassSerializePrinting;
 
 public class TestBSPMasterGroomServer extends HamaCluster {

@@ -33,6 +33,7 @@ import org.apache.hama.bsp.Counters;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
 import org.apache.hama.bsp.message.compress.SnappyCompressor;
+import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.bsp.message.type.BooleanMessage;
 import org.apache.hama.bsp.message.type.DoubleMessage;
 import org.apache.hama.bsp.message.type.IntegerMessage;

@@ -51,7 +51,7 @@ import org.apache.hama.bsp.ft.AsyncRcvdMsgCheckpointImpl;
 import org.apache.hama.bsp.ft.FaultTolerantPeerService;
 import org.apache.hama.bsp.message.MessageEventListener;
 import org.apache.hama.bsp.message.MessageManager;
-import org.apache.hama.bsp.message.MessageQueue;
+import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.sync.BSPPeerSyncClient;
 import org.apache.hama.bsp.sync.PeerSyncClient;
 import org.apache.hama.bsp.sync.SyncEvent;

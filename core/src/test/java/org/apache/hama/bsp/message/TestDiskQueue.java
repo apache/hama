@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.TaskID;
+import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.junit.Test;
 
 public class TestDiskQueue extends TestCase {
