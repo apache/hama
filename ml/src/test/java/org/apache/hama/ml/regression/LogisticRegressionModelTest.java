@@ -35,7 +35,7 @@ public class LogisticRegressionModelTest {
     double y = 1;
     DoubleVector theta = new DenseDoubleVector(new double[]{1, 1, 1});
     Double cost = logisticRegressionModel.calculateCostForItem(x, y, 2, theta);
-    assertEquals("wrong cost calculation for logistic regression", Double.valueOf(6.17010948616701E-5), cost);
+    assertEquals("wrong cost calculation for logistic regression", Double.valueOf(6.170109486162941E-5), cost);
   }
 
   @Test
@@ -43,6 +43,6 @@ public class LogisticRegressionModelTest {
     LogisticRegressionModel logisticRegressionModel = new LogisticRegressionModel();
     Double hypothesisValue = logisticRegressionModel.applyHypothesis(new DenseDoubleVector(new double[]{1, 1, 1}),
             new DenseDoubleVector(new double[]{2, 3, 4}));
-    assertEquals("wrong hypothesis value for logistic regression", Double.valueOf(0.9998766054240137), hypothesisValue);
+    assertEquals("wrong hypothesis value for logistic regression", Double.valueOf(0.9998766054240138), hypothesisValue);
   }
 }

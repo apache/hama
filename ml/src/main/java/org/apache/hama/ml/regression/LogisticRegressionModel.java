@@ -17,6 +17,9 @@
  */
 package org.apache.hama.ml.regression;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 import org.apache.hama.ml.math.DoubleVector;
 
 /**
@@ -30,20 +33,42 @@ public class LogisticRegressionModel implements RegressionModel {
     costFunction = new CostFunction() {
       @Override
       public double calculateCostForItem(DoubleVector x, double y, int m, DoubleVector theta, HypothesisFunction hypothesis) {
-          double h = applyHypothesis(theta, x);
-          assert h > 0 && h < 1 : new StringBuilder("cannot calculate the log of a number equal to / less than zero [h:").
-                  append(h).append(" in log(h) and log(1-h)]").toString();
-          return (-1 * y * Math.log(h) + (1 - y) * Math.log(1 - h)) / m;
+          return (-1d * y * ln(applyHypothesisWithPrecision(theta, x)).doubleValue() + (1d - y) * ln(applyHypothesisWithPrecision(theta, x).subtract(BigDecimal.valueOf(1))).doubleValue()) / m;
       }
     };
   }
-
   @Override
   public double applyHypothesis(DoubleVector theta, DoubleVector x) {
-    return 1d / (1d + Math.exp(-1 * theta.dot(x)));
+      return applyHypothesisWithPrecision(theta, x).doubleValue();
   }
 
-  @Override
+  private BigDecimal applyHypothesisWithPrecision(DoubleVector theta, DoubleVector x) {
+    return BigDecimal.valueOf(1).divide(BigDecimal.valueOf(1d).add(BigDecimal.valueOf(Math.exp(-1d * theta.dot(x)))),
+            MathContext.DECIMAL128);
+  }
+
+  private BigDecimal ln(BigDecimal x) {
+      if (x.equals(BigDecimal.ONE)) {
+          return BigDecimal.ZERO;
+      }
+      x = x.subtract(BigDecimal.ONE);
+      int iterations = 1000;
+      BigDecimal ret = new BigDecimal(iterations + 1);
+      for (long i = iterations; i >= 0; i--) {
+          BigDecimal N = new BigDecimal(i / 2 + 1).pow(2);
+          N = N.multiply(x, MathContext.DECIMAL128);
+          ret = N.divide(ret, MathContext.DECIMAL128);
+
+          N = new BigDecimal(i + 1);
+          ret = ret.add(N, MathContext.DECIMAL128);
+
+      }
+      ret = x.divide(ret, MathContext.DECIMAL128);
+      return ret;
+  }
+
+
+    @Override
   public double calculateCostForItem(DoubleVector x, double y, int m, DoubleVector theta) {
     return costFunction.calculateCostForItem(x, y, m, theta, this);
   }

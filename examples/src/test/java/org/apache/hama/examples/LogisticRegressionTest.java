@@ -19,25 +19,13 @@ package org.apache.hama.examples;
 
 import org.junit.Test;
 
-import static org.junit.Assert.fail;
-
 /**
- * Testcase for {@link GradientDescentExample}
+ * Testcase for {@link GradientDescentExample} execution for 'logistic regression'
  */
-public class GradientDescentTest {
-  @Test
-  public void testCorrectGDWithLinearRegressionExecution() throws Exception {
-    GradientDescentExample.main(new String[]{"src/test/resources/gd_file_sample.txt"});
-  }
+public class LogisticRegressionTest {
 
   @Test
-  public void testWrongGDExecutionWithEmptyArgs() {
-    try {
-      GradientDescentExample.main(new String[0]);
-      fail("GradientDescentExample should fail if the argument list has size 0");
-    } catch (Exception e) {
-      // everything ok
-    }
+  public void testCorrectGDWithLogisticRegressionExecution() throws Exception {
+    GradientDescentExample.main(new String[]{"src/test/resources/logistic_regression_sample.txt", "logistic"});
   }
-
 }
