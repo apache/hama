@@ -53,6 +53,10 @@ import org.apache.hama.util.KeyValuePair;
 public final class GraphJobRunner<V extends Writable, E extends Writable, M extends Writable>
     extends BSP<Writable, Writable, Writable, Writable, GraphJobMessage> {
 
+  public static enum GraphJobCounter {
+    MULTISTEP_PARTITIONING, ITERATIONS, INPUT_VERTICES, AGGREGATE_VERTICES
+  }
+
   private static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
 
   // make sure that these values don't collide with the vertex names
@@ -124,7 +128,12 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       }
       // loop over vertices and do their computation
       doSuperstep(messages, peer);
+
+      if (isMasterTask(peer)) {
+        peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
+      }
     }
+
   }
 
   /**
@@ -304,10 +313,11 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
         vertexFinished = reader.parseVertex(next.getKey(), next.getValue(),
             vertex);
       } catch (Exception e) {
-        //LOG.error("exception occured during parsing vertex!" + e.toString());
-        throw new IOException("exception occured during parsing vertex!" + e.toString());
+        // LOG.error("exception occured during parsing vertex!" + e.toString());
+        throw new IOException("exception occured during parsing vertex!"
+            + e.toString());
       }
-      
+
       if (!vertexFinished) {
         continue;
       }
@@ -525,7 +535,12 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     for (Entry<Writable, Writable> e : x.entrySet()) {
       multiSteps = ((IntWritable) e.getValue()).get();
     }
-    LOG.info(peer.getPeerName() + ": " + multiSteps);
+
+    if (isMasterTask(peer)) {
+      peer.getCounter(GraphJobCounter.MULTISTEP_PARTITIONING).increment(
+          multiSteps);
+    }
+
     return multiSteps;
   }
 
@@ -547,6 +562,10 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       if (msg.isVerticesSizeMessage()) {
         numberVertices += msg.getVerticesSize().get();
       }
+    }
+
+    if (isMasterTask(peer)) {
+      peer.getCounter(GraphJobCounter.INPUT_VERTICES).increment(numberVertices);
     }
   }
 
