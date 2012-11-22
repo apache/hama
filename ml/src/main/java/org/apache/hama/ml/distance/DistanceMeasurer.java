@@ -20,22 +20,23 @@ package org.apache.hama.ml.distance;
 import org.apache.hama.ml.math.DoubleVector;
 
 /**
- * a {@link DistanceMeasurer} is responsible for calculating the distance between
- * {@link DoubleVector}s or Arrays of {@code double}s
+ * a {@link DistanceMeasurer} is responsible for calculating the distance
+ * between {@link DoubleVector}s or Arrays of {@code double}s
  */
 public interface DistanceMeasurer {
 
   /**
    * Calculates the distance between two arrays of {@code double}s
+   * 
    * @param set1 an array of {@code double}
    * @param set2 an array of {@code double}
    * @return a {@code double} representing the distance
    */
   public double measureDistance(double[] set1, double[] set2);
 
-
   /**
    * Calculates the distance between two {@link DoubleVector}ss
+   * 
    * @param vec1 a {@link DoubleVector}
    * @param vec2 a {@link DoubleVector}
    * @return a {@code double} representing the distance

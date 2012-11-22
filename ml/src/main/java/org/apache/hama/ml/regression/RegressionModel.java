@@ -25,15 +25,16 @@ import org.apache.hama.ml.math.DoubleVector;
 public interface RegressionModel extends HypothesisFunction {
 
   /**
-   * Calculates the cost function for a given item (input x, output y) and
-   * the model's parameters defined by the vector theta
-   *
-   * @param x     the input vector
-   * @param y     the learned output for x
-   * @param m     the total number of existing items
+   * Calculates the cost function for a given item (input x, output y) and the
+   * model's parameters defined by the vector theta
+   * 
+   * @param x the input vector
+   * @param y the learned output for x
+   * @param m the total number of existing items
    * @param theta the parameters vector theta
    * @return the calculated cost for input x and output y
    */
-  public double calculateCostForItem(DoubleVector x, double y, int m, DoubleVector theta);
+  public double calculateCostForItem(DoubleVector x, double y, int m,
+      DoubleVector theta);
 
 }

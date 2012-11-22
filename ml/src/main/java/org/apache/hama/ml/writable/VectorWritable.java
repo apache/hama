@@ -20,11 +20,10 @@ package org.apache.hama.ml.writable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hama.ml.math.DoubleVector;
 import org.apache.hama.ml.math.DenseDoubleVector;
+import org.apache.hama.ml.math.DoubleVector;
 
 /**
  * Writable for dense vectors.

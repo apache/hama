@@ -42,15 +42,16 @@ public class GradientDescentExample {
   private static final Path TMP_OUTPUT = new Path("/tmp/gd");
 
   public static void main(String[] args) throws InterruptedException,
-        IOException, ClassNotFoundException {
+      IOException, ClassNotFoundException {
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
     conf.setFloat(GradientDescentBSP.ALPHA, 0.002f);
     conf.setFloat(GradientDescentBSP.COST_THRESHOLD, 0.5f);
     conf.setInt(GradientDescentBSP.ITERATIONS_THRESHOLD, 300);
     conf.setInt(GradientDescentBSP.INITIAL_THETA_VALUES, 10);
-    if (args.length > 1 && args[1]!=null && args[1].equals("logistic")) {
-      conf.setClass(GradientDescentBSP.REGRESSION_MODEL_CLASS, LogisticRegressionModel.class, RegressionModel.class);
+    if (args.length > 1 && args[1] != null && args[1].equals("logistic")) {
+      conf.setClass(GradientDescentBSP.REGRESSION_MODEL_CLASS,
+          LogisticRegressionModel.class, RegressionModel.class);
     }
 
     BSPJob bsp = new BSPJob(conf, GradientDescentExample.class);
@@ -70,7 +71,7 @@ public class GradientDescentExample {
     if (bsp.waitForCompletion(true)) {
       printOutput(conf);
       System.out.println("Job Finished in "
-              + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
 
   }

@@ -36,19 +36,23 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * A {@link FileInputFormat} for files containing one vector and one double per line
+ * A {@link FileInputFormat} for files containing one vector and one double per
+ * line
  */
-public class VectorDoubleFileInputFormat extends FileInputFormat<VectorWritable, DoubleWritable> {
+public class VectorDoubleFileInputFormat extends
+    FileInputFormat<VectorWritable, DoubleWritable> {
 
   @Override
-  public RecordReader<VectorWritable, DoubleWritable> getRecordReader(InputSplit split, BSPJob job) throws IOException {
-    return new VectorDoubleRecorderReader(job.getConf(), (FileSplit) split);
+  public RecordReader<VectorWritable, DoubleWritable> getRecordReader(
+      InputSplit split, BSPJob job) throws IOException {
+    return new VectorDoubleRecorderReader(job.getConfiguration(), (FileSplit) split);
   }
 
-  static class VectorDoubleRecorderReader implements RecordReader<VectorWritable, DoubleWritable> {
+  static class VectorDoubleRecorderReader implements
+      RecordReader<VectorWritable, DoubleWritable> {
 
-    private static final Log LOG = LogFactory.getLog(VectorDoubleRecorderReader.class
-      .getName());
+    private static final Log LOG = LogFactory
+        .getLog(VectorDoubleRecorderReader.class.getName());
 
     private CompressionCodecFactory compressionCodecs = null;
     private long start;
@@ -75,9 +79,9 @@ public class VectorDoubleFileInputFormat extends FileInputFormat<VectorWritable,
     }
 
     public VectorDoubleRecorderReader(Configuration job, FileSplit split)
-      throws IOException {
+        throws IOException {
       this.maxLineLength = job.getInt("bsp.linerecordreader.maxlength",
-        Integer.MAX_VALUE);
+          Integer.MAX_VALUE);
       start = split.getStart();
       end = start + split.getLength();
       final Path file = split.getPath();
@@ -101,13 +105,13 @@ public class VectorDoubleFileInputFormat extends FileInputFormat<VectorWritable,
       }
       if (skipFirstLine) { // skip first line and re-establish "start".
         start += in.readLine(new Text(), 0,
-          (int) Math.min(Integer.MAX_VALUE, end - start));
+            (int) Math.min(Integer.MAX_VALUE, end - start));
       }
       this.pos = start;
     }
 
-    public VectorDoubleRecorderReader(InputStream in, long offset, long endOffset,
-                                      int maxLineLength) {
+    public VectorDoubleRecorderReader(InputStream in, long offset,
+        long endOffset, int maxLineLength) {
       this.maxLineLength = maxLineLength;
       this.in = new LineReader(in);
       this.start = offset;
@@ -115,10 +119,10 @@ public class VectorDoubleFileInputFormat extends FileInputFormat<VectorWritable,
       this.end = endOffset;
     }
 
-    public VectorDoubleRecorderReader(InputStream in, long offset, long endOffset,
-                                      Configuration job) throws IOException {
+    public VectorDoubleRecorderReader(InputStream in, long offset,
+        long endOffset, Configuration job) throws IOException {
       this.maxLineLength = job.getInt("bsp.linerecordreader.maxlength",
-        Integer.MAX_VALUE);
+          Integer.MAX_VALUE);
       this.in = new LineReader(in, job);
       this.start = offset;
       this.pos = offset;
@@ -140,13 +144,13 @@ public class VectorDoubleFileInputFormat extends FileInputFormat<VectorWritable,
      */
     @Override
     public synchronized boolean next(VectorWritable key, DoubleWritable value)
-      throws IOException {
+        throws IOException {
 
       while (pos < end) {
 
         Text textVal = new Text();
         int newSize = in.readLine(textVal, maxLineLength, Math.max(
-          (int) Math.min(Integer.MAX_VALUE, end - pos), maxLineLength));
+            (int) Math.min(Integer.MAX_VALUE, end - pos), maxLineLength));
         if (newSize == 0) {
           return false;
         }
@@ -168,7 +172,8 @@ public class VectorDoubleFileInputFormat extends FileInputFormat<VectorWritable,
         }
 
         // line too long. try again
-        LOG.info("Skipped line of size " + newSize + " at pos " + (pos - newSize));
+        LOG.info("Skipped line of size " + newSize + " at pos "
+            + (pos - newSize));
       }
 
       return false;
