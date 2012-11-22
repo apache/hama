@@ -62,7 +62,7 @@ public class JobInProgress {
   }
 
   public static enum JobCounter {
-    LAUNCHED_TASKS
+    LAUNCHED_TASKS, SUPERSTEPS
   }
 
   static final Log LOG = LogFactory.getLog(JobInProgress.class);

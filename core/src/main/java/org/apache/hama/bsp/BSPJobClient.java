@@ -646,7 +646,7 @@ public class BSPJobClient extends Configured implements Tool {
       LOG.info("The total number of supersteps: " + info.getSuperstepCount());
       info.getStatus()
           .getCounter()
-          .incrCounter(BSPPeerImpl.PeerCounter.SUPERSTEPS,
+          .incrCounter(JobInProgress.JobCounter.SUPERSTEPS,
               info.getSuperstepCount());
       info.getStatus().getCounter().log(LOG);
     } else {
