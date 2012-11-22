@@ -151,21 +151,22 @@ public class GraphJob extends BSPJob {
 
   @Override
   public void submit() throws IOException, InterruptedException {
-    Preconditions.checkArgument(this.getConf().get(VERTEX_CLASS_ATTR) != null,
+    Preconditions.checkArgument(
+        this.getConfiguration().get(VERTEX_CLASS_ATTR) != null,
         "Please provide a vertex class!");
     Preconditions.checkArgument(
-        this.getConf().get(VERTEX_ID_CLASS_ATTR) != null,
+        this.getConfiguration().get(VERTEX_ID_CLASS_ATTR) != null,
         "Please provide an vertex ID class!");
     Preconditions
         .checkArgument(
-            this.getConf().get(VERTEX_VALUE_CLASS_ATTR) != null,
+            this.getConfiguration().get(VERTEX_VALUE_CLASS_ATTR) != null,
             "Please provide an vertex value class, if you don't need one, use NullWritable!");
     Preconditions
-        .checkArgument(
-            this.getConf().get(VERTEX_EDGE_VALUE_CLASS_ATTR) != null,
+        .checkArgument(this.getConfiguration()
+            .get(VERTEX_EDGE_VALUE_CLASS_ATTR) != null,
             "Please provide an edge value class, if you don't need one, use NullWritable!");
     Preconditions.checkArgument(
-        this.getConf().get(VERTEX_GRAPH_INPUT_READER) != null,
+        this.getConfiguration().get(VERTEX_GRAPH_INPUT_READER) != null,
         "Please provide a vertex input reader!");
     super.submit();
   }
