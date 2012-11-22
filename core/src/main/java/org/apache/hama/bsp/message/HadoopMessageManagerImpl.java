@@ -29,6 +29,7 @@ import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
@@ -100,14 +101,12 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
       throw new IllegalArgumentException("Can not find " + addr.toString()
           + " to transfer messages to!");
     } else {
-      if (compressor != null) {
-        if (bundle.getApproximateSize() > conf.getLong(
-            "hama.messenger.compression.threshold", 1048576)) {
-          BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
-          bspPeerConnection.put(compMsgBundle);
-        } else {
-          bspPeerConnection.put(bundle);
-        }
+      if (compressor != null
+          && (bundle.getApproximateSize() > conf.getLong(
+              "hama.messenger.compression.threshold", 1048576))) {
+        BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
+        bspPeerConnection.put(compMsgBundle);
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.COMPRESSED_MESSAGES, 1L);
       } else {
         bspPeerConnection.put(bundle);
       }
