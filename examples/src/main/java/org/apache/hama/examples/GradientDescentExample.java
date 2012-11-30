@@ -43,15 +43,30 @@ public class GradientDescentExample {
 
   public static void main(String[] args) throws InterruptedException,
       IOException, ClassNotFoundException {
+
+   if (!(args.length == 1 || args.length == 2)) {
+     System.out.println("USAGE: <INPUT_PATH> [<REGRESSION_MODEL>]");
+     return;
+   }
+
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
     conf.setFloat(GradientDescentBSP.ALPHA, 0.002f);
     conf.setFloat(GradientDescentBSP.COST_THRESHOLD, 0.5f);
     conf.setInt(GradientDescentBSP.ITERATIONS_THRESHOLD, 300);
     conf.setInt(GradientDescentBSP.INITIAL_THETA_VALUES, 10);
-    if (args.length > 1 && args[1] != null && args[1].equals("logistic")) {
-      conf.setClass(GradientDescentBSP.REGRESSION_MODEL_CLASS,
+    if (args.length == 2 && args[1] != null) {
+      if (args[1].equals("logistic")) {
+        conf.setClass(GradientDescentBSP.REGRESSION_MODEL_CLASS,
           LogisticRegressionModel.class, RegressionModel.class);
+      }
+      else if (args[1].equals("linear")) {
+        // do nothing as 'linear' is default
+      }
+      else {
+        throw new RuntimeException(new StringBuilder("unsupported RegressionModel").
+                append(args[1]).append(", use 'logistic' or 'linear'").toString());
+      }
     }
 
     BSPJob bsp = new BSPJob(conf, GradientDescentExample.class);
@@ -90,4 +105,5 @@ public class GradientDescentExample {
 
     fs.delete(TMP_OUTPUT, true);
   }
+
 }

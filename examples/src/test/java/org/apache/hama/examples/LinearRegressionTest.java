@@ -27,17 +27,7 @@ import static org.junit.Assert.fail;
 public class LinearRegressionTest {
   @Test
   public void testCorrectGDWithLinearRegressionExecution() throws Exception {
-    GradientDescentExample.main(new String[]{"src/test/resources/linear_regression_sample.txt"});
-  }
-
-  @Test
-  public void testWrongGDExecutionWithEmptyArgs() {
-    try {
-      GradientDescentExample.main(new String[0]);
-      fail("GradientDescentExample should fail if the argument list has size 0");
-    } catch (Exception e) {
-      // everything ok
-    }
+    GradientDescentExample.main(new String[]{"src/test/resources/linear_regression_sample.txt", "linear"});
   }
 
 }
