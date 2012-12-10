@@ -44,14 +44,14 @@ import org.apache.hama.examples.CombineExample;
 public class SymmetricMatrixGen {
   protected static Log LOG = LogFactory.getLog(SymmetricMatrixGen.class);
 
-  private static String NUM_OF_VERTICES = "size.of.matrix";
+  private static String SIZE_OF_MATRIX = "size.of.matrix";
   private static String DENSITY = "density.of.matrix";
 
   public static class SymmetricMatrixGenBSP extends
       BSP<NullWritable, NullWritable, Text, TextArrayWritable, Text> {
 
     private Configuration conf;
-    private int numberN;
+    private int sizeN;
     private int density;
     private Map<Integer, HashSet<Integer>> list = new HashMap<Integer, HashSet<Integer>>();
 
@@ -59,7 +59,7 @@ public class SymmetricMatrixGen {
     public void setup(
         BSPPeer<NullWritable, NullWritable, Text, TextArrayWritable, Text> peer) {
       this.conf = peer.getConfiguration();
-      numberN = conf.getInt(NUM_OF_VERTICES, 10);
+      sizeN = conf.getInt(SIZE_OF_MATRIX, 10);
       density = conf.getInt(DENSITY, 1);
     }
 
@@ -67,11 +67,11 @@ public class SymmetricMatrixGen {
     public void bsp(
         BSPPeer<NullWritable, NullWritable, Text, TextArrayWritable, Text> peer)
         throws IOException, SyncException, InterruptedException {
-      int interval = numberN / peer.getNumPeers();
+      int interval = sizeN / peer.getNumPeers();
       int startID = peer.getPeerIndex() * interval;
       int endID;
       if (peer.getPeerIndex() == peer.getNumPeers() - 1)
-        endID = numberN;
+        endID = sizeN;
       else
         endID = startID + interval;
 
@@ -125,14 +125,14 @@ public class SymmetricMatrixGen {
       IOException, ClassNotFoundException {
     if (args.length < 4) {
       System.out
-          .println("Usage: <number n> <1/x density> <output path> <number of tasks>");
+          .println("Usage: <size n> <1/x density> <output path> <number of tasks>");
       System.exit(1);
     }
 
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
 
-    conf.setInt(NUM_OF_VERTICES, Integer.parseInt(args[0]));
+    conf.setInt(SIZE_OF_MATRIX, Integer.parseInt(args[0]));
     conf.setInt(DENSITY, Integer.parseInt(args[1]));
 
     BSPJob bsp = new BSPJob(conf, CombineExample.class);
