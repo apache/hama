@@ -137,7 +137,7 @@ public class SymmetricMatrixGen {
 
     BSPJob bsp = new BSPJob(conf, CombineExample.class);
     // Set the job name
-    bsp.setJobName("Random Symmetric Sparse Matrix Generator");
+    bsp.setJobName("Random Symmetric Matrix Generator");
     bsp.setBspClass(SymmetricMatrixGenBSP.class);
     bsp.setInputFormat(NullInputFormat.class);
     bsp.setOutputKeyClass(Text.class);
