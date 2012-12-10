@@ -4,7 +4,7 @@ Release 0.7 (unreleased changes)
 
   NEW FEATURES
 
-   HAMA-659: Add random symmetric sparse matrix generator (edwardyoon)
+   HAMA-658: Add random symmetric sparse matrix generator (edwardyoon)
 
   BUG FIXES
 
