@@ -19,8 +19,6 @@ package org.apache.hama.examples;
 
 import org.junit.Test;
 
-import static org.junit.Assert.fail;
-
 /**
  * Testcase for {@link GradientDescentExample} for 'linear regression'
  */
