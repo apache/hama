@@ -1,6 +1,16 @@
 Hama Change Log
 
-Release 0.6 (unreleased changes)
+Release 0.7 (unreleased changes)
+
+  NEW FEATURES
+
+   HAMA-659: Add random symmetric sparse matrix generator (edwardyoon)
+
+  BUG FIXES
+
+  IMPROVEMENTS
+
+Release 0.6 - November 28, 2012
 
   NEW FEATURES
 
