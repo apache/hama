@@ -225,14 +225,14 @@ public class Submitter implements Tool {
     job.setJarByClass(PipesBSP.class);
 
     String textClassname = Text.class.getName();
-    setIfUnset(job.getConf(), "bsp.input.key.class", textClassname);
-    setIfUnset(job.getConf(), "bsp.input.value.class", textClassname);
-    setIfUnset(job.getConf(), "bsp.output.key.class", textClassname);
-    setIfUnset(job.getConf(), "bsp.output.value.class", textClassname);
+    setIfUnset(job.getConfiguration(), "bsp.input.key.class", textClassname);
+    setIfUnset(job.getConfiguration(), "bsp.input.value.class", textClassname);
+    setIfUnset(job.getConfiguration(), "bsp.output.key.class", textClassname);
+    setIfUnset(job.getConfiguration(), "bsp.output.value.class", textClassname);
 
-    setIfUnset(job.getConf(), "bsp.job.name", "Hama Pipes Job");
+    setIfUnset(job.getConfiguration(), "bsp.job.name", "Hama Pipes Job");
 
-    LOG.debug("isJavaRecordReader: " + getIsJavaRecordReader(job.getConf()));
+    LOG.debug("isJavaRecordReader: " + getIsJavaRecordReader(job.getConfiguration()));
     LOG.debug("BspClass: " + job.getBspClass().getName());
     // conf.setInputFormat(NLineInputFormat.class);
     LOG.debug("InputFormat: " + job.getInputFormat());
@@ -246,18 +246,18 @@ public class Submitter implements Tool {
       throw new IllegalArgumentException(
           "Hama Pipes does only support Text as Key/Value output!");
 
-    LOG.debug("bsp.master.address: " + job.getConf().get("bsp.master.address"));
+    LOG.debug("bsp.master.address: " + job.getConfiguration().get("bsp.master.address"));
     LOG.debug("bsp.local.tasks.maximum: "
-        + job.getConf().get("bsp.local.tasks.maximum"));
+        + job.getConfiguration().get("bsp.local.tasks.maximum"));
     LOG.debug("NumBspTask: " + job.getNumBspTask());
-    LOG.debug("fs.default.name: " + job.getConf().get("fs.default.name"));
+    LOG.debug("fs.default.name: " + job.getConfiguration().get("fs.default.name"));
 
-    String exec = getExecutable(job.getConf());
+    String exec = getExecutable(job.getConfiguration());
     if (exec == null) {
       throw new IllegalArgumentException("No application defined.");
     }
 
-    URI[] fileCache = DistributedCache.getCacheFiles(job.getConf());
+    URI[] fileCache = DistributedCache.getCacheFiles(job.getConfiguration());
     if (fileCache == null) {
       fileCache = new URI[1];
     } else {
@@ -273,7 +273,7 @@ public class Submitter implements Tool {
       ie.initCause(e);
       throw ie;
     }
-    DistributedCache.setCacheFiles(fileCache, job.getConf());
+    DistributedCache.setCacheFiles(fileCache, job.getConfiguration());
   }
 
   /**
@@ -412,7 +412,7 @@ public class Submitter implements Tool {
       }
 
       if (results.hasOption("inputformat")) {
-        setIsJavaRecordReader(job.getConf(), true);
+        setIsJavaRecordReader(job.getConfiguration(), true);
         job.setInputFormat(getClass(results, "inputformat", conf,
             InputFormat.class));
       }
@@ -423,7 +423,7 @@ public class Submitter implements Tool {
       }
 
       if (results.hasOption("outputformat")) {
-        setIsJavaRecordWriter(job.getConf(), true);
+        setIsJavaRecordWriter(job.getConfiguration(), true);
         job.setOutputFormat(getClass(results, "outputformat", conf,
             OutputFormat.class));
       }
@@ -452,19 +452,19 @@ public class Submitter implements Tool {
 
       if (results.hasOption("program")) {
         String executablePath = results.getOptionValue("program");
-        setExecutable(job.getConf(), executablePath);
+        setExecutable(job.getConfiguration(), executablePath);
         DistributedCache.addCacheFile(new Path(executablePath).toUri(), conf);
       }
 
       if (results.hasOption("interpreter")) {
-        job.getConf().set("hama.pipes.executable.interpretor",
+        job.getConfiguration().set("hama.pipes.executable.interpretor",
             results.getOptionValue("interpreter"));
       }
 
       if (results.hasOption("programArgs")) {
-        job.getConf().set("hama.pipes.executable.args",
+        job.getConfiguration().set("hama.pipes.executable.args",
             Joiner.on(" ").join(results.getOptionValues("programArgs")));
-        // job.getConf().set("hama.pipes.resolve.executable.args", "true");
+        // job.getConfiguration().set("hama.pipes.resolve.executable.args", "true");
       }
 
       if (results.hasOption("cachefiles")) {
@@ -475,7 +475,7 @@ public class Submitter implements Tool {
           FileStatus[] globStatus = fs.globStatus(path);
           for (FileStatus f : globStatus) {
             if (!f.isDir()) {
-              DistributedCache.addCacheFile(f.getPath().toUri(), job.getConf());
+              DistributedCache.addCacheFile(f.getPath().toUri(), job.getConfiguration());
             } else {
               LOG.info("Ignoring directory " + f.getPath() + " while globbing.");
             }
