@@ -47,15 +47,15 @@ public class PipesNonJavaInputFormat implements
   @Override
   public RecordReader<FloatWritable, NullWritable> getRecordReader(
       InputSplit genericSplit, BSPJob job) throws IOException {
-    return new PipesDummyRecordReader(job.getConf(), genericSplit);
+    return new PipesDummyRecordReader(job.getConfiguration(), genericSplit);
   }
 
   @Override
   public InputSplit[] getSplits(BSPJob job, int numSplits) throws IOException {
     // Delegate the generation of input splits to the 'original' InputFormat
     return ReflectionUtils.newInstance(
-        job.getConf().getClass("hama.pipes.user.inputformat",
-            TextInputFormat.class, InputFormat.class), job.getConf())
+        job.getConfiguration().getClass("hama.pipes.user.inputformat",
+            TextInputFormat.class, InputFormat.class), job.getConfiguration())
         .getSplits(job, numSplits);
   }
 
