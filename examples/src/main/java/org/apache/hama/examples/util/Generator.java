@@ -24,13 +24,18 @@ public class Generator {
       System.out.println("Valid command names are:");
       System.out
           .println("  symmetric: Generate random symmetric matrix, which can be used as a input of graph examples.");
+      System.out.println("  square: Generate random square matrix.");
       System.exit(1);
     }
 
+    String[] newArgs = new String[args.length - 1];
+    System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+    
     if (args[0].equals("symmetric")) {
-      String[] newArgs = new String[args.length - 1];
-      System.arraycopy(args, 1, newArgs, 0, args.length - 1);
       SymmetricMatrixGen.main(newArgs);
+    } else if(args[0].equals("square")) {
+      System.out.println("Not implemented yet.");
+      //SquareMatrixGen.main(newArgs);
     }
   }
 }
