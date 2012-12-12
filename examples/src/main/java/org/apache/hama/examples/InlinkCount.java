@@ -22,17 +22,15 @@ import java.util.Iterator;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
+import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
-import org.apache.hama.bsp.TextInputFormat;
-import org.apache.hama.graph.Edge;
+import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
-import org.apache.hama.graph.VertexInputReader;
 
 public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
 
@@ -49,34 +47,6 @@ public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
       }
       voteToHalt();
     }
-  }
-
-  public static class InlinkCountTextReader extends
-      VertexInputReader<LongWritable, Text, Text, NullWritable, IntWritable> {
-
-    /**
-     * The text file essentially should look like: <br/>
-     * VERTEX_ID\t(n-tab separated VERTEX_IDs)<br/>
-     * E.G:<br/>
-     * 1\t2\t3\t4<br/>
-     * 2\t3\t1<br/>
-     * etc.
-     */
-    @Override
-    public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, NullWritable, IntWritable> vertex) throws Exception {
-      String[] split = value.toString().split("\t");
-      for (int i = 0; i < split.length; i++) {
-        if (i == 0) {
-          vertex.setVertexID(new Text(split[i]));
-        } else {
-          vertex
-              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
-        }
-      }
-      return true;
-    }
-
   }
 
   private static void printUsage() {
@@ -104,14 +74,14 @@ public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
     }
 
     inlinkJob.setVertexClass(InlinkCount.class);
-    inlinkJob.setInputFormat(TextInputFormat.class);
-    inlinkJob.setInputKeyClass(LongWritable.class);
-    inlinkJob.setInputValueClass(Text.class);
+
+    inlinkJob.setInputFormat(SequenceFileInputFormat.class);
+    inlinkJob.setInputKeyClass(Text.class);
+    inlinkJob.setInputValueClass(TextArrayWritable.class);
 
     inlinkJob.setVertexIDClass(Text.class);
     inlinkJob.setVertexValueClass(IntWritable.class);
     inlinkJob.setEdgeValueClass(NullWritable.class);
-    inlinkJob.setVertexInputReaderClass(InlinkCountTextReader.class);
 
     inlinkJob.setPartitioner(HashPartitioner.class);
     inlinkJob.setOutputFormat(SequenceFileOutputFormat.class);

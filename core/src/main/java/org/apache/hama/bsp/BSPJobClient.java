@@ -30,9 +30,7 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.StringTokenizer;
@@ -55,7 +53,6 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -301,9 +298,10 @@ public class BSPJobClient extends Configured implements Tool {
       throws IOException {
     BSPJob job = pJob;
     job.setJobID(jobId);
-    int limitTasks = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB, 0);
+    int limitTasks = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB,
+        0);
     int maxTasks = checkTaskLimits(job, limitTasks);
-    
+
     Path submitJobDir = new Path(getSystemDir(), "submit_"
         + Integer.toString(Math.abs(r.nextInt()), 36));
     Path submitSplitFile = new Path(submitJobDir, "job.split");
@@ -325,12 +323,6 @@ public class BSPJobClient extends Configured implements Tool {
     if (job.get("bsp.input.dir") != null) {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
-      if (job.getConfiguration().get("bsp.input.partitioner.class") != null
-          && !job.getConfiguration()
-              .getBoolean("hama.graph.runtime.partitioning", false)) {
-        job = partition(job, maxTasks);
-        maxTasks = job.getInt("hama.partition.count", maxTasks);
-      }
       job.setNumBspTask(writeSplits(job, submitSplitFile, maxTasks));
       job.set("bsp.job.split.file", submitSplitFile.toString());
     }
@@ -375,15 +367,16 @@ public class BSPJobClient extends Configured implements Tool {
   protected int checkTaskLimits(BSPJob job, int limitTasks) throws IOException {
     int maxTasks;
     ClusterStatus clusterStatus = getClusterStatus(true);
-    
-    if(limitTasks > 0) {
+
+    if (limitTasks > 0) {
       maxTasks = limitTasks;
     } else {
       maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
     }
-    
+
     if (maxTasks < job.getNumBspTask()) {
-      throw new IOException("Job failed! The number of tasks has exceeded the maximum allowed.");
+      throw new IOException(
+          "Job failed! The number of tasks has exceeded the maximum allowed.");
     }
     return maxTasks;
   }
@@ -402,95 +395,8 @@ public class BSPJobClient extends Configured implements Tool {
     }
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  protected BSPJob partition(BSPJob job, int maxTasks) throws IOException {
-    InputSplit[] splits = job.getInputFormat().getSplits(
-        job,
-        (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
-            : maxTasks);
-
-    String input = job.getConfiguration().get("bsp.input.dir");
-
-    if (input != null) {
-      InputFormat<?, ?> inputFormat = job.getInputFormat();
-
-      Path partitionedPath = new Path(input, "hama-partitions");
-      Path inputPath = new Path(input);
-      if (fs.isFile(inputPath)) {
-        partitionedPath = new Path(inputPath.getParent(), "hama-partitions");
-      }
-
-      String alternatePart = job.get("bsp.partitioning.dir");
-      if (alternatePart != null) {
-        partitionedPath = new Path(alternatePart, job.getJobID().toString());
-      }
-
-      if (fs.exists(partitionedPath)) {
-        fs.delete(partitionedPath, true);
-      } else {
-        fs.mkdirs(partitionedPath);
-      }
-      // FIXME this is soo unsafe
-      RecordReader sampleReader = inputFormat.getRecordReader(splits[0], job);
-
-      List<SequenceFile.Writer> writers = new ArrayList<SequenceFile.Writer>(
-          splits.length);
-
-      CompressionType compressionType = getOutputCompressionType(job);
-      Class<? extends CompressionCodec> outputCompressorClass = getOutputCompressorClass(
-          job, null);
-      CompressionCodec codec = null;
-      if (outputCompressorClass != null) {
-        codec = ReflectionUtils.newInstance(outputCompressorClass,
-            job.getConfiguration());
-      }
-
-      try {
-        for (int i = 0; i < splits.length; i++) {
-          Path p = new Path(partitionedPath, getPartitionName(i));
-          if (codec == null) {
-            writers.add(SequenceFile.createWriter(fs, job.getConfiguration(), p,
-                sampleReader.createKey().getClass(), sampleReader.createValue()
-                    .getClass(), CompressionType.NONE));
-          } else {
-            writers.add(SequenceFile.createWriter(fs, job.getConfiguration(), p,
-                sampleReader.createKey().getClass(), sampleReader.createValue()
-                    .getClass(), compressionType, codec));
-          }
-        }
-
-        Partitioner partitioner = job.getPartitioner();
-        for (int i = 0; i < splits.length; i++) {
-          InputSplit split = splits[i];
-          RecordReader recordReader = inputFormat.getRecordReader(split, job);
-          Object key = recordReader.createKey();
-          Object value = recordReader.createValue();
-          while (recordReader.next(key, value)) {
-            int index = Math.abs(partitioner.getPartition(key, value,
-                splits.length));
-            writers.get(index).append(key, value);
-          }
-          LOG.debug("Done with split " + i);
-        }
-      } finally {
-        for (SequenceFile.Writer wr : writers) {
-          wr.close();
-        }
-      }
-      job.set("hama.partition.count", writers.size() + "");
-      job.setInputFormat(SequenceFileInputFormat.class);
-      job.setInputPath(partitionedPath);
-    }
-
-    return job;
-  }
-
   private static boolean isProperSize(int numBspTask, int maxTasks) {
     return (numBspTask > 1 && numBspTask < maxTasks);
-  }
-
-  private static String getPartitionName(int i) {
-    return "part-" + String.valueOf(100000 + i).substring(1, 6);
   }
 
   /**

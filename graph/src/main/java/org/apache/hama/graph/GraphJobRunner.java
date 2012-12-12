@@ -28,8 +28,8 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -273,53 +273,24 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
-
-    /*
-     * Several partitioning constants begin
-     */
-
-    final VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
-        .newInstance(conf.getClass(GraphJob.VERTEX_GRAPH_INPUT_READER,
-            VertexInputReader.class), conf);
-
     final boolean repairNeeded = conf.getBoolean(GRAPH_REPAIR, false);
-    final boolean runtimePartitioning = conf.getBoolean(
-        GraphJob.VERTEX_GRAPH_RUNTIME_PARTIONING, true);
-
-    final long splitSize = peer.getSplitSize();
-    final int partitioningSteps = partitionMultiSteps(peer, splitSize);
-    final long interval = splitSize / partitioningSteps;
 
     final boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
-
-    /*
-     * Several partitioning constants end
-     */
 
     LOG.debug("vertex class: " + vertexClass);
     Vertex<V, E, M> vertex = newVertexInstance(vertexClass, conf);
     vertex.runner = this;
 
-    long startPos = peer.getPos();
-    if (startPos == 0)
-      startPos = 1L;
-
     KeyValuePair<Writable, Writable> next = null;
-    int steps = 1;
     while ((next = peer.readNext()) != null) {
-      boolean vertexFinished = false;
-      try {
-        vertexFinished = reader.parseVertex(next.getKey(), next.getValue(),
-            vertex);
-      } catch (Exception e) {
-        // LOG.error("exception occured during parsing vertex!" + e.toString());
-        throw new IOException("exception occured during parsing vertex!"
-            + e.toString());
+      V key = (V) next.getKey();
+      Writable[] edges = ((ArrayWritable) next.getValue()).get();
+      vertex.setVertexID(key);
+      List<Edge<V, E>> edgeList = new ArrayList<Edge<V, E>>();
+      for (Writable edge : edges) {
+        edgeList.add(new Edge<V, E>((V) edge, null));
       }
-
-      if (!vertexFinished) {
-        continue;
-      }
+      vertex.setEdges(edgeList);
 
       if (vertex.getEdges() == null) {
         if (selfReference) {
@@ -334,44 +305,12 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
         vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
       }
 
-      if (runtimePartitioning) {
-        int partition = partitioner.getPartition(vertex.getVertexID(),
-            vertex.getValue(), peer.getNumPeers());
-        peer.send(peer.getPeerName(partition), new GraphJobMessage(vertex));
-      } else {
-        vertex.setup(conf);
-        vertices.add(vertex);
-      }
+      vertex.setup(conf);
+      vertices.add(vertex);
       vertex = newVertexInstance(vertexClass, conf);
       vertex.runner = this;
-
-      if (runtimePartitioning) {
-        if (steps < partitioningSteps && (peer.getPos() - startPos) >= interval) {
-          peer.sync();
-          steps++;
-          GraphJobMessage msg = null;
-          while ((msg = peer.getCurrentMessage()) != null) {
-            Vertex<V, E, M> messagedVertex = (Vertex<V, E, M>) msg.getVertex();
-            messagedVertex.runner = this;
-            messagedVertex.setup(conf);
-            vertices.add(messagedVertex);
-          }
-          startPos = peer.getPos();
-        }
-      }
     }
 
-    if (runtimePartitioning) {
-      peer.sync();
-
-      GraphJobMessage msg = null;
-      while ((msg = peer.getCurrentMessage()) != null) {
-        Vertex<V, E, M> messagedVertex = (Vertex<V, E, M>) msg.getVertex();
-        messagedVertex.runner = this;
-        messagedVertex.setup(conf);
-        vertices.add(messagedVertex);
-      }
-    }
     LOG.debug("Loading finished at " + peer.getSuperstepCount() + " steps.");
 
     /*
@@ -383,7 +322,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
      */
     if (repairNeeded) {
       LOG.debug("Starting repair of this graph!");
-      repair(peer, partitioningSteps, selfReference);
+      repair(peer, selfReference);
     }
 
     LOG.debug("Starting Vertex processing!");
@@ -392,83 +331,16 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   @SuppressWarnings("unchecked")
   private void repair(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
-      int partitioningSteps, boolean selfReference) throws IOException,
+      boolean selfReference) throws IOException,
       SyncException, InterruptedException {
 
-    int multiSteps = 0;
-    MapWritable ssize = new MapWritable();
-    ssize.put(new IntWritable(peer.getPeerIndex()),
-        new IntWritable(vertices.size()));
-    peer.send(getMasterTask(peer), new GraphJobMessage(ssize));
-    ssize = null;
-    peer.sync();
-
-    if (isMasterTask(peer)) {
-      int minVerticesSize = Integer.MAX_VALUE;
-      GraphJobMessage received = null;
-      while ((received = peer.getCurrentMessage()) != null) {
-        MapWritable x = received.getMap();
-        for (Entry<Writable, Writable> e : x.entrySet()) {
-          int curr = ((IntWritable) e.getValue()).get();
-          if (minVerticesSize > curr) {
-            minVerticesSize = curr;
-          }
-        }
-      }
-
-      if (minVerticesSize < (partitioningSteps * 2)) {
-        multiSteps = minVerticesSize;
-      } else {
-        multiSteps = (partitioningSteps * 2);
-      }
-
-      for (String peerName : peer.getAllPeerNames()) {
-        MapWritable temp = new MapWritable();
-        temp.put(new Text("steps"), new IntWritable(multiSteps));
-        peer.send(peerName, new GraphJobMessage(temp));
-      }
-    }
-    peer.sync();
-
-    GraphJobMessage received = peer.getCurrentMessage();
-    MapWritable x = received.getMap();
-    for (Entry<Writable, Writable> e : x.entrySet()) {
-      multiSteps = ((IntWritable) e.getValue()).get();
-    }
-
     Map<V, Vertex<V, E, M>> tmp = new HashMap<V, Vertex<V, E, M>>();
-
-    int i = 0;
-    int syncs = 0;
 
     for (Vertex<V, E, M> v : vertices) {
       for (Edge<V, E> e : v.getEdges()) {
         peer.send(v.getDestinationPeerName(e),
             new GraphJobMessage(e.getDestinationVertexID()));
       }
-
-      if (syncs < multiSteps && (i % (vertices.size() / multiSteps)) == 0) {
-        peer.sync();
-        syncs++;
-        GraphJobMessage msg = null;
-        while ((msg = peer.getCurrentMessage()) != null) {
-          V vertexName = (V) msg.getVertexId();
-
-          Vertex<V, E, M> newVertex = newVertexInstance(vertexClass, conf);
-          newVertex.setVertexID(vertexName);
-          newVertex.runner = this;
-          if (selfReference) {
-            newVertex.setEdges(Collections.singletonList(new Edge<V, E>(
-                newVertex.getVertexID(), null)));
-          } else {
-            newVertex.setEdges(new ArrayList<Edge<V, E>>(0));
-          }
-          newVertex.setup(conf);
-          tmp.put(vertexName, newVertex);
-
-        }
-      }
-      i++;
     }
 
     peer.sync();
@@ -488,7 +360,6 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       newVertex.setup(conf);
       tmp.put(vertexName, newVertex);
       newVertex = null;
-
     }
 
     for (Vertex<V, E, M> e : vertices) {
@@ -499,59 +370,6 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
 
     vertices.addAll(tmp.values());
     tmp.clear();
-  }
-
-  /**
-   * Partitions our vertices through multiple supersteps to save memory.
-   */
-  private int partitionMultiSteps(
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
-      long splitSize) throws IOException, SyncException, InterruptedException {
-    int multiSteps = 1;
-
-    MapWritable ssize = new MapWritable();
-    ssize
-        .put(new IntWritable(peer.getPeerIndex()), new LongWritable(splitSize));
-    peer.send(getMasterTask(peer), new GraphJobMessage(ssize));
-    ssize = null;
-    peer.sync();
-
-    if (isMasterTask(peer)) {
-      long maxSplitSize = 0L;
-      GraphJobMessage received = null;
-      while ((received = peer.getCurrentMessage()) != null) {
-        MapWritable x = received.getMap();
-        for (Entry<Writable, Writable> e : x.entrySet()) {
-          long curr = ((LongWritable) e.getValue()).get();
-          if (maxSplitSize < curr) {
-            maxSplitSize = curr;
-          }
-        }
-      }
-
-      int steps = (int) (maxSplitSize / conf.getLong( // 20 mb
-          "hama.graph.multi.step.partitioning.interval", 20000000)) + 1;
-
-      for (String peerName : peer.getAllPeerNames()) {
-        MapWritable temp = new MapWritable();
-        temp.put(new Text("max"), new IntWritable(steps));
-        peer.send(peerName, new GraphJobMessage(temp));
-      }
-    }
-    peer.sync();
-
-    GraphJobMessage received = peer.getCurrentMessage();
-    MapWritable x = received.getMap();
-    for (Entry<Writable, Writable> e : x.entrySet()) {
-      multiSteps = ((IntWritable) e.getValue()).get();
-    }
-
-    if (isMasterTask(peer)) {
-      peer.getCounter(GraphJobCounter.MULTISTEP_PARTITIONING).increment(
-          multiSteps);
-    }
-
-    return multiSteps;
   }
 
   /**

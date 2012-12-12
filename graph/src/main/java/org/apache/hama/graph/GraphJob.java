@@ -165,9 +165,6 @@ public class GraphJob extends BSPJob {
         .checkArgument(this.getConfiguration()
             .get(VERTEX_EDGE_VALUE_CLASS_ATTR) != null,
             "Please provide an edge value class, if you don't need one, use NullWritable!");
-    Preconditions.checkArgument(
-        this.getConfiguration().get(VERTEX_GRAPH_INPUT_READER) != null,
-        "Please provide a vertex input reader!");
     super.submit();
   }
 

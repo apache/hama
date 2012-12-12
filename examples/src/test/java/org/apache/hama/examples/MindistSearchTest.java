@@ -18,8 +18,6 @@
 package org.apache.hama.examples;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
@@ -31,8 +29,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.examples.MindistSearch.MinTextCombiner;
 
 public class MindistSearchTest extends TestCase {
@@ -95,22 +96,25 @@ public class MindistSearchTest extends TestCase {
   }
 
   private void generateTestData() {
-    BufferedWriter bw = null;
     try {
-      bw = new BufferedWriter(new FileWriter(INPUT));
-      for (String s : input) {
-        bw.write(s + "\n");
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    } finally {
-      if (bw != null) {
-        try {
-          bw.close();
-        } catch (IOException e) {
-          e.printStackTrace();
+      SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
+          new Path(INPUT), Text.class, TextArrayWritable.class);
+
+      for (int i = 0; i < input.length; i++) {
+        String[] x = input[i].split("\t");
+        Text key = new Text(x[0]);
+        Writable[] values = new Writable[x.length - 1];
+        for (int j = 1; j < x.length; j++) {
+          values[j - 1] = new Text(x[j]);
         }
+        TextArrayWritable value = new TextArrayWritable();
+        value.set(values);
+        writer.append(key, value);
       }
+
+      writer.close();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 

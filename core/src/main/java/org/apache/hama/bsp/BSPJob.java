@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Enumeration;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -219,8 +220,41 @@ public class BSPJob extends BSPJobContext {
     state = JobState.RUNNING;
   }
 
+  boolean isPartitioned = false;
+
   public boolean waitForCompletion(boolean verbose) throws IOException,
       InterruptedException, ClassNotFoundException {
+    if (this.getConfiguration().get("bsp.input.partitioner.class") != null
+        && !isPartitioned) {
+      FileSystem fs = FileSystem.get(conf);
+      Path inputDir = new Path(conf.get("bsp.input.dir"));
+      if (fs.isFile(inputDir)) {
+        inputDir = inputDir.getParent();
+      }
+      Path partitionDir = new Path(inputDir + "/partitions");
+
+      if (fs.exists(partitionDir)) {
+        fs.delete(partitionDir, true);
+      }
+
+      HamaConfiguration conf = new HamaConfiguration();
+      conf.setInt("desired.num.of.tasks",
+          Integer.parseInt(this.getConfiguration().get("bsp.peers.num")));
+      BSPJob partitioningJob = new BSPJob(conf);
+      partitioningJob.setInputPath(new Path(this.getConfiguration().get(
+          "bsp.input.dir")));
+      partitioningJob.setInputFormat(this.getInputFormat().getClass());
+      partitioningJob.setInputKeyClass(this.getInputKeyClass());
+      partitioningJob.setInputValueClass(getInputValueClass());
+      partitioningJob.setOutputFormat(NullOutputFormat.class);
+      partitioningJob.setBspClass(PartitioningRunner.class);
+
+      isPartitioned = partitioningJob.waitForCompletion(true);
+      if (isPartitioned) {
+        this.setInputPath(new Path(inputDir + "/partitions"));
+      }
+    }
+
     if (state == JobState.DEFINE) {
       submit();
     }

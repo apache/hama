@@ -18,8 +18,6 @@
 package org.apache.hama.examples;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -30,33 +28,15 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.examples.util.SymmetricMatrixGen;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.GraphJobRunner;
 
 public class PageRankTest extends TestCase {
-  /**
-   * The graph looks like this (adjacency list, [] contains outlinks):<br/>
-   * stackoverflow.com [yahoo.com] <br/>
-   * google.com []<br/>
-   * facebook.com [twitter.com, google.com, nasa.gov]<br/>
-   * yahoo.com [nasa.gov, stackoverflow.com]<br/>
-   * twitter.com [google.com, facebook.com]<br/>
-   * nasa.gov [yahoo.com, stackoverflow.com]<br/>
-   * youtube.com [google.com, yahoo.com]<br/>
-   * Note that google is removed in this part mainly to test the repair
-   * functionality.
-   */
-  String[] input = new String[] { "stackoverflow.com\tyahoo.com",
-      "facebook.com\ttwitter.com\tgoogle.com\tnasa.gov",
-      "yahoo.com\tnasa.gov\tstackoverflow.com",
-      "twitter.com\tgoogle.com\tfacebook.com",
-      "nasa.gov\tyahoo.com\tstackoverflow.com",
-      "youtube.com\tgoogle.com\tyahoo.com" };
-
-  private static String INPUT = "/tmp/pagerank-tmp.seq";
-  private static String TEXT_INPUT = "/tmp/pagerank.txt";
+  private static String INPUT = "/tmp/pagerank/pagerank-tmp.seq";
+  private static String TEXT_INPUT = "/tmp/pagerank/pagerank.txt";
   private static String TEXT_OUTPUT = INPUT + "pagerank.txt.seq";
-  private static String OUTPUT = "/tmp/pagerank-out";
+  private static String OUTPUT = "/tmp/pagerank/pagerank-out";
   private Configuration conf = new HamaConfiguration();
   private FileSystem fs;
 
@@ -87,9 +67,10 @@ public class PageRankTest extends TestCase {
     generateTestData();
     try {
       HamaConfiguration conf = new HamaConfiguration(new Configuration());
-      conf.set("bsp.local.tasks.maximum", "1");
+      conf.set("bsp.local.tasks.maximum", "10");
+      conf.set("bsp.peers.num", "7");
       conf.setBoolean(GraphJobRunner.GRAPH_REPAIR, true);
-      GraphJob pageJob = PageRank.createJob(new String[] { INPUT, OUTPUT },
+      GraphJob pageJob = PageRank.createJob(new String[] { INPUT, OUTPUT, "7" },
           conf);
 
       if (!pageJob.waitForCompletion(true)) {
@@ -101,24 +82,9 @@ public class PageRankTest extends TestCase {
     }
   }
 
-  private void generateTestData() {
-    BufferedWriter bw = null;
-    try {
-      bw = new BufferedWriter(new FileWriter(INPUT));
-      for (String s : input) {
-        bw.write(s + "\n");
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    } finally {
-      if (bw != null) {
-        try {
-          bw.close();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    }
+  private void generateTestData() throws ClassNotFoundException,
+      InterruptedException, IOException {
+    SymmetricMatrixGen.main(new String[] { "40", "10", INPUT, "3" });
   }
 
   private void deleteTempDirs() {

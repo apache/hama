@@ -23,19 +23,17 @@ import java.util.Iterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.TextInputFormat;
+import org.apache.hama.bsp.SequenceFileInputFormat;
+import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.AbstractAggregator;
 import org.apache.hama.graph.AverageAggregator;
-import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
-import org.apache.hama.graph.VertexInputReader;
 
 /**
  * Real pagerank with dangling node contribution.
@@ -99,37 +97,8 @@ public class PageRank {
     }
   }
 
-  public static class PagerankTextReader extends
-      VertexInputReader<LongWritable, Text, Text, NullWritable, DoubleWritable> {
-
-    /**
-     * The text file essentially should look like: <br/>
-     * VERTEX_ID\t(n-tab separated VERTEX_IDs)<br/>
-     * E.G:<br/>
-     * 1\t2\t3\t4<br/>
-     * 2\t3\t1<br/>
-     * etc.
-     */
-    @Override
-    public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, NullWritable, DoubleWritable> vertex) throws Exception {
-      String[] split = value.toString().split("\t");
-      for (int i = 0; i < split.length; i++) {
-        if (i == 0) {
-          vertex.setVertexID(new Text(split[i]));
-        } else {
-          vertex
-              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
-        }
-      }
-      return true;
-    }
-
-  }
-
   private static void printUsage() {
-    System.out
-        .println("Usage: <input> <output> [damping factor (default 0.85)] [Epsilon (convergence error, default 0.001)] [Max iterations (default 30)] [tasks]");
+    System.out.println("Usage: <input> <output> [tasks]");
     System.exit(-1);
   }
 
@@ -161,15 +130,11 @@ public class PageRank {
     // set the defaults
     pageJob.setMaxIteration(30);
     pageJob.set("hama.pagerank.alpha", "0.85");
+    pageJob.set("hama.graph.max.convergence.error", "0.001");
 
-    if (args.length == 6)
-      pageJob.setNumBspTask(Integer.parseInt(args[5]));
-    if (args.length >= 5)
-      pageJob.setMaxIteration(Integer.parseInt(args[4]));
-    if (args.length >= 4)
-      pageJob.set("hama.graph.max.convergence.error", args[3]);
-    if (args.length >= 3)
-      pageJob.set("hama.pagerank.alpha", args[2]);
+    if (args.length == 3) {
+      pageJob.setNumBspTask(Integer.parseInt(args[2]));
+    }
 
     // error, dangling node probability sum
     pageJob.setAggregatorClass(AverageAggregator.class,
@@ -179,10 +144,10 @@ public class PageRank {
     pageJob.setVertexValueClass(DoubleWritable.class);
     pageJob.setEdgeValueClass(NullWritable.class);
 
-    pageJob.setInputKeyClass(LongWritable.class);
-    pageJob.setInputValueClass(Text.class);
-    pageJob.setInputFormat(TextInputFormat.class);
-    pageJob.setVertexInputReaderClass(PagerankTextReader.class);
+    pageJob.setInputFormat(SequenceFileInputFormat.class);
+    pageJob.setInputKeyClass(Text.class);
+    pageJob.setInputValueClass(TextArrayWritable.class);
+
     pageJob.setPartitioner(HashPartitioner.class);
     pageJob.setOutputFormat(TextOutputFormat.class);
     pageJob.setOutputKeyClass(Text.class);

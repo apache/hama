@@ -17,38 +17,36 @@
  */
 package org.apache.hama.graph;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPJobClient;
 import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.HashPartitioner;
+import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TestBSPMasterGroomServer;
-import org.apache.hama.bsp.TextInputFormat;
+import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.graph.example.PageRank;
 
 public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
 
   String[] input = new String[] { "stackoverflow.com\tyahoo.com",
-      "facebook.com\ttwitter.com\tgoogle.com\tnasa.gov]",
-      "yahoo.com\tnasa.gov\tstackoverflow.com]",
-      "twitter.com\tgoogle.com\tfacebook.com]",
-      "nasa.gov\tyahoo.com\tstackoverflow.com]",
-      "youtube.com\tgoogle.com\tyahoo.com]" };
+      "facebook.com\ttwitter.com\tgoogle.com\tnasa.gov",
+      "yahoo.com\tnasa.gov\tstackoverflow.com",
+      "twitter.com\tgoogle.com\tfacebook.com",
+      "nasa.gov\tyahoo.com\tstackoverflow.com",
+      "youtube.com\tgoogle.com\tyahoo.com" };
 
-  private static String INPUT = "/tmp/pagerank-real-tmp.seq";
-  private static String OUTPUT = "/tmp/pagerank-real-out";
+  private static String INPUT = "/tmp/pagerank/real-tmp.seq";
+  private static String OUTPUT = "/tmp/pagerank/real-out";
 
   @SuppressWarnings("unchecked")
   @Override
@@ -60,7 +58,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     configuration.setInt("hama.graph.multi.step.partitioning.interval", 30);
 
     GraphJob bsp = new GraphJob(configuration, PageRank.class);
-    bsp.setInputPath(new Path(INPUT));
+    bsp.setInputPath(new Path("/tmp/pagerank"));
     bsp.setOutputPath(new Path(OUTPUT));
     BSPJobClient jobClient = new BSPJobClient(configuration);
     configuration.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 6000);
@@ -77,14 +75,15 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     bsp.setAggregatorClass(AverageAggregator.class,
         PageRank.DanglingNodeAggregator.class);
 
+    bsp.setVertexInputReaderClass(PageRank.PagerankTextReader.class);
+    bsp.setInputFormat(SequenceFileInputFormat.class);
+    bsp.setInputKeyClass(Text.class);
+    bsp.setInputValueClass(TextArrayWritable.class);
+    
     bsp.setVertexIDClass(Text.class);
     bsp.setVertexValueClass(DoubleWritable.class);
     bsp.setEdgeValueClass(NullWritable.class);
 
-    bsp.setVertexInputReaderClass(PageRank.PagerankTextReader.class);
-    bsp.setInputFormat(TextInputFormat.class);
-    bsp.setInputKeyClass(LongWritable.class);
-    bsp.setInputValueClass(Text.class);
     bsp.setPartitioner(HashPartitioner.class);
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
     bsp.setOutputKeyClass(Text.class);
@@ -123,26 +122,25 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   }
 
   private void generateTestData() {
-    BufferedWriter bw = null;
     try {
-      bw = new BufferedWriter(new FileWriter(INPUT));
-      for (String s : input) {
-        bw.write(s + "\n");
+      SequenceFile.Writer writer = SequenceFile.createWriter(fs, getConf(),
+          new Path(INPUT), Text.class, TextArrayWritable.class);
+
+      for (int i = 0; i < input.length; i++) {
+        String[] x = input[i].split("\t");
+        Text key = new Text(x[0]);
+        Writable[] values = new Writable[x.length - 1];
+        for (int j = 1; j < x.length; j++) {
+          values[j - 1] = new Text(x[j]);
+        }
+        TextArrayWritable value = new TextArrayWritable();
+        value.set(values);
+        writer.append(key, value);
       }
+
+      writer.close();
     } catch (IOException e) {
       e.printStackTrace();
-    } finally {
-      if (bw != null) {
-        try {
-          bw.close();
-
-          File file = new File(INPUT);
-          LOG.info("Temp file length: " + file.length());
-
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
     }
   }
 
