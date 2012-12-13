@@ -29,11 +29,11 @@ import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.junit.Test;
 
 public class TestDiskQueue extends TestCase {
+  public static final String TMP_OUTPUT_PATH = "/tmp/messageQueue";
 
   static Configuration conf = new Configuration();
   static {
-    conf.set(DiskQueue.DISK_QUEUE_PATH_KEY,
-        TestAvroMessageManager.TMP_OUTPUT_PATH);
+    conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
   }
 
   @Test
