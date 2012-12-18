@@ -54,7 +54,11 @@ public class PartitioningRunner extends
       inputDir = inputDir.getParent();
     }
 
-    this.partitionDir = new Path(inputDir + "/partitions");
+    if(conf.get("bsp.partitioning.dir") != null) {
+      this.partitionDir = new Path(conf.get("bsp.partitioning.dir"));
+    } else {
+      this.partitionDir = new Path(inputDir + "/partitions");
+    }
   }
 
   @Override

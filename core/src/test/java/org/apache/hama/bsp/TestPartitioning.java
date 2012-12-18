@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -52,6 +53,9 @@ public class TestPartitioning extends TestCase {
     bsp.setInputPath(new Path("../CHANGES.txt"));
     bsp.setPartitioner(HashPartitioner.class);
     assertTrue(bsp.waitForCompletion(true));
+    
+    FileSystem fs = FileSystem.get(conf);
+    fs.delete(new Path("/tmp/hama-test/partitioning/localtest"), true);
   }
 
   public static class PartionedBSP extends
@@ -69,7 +73,6 @@ public class TestPartitioning extends TestCase {
 
       assertTrue(numOfPairs > 2);
     }
-
   }
 
 }

@@ -240,6 +240,7 @@ public class BSPJob extends BSPJobContext {
       HamaConfiguration conf = new HamaConfiguration();
       conf.setInt("desired.num.of.tasks",
           Integer.parseInt(this.getConfiguration().get("bsp.peers.num")));
+      conf.set("bsp.partitioning.dir", this.getConfiguration().get("bsp.partitioning.dir"));
       BSPJob partitioningJob = new BSPJob(conf);
       partitioningJob.setInputPath(new Path(this.getConfiguration().get(
           "bsp.input.dir")));
@@ -251,7 +252,11 @@ public class BSPJob extends BSPJobContext {
 
       isPartitioned = partitioningJob.waitForCompletion(true);
       if (isPartitioned) {
-        this.setInputPath(new Path(inputDir + "/partitions"));
+        if(conf.get("bsp.partitioning.dir") != null) {
+          this.setInputPath(new Path(conf.get("bsp.partitioning.dir")));
+        } else {
+          this.setInputPath(new Path(inputDir + "/partitions"));
+         }
       }
     }
 
