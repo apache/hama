@@ -240,7 +240,7 @@ public class BSPJob extends BSPJobContext {
       HamaConfiguration conf = new HamaConfiguration();
       conf.setInt("desired.num.of.tasks",
           Integer.parseInt(this.getConfiguration().get("bsp.peers.num")));
-      if(conf.get("bsp.partitioning.dir") != null) {
+      if(this.getConfiguration().get("bsp.partitioning.dir") != null) {
         conf.set("bsp.partitioning.dir", this.getConfiguration().get("bsp.partitioning.dir"));
        }
       BSPJob partitioningJob = new BSPJob(conf);
