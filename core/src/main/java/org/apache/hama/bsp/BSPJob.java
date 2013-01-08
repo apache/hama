@@ -47,7 +47,6 @@ public class BSPJob extends BSPJobContext {
   private JobState state = JobState.DEFINE;
   private BSPJobClient jobClient;
   private RunningJob info;
-  private boolean isPartitioned = false; //TODO: If input is already partitioned init to true
 
   public BSPJob() throws IOException {
     this(new HamaConfiguration());
@@ -130,13 +129,13 @@ public class BSPJob extends BSPJobContext {
 
   public void setCombinerClass(Class<? extends Combiner<? extends Writable>> cls) {
     ensureState(JobState.DEFINE);
-    conf.setClass(COMBINER_CLASS_ATTR, cls, Combiner.class);
+    conf.setClass(Constants.COMBINER_CLASS, cls, Combiner.class);
   }
 
   @SuppressWarnings("unchecked")
   public Class<? extends Combiner<? extends Writable>> getCombinerClass() {
     return (Class<? extends Combiner<? extends Writable>>) conf.getClass(
-        COMBINER_CLASS_ATTR, Combiner.class);
+        Constants.COMBINER_CLASS, Combiner.class);
   }
 
   public void setJar(String jar) {
@@ -223,44 +222,6 @@ public class BSPJob extends BSPJobContext {
 
   public boolean waitForCompletion(boolean verbose) throws IOException,
       InterruptedException, ClassNotFoundException {
-    if (this.getConfiguration().get("bsp.input.partitioner.class") != null
-        && !isPartitioned) {
-      FileSystem fs = FileSystem.get(conf);
-      Path inputDir = new Path(conf.get("bsp.input.dir"));
-      if (fs.isFile(inputDir)) {
-        inputDir = inputDir.getParent();
-      }
-      Path partitionDir = new Path(inputDir + "/partitions");
-
-      if (fs.exists(partitionDir)) {
-        fs.delete(partitionDir, true);
-      }
-
-      HamaConfiguration conf = new HamaConfiguration();
-      conf.setInt("desired.num.of.tasks",
-          Integer.parseInt(this.getConfiguration().get("bsp.peers.num")));
-      if(this.getConfiguration().get("bsp.partitioning.dir") != null) {
-        conf.set("bsp.partitioning.dir", this.getConfiguration().get("bsp.partitioning.dir"));
-       }
-      BSPJob partitioningJob = new BSPJob(conf);
-      partitioningJob.setInputPath(new Path(this.getConfiguration().get(
-          "bsp.input.dir")));
-      partitioningJob.setInputFormat(this.getInputFormat().getClass());
-      partitioningJob.setInputKeyClass(this.getInputKeyClass());
-      partitioningJob.setInputValueClass(getInputValueClass());
-      partitioningJob.setOutputFormat(NullOutputFormat.class);
-      partitioningJob.setBspClass(PartitioningRunner.class);
-
-      isPartitioned = partitioningJob.waitForCompletion(true);
-      if (isPartitioned) {
-        if(conf.get("bsp.partitioning.dir") != null) {
-          this.setInputPath(new Path(conf.get("bsp.partitioning.dir")));
-        } else {
-          this.setInputPath(new Path(inputDir + "/partitions"));
-         }
-      }
-    }
-
     if (state == JobState.DEFINE) {
       submit();
     }
@@ -292,13 +253,13 @@ public class BSPJob extends BSPJobContext {
 
   @SuppressWarnings({ "rawtypes" })
   public InputFormat getInputFormat() {
-    return ReflectionUtils.newInstance(conf.getClass("bsp.input.format.class",
+    return ReflectionUtils.newInstance(conf.getClass(Constants.INPUT_FORMAT_CLASS,
         TextInputFormat.class, InputFormat.class), conf);
   }
 
   @SuppressWarnings({ "rawtypes" })
   public void setInputFormat(Class<? extends InputFormat> cls) {
-    conf.setClass("bsp.input.format.class", cls, InputFormat.class);
+    conf.setClass(Constants.INPUT_FORMAT_CLASS, cls, InputFormat.class);
   }
 
   /**
@@ -406,7 +367,7 @@ public class BSPJob extends BSPJobContext {
    */
   @SuppressWarnings("rawtypes")
   public void setOutputFormat(Class<? extends OutputFormat> theClass) {
-    conf.setClass("bsp.output.format.class", theClass, OutputFormat.class);
+    conf.setClass(Constants.OUTPUT_FORMAT_CLASS, theClass, OutputFormat.class);
   }
 
   /**
@@ -414,19 +375,18 @@ public class BSPJob extends BSPJobContext {
    */
   @SuppressWarnings("rawtypes")
   public void setPartitioner(Class<? extends Partitioner> theClass) {
-    conf.setClass("bsp.input.partitioner.class", theClass, Partitioner.class);
+    conf.setClass(Constants.RUNTIME_PARTITIONING_CLASS, theClass, Partitioner.class);
   }
 
   @SuppressWarnings("rawtypes")
   public Partitioner getPartitioner() {
-    return ReflectionUtils.newInstance(conf
-        .getClass("bsp.input.partitioner.class", HashPartitioner.class,
-            Partitioner.class), conf);
+    return ReflectionUtils.newInstance(
+        conf.getClass(Constants.RUNTIME_PARTITIONING_CLASS, HashPartitioner.class,Partitioner.class), conf);
   }
 
   @SuppressWarnings("rawtypes")
   public OutputFormat getOutputFormat() {
-    return ReflectionUtils.newInstance(conf.getClass("bsp.output.format.class",
+    return ReflectionUtils.newInstance(conf.getClass(Constants.OUTPUT_FORMAT_CLASS,
         TextOutputFormat.class, OutputFormat.class), conf);
   }
 

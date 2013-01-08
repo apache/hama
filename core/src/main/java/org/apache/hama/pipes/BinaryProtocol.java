@@ -42,6 +42,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
@@ -297,8 +298,8 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
     }
 
     public void readKeyValue() throws IOException {
-      boolean nullinput = peer.getConfiguration().get("bsp.input.format.class") == null
-          || peer.getConfiguration().get("bsp.input.format.class")
+      boolean nullinput = peer.getConfiguration().get(Constants.INPUT_FORMAT_CLASS) == null
+          || peer.getConfiguration().get(Constants.INPUT_FORMAT_CLASS)
               .equals("org.apache.hama.bsp.NullInputFormat");
 
       if (!nullinput) {

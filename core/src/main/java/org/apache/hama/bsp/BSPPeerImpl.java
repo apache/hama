@@ -183,7 +183,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       LOG.debug("Initialized Messaging service.");
     }
 
-    final String combinerName = conf.get("bsp.combiner.class");
+    final String combinerName = conf.get(Constants.COMBINER_CLASS);
     if (combinerName != null) {
       combiner = (Combiner<M>) ReflectionUtils.newInstance(
           conf.getClassByName(combinerName), conf);

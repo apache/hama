@@ -30,6 +30,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
 
@@ -139,7 +140,7 @@ public class PartitioningRunner extends
   @SuppressWarnings("rawtypes")
   public Partitioner getPartitioner() {
     return ReflectionUtils.newInstance(conf
-        .getClass("bsp.input.partitioner.class", HashPartitioner.class,
+        .getClass(Constants.RUNTIME_PARTITIONING_CLASS, HashPartitioner.class,
             Partitioner.class), conf);
   }
 

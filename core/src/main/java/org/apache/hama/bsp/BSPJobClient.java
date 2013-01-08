@@ -288,7 +288,7 @@ public class BSPJobClient extends Configured implements Tool {
    * @throws IOException
    */
   public RunningJob submitJob(BSPJob job) throws FileNotFoundException,
-      IOException {
+  IOException {
     return submitJobInternal(job, jobSubmitClient.getNewJobId());
   }
 
@@ -323,6 +323,10 @@ public class BSPJobClient extends Configured implements Tool {
     if (job.get("bsp.input.dir") != null) {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
+
+      job = partition(job, maxTasks);
+      maxTasks = job.getInt("hama.partition.count", maxTasks);
+
       job.setNumBspTask(writeSplits(job, submitSplitFile, maxTasks));
       job.set("bsp.job.split.file", submitSplitFile.toString());
     }
@@ -363,6 +367,79 @@ public class BSPJobClient extends Configured implements Tool {
 
     return launchJob(jobId, job, submitJobFile, fs);
   }
+
+
+  protected BSPJob partition(BSPJob job, int maxTasks) throws IOException {
+    
+    if(job.get("bsp.partitioning.runner.job") != null){return job;}//Early exit for the partitioner job.
+    
+    InputSplit[] splits = job.getInputFormat().getSplits(job,
+        (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
+            : maxTasks);
+
+    String inputPath = job.getConfiguration().get(Constants.JOB_INPUT_DIR);
+    Path inputDir = new Path(inputPath);
+    if (fs.isFile(inputDir)) {
+      inputDir = inputDir.getParent();
+    }
+
+    if (inputPath != null) {
+      int numSplits = splits.length;
+      int numTasks = job.getConfiguration().getInt("bsp.peers.num", 0);
+
+      if ((numTasks > 0 && numTasks != numSplits)
+          || (job.getConfiguration().getBoolean(
+              Constants.ENABLE_RUNTIME_PARTITIONING, false) && job
+              .getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null)) {
+
+        Path partitionDir = new Path(inputDir + "/partitions");
+
+        if (fs.exists(partitionDir)) {
+          fs.delete(partitionDir, true);
+        }
+
+        HamaConfiguration conf = new HamaConfiguration();
+        conf.setInt(Constants.RUNTIME_DESIRED_PEERS_COUNT,
+            Integer.parseInt(job.getConfiguration().get("bsp.peers.num")));
+        if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_DIR) != null) {
+          conf.set(Constants.RUNTIME_PARTITIONING_DIR, job.getConfiguration()
+              .get(Constants.RUNTIME_PARTITIONING_DIR));
+        }
+        conf.set(Constants.RUNTIME_PARTITIONING_CLASS, job.get(Constants.RUNTIME_PARTITIONING_CLASS));
+        BSPJob partitioningJob = new BSPJob(conf);
+        partitioningJob.setInputPath(new Path(job.getConfiguration().get(
+            Constants.JOB_INPUT_DIR)));
+        partitioningJob.setInputFormat(job.getInputFormat().getClass());
+        partitioningJob.setInputKeyClass(job.getInputKeyClass());
+        partitioningJob.setInputValueClass(job.getInputValueClass());
+        partitioningJob.setOutputFormat(NullOutputFormat.class);
+        partitioningJob.setBspClass(PartitioningRunner.class);
+        partitioningJob.set("bsp.partitioning.runner.job", "true");
+
+        boolean isPartitioned = false;
+        try {
+          isPartitioned = partitioningJob.waitForCompletion(true);
+        } catch (InterruptedException e) {
+          LOG.error("Interrupted partitioning run-time.", e);
+        } catch (ClassNotFoundException e) {
+          LOG.error("Class not found error partitioning run-time.", e);
+        }
+        if (isPartitioned) {
+          if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_DIR) != null) {
+            job.setInputPath(new Path(conf
+                .get(Constants.RUNTIME_PARTITIONING_DIR)));
+          } else {
+            job.setInputPath(new Path(inputDir + "/partitions"));
+          }
+        } else {
+          LOG.error("Error partitioning the input path.");
+          throw new IOException("Runtime partition failed for the job.");
+        }
+      }
+    }
+    return job;
+  }
+
 
   protected int checkTaskLimits(BSPJob job, int limitTasks) throws IOException {
     int maxTasks;
@@ -551,9 +628,9 @@ public class BSPJobClient extends Configured implements Tool {
     if (job.isSuccessful()) {
       LOG.info("The total number of supersteps: " + info.getSuperstepCount());
       info.getStatus()
-          .getCounter()
-          .incrCounter(JobInProgress.JobCounter.SUPERSTEPS,
-              info.getSuperstepCount());
+      .getCounter()
+      .incrCounter(JobInProgress.JobCounter.SUPERSTEPS,
+          info.getSuperstepCount());
       info.getStatus().getCounter().log(LOG);
     } else {
       LOG.info("Job failed.");
@@ -615,7 +692,7 @@ public class BSPJobClient extends Configured implements Tool {
   }
 
   public static void runJob(BSPJob job) throws FileNotFoundException,
-      IOException {
+  IOException {
     BSPJobClient jc = new BSPJobClient(job.getConfiguration());
 
     if (job.getNumBspTask() == 0

@@ -43,6 +43,7 @@ public class TestPartitioning extends TestCase {
     Configuration conf = new Configuration();
     conf.set("bsp.local.dir", "/tmp/hama-test/partitioning");
     conf.set("bsp.partitioning.dir", "/tmp/hama-test/partitioning/localtest");
+    conf.setBoolean("bsp.input.runtime.partitioning", true);
     BSPJob bsp = new BSPJob(new HamaConfiguration(conf));
     bsp.setJobName("Test partitioning with input");
     bsp.setBspClass(PartionedBSP.class);

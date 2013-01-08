@@ -60,25 +60,27 @@ public interface Constants {
   public static final String UTF8_ENCODING = "UTF-8";
 
   public static final String MAX_TASKS_PER_GROOM = "bsp.tasks.maximum";
-  
+
   public static final String MAX_TASK_ATTEMPTS = "bsp.tasks.max.attempts";
 
   public static final String MAX_TASKS_PER_JOB = "bsp.max.tasks.per.job";
   
+  public static final String COMBINER_CLASS = "bsp.combiner.class";
+
   public static final int DEFAULT_MAX_TASK_ATTEMPTS = 2;
 
   ////////////////////////////////////////
   // Task scheduler related constants
   // //////////////////////////////////////
-  
+
   public static final String TASK_ALLOCATOR_CLASS = "bsp.taskalloc.class";
-  
+
   // //////////////////////////////////////
   // Fault tolerance related constants
   // //////////////////////////////////////
 
   public static final String FAULT_TOLERANCE_FLAG = "bsp.ft.enabled";
-  
+
   public static final String FAULT_TOLERANCE_CLASS = "bsp.ft.class";
 
   // //////////////////////////////////////
@@ -91,6 +93,25 @@ public interface Constants {
   public static final String CHECKPOINT_INTERVAL = "bsp.checkpoint.interval";
   // By default checkpointing when enabled would checkpoint on every superstep
   public static final short DEFAULT_CHECKPOINT_INTERVAL = 1;
+
+  // /////////////////////////////////////////////
+  // Job configuration related parameters.
+  // /////////////////////////////////////////////
+  public static final String JOB_INPUT_DIR      = "bsp.input.dir";
+  public static final String JOB_PEERS_COUNT    = "bsp.peers.num";
+  public static final String INPUT_FORMAT_CLASS = "bsp.input.format.class"; 
+  public static final String OUTPUT_FORMAT_CLASS = "bsp.output.format.class";
+  
+
+  // /////////////////////////////////////////////
+  // Constants related to partitioning
+  // /////////////////////////////////////////////
+  public static final String RUNTIME_PARTITIONING_DIR = "bsp.partitioning.dir";
+  public static final String ENABLE_RUNTIME_PARTITIONING = "bsp.input.runtime.partitioning";
+  public static final String RUNTIME_PARTITIONING_CLASS = "bsp.input.partitioner.class";
+  public static final String RUNTIME_DESIRED_PEERS_COUNT = "desired.num.of.tasks";
+  public static final String RUNTIME_PARTITION_RECORDCONVERTER = "bsp.runtime.partition.recordconverter";
+
 
   // /////////////////////////////////////
   // Constants for ZooKeeper
