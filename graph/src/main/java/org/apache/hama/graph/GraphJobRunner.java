@@ -105,8 +105,6 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
 
   }
 
-  Map<V, List<M>> messages = null;
-
   @Override
   public final void bsp(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
@@ -120,7 +118,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       peer.sync();
 
       // note that the messages must be parsed here
-      messages = parseMessages(peer);
+      final Map<V, List<M>> messages = parseMessages(peer);
       // master needs to update
       doMasterUpdates(peer);
       // if aggregators say we don't have updates anymore, break
@@ -128,7 +126,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
         break;
       }
       // loop over vertices and do their computation
-      doSuperstep(peer);
+      doSuperstep(messages, peer);
 
       if (isMasterTask(peer)) {
         peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
@@ -177,7 +175,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
    * Do the main logic of a superstep, namely checking if vertices are active,
    * feeding compute with messages and controlling combiners/aggregators.
    */
-  private void doSuperstep(
+  private void doSuperstep(Map<V, List<M>> messages,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     int activeVertices = 0;
@@ -204,14 +202,10 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
           activeVertices++;
         }
       }
-
-      msgs = null;
-      messages.remove(vertex.getVertexID());
     }
 
     aggregationRunner.sendAggregatorValues(peer, activeVertices);
     iteration++;
-    messages = new HashMap<V, List<M>>();
   }
 
   /**
@@ -337,8 +331,8 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   @SuppressWarnings("unchecked")
   private void repair(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
-      boolean selfReference) throws IOException, SyncException,
-      InterruptedException {
+      boolean selfReference) throws IOException,
+      SyncException, InterruptedException {
 
     Map<V, Vertex<V, E, M>> tmp = new HashMap<V, Vertex<V, E, M>>();
 
@@ -414,8 +408,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     GraphJobMessage msg = null;
-    Map<V, List<M>> msgMap = new HashMap<V, List<M>>();
-    
+    final Map<V, List<M>> msgMap = new HashMap<V, List<M>>();
     while ((msg = peer.getCurrentMessage()) != null) {
       // either this is a vertex message or a directive that must be read
       // as map
@@ -452,7 +445,6 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       }
 
     }
-    
     return msgMap;
   }
 
@@ -541,3 +533,4 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   }
 
 }
+
