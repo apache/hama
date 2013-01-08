@@ -47,6 +47,7 @@ public class BSPJob extends BSPJobContext {
   private JobState state = JobState.DEFINE;
   private BSPJobClient jobClient;
   private RunningJob info;
+  private boolean isPartitioned = false; //TODO: If input is already partitioned init to true
 
   public BSPJob() throws IOException {
     this(new HamaConfiguration());
@@ -219,8 +220,6 @@ public class BSPJob extends BSPJobContext {
     info = jobClient.submitJob(this);
     state = JobState.RUNNING;
   }
-
-  boolean isPartitioned = false;
 
   public boolean waitForCompletion(boolean verbose) throws IOException,
       InterruptedException, ClassNotFoundException {
