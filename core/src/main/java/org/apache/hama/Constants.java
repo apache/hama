@@ -68,6 +68,8 @@ public interface Constants {
   public static final String COMBINER_CLASS = "bsp.combiner.class";
 
   public static final int DEFAULT_MAX_TASK_ATTEMPTS = 2;
+  
+  public static final String COMBINER_CLASS = "bsp.combiner.class";
 
   ////////////////////////////////////////
   // Task scheduler related constants
