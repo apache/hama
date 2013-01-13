@@ -17,6 +17,8 @@
  */
 package org.apache.hama.examples;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -94,4 +96,27 @@ public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
           + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
+
+  @Override
+  public void readState(DataInput in) throws IOException {}
+
+  @Override
+  public void writeState(DataOutput out) throws IOException {}
+
+  @Override
+  public Text createVertexIDObject() {
+    return new Text();
+  }
+
+  @Override
+  public NullWritable createEdgeCostObject() {
+    return NullWritable.get();
+  }
+
+  @Override
+  public IntWritable createVertexValue() {
+    return new IntWritable();
+  }
+
+  
 }

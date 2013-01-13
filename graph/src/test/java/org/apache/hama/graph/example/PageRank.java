@@ -17,6 +17,8 @@
  */
 package org.apache.hama.graph.example;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -25,6 +27,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.graph.AbstractAggregator;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.Vertex;
@@ -87,10 +90,33 @@ public class PageRank {
       sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
           / numEdges));
     }
+
+    @Override
+    public Text createVertexIDObject() {
+      return new Text();
+    }
+
+    @Override
+    public NullWritable createEdgeCostObject() {
+      return NullWritable.get();
+    }
+
+    @Override
+    public DoubleWritable createVertexValue() {
+      return new DoubleWritable();
+    }
+
+    @Override
+    public void readState(DataInput in) throws IOException {}
+
+    @Override
+    public void writeState(DataOutput out) throws IOException {}
+
   }
 
   public static class PagerankTextReader extends
-      VertexInputReader<LongWritable, Text, Text, NullWritable, DoubleWritable> {
+      VertexInputReader<LongWritable, Text, Text, NullWritable, DoubleWritable>
+      implements RecordConverter {
 
     /**
      * The text file essentially should look like: <br/>

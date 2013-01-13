@@ -24,7 +24,6 @@ import org.apache.hadoop.io.Writable;
  * The edge class
  */
 public final class Edge<VERTEX_ID extends Writable, EDGE_VALUE_TYPE extends Writable> {
-
   private final VERTEX_ID destinationVertexID;
   private final EDGE_VALUE_TYPE cost;
 

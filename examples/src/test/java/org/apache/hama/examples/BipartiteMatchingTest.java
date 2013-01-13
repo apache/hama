@@ -26,6 +26,8 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.TestCase;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -33,30 +35,36 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.examples.util.TextPair;
+import org.apache.hama.graph.GraphJob;
 import org.junit.Test;
 
-import junit.framework.TestCase;
+public class BipartiteMatchingTest extends TestCase {
 
-public class BipartiteMatchingTest extends TestCase{
-
-  private String[] input = {
-      "A L:B D",
-      "B R:A C",
-      "C L:B D",
-      "D R:A C"
-  };
+  private String[] input = { "A L:B D", "B R:A C", "C L:B D", "D R:A C" };
 
   private final static String DELIMETER = "\t";
 
   @SuppressWarnings("serial")
-  private Map<String, String> output1 = new HashMap<String, String>()
-  {{
-    put("C", "TextPair{MatchVertex=D, Component=L}");
-    put("A", "TextPair{MatchVertex=B, Component=L}");
-    put("D", "TextPair{MatchVertex=C, Component=R}");
-    put("B", "TextPair{MatchVertex=A, Component=R}");
-  }};
+  private Map<String, String> output1 = new HashMap<String, String>() {
+    {
+      put("C", "TextPair{MatchVertex=D, Component=L}");
+      put("A", "TextPair{MatchVertex=B, Component=L}");
+      put("D", "TextPair{MatchVertex=C, Component=R}");
+      put("B", "TextPair{MatchVertex=A, Component=R}");
+    }
+  };
 
+  public static class CustomTextPartitioner implements
+      Partitioner<Text, TextPair> {
+
+    @Override
+    public int getPartition(Text key, TextPair value, int numTasks) {
+      return Character.getNumericValue(key.toString().charAt(0)) % numTasks;
+    }
+
+  }
 
   private static String INPUT = "/tmp/graph.txt";
   private static String OUTPUT = "/tmp/graph-bipartite";
@@ -70,57 +78,63 @@ public class BipartiteMatchingTest extends TestCase{
     fs = FileSystem.get(conf);
   }
 
-  private void generateTestData(){
+  private void generateTestData() {
     FileWriter fout = null;
     BufferedWriter bout = null;
     PrintWriter pout = null;
-    try{
+    try {
       fout = new FileWriter(INPUT);
       bout = new BufferedWriter(fout);
       pout = new PrintWriter(bout);
-      for(String line:input){
+      for (String line : input) {
         pout.println(line);
       }
-    }
-    catch(IOException e){
+    } catch (IOException e) {
       e.printStackTrace();
-    }
-    finally{      
+    } finally {
       try {
-        if(pout!=null){pout.close();}
-        if(bout!=null){bout.close();}
-        if(fout!=null){fout.close();}
+        if (pout != null) {
+          pout.close();
+        }
+        if (bout != null) {
+          bout.close();
+        }
+        if (fout != null) {
+          fout.close();
+        }
       } catch (IOException e) {
         e.printStackTrace();
-      }      
+      }
     }
   }
 
-
-  private void verifyResult()throws IOException{
+  private void verifyResult() throws IOException {
     FileStatus[] files = fs.globStatus(new Path(OUTPUT + "/part-*"));
+    assertTrue(files.length == 2);
+
     Text key = new Text();
     Text value = new Text();
-    for(FileStatus file:files){
-      if(file.getLen() > 0){
-        FSDataInputStream in = fs.open(file.getPath());        
-        BufferedReader bin = new BufferedReader(
-            new InputStreamReader(in));
+
+    for (FileStatus file : files) {
+      if (file.getLen() > 0) {
+        FSDataInputStream in = fs.open(file.getPath());
+        BufferedReader bin = new BufferedReader(new InputStreamReader(in));
 
         String s = bin.readLine();
-        while(s!=null){
+        while (s != null) {
           next(key, value, s);
           String expValue = output1.get(key.toString());
+          System.out.println(key + " " + value + " expvalue = " + expValue);
           assertEquals(expValue, value.toString());
-          System.out.println(key + " "+value);
+
           s = bin.readLine();
-        }        
+        }
         in.close();
       }
     }
   }
 
-  private static void next(Text key, Text value, String line){
+  private static void next(Text key, Text value, String line) {
     String[] lineA = line.split(DELIMETER);
     key.set(lineA[0]);
     value.set(lineA[1]);
@@ -139,17 +153,24 @@ public class BipartiteMatchingTest extends TestCase{
 
   @Test
   public void testBipartiteMatching() throws IOException, InterruptedException,
-  ClassNotFoundException{    
+      ClassNotFoundException {
     generateTestData();
     try {
       String seed = "2";
-      BipartiteMatching.main(new String[] { INPUT, OUTPUT, "30", "2",
-          seed});
+      HamaConfiguration conf = new HamaConfiguration();
+      GraphJob job = BipartiteMatching.createJob(new String[] { INPUT, OUTPUT,
+          "30", "2", seed }, conf);
+      job.setPartitioner(CustomTextPartitioner.class);
+
+      long startTime = System.currentTimeMillis();
+      if (job.waitForCompletion(true)) {
+        System.out.println("Job Finished in "
+            + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+      }
+
       verifyResult();
     } finally {
       deleteTempDirs();
     }
   }
-
-
 }

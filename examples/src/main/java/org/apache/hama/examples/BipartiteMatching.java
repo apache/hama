@@ -17,6 +17,8 @@
  */
 package org.apache.hama.examples;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -159,6 +161,41 @@ public final class BipartiteMatching {
       return !getValue().getFirst().equals(UNMATCHED);
     }
 
+    @Override
+    public void readState(DataInput in) throws IOException {
+      if (in.readBoolean()) {
+        reusableMessage = new TextPair();
+        reusableMessage.readFields(in);
+      }
+
+    }
+
+    @Override
+    public void writeState(DataOutput out) throws IOException {
+      if (reusableMessage == null) {
+        out.writeBoolean(false);
+      } else {
+        out.writeBoolean(true);
+        reusableMessage.write(out);
+      }
+
+    }
+
+    @Override
+    public Text createVertexIDObject() {
+      return new Text();
+    }
+
+    @Override
+    public NullWritable createEdgeCostObject() {
+      return NullWritable.get();
+    }
+
+    @Override
+    public TextPair createVertexValue() {
+      return new TextPair();
+    }
+
   }
 
   /**
@@ -199,16 +236,9 @@ public final class BipartiteMatching {
     System.exit(-1);
   }
 
-  public static void main(String... args) throws IOException,
-      InterruptedException, ClassNotFoundException {
-
-    if (args.length < 2) {
-      printUsage();
-    }
-
-    HamaConfiguration conf = new HamaConfiguration(new Configuration());
+  public static GraphJob createJob(String[] args, HamaConfiguration conf) throws IOException{
     GraphJob job = new GraphJob(conf, BipartiteMatching.class);
-
+    
     // set the defaults
     job.setMaxIteration(30);
     job.setNumBspTask(2);
@@ -230,14 +260,26 @@ public final class BipartiteMatching {
     job.setVertexValueClass(TextPair.class);
     job.setEdgeValueClass(NullWritable.class);
 
-    job.setInputKeyClass(LongWritable.class);
-    job.setInputValueClass(Text.class);
     job.setInputFormat(TextInputFormat.class);
     job.setVertexInputReaderClass(BipartiteMatchingVertexReader.class);
     job.setPartitioner(HashPartitioner.class);
     job.setOutputFormat(TextOutputFormat.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(TextPair.class);
+    return job;
+  }
+  
+  
+  public static void main(String... args) throws IOException,
+      InterruptedException, ClassNotFoundException {
+
+    if (args.length < 2) {
+      printUsage();
+    }
+
+    HamaConfiguration conf = new HamaConfiguration(new Configuration());
+    
+    GraphJob job = createJob(args, conf);
 
     long startTime = System.currentTimeMillis();
     if (job.waitForCompletion(true)) {

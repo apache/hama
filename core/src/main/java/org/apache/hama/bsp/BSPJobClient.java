@@ -45,6 +45,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
@@ -288,7 +289,7 @@ public class BSPJobClient extends Configured implements Tool {
    * @throws IOException
    */
   public RunningJob submitJob(BSPJob job) throws FileNotFoundException,
-  IOException {
+      IOException {
     return submitJobInternal(job, jobSubmitClient.getNewJobId());
   }
 
@@ -368,12 +369,14 @@ public class BSPJobClient extends Configured implements Tool {
     return launchJob(jobId, job, submitJobFile, fs);
   }
 
-
   protected BSPJob partition(BSPJob job, int maxTasks) throws IOException {
-    
-    if(job.get("bsp.partitioning.runner.job") != null){return job;}//Early exit for the partitioner job.
-    
-    InputSplit[] splits = job.getInputFormat().getSplits(job,
+
+    if (job.get("bsp.partitioning.runner.job") != null) {
+      return job;
+    }// Early exit for the partitioner job.
+
+    InputSplit[] splits = job.getInputFormat().getSplits(
+        job,
         (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
             : maxTasks);
 
@@ -386,6 +389,17 @@ public class BSPJobClient extends Configured implements Tool {
     if (inputPath != null) {
       int numSplits = splits.length;
       int numTasks = job.getConfiguration().getInt("bsp.peers.num", 0);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(" numTasks = "
+            + numTasks
+            + " numSplits = "
+            + numSplits
+            + " enable = "
+            + (job.getConfiguration().getBoolean(
+                Constants.ENABLE_RUNTIME_PARTITIONING, false)
+                + " class = " + job.getConfiguration().get(
+                Constants.RUNTIME_PARTITIONING_CLASS)));
+      }
 
       if ((numTasks > 0 && numTasks != numSplits)
           || (job.getConfiguration().getBoolean(
@@ -398,14 +412,18 @@ public class BSPJobClient extends Configured implements Tool {
           fs.delete(partitionDir, true);
         }
 
-        HamaConfiguration conf = new HamaConfiguration();
+        HamaConfiguration conf = new HamaConfiguration(job.getConfiguration());
+
         conf.setInt(Constants.RUNTIME_DESIRED_PEERS_COUNT,
             Integer.parseInt(job.getConfiguration().get("bsp.peers.num")));
         if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_DIR) != null) {
           conf.set(Constants.RUNTIME_PARTITIONING_DIR, job.getConfiguration()
               .get(Constants.RUNTIME_PARTITIONING_DIR));
         }
-        conf.set(Constants.RUNTIME_PARTITIONING_CLASS, job.get(Constants.RUNTIME_PARTITIONING_CLASS));
+        if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null) {
+          conf.set(Constants.RUNTIME_PARTITIONING_CLASS,
+              job.get(Constants.RUNTIME_PARTITIONING_CLASS));
+        }
         BSPJob partitioningJob = new BSPJob(conf);
         partitioningJob.setInputPath(new Path(job.getConfiguration().get(
             Constants.JOB_INPUT_DIR)));
@@ -413,8 +431,12 @@ public class BSPJobClient extends Configured implements Tool {
         partitioningJob.setInputKeyClass(job.getInputKeyClass());
         partitioningJob.setInputValueClass(job.getInputValueClass());
         partitioningJob.setOutputFormat(NullOutputFormat.class);
+        partitioningJob.setOutputKeyClass(NullWritable.class);
+        partitioningJob.setOutputValueClass(NullWritable.class);
         partitioningJob.setBspClass(PartitioningRunner.class);
         partitioningJob.set("bsp.partitioning.runner.job", "true");
+        partitioningJob.getConfiguration().setBoolean(
+            Constants.ENABLE_RUNTIME_PARTITIONING, false);
 
         boolean isPartitioned = false;
         try {
@@ -431,6 +453,7 @@ public class BSPJobClient extends Configured implements Tool {
           } else {
             job.setInputPath(new Path(inputDir + "/partitions"));
           }
+          job.setInputFormat(SequenceFileInputFormat.class);
         } else {
           LOG.error("Error partitioning the input path.");
           throw new IOException("Runtime partition failed for the job.");
@@ -439,7 +462,6 @@ public class BSPJobClient extends Configured implements Tool {
     }
     return job;
   }
-
 
   protected int checkTaskLimits(BSPJob job, int limitTasks) throws IOException {
     int maxTasks;
@@ -628,9 +650,9 @@ public class BSPJobClient extends Configured implements Tool {
     if (job.isSuccessful()) {
       LOG.info("The total number of supersteps: " + info.getSuperstepCount());
       info.getStatus()
-      .getCounter()
-      .incrCounter(JobInProgress.JobCounter.SUPERSTEPS,
-          info.getSuperstepCount());
+          .getCounter()
+          .incrCounter(JobInProgress.JobCounter.SUPERSTEPS,
+              info.getSuperstepCount());
       info.getStatus().getCounter().log(LOG);
     } else {
       LOG.info("Job failed.");
@@ -692,7 +714,7 @@ public class BSPJobClient extends Configured implements Tool {
   }
 
   public static void runJob(BSPJob job) throws FileNotFoundException,
-  IOException {
+      IOException {
     BSPJobClient jc = new BSPJobClient(job.getConfiguration());
 
     if (job.getNumBspTask() == 0

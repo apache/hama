@@ -22,7 +22,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Enumeration;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;

@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
@@ -66,13 +65,13 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
 
   public static final String MESSAGE_COMBINER_CLASS = "hama.vertex.message.combiner.class";
   public static final String GRAPH_REPAIR = "hama.graph.repair";
+  public static final String VERTEX_CLASS = "hama.graph.vertex.class";
 
   private Configuration conf;
   private Combiner<M> combiner;
   private Partitioner<V, M> partitioner;
 
-  private List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>();
-
+  private VerticesInfo<V, E, M> vertices;
   private boolean updated = true;
   private int globalUpdateCounts = 0;
 
@@ -264,10 +263,12 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
 
     aggregationRunner = new AggregationRunner<V, E, M>();
     aggregationRunner.setupAggregators(peer);
+
+    vertices = new VerticesInfo<V, E, M>();
   }
 
   /**
-   * Loads vertices into memory of each peer. TODO this needs to be simplified.
+   * Loads vertices into memory of each peer.
    */
   @SuppressWarnings("unchecked")
   private void loadVertices(
@@ -277,41 +278,22 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
 
     final boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
 
-    LOG.debug("vertex class: " + vertexClass);
-    Vertex<V, E, M> vertex = newVertexInstance(vertexClass, conf);
-    vertex.runner = this;
+    if (LOG.isDebugEnabled())
+      LOG.debug("Vertex class: " + vertexClass);
 
     KeyValuePair<Writable, Writable> next = null;
     while ((next = peer.readNext()) != null) {
-      V key = (V) next.getKey();
-      Writable[] edges = ((ArrayWritable) next.getValue()).get();
-      vertex.setVertexID(key);
-      List<Edge<V, E>> edgeList = new ArrayList<Edge<V, E>>();
-      for (Writable edge : edges) {
-        edgeList.add(new Edge<V, E>((V) edge, null));
-      }
-      vertex.setEdges(edgeList);
-
-      if (vertex.getEdges() == null) {
-        if (selfReference) {
-          vertex.setEdges(Collections.singletonList(new Edge<V, E>(vertex
-              .getVertexID(), null)));
-        } else {
-          vertex.setEdges(Collections.EMPTY_LIST);
-        }
-      }
-
+      Vertex<V, E, M> vertex = (Vertex<V, E, M>) next.getKey();
+      vertex.runner = this;
+      vertex.setup(conf);
+      vertices.addVertex(vertex);
       if (selfReference) {
         vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
       }
-
-      vertex.setup(conf);
-      vertices.add(vertex);
-      vertex = newVertexInstance(vertexClass, conf);
-      vertex.runner = this;
     }
 
-    LOG.debug("Loading finished at " + peer.getSuperstepCount() + " steps.");
+    if (LOG.isDebugEnabled())
+      LOG.debug("Loading finished at " + peer.getSuperstepCount() + " steps.");
 
     /*
      * If the user want to repair the graph, it should traverse through that
@@ -321,18 +303,20 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
      * procedure is to prevent NullPointerExceptions from happening.
      */
     if (repairNeeded) {
-      LOG.debug("Starting repair of this graph!");
+      if (LOG.isDebugEnabled())
+        LOG.debug("Starting repair of this graph!");
       repair(peer, selfReference);
     }
 
-    LOG.debug("Starting Vertex processing!");
+    if (LOG.isDebugEnabled())
+      LOG.debug("Starting Vertex processing!");
   }
 
   @SuppressWarnings("unchecked")
   private void repair(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
-      boolean selfReference) throws IOException,
-      SyncException, InterruptedException {
+      boolean selfReference) throws IOException, SyncException,
+      InterruptedException {
 
     Map<V, Vertex<V, E, M>> tmp = new HashMap<V, Vertex<V, E, M>>();
 
@@ -368,7 +352,9 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       }
     }
 
-    vertices.addAll(tmp.values());
+    for (Vertex<V, E, M> v : tmp.values()) {
+      vertices.addVertex(v);
+    }
     tmp.clear();
   }
 
@@ -533,4 +519,3 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   }
 
 }
-

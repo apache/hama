@@ -151,6 +151,8 @@ public class SpMV {
      * Output is pairs of integer and double
      */
     bsp.setInputFormat(SequenceFileInputFormat.class);
+    bsp.setInputKeyClass(IntWritable.class);
+    bsp.setInputValueClass(SparseVectorWritable.class); 
     bsp.setOutputKeyClass(IntWritable.class);
     bsp.setOutputValueClass(DoubleWritable.class);
     bsp.setOutputFormat(SequenceFileOutputFormat.class);

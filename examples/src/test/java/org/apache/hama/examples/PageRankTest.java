@@ -28,14 +28,17 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.examples.util.SymmetricMatrixGen;
+import org.apache.hama.examples.PageRank.PageRankVertex;
+import org.apache.hama.examples.util.VertexInputGen;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.GraphJobRunner;
 
 public class PageRankTest extends TestCase {
+
   private static String INPUT = "/tmp/pagerank/pagerank-tmp.seq";
   private static String TEXT_INPUT = "/tmp/pagerank/pagerank.txt";
   private static String TEXT_OUTPUT = INPUT + "pagerank.txt.seq";
+
   private static String OUTPUT = "/tmp/pagerank/pagerank-out";
   private Configuration conf = new HamaConfiguration();
   private FileSystem fs;
@@ -70,8 +73,8 @@ public class PageRankTest extends TestCase {
       conf.set("bsp.local.tasks.maximum", "10");
       conf.set("bsp.peers.num", "7");
       conf.setBoolean(GraphJobRunner.GRAPH_REPAIR, true);
-      GraphJob pageJob = PageRank.createJob(new String[] { INPUT, OUTPUT, "7" },
-          conf);
+      GraphJob pageJob = PageRank.createJob(
+          new String[] { INPUT, OUTPUT, "7" }, conf);
 
       if (!pageJob.waitForCompletion(true)) {
         fail("Job did not complete normally!");
@@ -84,7 +87,11 @@ public class PageRankTest extends TestCase {
 
   private void generateTestData() throws ClassNotFoundException,
       InterruptedException, IOException {
-    SymmetricMatrixGen.main(new String[] { "40", "10", INPUT, "3" });
+    HamaConfiguration conf = new HamaConfiguration();
+    conf.setInt(VertexInputGen.SIZE_OF_MATRIX, 40);
+    conf.setInt(VertexInputGen.DENSITY, 10);
+    conf.setInt("hama.test.vertexcreatorid", 1);
+    VertexInputGen.runJob(conf, 3, INPUT, PageRankVertex.class);
   }
 
   private void deleteTempDirs() {

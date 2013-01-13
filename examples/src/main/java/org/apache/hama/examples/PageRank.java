@@ -17,28 +17,60 @@
  */
 package org.apache.hama.examples;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
-import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.AbstractAggregator;
 import org.apache.hama.graph.AverageAggregator;
+import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
+import org.apache.hama.graph.VertexInputReader;
 
 /**
  * Real pagerank with dangling node contribution.
  */
 public class PageRank {
+
+  public static class PagerankTextReader extends
+      VertexInputReader<LongWritable, Text, Text, NullWritable, DoubleWritable> {
+
+    /**
+     * The text file essentially should look like: <br/>
+     * VERTEX_ID\t(n-tab separated VERTEX_IDs)<br/>
+     * E.G:<br/>
+     * 1\t2\t3\t4<br/>
+     * 2\t3\t1<br/>
+     * etc.
+     */
+    @Override
+    public boolean parseVertex(LongWritable key, Text value,
+        Vertex<Text, NullWritable, DoubleWritable> vertex) throws Exception {
+      String[] split = value.toString().split("\t");
+      for (int i = 0; i < split.length; i++) {
+        if (i == 0) {
+          vertex.setVertexID(new Text(split[i]));
+        } else {
+          vertex
+              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
+        }
+      }
+      return true;
+    }
+
+  }
 
   public static class PageRankVertex extends
       Vertex<Text, NullWritable, DoubleWritable> {
@@ -95,6 +127,30 @@ public class PageRank {
       sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
           / numEdges));
     }
+
+    @Override
+    public void readState(DataInput in) throws IOException {
+    }
+
+    @Override
+    public void writeState(DataOutput out) throws IOException {
+    }
+
+    @Override
+    public Text createVertexIDObject() {
+      return new Text();
+    }
+
+    @Override
+    public NullWritable createEdgeCostObject() {
+      return NullWritable.get();
+    }
+
+    @Override
+    public DoubleWritable createVertexValue() {
+      return new DoubleWritable();
+    }
+
   }
 
   private static void printUsage() {
@@ -109,6 +165,7 @@ public class PageRank {
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
     GraphJob pageJob = createJob(args, conf);
+    pageJob.setVertexInputReaderClass(PagerankTextReader.class);
 
     long startTime = System.currentTimeMillis();
     if (pageJob.waitForCompletion(true)) {
@@ -145,8 +202,6 @@ public class PageRank {
     pageJob.setEdgeValueClass(NullWritable.class);
 
     pageJob.setInputFormat(SequenceFileInputFormat.class);
-    pageJob.setInputKeyClass(Text.class);
-    pageJob.setInputValueClass(TextArrayWritable.class);
 
     pageJob.setPartitioner(HashPartitioner.class);
     pageJob.setOutputFormat(TextOutputFormat.class);

@@ -29,12 +29,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.examples.MindistSearch.MinTextCombiner;
+import org.apache.hama.examples.MindistSearch.MindistSearchVertex;
+import org.apache.hama.graph.Edge;
 
 public class MindistSearchTest extends TestCase {
 
@@ -98,18 +99,18 @@ public class MindistSearchTest extends TestCase {
   private void generateTestData() {
     try {
       SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
-          new Path(INPUT), Text.class, TextArrayWritable.class);
+          new Path(INPUT), MindistSearchVertex.class, NullWritable.class);
 
       for (int i = 0; i < input.length; i++) {
         String[] x = input[i].split("\t");
         Text key = new Text(x[0]);
-        Writable[] values = new Writable[x.length - 1];
+        MindistSearchVertex vertex = new MindistSearchVertex();
+        vertex.setVertexID(key);
         for (int j = 1; j < x.length; j++) {
-          values[j - 1] = new Text(x[j]);
+          vertex.addEdge(new Edge<Text, NullWritable>(new Text(x[j]),
+              NullWritable.get()));
         }
-        TextArrayWritable value = new TextArrayWritable();
-        value.set(values);
-        writer.append(key, value);
+        writer.append(vertex, NullWritable.get());
       }
 
       writer.close();

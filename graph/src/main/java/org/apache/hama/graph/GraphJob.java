@@ -20,13 +20,16 @@ package org.apache.hama.graph;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 
 import com.google.common.base.Preconditions;
 
@@ -39,9 +42,6 @@ public class GraphJob extends BSPJob {
 
   public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";
   public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
-  public final static String VERTEX_GRAPH_RUNTIME_PARTIONING = "hama.graph.runtime.partitioning";
-  public final static String VERTEX_GRAPH_INPUT_READER = "hama.graph.input.reader.class";
-
   /**
    * Creates a new Graph Job with the given configuration and an exampleClass.
    * The exampleClass is used to determine the user's jar to distribute in the
@@ -67,6 +67,8 @@ public class GraphJob extends BSPJob {
       Class<? extends Vertex<? extends Writable, ? extends Writable, ? extends Writable>> cls)
       throws IllegalStateException {
     conf.setClass(VERTEX_CLASS_ATTR, cls, Vertex.class);
+    setInputKeyClass(cls);
+    setInputValueClass(NullWritable.class);
   }
 
   /**
@@ -119,7 +121,9 @@ public class GraphJob extends BSPJob {
   public void setVertexInputReaderClass(
       Class<? extends VertexInputReader<?, ?, ?, ?, ?>> cls) {
     ensureState(JobState.DEFINE);
-    conf.setClass(VERTEX_GRAPH_INPUT_READER, cls, VertexInputReader.class);
+    conf.setClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, cls,
+        RecordConverter.class);
+    conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
   }
 
   @SuppressWarnings("unchecked")
@@ -132,7 +136,7 @@ public class GraphJob extends BSPJob {
   public void setPartitioner(@SuppressWarnings("rawtypes")
   Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
-    conf.setBoolean(VERTEX_GRAPH_RUNTIME_PARTIONING, true);
+    conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
   }
 
   @Override

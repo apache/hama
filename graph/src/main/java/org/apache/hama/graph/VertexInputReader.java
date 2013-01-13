@@ -17,12 +17,25 @@
  */
 package org.apache.hama.graph;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
+import org.apache.hama.util.KeyValuePair;
 
 /**
  * A reader to read Hama's input files and parses a vertex out of it.
  */
-public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends Writable, V extends Writable, E extends Writable, M extends Writable> {
+public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends Writable, V extends Writable, E extends Writable, M extends Writable>
+    implements RecordConverter {
+
+  private static final Log LOG = LogFactory.getLog(VertexInputReader.class);
+
+  private KeyValuePair<Writable, Writable> outputRecord = new KeyValuePair<Writable, Writable>();
 
   /**
    * Parses a given key and value into the given vertex. If returned true, the
@@ -31,5 +44,41 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
    */
   public abstract boolean parseVertex(KEYIN key, VALUEIN value,
       Vertex<V, E, M> vertex) throws Exception;
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public KeyValuePair<Writable, Writable> convertRecord(
+      KeyValuePair<Writable, Writable> inputRecord, Configuration conf) {
+    Class<Vertex<V, E, M>> vertexClass = (Class<Vertex<V, E, M>>) conf
+        .getClass(GraphJob.VERTEX_CLASS_ATTR, Vertex.class);
+    boolean vertexCreation = true;
+    Vertex<V, E, M> vertex = GraphJobRunner
+        .newVertexInstance(vertexClass, conf);
+    try {
+      vertexCreation = parseVertex((KEYIN) inputRecord.getKey(),
+          (VALUEIN) inputRecord.getValue(), vertex);
+    } catch (Exception e) {
+      LOG.error("Error parsing vertex.", e);
+      vertexCreation = false;
+    }
+    if (!vertexCreation) {
+      return null;
+    }
+    outputRecord.setKey(vertex);
+    outputRecord.setValue(NullWritable.get());
+    return outputRecord;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public int getPartitionId(KeyValuePair<Writable, Writable> inputRecord,
+      @SuppressWarnings("rawtypes")
+      Partitioner partitioner, Configuration conf,
+      @SuppressWarnings("rawtypes")
+      BSPPeer peer, int numTasks) {
+    Vertex<V, E, M> vertex = (Vertex<V, E, M>) outputRecord.getKey();
+    return Math.abs(partitioner.getPartition(vertex.getVertexID(),
+        vertex.getValue(), numTasks));
+  }
 
 }

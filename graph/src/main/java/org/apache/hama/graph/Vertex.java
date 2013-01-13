@@ -17,8 +17,10 @@
  */
 package org.apache.hama.graph;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -27,8 +29,24 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
 
+/**
+ * Vertex is a abstract definition of Google Pregel Vertex. For implementing a
+ * graph application, one must implement a sub-class of Vertex and define, the
+ * message passing and message processing for each vertex.
+ * 
+ * Every vertex should be assigned an ID. This ID object should obey the
+ * equals-hashcode contract and would be used for partitioning.
+ * 
+ * The edges for a vertex could be accessed and modified using the
+ * {@link Vertex#getEdges()} call. The self value of the vertex could be changed
+ * by {@link Vertex#setValue(Writable)}.
+ * 
+ * @param <V> Vertex ID object type
+ * @param <E> Edge cost object type
+ * @param <M> Vertex value object type
+ */
 public abstract class Vertex<V extends Writable, E extends Writable, M extends Writable>
-    implements VertexInterface<V, E, M> {
+    implements VertexInterface<V, E, M>, Writable {
 
   GraphJobRunner<?, ?, ?> runner;
 
@@ -74,7 +92,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
         getPartitioner().getPartition(vertexId, value,
             runner.getPeer().getNumPeers()));
   }
-
+  
   @Override
   public void sendMessageToNeighbors(M msg) throws IOException {
     final List<Edge<V, E>> outEdges = this.getEdges();
@@ -103,7 +121,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
 
   public void addEdge(Edge<V, E> edge) {
     if (edges == null) {
-      this.edges = new ArrayList<Edge<V, E>>(1);
+      this.edges = new LinkedList<Edge<V, E>>();
     }
     this.edges.add(edge);
   }
@@ -195,10 +213,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((vertexID == null) ? 0 : vertexID.hashCode());
-    return result;
+    return ((vertexID == null) ? 0 : vertexID.hashCode());
   }
 
   @Override
@@ -223,5 +238,121 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
     return getVertexID() + (getValue() != null ? " = " + getValue() : "")
         + " // " + edges;
   }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    if (in.readBoolean()) {
+      if (vertexID == null) {
+        vertexID = createVertexIDObject();
+      }
+      vertexID.readFields(in);
+    }
+    if (in.readBoolean()) {
+      if (this.value == null) {
+        value = createVertexValue();
+      }
+      value.readFields(in);
+    }
+    this.edges = new LinkedList<Edge<V, E>>();
+    if (in.readBoolean()) {
+      int num = in.readInt();
+      if (num > 0) {
+        for (int i = 0; i < num; ++i) {
+          V vertex = createVertexIDObject();
+          vertex.readFields(in);
+          E edgeCost = null;
+          if (in.readBoolean()) {
+            edgeCost = this.createEdgeCostObject();
+            edgeCost.readFields(in);
+          }
+          Edge<V, E> edge = new Edge<V, E>(vertex, edgeCost);
+          this.edges.add(edge);
+        }
+
+      }
+    }
+    votedToHalt = in.readBoolean();
+    readState(in);
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    if (vertexID == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      vertexID.write(out);
+    }
+    if (value == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      value.write(out);
+    }
+    if (this.edges == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeInt(this.edges.size());
+      for (Edge<V, E> edge : this.edges) {
+        edge.getDestinationVertexID().write(out);
+        if (edge.getValue() == null) {
+          out.writeBoolean(false);
+        } else {
+          out.writeBoolean(true);
+          edge.getValue().write(out);
+        }
+      }
+    }
+    out.writeBoolean(votedToHalt);
+    writeState(out);
+
+  }
+
+  /**
+   * Create the vertex id object. This function is used by the framework to
+   * construct the vertex id object.
+   * 
+   * @return instance of V
+   */
+  public abstract V createVertexIDObject();
+
+  /**
+   * Create the Edge cost object. This function is used by the framework to
+   * construct the edge cost object
+   * 
+   * @return instance of E
+   */
+  public abstract E createEdgeCostObject();
+
+  /**
+   * Create the vertex value object. This function is used by the framework to
+   * construct the vertex value object.
+   * 
+   * @return
+   */
+  public abstract M createVertexValue();
+
+  /**
+   * Read the state of the vertex from the input stream. The framework would
+   * have already constructed and loaded the vertex-id, edges and voteToHalt
+   * state. This function is essential if there is any more properties of vertex
+   * to be read from.
+   * 
+   * @param in
+   * @throws IOException
+   */
+  public abstract void readState(DataInput in) throws IOException;
+
+  /**
+   * Writes the state of vertex to the output stream. The framework writes the
+   * vertex and edge information to the output stream. This function could be
+   * used to save the state variable of the vertex added in the implementation
+   * of object.
+   * 
+   * @param out
+   * @throws IOException
+   */
+  public abstract void writeState(DataOutput out) throws IOException;
 
 }
