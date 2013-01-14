@@ -65,7 +65,6 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     configuration.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 6000);
     ClusterStatus cluster = jobClient.getClusterStatus(false);
     assertEquals(this.numOfGroom, cluster.getGroomServers());
-    bsp.setNumBspTask(2);
     LOG.info("Client finishes execution job.");
     bsp.setJobName("Pagerank");
     bsp.setVertexClass(PageRank.PageRankVertex.class);
@@ -119,12 +118,13 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     assertTrue(sum > 0.9d && sum <= 1.1d);
   }
 
+
   private void generateTestData() {
     try {
-      SequenceFile.Writer writer = SequenceFile.createWriter(fs, getConf(),
-          new Path(INPUT), PageRankVertex.class, NullWritable.class);
+      SequenceFile.Writer writer1 = SequenceFile.createWriter(fs, getConf(),
+          new Path(INPUT+"/part0"), PageRankVertex.class, NullWritable.class);
 
-      for (int i = 0; i < input.length; i++) {
+      for (int i = 0; i < input.length/2; i++) {
         String[] x = input[i].split("\t");
 
         PageRankVertex vertex = new PageRankVertex();
@@ -133,15 +133,33 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
           vertex.addEdge(new Edge<Text, NullWritable>(new Text(x[j]),
               NullWritable.get()));
         }
-        writer.append(vertex, NullWritable.get());
+        writer1.append(vertex, NullWritable.get());
       }
 
-      writer.close();
+      writer1.close();
+      
+      SequenceFile.Writer writer2 = SequenceFile.createWriter(fs, getConf(),
+          new Path(INPUT+"/part1"), PageRankVertex.class, NullWritable.class);
+
+      for (int i = 0; i < input.length/2 + 1; i++) {
+        String[] x = input[i].split("\t");
+
+        PageRankVertex vertex = new PageRankVertex();
+        vertex.setVertexID(new Text(x[0]));
+        for (int j = 1; j < x.length; j++) {
+          vertex.addEdge(new Edge<Text, NullWritable>(new Text(x[j]),
+              NullWritable.get()));
+        }
+        writer2.append(vertex, NullWritable.get());
+      }
+
+      writer2.close();
+      
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
-
+  
   private void deleteTempDirs() {
     try {
       if (fs.exists(new Path(INPUT)))

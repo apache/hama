@@ -11,6 +11,8 @@ Release 0.7 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-712: PartitioningRunner should works for multiple input files (surajsmenon via edwardyoon)
+
   IMPROVEMENTS
 
    HAMA-531: Reimplementation of partitioner (edwardyoon)

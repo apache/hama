@@ -71,7 +71,7 @@ public class PageRankTest extends TestCase {
     try {
       HamaConfiguration conf = new HamaConfiguration(new Configuration());
       conf.set("bsp.local.tasks.maximum", "10");
-      conf.set("bsp.peers.num", "7");
+      conf.setInt("bsp.peers.num", 7);
       conf.setBoolean(GraphJobRunner.GRAPH_REPAIR, true);
       GraphJob pageJob = PageRank.createJob(
           new String[] { INPUT, OUTPUT, "7" }, conf);

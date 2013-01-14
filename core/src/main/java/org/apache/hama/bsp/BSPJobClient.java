@@ -412,10 +412,13 @@ public class BSPJobClient extends Configured implements Tool {
           fs.delete(partitionDir, true);
         }
 
+        if (numTasks == 0) {
+          numTasks = numSplits;
+        }
+
         HamaConfiguration conf = new HamaConfiguration(job.getConfiguration());
 
-        conf.setInt(Constants.RUNTIME_DESIRED_PEERS_COUNT,
-            Integer.parseInt(job.getConfiguration().get("bsp.peers.num")));
+        conf.setInt(Constants.RUNTIME_DESIRED_PEERS_COUNT, numTasks);
         if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_DIR) != null) {
           conf.set(Constants.RUNTIME_PARTITIONING_DIR, job.getConfiguration()
               .get(Constants.RUNTIME_PARTITIONING_DIR));
