@@ -60,7 +60,7 @@ public class MindistSearchTest extends TestCase {
   public void testMindistSearch() throws Exception {
     generateTestData();
     try {
-      MindistSearch.main(new String[] { INPUT, OUTPUT, "30", "1" });
+      MindistSearch.main(new String[] { INPUT, OUTPUT, "30", "3" });
 
       verifyResult();
     } finally {

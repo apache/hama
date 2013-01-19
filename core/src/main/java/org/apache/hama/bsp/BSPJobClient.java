@@ -555,6 +555,17 @@ public class BSPJobClient extends Configured implements Tool {
       DataOutputBuffer buffer = new DataOutputBuffer();
       RawSplit rawSplit = new RawSplit();
       for (InputSplit split : splits) {
+
+        // set partitionID to rawSplit
+        if (split.getClass().getName().equals(FileSplit.class.getName())
+            && job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null
+            && job.get("bsp.partitioning.runner.job") == null) {
+          LOG.debug(((FileSplit) split).getPath().getName());
+          String[] extractPartitionID = ((FileSplit) split).getPath().getName()
+              .toString().split("[-]");
+          rawSplit.setPartitionID(Integer.parseInt(extractPartitionID[1]));
+        }
+
         rawSplit.setClassName(split.getClass().getName());
         buffer.reset();
         split.write(buffer);
@@ -604,8 +615,12 @@ public class BSPJobClient extends Configured implements Tool {
     int len = WritableUtils.readVInt(in);
     RawSplit[] result = new RawSplit[len];
     for (int i = 0; i < len; ++i) {
-      result[i] = new RawSplit();
-      result[i].readFields(in);
+      RawSplit split = new RawSplit();
+      split.readFields(in);
+      if (split.getPartitionID() != Integer.MIN_VALUE)
+        result[split.getPartitionID()] = split;
+      else
+        result[i] = split;
     }
     return result;
   }
@@ -1050,6 +1065,7 @@ public class BSPJobClient extends Configured implements Tool {
     private String splitClass;
     private BytesWritable bytes = new BytesWritable();
     private String[] locations;
+    private int partitionID = Integer.MIN_VALUE;
     long dataLength;
 
     public void setBytes(byte[] data, int offset, int length) {
@@ -1058,6 +1074,14 @@ public class BSPJobClient extends Configured implements Tool {
 
     public void setClassName(String className) {
       splitClass = className;
+    }
+
+    public void setPartitionID(int id) {
+      this.partitionID = id;
+    }
+
+    public int getPartitionID() {
+      return partitionID;
     }
 
     public String getClassName() {
@@ -1084,6 +1108,7 @@ public class BSPJobClient extends Configured implements Tool {
     public void readFields(DataInput in) throws IOException {
       splitClass = Text.readString(in);
       dataLength = in.readLong();
+      partitionID = in.readInt();
       bytes.readFields(in);
       int len = WritableUtils.readVInt(in);
       locations = new String[len];
@@ -1096,6 +1121,7 @@ public class BSPJobClient extends Configured implements Tool {
     public void write(DataOutput out) throws IOException {
       Text.writeString(out, splitClass);
       out.writeLong(dataLength);
+      out.writeInt(partitionID);
       bytes.write(out);
       WritableUtils.writeVInt(out, locations.length);
       for (int i = 0; i < locations.length; i++) {

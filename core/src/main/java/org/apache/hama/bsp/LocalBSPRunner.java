@@ -230,7 +230,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       conf.set(Constants.PEER_HOST, "local");
 
       bsp = (BSP) ReflectionUtils.newInstance(
-          job.getConfiguration().getClass("bsp.work.class", BSP.class), job.getConfiguration());
+          job.getConfiguration().getClass("bsp.work.class", BSP.class),
+          job.getConfiguration());
 
     }
 
@@ -240,6 +241,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       String splitname = null;
       BytesWritable realBytes = null;
       if (splits != null) {
+        LOG.debug(id + ", " + splits[id].getPartitionID());
         splitname = splits[id].getClassName();
         realBytes = splits[id].getBytes();
       }
