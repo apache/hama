@@ -28,8 +28,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.examples.PageRank.PageRankVertex;
-import org.apache.hama.examples.util.VertexInputGen;
+import org.apache.hama.examples.util.SymmetricMatrixGen;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.GraphJobRunner;
 
@@ -87,11 +86,7 @@ public class PageRankTest extends TestCase {
 
   private void generateTestData() throws ClassNotFoundException,
       InterruptedException, IOException {
-    HamaConfiguration conf = new HamaConfiguration();
-    conf.setInt(VertexInputGen.SIZE_OF_MATRIX, 40);
-    conf.setInt(VertexInputGen.DENSITY, 10);
-    conf.setInt("hama.test.vertexcreatorid", 1);
-    VertexInputGen.runJob(conf, 3, INPUT, PageRankVertex.class);
+    SymmetricMatrixGen.main(new String[] { "40", "10", INPUT, "2" });
   }
 
   private void deleteTempDirs() {

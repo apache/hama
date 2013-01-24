@@ -25,12 +25,13 @@ import java.util.Iterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
+import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.AbstractAggregator;
 import org.apache.hama.graph.AverageAggregator;
@@ -43,34 +44,6 @@ import org.apache.hama.graph.VertexInputReader;
  * Real pagerank with dangling node contribution.
  */
 public class PageRank {
-
-  public static class PagerankTextReader extends
-      VertexInputReader<LongWritable, Text, Text, NullWritable, DoubleWritable> {
-
-    /**
-     * The text file essentially should look like: <br/>
-     * VERTEX_ID\t(n-tab separated VERTEX_IDs)<br/>
-     * E.G:<br/>
-     * 1\t2\t3\t4<br/>
-     * 2\t3\t1<br/>
-     * etc.
-     */
-    @Override
-    public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, NullWritable, DoubleWritable> vertex) throws Exception {
-      String[] split = value.toString().split("\t");
-      for (int i = 0; i < split.length; i++) {
-        if (i == 0) {
-          vertex.setVertexID(new Text(split[i]));
-        } else {
-          vertex
-              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
-        }
-      }
-      return true;
-    }
-
-  }
 
   public static class PageRankVertex extends
       Vertex<Text, NullWritable, DoubleWritable> {
@@ -153,63 +126,6 @@ public class PageRank {
 
   }
 
-  private static void printUsage() {
-    System.out.println("Usage: <input> <output> [tasks]");
-    System.exit(-1);
-  }
-
-  public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException {
-    if (args.length < 2)
-      printUsage();
-
-    HamaConfiguration conf = new HamaConfiguration(new Configuration());
-    GraphJob pageJob = createJob(args, conf);
-    pageJob.setVertexInputReaderClass(PagerankTextReader.class);
-
-    long startTime = System.currentTimeMillis();
-    if (pageJob.waitForCompletion(true)) {
-      System.out.println("Job Finished in "
-          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  public static GraphJob createJob(String[] args, HamaConfiguration conf)
-      throws IOException {
-    GraphJob pageJob = new GraphJob(conf, PageRank.class);
-    pageJob.setJobName("Pagerank");
-
-    pageJob.setVertexClass(PageRankVertex.class);
-    pageJob.setInputPath(new Path(args[0]));
-    pageJob.setOutputPath(new Path(args[1]));
-
-    // set the defaults
-    pageJob.setMaxIteration(30);
-    pageJob.set("hama.pagerank.alpha", "0.85");
-    pageJob.set("hama.graph.max.convergence.error", "0.001");
-
-    if (args.length == 3) {
-      pageJob.setNumBspTask(Integer.parseInt(args[2]));
-    }
-
-    // error, dangling node probability sum
-    pageJob.setAggregatorClass(AverageAggregator.class,
-        DanglingNodeAggregator.class);
-
-    pageJob.setVertexIDClass(Text.class);
-    pageJob.setVertexValueClass(DoubleWritable.class);
-    pageJob.setEdgeValueClass(NullWritable.class);
-
-    pageJob.setInputFormat(SequenceFileInputFormat.class);
-
-    pageJob.setPartitioner(HashPartitioner.class);
-    pageJob.setOutputFormat(TextOutputFormat.class);
-    pageJob.setOutputKeyClass(Text.class);
-    pageJob.setOutputValueClass(DoubleWritable.class);
-    return pageJob;
-  }
-
   public static class DanglingNodeAggregator
       extends
       AbstractAggregator<DoubleWritable, Vertex<Text, NullWritable, DoubleWritable>> {
@@ -233,5 +149,80 @@ public class PageRank {
       return new DoubleWritable(danglingNodeSum);
     }
 
+  }
+
+  public static class PagerankSeqReader
+      extends
+      VertexInputReader<Text, TextArrayWritable, Text, NullWritable, DoubleWritable> {
+    @Override
+    public boolean parseVertex(Text key, TextArrayWritable value,
+        Vertex<Text, NullWritable, DoubleWritable> vertex) throws Exception {
+      vertex.setVertexID(key);
+
+      for (Writable v : value.get()) {
+        vertex.addEdge(new Edge<Text, NullWritable>((Text) v, null));
+      }
+
+      return true;
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static GraphJob createJob(String[] args, HamaConfiguration conf)
+      throws IOException {
+    GraphJob pageJob = new GraphJob(conf, PageRank.class);
+    pageJob.setJobName("Pagerank");
+    
+    pageJob.setVertexClass(PageRankVertex.class);
+    pageJob.setInputPath(new Path(args[0]));
+    pageJob.setOutputPath(new Path(args[1]));
+
+    // set the defaults
+    pageJob.setMaxIteration(30);
+    pageJob.set("hama.pagerank.alpha", "0.85");
+    pageJob.set("hama.graph.max.convergence.error", "0.001");
+
+    if (args.length == 3) {
+      pageJob.setNumBspTask(Integer.parseInt(args[2]));
+    }
+
+    // error, dangling node probability sum
+    pageJob.setAggregatorClass(AverageAggregator.class,
+        DanglingNodeAggregator.class);
+
+    // Vertex reader
+    pageJob.setVertexInputReaderClass(PagerankSeqReader.class);
+    
+    pageJob.setVertexIDClass(Text.class);
+    pageJob.setVertexValueClass(DoubleWritable.class);
+    pageJob.setEdgeValueClass(NullWritable.class);
+
+    pageJob.setInputFormat(SequenceFileInputFormat.class);
+
+    pageJob.setPartitioner(HashPartitioner.class);
+    pageJob.setOutputFormat(TextOutputFormat.class);
+    pageJob.setOutputKeyClass(Text.class);
+    pageJob.setOutputValueClass(DoubleWritable.class);
+    return pageJob;
+  }
+
+  private static void printUsage() {
+    System.out.println("Usage: <input> <output> [tasks]");
+    System.exit(-1);
+  }
+
+  public static void main(String[] args) throws IOException,
+      InterruptedException, ClassNotFoundException {
+    if (args.length < 2)
+      printUsage();
+
+    HamaConfiguration conf = new HamaConfiguration(new Configuration());
+    GraphJob pageJob = createJob(args, conf);
+
+    long startTime = System.currentTimeMillis();
+    if (pageJob.waitForCompletion(true)) {
+      System.out.println("Job Finished in "
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+    }
   }
 }

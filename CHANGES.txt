@@ -16,6 +16,7 @@ Release 0.7 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-714: Align format consistency between examples and generators (edwardyoon)
    HAMA-531: Reimplementation of partitioner (edwardyoon)
 
 Release 0.6 - November 28, 2012
