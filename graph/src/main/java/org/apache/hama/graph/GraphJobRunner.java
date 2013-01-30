@@ -292,8 +292,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       }
     }
 
-    if (LOG.isDebugEnabled())
-      LOG.debug("Loading finished at " + peer.getSuperstepCount() + " steps.");
+    LOG.info(vertices.size() + " vertices are loaded into " + peer.getPeerName());
 
     /*
      * If the user want to repair the graph, it should traverse through that
