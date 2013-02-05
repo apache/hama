@@ -59,7 +59,7 @@ public class VectorDoubleFileInputFormat extends
     private long pos;
     private long end;
     private LineReader in;
-    int maxLineLength;
+    final int maxLineLength;
 
     /**
      * A class that provides a line reader from an input stream.
@@ -155,7 +155,7 @@ public class VectorDoubleFileInputFormat extends
           return false;
         }
 
-        String[] kv = new String(textVal.getBytes()).split("\\>");
+        String[] kv = new String(textVal.getBytes()).split(">");
         if (kv.length != 2) {
           throw new IOException("a line was not parsed correctly");
         }

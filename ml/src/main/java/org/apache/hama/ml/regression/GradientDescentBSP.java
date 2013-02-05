@@ -273,8 +273,8 @@ public class GradientDescentBSP
     }
   }
 
-  public void getInitialTheta(
-      BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer)
+  void getInitialTheta(
+          BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer)
       throws IOException, SyncException, InterruptedException {
     if (theta == null) {
       if (master) {
