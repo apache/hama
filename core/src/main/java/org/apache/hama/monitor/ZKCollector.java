@@ -19,6 +19,7 @@ package org.apache.hama.monitor;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -114,7 +115,7 @@ public final class ZKCollector implements Collector {
             LOG.info("metrics " + name + " value:" + lv);
             record.add(new Metric<Long>(name, lv));
           } else if ("b".equals(dataType)) {
-            LOG.info("metrics" + name + " value:" + dataInBytes);
+            LOG.info("metrics" + name + " value:" + Arrays.toString(dataInBytes));
             record.add(new Metric<byte[]>(name, dataInBytes));
           } else {
             LOG.warn("Unkown data type for metrics name: " + child);

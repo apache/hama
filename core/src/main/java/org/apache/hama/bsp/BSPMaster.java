@@ -127,7 +127,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
       .createImmutable((short) 0700); // rwx------
 
   // Jobs' Meta Data
-  private Integer nextJobId = Integer.valueOf(1);
+  private Integer nextJobId = 1;
   private int totalSubmissions = 0; // how many jobs has been submitted by clients
   private int totalTasks = 0; // currnetly running tasks
   private int totalTaskCapacity; // max tasks that groom server can run
@@ -439,17 +439,17 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   void deleteLocalFiles() throws IOException {
     String[] localDirs = getLocalDirs();
-    for (int i = 0; i < localDirs.length; i++) {
-      FileSystem.getLocal(conf).delete(new Path(localDirs[i]), true);
-    }
+      for (String localDir : localDirs) {
+          FileSystem.getLocal(conf).delete(new Path(localDir), true);
+      }
   }
 
   void deleteLocalFiles(String subdir) throws IOException {
     try {
       String[] localDirs = getLocalDirs();
-      for (int i = 0; i < localDirs.length; i++) {
-        FileSystem.getLocal(conf).delete(new Path(localDirs[i], subdir), true);
-      }
+        for (String localDir : localDirs) {
+            FileSystem.getLocal(conf).delete(new Path(localDir, subdir), true);
+        }
     } catch (NullPointerException e) {
       LOG.info(e);
     }
@@ -588,7 +588,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     int id;
     synchronized (nextJobId) {
       id = nextJobId;
-      nextJobId = Integer.valueOf(id + 1);
+      nextJobId = id + 1;
     }
     return new BSPJobID(this.masterIdentifier, id);
   }

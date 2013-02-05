@@ -43,9 +43,9 @@ public class Directive implements Writable {
     public int value() {
       return this.t;
     }
-  };
+  }
 
-  public Directive() {
+    public Directive() {
   }
 
   public Directive(Directive.Type type) {

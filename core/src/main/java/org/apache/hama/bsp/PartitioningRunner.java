@@ -181,51 +181,51 @@ public class PartitioningRunner extends
     // merge files into one.
     // TODO if we use header info, we might able to merge files without full
     // scan.
-    for (int j = 0; j < status.length; j++) {
-      int partitionID = Integer.parseInt(status[j].getPath().getName()
-          .split("[-]")[1]);
-      int denom = desiredNum / peer.getNumPeers();
-      int assignedID = partitionID;
-      if(denom > 1) {
-        assignedID = partitionID / denom;
-      }
-      
-      if (assignedID == peer.getNumPeers())
-        assignedID = assignedID - 1;
-
-      // TODO set replica factor to 1.
-      // TODO and check whether we can write to specific DataNode.
-      if (assignedID == peer.getPeerIndex()) {
-        Path partitionFile = new Path(partitionDir + "/"
-            + getPartitionName(partitionID));
-
-        FileStatus[] files = fs.listStatus(status[j].getPath());
-        SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
-            partitionFile, outputKeyClass, outputValueClass,
-            CompressionType.NONE);
-
-        for (int i = 0; i < files.length; i++) {
-          LOG.debug("merge '" + files[i].getPath() + "' into " + partitionDir
-              + "/" + getPartitionName(partitionID));
-
-          SequenceFile.Reader reader = new SequenceFile.Reader(fs,
-              files[i].getPath(), conf);
-
-          Writable key = (Writable) ReflectionUtils.newInstance(outputKeyClass,
-              conf);
-          Writable value = (Writable) ReflectionUtils.newInstance(
-              outputValueClass, conf);
-
-          while (reader.next(key, value)) {
-            writer.append(key, value);
+      for (FileStatus statu : status) {
+          int partitionID = Integer.parseInt(statu.getPath().getName()
+                  .split("[-]")[1]);
+          int denom = desiredNum / peer.getNumPeers();
+          int assignedID = partitionID;
+          if (denom > 1) {
+              assignedID = partitionID / denom;
           }
-          reader.close();
-        }
 
-        writer.close();
-        fs.delete(status[j].getPath(), true);
+          if (assignedID == peer.getNumPeers())
+              assignedID = assignedID - 1;
+
+          // TODO set replica factor to 1.
+          // TODO and check whether we can write to specific DataNode.
+          if (assignedID == peer.getPeerIndex()) {
+              Path partitionFile = new Path(partitionDir + "/"
+                      + getPartitionName(partitionID));
+
+              FileStatus[] files = fs.listStatus(statu.getPath());
+              SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
+                      partitionFile, outputKeyClass, outputValueClass,
+                      CompressionType.NONE);
+
+              for (int i = 0; i < files.length; i++) {
+                  LOG.debug("merge '" + files[i].getPath() + "' into " + partitionDir
+                          + "/" + getPartitionName(partitionID));
+
+                  SequenceFile.Reader reader = new SequenceFile.Reader(fs,
+                          files[i].getPath(), conf);
+
+                  Writable key = (Writable) ReflectionUtils.newInstance(outputKeyClass,
+                          conf);
+                  Writable value = (Writable) ReflectionUtils.newInstance(
+                          outputValueClass, conf);
+
+                  while (reader.next(key, value)) {
+                      writer.append(key, value);
+                  }
+                  reader.close();
+              }
+
+              writer.close();
+              fs.delete(statu.getPath(), true);
+          }
       }
-    }
   }
 
   @SuppressWarnings("rawtypes")

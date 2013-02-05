@@ -229,35 +229,27 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   }
 
   private void notifySentMessage(String peerName, M message) {
-    Iterator<MessageEventListener<M>> iterator = this.messageListenerQueue
-        .iterator();
-    while (iterator.hasNext()) {
-      iterator.next().onMessageSent(peerName, message);
-    }
+      for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+          aMessageListenerQueue.onMessageSent(peerName, message);
+      }
   }
 
   private void notifyReceivedMessage(M message) throws IOException {
-    Iterator<MessageEventListener<M>> iterator = this.messageListenerQueue
-        .iterator();
-    while (iterator.hasNext()) {
-      iterator.next().onMessageReceived(message);
-    }
+      for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+          aMessageListenerQueue.onMessageReceived(message);
+      }
   }
 
   private void notifyInit() {
-    Iterator<MessageEventListener<M>> iterator = this.messageListenerQueue
-        .iterator();
-    while (iterator.hasNext()) {
-      iterator.next().onInitialized();
-    }
+      for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+          aMessageListenerQueue.onInitialized();
+      }
   }
 
   private void notifyClose() {
-    Iterator<MessageEventListener<M>> iterator = this.messageListenerQueue
-        .iterator();
-    while (iterator.hasNext()) {
-      iterator.next().onClose();
-    }
+      for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+          aMessageListenerQueue.onClose();
+      }
   }
 
   @Override

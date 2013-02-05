@@ -187,9 +187,9 @@ public class CombineFileSplit implements InputSplit {
     if (locations != null) {
       String locs = "";
       StringBuffer locsb = new StringBuffer();
-      for (int i = 0; i < locations.length; i++) {
-        locsb.append(locations[i]).append(":");
-      }
+        for (String location : locations) {
+            locsb.append(location).append(":");
+        }
       locs = locsb.toString();
       sb.append(" Locations:").append(locs).append("; ");
     }

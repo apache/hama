@@ -340,26 +340,25 @@ public class JobInProgress {
     Task result = null;
     BSPResource[] resources = new BSPResource[0];
 
-    for (int i = 0; i < tasks.length; i++) {
-      if (!tasks[i].isRunning() && !tasks[i].isComplete()) {
+      for (TaskInProgress task : tasks) {
+          if (!task.isRunning() && !task.isComplete()) {
 
-        String[] selectedGrooms = taskAllocationStrategy.selectGrooms(
-            groomStatuses, taskCountInGroomMap, resources, tasks[i]);
-        GroomServerStatus groomStatus = taskAllocationStrategy
-            .getGroomToAllocate(groomStatuses, selectedGrooms,
-                taskCountInGroomMap, resources, tasks[i]);
-        if (groomStatus != null){
-          result = tasks[i].constructTask(groomStatus);
-        }
-        else if (LOG.isDebugEnabled()){
-        	LOG.debug("Could not find a groom to schedule task");
-        }
-        if (result != null) {
-          updateGroomTaskDetails(tasks[i].getGroomServerStatus(), result);
-        }
-        break;
+              String[] selectedGrooms = taskAllocationStrategy.selectGrooms(
+                      groomStatuses, taskCountInGroomMap, resources, task);
+              GroomServerStatus groomStatus = taskAllocationStrategy
+                      .getGroomToAllocate(groomStatuses, selectedGrooms,
+                              taskCountInGroomMap, resources, task);
+              if (groomStatus != null) {
+                  result = task.constructTask(groomStatus);
+              } else if (LOG.isDebugEnabled()) {
+                  LOG.debug("Could not find a groom to schedule task");
+              }
+              if (result != null) {
+                  updateGroomTaskDetails(task.getGroomServerStatus(), result);
+              }
+              break;
+          }
       }
-    }
 
     counters.incrCounter(JobCounter.LAUNCHED_TASKS, 1L);
     return result;
@@ -543,9 +542,9 @@ public class JobInProgress {
       //
       // kill all TIPs.
       //
-      for (int i = 0; i < tasks.length; i++) {
-        tasks[i].kill();
-      }
+        for (TaskInProgress task : tasks) {
+            task.kill();
+        }
 
       garbageCollect();
     }

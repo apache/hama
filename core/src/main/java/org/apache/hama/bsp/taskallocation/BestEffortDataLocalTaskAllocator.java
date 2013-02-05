@@ -53,17 +53,16 @@ public class BestEffortDataLocalTaskAllocator implements TaskAllocationStrategy 
   private static String getAnyGroomToSchedule(Map<String, GroomServerStatus> grooms,
       Map<GroomServerStatus, Integer> tasksInGroomMap) {
 
-    Iterator<String> groomIter = grooms.keySet().iterator();
-    while (groomIter.hasNext()) {
-      GroomServerStatus groom = grooms.get(groomIter.next());
-      if (groom == null)
-        continue;
-      Integer taskInGroom = tasksInGroomMap.get(groom);
-      taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
-      if (taskInGroom < groom.getMaxTasks()) {
-        return groom.getGroomHostName();
+      for (String s : grooms.keySet()) {
+          GroomServerStatus groom = grooms.get(s);
+          if (groom == null)
+              continue;
+          Integer taskInGroom = tasksInGroomMap.get(groom);
+          taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+          if (taskInGroom < groom.getMaxTasks()) {
+              return groom.getGroomHostName();
+          }
       }
-    }
     return null;
   }
 
@@ -80,26 +79,25 @@ public class BestEffortDataLocalTaskAllocator implements TaskAllocationStrategy 
       Map<GroomServerStatus, Integer> tasksInGroomMap,
       String[] possibleLocations) {
 
-    for (int i = 0; i < possibleLocations.length; ++i) {
-      String location = possibleLocations[i];
-      GroomServerStatus groom = grooms.get(location);
-      if (groom == null){
-        if(LOG.isDebugEnabled()){
-          LOG.debug("Could not find groom for location " + location);
-        }
-        continue;
+      for (String location : possibleLocations) {
+          GroomServerStatus groom = grooms.get(location);
+          if (groom == null) {
+              if (LOG.isDebugEnabled()) {
+                  LOG.debug("Could not find groom for location " + location);
+              }
+              continue;
+          }
+          Integer taskInGroom = tasksInGroomMap.get(groom);
+          taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+          if (LOG.isDebugEnabled()) {
+              LOG.debug("taskInGroom = " + taskInGroom + " max tasks = " + groom.getMaxTasks()
+                      + " location = " + location + " groomhostname = " + groom.getGroomHostName());
+          }
+          if (taskInGroom < groom.getMaxTasks()
+                  && location.equals(groom.getGroomHostName())) {
+              return groom.getGroomHostName();
+          }
       }
-      Integer taskInGroom = tasksInGroomMap.get(groom);
-      taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
-      if(LOG.isDebugEnabled()){
-        LOG.debug("taskInGroom = " + taskInGroom + " max tasks = " + groom.getMaxTasks()
-            + " location = " + location + " groomhostname = " + groom.getGroomHostName());
-      }
-      if (taskInGroom < groom.getMaxTasks()
-          && location.equals(groom.getGroomHostName())) {
-        return groom.getGroomHostName();
-      }
-    }
     if(LOG.isDebugEnabled()){
       LOG.debug("Returning null");
     }

@@ -152,10 +152,9 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
 
   @Override
   public void addAll(MessageQueue<M> arg0) {
-    Iterator<M> iter = arg0.iterator();
-    while (iter.hasNext()) {
-      add(iter.next());
-    }
+      for (M anArg0 : arg0) {
+          add(anArg0);
+      }
   }
 
   @Override

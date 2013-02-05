@@ -152,7 +152,7 @@ public class UDPSupervisor implements Supervisor, Callable<Object> {
         if (getSamplingWindow().size() == windowSize()) {
           getSamplingWindow().remove();
         }
-        getSamplingWindow().add(new Double(heartbeat - getLatestHeartbeat()));
+        getSamplingWindow().add((double) (heartbeat - getLatestHeartbeat()));
       }
       setLatestHeartbeat(heartbeat);
     }

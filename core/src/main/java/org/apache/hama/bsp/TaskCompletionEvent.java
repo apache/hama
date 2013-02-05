@@ -27,9 +27,9 @@ import org.apache.hadoop.io.WritableUtils;
 public class TaskCompletionEvent implements Writable {
   static public enum Status {
     FAILED, KILLED, SUCCEEDED, OBSOLETE, TIPFAILED
-  };
+  }
 
-  private int eventId;
+    private int eventId;
   private String groomServerInfo;
   private int taskRunTime; // using int since runtime is the time difference
   private TaskAttemptID taskId;

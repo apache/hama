@@ -58,9 +58,9 @@ public class ZKSyncEventFactory {
               .append(getEventCount()-1)).toString());
     }
     
-  };
-  
-  public static int getSupportedEventCount(){
+  }
+
+    public static int getSupportedEventCount(){
     return ZKEvent.getEventCount();
   }
 

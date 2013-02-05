@@ -56,9 +56,9 @@ public abstract class GroomServerAction implements Writable {
 
     /** Update information on a peer. */
     UPDATE_PEER
-  };
+  }
 
-  /**
+    /**
    * A factory-method to create objects of given {@link ActionType}.
    * 
    * @param actionType the {@link ActionType} of object to create.

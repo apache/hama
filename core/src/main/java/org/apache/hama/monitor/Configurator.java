@@ -68,7 +68,7 @@ public final class Configurator {
         if(null != t) {
           t.setListener(listener);
           taskList.put(jarPath, t);
-          repos.put(jarPath, new Long(jar.lastModified()));
+          repos.put(jarPath, jar.lastModified());
           LOG.debug(jar.getName()+" is loaded.");
         }
       }

@@ -123,14 +123,13 @@ public class GroomServerStatus implements Writable {
    */
   public int countTasks() {
     int taskCount = 0;
-    for (Iterator<TaskStatus> it = taskReports.iterator(); it.hasNext();) {
-      TaskStatus ts = it.next();
-      TaskStatus.State state = ts.getRunState();
-      if (state == TaskStatus.State.RUNNING
-          || state == TaskStatus.State.UNASSIGNED) {
-        taskCount++;
+      for (TaskStatus ts : taskReports) {
+          TaskStatus.State state = ts.getRunState();
+          if (state == TaskStatus.State.RUNNING
+                  || state == TaskStatus.State.UNASSIGNED) {
+              taskCount++;
+          }
       }
-    }
 
     return taskCount;
   }

@@ -181,12 +181,12 @@ public class TaskLogServlet extends HttpServlet {
 
     String sLogOff = request.getParameter("start");
     if (sLogOff != null) {
-      start = Long.valueOf(sLogOff).longValue();
+      start = Long.valueOf(sLogOff);
     }
 
     String sLogEnd = request.getParameter("end");
     if (sLogEnd != null) {
-      end = Long.valueOf(sLogEnd).longValue();
+      end = Long.valueOf(sLogEnd);
     }
 
     String sPlainText = request.getParameter("plaintext");

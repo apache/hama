@@ -1123,9 +1123,9 @@ public class BSPJobClient extends Configured implements Tool {
       out.writeInt(partitionID);
       bytes.write(out);
       WritableUtils.writeVInt(out, locations.length);
-      for (int i = 0; i < locations.length; i++) {
-        Text.writeString(out, locations[i]);
-      }
+        for (String location : locations) {
+            Text.writeString(out, location);
+        }
     }
 
     public long getDataLength() {

@@ -96,9 +96,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   // Constants
   static enum State {
     NORMAL, COMPUTE, SYNC, BARRIER, STALE, INTERRUPTED, DENIED
-  };
+  }
 
-  private HttpServer server;
+    private HttpServer server;
   private ZooKeeper zk = null;
 
   // Running States and its related things
@@ -276,20 +276,17 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         LOG.debug("Got " + outOfContactTasks.size() + " oblivious tasks");
       }
 
-      Iterator<TaskInProgress> taskIter = outOfContactTasks.iterator();
+        for (TaskInProgress tip : outOfContactTasks) {
+            try {
+                LOG.debug("Purging task " + tip);
+                purgeTask(tip, true);
+            } catch (Exception e) {
+                LOG.error(
+                        new StringBuilder("Error while removing a timed-out task - ")
+                                .append(tip.toString()), e);
 
-      while (taskIter.hasNext()) {
-        TaskInProgress tip = taskIter.next();
-        try {
-          LOG.debug("Purging task " + tip);
-          purgeTask(tip, true);
-        } catch (Exception e) {
-          LOG.error(
-              new StringBuilder("Error while removing a timed-out task - ")
-                  .append(tip.toString()), e);
-
+            }
         }
-      }
       outOfContactTasks.clear();
 
     }
@@ -467,15 +464,15 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     LOG.debug(localDirs);
 
     if (localDirs != null) {
-      for (int i = 0; i < localDirs.length; i++) {
-        try {
-          LOG.info(localDirs[i]);
-          DiskChecker.checkDir(new File(localDirs[i]));
-          writable = true;
-        } catch (DiskErrorException e) {
-          LOG.warn("BSP Processor local " + e.getMessage());
+        for (String localDir : localDirs) {
+            try {
+                LOG.info(localDir);
+                DiskChecker.checkDir(new File(localDir));
+                writable = true;
+            } catch (DiskErrorException e) {
+                LOG.warn("BSP Processor local " + e.getMessage());
+            }
         }
-      }
     }
 
     if (!writable)
@@ -488,18 +485,18 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
   public void deleteLocalFiles() throws IOException {
     String[] localDirs = getLocalDirs();
-    for (int i = 0; i < localDirs.length; i++) {
-      FileSystem.getLocal(this.conf).delete(new Path(localDirs[i]), true);
-    }
+      for (String localDir : localDirs) {
+          FileSystem.getLocal(this.conf).delete(new Path(localDir), true);
+      }
   }
 
   public void deleteLocalFiles(String subdir) throws IOException {
     try {
       String[] localDirs = getLocalDirs();
-      for (int i = 0; i < localDirs.length; i++) {
-        FileSystem.getLocal(this.conf).delete(new Path(localDirs[i], subdir),
-            true);
-      }
+        for (String localDir : localDirs) {
+            FileSystem.getLocal(this.conf).delete(new Path(localDir, subdir),
+                    true);
+        }
     } catch (NullPointerException e) {
       LOG.info(e);
     }

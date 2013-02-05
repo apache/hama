@@ -181,11 +181,11 @@ public class TaskRunner extends Thread {
       }
       File[] libs = new File(workDir, "lib").listFiles();
       if (libs != null) {
-        for (int i = 0; i < libs.length; i++) {
-          // add libs from jar to classpath
-          classPath.append(SYSTEM_PATH_SEPARATOR);
-          classPath.append(libs[i]);
-        }
+          for (File lib : libs) {
+              // add libs from jar to classpath
+              classPath.append(SYSTEM_PATH_SEPARATOR);
+              classPath.append(lib);
+          }
       }
       classPath.append(SYSTEM_PATH_SEPARATOR);
       classPath.append(new File(workDir, "classes"));

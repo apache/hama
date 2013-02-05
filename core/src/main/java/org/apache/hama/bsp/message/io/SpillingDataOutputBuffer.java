@@ -247,9 +247,9 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
       startedSpilling_ = false;
       bufferState_.clear();
 
-      for (int i = 0; i < bufferList_.size(); ++i) {
-        bufferList_.get(i).clear();
-      }
+        for (ByteBuffer aBufferList_ : bufferList_) {
+            aBufferList_.clear();
+        }
       currentBuffer_ = bufferList_.get(0);
       bytesWritten_ = 0L;
       bytesRemaining_ = bufferSize_;
