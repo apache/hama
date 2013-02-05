@@ -80,9 +80,6 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   private int maxIteration = -1;
   private long iteration;
 
-  private Class<V> vertexIdClass;
-  private Class<M> vertexValueClass;
-  private Class<E> edgeValueClass;
   private Class<Vertex<V, E, M>> vertexClass;
 
   private AggregationRunner<V, E, M> aggregationRunner;
@@ -232,13 +229,13 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     maxIteration = peer.getConfiguration().getInt("hama.graph.max.iteration",
         -1);
 
-    vertexIdClass = (Class<V>) conf.getClass(GraphJob.VERTEX_ID_CLASS_ATTR,
-        Text.class, Writable.class);
-    vertexValueClass = (Class<M>) conf.getClass(
-        GraphJob.VERTEX_VALUE_CLASS_ATTR, IntWritable.class, Writable.class);
-    edgeValueClass = (Class<E>) conf.getClass(
-        GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR, IntWritable.class,
-        Writable.class);
+      Class<V> vertexIdClass = (Class<V>) conf.getClass(GraphJob.VERTEX_ID_CLASS_ATTR,
+              Text.class, Writable.class);
+      Class<M> vertexValueClass = (Class<M>) conf.getClass(
+              GraphJob.VERTEX_VALUE_CLASS_ATTR, IntWritable.class, Writable.class);
+      Class<E> edgeValueClass = (Class<E>) conf.getClass(
+              GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR, IntWritable.class,
+              Writable.class);
     vertexClass = (Class<Vertex<V, E, M>>) conf.getClass(
         "hama.graph.vertex.class", Vertex.class);
 
@@ -281,7 +278,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     if (LOG.isDebugEnabled())
       LOG.debug("Vertex class: " + vertexClass);
 
-    KeyValuePair<Writable, Writable> next = null;
+    KeyValuePair<Writable, Writable> next;
     while ((next = peer.readNext()) != null) {
       Vertex<V, E, M> vertex = (Vertex<V, E, M>) next.getKey();
       vertex.runner = this;
@@ -327,7 +324,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     }
 
     peer.sync();
-    GraphJobMessage msg = null;
+    GraphJobMessage msg;
     while ((msg = peer.getCurrentMessage()) != null) {
       V vertexName = (V) msg.getVertexId();
 
@@ -342,7 +339,6 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       }
       newVertex.setup(conf);
       tmp.put(vertexName, newVertex);
-      newVertex = null;
     }
 
     for (Vertex<V, E, M> e : vertices) {
@@ -370,7 +366,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
 
     peer.sync();
 
-    GraphJobMessage msg = null;
+    GraphJobMessage msg;
     while ((msg = peer.getCurrentMessage()) != null) {
       if (msg.isVerticesSizeMessage()) {
         numberVertices += msg.getVerticesSize().get();
@@ -392,7 +388,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   private Map<V, List<M>> parseMessages(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
-    GraphJobMessage msg = null;
+    GraphJobMessage msg;
     final Map<V, List<M>> msgMap = new HashMap<V, List<M>>();
     while ((msg = peer.getCurrentMessage()) != null) {
       // either this is a vertex message or a directive that must be read
@@ -511,10 +507,8 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
    */
   public static <V extends Writable, E extends Writable, M extends Writable> Vertex<V, E, M> newVertexInstance(
       Class<?> vertexClass, Configuration conf) {
-    @SuppressWarnings("unchecked")
-    Vertex<V, E, M> vertex = (Vertex<V, E, M>) ReflectionUtils.newInstance(
+    return (Vertex<V, E, M>) ReflectionUtils.newInstance(
         vertexClass, conf);
-    return vertex;
   }
 
 }

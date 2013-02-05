@@ -35,7 +35,7 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
 
   private static final Log LOG = LogFactory.getLog(VertexInputReader.class);
 
-  private KeyValuePair<Writable, Writable> outputRecord = new KeyValuePair<Writable, Writable>();
+  private final KeyValuePair<Writable, Writable> outputRecord = new KeyValuePair<Writable, Writable>();
 
   /**
    * Parses a given key and value into the given vertex. If returned true, the
@@ -51,7 +51,7 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
       KeyValuePair<Writable, Writable> inputRecord, Configuration conf) {
     Class<Vertex<V, E, M>> vertexClass = (Class<Vertex<V, E, M>>) conf
         .getClass(GraphJob.VERTEX_CLASS_ATTR, Vertex.class);
-    boolean vertexCreation = true;
+    boolean vertexCreation;
     Vertex<V, E, M> vertex = GraphJobRunner
         .newVertexInstance(vertexClass, conf);
     try {

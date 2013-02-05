@@ -35,7 +35,7 @@ import org.apache.hadoop.io.Writable;
 public class VerticesInfo<V extends Writable, E extends Writable, M extends Writable>
     implements Iterable<Vertex<V, E, M>> {
 
-  private List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(100);
+  private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(100);
 
   public void addVertex(Vertex<V, E, M> vertex) {
     int i = 0;
