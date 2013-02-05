@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -207,13 +208,11 @@ public class TaskRunner extends Thread {
     javaOpts = javaOpts.replace("@taskid@", task.getTaskID().toString());
 
     String[] javaOptsSplit = javaOpts.split(" ");
-    for (int i = 0; i < javaOptsSplit.length; i++) {
-      vargs.add(javaOptsSplit[i]);
-    }
+      Collections.addAll(vargs, javaOptsSplit);
 
     // Add classpath.
     vargs.add("-classpath");
-    vargs.add(classPath.toString());
+    vargs.add(classPath);
     // Add main class and its arguments
     LOG.debug("Executing child Process " + child.getName());
     vargs.add(child.getName()); // bsp class name

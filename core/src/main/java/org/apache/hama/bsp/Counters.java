@@ -612,10 +612,9 @@ public class Counters implements Writable, Iterable<Counters.Group> {
   public synchronized String toString() {
     StringBuilder sb = new StringBuilder("Counters: " + size());
     for (Group group : this) {
-      sb.append("\n\t" + group.getDisplayName());
+      sb.append("\n\t").append(group.getDisplayName());
       for (Counter counter : group) {
-        sb.append("\n\t\t" + counter.getDisplayName() + "="
-            + counter.getCounter());
+        sb.append("\n\t\t").append(counter.getDisplayName()).append("=").append(counter.getCounter());
       }
     }
     return sb.toString();

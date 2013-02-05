@@ -179,8 +179,7 @@ public class CombineFileSplit implements InputSplit {
       if (i == 0) {
         sb.append("Paths:");
       }
-      sb.append(paths[i].toUri().getPath() + ":" + startoffset[i] + "+"
-          + lengths[i]);
+      sb.append(paths[i].toUri().getPath()).append(":").append(startoffset[i]).append("+").append(lengths[i]);
       if (i < paths.length - 1) {
         sb.append(",");
       }
@@ -189,10 +188,10 @@ public class CombineFileSplit implements InputSplit {
       String locs = "";
       StringBuffer locsb = new StringBuffer();
       for (int i = 0; i < locations.length; i++) {
-        locsb.append(locations[i] + ":");
+        locsb.append(locations[i]).append(":");
       }
       locs = locsb.toString();
-      sb.append(" Locations:" + locs + "; ");
+      sb.append(" Locations:").append(locs).append("; ");
     }
     return sb.toString();
   }

@@ -33,7 +33,7 @@ class KillJobAction extends GroomServerAction {
 
   public KillJobAction() {
     super(ActionType.KILL_JOB);
-    jobId = new String();
+    jobId = "";
   }
 
   public KillJobAction(String killJobId) {

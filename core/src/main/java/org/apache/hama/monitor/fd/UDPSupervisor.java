@@ -249,7 +249,7 @@ public class UDPSupervisor implements Supervisor, Callable<Object> {
       Double[] samples = samples();
       StringBuilder builder = new StringBuilder();
       for (double d : samples) {
-        builder.append(" " + d + " ");
+        builder.append(" ").append(d).append(" ");
       }
       return "Node host:" + this.host + " mean:" + mean(samples) + " variance:"
           + variance(samples) + " samples:[" + builder.toString() + "]";

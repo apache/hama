@@ -143,10 +143,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
       } else {
         for (FileStatus globStat : matches) {
           if (globStat.isDir()) {
-            for (FileStatus stat : fs.listStatus(globStat.getPath(),
-                inputFilter)) {
-              result.add(stat);
-            }
+              Collections.addAll(result, fs.listStatus(globStat.getPath(),
+                      inputFilter));
           } else {
             result.add(globStat);
           }
@@ -416,7 +414,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     }
     pathStrings.add(commaSeparatedPaths.substring(pathStart, length));
 
-    return pathStrings.toArray(new String[0]);
+    return pathStrings.toArray(new String[pathStrings.size()]);
   }
 
   /**

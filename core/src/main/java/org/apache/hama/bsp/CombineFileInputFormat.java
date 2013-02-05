@@ -20,6 +20,7 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -388,9 +389,7 @@ public abstract class CombineFileInputFormat<K, V> extends
 
       // This might cause an exiting rack location to be re-added,
       // but it should be ok.
-      for (int i = 0; i < oneblock.racks.length; i++) {
-        racks.add(oneblock.racks[i]);
-      }
+        Collections.addAll(racks, oneblock.racks);
 
       // if the accumulated split size exceeds the maximum, then
       // create this split.
@@ -428,7 +427,7 @@ public abstract class CombineFileInputFormat<K, V> extends
 
     // add this split to the list that is returned
     CombineFileSplit thissplit = new CombineFileSplit(job, fl, offset, length,
-        locations.toArray(new String[0]));
+            locations.toArray(new String[locations.size()]));
     splitList.add(thissplit);
   }
 

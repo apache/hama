@@ -291,7 +291,7 @@ public class TaskLog {
     StringBuilder mergedCmd = new StringBuilder();
 
     mergedCmd.append(addCommand(cmd, true));
-    mergedCmd.append(" 2>&1 | tee " + stdout);
+    mergedCmd.append(" 2>&1 | tee ").append(stdout);
 
     result.add(mergedCmd.toString());
     return result;
