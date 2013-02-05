@@ -182,7 +182,13 @@ public class PartitioningRunner extends
     for (int j = 0; j < status.length; j++) {
       int partitionID = Integer.parseInt(status[j].getPath().getName()
           .split("[-]")[1]);
-      int assignedID = partitionID / (desiredNum / peer.getNumPeers());
+      System.out.println(desiredNum + ", " + peer.getNumPeers());
+      int denom = desiredNum / peer.getNumPeers();
+      int assignedID = partitionID;
+      if(denom > 1) {
+        assignedID = partitionID / (desiredNum / peer.getNumPeers());
+      }
+      
       if (assignedID == peer.getNumPeers())
         assignedID = assignedID - 1;
 
