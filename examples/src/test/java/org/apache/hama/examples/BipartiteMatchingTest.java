@@ -146,6 +146,8 @@ public class BipartiteMatchingTest extends TestCase {
         fs.delete(new Path(INPUT), true);
       if (fs.exists(new Path(OUTPUT)))
         fs.delete(new Path(OUTPUT), true);
+      if (fs.exists(new Path("/tmp/partitions")))
+        fs.delete(new Path("/tmp/partitions"), true);
     } catch (IOException e) {
       e.printStackTrace();
     }

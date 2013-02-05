@@ -159,7 +159,7 @@ public class PartitioningRunner extends
       }
       values.get(index).put(outputPair.getKey(), outputPair.getValue());
     }
-
+    
     // The reason of use of Memory is to reduce file opens
     for (Map.Entry<Integer, Map<Writable, Writable>> e : values.entrySet()) {
       Path destFile = new Path(partitionDir + "/part-" + e.getKey() + "/file-"
@@ -174,11 +174,13 @@ public class PartitioningRunner extends
     }
 
     peer.sync();
-
+    FileStatus[] status = fs.listStatus(partitionDir);
+    // Call sync() one more time to avoid concurrent access
+    peer.sync();
+    
     // merge files into one.
     // TODO if we use header info, we might able to merge files without full
     // scan.
-    FileStatus[] status = fs.listStatus(partitionDir);
     for (int j = 0; j < status.length; j++) {
       int partitionID = Integer.parseInt(status[j].getPath().getName()
           .split("[-]")[1]);

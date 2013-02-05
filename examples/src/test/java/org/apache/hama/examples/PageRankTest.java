@@ -34,7 +34,7 @@ import org.apache.hama.graph.GraphJobRunner;
 
 public class PageRankTest extends TestCase {
 
-  private static String INPUT = "/tmp/pagerank/pagerank-tmp.seq";
+  private static String INPUT = "/tmp/pagerank/";
   private static String TEXT_INPUT = "/tmp/pagerank/pagerank.txt";
   private static String TEXT_OUTPUT = INPUT + "pagerank.txt.seq";
 
@@ -86,7 +86,7 @@ public class PageRankTest extends TestCase {
 
   private void generateTestData() throws ClassNotFoundException,
       InterruptedException, IOException {
-    SymmetricMatrixGen.main(new String[] { "40", "10", INPUT, "2" });
+    SymmetricMatrixGen.main(new String[] { "40", "10", INPUT, "20" });
   }
 
   private void deleteTempDirs() {

@@ -159,11 +159,11 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
       e.printStackTrace();
     }
   }
-  
+
   private void deleteTempDirs() {
     try {
-      if (fs.exists(new Path(INPUT)))
-        fs.delete(new Path(INPUT), true);
+      if (fs.exists(new Path(INPUT).getParent()))
+        fs.delete(new Path(INPUT).getParent(), true);
       if (fs.exists(new Path(OUTPUT)))
         fs.delete(new Path(OUTPUT), true);
     } catch (IOException e) {
