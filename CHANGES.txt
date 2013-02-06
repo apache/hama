@@ -4,6 +4,7 @@ Release 0.7 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-721: Added spilling queue with combiner. (surajsmenon)
    HAMA-559: Added spilling queue. (surajsmenon)
    HAMA-700: BSPPartitioner should be configurable to be optional and allow input format conversion (surajsmenon)
    HAMA-524: Add SpMV example (Mikalai Parafeniuk via edwardyoon)
