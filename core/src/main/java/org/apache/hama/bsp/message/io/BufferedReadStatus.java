@@ -50,7 +50,8 @@ class BufferReadStatus extends ReadIndexStatus {
   }
 
   @Override
-  public void startReading() {
+  public boolean startReading() {
+    return true;
   }
 
 }

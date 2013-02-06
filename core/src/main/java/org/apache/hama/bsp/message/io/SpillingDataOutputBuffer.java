@@ -23,7 +23,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -36,11 +35,6 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hama.bsp.message.io.SpillWriteIndexStatus;
-import org.apache.hama.bsp.message.io.SpilledDataInputBuffer;
-import org.apache.hama.bsp.message.io.SpilledDataProcessor;
-import org.apache.hama.bsp.message.io.SpillingDataOutputBuffer;
-import org.apache.hama.bsp.message.io.WriteSpilledDataProcessor;
 
 /**
  * <code>SpillingBuffer</code> is an output stream comprised of byte arrays that
@@ -56,7 +50,8 @@ import org.apache.hama.bsp.message.io.WriteSpilledDataProcessor;
  */
 public class SpillingDataOutputBuffer extends DataOutputStream {
 
-  private static final Log LOG = LogFactory.getLog(SpillingDataOutputBuffer.class);
+  private static final Log LOG = LogFactory
+      .getLog(SpillingDataOutputBuffer.class);
 
   /**
    * This thread is responsible for writing from the ByteBuffers in the list to
@@ -64,13 +59,13 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
    */
   static class ProcessSpilledDataThread implements Callable<Boolean> {
     private SpillWriteIndexStatus status_;
-    private List<ByteBuffer> bufferList_;
+    private List<SpilledByteBuffer> bufferList_;
     private long fileWrittenSize_;
     private boolean closed;
     SpilledDataProcessor processor;
 
     ProcessSpilledDataThread(SpillWriteIndexStatus status,
-        List<ByteBuffer> bufferList, SpilledDataProcessor processor) {
+        List<SpilledByteBuffer> bufferList, SpilledDataProcessor processor) {
       status_ = status;
       bufferList_ = bufferList;
       closed = false;
@@ -86,6 +81,7 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
     private void keepProcessingData() throws IOException {
 
       int fileWriteIndex = -1;
+
       do {
 
         try {
@@ -94,7 +90,7 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
           throw new IOException(e1);
         }
         while (fileWriteIndex >= 0) {
-          ByteBuffer buffer = bufferList_.get(fileWriteIndex);
+          SpilledByteBuffer buffer = bufferList_.get(fileWriteIndex);
           processor.handleSpilledBuffer(buffer);
           buffer.clear();
           try {
@@ -107,6 +103,9 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
         }
       } while (!closed);
 
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("Done handling spilling data.");
+      }
 
     }
 
@@ -128,7 +127,13 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
 
     @Override
     public Boolean call() throws Exception {
-      keepProcessingData();
+      try {
+        keepProcessingData();
+      } catch (Exception e) {
+        LOG.error("Error handling spilled data.", e);
+        status_.notifyError();
+        return Boolean.FALSE;
+      }
       return Boolean.TRUE;
     }
 
@@ -146,12 +151,13 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
     final byte[] b;
     final boolean direct_;
 
-    private List<ByteBuffer> bufferList_;
+    private List<SpilledByteBuffer> bufferList_;
     private int bufferSize_;
     private BitSet bufferState_;
     private int numberBuffers_;
-    private ByteBuffer currentBuffer_;
-    private long bytesWritten_;
+    private SpilledByteBuffer currentBuffer_;
+    protected long bytesWritten_;
+    protected long bytesWrittenToBuffer;
     private long bytesRemaining_;
     private SpillWriteIndexStatus spillStatus_;
     private int thresholdSize_;
@@ -159,8 +165,9 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
     private ProcessSpilledDataThread spillThread_;
     private ExecutorService spillThreadService_;
     private Future<Boolean> spillThreadState_;
-    private boolean closed_;
+    private boolean closed_;;
 
+    private int interBufferEndOfRecord;
     private SpilledDataProcessor processor;
     /**
      * The internal buffer where data is stored.
@@ -208,8 +215,8 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
 
       assert (threshold >= bufferSize);
       assert (threshold < numBuffers * bufferSize);
-      if(interBufferSize > bufferSize){
-        interBufferSize = bufferSize/2;
+      if (interBufferSize > bufferSize) {
+        interBufferSize = bufferSize / 2;
       }
       defaultBufferSize_ = interBufferSize;
       this.b = new byte[1];
@@ -218,15 +225,11 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
       direct_ = direct;
       numberBuffers_ = numBuffers;
       bufferSize_ = bufferSize;
-      bufferList_ = new ArrayList<ByteBuffer>(numberBuffers_);
+      bufferList_ = new ArrayList<SpilledByteBuffer>(numberBuffers_);
       bufferState_ = new BitSet(numBuffers);
 
       for (int i = 0; i < numBuffers / 2; ++i) {
-        if (direct_) {
-          bufferList_.add(ByteBuffer.allocateDirect(bufferSize_));
-        } else {
-          bufferList_.add(ByteBuffer.allocate(bufferSize_));
-        }
+        bufferList_.add(new SpilledByteBuffer(direct_, bufferSize_));
       }
       currentBuffer_ = bufferList_.get(0);
       bytesWritten_ = 0L;
@@ -241,13 +244,19 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
       closed_ = false;
 
     }
-    
-    public void clear() throws IOException{
+
+    public void markEndOfRecord() {
+      interBufferEndOfRecord = (int) (this.bytesWrittenToBuffer + count);
+      if (currentBuffer_.capacity() > interBufferEndOfRecord)
+        this.currentBuffer_.markEndOfRecord(interBufferEndOfRecord);
+    }
+
+    public void clear() throws IOException {
       this.close();
       startedSpilling_ = false;
       bufferState_.clear();
 
-        for (ByteBuffer aBufferList_ : bufferList_) {
+        for (SpilledByteBuffer aBufferList_ : bufferList_) {
             aBufferList_.clear();
         }
       currentBuffer_ = bufferList_.get(0);
@@ -261,7 +270,7 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
         buf[count++] = (byte) (b & 0xFF);
         return;
       }
-      
+
       this.b[0] = (byte) (b & 0xFF);
       write(this.b);
     }
@@ -277,49 +286,19 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
      * 
      * @param len
      * @throws InterruptedException
+     * @throws IOException
      */
-    private void startSpilling() throws InterruptedException {
+    private void startSpilling() throws InterruptedException, IOException {
       synchronized (this) {
         spillThread_ = new ProcessSpilledDataThread(spillStatus_, bufferList_,
             processor);
         startedSpilling_ = true;
         spillThreadService_ = Executors.newFixedThreadPool(1);
         spillThreadState_ = spillThreadService_.submit(spillThread_);
-        spillStatus_.startSpilling();
+        if (!spillStatus_.startSpilling()) {
+          throw new IOException("Could not start spilling on disk.");
+        }
       }
-      // }
-    }
-
-    public void perfectFillWrite(byte[] b, int off, int len) throws IOException {
-      int rem = currentBuffer_.remaining();
-      while (len > rem) {
-        currentBuffer_.put(b, off, rem);
-        // bytesWritten_ += len;
-        // if (bytesWritten_ > thresholdSize_ && !startedSpilling_) {
-        // try {
-        // startSpilling(rem);
-        // } catch (InterruptedException e) {
-        // throw new IOException("Internal error occured writing to buffer.",
-        // e);
-        // }
-        // }
-
-        currentBuffer_.flip();
-        int index = spillStatus_.getNextBufferIndex();
-        currentBuffer_ = getBuffer(index);
-        off += rem;
-        len -= rem;
-        rem = currentBuffer_.remaining();
-      }
-      currentBuffer_.put(b, off, len);
-      // bytesWritten_ += len;
-      // if (bytesWritten_ > thresholdSize_ && !startedSpilling_) {
-      // try {
-      // startSpilling(len);
-      // } catch (InterruptedException e) {
-      // throw new IOException("Internal error occured writing to buffer.", e);
-      // }
-      // }
     }
 
     @Override
@@ -341,10 +320,11 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
       count += len;
     }
 
-    private void writeInternal(byte[] b, int off, int len) throws IOException {
+    @SuppressWarnings("unused")
+    private void writeInternalImperfect(byte[] b, int off, int len)
+        throws IOException {
 
-      bytesWritten_ += len;
-      if (bytesWritten_ >= thresholdSize_ && !startedSpilling_) {
+      if (!startedSpilling_ && bytesWritten_ >= thresholdSize_) {
         try {
           startSpilling();
         } catch (InterruptedException e) {
@@ -356,10 +336,50 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
         currentBuffer_.flip();
         currentBuffer_ = getBuffer(spillStatus_.getNextBufferIndex());
         bytesRemaining_ = bufferSize_;
+        this.bytesWrittenToBuffer = bytesWritten_;
       }
       currentBuffer_.put(b, off, len);
       bytesRemaining_ -= len;
+      bytesWritten_ += len;
 
+    }
+
+    public void writeInternal(byte[] b, int off, int len) throws IOException {
+      int rem = currentBuffer_.remaining();
+      while (len > rem) {
+        currentBuffer_.put(b, off, rem);
+        bytesWritten_ += rem;
+        if (!startedSpilling_) {
+          checkSpillStart();
+        }
+        currentBuffer_.flip();
+        currentBuffer_ = getBuffer(spillStatus_.getNextBufferIndex());
+        if (currentBuffer_ == null)
+          throw new IOException(
+              "Error writing to spilling buffer. Could not get free buffer.");
+        bytesRemaining_ = bufferSize_;
+        this.bytesWrittenToBuffer = 0;
+        off += rem;
+        len -= rem;
+        rem = currentBuffer_.remaining();
+      }
+      currentBuffer_.put(b, off, len);
+      bytesWritten_ += len;
+      bytesRemaining_ -= len;
+      if (!startedSpilling_) {
+        checkSpillStart();
+      }
+      this.bytesWrittenToBuffer += len;
+    }
+
+    private void checkSpillStart() throws IOException {
+      if (bytesWritten_ >= thresholdSize_) {
+        try {
+          startSpilling();
+        } catch (InterruptedException e) {
+          throw new IOException("Internal error occured writing to buffer.", e);
+        }
+      }
     }
 
     /** Flush the internal buffer */
@@ -377,16 +397,13 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
      * @return
      * @throws IOException
      */
-    ByteBuffer getBuffer(int index) throws IOException {
-
-      if (index >= bufferList_.size()) {
-        if (direct_) {
-          bufferList_.add(index, ByteBuffer.allocateDirect(bufferSize_));
-        } else {
-          bufferList_.add(index, ByteBuffer.allocate(bufferSize_));
-        }
+    SpilledByteBuffer getBuffer(int index) throws IOException {
+      if(index < 0){
+        return null;
       }
-
+      if (index >= bufferList_.size()) {
+        bufferList_.add(new SpilledByteBuffer(direct_, bufferSize_));
+      }
       return bufferList_.get(index);
     }
 
@@ -422,7 +439,7 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
           this.processor.close();
           this.spillThreadService_.shutdownNow();
         }
-        
+
       }
     }
 
@@ -432,28 +449,27 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
    * Initialize the spilling buffer with spilling file name
    * 
    * @param fileName name of the file.
-   * @throws FileNotFoundException 
+   * @throws FileNotFoundException
    */
   public SpillingDataOutputBuffer(String fileName) throws FileNotFoundException {
-    super(new SpillingStream(3, 16 * 1024, 16 * 1024, true, 
+    super(new SpillingStream(3, 16 * 1024, 16 * 1024, true,
         new WriteSpilledDataProcessor(fileName)));
   }
-  
-  public SpillingDataOutputBuffer(SpilledDataProcessor processor) throws FileNotFoundException {
-    super(new SpillingStream(3, 16 * 1024, 16 * 1024, true, 
-        processor));
+
+  public SpillingDataOutputBuffer(SpilledDataProcessor processor)
+      throws FileNotFoundException {
+    super(new SpillingStream(3, 16 * 1024, 16 * 1024, true, processor));
   }
-  
-  
 
   /**
    * Initializes the spilling buffer.
-   * @throws FileNotFoundException 
+   * 
+   * @throws FileNotFoundException
    */
   public SpillingDataOutputBuffer() throws FileNotFoundException {
     super(new SpillingStream(3, 16 * 1024, 16 * 1024, true,
-        new WriteSpilledDataProcessor(
-        System.getProperty("java.io.tmpdir") + File.separatorChar
+        new WriteSpilledDataProcessor(System.getProperty("java.io.tmpdir")
+            + File.separatorChar
             + new BigInteger(128, new SecureRandom()).toString(32))));
   }
 
@@ -465,19 +481,23 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
    * @param direct
    * @param fileName
    */
-  public SpillingDataOutputBuffer(int bufferCount, int bufferSize, int threshold,
-      boolean direct, SpilledDataProcessor processor) {
+  public SpillingDataOutputBuffer(int bufferCount, int bufferSize,
+      int threshold, boolean direct, SpilledDataProcessor processor) {
     super(new SpillingStream(bufferCount, bufferSize, threshold, direct,
         processor));
   }
-  
-  public void clear() throws IOException{
+
+  public void clear() throws IOException {
     SpillingStream stream = (SpillingStream) this.out;
     stream.clear();
   }
-  
-  public boolean hasSpilled(){
+
+  public boolean hasSpilled() {
     return ((SpillingStream) this.out).startedSpilling_;
+  }
+
+  public void markRecordEnd() {
+    ((SpillingStream) this.out).markEndOfRecord();
   }
 
   /**
@@ -485,12 +505,12 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
    * 
    * @throws IOException
    */
-  public SpilledDataInputBuffer getInputStreamToRead(String fileName) throws IOException {
+  public SpilledDataInputBuffer getInputStreamToRead(String fileName)
+      throws IOException {
 
     SpillingStream stream = (SpillingStream) this.out;
     SpilledDataInputBuffer.SpilledInputStream inStream = new SpilledDataInputBuffer.SpilledInputStream(
-        fileName, stream.direct_, stream.bufferList_,
-        stream.startedSpilling_);
+        fileName, stream.direct_, stream.bufferList_, stream.startedSpilling_);
     inStream.prepareRead();
     return new SpilledDataInputBuffer(inStream);
   }

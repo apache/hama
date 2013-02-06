@@ -23,10 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -35,10 +32,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.hama.bsp.message.io.BufferReadStatus;
-import org.apache.hama.bsp.message.io.ReadIndexStatus;
-import org.apache.hama.bsp.message.io.SpilledDataInputBuffer;
-import org.apache.hama.bsp.message.io.SpilledDataReadStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * <code>SpilledDataInputBuffer</code> class is designed to read from the
@@ -49,6 +44,8 @@ import org.apache.hama.bsp.message.io.SpilledDataReadStatus;
  */
 public class SpilledDataInputBuffer extends DataInputStream implements
     DataInput {
+  private static final Log LOG = LogFactory
+      .getLog(SpilledDataInputBuffer.class);
 
   /**
    * The thread is used to asynchronously read from the spilled file and load
@@ -57,7 +54,7 @@ public class SpilledDataInputBuffer extends DataInputStream implements
   static class SpillReadThread implements Callable<Boolean> {
 
     private String fileName;
-    private List<ByteBuffer> bufferList_;
+    private List<SpilledByteBuffer> bufferList_;
     private long bytesToRead_;
     private long bytesWrittenInFile_;
     private SpilledDataReadStatus status_;
@@ -73,7 +70,7 @@ public class SpilledDataInputBuffer extends DataInputStream implements
      * @param status The shared object that synchronizes the indexes for buffer
      *          to fill the data with.
      */
-    public SpillReadThread(String fileName, List<ByteBuffer> bufferList,
+    public SpillReadThread(String fileName, List<SpilledByteBuffer> bufferList,
         SpilledDataReadStatus status) {
       this.fileName = fileName;
       bufferList_ = bufferList;
@@ -92,7 +89,6 @@ public class SpilledDataInputBuffer extends DataInputStream implements
       FileChannel fc = raf.getChannel();
       bytesToRead_ = fc.size();
       bytesWrittenInFile_ = bytesToRead_;
-      MappedByteBuffer mBuffer = null;
       long fileReadPos = 0;
       int fileReadIndex = -1;
       do {
@@ -105,13 +101,14 @@ public class SpilledDataInputBuffer extends DataInputStream implements
         if (fileReadIndex < 0)
           break;
 
-        ByteBuffer buffer = bufferList_.get(fileReadIndex);
+        SpilledByteBuffer buffer = bufferList_.get(fileReadIndex);
         buffer.clear();
         long readSize = Math.min(buffer.remaining(),
             (bytesWrittenInFile_ - fileReadPos));
-
-        mBuffer = fc.map(MapMode.READ_ONLY, fileReadPos, readSize);
-        buffer.put(mBuffer);
+        readSize = fc.read(buffer.getByteBuffer());
+        if (readSize < 0) {
+          break;
+        }
         buffer.flip();
         bytesToRead_ -= readSize;
         fileReadPos += readSize;
@@ -136,7 +133,13 @@ public class SpilledDataInputBuffer extends DataInputStream implements
 
     @Override
     public Boolean call() throws Exception {
-      keepReadingFromFile();
+      try {
+        keepReadingFromFile();
+      } catch (Exception e) {
+        LOG.error("Error reading from file: " + fileName, e);
+        status_.notifyError();
+        return Boolean.FALSE;
+      }
       return Boolean.TRUE;
     }
 
@@ -152,7 +155,7 @@ public class SpilledDataInputBuffer extends DataInputStream implements
   static class SpilledInputStream extends InputStream {
 
     private String fileName_;
-    private List<ByteBuffer> bufferList_;
+    private List<SpilledByteBuffer> bufferList_;
     private boolean spilledAlready_;
     ReadIndexStatus status_;
     private final byte[] readByte = new byte[1];
@@ -162,13 +165,14 @@ public class SpilledDataInputBuffer extends DataInputStream implements
     private Callable<Boolean> spillReadThread_;
     private Future<Boolean> spillReadState_;
     private ExecutorService spillThreadService_;
-    private ByteBuffer currentReadBuffer_;
+    private SpilledByteBuffer currentReadBuffer_;
     private BitSet bufferBitState_;
 
     private boolean closed_;
 
     public SpilledInputStream(String fileName, boolean direct,
-        List<ByteBuffer> bufferList, boolean hasSpilled) throws IOException {
+        List<SpilledByteBuffer> bufferList, boolean hasSpilled)
+        throws IOException {
       fileName_ = fileName;
       bufferList_ = bufferList;
       spilledAlready_ = hasSpilled;
@@ -193,7 +197,9 @@ public class SpilledDataInputBuffer extends DataInputStream implements
             (SpilledDataReadStatus) status_);
         spillThreadService_ = Executors.newFixedThreadPool(1);
         spillReadState_ = spillThreadService_.submit(spillReadThread_);
-        status_.startReading();
+        if (!status_.startReading()) {
+          throw new IOException("Failed to read the spilled file: " + fileName_);
+        }
       }
       try {
         currentReadBuffer_ = getNextBuffer();
@@ -217,7 +223,7 @@ public class SpilledDataInputBuffer extends DataInputStream implements
       }
     }
 
-    public ByteBuffer getNextBuffer() throws InterruptedException {
+    public SpilledByteBuffer getNextBuffer() throws InterruptedException {
       int index = status_.getReadBufferIndex();
       if (index >= 0 && index < bufferList_.size()) {
         return bufferList_.get(index);
@@ -362,7 +368,7 @@ public class SpilledDataInputBuffer extends DataInputStream implements
   }
 
   public static SpilledDataInputBuffer getSpilledDataInputBuffer(
-      String fileName, boolean direct, List<ByteBuffer> bufferList)
+      String fileName, boolean direct, List<SpilledByteBuffer> bufferList)
       throws IOException {
     SpilledInputStream inStream = new SpilledInputStream(fileName, direct,
         bufferList, true);

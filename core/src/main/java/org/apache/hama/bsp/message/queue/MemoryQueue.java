@@ -103,4 +103,9 @@ public final class MemoryQueue<M extends Writable> implements MessageQueue<M> {
 
   }
 
+  @Override
+  public boolean isMessageSerialized() {
+    return false;
+  }
+
 }

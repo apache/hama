@@ -31,16 +31,17 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.message.io.CombineSpilledDataProcessor;
 import org.apache.hama.bsp.message.io.PreFetchCache;
 import org.apache.hama.bsp.message.io.SpilledDataInputBuffer;
 import org.apache.hama.bsp.message.io.SpilledDataProcessor;
 import org.apache.hama.bsp.message.io.SpillingDataOutputBuffer;
-import org.apache.hama.bsp.message.io.WriteSpilledDataProcessor;
 
 /**
  * 
- *
+ * 
  * @param <M>
  */
 public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
@@ -67,26 +68,25 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
   private SpilledDataInputBuffer spilledInput;
   private boolean objectWritableMode;
   private ObjectWritable objectWritable;
-  
+
   private Class<M> messageClass;
   private PreFetchCache<M> prefetchCache;
   private boolean enablePrefetch;
 
-  
   private class SpillIterator implements Iterator<M> {
 
     private boolean objectMode;
     private Class<M> classObject;
     private M messageHolder;
-    
-    public SpillIterator(boolean mode, Class<M> classObj, Configuration conf){
+
+    public SpillIterator(boolean mode, Class<M> classObj, Configuration conf) {
       this.objectMode = mode;
       this.classObject = classObj;
-      if(classObject != null){
+      if (classObject != null) {
         messageHolder = ReflectionUtils.newInstance(classObj, conf);
       }
     }
-    
+
     @Override
     public boolean hasNext() {
       return numMessagesRead != numMessagesWritten && numMessagesWritten > 0;
@@ -94,10 +94,9 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
 
     @Override
     public M next() {
-      if(objectMode){
+      if (objectMode) {
         return poll();
-      }
-      else {
+      } else {
         return poll(messageHolder);
       }
     }
@@ -134,6 +133,7 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
       } else {
         msg.write(spillOutputBuffer);
       }
+      spillOutputBuffer.markRecordEnd();
       ++numMessagesWritten;
     } catch (IOException e) {
       LOG.error("Error adding message.", e);
@@ -189,19 +189,21 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
   public void init(Configuration conf, TaskAttemptID arg1) {
 
     bufferCount = conf.getInt(SPILLBUFFER_COUNT, 3);
-    bufferSize = conf.getInt(SPILLBUFFER_SIZE, 16 * 1024);
+    bufferSize = conf.getInt(SPILLBUFFER_SIZE, Constants.BUFFER_DEFAULT_SIZE);
     direct = conf.getBoolean(SPILLBUFFER_DIRECT, true);
-    threshold = conf.getInt(SPILLBUFFER_THRESHOLD, 16 * 1024);
+    threshold = conf.getInt(SPILLBUFFER_THRESHOLD,
+        Constants.BUFFER_DEFAULT_SIZE);
     fileName = conf.get(SPILLBUFFER_FILENAME,
         System.getProperty("java.io.tmpdir") + File.separatorChar
             + new BigInteger(128, new SecureRandom()).toString(32));
-    
-    messageClass = (Class<M>) conf.getClass(SPILLBUFFER_MSGCLASS, null);
+
+    messageClass = (Class<M>) conf.getClass(Constants.MESSAGE_CLASS, null);
     objectWritableMode = messageClass == null;
-    
+
     SpilledDataProcessor processor;
     try {
-      processor = new WriteSpilledDataProcessor(fileName);
+      processor = new CombineSpilledDataProcessor<M>(fileName);
+      processor.init(conf);
     } catch (FileNotFoundException e) {
       LOG.error("Error initializing spilled data stream.", e);
       throw new RuntimeException(e);
@@ -212,14 +214,14 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
     objectWritable.setConf(conf);
     this.conf = conf;
   }
-  
-  private void incReadMsgCount(){
+
+  private void incReadMsgCount() {
     ++numMessagesRead;
   }
-  
+
   @SuppressWarnings("unchecked")
-  private M readDirect(M msg){
-    if(numMessagesRead >= numMessagesWritten){
+  private M readDirect(M msg) {
+    if (numMessagesRead >= numMessagesWritten) {
       return null;
     }
     try {
@@ -239,19 +241,18 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
   }
 
   public M poll(M msg) {
-    if(numMessagesRead >= numMessagesWritten){
+    if (numMessagesRead >= numMessagesWritten) {
       return null;
     }
-    if(enablePrefetch){
+    if (enablePrefetch) {
       return readFromPrefetch(msg);
-    }
-    else {
+    } else {
       return readDirect(msg);
     }
   }
-  
+
   @SuppressWarnings("unchecked")
-  private M readDirectObjectWritable(){
+  private M readDirectObjectWritable() {
     if (!objectWritableMode) {
       throw new IllegalStateException(
           "API call not supported. Set the configuration property "
@@ -266,34 +267,32 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
     }
     return (M) objectWritable.get();
   }
-  
+
   @SuppressWarnings({ "unchecked" })
-  private M readFromPrefetch(M msg){
-    if(objectWritableMode){
+  private M readFromPrefetch(M msg) {
+    if (objectWritableMode) {
       this.objectWritable = (ObjectWritable) prefetchCache.get();
       incReadMsgCount();
-      return (M)this.objectWritable.get();
-    }
-    else {
+      return (M) this.objectWritable.get();
+    } else {
       incReadMsgCount();
-      return (M)this.prefetchCache.get();
+      return (M) this.prefetchCache.get();
     }
-    
+
   }
 
   @Override
   public M poll() {
-    if(numMessagesRead >= numMessagesWritten){
+    if (numMessagesRead >= numMessagesWritten) {
       return null;
     }
-    
-    if(enablePrefetch){
+
+    if (enablePrefetch) {
       M msg = readFromPrefetch(null);
-      if(msg != null)
+      if (msg != null)
         incReadMsgCount();
       return msg;
-    }
-    else {
+    } else {
       return readDirectObjectWritable();
     }
   }
@@ -312,13 +311,15 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
       LOG.error("Error initializing the input spilled stream", e);
       throw new RuntimeException(e);
     }
-    if(conf.getBoolean(ENABLE_PREFETCH, false)){
+    if (conf.getBoolean(ENABLE_PREFETCH, false)) {
       this.prefetchCache = new PreFetchCache<M>(numMessagesWritten);
       this.enablePrefetch = true;
       try {
         this.prefetchCache.startFetching(this.messageClass, spilledInput, conf);
       } catch (InterruptedException e) {
         LOG.error("Error starting prefetch on message queue.", e);
+        throw new RuntimeException(e);
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
@@ -333,5 +334,12 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M> {
   public int size() {
     return numMessagesWritten;
   }
+  
+
+  @Override
+  public boolean isMessageSerialized() {
+    return true;
+  }
+
 
 }

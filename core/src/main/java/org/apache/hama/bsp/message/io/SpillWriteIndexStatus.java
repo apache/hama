@@ -22,8 +22,8 @@ import java.util.BitSet;
 
 /**
  * This class provides a thread-safe interface for both the spilling thread and
- * the thread that is writing into <code>SpillingBuffer</code>. It stores the
- * state and manipulates the next available buffer for both the threads.
+ * the thread that is writing into {@link SpillingDataOutputBuffer}. It stores
+ * the state and manipulates the next available buffer for both the threads.
  */
 class SpillWriteIndexStatus {
 
@@ -33,6 +33,7 @@ class SpillWriteIndexStatus {
   private volatile boolean spillStart;
   private int numBuffers;
   private volatile BitSet bufferBitState;
+  private volatile boolean errorState;
 
   SpillWriteIndexStatus(int size, int bufferCount, int bufferIndex,
       int fileWriteIndex, BitSet bufferBitState) {
@@ -42,6 +43,7 @@ class SpillWriteIndexStatus {
     processorBufferIndex = fileWriteIndex;
     numBuffers = bufferCount;
     this.bufferBitState = bufferBitState;
+    errorState = false;
   }
 
   /**
@@ -57,14 +59,23 @@ class SpillWriteIndexStatus {
     bufferBitState.set(bufferListWriteIndex, true);
     notify();
     bufferListWriteIndex = (bufferListWriteIndex + 1) % numBuffers;
-    while (bufferBitState.get(bufferListWriteIndex)) {
+    while (bufferBitState.get(bufferListWriteIndex) && !errorState) {
       try {
         wait();
       } catch (InterruptedException e) {
         throw new IOException(e);
       }
     }
-    return bufferListWriteIndex;
+    return checkError(bufferListWriteIndex);
+  }
+
+  private int checkError(int index) {
+    return errorState ? -1 : index;
+  }
+
+  public void notifyError() {
+    errorState = true;
+    notify();
   }
 
   /**
@@ -90,15 +101,16 @@ class SpillWriteIndexStatus {
       notify();
     }
     processorBufferIndex = (processorBufferIndex + 1) % numBuffers;
-    while (!bufferBitState.get(processorBufferIndex) && !spillComplete) {
+    while (!bufferBitState.get(processorBufferIndex) && !spillComplete
+        && !errorState) {
       wait();
     }
     // Is the last buffer written to file after the spilling is complete?
     // then complete the operation.
-    if (spillComplete && bufferBitState.isEmpty()) {
+    if ((spillComplete && bufferBitState.isEmpty()) || errorState) {
       return -1;
     }
-    return processorBufferIndex;
+    return checkError(processorBufferIndex);
   }
 
   /**
@@ -107,12 +119,14 @@ class SpillWriteIndexStatus {
    * spilled.
    * 
    * @throws InterruptedException
+   * @return whether the spill started correctly
    */
-  public synchronized void startSpilling() throws InterruptedException {
+  public synchronized boolean startSpilling() throws InterruptedException {
 
-    while (!spillStart) {
+    while (!spillStart && !errorState) {
       wait();
     }
+    return !errorState;
   }
 
   /**

@@ -17,10 +17,10 @@
  */
 package org.apache.hama.bsp.message.io;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import org.apache.commons.logging.Log;
@@ -28,8 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
 /**
- * 
- *
+ * A {@link SpilledDataProcessor} that writes the spilled data to the file.
  */
 public class WriteSpilledDataProcessor implements SpilledDataProcessor {
 
@@ -37,28 +36,43 @@ public class WriteSpilledDataProcessor implements SpilledDataProcessor {
       .getLog(WriteSpilledDataProcessor.class);
 
   private FileChannel fileChannel;
-  private RandomAccessFile raf;
   private String fileName;
-
+  
   public WriteSpilledDataProcessor(String fileName)
       throws FileNotFoundException {
     this.fileName = fileName;
-    raf = new RandomAccessFile(fileName, "rw");
-    fileChannel = raf.getChannel();
+  }
+
+  private void initializeFileChannel() {
+    FileOutputStream stream;
+    try {
+      stream = new FileOutputStream(new File(fileName), true);
+    } catch (FileNotFoundException e) {
+      LOG.error("Error opening file to write spilled data.", e);
+      throw new RuntimeException(e);
+    }
+    fileChannel = stream.getChannel();
   }
 
   @Override
   public boolean init(Configuration conf) {
+
     return true;
   }
 
   @Override
-  public boolean handleSpilledBuffer(ByteBuffer buffer) {
+  public boolean handleSpilledBuffer(SpilledByteBuffer buffer) {
     try {
-      fileChannel.write(buffer);
+      
+      if(fileChannel == null){
+        initializeFileChannel();
+      }
+      
+      fileChannel.write(buffer.getByteBuffer());
+      fileChannel.force(true);
       return true;
     } catch (IOException e) {
-      LOG.error("Error writing to file:"+fileName, e);
+      LOG.error("Error writing to file:" + fileName, e);
     }
     return false;
   }

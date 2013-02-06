@@ -305,4 +305,9 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
         .getJobID().toString()), id.getTaskID().toString());
   }
 
+  @Override
+  public boolean isMessageSerialized() {
+    return false;
+  }
+
 }

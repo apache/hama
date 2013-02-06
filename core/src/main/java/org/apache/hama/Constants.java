@@ -64,12 +64,12 @@ public interface Constants {
   public static final String MAX_TASK_ATTEMPTS = "bsp.tasks.max.attempts";
 
   public static final String MAX_TASKS_PER_JOB = "bsp.max.tasks.per.job";
-  
+
   public static final String COMBINER_CLASS = "bsp.combiner.class";
 
   public static final int DEFAULT_MAX_TASK_ATTEMPTS = 2;
-  
-  ////////////////////////////////////////
+
+  // //////////////////////////////////////
   // Task scheduler related constants
   // //////////////////////////////////////
 
@@ -97,11 +97,20 @@ public interface Constants {
   // /////////////////////////////////////////////
   // Job configuration related parameters.
   // /////////////////////////////////////////////
-  public static final String JOB_INPUT_DIR      = "bsp.input.dir";
-  public static final String JOB_PEERS_COUNT    = "bsp.peers.num";
-  public static final String INPUT_FORMAT_CLASS = "bsp.input.format.class"; 
+  public static final String JOB_INPUT_DIR = "bsp.input.dir";
+  public static final String JOB_PEERS_COUNT = "bsp.peers.num";
+  public static final String INPUT_FORMAT_CLASS = "bsp.input.format.class";
   public static final String OUTPUT_FORMAT_CLASS = "bsp.output.format.class";
-  
+  public static final String MESSAGE_CLASS = "bsp.message.type.class";
+
+  // /////////////////////////////////////////////
+  // Messaging related parameters.
+  // /////////////////////////////////////////////
+  public static final int BUFFER_DEFAULT_SIZE = 16 * 1024;
+  public static final String BYTEBUFFER_SIZE = "bsp.message.bytebuffer.size";
+  public static final String BYTEBUFFER_DIRECT = "bsp.message.bytebuffer.direct";
+  public static final boolean BYTEBUFFER_DIRECT_DEFAULT = true;
+  public static final String DATA_SPILL_PATH = "bsp.data.spill.location";
 
   // /////////////////////////////////////////////
   // Constants related to partitioning
@@ -111,7 +120,6 @@ public interface Constants {
   public static final String RUNTIME_PARTITIONING_CLASS = "bsp.input.partitioner.class";
   public static final String RUNTIME_DESIRED_PEERS_COUNT = "desired.num.of.tasks";
   public static final String RUNTIME_PARTITION_RECORDCONVERTER = "bsp.runtime.partition.recordconverter";
-
 
   // /////////////////////////////////////
   // Constants for ZooKeeper

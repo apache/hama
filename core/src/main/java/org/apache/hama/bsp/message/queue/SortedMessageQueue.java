@@ -105,4 +105,9 @@ public final class SortedMessageQueue<M extends WritableComparable<M>>
 
   }
 
+  @Override
+  public boolean isMessageSerialized() {
+    return false;
+  }
+
 }

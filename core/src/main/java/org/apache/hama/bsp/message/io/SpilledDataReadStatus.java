@@ -38,6 +38,7 @@ class SpilledDataReadStatus extends ReadIndexStatus {
   private volatile boolean fileReadComplete_;
   private volatile boolean bufferReadComplete_;
   private volatile BitSet bufferBitState_;
+  private volatile boolean errorState_;
 
   public SpilledDataReadStatus(int totalSize, BitSet bufferBitState) {
     readBufferIndex_ = -1;
@@ -47,8 +48,22 @@ class SpilledDataReadStatus extends ReadIndexStatus {
     bufferReadComplete_ = false;
     totalSize_ = totalSize;
     bufferBitState_ = bufferBitState;
+    errorState_ = false;
   }
 
+  private int checkError(int index) {
+    if (errorState_) {
+      return -1;
+    } else {
+      return index;
+    }
+  }
+
+  public void notifyError() {
+    errorState_ = true;
+    notify();
+  }
+  
   @Override
   public synchronized int getReadBufferIndex() throws InterruptedException {
 
@@ -59,14 +74,14 @@ class SpilledDataReadStatus extends ReadIndexStatus {
       notify();
     }
     readBufferIndex_ = (readBufferIndex_ + 1) % totalSize_;
-    while (!bufferBitState_.get(readBufferIndex_) && !fileReadComplete_) {
+    while (!bufferBitState_.get(readBufferIndex_) && !fileReadComplete_ && !errorState_) {
       wait();
     }
     // The file is completely read and transferred to buffers already.
     if (bufferBitState_.isEmpty() && fileReadComplete_) {
       return -1;
     }
-    return readBufferIndex_;
+    return checkError(readBufferIndex_);
   }
 
   @Override
@@ -91,7 +106,7 @@ class SpilledDataReadStatus extends ReadIndexStatus {
     fetchFileBufferIndex_ = (fetchFileBufferIndex_ + 1) % totalSize_;
 
     while (bufferBitState_.get(fetchFileBufferIndex_)
-        && !bufferReadComplete_) {
+        && !bufferReadComplete_ && !errorState_) {
       wait();
     }
 
@@ -99,7 +114,7 @@ class SpilledDataReadStatus extends ReadIndexStatus {
       return -1;
     }
 
-    return fetchFileBufferIndex_;
+    return checkError(fetchFileBufferIndex_);
   }
 
   @Override
@@ -121,14 +136,16 @@ class SpilledDataReadStatus extends ReadIndexStatus {
   }
 
   @Override
-  public synchronized void startReading() {
-    while (!spilledReadStart_)
+  public synchronized boolean startReading() {
+    while (!spilledReadStart_ && !errorState_) {
       try {
         wait();
       } catch (InterruptedException e) {
         LOG.error("Interrupted waiting to read the spilled file.", e);
         throw new RuntimeException(e);
       }
+    }
+    return !errorState_;
   }
 
 }

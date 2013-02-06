@@ -17,33 +17,34 @@
  */
 package org.apache.hama.bsp.message.io;
 
-import java.nio.ByteBuffer;
-
 import org.apache.hadoop.conf.Configuration;
 
 /**
- * Base interface defining the behaviour to process the spilled data provided
- * in a byte buffer.
+ * Base interface defining the behaviour to process the spilled data provided in
+ * a byte buffer.
  */
 public interface SpilledDataProcessor {
 
   /**
    * Initialize the data processor.
+   * 
    * @param conf
    * @return true if no errors.
    */
   boolean init(Configuration conf);
-  
+
   /**
    * Override the method to define the action to be taken on the spilled data
    * provided in the byte buffer.
+   * 
    * @param buffer
    * @return true if no errors.
    */
-  boolean handleSpilledBuffer(ByteBuffer buffer);
-  
+  boolean handleSpilledBuffer(SpilledByteBuffer buffer);
+
   /**
    * Close the data processor.
+   * 
    * @return true if no errors.
    */
   boolean close();

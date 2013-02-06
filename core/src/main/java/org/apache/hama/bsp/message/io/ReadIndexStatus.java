@@ -52,7 +52,7 @@ abstract class ReadIndexStatus {
   /**
    * Indicate to start reading.
    */
-  public abstract void startReading();
+  public abstract boolean startReading();
 
 }
 

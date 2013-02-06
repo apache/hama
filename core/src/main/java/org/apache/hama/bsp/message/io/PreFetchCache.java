@@ -142,12 +142,14 @@ public class PreFetchCache<M extends Writable> {
 
   public void startFetching(Class<M> classObject,
       SpilledDataInputBuffer buffer, Configuration conf)
-      throws InterruptedException {
+      throws InterruptedException, IOException {
 
     preFetchThread = new PreFetchThread<M>(classObject, objectListArr,
         capacity, buffer, totalMessages, status, conf);
     preFetchThread.start();
-    status.startReading();
+    if(!status.startReading()){
+      throw new IOException("Failed to start reading the spilled file: ");
+    }
     arrIndex = status.getReadBufferIndex();
   }
 
