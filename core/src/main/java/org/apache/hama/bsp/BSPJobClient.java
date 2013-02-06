@@ -370,7 +370,18 @@ public class BSPJobClient extends Configured implements Tool {
   }
 
   protected BSPJob partition(BSPJob job, int maxTasks) throws IOException {
+    String inputPath = job.getConfiguration().get(Constants.JOB_INPUT_DIR);
+    Path inputDir = new Path(inputPath);
+    if (fs.isFile(inputDir)) {
+      inputDir = inputDir.getParent();
+    }
+    
+    Path partitionDir = new Path(inputDir + "/partitions");
 
+    if (fs.exists(partitionDir)) {
+      fs.delete(partitionDir, true);
+    }
+    
     if (job.get("bsp.partitioning.runner.job") != null) {
       return job;
     }// Early exit for the partitioner job.
@@ -379,12 +390,6 @@ public class BSPJobClient extends Configured implements Tool {
         job,
         (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
             : maxTasks);
-
-    String inputPath = job.getConfiguration().get(Constants.JOB_INPUT_DIR);
-    Path inputDir = new Path(inputPath);
-    if (fs.isFile(inputDir)) {
-      inputDir = inputDir.getParent();
-    }
 
     if (inputPath != null) {
       int numSplits = splits.length;
@@ -405,12 +410,6 @@ public class BSPJobClient extends Configured implements Tool {
           || (job.getConfiguration().getBoolean(
               Constants.ENABLE_RUNTIME_PARTITIONING, false) && job
               .getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null)) {
-
-        Path partitionDir = new Path(inputDir + "/partitions");
-
-        if (fs.exists(partitionDir)) {
-          fs.delete(partitionDir, true);
-        }
 
         if (numTasks == 0) {
           numTasks = numSplits;
