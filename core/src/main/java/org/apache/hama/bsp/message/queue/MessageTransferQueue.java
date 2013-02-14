@@ -17,13 +17,21 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-
 /**
- * Synchronized Queue interface. Can be used to implement better synchronized
- * datastructures.
+ * 
+ *
+ * @param <M>
  */
-public interface SynchronizedQueue<T> extends MessageQueue<T>{
-
-  public abstract MessageQueue<T> getMessageQueue();
+public interface MessageTransferQueue<M> {
+  
+  /**
+   * 
+   */
+  public MessageQueue<M> getSenderQueue();
+  
+  /**
+   * 
+   */
+  public MessageQueue<M> getReceiverQueue();
 
 }

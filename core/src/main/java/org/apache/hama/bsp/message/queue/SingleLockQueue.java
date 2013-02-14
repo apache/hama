@@ -150,7 +150,7 @@ public final class SingleLockQueue<T> implements SynchronizedQueue<T> {
    * @see org.apache.hama.bsp.message.SynchronizedQueue#poll()
    */
   @Override
-  public Object poll() {
+  public T poll() {
     synchronized (mutex) {
       return queue.poll();
     }
@@ -189,5 +189,26 @@ public final class SingleLockQueue<T> implements SynchronizedQueue<T> {
   public static <T> SynchronizedQueue<T> synchronize(MessageQueue<T> queue,
       Object mutex) {
     return new SingleLockQueue<T>(queue, mutex);
+  }
+
+  @Override
+  public void prepareWrite() {
+    synchronized (mutex) {
+      queue.prepareWrite();
+    }
+  }
+
+  @Override
+  public void addAll(MessageQueue<T> otherqueue) {
+    synchronized (mutex) {
+      queue.addAll(otherqueue);
+    }
+  }
+
+  @Override
+  public boolean isMessageSerialized() {
+    synchronized (mutex) {
+      return queue.isMessageSerialized();
+    }
   }
 }

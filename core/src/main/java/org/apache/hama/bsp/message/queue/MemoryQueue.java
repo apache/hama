@@ -29,7 +29,7 @@ import org.apache.hama.bsp.TaskAttemptID;
 /**
  * LinkedList backed queue structure for bookkeeping messages.
  */
-public final class MemoryQueue<M extends Writable> implements MessageQueue<M> {
+public final class MemoryQueue<M extends Writable> implements MessageQueue<M>, MessageTransferQueue<M> {
 
   private final Deque<M> deque = new ArrayDeque<M>();
   private Configuration conf;
@@ -106,6 +106,16 @@ public final class MemoryQueue<M extends Writable> implements MessageQueue<M> {
   @Override
   public boolean isMessageSerialized() {
     return false;
+  }
+
+  @Override
+  public MessageQueue<M> getSenderQueue() {
+    return this;
+  }
+
+  @Override
+  public MessageQueue<M> getReceiverQueue() {
+    return this;
   }
 
 }

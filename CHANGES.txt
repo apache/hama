@@ -4,6 +4,7 @@ Release 0.7 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-722: Messaging queue should construct sender and receiver queue. (surajsmenon)
    HAMA-721: Added spilling queue with combiner. (surajsmenon)
    HAMA-559: Added spilling queue. (surajsmenon)
    HAMA-700: BSPPartitioner should be configurable to be optional and allow input format conversion (surajsmenon)

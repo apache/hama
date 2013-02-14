@@ -40,6 +40,7 @@ import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.bsp.message.queue.MemoryQueue;
 import org.apache.hama.bsp.message.queue.MessageQueue;
+import org.apache.hama.bsp.message.queue.MessageTransferQueue;
 import org.apache.hama.bsp.message.queue.SingleLockQueue;
 import org.apache.hama.bsp.message.queue.SynchronizedQueue;
 import org.apache.hama.util.BSPNetUtils;
@@ -59,7 +60,9 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   protected Configuration conf;
   protected final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
   protected final HashMap<InetSocketAddress, MessageQueue<M>> outgoingQueues = new HashMap<InetSocketAddress, MessageQueue<M>>();
+
   protected MessageQueue<M> localQueue;
+
   // this must be a synchronized implementation: this is accessed per RPC
   protected SynchronizedQueue<M> localQueueForNextIteration;
   // this peer object is just used for counter incrementation
@@ -89,8 +92,8 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     this.peer = peer;
     this.conf = conf;
     this.peerAddress = peerAddress;
-    this.localQueue = getQueue();
-    this.localQueueForNextIteration = getSynchronizedQueue();
+    this.localQueue = getSenderQueue();
+    this.localQueueForNextIteration = getSynchronizedReceiverQueue();
     this.maxCachedConnections = conf.getInt(MAX_CACHED_CONNECTIONS_KEY, 100);
   }
 
@@ -158,7 +161,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   public final void clearOutgoingQueues() {
     localQueue = localQueueForNextIteration.getMessageQueue();
     localQueue.prepareRead();
-    localQueueForNextIteration = getSynchronizedQueue();
+    localQueueForNextIteration = getSynchronizedReceiverQueue();
     notifyInit();
   }
 
@@ -179,7 +182,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     }
     MessageQueue<M> queue = outgoingQueues.get(targetPeerAddress);
     if (queue == null) {
-      queue = getQueue();
+      queue = getSenderQueue();
     }
     queue.add(msg);
     peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_SENT, 1L);
@@ -204,18 +207,42 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    * 
    * @return a <b>new</b> queue implementation.
    */
-  protected MessageQueue<M> getQueue() {
+  protected MessageQueue<M> getSenderQueue() {
     Class<?> queueClass = conf.getClass(QUEUE_TYPE_CLASS, MemoryQueue.class);
     LOG.debug("Creating new " + queueClass);
     @SuppressWarnings("unchecked")
-    MessageQueue<M> newInstance = (MessageQueue<M>) ReflectionUtils
+    MessageTransferQueue<M> newInstance = (MessageTransferQueue<M>) ReflectionUtils
         .newInstance(queueClass, conf);
-    newInstance.init(conf, attemptId);
-    return newInstance;
+    MessageQueue<M> queue = newInstance.getSenderQueue();
+    queue.init(conf, attemptId);
+    return queue;
   }
 
-  protected SynchronizedQueue<M> getSynchronizedQueue() {
-    return SingleLockQueue.synchronize(getQueue());
+  /**
+   * Returns a new queue implementation based on what was configured. If nothing
+   * has been configured for "hama.messenger.queue.class" then the
+   * {@link MemoryQueue} is used. If you have scalability issues, then better
+   * use {@link DiskQueue}.
+   * 
+   * @return a <b>new</b> queue implementation.
+   */
+  protected MessageQueue<M> getReceiverQueue() {
+    Class<?> queueClass = conf.getClass(QUEUE_TYPE_CLASS, MemoryQueue.class);
+    LOG.debug("Creating new " + queueClass);
+    @SuppressWarnings("unchecked")
+    MessageTransferQueue<M> newInstance = (MessageTransferQueue<M>) ReflectionUtils
+        .newInstance(queueClass, conf);
+    MessageQueue<M> queue = newInstance.getReceiverQueue();
+    queue.init(conf, attemptId);
+    return queue;
+  }
+
+  protected SynchronizedQueue<M> getSynchronizedSenderQueue() {
+    return SingleLockQueue.synchronize(getSenderQueue());
+  }
+
+  protected SynchronizedQueue<M> getSynchronizedReceiverQueue() {
+    return SingleLockQueue.synchronize(getReceiverQueue());
   }
 
   @Override
@@ -229,27 +256,27 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   }
 
   private void notifySentMessage(String peerName, M message) {
-      for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
-          aMessageListenerQueue.onMessageSent(peerName, message);
-      }
+    for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+      aMessageListenerQueue.onMessageSent(peerName, message);
+    }
   }
 
   private void notifyReceivedMessage(M message) throws IOException {
-      for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
-          aMessageListenerQueue.onMessageReceived(message);
-      }
+    for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+      aMessageListenerQueue.onMessageReceived(message);
+    }
   }
 
   private void notifyInit() {
-      for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
-          aMessageListenerQueue.onInitialized();
-      }
+    for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+      aMessageListenerQueue.onInitialized();
+    }
   }
 
   private void notifyClose() {
-      for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
-          aMessageListenerQueue.onClose();
-      }
+    for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+      aMessageListenerQueue.onClose();
+    }
   }
 
   @Override

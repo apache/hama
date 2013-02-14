@@ -30,7 +30,7 @@ import org.apache.hama.bsp.TaskAttemptID;
  * sorted receive and send.
  */
 public final class SortedMessageQueue<M extends WritableComparable<M>>
-    implements MessageQueue<M> {
+    implements MessageQueue<M>, MessageTransferQueue<M> {
 
   private final PriorityQueue<M> queue = new PriorityQueue<M>();
   private Configuration conf;
@@ -108,6 +108,16 @@ public final class SortedMessageQueue<M extends WritableComparable<M>>
   @Override
   public boolean isMessageSerialized() {
     return false;
+  }
+
+  @Override
+  public MessageQueue<M> getSenderQueue() {
+    return this;
+  }
+
+  @Override
+  public MessageQueue<M> getReceiverQueue() {
+    return this;
   }
 
 }
