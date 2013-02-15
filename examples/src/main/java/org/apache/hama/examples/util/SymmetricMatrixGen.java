@@ -83,12 +83,12 @@ public class SymmetricMatrixGen {
           if (nonZero && !edges.contains(j) && i != j) {
             edges.add(j);
             
-            // TODO please refactor this.
+            // allocate remainders to the last task
             int peerIndex = j / interval;
             if(peerIndex == peer.getNumPeers())
               peerIndex = peerIndex - 1;
             
-            peer.send(peer.getPeerName(j / interval), new Text(j + "," + i));
+            peer.send(peer.getPeerName(peerIndex), new Text(j + "," + i));
           }
         }
 
