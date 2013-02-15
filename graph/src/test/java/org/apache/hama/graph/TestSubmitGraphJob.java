@@ -115,7 +115,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
       reader.close();
     }
     LOG.info("Sum is: " + sum);
-    assertTrue(sum > 0.9d && sum <= 1.1d);
+    assertTrue("unexpected sum " +sum, sum > 0.9d && sum <= 1.1d);
   }
 
 

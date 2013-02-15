@@ -71,7 +71,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   private Combiner<M> combiner;
   private Partitioner<V, M> partitioner;
 
-  private VerticesInfo<V, E, M> vertices;
+  private OffHeapVerticesInfo<V, E, M> vertices;
   private boolean updated = true;
   private int globalUpdateCounts = 0;
 
@@ -261,7 +261,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     aggregationRunner = new AggregationRunner<V, E, M>();
     aggregationRunner.setupAggregators(peer);
 
-    vertices = new VerticesInfo<V, E, M>();
+    vertices = new OffHeapVerticesInfo<V, E, M>();
   }
 
   /**
