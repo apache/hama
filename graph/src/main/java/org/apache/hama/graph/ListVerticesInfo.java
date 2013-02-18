@@ -32,7 +32,7 @@ import org.apache.hadoop.io.Writable;
  * @param <E> Edge cost object type
  * @param <M> Vertex value object type
  */
-public class VerticesInfo<V extends Writable, E extends Writable, M extends Writable>
+public class ListVerticesInfo<V extends Writable, E extends Writable, M extends Writable>
     implements Iterable<Vertex<V, E, M>> {
 
   private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(100);
