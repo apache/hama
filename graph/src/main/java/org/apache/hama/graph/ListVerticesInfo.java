@@ -26,14 +26,13 @@ import java.util.List;
 import org.apache.hadoop.io.Writable;
 
 /**
- * VerticesInfo encapsulates the storage of vertices in a BSP Task.
- * 
- * @param <V> Vertex ID object type
- * @param <E> Edge cost object type
- * @param <M> Vertex value object type
+ * {@link List} based {@link VerticesInfo} implementation
+ * @param <V>
+ * @param <E>
+ * @param <M>
  */
-public class ListVerticesInfo<V extends Writable, E extends Writable, M extends Writable>
-    implements Iterable<Vertex<V, E, M>> {
+public class ListVerticesInfo<V extends Writable, E extends Writable,
+        M extends Writable> implements VerticesInfo<V, E, M>{
 
   private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(100);
 

@@ -71,7 +71,7 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   private Combiner<M> combiner;
   private Partitioner<V, M> partitioner;
 
-  private OffHeapVerticesInfo<V, E, M> vertices;
+  private VerticesInfo<V, E, M> vertices;
   private boolean updated = true;
   private int globalUpdateCounts = 0;
 

@@ -28,7 +28,7 @@ import org.apache.hadoop.io.Writable;
  * An off heap version of a {@link Vertex} storage.
  */
 public class OffHeapVerticesInfo<V extends Writable, E extends Writable, M extends Writable>
-        implements Iterable<Vertex<V, E, M>> {
+        implements VerticesInfo<V, E, M> {
 
     private final CacheService<V, Vertex<V, E, M>> vertices;
 
