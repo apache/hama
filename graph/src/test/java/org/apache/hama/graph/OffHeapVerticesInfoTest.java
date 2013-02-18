@@ -27,6 +27,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -46,6 +47,7 @@ public class OffHeapVerticesInfoTest {
         OffHeapVerticesInfo<DoubleWritable, DoubleWritable, DoubleWritable> verticesInfo =
                 new OffHeapVerticesInfo<DoubleWritable, DoubleWritable, DoubleWritable>();
         Vertex<DoubleWritable, DoubleWritable, DoubleWritable> vertex = creteDoubleVertex(1d);
+        assertNotNull(vertex.getVertexID());
         verticesInfo.addVertex(vertex);
         assertTrue("added vertex could not be found in the cache", verticesInfo.iterator().hasNext());
     }
@@ -54,7 +56,7 @@ public class OffHeapVerticesInfoTest {
     public void testAdditionWithNonStrictCache() throws Exception {
         OffHeapVerticesInfo<DoubleWritable, DoubleWritable, DoubleWritable> verticesInfo =
                 new OffHeapVerticesInfo<DoubleWritable, DoubleWritable, DoubleWritable>(false);
-        Vertex<DoubleWritable, DoubleWritable, DoubleWritable> vertex = creteDoubleVertex(1d);
+        Vertex<DoubleWritable, DoubleWritable, DoubleWritable> vertex = creteDoubleVertex(2d);
         verticesInfo.addVertex(vertex);
         assertTrue("added vertex could not be found in the cache", verticesInfo.iterator().hasNext());
     }
@@ -62,6 +64,12 @@ public class OffHeapVerticesInfoTest {
 
     private Vertex<DoubleWritable, DoubleWritable, DoubleWritable> creteDoubleVertex(final Double id) {
         return new Vertex<DoubleWritable, DoubleWritable, DoubleWritable>() {
+
+            @Override
+            public DoubleWritable getVertexID() {
+                return new DoubleWritable(id);
+            }
+
             @Override
             public DoubleWritable createVertexIDObject() {
                 return new DoubleWritable(id);

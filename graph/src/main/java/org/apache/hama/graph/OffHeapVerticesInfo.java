@@ -21,6 +21,7 @@ import java.util.Iterator;
 
 import org.apache.directmemory.DirectMemory;
 import org.apache.directmemory.cache.CacheService;
+import org.apache.directmemory.serialization.protostuff.ProtoStuffWithLinkedBufferSerializer;
 import org.apache.directmemory.utils.CacheValuesIterable;
 import org.apache.hadoop.io.Writable;
 
@@ -36,9 +37,9 @@ public class OffHeapVerticesInfo<V extends Writable, E extends Writable, M exten
 
     public OffHeapVerticesInfo(boolean strict) {
         this.strict = strict;
-        this.vertices = new DirectMemory<V, Vertex<V, E, M>>().setNumberOfBuffers(1).
-                setSize(1000).setInitialCapacity(10000).setConcurrencyLevel(100).
-                setDisposalTime(100000).newCacheService();
+        this.vertices = new DirectMemory<V, Vertex<V, E, M>>().setNumberOfBuffers(10).
+                setSize(1000000).setInitialCapacity(10).setConcurrencyLevel(1).
+                setDisposalTime(100).setSerializer(new ProtoStuffWithLinkedBufferSerializer()).newCacheService();
     }
 
     public OffHeapVerticesInfo() {
