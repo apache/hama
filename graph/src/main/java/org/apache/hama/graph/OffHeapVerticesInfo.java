@@ -37,9 +37,14 @@ public class OffHeapVerticesInfo<V extends Writable, E extends Writable, M exten
 
     public OffHeapVerticesInfo(boolean strict) {
         this.strict = strict;
-        this.vertices = new DirectMemory<V, Vertex<V, E, M>>().setNumberOfBuffers(10).
-                setSize(1000000).setInitialCapacity(10).setConcurrencyLevel(1).
-                setDisposalTime(100).setSerializer(new ProtoStuffWithLinkedBufferSerializer()).newCacheService();
+        this.vertices = new DirectMemory<V, Vertex<V, E, M>>()
+                .setNumberOfBuffers(10)
+                .setSize(102400)
+                .setInitialCapacity(10000)
+                .setConcurrencyLevel(10)
+                .setDisposalTime(360000)
+                .setSerializer(new ProtoStuffWithLinkedBufferSerializer())
+                .newCacheService();
     }
 
     public OffHeapVerticesInfo() {
