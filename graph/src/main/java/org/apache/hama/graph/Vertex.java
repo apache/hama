@@ -47,7 +47,7 @@ import org.apache.hama.bsp.Partitioner;
  * @param <M> Vertex value object type
  */
 public abstract class Vertex<V extends WritableComparable<? super V>, E extends Writable, M extends Writable>
-    implements VertexInterface<V, E, M>, Writable {
+    implements VertexInterface<V, E, M> {
 
   GraphJobRunner<?, ?, ?> runner;
 
@@ -308,6 +308,12 @@ public abstract class Vertex<V extends WritableComparable<? super V>, E extends 
     out.writeBoolean(votedToHalt);
     writeState(out);
 
+  }
+
+  // compare across the vertex ID
+  @Override
+  public final int compareTo(VertexInterface<V, E, M> o) {
+    return getVertexID().compareTo(o.getVertexID());
   }
 
   /**

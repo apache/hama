@@ -24,9 +24,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -43,7 +41,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
 
   public static final Log LOG = LogFactory.getLog(BSPMessageBundle.class);
 
-  private HashMap<String, LinkedList<M>> messages = new HashMap<String, LinkedList<M>>();
+  private HashMap<String, List<M>> messages = new HashMap<String, List<M>>();
   private HashMap<String, Class<M>> classCache = new HashMap<String, Class<M>>();
 
   public BSPMessageBundle() {
@@ -56,22 +54,20 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
    */
   public void addMessage(M message) {
     String className = message.getClass().getName();
-    if (!messages.containsKey(className)) {
-      // use linked list because we're just iterating over them
-      LinkedList<M> list = new LinkedList<M>();
-      list.add(message);
+    List<M> list = messages.get(className);
+    if (list == null) {
+      list = new ArrayList<M>();
       messages.put(className, list);
-      list = null;
-    } else {
-      messages.get(className).add(message);
     }
+
+    list.add(message);
   }
 
   public List<M> getMessages() {
     // here we use an arraylist, because we know the size and outside may need
     // random access
     List<M> mergeList = new ArrayList<M>(messages.size());
-    for (LinkedList<M> c : messages.values()) {
+    for (List<M> c : messages.values()) {
       mergeList.addAll(c);
     }
     return mergeList;
@@ -88,9 +84,9 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
     int classNames = 0;
     DataOutputStream dos = null;
 
-    for (Map.Entry<String, LinkedList<M>> e : messages.entrySet()) {
+    for (Entry<String, List<M>> e : messages.entrySet()) {
       classNames += e.getKey().length();
-      LinkedList<M> c = e.getValue();
+      List<M> c = e.getValue();
 
       if (messages.size() == 1 && c.size() < sample) {
         dos = new DataOutputStream(new ByteArrayOutputStream());
@@ -118,9 +114,9 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
     // writes the k/v mapping size
     out.writeInt(messages.size());
     if (messages.size() > 0) {
-      for (Entry<String, LinkedList<M>> entry : messages.entrySet()) {
+      for (Entry<String, List<M>> entry : messages.entrySet()) {
         out.writeUTF(entry.getKey());
-        LinkedList<M> messageList = entry.getValue();
+        List<M> messageList = entry.getValue();
         out.writeInt(messageList.size());
         for (M msg : messageList) {
           msg.write(out);
@@ -133,14 +129,14 @@ public class BSPMessageBundle<M extends Writable> implements Writable {
   @SuppressWarnings("unchecked")
   public void readFields(DataInput in) throws IOException {
     if (messages == null) {
-      messages = new HashMap<String, LinkedList<M>>();
+      messages = new HashMap<String, List<M>>();
     }
     int numMessages = in.readInt();
     if (numMessages > 0) {
       for (int entries = 0; entries < numMessages; entries++) {
         String className = in.readUTF();
         int size = in.readInt();
-        LinkedList<M> msgList = new LinkedList<M>();
+        List<M> msgList = new ArrayList<M>();
         messages.put(className, msgList);
 
         Class<M> clazz = null;

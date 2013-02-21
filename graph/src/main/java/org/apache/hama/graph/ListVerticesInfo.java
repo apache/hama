@@ -33,59 +33,58 @@ import org.apache.hadoop.io.WritableComparable;
  * @param <E> Edge cost object type
  * @param <M> Vertex value object type
  */
-public class VerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
-    implements Iterable<Vertex<V, E, M>> {
+public final class ListVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
+    implements IVerticesInfo<V, E, M> {
 
   private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(
       100);
 
+  /*
+   * (non-Javadoc)
+   * @see
+   * org.apache.hama.graph.IVerticesInfo#addVertex(org.apache.hama.graph.Vertex)
+   */
+  @Override
   public void addVertex(Vertex<V, E, M> vertex) {
-    int i = 0;
-    for (Vertex<V, E, M> check : this) {
-      if (check.getVertexID().equals(vertex.getVertexID())) {
-        this.vertices.set(i, vertex);
-        return;
-      }
-      ++i;
-    }
     vertices.add(vertex);
-  }
-
-  public Vertex<V, E, M> getVertex(V vertexId) {
-    for (Vertex<V, E, M> vertex : this) {
-      if (vertex.getVertexID().equals(vertexId)) {
-        return vertex;
-      }
-    }
-    return null;
-  }
-
-  public boolean containsVertex(V vertexId) {
-    for (Vertex<V, E, M> vertex : this) {
-      if (vertex.getVertexID().equals(vertexId)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   public void clear() {
     vertices.clear();
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.graph.IVerticesInfo#size()
+   */
+  @Override
   public int size() {
     return this.vertices.size();
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.graph.IVerticesInfo#iterator()
+   */
   @Override
   public Iterator<Vertex<V, E, M>> iterator() {
     return vertices.iterator();
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.graph.IVerticesInfo#recoverState(java.io.DataInput)
+   */
+  @Override
   public void recoverState(DataInput in) {
 
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.graph.IVerticesInfo#saveState(java.io.DataOutput)
+   */
+  @Override
   public void saveState(DataOutput out) {
 
   }

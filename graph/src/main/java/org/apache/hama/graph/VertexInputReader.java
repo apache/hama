@@ -17,6 +17,9 @@
  */
 package org.apache.hama.graph;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -46,7 +49,7 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
   @Override
   public void setup(Configuration conf) {
     // initialize the usual vertex structures for read/write methods
-    GraphJobRunner.initClasses(conf);
+    GraphJobRunner.<V, E, M> initClasses(conf);
   }
 
   private final KeyValuePair<Writable, Writable> outputRecord = new KeyValuePair<Writable, Writable>();
@@ -66,7 +69,8 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
     Class<Vertex<V, E, M>> vertexClass = (Class<Vertex<V, E, M>>) conf
         .getClass(GraphJob.VERTEX_CLASS_ATTR, Vertex.class);
     boolean vertexCreation;
-    Vertex<V, E, M> vertex = GraphJobRunner.newVertexInstance(vertexClass);
+    Vertex<V, E, M> vertex = GraphJobRunner
+        .<V, E, M> newVertexInstance(vertexClass);
     try {
       vertexCreation = parseVertex((KEYIN) inputRecord.getKey(),
           (VALUEIN) inputRecord.getValue(), vertex);
@@ -91,6 +95,12 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
     Vertex<V, E, M> vertex = (Vertex<V, E, M>) outputRecord.getKey();
     return Math.abs(partitioner.getPartition(vertex.getVertexID(),
         vertex.getValue(), numTasks));
+  }
+
+  // final because we don't want vertices to change ordering
+  @Override
+  public final Map<Writable, Writable> newMap() {
+    return new TreeMap<Writable, Writable>();
   }
 
 }

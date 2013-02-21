@@ -77,7 +77,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
   public static Class<? extends Writable> EDGE_VALUE_CLASS;
   public static Class<Vertex<?, ?, ?>> vertexClass;
 
-  private VerticesInfo<V, E, M> vertices;
+  private IVerticesInfo<V, E, M> vertices;
   private boolean updated = true;
   private int globalUpdateCounts = 0;
 
@@ -234,7 +234,7 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
     maxIteration = peer.getConfiguration().getInt("hama.graph.max.iteration",
         -1);
 
-    initClasses(conf);
+    GraphJobRunner.<V, E, M> initClasses(conf);
 
     partitioner = (Partitioner<V, M>) org.apache.hadoop.util.ReflectionUtils
         .newInstance(
@@ -253,11 +253,11 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
     aggregationRunner = new AggregationRunner<V, E, M>();
     aggregationRunner.setupAggregators(peer);
 
-    vertices = new VerticesInfo<V, E, M>();
+    vertices = new ListVerticesInfo<V, E, M>();
   }
 
   @SuppressWarnings("unchecked")
-  public static <V extends WritableComparable<V>, E extends Writable, M extends Writable> void initClasses(
+  public static <V extends WritableComparable<? super V>, E extends Writable, M extends Writable> void initClasses(
       Configuration conf) {
     Class<V> vertexIdClass = (Class<V>) conf.getClass(
         GraphJob.VERTEX_ID_CLASS_ATTR, Text.class, Writable.class);
@@ -289,14 +289,16 @@ public final class GraphJobRunner<V extends WritableComparable<V>, E extends Wri
       LOG.debug("Vertex class: " + vertexClass);
 
     KeyValuePair<Writable, Writable> next;
+    // our VertexInputReader ensures that the incoming vertices are sorted by
+    // ID.
     while ((next = peer.readNext()) != null) {
       Vertex<V, E, M> vertex = (Vertex<V, E, M>) next.getKey();
       vertex.runner = this;
       vertex.setup(conf);
-      vertices.addVertex(vertex);
       if (selfReference) {
         vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
       }
+      vertices.addVertex(vertex);
     }
 
     LOG.info(vertices.size() + " vertices are loaded into "

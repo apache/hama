@@ -97,10 +97,15 @@ public class PartitioningRunner extends
         KeyValuePair<Writable, Writable> inputRecord, Configuration conf);
 
     public int getPartitionId(KeyValuePair<Writable, Writable> inputRecord,
-        @SuppressWarnings("rawtypes")
-        Partitioner partitioner, Configuration conf,
-        @SuppressWarnings("rawtypes")
-        BSPPeer peer, int numTasks);
+        @SuppressWarnings("rawtypes") Partitioner partitioner,
+        Configuration conf, @SuppressWarnings("rawtypes") BSPPeer peer,
+        int numTasks);
+
+    /**
+     * @return a map implementation, so order can be changed in subclasses if
+     *         needed.
+     */
+    public Map<Writable, Writable> newMap();
   }
 
   /**
@@ -117,10 +122,9 @@ public class PartitioningRunner extends
     @SuppressWarnings("unchecked")
     @Override
     public int getPartitionId(KeyValuePair<Writable, Writable> outputRecord,
-        @SuppressWarnings("rawtypes")
-        Partitioner partitioner, Configuration conf,
-        @SuppressWarnings("rawtypes")
-        BSPPeer peer, int numTasks) {
+        @SuppressWarnings("rawtypes") Partitioner partitioner,
+        Configuration conf, @SuppressWarnings("rawtypes") BSPPeer peer,
+        int numTasks) {
       return Math.abs(partitioner.getPartition(outputRecord.getKey(),
           outputRecord.getValue(), numTasks));
     }
@@ -128,6 +132,11 @@ public class PartitioningRunner extends
     @Override
     public void setup(Configuration conf) {
 
+    }
+
+    @Override
+    public Map<Writable, Writable> newMap() {
+      return new HashMap<Writable, Writable>();
     }
   }
 
@@ -164,10 +173,12 @@ public class PartitioningRunner extends
       int index = converter.getPartitionId(outputPair, partitioner, conf, peer,
           desiredNum);
 
-      if (!values.containsKey(index)) {
-        values.put(index, new HashMap<Writable, Writable>());
+      Map<Writable, Writable> map = values.get(index);
+      if (map == null) {
+        map = converter.newMap();
+        values.put(index, map);
       }
-      values.get(index).put(outputPair.getKey(), outputPair.getValue());
+      map.put(outputPair.getKey(), outputPair.getValue());
     }
 
     // The reason of use of Memory is to reduce file opens
