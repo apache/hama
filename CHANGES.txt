@@ -4,6 +4,7 @@ Release 0.7 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-736: Add one pass graph generator (tjungblut)
    HAMA-722: Messaging queue should construct sender and receiver queue. (surajsmenon)
    HAMA-721: Added spilling queue with combiner. (surajsmenon)
    HAMA-559: Added spilling queue. (surajsmenon)

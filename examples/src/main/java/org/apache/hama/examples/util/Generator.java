@@ -24,6 +24,8 @@ public class Generator {
       System.out.println("Valid command names are:");
       System.out
           .println("  symmetric: Generate random symmetric matrix, which can be used as a input of graph examples.");
+      System.out
+          .println("  fastgen: Generate random matrix, which can be used as a input of graph examples and is faster than symmetric.");
       System.out.println("  square: Generate random square matrix.");
       System.exit(1);
     }
@@ -33,6 +35,8 @@ public class Generator {
 
     if (args[0].equals("symmetric")) {
       SymmetricMatrixGen.main(newArgs);
+    } else if (args[0].equals("fastgen")) {
+      FastGraphGen.main(newArgs);
     } else if (args[0].equals("square")) {
       System.out.println("Not implemented yet.");
       // SquareMatrixGen.main(newArgs);
