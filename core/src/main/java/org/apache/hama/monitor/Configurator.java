@@ -34,42 +34,42 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.monitor.Monitor.Task;
 
 /**
- * Configurator loads and configure jar files.  
+ * Configurator loads and configure jar files.
  */
 public final class Configurator {
 
-  public static final Log LOG = LogFactory.getLog(Configurator.class); 
+  public static final Log LOG = LogFactory.getLog(Configurator.class);
   public static final String DEFAULT_PLUGINS_DIR = "plugins";
-  private static final ConcurrentMap<String, Long> repos = 
-    new ConcurrentHashMap<String, Long>();
+  private static final ConcurrentMap<String, Long> repos = new ConcurrentHashMap<String, Long>();
 
   /**
    * Configure plugins directory for monitoring GroomServer.
+   * 
    * @param conf file points out the plugin dir location.
-   * @return Map contains jar path and task to be executed; null if 
-   *             plugin directory, default set to $HAMA_HOME/plugins, doesn't 
-   *             exist. 
-   */ 
-  public static Map<String, Task> configure(HamaConfiguration conf, 
+   * @return Map contains jar path and task to be executed; null if plugin
+   *         directory, default set to $HAMA_HOME/plugins, doesn't exist.
+   */
+  public static Map<String, Task> configure(HamaConfiguration conf,
       MonitorListener listener) throws IOException {
     String hamaHome = System.getProperty("hama.home.dir");
-    String pluginPath = conf.get("bsp.monitor.plugins.dir", 
-      hamaHome+File.separator+DEFAULT_PLUGINS_DIR);
+    String pluginPath = conf.get("bsp.monitor.plugins.dir", hamaHome
+        + File.separator + DEFAULT_PLUGINS_DIR);
     File pluginDir = new File(pluginPath);
-    if(null == pluginDir || null == pluginDir.listFiles()) return null; 
+    if (null == pluginDir || null == pluginDir.listFiles())
+      return null;
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
     Map<String, Task> taskList = new HashMap<String, Task>();
-    LOG.debug("Scanning jar files within "+pluginDir+".");
-    for(File jar: pluginDir.listFiles()) {
+    LOG.debug("Scanning jar files within " + pluginDir + ".");
+    for (File jar : pluginDir.listFiles()) {
       String jarPath = jar.getPath();
       Long timestamp = repos.get(jarPath);
-      if(null == timestamp || jar.lastModified() > timestamp) {
+      if (null == timestamp || jar.lastModified() > timestamp) {
         Task t = load(jar, loader);
-        if(null != t) {
+        if (null != t) {
           t.setListener(listener);
           taskList.put(jarPath, t);
           repos.put(jarPath, jar.lastModified());
-          LOG.debug(jar.getName()+" is loaded.");
+          LOG.debug(jar.getName() + " is loaded.");
         }
       }
     }
@@ -78,8 +78,9 @@ public final class Configurator {
 
   /**
    * Load jar from specified path.
+   * 
    * @param path to the jar file.
-   * @param loader of the current thread.  
+   * @param loader of the current thread.
    * @return task to be run.
    */
   private static Task load(File path, ClassLoader loader) throws IOException {
@@ -87,14 +88,14 @@ public final class Configurator {
     Manifest manifest = jar.getManifest();
     String pkg = manifest.getMainAttributes().getValue("Package");
     String main = manifest.getMainAttributes().getValue("Main-Class");
-    if(null == pkg || null == main ) 
-      throw new NullPointerException("Package or main class not found "+
-      "in menifest file.");
+    if (null == pkg || null == main)
+      throw new NullPointerException("Package or main class not found "
+          + "in menifest file.");
     String namespace = pkg + File.separator + main;
     namespace = namespace.replaceAll(File.separator, ".");
-    LOG.debug("Task class to be loaded: "+namespace);
-    URLClassLoader child = 
-      new URLClassLoader(new URL[]{path.toURI().toURL()}, loader); 
+    LOG.debug("Task class to be loaded: " + namespace);
+    URLClassLoader child = new URLClassLoader(
+        new URL[] { path.toURI().toURL() }, loader);
     Thread.currentThread().setContextClassLoader(child);
     Class<?> taskClass = null;
     try {
@@ -102,16 +103,17 @@ public final class Configurator {
     } catch (ClassNotFoundException cnfe) {
       LOG.warn("Task class is not found.", cnfe);
     }
-    if(null == taskClass) return null;
+    if (null == taskClass)
+      return null;
 
     try {
-      return (Task)taskClass.newInstance();
-    } catch(InstantiationException ie) {
-      LOG.warn("Unable to instantiate task class."+namespace, ie);
-    } catch(IllegalAccessException iae) {
+      return (Task) taskClass.newInstance();
+    } catch (InstantiationException ie) {
+      LOG.warn("Unable to instantiate task class." + namespace, ie);
+    } catch (IllegalAccessException iae) {
       LOG.warn(iae);
     }
     return null;
   }
-  
+
 }

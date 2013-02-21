@@ -17,6 +17,8 @@
  */
 package org.apache.hama.examples;
 
+import java.io.IOException;
+
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -33,8 +35,6 @@ import org.apache.hama.ml.regression.RegressionModel;
 import org.apache.hama.ml.regression.VectorDoubleFileInputFormat;
 import org.apache.hama.ml.writable.VectorWritable;
 
-import java.io.IOException;
-
 /**
  * A {@link GradientDescentBSP} job example
  */
@@ -44,10 +44,10 @@ public class GradientDescentExample {
   public static void main(String[] args) throws InterruptedException,
       IOException, ClassNotFoundException {
 
-   if (!(args.length == 1 || args.length == 2)) {
-     System.out.println("USAGE: <INPUT_PATH> [<REGRESSION_MODEL>]");
-     return;
-   }
+    if (!(args.length == 1 || args.length == 2)) {
+      System.out.println("USAGE: <INPUT_PATH> [<REGRESSION_MODEL>]");
+      return;
+    }
 
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
@@ -58,14 +58,13 @@ public class GradientDescentExample {
     if (args.length == 2 && args[1] != null) {
       if (args[1].equals("logistic")) {
         conf.setClass(GradientDescentBSP.REGRESSION_MODEL_CLASS,
-          LogisticRegressionModel.class, RegressionModel.class);
-      }
-      else if (args[1].equals("linear")) {
+            LogisticRegressionModel.class, RegressionModel.class);
+      } else if (args[1].equals("linear")) {
         // do nothing as 'linear' is default
-      }
-      else {
-        throw new RuntimeException(new StringBuilder("unsupported RegressionModel").
-                append(args[1]).append(", use 'logistic' or 'linear'").toString());
+      } else {
+        throw new RuntimeException(new StringBuilder(
+            "unsupported RegressionModel").append(args[1])
+            .append(", use 'logistic' or 'linear'").toString());
       }
     }
 

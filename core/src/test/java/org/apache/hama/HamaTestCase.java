@@ -32,14 +32,14 @@ import org.apache.hama.util.Bytes;
 
 public abstract class HamaTestCase extends TestCase {
   private static Log LOG = LogFactory.getLog(HamaTestCase.class);
-  
+
   /** configuration parameter name for test directory */
   public static final String TEST_DIRECTORY_KEY = "test.build.data";
 
   private boolean localfs = false;
   protected Path testDir = null;
   protected FileSystem fs = null;
-  
+
   static {
     initialize();
   }
@@ -51,7 +51,7 @@ public abstract class HamaTestCase extends TestCase {
     super();
     init();
   }
-  
+
   /**
    * @param name
    */
@@ -59,7 +59,7 @@ public abstract class HamaTestCase extends TestCase {
     super(name);
     init();
   }
-  
+
   private void init() {
     conf = new HamaConfiguration();
     System.setProperty("hama.log.dir", "/tmp/hama-test/logs/");
@@ -76,8 +76,7 @@ public abstract class HamaTestCase extends TestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    localfs =
-      (conf.get("fs.defaultFS", "file:///").compareTo("file:///") == 0);
+    localfs = (conf.get("fs.defaultFS", "file:///").compareTo("file:///") == 0);
 
     if (fs == null) {
       this.fs = FileSystem.get(conf);
@@ -89,8 +88,7 @@ public abstract class HamaTestCase extends TestCase {
           fs.delete(testDir, true);
         }
       } else {
-        this.testDir =
-          this.fs.makeQualified(new Path("/tmp/hama-test"));
+        this.testDir = this.fs.makeQualified(new Path("/tmp/hama-test"));
       }
     } catch (Exception e) {
       LOG.fatal("error during setup", e);
@@ -113,28 +111,28 @@ public abstract class HamaTestCase extends TestCase {
   }
 
   protected Path getUnitTestdir(String testName) {
-    return new Path(
-        conf.get(TEST_DIRECTORY_KEY, "/tmp/hama-test/build/data"), testName);
+    return new Path(conf.get(TEST_DIRECTORY_KEY, "/tmp/hama-test/build/data"),
+        testName);
   }
 
   /**
    * Initializes parameters used in the test environment:
-   *
+   * 
    * Sets the configuration parameter TEST_DIRECTORY_KEY if not already set.
-   * Sets the boolean debugging if "DEBUGGING" is set in the environment.
-   * If debugging is enabled, reconfigures logging so that the root log level is
+   * Sets the boolean debugging if "DEBUGGING" is set in the environment. If
+   * debugging is enabled, reconfigures logging so that the root log level is
    * set to WARN and the logging level for the package is set to DEBUG.
    */
   public static void initialize() {
     if (System.getProperty(TEST_DIRECTORY_KEY) == null) {
-      System.setProperty(TEST_DIRECTORY_KEY, new File(
-          "build/hama/test").getAbsolutePath());
+      System.setProperty(TEST_DIRECTORY_KEY,
+          new File("build/hama/test").getAbsolutePath());
     }
   }
 
   /**
    * Common method to close down a MiniDFSCluster and the associated file system
-   *
+   * 
    * @param cluster
    */
   public static void shutdownDfs(MiniDFSCluster cluster) {
@@ -143,7 +141,7 @@ public abstract class HamaTestCase extends TestCase {
       try {
         cluster.shutdown();
       } catch (Exception e) {
-        /// Can get a java.lang.reflect.UndeclaredThrowableException thrown
+        // / Can get a java.lang.reflect.UndeclaredThrowableException thrown
         // here because of an InterruptedException. Don't let exceptions in
         // here be cause of test failure.
       }
@@ -160,21 +158,18 @@ public abstract class HamaTestCase extends TestCase {
     }
   }
 
-  public void assertByteEquals(byte[] expected,
-                               byte[] actual) {
+  public void assertByteEquals(byte[] expected, byte[] actual) {
     if (Bytes.compareTo(expected, actual) != 0) {
-      throw new AssertionFailedError("expected:<" +
-      Bytes.toString(expected) + "> but was:<" +
-      Bytes.toString(actual) + ">");
+      throw new AssertionFailedError("expected:<" + Bytes.toString(expected)
+          + "> but was:<" + Bytes.toString(actual) + ">");
     }
   }
 
-  public static void assertEquals(byte[] expected,
-                               byte[] actual) {
+  public static void assertEquals(byte[] expected, byte[] actual) {
     if (Bytes.compareTo(expected, actual) != 0) {
-      throw new AssertionFailedError("expected:<" +
-      Bytes.toStringBinary(expected) + "> but was:<" +
-      Bytes.toStringBinary(actual) + ">");
+      throw new AssertionFailedError("expected:<"
+          + Bytes.toStringBinary(expected) + "> but was:<"
+          + Bytes.toStringBinary(actual) + ">");
     }
   }
 

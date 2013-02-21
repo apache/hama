@@ -65,6 +65,7 @@ public class PartitioningRunner extends
     converter = ReflectionUtils.newInstance(conf.getClass(
         Constants.RUNTIME_PARTITION_RECORDCONVERTER,
         DefaultRecordConverter.class, RecordConverter.class), conf);
+    converter.setup(conf);
 
     if (conf.get(Constants.RUNTIME_PARTITIONING_DIR) == null) {
       this.partitionDir = new Path(inputDir + "/partitions");
@@ -82,6 +83,8 @@ public class PartitioningRunner extends
    */
   public static interface RecordConverter {
 
+    public void setup(Configuration conf);
+
     /**
      * Should return the Key-Value pair constructed from the input format.
      * 
@@ -94,9 +97,10 @@ public class PartitioningRunner extends
         KeyValuePair<Writable, Writable> inputRecord, Configuration conf);
 
     public int getPartitionId(KeyValuePair<Writable, Writable> inputRecord,
-        @SuppressWarnings("rawtypes") Partitioner partitioner,
-        Configuration conf, @SuppressWarnings("rawtypes") BSPPeer peer,
-        int numTasks);
+        @SuppressWarnings("rawtypes")
+        Partitioner partitioner, Configuration conf,
+        @SuppressWarnings("rawtypes")
+        BSPPeer peer, int numTasks);
   }
 
   /**
@@ -113,11 +117,17 @@ public class PartitioningRunner extends
     @SuppressWarnings("unchecked")
     @Override
     public int getPartitionId(KeyValuePair<Writable, Writable> outputRecord,
-        @SuppressWarnings("rawtypes") Partitioner partitioner,
-        Configuration conf, @SuppressWarnings("rawtypes") BSPPeer peer,
-        int numTasks) {
+        @SuppressWarnings("rawtypes")
+        Partitioner partitioner, Configuration conf,
+        @SuppressWarnings("rawtypes")
+        BSPPeer peer, int numTasks) {
       return Math.abs(partitioner.getPartition(outputRecord.getKey(),
           outputRecord.getValue(), numTasks));
+    }
+
+    @Override
+    public void setup(Configuration conf) {
+
     }
   }
 
@@ -159,7 +169,7 @@ public class PartitioningRunner extends
       }
       values.get(index).put(outputPair.getKey(), outputPair.getValue());
     }
-    
+
     // The reason of use of Memory is to reduce file opens
     for (Map.Entry<Integer, Map<Writable, Writable>> e : values.entrySet()) {
       Path destFile = new Path(partitionDir + "/part-" + e.getKey() + "/file-"
@@ -177,55 +187,55 @@ public class PartitioningRunner extends
     FileStatus[] status = fs.listStatus(partitionDir);
     // Call sync() one more time to avoid concurrent access
     peer.sync();
-    
+
     // merge files into one.
     // TODO if we use header info, we might able to merge files without full
     // scan.
-      for (FileStatus statu : status) {
-          int partitionID = Integer.parseInt(statu.getPath().getName()
-                  .split("[-]")[1]);
-          int denom = desiredNum / peer.getNumPeers();
-          int assignedID = partitionID;
-          if (denom > 1) {
-              assignedID = partitionID / denom;
-          }
-
-          if (assignedID == peer.getNumPeers())
-              assignedID = assignedID - 1;
-
-          // TODO set replica factor to 1.
-          // TODO and check whether we can write to specific DataNode.
-          if (assignedID == peer.getPeerIndex()) {
-              Path partitionFile = new Path(partitionDir + "/"
-                      + getPartitionName(partitionID));
-
-              FileStatus[] files = fs.listStatus(statu.getPath());
-              SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
-                      partitionFile, outputKeyClass, outputValueClass,
-                      CompressionType.NONE);
-
-              for (int i = 0; i < files.length; i++) {
-                  LOG.debug("merge '" + files[i].getPath() + "' into " + partitionDir
-                          + "/" + getPartitionName(partitionID));
-
-                  SequenceFile.Reader reader = new SequenceFile.Reader(fs,
-                          files[i].getPath(), conf);
-
-                  Writable key = (Writable) ReflectionUtils.newInstance(outputKeyClass,
-                          conf);
-                  Writable value = (Writable) ReflectionUtils.newInstance(
-                          outputValueClass, conf);
-
-                  while (reader.next(key, value)) {
-                      writer.append(key, value);
-                  }
-                  reader.close();
-              }
-
-              writer.close();
-              fs.delete(statu.getPath(), true);
-          }
+    for (FileStatus statu : status) {
+      int partitionID = Integer
+          .parseInt(statu.getPath().getName().split("[-]")[1]);
+      int denom = desiredNum / peer.getNumPeers();
+      int assignedID = partitionID;
+      if (denom > 1) {
+        assignedID = partitionID / denom;
       }
+
+      if (assignedID == peer.getNumPeers())
+        assignedID = assignedID - 1;
+
+      // TODO set replica factor to 1.
+      // TODO and check whether we can write to specific DataNode.
+      if (assignedID == peer.getPeerIndex()) {
+        Path partitionFile = new Path(partitionDir + "/"
+            + getPartitionName(partitionID));
+
+        FileStatus[] files = fs.listStatus(statu.getPath());
+        SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
+            partitionFile, outputKeyClass, outputValueClass,
+            CompressionType.NONE);
+
+        for (int i = 0; i < files.length; i++) {
+          LOG.debug("merge '" + files[i].getPath() + "' into " + partitionDir
+              + "/" + getPartitionName(partitionID));
+
+          SequenceFile.Reader reader = new SequenceFile.Reader(fs,
+              files[i].getPath(), conf);
+
+          Writable key = (Writable) ReflectionUtils.newInstance(outputKeyClass,
+              conf);
+          Writable value = (Writable) ReflectionUtils.newInstance(
+              outputValueClass, conf);
+
+          while (reader.next(key, value)) {
+            writer.append(key, value);
+          }
+          reader.close();
+        }
+
+        writer.close();
+        fs.delete(statu.getPath(), true);
+      }
+    }
   }
 
   @SuppressWarnings("rawtypes")

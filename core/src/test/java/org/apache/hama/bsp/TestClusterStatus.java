@@ -48,7 +48,8 @@ public class TestClusterStatus extends TestCase {
       int num = rnd.nextInt();
       String groomName = "groom_" + num;
       String peerName = "peerhost:" + num;
-      grooms.put(groomName, new GroomServerStatus(peerName, new ArrayList<TaskStatus>(0), 25, 2));
+      grooms.put(groomName, new GroomServerStatus(peerName,
+          new ArrayList<TaskStatus>(0), 25, 2));
     }
 
     int tasks = rnd.nextInt(100);
@@ -62,10 +63,11 @@ public class TestClusterStatus extends TestCase {
 
     ClusterStatus status2 = new ClusterStatus();
     status2.readFields(in);
-    
-    for(Entry<String, GroomServerStatus> entry : status2.getActiveGroomServerStatus().entrySet()){
-      assertEquals(entry.getValue().getMaxTasks(),2);
-      assertEquals(entry.getValue().getFailures(),25);
+
+    for (Entry<String, GroomServerStatus> entry : status2
+        .getActiveGroomServerStatus().entrySet()) {
+      assertEquals(entry.getValue().getMaxTasks(), 2);
+      assertEquals(entry.getValue().getFailures(), 25);
     }
 
     Map<String, String> grooms_s = new HashMap<String, String>(

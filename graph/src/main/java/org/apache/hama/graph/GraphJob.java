@@ -42,6 +42,7 @@ public class GraphJob extends BSPJob {
 
   public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";
   public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
+
   /**
    * Creates a new Graph Job with the given configuration and an exampleClass.
    * The exampleClass is used to determine the user's jar to distribute in the
@@ -169,6 +170,13 @@ public class GraphJob extends BSPJob {
         .checkArgument(this.getConfiguration()
             .get(VERTEX_EDGE_VALUE_CLASS_ATTR) != null,
             "Please provide an edge value class, if you don't need one, use NullWritable!");
+
+    Preconditions
+        .checkArgument(
+            this.getConfiguration().get(
+                Constants.RUNTIME_PARTITION_RECORDCONVERTER) != null,
+            "Please provide a converter class for your vertex by using GraphJob#setVertexInputReaderClass!");
+
     super.submit();
   }
 

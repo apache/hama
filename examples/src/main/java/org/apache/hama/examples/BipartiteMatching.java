@@ -181,21 +181,6 @@ public final class BipartiteMatching {
 
     }
 
-    @Override
-    public Text createVertexIDObject() {
-      return new Text();
-    }
-
-    @Override
-    public NullWritable createEdgeCostObject() {
-      return NullWritable.get();
-    }
-
-    @Override
-    public TextPair createVertexValue() {
-      return new TextPair();
-    }
-
   }
 
   /**
@@ -236,9 +221,10 @@ public final class BipartiteMatching {
     System.exit(-1);
   }
 
-  public static GraphJob createJob(String[] args, HamaConfiguration conf) throws IOException{
+  public static GraphJob createJob(String[] args, HamaConfiguration conf)
+      throws IOException {
     GraphJob job = new GraphJob(conf, BipartiteMatching.class);
-    
+
     // set the defaults
     job.setMaxIteration(30);
     job.setNumBspTask(2);
@@ -268,8 +254,7 @@ public final class BipartiteMatching {
     job.setOutputValueClass(TextPair.class);
     return job;
   }
-  
-  
+
   public static void main(String... args) throws IOException,
       InterruptedException, ClassNotFoundException {
 
@@ -278,7 +263,7 @@ public final class BipartiteMatching {
     }
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
-    
+
     GraphJob job = createJob(args, conf);
 
     long startTime = System.currentTimeMillis();

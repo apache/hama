@@ -22,15 +22,14 @@ import java.io.IOException;
 import org.apache.hama.bsp.Directive;
 
 /**
- * A protocol for BSPMaster talks to GroomServer. 
+ * A protocol for BSPMaster talks to GroomServer.
  */
 public interface GroomProtocol extends HamaRPCProtocolVersion {
 
   /**
    * Instruct GroomServer performaning tasks.
    * 
-   * @param directive instructs a GroomServer performing necessary
-   *        execution.
+   * @param directive instructs a GroomServer performing necessary execution.
    * @throws IOException
    */
   void dispatch(Directive directive) throws IOException;

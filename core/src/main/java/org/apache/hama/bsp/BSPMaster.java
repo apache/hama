@@ -65,15 +65,15 @@ import org.apache.zookeeper.Watcher;
  * BSPMaster is responsible to control all the groom servers and to manage bsp
  * jobs. It has the following responsibilities:
  * <ol>
- * <li> <b>Job submission</b>. BSPMaster is responsible for accepting new job
+ * <li><b>Job submission</b>. BSPMaster is responsible for accepting new job
  * requests and assigning the job to scheduler for scheduling BSP Tasks defined
  * for the job.
- * <li> <b>GroomServer monitoring</b> BSPMaster keeps track of all the groom 
- * servers in the cluster. It is responsible for adding new grooms to the 
- * cluster and keeping a tab on all the grooms and could blacklist a groom if 
- * it get fails the availability requirement.
- * <li> BSPMaster keeps track of all the task status for each job and handles
- * the failure of job as requested by the jobs.  
+ * <li><b>GroomServer monitoring</b> BSPMaster keeps track of all the groom
+ * servers in the cluster. It is responsible for adding new grooms to the
+ * cluster and keeping a tab on all the grooms and could blacklist a groom if it
+ * get fails the availability requirement.
+ * <li>BSPMaster keeps track of all the task status for each job and handles the
+ * failure of job as requested by the jobs.
  * </ol>
  */
 public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
@@ -128,7 +128,8 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   // Jobs' Meta Data
   private Integer nextJobId = 1;
-  private int totalSubmissions = 0; // how many jobs has been submitted by clients
+  private int totalSubmissions = 0; // how many jobs has been submitted by
+                                    // clients
   private int totalTasks = 0; // currnetly running tasks
   private int totalTaskCapacity; // max tasks that groom server can run
 
@@ -148,11 +149,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
   private final AtomicReference<Supervisor> supervisor = new AtomicReference<Supervisor>();
 
   /**
-   * ReportGroomStatusHandler keeps track of the status reported by each 
-   * Groomservers on the task they are executing currently. Based on the 
-   * status reported, it is responsible for issuing task recovery requests, 
-   * updating the job progress and other book keeping on currently running
-   * jobs. 
+   * ReportGroomStatusHandler keeps track of the status reported by each
+   * Groomservers on the task they are executing currently. Based on the status
+   * reported, it is responsible for issuing task recovery requests, updating
+   * the job progress and other book keeping on currently running jobs.
    */
   private class ReportGroomStatusHandler implements DirectiveHandler {
 
@@ -190,10 +190,9 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               jip.getStatus().setProgress(ts.getSuperstepCount());
               jip.getStatus().setSuperstepCount(ts.getSuperstepCount());
             } else if (ts.getRunState() == TaskStatus.State.FAILED) {
-              if(jip.handleFailure(tip)){
+              if (jip.handleFailure(tip)) {
                 recoverTask(jip);
-              }
-              else {
+              } else {
                 jip.status.setRunState(JobStatus.FAILED);
                 jip.failedTask(tip, ts);
               }
@@ -210,7 +209,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               jip.getStatus().setProgress(ts.getSuperstepCount());
               jip.getStatus().setSuperstepCount(ts.getSuperstepCount());
             } else if (jip.getStatus().getRunState() == JobStatus.KILLED) {
-              
+
               GroomProtocol worker = findGroomServer(tmpStatus);
               Directive d1 = new DispatchTasksDirective(
                   new GroomServerAction[] { new KillTaskAction(ts.getTaskId()) });
@@ -439,17 +438,17 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   void deleteLocalFiles() throws IOException {
     String[] localDirs = getLocalDirs();
-      for (String localDir : localDirs) {
-          FileSystem.getLocal(conf).delete(new Path(localDir), true);
-      }
+    for (String localDir : localDirs) {
+      FileSystem.getLocal(conf).delete(new Path(localDir), true);
+    }
   }
 
   void deleteLocalFiles(String subdir) throws IOException {
     try {
       String[] localDirs = getLocalDirs();
-        for (String localDir : localDirs) {
-            FileSystem.getLocal(conf).delete(new Path(localDir, subdir), true);
-        }
+      for (String localDir : localDirs) {
+        FileSystem.getLocal(conf).delete(new Path(localDir, subdir), true);
+      }
     } catch (NullPointerException e) {
       LOG.info(e);
     }
@@ -465,6 +464,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   /**
    * Starts the BSP Master process.
+   * 
    * @param conf The Hama configuration.
    * @return an instance of BSPMaster
    * @throws IOException
@@ -477,6 +477,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   /**
    * Starts the BSP Master process
+   * 
    * @param conf The Hama configuration
    * @param identifier Identifier for the job.
    * @return
@@ -500,6 +501,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   /**
    * Initialize the global synchronization client.
+   * 
    * @param conf Hama configuration.
    */
   private void initZK(HamaConfiguration conf) {
@@ -509,9 +511,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
 
   /**
    * Get a handle of the global synchronization client used by BSPMaster.
+   * 
    * @return The synchronization client.
    */
-  public MasterSyncClient getSyncClient(){
+  public MasterSyncClient getSyncClient() {
     return this.syncClient;
   }
 
@@ -604,9 +607,9 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     JobInProgress job = new JobInProgress(jobID, new Path(jobFile), this,
         this.conf);
     ++totalSubmissions;
-    if(LOG.isDebugEnabled()){
-      LOG.debug("Submitting job number = " + totalSubmissions + 
-          " id = " + job.getJobID());
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Submitting job number = " + totalSubmissions + " id = "
+          + job.getJobID());
     }
     return addJob(jobID, job);
   }
@@ -755,10 +758,10 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     }
     return job.getStatus();
   }
-  
+
   /**
-   * Recovers task in job. To be called when a particular task in a job has failed 
-   * and there is a need to schedule it on a machine.
+   * Recovers task in job. To be called when a particular task in a job has
+   * failed and there is a need to schedule it on a machine.
    */
   private synchronized void recoverTask(JobInProgress job) {
     ++totalSubmissions;
@@ -893,7 +896,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
     try {
       this.syncClient.close();
     } catch (IOException e) {
-      LOG.error("Error closing the sync client",e);
+      LOG.error("Error closing the sync client", e);
     }
     if (null != this.supervisor.get()) {
       this.supervisor.get().stop();

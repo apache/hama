@@ -17,9 +17,9 @@
  */
 package org.apache.hama.examples;
 
-import org.junit.Test;
-
 import static org.junit.Assert.fail;
+
+import org.junit.Test;
 
 /**
  * Testcase for {@link org.apache.hama.examples.RandBench}

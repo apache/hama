@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
 /**
  * The vertex interface.
@@ -33,7 +34,7 @@ import org.apache.hadoop.io.Writable;
  *          edge.
  * @param <M> the type used for messaging, usually the value of a vertex.
  */
-public interface VertexInterface<V extends Writable, E extends Writable, M extends Writable> {
+public interface VertexInterface<V extends WritableComparable<? super V>, E extends Writable, M extends Writable> {
 
   /**
    * Used to setup a vertex.

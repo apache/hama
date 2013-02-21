@@ -17,8 +17,6 @@
  */
 package org.apache.hama.monitor.fd;
 
-import org.apache.hama.monitor.fd.NodeStatus;
-
 /**
  * Notify when an event happens.
  */
@@ -26,6 +24,7 @@ public interface NodeEventListener {
 
   /**
    * Notify the node status.
+   * 
    * @param status status of the groom server.
    * @param host name of the groom server.
    */
@@ -33,12 +32,13 @@ public interface NodeEventListener {
 
   /**
    * The status that the listener is interested in.
+   * 
    * @return the status the listener has interest.
    */
   NodeStatus[] interest();
 
   /**
-   * This listener's name. 
+   * This listener's name.
    */
   String name();
 

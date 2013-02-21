@@ -22,10 +22,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+
 /**
- * A {@link ByteBuffer} stream that synchronously writes the spilled data to 
+ * A {@link ByteBuffer} stream that synchronously writes the spilled data to
  * local storage.
- *
+ * 
  */
 public class SyncFlushByteBufferOutputStream extends ByteBufferOutputStream {
 

@@ -18,14 +18,15 @@
 package org.apache.hama.bsp.sync;
 
 /**
- * A distributed global synchronization event.   
+ * A distributed global synchronization event.
  */
 public interface SyncEvent {
-  
+
   /**
-   * Returns the event identifier in the scheme of events defined for the
-   * global synchronization service.
-   * @return the event identifier 
+   * Returns the event identifier in the scheme of events defined for the global
+   * synchronization service.
+   * 
+   * @return the event identifier
    */
   public int getEventId();
 

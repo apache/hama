@@ -38,7 +38,7 @@ public class HamaConfiguration extends Configuration {
     super();
     this.addResource(confFile);
   }
-  
+
   /**
    * Create a clone of passed configuration.
    * 

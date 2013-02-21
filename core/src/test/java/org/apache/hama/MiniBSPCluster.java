@@ -17,23 +17,21 @@
  */
 package org.apache.hama;
 
-import java.io.IOException;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static junit.framework.Assert.fail;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import static java.util.concurrent.TimeUnit.*;
-
-import static junit.framework.Assert.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hama.bsp.BSPMaster;
 import org.apache.hama.bsp.GroomServer;
-import org.apache.hama.HamaConfiguration;
 
 public class MiniBSPCluster {
 

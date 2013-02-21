@@ -23,18 +23,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * An attribute that 
- * holds the information on version and build information of a
+ * An attribute that holds the information on version and build information of a
  * Hama package that a potential user is working with.
  */
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PACKAGE)
-
 public @interface HamaVersionAnnotation {
 
   /**
    * Get the Hama version
+   * 
    * @return the version string "0.3.3-dev"
    */
   String version();
@@ -46,6 +45,7 @@ public @interface HamaVersionAnnotation {
 
   /**
    * Get the date when Hama was compiled.
+   * 
    * @return the date in unix 'date' format
    */
   String date();
@@ -57,23 +57,23 @@ public @interface HamaVersionAnnotation {
 
   /**
    * Get the subversion revision.
+   * 
    * @return the revision number as a string (eg. "451451")
    */
   String revision();
 
   /**
    * Get the branch from which this was compiled.
+   * 
    * @return The branch name, e.g. "trunk" or "branches/branch-0.20"
    */
   String branch();
 
   /**
-   * Get a checksum of the source files from which
-   * Hama was compiled.
+   * Get a checksum of the source files from which Hama was compiled.
+   * 
    * @return a string that uniquely identifies the source
    **/
-  String srcChecksum(); 	
-
-
+  String srcChecksum();
 
 }

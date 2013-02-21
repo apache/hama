@@ -251,16 +251,16 @@ class SimpleTaskScheduler extends TaskScheduler {
       }
 
       // assembly into actions
-        for (Task task : taskSet) {
-            GroomServerStatus groomStatus = jip.getGroomStatusForTask(task);
-            List<GroomServerAction> taskActions = actionMap.get(groomStatus);
-            if (taskActions == null) {
-                taskActions = new ArrayList<GroomServerAction>(
-                        groomStatus.getMaxTasks());
-            }
-            taskActions.add(new LaunchTaskAction(task));
-            actionMap.put(groomStatus, taskActions);
+      for (Task task : taskSet) {
+        GroomServerStatus groomStatus = jip.getGroomStatusForTask(task);
+        List<GroomServerAction> taskActions = actionMap.get(groomStatus);
+        if (taskActions == null) {
+          taskActions = new ArrayList<GroomServerAction>(
+              groomStatus.getMaxTasks());
         }
+        taskActions.add(new LaunchTaskAction(task));
+        actionMap.put(groomStatus, taskActions);
+      }
 
       sendDirectivesToGrooms(actionMap);
 

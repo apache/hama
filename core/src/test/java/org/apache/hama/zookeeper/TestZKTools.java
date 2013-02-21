@@ -17,10 +17,10 @@
  */
 package org.apache.hama.zookeeper;
 
+import junit.framework.TestCase;
+
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
-
-import junit.framework.TestCase;
 
 public class TestZKTools extends TestCase {
 

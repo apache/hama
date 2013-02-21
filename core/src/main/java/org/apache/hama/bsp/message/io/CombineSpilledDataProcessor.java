@@ -119,7 +119,7 @@ public class CombineSpilledDataProcessor<M extends Writable> extends
     try {
       return super.handleSpilledBuffer(new SpilledByteBuffer(
           this.combineOutputBuffer.getBuffer(), this.combineOutputBuffer
-          .getBuffer().remaining()));
+              .getBuffer().remaining()));
     } finally {
       this.combineOutputBuffer.clear();
     }

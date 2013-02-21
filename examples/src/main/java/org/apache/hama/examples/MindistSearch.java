@@ -17,24 +17,25 @@
  */
 package org.apache.hama.examples;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileInputFormat;
-import org.apache.hama.bsp.TextArrayWritable;
+import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
+import org.apache.hama.graph.VertexInputReader;
+
+import com.google.common.base.Optional;
 
 /**
  * Finding the mindist vertex in a connected component.
@@ -82,28 +83,26 @@ public class MindistSearch {
       }
     }
 
-    @Override
-    public void readState(DataInput in) throws IOException {}
+  }
+
+  public static class MindistSearchTextReader extends
+      VertexInputReader<LongWritable, Text, Text, NullWritable, Text> {
 
     @Override
-    public void writeState(DataOutput out) throws IOException {}
-
-    @Override
-    public Text createVertexIDObject() {
-      return new Text();
+    public boolean parseVertex(LongWritable key, Text value,
+        Vertex<Text, NullWritable, Text> vertex) throws Exception {
+      String[] split = value.toString().split("\t");
+      for (int i = 0; i < split.length; i++) {
+        if (i == 0) {
+          vertex.setVertexID(new Text(split[i]));
+        } else {
+          vertex
+              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
+        }
+      }
+      return true;
     }
 
-    @Override
-    public NullWritable createEdgeCostObject() {
-      return NullWritable.get();
-    }
-
-    @Override
-    public Text createVertexValue() {
-      return new Text();
-    }
-
-    
   }
 
   public static class MinTextCombiner extends Combiner<Text> {
@@ -127,40 +126,52 @@ public class MindistSearch {
     System.exit(-1);
   }
 
-  public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException {
-    if (args.length < 2)
-      printUsage();
+  public static GraphJob getJob(String inpath, String outpath,
+      Optional<Integer> numTasks, Optional<Integer> numIterations)
+      throws IOException {
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
     GraphJob job = new GraphJob(conf, MindistSearchVertex.class);
     job.setJobName("Mindist Search");
 
     job.setVertexClass(MindistSearchVertex.class);
-    job.setInputPath(new Path(args[0]));
-    job.setOutputPath(new Path(args[1]));
+    job.setInputPath(new Path(inpath));
+    job.setOutputPath(new Path(outpath));
     // set the min text combiner here
     job.setCombinerClass(MinTextCombiner.class);
 
     // set the defaults
     job.setMaxIteration(30);
-    if (args.length == 4)
-      job.setNumBspTask(Integer.parseInt(args[3]));
-    if (args.length >= 3)
-      job.setMaxIteration(Integer.parseInt(args[2]));
+    if (numTasks.isPresent())
+      job.setNumBspTask(numTasks.get());
+    if (numIterations.isPresent())
+      job.setMaxIteration(numIterations.get());
 
     job.setVertexIDClass(Text.class);
     job.setVertexValueClass(Text.class);
     job.setEdgeValueClass(NullWritable.class);
 
-    job.setInputFormat(SequenceFileInputFormat.class);
-    job.setInputKeyClass(Text.class);
-    job.setInputValueClass(TextArrayWritable.class);
+    job.setInputFormat(TextInputFormat.class);
+    job.setInputKeyClass(LongWritable.class);
+    job.setInputValueClass(Text.class);
+    job.setVertexInputReaderClass(MindistSearchTextReader.class);
 
     job.setPartitioner(HashPartitioner.class);
     job.setOutputFormat(TextOutputFormat.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(Text.class);
+    return job;
+  }
+
+  public static void main(String[] args) throws IOException,
+      InterruptedException, ClassNotFoundException {
+    if (args.length < 2)
+      printUsage();
+
+    Optional<Integer> absent = Optional.absent();
+    GraphJob job = getJob(args[0], args[1],
+        args.length >= 3 ? Optional.of(Integer.parseInt(args[3])) : absent,
+        args.length >= 4 ? Optional.of(Integer.parseInt(args[4])) : absent);
 
     long startTime = System.currentTimeMillis();
     if (job.waitForCompletion(true)) {
@@ -168,5 +179,4 @@ public class MindistSearch {
           + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
-
 }

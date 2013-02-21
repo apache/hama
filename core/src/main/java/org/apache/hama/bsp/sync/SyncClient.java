@@ -29,66 +29,76 @@ import org.apache.hama.bsp.BSPJobID;
 public interface SyncClient {
 
   /**
-   * Construct key in the format required by the SyncClient for storing and 
+   * Construct key in the format required by the SyncClient for storing and
    * retrieving information. This function is recommended to use to construct
    * keys for storing keys.
+   * 
    * @param jobId The BSP Job Id.
    * @param args The list of String objects that would be used to construct key
    * @return The key consisting of entities provided in the required format.
    */
-  public String constructKey(BSPJobID jobId, String ... args);
+  public String constructKey(BSPJobID jobId, String... args);
 
   /**
    * Stores value for the specified key.
-   * @param key The key for which value should be stored. It is recommended to use 
-   * <code>constructKey</code> to create key object.
+   * 
+   * @param key The key for which value should be stored. It is recommended to
+   *          use <code>constructKey</code> to create key object.
    * @param value The value to be stored.
-   * @param permanent true if the value should be persisted after end of session.
-   * @param Listener object that provides asynchronous updates on the state 
-   * of information stored under the key.
+   * @param permanent true if the value should be persisted after end of
+   *          session.
+   * @param Listener object that provides asynchronous updates on the state of
+   *          information stored under the key.
    * @return true if the operation was successful.
    */
-  public boolean storeInformation(String key, Writable value, 
+  public boolean storeInformation(String key, Writable value,
       boolean permanent, SyncEventListener listener);
 
   /**
    * Retrieve value previously store for the key.
+   * 
    * @param key The key for which value was stored.
    * @param classType The expected class instance of value to be extracted
    * @return the value if found. Returns null if there was any error of if there
-   * was no value stored for the key.
+   *         was no value stored for the key.
    */
   public boolean getInformation(String key, Writable valueHolder);
 
   /**
    * Store new key in key set.
-   * @param key The key to be saved in key set. It is recommended to use 
-   * <code>constructKey</code> to create key object. 
-   * @param permanent true if the value should be persisted after end of session.
-   * @param listener Listener object that asynchronously notifies the events 
-   * related to the key.
+   * 
+   * @param key The key to be saved in key set. It is recommended to use
+   *          <code>constructKey</code> to create key object.
+   * @param permanent true if the value should be persisted after end of
+   *          session.
+   * @param listener Listener object that asynchronously notifies the events
+   *          related to the key.
    * @return true if operation was successful.
    */
-  public boolean addKey(String key, boolean permanent, SyncEventListener listener);
+  public boolean addKey(String key, boolean permanent,
+      SyncEventListener listener);
 
   /**
    * Check if key was previously stored.
-   * @param key The value of the key. 
+   * 
+   * @param key The value of the key.
    * @return true if the key exists.
    */
   public boolean hasKey(String key);
-  
+
   /**
-  * Get list of child keys stored under the key provided.
-  * @param key The key whose child key set are to be found.
-  * @param listener Listener object that asynchronously notifies the changes 
-  * under the provided key
-  * @return Array of child keys.
-  */
+   * Get list of child keys stored under the key provided.
+   * 
+   * @param key The key whose child key set are to be found.
+   * @param listener Listener object that asynchronously notifies the changes
+   *          under the provided key
+   * @return Array of child keys.
+   */
   public String[] getChildKeySet(String key, SyncEventListener listener);
 
   /**
    * Register a listener for events on the key.
+   * 
    * @param key The key on which an event listener should be registered.
    * @param event for which the listener is registered for.
    * @param listener The event listener that defines how to process the event.
@@ -99,15 +109,16 @@ public interface SyncClient {
 
   /**
    * Delete the key and the information stored under it.
+   * 
    * @param key
    * @param listener
    * @return
    */
   public boolean remove(String key, SyncEventListener listener);
-  
+
   /**
    * 
    */
   public void close() throws IOException;
-  
+
 }

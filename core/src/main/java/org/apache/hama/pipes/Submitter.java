@@ -232,7 +232,8 @@ public class Submitter implements Tool {
 
     setIfUnset(job.getConfiguration(), "bsp.job.name", "Hama Pipes Job");
 
-    LOG.debug("isJavaRecordReader: " + getIsJavaRecordReader(job.getConfiguration()));
+    LOG.debug("isJavaRecordReader: "
+        + getIsJavaRecordReader(job.getConfiguration()));
     LOG.debug("BspClass: " + job.getBspClass().getName());
     // conf.setInputFormat(NLineInputFormat.class);
     LOG.debug("InputFormat: " + job.getInputFormat());
@@ -246,11 +247,13 @@ public class Submitter implements Tool {
       throw new IllegalArgumentException(
           "Hama Pipes does only support Text as Key/Value output!");
 
-    LOG.debug("bsp.master.address: " + job.getConfiguration().get("bsp.master.address"));
+    LOG.debug("bsp.master.address: "
+        + job.getConfiguration().get("bsp.master.address"));
     LOG.debug("bsp.local.tasks.maximum: "
         + job.getConfiguration().get("bsp.local.tasks.maximum"));
     LOG.debug("NumBspTask: " + job.getNumBspTask());
-    LOG.debug("fs.default.name: " + job.getConfiguration().get("fs.default.name"));
+    LOG.debug("fs.default.name: "
+        + job.getConfiguration().get("fs.default.name"));
 
     String exec = getExecutable(job.getConfiguration());
     if (exec == null) {
@@ -464,7 +467,8 @@ public class Submitter implements Tool {
       if (results.hasOption("programArgs")) {
         job.getConfiguration().set("hama.pipes.executable.args",
             Joiner.on(" ").join(results.getOptionValues("programArgs")));
-        // job.getConfiguration().set("hama.pipes.resolve.executable.args", "true");
+        // job.getConfiguration().set("hama.pipes.resolve.executable.args",
+        // "true");
       }
 
       if (results.hasOption("cachefiles")) {
@@ -475,7 +479,8 @@ public class Submitter implements Tool {
           FileStatus[] globStatus = fs.globStatus(path);
           for (FileStatus f : globStatus) {
             if (!f.isDir()) {
-              DistributedCache.addCacheFile(f.getPath().toUri(), job.getConfiguration());
+              DistributedCache.addCacheFile(f.getPath().toUri(),
+                  job.getConfiguration());
             } else {
               LOG.info("Ignoring directory " + f.getPath() + " while globbing.");
             }

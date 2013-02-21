@@ -45,7 +45,7 @@ public class Directive implements Writable {
     }
   }
 
-    public Directive() {
+  public Directive() {
   }
 
   public Directive(Directive.Type type) {

@@ -79,7 +79,7 @@ public interface MessageQueue<M> extends Iterable<M>, Configurable {
    * @return how many items are in the queue.
    */
   public int size();
-  
+
   /**
    * 
    * @return true if the messages in the queue are serialized to byte buffers.

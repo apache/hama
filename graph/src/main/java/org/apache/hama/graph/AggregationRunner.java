@@ -24,6 +24,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
@@ -35,7 +36,7 @@ import com.google.common.base.Preconditions;
  * configured.
  * 
  */
-public final class AggregationRunner<V extends Writable, E extends Writable, M extends Writable> {
+public final class AggregationRunner<V extends WritableComparable<V>, E extends Writable, M extends Writable> {
 
   // multiple aggregator arrays
   private Aggregator<M, Vertex<V, E, M>>[] aggregators;

@@ -23,14 +23,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * The implementation of the shared object when the buffer has already
- * spilled to disk.
+ * The implementation of the shared object when the buffer has already spilled
+ * to disk.
  * 
  */
 class SpilledDataReadStatus extends ReadIndexStatus {
 
   private static final Log LOG = LogFactory.getLog(SpilledDataReadStatus.class);
-  
+
   private volatile int readBufferIndex_;
   private volatile int fetchFileBufferIndex_;
   private int totalSize_;
@@ -63,7 +63,7 @@ class SpilledDataReadStatus extends ReadIndexStatus {
     errorState_ = true;
     notify();
   }
-  
+
   @Override
   public synchronized int getReadBufferIndex() throws InterruptedException {
 
@@ -74,7 +74,8 @@ class SpilledDataReadStatus extends ReadIndexStatus {
       notify();
     }
     readBufferIndex_ = (readBufferIndex_ + 1) % totalSize_;
-    while (!bufferBitState_.get(readBufferIndex_) && !fileReadComplete_ && !errorState_) {
+    while (!bufferBitState_.get(readBufferIndex_) && !fileReadComplete_
+        && !errorState_) {
       wait();
     }
     // The file is completely read and transferred to buffers already.
@@ -105,8 +106,8 @@ class SpilledDataReadStatus extends ReadIndexStatus {
     notify();
     fetchFileBufferIndex_ = (fetchFileBufferIndex_ + 1) % totalSize_;
 
-    while (bufferBitState_.get(fetchFileBufferIndex_)
-        && !bufferReadComplete_ && !errorState_) {
+    while (bufferBitState_.get(fetchFileBufferIndex_) && !bufferReadComplete_
+        && !errorState_) {
       wait();
     }
 
@@ -126,8 +127,8 @@ class SpilledDataReadStatus extends ReadIndexStatus {
   }
 
   /**
-   * Called by the thread to indicate that all the spilled data is
-   * completely read.
+   * Called by the thread to indicate that all the spilled data is completely
+   * read.
    */
   public synchronized void closedBySpiller() {
     fileReadComplete_ = true;
@@ -149,4 +150,3 @@ class SpilledDataReadStatus extends ReadIndexStatus {
   }
 
 }
-

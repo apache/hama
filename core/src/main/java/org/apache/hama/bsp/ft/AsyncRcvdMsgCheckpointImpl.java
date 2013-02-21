@@ -131,10 +131,9 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
 
       Map<TaskID, TaskInProgress> recoverySet = new HashMap<TaskID, TaskInProgress>(
           2 * failedTasksInProgress.length);
-        for (TaskInProgress failedTasksInProgres : failedTasksInProgress) {
-            recoverySet.put(failedTasksInProgres.getTaskId(),
-                    failedTasksInProgres);
-        }
+      for (TaskInProgress failedTasksInProgres : failedTasksInProgress) {
+        recoverySet.put(failedTasksInProgres.getTaskId(), failedTasksInProgres);
+      }
 
       long lowestSuperstepNumber = Long.MAX_VALUE;
 
@@ -152,31 +151,31 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
       }
 
       if (taskProgress.length == this.tasks.length) {
-          for (String taskProgres : taskProgress) {
-              ArrayWritable progressInformation = new ArrayWritable(
-                      LongWritable.class);
-              boolean result = this.masterSyncClient.getInformation(
-                      this.masterSyncClient.constructKey(jobId, "checkpoint",
-                              taskProgres), progressInformation);
+        for (String taskProgres : taskProgress) {
+          ArrayWritable progressInformation = new ArrayWritable(
+              LongWritable.class);
+          boolean result = this.masterSyncClient.getInformation(
+              this.masterSyncClient.constructKey(jobId, "checkpoint",
+                  taskProgres), progressInformation);
 
-              if (!result) {
-                  lowestSuperstepNumber = -1L;
-                  break;
-              }
-
-              Writable[] progressArr = progressInformation.get();
-              LongWritable superstepProgress = (LongWritable) progressArr[0];
-
-              if (superstepProgress != null) {
-                  if (superstepProgress.get() < lowestSuperstepNumber) {
-                      lowestSuperstepNumber = superstepProgress.get();
-                      if (LOG.isDebugEnabled()) {
-                          LOG.debug("Got superstep number " + lowestSuperstepNumber
-                                  + " from " + taskProgres);
-                      }
-                  }
-              }
+          if (!result) {
+            lowestSuperstepNumber = -1L;
+            break;
           }
+
+          Writable[] progressArr = progressInformation.get();
+          LongWritable superstepProgress = (LongWritable) progressArr[0];
+
+          if (superstepProgress != null) {
+            if (superstepProgress.get() < lowestSuperstepNumber) {
+              lowestSuperstepNumber = superstepProgress.get();
+              if (LOG.isDebugEnabled()) {
+                LOG.debug("Got superstep number " + lowestSuperstepNumber
+                    + " from " + taskProgres);
+              }
+            }
+          }
+        }
         clearClientForSuperstep(lowestSuperstepNumber);
         restartJob(lowestSuperstepNumber, groomStatuses, recoverySet,
             allTasksInProgress, taskCountInGroomMap, actionMap);
@@ -225,56 +224,55 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
 
       if (superstep >= 0) {
         FileSystem fileSystem = FileSystem.get(conf);
-          for (TaskInProgress allTask : allTasks) {
-              String[] hosts = null;
-              if (recoveryMap.containsKey(allTask.getTaskId())) {
+        for (TaskInProgress allTask : allTasks) {
+          String[] hosts = null;
+          if (recoveryMap.containsKey(allTask.getTaskId())) {
 
-                  // Update task count in map.
-                  // TODO: This should be a responsibility of GroomServerStatus
-                  Integer count = taskCountInGroomMap.get(allTask
-                          .getGroomServerStatus());
-                  if (count != null) {
-                      count = count.intValue() - 1;
-                      taskCountInGroomMap
-                              .put(allTask.getGroomServerStatus(), count);
-                  }
+            // Update task count in map.
+            // TODO: This should be a responsibility of GroomServerStatus
+            Integer count = taskCountInGroomMap.get(allTask
+                .getGroomServerStatus());
+            if (count != null) {
+              count = count.intValue() - 1;
+              taskCountInGroomMap.put(allTask.getGroomServerStatus(), count);
+            }
 
-                  StringBuffer ckptPath = new StringBuffer(path);
-                  ckptPath.append(this.jobId.toString());
-                  ckptPath.append("/").append(superstep).append("/")
-                          .append(allTask.getTaskId().getId());
-                  Path checkpointPath = new Path(ckptPath.toString());
-                  if (fileSystem.exists(checkpointPath)) {
-                      FileStatus fileStatus = fileSystem.getFileStatus(checkpointPath);
-                      BlockLocation[] blocks = fileSystem.getFileBlockLocations(
-                              fileStatus, 0, fileStatus.getLen());
-                      hosts = blocks[0].getHosts();
-                  } else {
-                      hosts = new String[groomStatuses.keySet().size()];
-                      groomStatuses.keySet().toArray(hosts);
-                  }
-                  GroomServerStatus serverStatus = this.allocationStrategy
-                          .getGroomToAllocate(groomStatuses, hosts, taskCountInGroomMap,
-                                  new BSPResource[0], allTask);
-                  Task task = allTask.constructTask(serverStatus);
-                  populateAction(task, superstep, serverStatus, actionMap);
+            StringBuffer ckptPath = new StringBuffer(path);
+            ckptPath.append(this.jobId.toString());
+            ckptPath.append("/").append(superstep).append("/")
+                .append(allTask.getTaskId().getId());
+            Path checkpointPath = new Path(ckptPath.toString());
+            if (fileSystem.exists(checkpointPath)) {
+              FileStatus fileStatus = fileSystem.getFileStatus(checkpointPath);
+              BlockLocation[] blocks = fileSystem.getFileBlockLocations(
+                  fileStatus, 0, fileStatus.getLen());
+              hosts = blocks[0].getHosts();
+            } else {
+              hosts = new String[groomStatuses.keySet().size()];
+              groomStatuses.keySet().toArray(hosts);
+            }
+            GroomServerStatus serverStatus = this.allocationStrategy
+                .getGroomToAllocate(groomStatuses, hosts, taskCountInGroomMap,
+                    new BSPResource[0], allTask);
+            Task task = allTask.constructTask(serverStatus);
+            populateAction(task, superstep, serverStatus, actionMap);
 
-              } else {
-                  restartTask(allTask, superstep, groomStatuses, actionMap);
-              }
+          } else {
+            restartTask(allTask, superstep, groomStatuses, actionMap);
           }
+        }
       } else {
         // Start the task from the beginning.
-          for (TaskInProgress allTask : allTasks) {
-              if (recoveryMap.containsKey(allTask.getTaskId())) {
-                  this.allocationStrategy.getGroomToAllocate(groomStatuses,
-                          this.allocationStrategy.selectGrooms(groomStatuses,
-                                  taskCountInGroomMap, new BSPResource[0], allTask),
-                          taskCountInGroomMap, new BSPResource[0], allTask);
-              } else {
-                  restartTask(allTask, superstep, groomStatuses, actionMap);
-              }
+        for (TaskInProgress allTask : allTasks) {
+          if (recoveryMap.containsKey(allTask.getTaskId())) {
+            this.allocationStrategy.getGroomToAllocate(groomStatuses,
+                this.allocationStrategy.selectGrooms(groomStatuses,
+                    taskCountInGroomMap, new BSPResource[0], allTask),
+                taskCountInGroomMap, new BSPResource[0], allTask);
+          } else {
+            restartTask(allTask, superstep, groomStatuses, actionMap);
           }
+        }
       }
     }
 

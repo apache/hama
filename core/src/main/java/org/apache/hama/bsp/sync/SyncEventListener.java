@@ -19,13 +19,14 @@ package org.apache.hama.bsp.sync;
 
 /**
  * This class is used to define a listener to the synchronized global event.
- *
+ * 
  */
 public abstract class SyncEventListener {
-  
+
   /**
-   * Every event is identified by an event identifier. You can refer to 
+   * Every event is identified by an event identifier. You can refer to
    * <code>SyncEvent</code> class.
+   * 
    * @param eventId The event identification code.
    */
   public abstract void handleEvent(int eventId);

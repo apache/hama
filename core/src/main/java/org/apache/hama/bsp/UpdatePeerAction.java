@@ -24,21 +24,21 @@ import java.io.IOException;
 import org.apache.hadoop.io.Text;
 
 /**
- * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} 
- * to the {@link org.apache.hama.bsp.GroomServer} to kill a task.
+ * Represents a directive from the {@link org.apache.hama.bsp.BSPMaster} to the
+ * {@link org.apache.hama.bsp.GroomServer} to kill a task.
  */
 class UpdatePeerAction extends GroomServerAction {
   TaskAttemptID taskId;
   TaskAttemptID peerTaskId;
   Text groomName;
-  
+
   public UpdatePeerAction() {
     super(ActionType.UPDATE_PEER);
     taskId = new TaskAttemptID();
     groomName = new Text("");
   }
-  
-  public UpdatePeerAction(TaskAttemptID taskId, TaskAttemptID peerTaskId, 
+
+  public UpdatePeerAction(TaskAttemptID taskId, TaskAttemptID peerTaskId,
       String groom) {
     super(ActionType.UPDATE_PEER);
     this.taskId = taskId;
@@ -49,15 +49,15 @@ class UpdatePeerAction extends GroomServerAction {
   public TaskAttemptID getTaskID() {
     return taskId;
   }
-  
-  public TaskAttemptID getPeerTaskID(){
+
+  public TaskAttemptID getPeerTaskID() {
     return peerTaskId;
   }
-  
-  public String getGroomName(){
+
+  public String getGroomName() {
     return groomName.toString();
   }
-  
+
   @Override
   public void write(DataOutput out) throws IOException {
     taskId.write(out);

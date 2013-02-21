@@ -19,8 +19,8 @@ package org.apache.hama.monitor;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represents a record containing multiple metrics.

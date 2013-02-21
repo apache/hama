@@ -32,7 +32,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Combiner;
@@ -40,6 +40,7 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
+import org.apache.hama.util.ReflectionUtils;
 
 /**
  * Fully generic graph job runner.
@@ -48,7 +49,7 @@ import org.apache.hama.util.KeyValuePair;
  * @param <E> the value type of an edge.
  * @param <M> the value type of a vertex.
  */
-public final class GraphJobRunner<V extends Writable, E extends Writable, M extends Writable>
+public final class GraphJobRunner<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     extends BSP<Writable, Writable, Writable, Writable, GraphJobMessage> {
 
   public static enum GraphJobCounter {
@@ -63,13 +64,18 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   public static final String S_FLAG_AGGREGATOR_INCREMENT = "hama.2";
   public static final Text FLAG_MESSAGE_COUNTS = new Text(S_FLAG_MESSAGE_COUNTS);
 
-  public static final String MESSAGE_COMBINER_CLASS = "hama.vertex.message.combiner.class";
-  public static final String GRAPH_REPAIR = "hama.graph.repair";
-  public static final String VERTEX_CLASS = "hama.graph.vertex.class";
+  public static final String MESSAGE_COMBINER_CLASS_KEY = "hama.vertex.message.combiner.class";
+  public static final String VERTEX_CLASS_KEY = "hama.graph.vertex.class";
 
   private Configuration conf;
   private Combiner<M> combiner;
   private Partitioner<V, M> partitioner;
+
+  public static Class<?> VERTEX_CLASS;
+  public static Class<? extends WritableComparable<?>> VERTEX_ID_CLASS;
+  public static Class<? extends Writable> VERTEX_VALUE_CLASS;
+  public static Class<? extends Writable> EDGE_VALUE_CLASS;
+  public static Class<Vertex<?, ?, ?>> vertexClass;
 
   private VerticesInfo<V, E, M> vertices;
   private boolean updated = true;
@@ -79,8 +85,6 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   // -1 is deactivated
   private int maxIteration = -1;
   private long iteration;
-
-  private Class<Vertex<V, E, M>> vertexClass;
 
   private AggregationRunner<V, E, M> aggregationRunner;
 
@@ -109,7 +113,8 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     // we do supersteps while we still have updates and have not reached our
     // maximum iterations yet
     while (updated && !((maxIteration > 0) && iteration > maxIteration)) {
-      // reset the global update counter from our master in every superstep
+      // reset the global update counter from our master in every
+      // superstep
       globalUpdateCounts = 0;
       peer.sync();
 
@@ -229,39 +234,46 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
     maxIteration = peer.getConfiguration().getInt("hama.graph.max.iteration",
         -1);
 
-      Class<V> vertexIdClass = (Class<V>) conf.getClass(GraphJob.VERTEX_ID_CLASS_ATTR,
-              Text.class, Writable.class);
-      Class<M> vertexValueClass = (Class<M>) conf.getClass(
-              GraphJob.VERTEX_VALUE_CLASS_ATTR, IntWritable.class, Writable.class);
-      Class<E> edgeValueClass = (Class<E>) conf.getClass(
-              GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR, IntWritable.class,
-              Writable.class);
-    vertexClass = (Class<Vertex<V, E, M>>) conf.getClass(
-        "hama.graph.vertex.class", Vertex.class);
+    initClasses(conf);
 
-    // set the classes statically, so we can save memory per message
-    GraphJobMessage.VERTEX_ID_CLASS = vertexIdClass;
-    GraphJobMessage.VERTEX_VALUE_CLASS = vertexValueClass;
-    GraphJobMessage.VERTEX_CLASS = vertexClass;
-    GraphJobMessage.EDGE_VALUE_CLASS = edgeValueClass;
+    partitioner = (Partitioner<V, M>) org.apache.hadoop.util.ReflectionUtils
+        .newInstance(
+            conf.getClass("bsp.input.partitioner.class", HashPartitioner.class),
+            conf);
 
-    partitioner = (Partitioner<V, M>) ReflectionUtils.newInstance(
-        conf.getClass("bsp.input.partitioner.class", HashPartitioner.class),
-        conf);
-
-    if (!conf.getClass(MESSAGE_COMBINER_CLASS, Combiner.class).equals(
+    if (!conf.getClass(MESSAGE_COMBINER_CLASS_KEY, Combiner.class).equals(
         Combiner.class)) {
-      LOG.debug("Combiner class: " + conf.get(MESSAGE_COMBINER_CLASS));
+      LOG.debug("Combiner class: " + conf.get(MESSAGE_COMBINER_CLASS_KEY));
 
-      combiner = (Combiner<M>) ReflectionUtils.newInstance(
-          conf.getClass("hama.vertex.message.combiner.class", Combiner.class),
-          conf);
+      combiner = (Combiner<M>) org.apache.hadoop.util.ReflectionUtils
+          .newInstance(conf.getClass("hama.vertex.message.combiner.class",
+              Combiner.class), conf);
     }
 
     aggregationRunner = new AggregationRunner<V, E, M>();
     aggregationRunner.setupAggregators(peer);
 
     vertices = new VerticesInfo<V, E, M>();
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <V extends WritableComparable<V>, E extends Writable, M extends Writable> void initClasses(
+      Configuration conf) {
+    Class<V> vertexIdClass = (Class<V>) conf.getClass(
+        GraphJob.VERTEX_ID_CLASS_ATTR, Text.class, Writable.class);
+    Class<M> vertexValueClass = (Class<M>) conf.getClass(
+        GraphJob.VERTEX_VALUE_CLASS_ATTR, IntWritable.class, Writable.class);
+    Class<E> edgeValueClass = (Class<E>) conf.getClass(
+        GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR, IntWritable.class,
+        Writable.class);
+    vertexClass = (Class<Vertex<?, ?, ?>>) conf.getClass(
+        "hama.graph.vertex.class", Vertex.class);
+
+    // set the classes statically, so we can save memory per message
+    VERTEX_ID_CLASS = vertexIdClass;
+    VERTEX_VALUE_CLASS = vertexValueClass;
+    VERTEX_CLASS = vertexClass;
+    EDGE_VALUE_CLASS = edgeValueClass;
   }
 
   /**
@@ -271,8 +283,6 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
-    final boolean repairNeeded = conf.getBoolean(GRAPH_REPAIR, false);
-
     final boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
 
     if (LOG.isDebugEnabled())
@@ -289,68 +299,11 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
       }
     }
 
-    LOG.info(vertices.size() + " vertices are loaded into " + peer.getPeerName());
-
-    /*
-     * If the user want to repair the graph, it should traverse through that
-     * local chunk of adjancency list and message the corresponding peer to
-     * check whether that vertex exists. In real-life this may be dead-ending
-     * vertices, since we have no information about outgoing edges. Mainly this
-     * procedure is to prevent NullPointerExceptions from happening.
-     */
-    if (repairNeeded) {
-      if (LOG.isDebugEnabled())
-        LOG.debug("Starting repair of this graph!");
-      repair(peer, selfReference);
-    }
+    LOG.info(vertices.size() + " vertices are loaded into "
+        + peer.getPeerName());
 
     if (LOG.isDebugEnabled())
       LOG.debug("Starting Vertex processing!");
-  }
-
-  @SuppressWarnings("unchecked")
-  private void repair(
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
-      boolean selfReference) throws IOException, SyncException,
-      InterruptedException {
-
-    Map<V, Vertex<V, E, M>> tmp = new HashMap<V, Vertex<V, E, M>>();
-
-    for (Vertex<V, E, M> v : vertices) {
-      for (Edge<V, E> e : v.getEdges()) {
-        peer.send(v.getDestinationPeerName(e),
-            new GraphJobMessage(e.getDestinationVertexID()));
-      }
-    }
-
-    peer.sync();
-    GraphJobMessage msg;
-    while ((msg = peer.getCurrentMessage()) != null) {
-      V vertexName = (V) msg.getVertexId();
-
-      Vertex<V, E, M> newVertex = newVertexInstance(vertexClass, conf);
-      newVertex.setVertexID(vertexName);
-      newVertex.runner = this;
-      if (selfReference) {
-        newVertex.setEdges(Collections.singletonList(new Edge<V, E>(newVertex
-            .getVertexID(), null)));
-      } else {
-        newVertex.setEdges(new ArrayList<Edge<V, E>>(0));
-      }
-      newVertex.setup(conf);
-      tmp.put(vertexName, newVertex);
-    }
-
-    for (Vertex<V, E, M> e : vertices) {
-      if (tmp.containsKey((e.getVertexID()))) {
-        tmp.remove(e.getVertexID());
-      }
-    }
-
-    for (Vertex<V, E, M> v : tmp.values()) {
-      vertices.addVertex(v);
-    }
-    tmp.clear();
   }
 
   /**
@@ -505,10 +458,36 @@ public final class GraphJobRunner<V extends Writable, E extends Writable, M exte
   /**
    * @return a new vertex instance
    */
-  public static <V extends Writable, E extends Writable, M extends Writable> Vertex<V, E, M> newVertexInstance(
-      Class<?> vertexClass, Configuration conf) {
-    return (Vertex<V, E, M>) ReflectionUtils.newInstance(
-        vertexClass, conf);
+  @SuppressWarnings({ "unchecked" })
+  public static <V extends WritableComparable<? super V>, E extends Writable, M extends Writable> Vertex<V, E, M> newVertexInstance(
+      Class<?> vertexClass) {
+    return (Vertex<V, E, M>) ReflectionUtils.newInstance(vertexClass);
+  }
+
+  // following new instances don't need conf injects.
+
+  /**
+   * @return a new vertex id object.
+   */
+  @SuppressWarnings("unchecked")
+  public static <X extends Writable> X createVertexIDObject() {
+    return (X) ReflectionUtils.newInstance(VERTEX_ID_CLASS);
+  }
+
+  /**
+   * @return a new vertex value object.
+   */
+  @SuppressWarnings("unchecked")
+  public static <X extends Writable> X createVertexValue() {
+    return (X) ReflectionUtils.newInstance(VERTEX_VALUE_CLASS);
+  }
+
+  /**
+   * @return a new edge cost object.
+   */
+  @SuppressWarnings("unchecked")
+  public static <X extends Writable> X createEdgeCostObject() {
+    return (X) ReflectionUtils.newInstance(EDGE_VALUE_CLASS);
   }
 
 }

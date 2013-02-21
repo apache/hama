@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
 /**
  * VerticesInfo encapsulates the storage of vertices in a BSP Task.
@@ -32,10 +33,11 @@ import org.apache.hadoop.io.Writable;
  * @param <E> Edge cost object type
  * @param <M> Vertex value object type
  */
-public class VerticesInfo<V extends Writable, E extends Writable, M extends Writable>
+public class VerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements Iterable<Vertex<V, E, M>> {
 
-  private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(100);
+  private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(
+      100);
 
   public void addVertex(Vertex<V, E, M> vertex) {
     int i = 0;

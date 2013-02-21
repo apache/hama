@@ -17,8 +17,8 @@
  */
 package org.apache.hama.zookeeper;
 
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.HamaConfiguration;
@@ -27,7 +27,7 @@ import org.apache.hama.HamaConfiguration;
  * A tool class for Zookeeper use.
  */
 public class ZKServerTool {
-  
+
   /**
    * Run the tool.
    * 

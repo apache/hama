@@ -252,8 +252,9 @@ public class BSPJob extends BSPJobContext {
 
   @SuppressWarnings({ "rawtypes" })
   public InputFormat getInputFormat() {
-    return ReflectionUtils.newInstance(conf.getClass(Constants.INPUT_FORMAT_CLASS,
-        TextInputFormat.class, InputFormat.class), conf);
+    return ReflectionUtils.newInstance(
+        conf.getClass(Constants.INPUT_FORMAT_CLASS, TextInputFormat.class,
+            InputFormat.class), conf);
   }
 
   @SuppressWarnings({ "rawtypes" })
@@ -374,19 +375,22 @@ public class BSPJob extends BSPJobContext {
    */
   @SuppressWarnings("rawtypes")
   public void setPartitioner(Class<? extends Partitioner> theClass) {
-    conf.setClass(Constants.RUNTIME_PARTITIONING_CLASS, theClass, Partitioner.class);
+    conf.setClass(Constants.RUNTIME_PARTITIONING_CLASS, theClass,
+        Partitioner.class);
   }
 
   @SuppressWarnings("rawtypes")
   public Partitioner getPartitioner() {
-    return ReflectionUtils.newInstance(
-        conf.getClass(Constants.RUNTIME_PARTITIONING_CLASS, HashPartitioner.class,Partitioner.class), conf);
+    return ReflectionUtils.newInstance(conf.getClass(
+        Constants.RUNTIME_PARTITIONING_CLASS, HashPartitioner.class,
+        Partitioner.class), conf);
   }
 
   @SuppressWarnings("rawtypes")
   public OutputFormat getOutputFormat() {
-    return ReflectionUtils.newInstance(conf.getClass(Constants.OUTPUT_FORMAT_CLASS,
-        TextOutputFormat.class, OutputFormat.class), conf);
+    return ReflectionUtils.newInstance(conf.getClass(
+        Constants.OUTPUT_FORMAT_CLASS, TextOutputFormat.class,
+        OutputFormat.class), conf);
   }
 
   protected void setCheckPointInterval(int checkPointInterval) {

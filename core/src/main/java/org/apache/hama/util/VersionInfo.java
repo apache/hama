@@ -21,9 +21,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hama.HamaVersionAnnotation;
 
-
 /**
- * A version information class. The code is picked from Apache Hadoop and 
+ * A version information class. The code is picked from Apache Hadoop and
  * adapted for Hama code-base.
  */
 public class VersionInfo {
@@ -40,6 +39,7 @@ public class VersionInfo {
 
   /**
    * Get the meta-data for the Hama package.
+   * 
    * @return the current package
    */
   static Package getPackage() {
@@ -48,6 +48,7 @@ public class VersionInfo {
 
   /**
    * Get the Hama version.
+   * 
    * @return the Hama version string, eg. "0.6.3-dev"
    */
   public static String getVersion() {
@@ -56,6 +57,7 @@ public class VersionInfo {
 
   /**
    * Get the subversion revision number for the root directory
+   * 
    * @return the revision number, eg. "451451"
    */
   public static String getRevision() {
@@ -64,6 +66,7 @@ public class VersionInfo {
 
   /**
    * Get the branch on which this originated.
+   * 
    * @return The branch name, e.g. "trunk" or "branches/branch-0.20"
    */
   public static String getBranch() {
@@ -72,6 +75,7 @@ public class VersionInfo {
 
   /**
    * The date that Hama was compiled.
+   * 
    * @return the compilation date in unix date format
    */
   public static String getDate() {
@@ -80,6 +84,7 @@ public class VersionInfo {
 
   /**
    * The user that compiled Hama.
+   * 
    * @return the username of the user
    */
   public static String getUser() {
@@ -94,22 +99,19 @@ public class VersionInfo {
   }
 
   /**
-   * Get the checksum of the source files from which Hama was
-   * built.
+   * Get the checksum of the source files from which Hama was built.
    **/
   public static String getSrcChecksum() {
     return version != null ? version.srcChecksum() : "Unknown";
   }
 
   /**
-   * Returns the buildVersion which includes version, 
-   * revision, user and date. 
+   * Returns the buildVersion which includes version, revision, user and date.
    */
-  public static String getBuildVersion(){
-    return VersionInfo.getVersion() + 
-        " from " + VersionInfo.getRevision() +
-        " by " + VersionInfo.getUser() + 
-        " source checksum " + VersionInfo.getSrcChecksum();
+  public static String getBuildVersion() {
+    return VersionInfo.getVersion() + " from " + VersionInfo.getRevision()
+        + " by " + VersionInfo.getUser() + " source checksum "
+        + VersionInfo.getSrcChecksum();
   }
 
   public static void main(String[] args) {

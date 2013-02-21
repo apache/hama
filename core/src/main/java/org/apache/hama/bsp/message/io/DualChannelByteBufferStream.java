@@ -27,7 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.Constants;
 
 /**
- * A synchronous i/o stream that is used to write data into and to read back the 
+ * A synchronous i/o stream that is used to write data into and to read back the
  * written data.
  */
 public class DualChannelByteBufferStream {
@@ -73,8 +73,8 @@ public class DualChannelByteBufferStream {
     }
     outputMode = false;
   }
-  
-  public void close() throws IOException{
+
+  public void close() throws IOException {
     closeInput();
     closeOutput();
   }

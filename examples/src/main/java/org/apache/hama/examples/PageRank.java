@@ -17,8 +17,6 @@
  */
 package org.apache.hama.examples;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -101,29 +99,6 @@ public class PageRank {
           / numEdges));
     }
 
-    @Override
-    public void readState(DataInput in) throws IOException {
-    }
-
-    @Override
-    public void writeState(DataOutput out) throws IOException {
-    }
-
-    @Override
-    public Text createVertexIDObject() {
-      return new Text();
-    }
-
-    @Override
-    public NullWritable createEdgeCostObject() {
-      return NullWritable.get();
-    }
-
-    @Override
-    public DoubleWritable createVertexValue() {
-      return new DoubleWritable();
-    }
-
   }
 
   public static class DanglingNodeAggregator
@@ -172,7 +147,7 @@ public class PageRank {
       throws IOException {
     GraphJob pageJob = new GraphJob(conf, PageRank.class);
     pageJob.setJobName("Pagerank");
-    
+
     pageJob.setVertexClass(PageRankVertex.class);
     pageJob.setInputPath(new Path(args[0]));
     pageJob.setOutputPath(new Path(args[1]));
@@ -192,7 +167,7 @@ public class PageRank {
 
     // Vertex reader
     pageJob.setVertexInputReaderClass(PagerankSeqReader.class);
-    
+
     pageJob.setVertexIDClass(Text.class);
     pageJob.setVertexValueClass(DoubleWritable.class);
     pageJob.setEdgeValueClass(NullWritable.class);

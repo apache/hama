@@ -38,7 +38,7 @@ public class ExampleDriver {
       pgd.addClass("bipartite", BipartiteMatching.class, "Bipartite Matching");
       pgd.addClass("kmeans", Kmeans.class, "K-Means Clustering");
       pgd.addClass("gd", GradientDescentExample.class, "Gradient Descent");
-      
+
       pgd.addClass("gen", Generator.class, "Random Data Generator Util");
       pgd.driver(args);
     } catch (Throwable e) {

@@ -29,7 +29,7 @@ public abstract class HamaCluster extends HamaClusterTestCase {
   public static final Log LOG = LogFactory.getLog(HamaCluster.class);
   private final static HamaConfiguration conf = new HamaConfiguration();
 
-  public HamaCluster(){
+  public HamaCluster() {
     super();
   }
 

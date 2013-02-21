@@ -18,11 +18,10 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -68,7 +67,7 @@ public class TaskInProgress {
 
   // The first taskid of this tip
   private TaskAttemptID firstTaskId;
-  
+
   private TaskAttemptID currentTaskId;
 
   // Map from task Id -> GroomServer Id, contains tasks that are
@@ -145,17 +144,17 @@ public class TaskInProgress {
       Map<GroomServerStatus, Integer> tasksInGroomMap,
       String[] possibleLocations) {
 
-      for (String location : possibleLocations) {
-          GroomServerStatus groom = grooms.get(location);
-          if (groom == null)
-              continue;
-          Integer taskInGroom = tasksInGroomMap.get(groom);
-          taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
-          if (taskInGroom < groom.getMaxTasks()
-                  && location.equals(groom.getGroomHostName())) {
-              return groom.getGroomHostName();
-          }
+    for (String location : possibleLocations) {
+      GroomServerStatus groom = grooms.get(location);
+      if (groom == null)
+        continue;
+      Integer taskInGroom = tasksInGroomMap.get(groom);
+      taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+      if (taskInGroom < groom.getMaxTasks()
+          && location.equals(groom.getGroomHostName())) {
+        return groom.getGroomHostName();
       }
+    }
     return null;
   }
 
@@ -168,16 +167,16 @@ public class TaskInProgress {
   private String getAnyGroomToSchedule(Map<String, GroomServerStatus> grooms,
       Map<GroomServerStatus, Integer> tasksInGroomMap) {
 
-      for (String s : grooms.keySet()) {
-          GroomServerStatus groom = grooms.get(s);
-          if (groom == null)
-              continue;
-          Integer taskInGroom = tasksInGroomMap.get(groom);
-          taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
-          if (taskInGroom < groom.getMaxTasks()) {
-              return groom.getGroomHostName();
-          }
+    for (String s : grooms.keySet()) {
+      GroomServerStatus groom = grooms.get(s);
+      if (groom == null)
+        continue;
+      Integer taskInGroom = tasksInGroomMap.get(groom);
+      taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
+      if (taskInGroom < groom.getMaxTasks()) {
+        return groom.getGroomHostName();
       }
+    }
     return null;
   }
 
@@ -188,7 +187,7 @@ public class TaskInProgress {
    * @return
    */
   public Task constructTask(GroomServerStatus groomStatus) {
-    if(groomStatus == null){
+    if (groomStatus == null) {
       return null;
     }
     TaskAttemptID taskId = computeTaskId();
@@ -198,8 +197,8 @@ public class TaskInProgress {
       String splitClass = null;
       BytesWritable split = null;
       if (rawSplit != null) {
-    	  splitClass = rawSplit.getClassName();
-    	  split = rawSplit.getBytes();
+        splitClass = rawSplit.getClassName();
+        split = rawSplit.getBytes();
       }
       currentTaskId = taskId;
       String groomName = groomStatus.getGroomHostName();
@@ -218,8 +217,8 @@ public class TaskInProgress {
     String splitClass = null;
     BytesWritable split = null;
     if (rawSplit != null) {
-  	  splitClass = rawSplit.getClassName();
-  	  split = rawSplit.getBytes();
+      splitClass = rawSplit.getClassName();
+      split = rawSplit.getBytes();
     }
     Task t = null;
     String groomName = getGroomToSchedule(taskid, grooms, tasksInGroomMap,
@@ -492,8 +491,8 @@ public class TaskInProgress {
   public RawSplit getFileSplit() {
     return this.rawSplit;
   }
-  
-  public TaskAttemptID getCurrentTaskAttemptId(){
+
+  public TaskAttemptID getCurrentTaskAttemptId() {
     return this.currentTaskId;
   }
 

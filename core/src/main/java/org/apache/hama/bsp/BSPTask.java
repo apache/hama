@@ -69,7 +69,8 @@ public final class BSPTask extends Task {
       boolean shouldKillSelf = false;
       try {
         if (LOG.isDebugEnabled())
-          LOG.debug("Pinging at time " + Calendar.getInstance().getTimeInMillis());
+          LOG.debug("Pinging at time "
+              + Calendar.getInstance().getTimeInMillis());
         // if the RPC call returns false, it means that groomserver does not
         // have knowledge of this task.
         shouldKillSelf = !(pingRPC.ping(taskId) && bspThread.isAlive());
@@ -114,8 +115,8 @@ public final class BSPTask extends Task {
 
   private void startPingingGroom(BSPJob job, BSPPeerProtocol umbilical) {
 
-    long pingPeriod = job.getConfiguration().getLong(Constants.GROOM_PING_PERIOD,
-        Constants.DEFAULT_GROOM_PING_PERIOD) / 2;
+    long pingPeriod = job.getConfiguration().getLong(
+        Constants.GROOM_PING_PERIOD, Constants.DEFAULT_GROOM_PING_PERIOD) / 2;
 
     try {
       if (pingPeriod > 0) {
@@ -156,7 +157,8 @@ public final class BSPTask extends Task {
       throws Exception {
 
     BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> bsp = (BSP<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M>) ReflectionUtils
-        .newInstance(job.getConfiguration().getClass("bsp.work.class", BSP.class),
+        .newInstance(
+            job.getConfiguration().getClass("bsp.work.class", BSP.class),
             job.getConfiguration());
 
     // The policy is to throw the first exception and log the remaining.

@@ -25,7 +25,8 @@ import org.junit.Test;
 public class LinearRegressionTest {
   @Test
   public void testCorrectGDWithLinearRegressionExecution() throws Exception {
-    GradientDescentExample.main(new String[]{"src/test/resources/linear_regression_sample.txt", "linear"});
+    GradientDescentExample.main(new String[] {
+        "src/test/resources/linear_regression_sample.txt", "linear" });
   }
 
 }

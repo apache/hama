@@ -49,8 +49,8 @@ public class SpilledByteBuffer {
   public void setRecordClass(Class<? extends Writable> classObj) {
     this.writableClass = classObj;
   }
-  
-  public Class<? extends Writable> getRecordClass(){
+
+  public Class<? extends Writable> getRecordClass() {
     return this.writableClass;
   }
 
@@ -66,14 +66,14 @@ public class SpilledByteBuffer {
   public void markEndOfRecord() {
     this.endOfRecord = this.buffer.position();
   }
-  
-  public void markEndOfRecord(int pos){
-    if(pos < this.buffer.capacity()){
+
+  public void markEndOfRecord(int pos) {
+    if (pos < this.buffer.capacity()) {
       this.endOfRecord = pos;
     }
   }
-  
-  public int getMarkofLastRecord(){
+
+  public int getMarkofLastRecord() {
     return this.endOfRecord;
   }
 
@@ -290,8 +290,8 @@ public class SpilledByteBuffer {
     buffer.put(byteBuffer);
 
   }
-  
-  public int capacity(){
+
+  public int capacity() {
     return this.buffer.capacity();
   }
 

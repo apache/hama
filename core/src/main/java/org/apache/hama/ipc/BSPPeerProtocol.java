@@ -54,7 +54,7 @@ public interface BSPPeerProtocol extends HamaRPCProtocolVersion, Closeable,
 
   /** Report that the task encounted a fatal error. */
   void fatalError(TaskAttemptID taskId, String message) throws IOException;
-  
+
   /**
    * Report child's progress to parent.
    * 

@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.util.ReflectionUtils;
 
 /**
@@ -40,13 +41,6 @@ public final class GraphJobMessage implements Writable {
   public static final int REPAIR_FLAG = 0x04;
   public static final int PARTITION_FLAG = 0x08;
   public static final int VERTICES_SIZE_FLAG = 0x10;
-
-  // staticly defined because it is process-wide information, therefore in caps
-  // considered as a constant
-  public static Class<?> VERTEX_CLASS;
-  public static Class<? extends Writable> VERTEX_ID_CLASS;
-  public static Class<? extends Writable> VERTEX_VALUE_CLASS;
-  public static Class<? extends Writable> EDGE_VALUE_CLASS;
 
   // default flag to -1 "unknown"
   private int flag = -1;
@@ -127,45 +121,49 @@ public final class GraphJobMessage implements Writable {
   public void readFields(DataInput in) throws IOException {
     flag = in.readByte();
     if (isVertexMessage()) {
-      vertexId = ReflectionUtils.newInstance(VERTEX_ID_CLASS, null);
+      vertexId = GraphJobRunner.createVertexIDObject();
       vertexId.readFields(in);
-      vertexValue = ReflectionUtils.newInstance(VERTEX_VALUE_CLASS, null);
+      vertexValue = GraphJobRunner.createVertexValue();
       vertexValue.readFields(in);
     } else if (isMapMessage()) {
       map = new MapWritable();
       map.readFields(in);
     } else if (isPartitioningMessage()) {
-      Vertex<Writable, Writable, Writable> vertex = GraphJobRunner
-          .newVertexInstance(VERTEX_CLASS, null);
-      Writable vertexId = ReflectionUtils.newInstance(VERTEX_ID_CLASS, null);
+      Vertex<WritableComparable<Writable>, Writable, Writable> vertex = GraphJobRunner
+          .newVertexInstance(GraphJobRunner.VERTEX_CLASS);
+      WritableComparable<Writable> vertexId = GraphJobRunner
+          .createVertexIDObject();
       vertexId.readFields(in);
       vertex.setVertexID(vertexId);
       if (in.readBoolean()) {
-        Writable vertexValue = ReflectionUtils.newInstance(VERTEX_VALUE_CLASS,
-            null);
+        Writable vertexValue = GraphJobRunner.createVertexValue();
         vertexValue.readFields(in);
         vertex.setValue(vertexValue);
       }
       int size = in.readInt();
-      vertex.setEdges(new ArrayList<Edge<Writable, Writable>>(size));
+      vertex
+          .setEdges(new ArrayList<Edge<WritableComparable<Writable>, Writable>>(
+              size));
       for (int i = 0; i < size; i++) {
-        Writable edgeVertexID = ReflectionUtils.newInstance(VERTEX_ID_CLASS,
-            null);
+        WritableComparable<Writable> edgeVertexID = GraphJobRunner
+            .createVertexIDObject();
         edgeVertexID.readFields(in);
         Writable edgeValue = null;
         if (in.readBoolean()) {
-          edgeValue = ReflectionUtils.newInstance(EDGE_VALUE_CLASS, null);
+          edgeValue = GraphJobRunner.createEdgeCostObject();
           edgeValue.readFields(in);
         }
         vertex.getEdges().add(
-            new Edge<Writable, Writable>(edgeVertexID, edgeValue));
+            new Edge<WritableComparable<Writable>, Writable>(edgeVertexID,
+                edgeValue));
       }
       this.vertex = vertex;
     } else if (isVerticesSizeMessage()) {
       vertices_size = new IntWritable();
       vertices_size.readFields(in);
     } else {
-      vertexId = ReflectionUtils.newInstance(VERTEX_ID_CLASS, null);
+      vertexId = ReflectionUtils.newInstance(GraphJobRunner.VERTEX_ID_CLASS,
+          null);
       vertexId.readFields(in);
     }
   }

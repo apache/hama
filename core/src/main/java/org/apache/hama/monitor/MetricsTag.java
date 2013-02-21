@@ -24,36 +24,41 @@ public final class MetricsTag {
   private final String name;
   private final String value;
 
-  public MetricsTag(String name, String value){
+  public MetricsTag(String name, String value) {
     this.name = name;
     this.value = value;
   }
 
-  public final String name(){
+  public final String name() {
     return this.name;
   }
 
-  public final String value(){
+  public final String value() {
     return this.value;
   }
 
   @Override
-  public boolean equals(Object target){
-   if (target == this) return true;
-    if (null == target) return false;
-    if (getClass() != target.getClass()) return false;
- 
+  public boolean equals(Object target) {
+    if (target == this)
+      return true;
+    if (null == target)
+      return false;
+    if (getClass() != target.getClass())
+      return false;
+
     MetricsTag t = (MetricsTag) target;
-    if(!t.name.equals(name)) return false;
-    if(!t.value.equals(value)) return false;
+    if (!t.name.equals(name))
+      return false;
+    if (!t.value.equals(value))
+      return false;
     return true;
   }
 
   @Override
-  public int hashCode(){
+  public int hashCode() {
     int result = 17;
     result = 37 * result + name().hashCode();
     result = 37 * result + value().hashCode();
-    return result; 
+    return result;
   }
 }

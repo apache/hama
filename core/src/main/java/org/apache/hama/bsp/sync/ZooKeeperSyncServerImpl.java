@@ -22,7 +22,6 @@ import javax.management.InstanceNotFoundException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.sync.SyncServer;
 import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.zookeeper.QuorumPeer;
 import org.apache.hama.zookeeper.QuorumPeer.ShutdownableZooKeeperServerMain;

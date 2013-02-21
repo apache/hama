@@ -19,16 +19,16 @@ package org.apache.hama.bsp.message.queue;
 
 /**
  * 
- *
+ * 
  * @param <M>
  */
 public interface MessageTransferQueue<M> {
-  
+
   /**
    * 
    */
   public MessageQueue<M> getSenderQueue();
-  
+
   /**
    * 
    */

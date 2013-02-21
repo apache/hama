@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
@@ -29,11 +30,24 @@ import org.apache.hama.util.KeyValuePair;
 
 /**
  * A reader to read Hama's input files and parses a vertex out of it.
+ * 
+ * 
+ * @param <KEYIN> the input format's KEYIN type.
+ * @param <VALUEIN> the input format's VALUE_IN type.
+ * @param <V> the vertex id type.
+ * @param <E> the Edge cost object type.
+ * @param <M> the Vertex value/message object type.
  */
-public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends Writable, V extends Writable, E extends Writable, M extends Writable>
+public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends Writable, V extends WritableComparable<? super V>, E extends Writable, M extends Writable>
     implements RecordConverter {
 
   private static final Log LOG = LogFactory.getLog(VertexInputReader.class);
+
+  @Override
+  public void setup(Configuration conf) {
+    // initialize the usual vertex structures for read/write methods
+    GraphJobRunner.initClasses(conf);
+  }
 
   private final KeyValuePair<Writable, Writable> outputRecord = new KeyValuePair<Writable, Writable>();
 
@@ -52,8 +66,7 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
     Class<Vertex<V, E, M>> vertexClass = (Class<Vertex<V, E, M>>) conf
         .getClass(GraphJob.VERTEX_CLASS_ATTR, Vertex.class);
     boolean vertexCreation;
-    Vertex<V, E, M> vertex = GraphJobRunner
-        .newVertexInstance(vertexClass, conf);
+    Vertex<V, E, M> vertex = GraphJobRunner.newVertexInstance(vertexClass);
     try {
       vertexCreation = parseVertex((KEYIN) inputRecord.getKey(),
           (VALUEIN) inputRecord.getValue(), vertex);
@@ -72,10 +85,9 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
   @SuppressWarnings("unchecked")
   @Override
   public int getPartitionId(KeyValuePair<Writable, Writable> inputRecord,
-      @SuppressWarnings("rawtypes")
-      Partitioner partitioner, Configuration conf,
-      @SuppressWarnings("rawtypes")
-      BSPPeer peer, int numTasks) {
+      @SuppressWarnings("rawtypes") Partitioner partitioner,
+      Configuration conf, @SuppressWarnings("rawtypes") BSPPeer peer,
+      int numTasks) {
     Vertex<V, E, M> vertex = (Vertex<V, E, M>) outputRecord.getKey();
     return Math.abs(partitioner.getPartition(vertex.getVertexID(),
         vertex.getValue(), numTasks));

@@ -72,11 +72,11 @@ public class TestZooKeeper extends TestCase {
       executorService.submit(new Runnable() {
         @Override
         public void run() {
-            try {
-                server.start();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+          try {
+            server.start();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
         }
       });
 
@@ -127,10 +127,10 @@ public class TestZooKeeper extends TestCase {
 
       Log.info("Passed the child count test");
 
-      masterClient.addKey(masterClient.constructKey(jobID, "peer", "1"),
-          true, null);
-      masterClient.addKey(masterClient.constructKey(jobID, "peer", "2"),
-          true, null);
+      masterClient.addKey(masterClient.constructKey(jobID, "peer", "1"), true,
+          null);
+      masterClient.addKey(masterClient.constructKey(jobID, "peer", "2"), true,
+          null);
 
       String[] peerChild = masterClient.getChildKeySet(
           masterClient.constructKey(jobID, "peer"), null);
@@ -157,26 +157,26 @@ public class TestZooKeeper extends TestCase {
               new IntWritable());
 
       assertEquals(false, result);
-      
+
       Writable[] writableArr = new Writable[2];
       writableArr[0] = new LongWritable(3L);
       writableArr[1] = new LongWritable(5L);
       ArrayWritable arrWritable = new ArrayWritable(LongWritable.class);
       arrWritable.set(writableArr);
       masterClient.storeInformation(
-          masterClient.constructKey(jobID, "info", "level3"), 
-          arrWritable, true, null);
-      
+          masterClient.constructKey(jobID, "info", "level3"), arrWritable,
+          true, null);
+
       ArrayWritable valueHolder = new ArrayWritable(LongWritable.class);
-      
+
       boolean getResult = masterClient.getInformation(
           masterClient.constructKey(jobID, "info", "level3"), valueHolder);
-      
+
       assertTrue(getResult);
-      
+
       assertEquals(arrWritable.get()[0], valueHolder.get()[0]);
       assertEquals(arrWritable.get()[1], valueHolder.get()[1]);
-      
+
       Log.info("Passed array writable test");
       done = true;
 

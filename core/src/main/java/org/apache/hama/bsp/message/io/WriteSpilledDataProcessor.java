@@ -37,7 +37,7 @@ public class WriteSpilledDataProcessor implements SpilledDataProcessor {
 
   private FileChannel fileChannel;
   private String fileName;
-  
+
   public WriteSpilledDataProcessor(String fileName)
       throws FileNotFoundException {
     this.fileName = fileName;
@@ -63,11 +63,11 @@ public class WriteSpilledDataProcessor implements SpilledDataProcessor {
   @Override
   public boolean handleSpilledBuffer(SpilledByteBuffer buffer) {
     try {
-      
-      if(fileChannel == null){
+
+      if (fileChannel == null) {
         initializeFileChannel();
       }
-      
+
       fileChannel.write(buffer.getByteBuffer());
       fileChannel.force(true);
       return true;

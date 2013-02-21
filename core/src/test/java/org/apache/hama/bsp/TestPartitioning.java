@@ -54,7 +54,7 @@ public class TestPartitioning extends TestCase {
     bsp.setInputPath(new Path("../CHANGES.txt"));
     bsp.setPartitioner(HashPartitioner.class);
     assertTrue(bsp.waitForCompletion(true));
-    
+
     FileSystem fs = FileSystem.get(conf);
     fs.delete(new Path("/tmp/hama-test/partitioning/localtest"), true);
   }
@@ -63,12 +63,14 @@ public class TestPartitioning extends TestCase {
       BSP<LongWritable, Text, NullWritable, NullWritable, NullWritable> {
 
     @Override
-    public void bsp(BSPPeer<LongWritable, Text, NullWritable, NullWritable, NullWritable> peer)
+    public void bsp(
+        BSPPeer<LongWritable, Text, NullWritable, NullWritable, NullWritable> peer)
         throws IOException, SyncException, InterruptedException {
       long numOfPairs = 0;
       KeyValuePair<LongWritable, Text> readNext = null;
       while ((readNext = peer.readNext()) != null) {
-        LOG.debug(readNext.getKey().get() + " / " + readNext.getValue().toString());
+        LOG.debug(readNext.getKey().get() + " / "
+            + readNext.getValue().toString());
         numOfPairs++;
       }
 

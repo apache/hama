@@ -18,7 +18,6 @@
 package org.apache.hama.bsp;
 
 import java.io.DataInput;
-
 import java.io.DataOutput;
 import java.io.IOException;
 import java.text.NumberFormat;

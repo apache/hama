@@ -17,8 +17,6 @@
  */
 package org.apache.hama.examples;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -73,28 +71,6 @@ public class SSSP {
       }
     }
 
-    @Override
-    public void readState(DataInput in) throws IOException {}
-
-    @Override
-    public void writeState(DataOutput out) throws IOException {}
-
-    @Override
-    public Text createVertexIDObject() {
-      return new Text();
-    }
-
-    @Override
-    public IntWritable createEdgeCostObject() {
-      return new IntWritable();
-    }
-
-    @Override
-    public IntWritable createVertexValue() {
-      return new IntWritable();
-    }
-
-    
   }
 
   public static class MinIntCombiner extends Combiner<IntWritable> {

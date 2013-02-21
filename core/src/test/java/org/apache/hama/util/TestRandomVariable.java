@@ -19,9 +19,9 @@
  */
 package org.apache.hama.util;
 
-import org.apache.log4j.Logger;
-
 import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
 
 /**
  * Random variable generation test

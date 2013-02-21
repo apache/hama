@@ -23,7 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.BSPJobID;
 import org.apache.hama.bsp.TaskAttemptID;
 
-public abstract class BSPPeerSyncClient implements PeerSyncClient{
+public abstract class BSPPeerSyncClient implements PeerSyncClient {
 
   /**
    * Init will be called within a spawned task, it should be used to initialize
@@ -32,8 +32,8 @@ public abstract class BSPPeerSyncClient implements PeerSyncClient{
    * 
    * @throws Exception
    */
-  public abstract void init(Configuration conf, BSPJobID jobId, TaskAttemptID taskId)
-      throws Exception;
+  public abstract void init(Configuration conf, BSPJobID jobId,
+      TaskAttemptID taskId) throws Exception;
 
   /**
    * Enters the barrier before the message sending in each superstep.
@@ -43,8 +43,8 @@ public abstract class BSPPeerSyncClient implements PeerSyncClient{
    * @param superstep the superstep of the task
    * @throws SyncException
    */
-  public abstract void enterBarrier(BSPJobID jobId, TaskAttemptID taskId, long superstep)
-      throws SyncException;
+  public abstract void enterBarrier(BSPJobID jobId, TaskAttemptID taskId,
+      long superstep) throws SyncException;
 
   /**
    * Leaves the barrier after all communication has been done, this is usually
@@ -55,8 +55,8 @@ public abstract class BSPPeerSyncClient implements PeerSyncClient{
    * @param superstep the superstep of the task
    * @throws SyncException
    */
-  public abstract void leaveBarrier(BSPJobID jobId, TaskAttemptID taskId, long superstep)
-      throws SyncException;
+  public abstract void leaveBarrier(BSPJobID jobId, TaskAttemptID taskId,
+      long superstep) throws SyncException;
 
   /**
    * Registers a specific task with a its host and port to the sync daemon.
@@ -89,8 +89,8 @@ public abstract class BSPPeerSyncClient implements PeerSyncClient{
    * @param hostAddress
    * @param port
    */
-  public abstract void deregisterFromBarrier(BSPJobID jobId, TaskAttemptID taskId,
-      String hostAddress, long port);
+  public abstract void deregisterFromBarrier(BSPJobID jobId,
+      TaskAttemptID taskId, String hostAddress, long port);
 
   /**
    * This stops the sync daemon. Only used in YARN.
@@ -103,6 +103,5 @@ public abstract class BSPPeerSyncClient implements PeerSyncClient{
    * @throws InterruptedException
    */
   public abstract void close() throws IOException;
-
 
 }

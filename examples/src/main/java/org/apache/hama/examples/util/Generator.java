@@ -30,12 +30,12 @@ public class Generator {
 
     String[] newArgs = new String[args.length - 1];
     System.arraycopy(args, 1, newArgs, 0, args.length - 1);
-    
+
     if (args[0].equals("symmetric")) {
       SymmetricMatrixGen.main(newArgs);
-    } else if(args[0].equals("square")) {
+    } else if (args[0].equals("square")) {
       System.out.println("Not implemented yet.");
-      //SquareMatrixGen.main(newArgs);
+      // SquareMatrixGen.main(newArgs);
     }
   }
 }

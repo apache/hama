@@ -152,7 +152,7 @@ public class SpMV {
      */
     bsp.setInputFormat(SequenceFileInputFormat.class);
     bsp.setInputKeyClass(IntWritable.class);
-    bsp.setInputValueClass(SparseVectorWritable.class); 
+    bsp.setInputValueClass(SparseVectorWritable.class);
     bsp.setOutputKeyClass(IntWritable.class);
     bsp.setOutputValueClass(DoubleWritable.class);
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
