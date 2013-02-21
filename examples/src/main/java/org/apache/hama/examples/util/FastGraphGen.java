@@ -36,7 +36,6 @@ import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.examples.CombineExample;
 
 import com.google.common.collect.Sets;
 
@@ -46,7 +45,7 @@ public class FastGraphGen {
   private static String SIZE_OF_MATRIX = "size.of.matrix";
   private static String MAX_EDGES = "max.outlinks";
 
-  public static class SymmetricMatrixGenBSP extends
+  public static class FastGraphGenBSP extends
       BSP<NullWritable, NullWritable, Text, TextArrayWritable, Text> {
 
     private Configuration conf;
@@ -107,10 +106,10 @@ public class FastGraphGen {
     conf.setInt(SIZE_OF_MATRIX, Integer.parseInt(args[0]));
     conf.setInt(MAX_EDGES, Integer.parseInt(args[1]));
 
-    BSPJob bsp = new BSPJob(conf, CombineExample.class);
+    BSPJob bsp = new BSPJob(conf, FastGraphGenBSP.class);
     // Set the job name
     bsp.setJobName("Random Fast Matrix Generator");
-    bsp.setBspClass(SymmetricMatrixGenBSP.class);
+    bsp.setBspClass(FastGraphGenBSP.class);
     bsp.setInputFormat(NullInputFormat.class);
     bsp.setOutputKeyClass(Text.class);
     bsp.setOutputValueClass(TextArrayWritable.class);

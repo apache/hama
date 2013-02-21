@@ -86,7 +86,7 @@ public class SSSPTest extends TestCase {
       String line = null;
       while ((line = reader.readLine()) != null) {
         String[] split = line.split("\t");
-        System.out.println(split[1] + " = " + (int) rs.get(split[0]));
+        System.out.println(split[1] + " = " + rs.get(split[0]));
         assertEquals(Integer.parseInt(split[1]), (int) rs.get(split[0]));
       }
     }
