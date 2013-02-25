@@ -280,8 +280,7 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
 
   @Override
   public FaultTolerantPeerService<M> constructPeerFaultTolerance(BSPJob job,
-      @SuppressWarnings("rawtypes")
-      BSPPeer bspPeer, PeerSyncClient syncClient,
+      @SuppressWarnings("rawtypes") BSPPeer bspPeer, PeerSyncClient syncClient,
       InetSocketAddress peerAddress, TaskAttemptID taskAttemptId,
       long superstep, Configuration conf, MessageManager<M> messenger)
       throws Exception {
@@ -327,8 +326,9 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
     volatile private FSDataOutputStream checkpointStream;
     volatile private long checkpointMessageCount;
 
-    public void initialize(BSPJob job, @SuppressWarnings("rawtypes")
-    BSPPeer bspPeer, PeerSyncClient syncClient, InetSocketAddress peerAddress,
+    public void initialize(BSPJob job,
+        @SuppressWarnings("rawtypes") BSPPeer bspPeer,
+        PeerSyncClient syncClient, InetSocketAddress peerAddress,
         TaskAttemptID taskAttemptId, long superstep, Configuration conf,
         MessageManager<M> messenger) throws IOException {
 

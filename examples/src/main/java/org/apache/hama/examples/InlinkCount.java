@@ -18,7 +18,6 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -37,14 +36,13 @@ import com.google.common.base.Optional;
 public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
 
   @Override
-  public void compute(Iterator<IntWritable> messages) throws IOException {
+  public void compute(Iterable<IntWritable> messages) throws IOException {
 
     if (getSuperstepCount() == 0L) {
       setValue(new IntWritable(0));
       sendMessageToNeighbors(new IntWritable(1));
     } else {
-      while (messages.hasNext()) {
-        IntWritable msg = messages.next();
+      for (IntWritable msg : messages) {
         this.setValue(new IntWritable(this.getValue().get() + msg.get()));
       }
       voteToHalt();

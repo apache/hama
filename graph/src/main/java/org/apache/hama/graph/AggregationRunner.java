@@ -36,7 +36,7 @@ import com.google.common.base.Preconditions;
  * configured.
  * 
  */
-public final class AggregationRunner<V extends WritableComparable<V>, E extends Writable, M extends Writable> {
+public final class AggregationRunner<V extends WritableComparable<? super V>, E extends Writable, M extends Writable> {
 
   // multiple aggregator arrays
   private Aggregator<M, Vertex<V, E, M>>[] aggregators;
@@ -166,31 +166,23 @@ public final class AggregationRunner<V extends WritableComparable<V>, E extends 
   }
 
   /**
-   * Receives aggregated values from a master task, by doing an additional
-   * barrier sync and parsing the messages.
+   * Receives aggregated values from a master task.
    * 
    * @return always true if no aggregators are defined, false if aggregators say
    *         we haven't seen any messages anymore.
    */
-  public boolean receiveAggregatedValues(
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
+  public boolean receiveAggregatedValues(MapWritable updatedValues,
       long iteration) throws IOException, SyncException, InterruptedException {
-    // if we have an aggregator defined, we must make an additional sync
-    // to have the updated values available on all our peers.
-    if (isEnabled() && iteration > 1) {
-      peer.sync();
-
-      MapWritable updatedValues = peer.getCurrentMessage().getMap();
-      for (int i = 0; i < aggregators.length; i++) {
-        globalAggregatorResult[i] = updatedValues.get(aggregatorValueFlag[i]);
-        globalAggregatorIncrement[i] = (IntWritable) updatedValues
-            .get(aggregatorIncrementFlag[i]);
-      }
-      IntWritable count = (IntWritable) updatedValues
-          .get(GraphJobRunner.FLAG_MESSAGE_COUNTS);
-      if (count != null && count.get() == Integer.MIN_VALUE) {
-        return false;
-      }
+    // map is the first value that is in the queue
+    for (int i = 0; i < aggregators.length; i++) {
+      globalAggregatorResult[i] = updatedValues.get(aggregatorValueFlag[i]);
+      globalAggregatorIncrement[i] = (IntWritable) updatedValues
+          .get(aggregatorIncrementFlag[i]);
+    }
+    IntWritable count = (IntWritable) updatedValues
+        .get(GraphJobRunner.FLAG_MESSAGE_COUNTS);
+    if (count != null && count.get() == Integer.MIN_VALUE) {
+      return false;
     }
     return true;
   }

@@ -81,8 +81,7 @@ public interface BSPFaultTolerantService<M extends Writable> {
    *         <code>FaultTolerantPeerService</code>
    */
   public FaultTolerantPeerService<M> constructPeerFaultTolerance(BSPJob job,
-      @SuppressWarnings("rawtypes")
-      BSPPeer bspPeer, PeerSyncClient syncClient,
+      @SuppressWarnings("rawtypes") BSPPeer bspPeer, PeerSyncClient syncClient,
       InetSocketAddress peerAddress, TaskAttemptID taskAttemptId,
       long superstep, Configuration conf, MessageManager<M> messenger)
       throws Exception;

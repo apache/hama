@@ -212,6 +212,10 @@ public abstract class Vertex<V extends WritableComparable<? super V>, E extends 
     return votedToHalt;
   }
 
+  void setVotedToHalt(boolean votedToHalt) {
+    this.votedToHalt = votedToHalt;
+  }
+
   @Override
   public int hashCode() {
     return ((vertexID == null) ? 0 : vertexID.hashCode());
@@ -236,8 +240,8 @@ public abstract class Vertex<V extends WritableComparable<? super V>, E extends 
 
   @Override
   public String toString() {
-    return getVertexID() + (getValue() != null ? " = " + getValue() : "")
-        + " // " + edges;
+    return "Active: " + !votedToHalt + " -> ID: " + getVertexID()
+        + (getValue() != null ? " = " + getValue() : "") + " // " + edges;
   }
 
   @Override

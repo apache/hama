@@ -18,7 +18,6 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -55,7 +54,7 @@ public interface VertexInterface<V extends WritableComparable<? super V>, E exte
   /**
    * The user-defined function
    */
-  public void compute(Iterator<M> messages) throws IOException;
+  public void compute(Iterable<M> messages) throws IOException;
 
   /**
    * @return a list of outgoing edges of this vertex in the input graph.

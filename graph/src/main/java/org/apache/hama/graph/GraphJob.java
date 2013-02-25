@@ -30,6 +30,9 @@ import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
+import org.apache.hama.bsp.message.MessageManager;
+import org.apache.hama.bsp.message.queue.MessageQueue;
+import org.apache.hama.bsp.message.queue.SortedMessageQueue;
 
 import com.google.common.base.Preconditions;
 
@@ -134,8 +137,8 @@ public class GraphJob extends BSPJob {
   }
 
   @Override
-  public void setPartitioner(@SuppressWarnings("rawtypes")
-  Class<? extends Partitioner> theClass) {
+  public void setPartitioner(
+      @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
   }
@@ -176,6 +179,10 @@ public class GraphJob extends BSPJob {
             this.getConfiguration().get(
                 Constants.RUNTIME_PARTITION_RECORDCONVERTER) != null,
             "Please provide a converter class for your vertex by using GraphJob#setVertexInputReaderClass!");
+
+    // add the default message queue to the sorted one
+    this.getConfiguration().setClass(MessageManager.QUEUE_TYPE_CLASS,
+        SortedMessageQueue.class, MessageQueue.class);
 
     super.submit();
   }

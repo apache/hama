@@ -44,12 +44,11 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
       "yahoo.com\tnasa.gov\tstackoverflow.com",
       "twitter.com\tgoogle.com\tfacebook.com",
       "nasa.gov\tyahoo.com\tstackoverflow.com",
-      "youtube.com\tgoogle.com\tyahoo.com" };
+      "youtube.com\tgoogle.com\tyahoo.com", "google.com" };
 
   private static String INPUT = "/tmp/pagerank/real-tmp.seq";
   private static String OUTPUT = "/tmp/pagerank/real-out";
 
-  @SuppressWarnings("unchecked")
   @Override
   public void testSubmitJob() throws Exception {
 
@@ -60,6 +59,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     bsp.setOutputPath(new Path(OUTPUT));
     BSPJobClient jobClient = new BSPJobClient(configuration);
     configuration.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 6000);
+    configuration.set("hama.graph.self.ref", "true");
     ClusterStatus cluster = jobClient.getClusterStatus(false);
     assertEquals(this.numOfGroom, cluster.getGroomServers());
     LOG.info("Client finishes execution job.");
@@ -67,11 +67,8 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     bsp.setVertexClass(PageRank.PageRankVertex.class);
     // set the defaults
     bsp.setMaxIteration(30);
-    // FIXME why is the sum correct when 1-ALPHA instead of ALPHA itself?
-    bsp.set("hama.pagerank.alpha", "0.25");
 
-    bsp.setAggregatorClass(AverageAggregator.class,
-        PageRank.DanglingNodeAggregator.class);
+    bsp.setAggregatorClass(AverageAggregator.class);
 
     bsp.setInputFormat(SequenceFileInputFormat.class);
     bsp.setInputKeyClass(Text.class);

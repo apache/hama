@@ -49,6 +49,7 @@ public class ReflectionUtils {
       Constructor<T> meth = (Constructor<T>) CONSTRUCTOR_CACHE.get(theClass);
       if (null == meth) {
         meth = theClass.getDeclaredConstructor(new Class[0]);
+        meth.setAccessible(true);
         CONSTRUCTOR_CACHE.put(theClass, meth);
       }
       result = meth.newInstance();

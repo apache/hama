@@ -18,7 +18,6 @@
 package org.apache.hama.examples;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -49,7 +48,7 @@ public class MindistSearch {
       Vertex<Text, NullWritable, Text> {
 
     @Override
-    public void compute(Iterator<Text> messages) throws IOException {
+    public void compute(Iterable<Text> messages) throws IOException {
       Text currentComponent = getValue();
       if (getSuperstepCount() == 0L) {
         // if we have no associated component, pick the lowest in our direct
@@ -66,8 +65,7 @@ public class MindistSearch {
         }
       } else {
         boolean updated = false;
-        while (messages.hasNext()) {
-          Text next = messages.next();
+        for (Text next : messages) {
           if (currentComponent != null && next != null) {
             if (currentComponent.compareTo(next) > 0) {
               updated = true;

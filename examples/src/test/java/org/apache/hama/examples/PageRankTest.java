@@ -18,12 +18,8 @@
 package org.apache.hama.examples;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -31,29 +27,24 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.TextArrayWritable;
 import org.junit.Test;
 
 /**
- * Testcase for {@link ShortestPaths}
+ * Testcase for {@link PageRank}
  */
-public class SSSPTest extends TestCase {
-  String[] input = new String[] { "1:85\t2:217\t4:173",// 0
-      "0:85\t5:80",// 1
-      "0:217\t6:186\t7:103",// 2
-      "7:183",// 3
-      "0:173\t9:502", // 4
-      "1:80\t8:250", // 5
-      "2:186", // 6
-      "3:183\t9:167\t2:103", // 7
-      "5:250\t9:84", // 8
-      "4:502\t7:167\t8:84" // 9
-  };
+public class PageRankTest extends TestCase {
+  String[] input = new String[] { "1\t2\t3", "2", "3\t1\t2\t5", "4\t5\t6",
+      "5\t4\t6", "6\t4", "7\t2\t4" };
 
-  private static String INPUT = "/tmp/sssp-tmp.seq";
-  private static String TEXT_INPUT = "/tmp/sssp.txt";
-  private static String TEXT_OUTPUT = INPUT + "sssp.txt.seq";
-  private static String OUTPUT = "/tmp/sssp-out";
+  private static String INPUT = "/tmp/page-tmp.seq";
+  private static String TEXT_INPUT = "/tmp/page.txt";
+  private static String TEXT_OUTPUT = INPUT + "page.txt.seq";
+  private static String OUTPUT = "/tmp/page-out";
   private Configuration conf = new HamaConfiguration();
   private FileSystem fs;
 
@@ -64,12 +55,12 @@ public class SSSPTest extends TestCase {
   }
 
   @Test
-  public void testShortestPaths() throws IOException, InterruptedException,
+  public void testPageRank() throws IOException, InterruptedException,
       ClassNotFoundException, InstantiationException, IllegalAccessException {
 
     generateTestData();
     try {
-      SSSP.main(new String[] { "0", INPUT, OUTPUT, "3" });
+      PageRank.main(new String[] { INPUT, OUTPUT, "3" });
       verifyResult();
     } finally {
       deleteTempDirs();
@@ -77,49 +68,44 @@ public class SSSPTest extends TestCase {
   }
 
   private void verifyResult() throws IOException {
-    Map<String, Integer> rs = new HashMap<String, Integer>();
-    rs.put("6", 403);
-    rs.put("1", 85);
-    rs.put("3", 503);
-    rs.put("4", 173);
-    rs.put("7", 320);
-    rs.put("8", 415);
-    rs.put("0", 0);
-    rs.put("9", 487);
-    rs.put("2", 217);
-    rs.put("5", 165);
-
     FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
+    double sum = 0d;
     for (FileStatus fts : globStatus) {
       BufferedReader reader = new BufferedReader(new InputStreamReader(
           fs.open(fts.getPath())));
       String line = null;
       while ((line = reader.readLine()) != null) {
+        System.out.println(line);
         String[] split = line.split("\t");
-        System.out.println(split[1] + " = " + rs.get(split[0]));
-        assertEquals(Integer.parseInt(split[1]), (int) rs.get(split[0]));
+        sum += Double.parseDouble(split[1]);
       }
     }
+    System.out.println(sum);
+    assertTrue("Sum was: " + sum, sum > 0.9 && sum < 1.1);
   }
 
   private void generateTestData() {
-    BufferedWriter bw = null;
     try {
-      bw = new BufferedWriter(new FileWriter(INPUT));
-      int index = 0;
-      for (String s : input) {
-        bw.write((index++) + "\t" + s + "\n");
+      SequenceFile.Writer writer1 = SequenceFile.createWriter(fs, conf,
+          new Path(INPUT + "/part0"), Text.class, TextArrayWritable.class);
+
+      for (int i = 0; i < input.length; i++) {
+        String[] x = input[i].split("\t");
+
+        Text vertex = new Text(x[0]);
+        TextArrayWritable arr = new TextArrayWritable();
+        Writable[] values = new Writable[x.length - 1];
+        for (int j = 1; j < x.length; j++) {
+          values[j - 1] = new Text(x[j]);
+        }
+        arr.set(values);
+        writer1.append(vertex, arr);
       }
+
+      writer1.close();
+
     } catch (IOException e) {
       e.printStackTrace();
-    } finally {
-      if (bw != null) {
-        try {
-          bw.close();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
     }
   }
 

@@ -92,6 +92,11 @@
     <description>Temporary directory on the local message buffer on disk.</description>
   </property>
   <property>
+    <name>hama.disk.vertices.path</name>
+    <value>${hama.tmp.dir}/graph/</value>
+    <description>Disk directory for graph data.</description>
+  </property>
+  <property>
     <name>bsp.child.java.opts</name>
     <value>-Xmx1024m</value>
     <description>Java opts for the groom server child processes.  
