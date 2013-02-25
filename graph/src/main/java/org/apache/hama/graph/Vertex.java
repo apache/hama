@@ -46,7 +46,8 @@ import org.apache.hama.bsp.Partitioner;
  * @param <E> Edge cost object type
  * @param <M> Vertex value object type
  */
-public abstract class Vertex<V extends WritableComparable<? super V>, E extends Writable, M extends Writable>
+@SuppressWarnings("rawtypes")
+public abstract class Vertex<V extends WritableComparable, E extends Writable, M extends Writable>
     implements VertexInterface<V, E, M> {
 
   GraphJobRunner<?, ?, ?> runner;
@@ -315,6 +316,7 @@ public abstract class Vertex<V extends WritableComparable<? super V>, E extends 
   }
 
   // compare across the vertex ID
+  @SuppressWarnings("unchecked")
   @Override
   public final int compareTo(VertexInterface<V, E, M> o) {
     return getVertexID().compareTo(o.getVertexID());

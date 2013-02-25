@@ -31,7 +31,8 @@ import org.apache.hama.bsp.TaskAttemptID;
  * @param <E> Edge cost object type
  * @param <M> Vertex value object type
  */
-public interface VerticesInfo<V extends WritableComparable<? super V>, E extends Writable, M extends Writable> {
+@SuppressWarnings("rawtypes")
+public interface VerticesInfo<V extends WritableComparable, E extends Writable, M extends Writable> {
 
   /**
    * Initialization of internal structures.

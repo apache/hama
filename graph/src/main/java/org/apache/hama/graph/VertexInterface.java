@@ -33,7 +33,8 @@ import org.apache.hadoop.io.WritableComparable;
  *          edge.
  * @param <M> the type used for messaging, usually the value of a vertex.
  */
-public interface VertexInterface<V extends WritableComparable<? super V>, E extends Writable, M extends Writable>
+@SuppressWarnings("rawtypes")
+public interface VertexInterface<V extends WritableComparable, E extends Writable, M extends Writable>
     extends WritableComparable<VertexInterface<V, E, M>> {
 
   /**

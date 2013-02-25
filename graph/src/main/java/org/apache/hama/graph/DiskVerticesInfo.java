@@ -35,7 +35,8 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.graph.IDSkippingIterator.Strategy;
 
-public final class DiskVerticesInfo<V extends WritableComparable<? super V>, E extends Writable, M extends Writable>
+@SuppressWarnings("rawtypes")
+public final class DiskVerticesInfo<V extends WritableComparable, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
 
   public static final String DISK_VERTICES_PATH_KEY = "hama.disk.vertices.path";

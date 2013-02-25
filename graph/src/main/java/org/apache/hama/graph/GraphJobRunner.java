@@ -46,7 +46,8 @@ import org.apache.hama.util.ReflectionUtils;
  * @param <E> the value type of an edge.
  * @param <M> the value type of a vertex.
  */
-public final class GraphJobRunner<V extends WritableComparable<? super V>, E extends Writable, M extends Writable>
+@SuppressWarnings("rawtypes")
+public final class GraphJobRunner<V extends WritableComparable, E extends Writable, M extends Writable>
     extends BSP<Writable, Writable, Writable, Writable, GraphJobMessage> {
 
   public static enum GraphJobCounter {
@@ -69,7 +70,7 @@ public final class GraphJobRunner<V extends WritableComparable<? super V>, E ext
   private Partitioner<V, M> partitioner;
 
   public static Class<?> VERTEX_CLASS;
-  public static Class<? extends WritableComparable<?>> VERTEX_ID_CLASS;
+  public static Class<? extends WritableComparable> VERTEX_ID_CLASS;
   public static Class<? extends Writable> VERTEX_VALUE_CLASS;
   public static Class<? extends Writable> EDGE_VALUE_CLASS;
   public static Class<Vertex<?, ?, ?>> vertexClass;
@@ -272,6 +273,7 @@ public final class GraphJobRunner<V extends WritableComparable<? super V>, E ext
   private VertexMessageIterable<V, M> iterate(GraphJobMessage currentMessage,
       V firstMessageId, Vertex<V, E, M> vertex,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer) {
+    @SuppressWarnings("unchecked")
     int comparision = firstMessageId.compareTo(vertex.getVertexID());
     if (comparision < 0) {
       throw new IllegalArgumentException(
@@ -540,7 +542,7 @@ public final class GraphJobRunner<V extends WritableComparable<? super V>, E ext
    * @return a new vertex instance
    */
   @SuppressWarnings({ "unchecked" })
-  public static <V extends WritableComparable<? super V>, E extends Writable, M extends Writable> Vertex<V, E, M> newVertexInstance(
+  public static <V extends WritableComparable, E extends Writable, M extends Writable> Vertex<V, E, M> newVertexInstance(
       Class<?> vertexClass) {
     return (Vertex<V, E, M>) ReflectionUtils.newInstance(vertexClass);
   }

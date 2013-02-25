@@ -24,7 +24,8 @@ import org.apache.hadoop.io.WritableComparable;
 /**
  * The edge class
  */
-public final class Edge<VERTEX_ID extends WritableComparable<? super VERTEX_ID>, EDGE_VALUE_TYPE extends Writable> {
+@SuppressWarnings("rawtypes")
+public final class Edge<VERTEX_ID extends WritableComparable, EDGE_VALUE_TYPE extends Writable> {
 
   private VERTEX_ID destinationVertexID;
   private EDGE_VALUE_TYPE cost;

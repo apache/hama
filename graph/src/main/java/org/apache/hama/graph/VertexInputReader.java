@@ -41,11 +41,13 @@ import org.apache.hama.util.KeyValuePair;
  * @param <E> the Edge cost object type.
  * @param <M> the Vertex value/message object type.
  */
-public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends Writable, V extends WritableComparable<? super V>, E extends Writable, M extends Writable>
+@SuppressWarnings("rawtypes")
+public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends Writable, V extends WritableComparable, E extends Writable, M extends Writable>
     implements RecordConverter {
 
   private static final Log LOG = LogFactory.getLog(VertexInputReader.class);
 
+  @SuppressWarnings("unchecked")
   @Override
   public void setup(Configuration conf) {
     // initialize the usual vertex structures for read/write methods
@@ -89,9 +91,7 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
   @SuppressWarnings("unchecked")
   @Override
   public int getPartitionId(KeyValuePair<Writable, Writable> inputRecord,
-      @SuppressWarnings("rawtypes") Partitioner partitioner,
-      Configuration conf, @SuppressWarnings("rawtypes") BSPPeer peer,
-      int numTasks) {
+      Partitioner partitioner, Configuration conf, BSPPeer peer, int numTasks) {
     Vertex<V, E, M> vertex = (Vertex<V, E, M>) outputRecord.getKey();
     return Math.abs(partitioner.getPartition(vertex.getVertexID(),
         vertex.getValue(), numTasks));

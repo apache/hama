@@ -23,13 +23,14 @@ import org.apache.hadoop.io.WritableComparable;
 /**
  * Iterator that allows skipping of items on disk based on some given stategy.
  */
-public abstract class IDSkippingIterator<V extends WritableComparable<? super V>, E extends Writable, M extends Writable> {
+@SuppressWarnings("rawtypes")
+public abstract class IDSkippingIterator<V extends WritableComparable, E extends Writable, M extends Writable> {
 
   enum Strategy {
     ALL, ACTIVE, ACTIVE_AND_MESSAGES, INACTIVE;
 
     // WritableComparable is really sucking in this type constellation
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings("unchecked")
     public boolean accept(Vertex v, WritableComparable msgId) {
       switch (this) {
         case ACTIVE_AND_MESSAGES:

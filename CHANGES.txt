@@ -13,7 +13,8 @@ Release 0.7 (unreleased changes)
    HAMA-658: Add random symmetric sparse matrix generator (edwardyoon)
 
   BUG FIXES
- 
+
+   HAMA-739: WritableComparable doesn't work with IntWritable (tjungblut) 
    HAMA-716: Splits should be assigned based on PartitionID (edwardyoon)
    HAMA-712: PartitioningRunner should works for multiple input files (surajsmenon via edwardyoon)
 
