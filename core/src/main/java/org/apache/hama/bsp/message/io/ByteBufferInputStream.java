@@ -135,7 +135,7 @@ public class ByteBufferInputStream extends InputStream {
    * @param len length of data to be written
    * @param cur The current size already read by the class.
    * @return if the end of the stream has reached, and cur is 0 return -1; else
-   * return the data size currently read.
+   *         return the data size currently read.
    * @throws IOException
    */
   protected int onBufferRead(byte[] b, int off, int len, int cur)
@@ -153,6 +153,7 @@ public class ByteBufferInputStream extends InputStream {
 
   /**
    * Sets the byte buffer to read the data from.
+   * 
    * @param buffer The byte buffer to read data from
    * @param toRead Number of bytes till end of last record.
    * @param total Total bytes of data to read in the buffer.
@@ -183,10 +184,11 @@ public class ByteBufferInputStream extends InputStream {
 
   /**
    * This function should be called to provision reading the partial records
-   * into the buffer after the last record in the buffer is read. This data 
-   * would be appended with the next ByteBuffer that is set using 
+   * into the buffer after the last record in the buffer is read. This data
+   * would be appended with the next ByteBuffer that is set using
    * {@link ByteBufferInputStream#setBuffer(ByteBuffer, long, long)} to start
    * reading records.
+   * 
    * @throws IOException
    */
   public void fillForNext() throws IOException {

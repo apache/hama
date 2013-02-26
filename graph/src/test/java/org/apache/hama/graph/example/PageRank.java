@@ -17,22 +17,28 @@
  */
 package org.apache.hama.graph.example;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
-import org.apache.hama.graph.AbstractAggregator;
+import org.apache.hadoop.io.Writable;
+import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.HashPartitioner;
+import org.apache.hama.bsp.SequenceFileInputFormat;
+import org.apache.hama.bsp.TextArrayWritable;
+import org.apache.hama.bsp.TextOutputFormat;
+import org.apache.hama.graph.AverageAggregator;
 import org.apache.hama.graph.Edge;
+import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
 
+/**
+ * Real pagerank with dangling node contribution.
+ */
 public class PageRank {
 
   public static class PageRankVertex extends
@@ -40,8 +46,6 @@ public class PageRank {
 
     static double DAMPING_FACTOR = 0.85;
     static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
-
-    int numEdges;
 
     @Override
     public void setup(Configuration conf) {
@@ -53,30 +57,20 @@ public class PageRank {
       if (val != null) {
         MAXIMUM_CONVERGENCE_ERROR = Double.parseDouble(val);
       }
-      numEdges = this.getEdges().size();
     }
 
     @Override
-    public void compute(Iterator<DoubleWritable> messages) throws IOException {
+    public void compute(Iterable<DoubleWritable> messages) throws IOException {
       // initialize this vertex to 1 / count of global vertices in this graph
       if (this.getSuperstepCount() == 0) {
         this.setValue(new DoubleWritable(1.0 / this.getNumVertices()));
       } else if (this.getSuperstepCount() >= 1) {
-        DoubleWritable danglingNodeContribution = getLastAggregatedValue(1);
         double sum = 0;
-        while (messages.hasNext()) {
-          DoubleWritable msg = messages.next();
+        for (DoubleWritable msg : messages) {
           sum += msg.get();
         }
-        if (danglingNodeContribution == null) {
-          double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
-          this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
-        } else {
-          double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
-          this.setValue(new DoubleWritable(alpha
-              + (DAMPING_FACTOR * (sum + danglingNodeContribution.get()
-                  / this.getNumVertices()))));
-        }
+        double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
+        this.setValue(new DoubleWritable(alpha + (sum * DAMPING_FACTOR)));
       }
 
       // if we have not reached our global error yet, then proceed.
@@ -86,86 +80,87 @@ public class PageRank {
         voteToHalt();
         return;
       }
+
       // in each superstep we are going to send a new rank to our neighbours
       sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
-          / numEdges));
+          / this.getEdges().size()));
     }
-
-    @Override
-    public Text createVertexIDObject() {
-      return new Text();
-    }
-
-    @Override
-    public NullWritable createEdgeCostObject() {
-      return NullWritable.get();
-    }
-
-    @Override
-    public DoubleWritable createVertexValue() {
-      return new DoubleWritable();
-    }
-
-    @Override
-    public void readState(DataInput in) throws IOException {}
-
-    @Override
-    public void writeState(DataOutput out) throws IOException {}
 
   }
 
-  public static class PagerankTextReader extends
-      VertexInputReader<LongWritable, Text, Text, NullWritable, DoubleWritable>
-      implements RecordConverter {
-
-    /**
-     * The text file essentially should look like: <br/>
-     * VERTEX_ID\t(n-tab separated VERTEX_IDs)<br/>
-     * E.G:<br/>
-     * 1\t2\t3\t4<br/>
-     * 2\t3\t1<br/>
-     * etc.
-     */
+  public static class PagerankSeqReader
+      extends
+      VertexInputReader<Text, TextArrayWritable, Text, NullWritable, DoubleWritable> {
     @Override
-    public boolean parseVertex(LongWritable key, Text value,
-        Vertex<Text, NullWritable, DoubleWritable> vertex) {
-      String[] split = value.toString().split("\t");
-      for (int i = 0; i < split.length; i++) {
-        if (i == 0) {
-          vertex.setVertexID(new Text(split[i]));
-        } else {
-          vertex
-              .addEdge(new Edge<Text, NullWritable>(new Text(split[i]), null));
-        }
+    public boolean parseVertex(Text key, TextArrayWritable value,
+        Vertex<Text, NullWritable, DoubleWritable> vertex) throws Exception {
+      vertex.setVertexID(key);
+
+      for (Writable v : value.get()) {
+        vertex.addEdge(new Edge<Text, NullWritable>((Text) v, null));
       }
+
       return true;
     }
-
   }
 
-  public static class DanglingNodeAggregator
-      extends
-      AbstractAggregator<DoubleWritable, Vertex<Text, NullWritable, DoubleWritable>> {
+  public static GraphJob createJob(String[] args, HamaConfiguration conf)
+      throws IOException {
+    GraphJob pageJob = new GraphJob(conf, PageRank.class);
+    pageJob.setJobName("Pagerank");
 
-    double danglingNodeSum;
+    pageJob.setVertexClass(PageRankVertex.class);
+    pageJob.setInputPath(new Path(args[0]));
+    pageJob.setOutputPath(new Path(args[1]));
 
-    @Override
-    public void aggregate(Vertex<Text, NullWritable, DoubleWritable> vertex,
-        DoubleWritable value) {
-      if (vertex != null) {
-        if (vertex.getEdges().size() == 0) {
-          danglingNodeSum += value.get();
-        }
-      } else {
-        danglingNodeSum += value.get();
-      }
+    // set the defaults
+    pageJob.setMaxIteration(30);
+    pageJob.set("hama.pagerank.alpha", "0.85");
+    // reference vertices to itself, because we don't have a dangling node
+    // contribution here
+    pageJob.set("hama.graph.self.ref", "true");
+    pageJob.set("hama.graph.max.convergence.error", "0.001");
+
+    if (args.length == 3) {
+      pageJob.setNumBspTask(Integer.parseInt(args[2]));
     }
 
-    @Override
-    public DoubleWritable getValue() {
-      return new DoubleWritable(danglingNodeSum);
-    }
+    // error
+    pageJob.setAggregatorClass(AverageAggregator.class);
 
+    // Vertex reader
+    pageJob.setVertexInputReaderClass(PagerankSeqReader.class);
+
+    pageJob.setVertexIDClass(Text.class);
+    pageJob.setVertexValueClass(DoubleWritable.class);
+    pageJob.setEdgeValueClass(NullWritable.class);
+
+    pageJob.setInputFormat(SequenceFileInputFormat.class);
+
+    pageJob.setPartitioner(HashPartitioner.class);
+    pageJob.setOutputFormat(TextOutputFormat.class);
+    pageJob.setOutputKeyClass(Text.class);
+    pageJob.setOutputValueClass(DoubleWritable.class);
+    return pageJob;
   }
 
+  private static void printUsage() {
+    System.out.println("Usage: <input> <output> [tasks]");
+    System.exit(-1);
+  }
+
+  public static void main(String[] args) throws IOException,
+      InterruptedException, ClassNotFoundException {
+    if (args.length < 2)
+      printUsage();
+
+    HamaConfiguration conf = new HamaConfiguration(new Configuration());
+    GraphJob pageJob = createJob(args, conf);
+
+    long startTime = System.currentTimeMillis();
+    if (pageJob.waitForCompletion(true)) {
+      System.out.println("Job Finished in "
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+    }
+  }
 }

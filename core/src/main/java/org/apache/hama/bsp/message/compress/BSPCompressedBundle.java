@@ -27,14 +27,14 @@ import org.apache.hadoop.io.Writable;
  * A compressed representation of BSPMessageBundle.
  * 
  */
-public final class BSPCompressedBundle implements Writable{
+public final class BSPCompressedBundle implements Writable {
 
   private byte[] data;
 
-  public BSPCompressedBundle(){		
+  public BSPCompressedBundle() {
   }
 
-  public BSPCompressedBundle(byte[] data){
+  public BSPCompressedBundle(byte[] data) {
     this.data = data;
   }
 
@@ -53,9 +53,9 @@ public final class BSPCompressedBundle implements Writable{
   }
 
   @Override
-  public void readFields(DataInput in) throws IOException {		
+  public void readFields(DataInput in) throws IOException {
     int len = in.readInt();
-    data    = new byte[len];
+    data = new byte[len];
     in.readFully(data);
   }
 

@@ -85,7 +85,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     bsp.setOutputKeyClass(IntWritable.class);
     bsp.setOutputValueClass(Text.class);
     bsp.setOutputPath(OUTPUT_PATH);
-    
+
     bsp.setCompressionCodec(SnappyCompressor.class);
     bsp.setCompressionThreshold(40);
 

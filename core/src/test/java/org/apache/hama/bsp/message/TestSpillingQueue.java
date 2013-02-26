@@ -35,6 +35,7 @@ public class TestSpillingQueue extends TestCase {
 
   /**
    * Test the spilling queue where the message class is specified.
+   * 
    * @throws Exception
    */
   public void testTextSpillingQueue() throws Exception {
@@ -44,9 +45,8 @@ public class TestSpillingQueue extends TestCase {
     TaskAttemptID id = new TaskAttemptID(new TaskID("123", 1, 2), 0);
     SpillingQueue<Text> queue = new SpillingQueue<Text>();
     Configuration conf = new HamaConfiguration();
-    
-    String fileName = 
-        System.getProperty("java.io.tmpdir") + File.separatorChar
+
+    String fileName = System.getProperty("java.io.tmpdir") + File.separatorChar
         + new BigInteger(128, new SecureRandom()).toString(32);
     File file = new File(fileName);
     conf.set(SpillingQueue.SPILLBUFFER_FILENAME, fileName);
@@ -54,25 +54,26 @@ public class TestSpillingQueue extends TestCase {
         Writable.class);
     queue.init(conf, id);
     queue.prepareWrite();
-    for(int i = 0; i < 1000; ++i){
+    for (int i = 0; i < 1000; ++i) {
       queue.add(text);
     }
     queue.prepareRead();
-    for(Text t: queue){
+    for (Text t : queue) {
       assertTrue(msg.equals(t.toString()));
       text.clear();
     }
-    
+
     assertTrue(queue.poll() == null);
-    
+
     assertTrue(file.exists());
     queue.close();
     assertFalse(file.exists());
   }
-  
+
   /**
    * Test the spilling queue where the message class is not specified and the
    * queue uses ObjectWritable to store messages.
+   * 
    * @throws Exception
    */
   public void testObjectWritableSpillingQueue() throws Exception {
@@ -82,25 +83,24 @@ public class TestSpillingQueue extends TestCase {
     TaskAttemptID id = new TaskAttemptID(new TaskID("123", 1, 2), 0);
     SpillingQueue<Text> queue = new SpillingQueue<Text>();
     Configuration conf = new HamaConfiguration();
-    
-    String fileName = 
-        System.getProperty("java.io.tmpdir") + File.separatorChar
+
+    String fileName = System.getProperty("java.io.tmpdir") + File.separatorChar
         + new BigInteger(128, new SecureRandom()).toString(32);
     File file = new File(fileName);
     conf.set(SpillingQueue.SPILLBUFFER_FILENAME, fileName);
     queue.init(conf, id);
     queue.prepareWrite();
-    for(int i = 0; i < 1000; ++i){
+    for (int i = 0; i < 1000; ++i) {
       queue.add(text);
     }
     queue.prepareRead();
-    for(Text t: queue){
+    for (Text t : queue) {
       assertTrue(msg.equals(t.toString()));
       text.clear();
     }
-    
+
     assertTrue(queue.poll() == null);
-    
+
     assertTrue(file.exists());
     queue.close();
     assertFalse(file.exists());

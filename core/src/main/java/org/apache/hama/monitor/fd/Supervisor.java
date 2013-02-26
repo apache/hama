@@ -19,17 +19,18 @@
 package org.apache.hama.monitor.fd;
 
 /**
- * A failure detector component. It is responsible for receiving the 
- * heartbeat and output suspicion level for Interpreter.
+ * A failure detector component. It is responsible for receiving the heartbeat
+ * and output suspicion level for Interpreter.
  */
 public interface Supervisor {
 
   /**
    * Receive notification if a node fails.
+   * 
    * @param listener will be called if a node fails.
    */
   void register(NodeEventListener listener);
-  
+
   /**
    * Start supervisor.
    */

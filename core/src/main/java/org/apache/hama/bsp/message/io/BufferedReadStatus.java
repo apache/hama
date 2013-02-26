@@ -18,8 +18,8 @@
 package org.apache.hama.bsp.message.io;
 
 /**
- * The implementation of shared object when there is no spilling in the
- * first place.
+ * The implementation of shared object when there is no spilling in the first
+ * place.
  * 
  */
 class BufferReadStatus extends ReadIndexStatus {
@@ -34,7 +34,7 @@ class BufferReadStatus extends ReadIndexStatus {
 
   @Override
   public int getReadBufferIndex() {
-    if(count == index - 1){
+    if (count == index - 1) {
       return -1;
     }
     return ++index;

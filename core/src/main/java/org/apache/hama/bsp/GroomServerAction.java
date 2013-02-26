@@ -58,7 +58,7 @@ public abstract class GroomServerAction implements Writable {
     UPDATE_PEER
   }
 
-    /**
+  /**
    * A factory-method to create objects of given {@link ActionType}.
    * 
    * @param actionType the {@link ActionType} of object to create.
@@ -79,17 +79,15 @@ public abstract class GroomServerAction implements Writable {
       case KILL_JOB: {
         action = new KillJobAction();
       }
-      break;
-      case RECOVER_TASK:
-      {
+        break;
+      case RECOVER_TASK: {
         action = new RecoverTaskAction();
       }
-      break;
-      case UPDATE_PEER:
-      {
+        break;
+      case UPDATE_PEER: {
         action = new UpdatePeerAction();
       }
-      break;
+        break;
       case REINIT_GROOM: {
         action = new ReinitGroomAction();
       }

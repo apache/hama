@@ -30,17 +30,15 @@ public class SyncServiceFactory {
    */
   public static PeerSyncClient getPeerSyncClient(Configuration conf)
       throws ClassNotFoundException {
-    return (PeerSyncClient) ReflectionUtils
-        .newInstance(conf.getClassByName(conf.get(SYNC_PEER_CLASS,
+    return (PeerSyncClient) ReflectionUtils.newInstance(conf
+        .getClassByName(conf.get(SYNC_PEER_CLASS,
             ZooKeeperSyncClientImpl.class.getName())), conf);
   }
 
-  
   public static SyncClient getMasterSyncClient(Configuration conf)
-		  throws ClassNotFoundException {
-	  return (SyncClient) ReflectionUtils
-			  .newInstance(conf.getClassByName(conf.get(SYNC_MASTER_CLASS,
-					  ZKSyncBSPMasterClient.class.getName())), conf);
+      throws ClassNotFoundException {
+    return (SyncClient) ReflectionUtils.newInstance(conf.getClassByName(conf
+        .get(SYNC_MASTER_CLASS, ZKSyncBSPMasterClient.class.getName())), conf);
   }
 
   /**

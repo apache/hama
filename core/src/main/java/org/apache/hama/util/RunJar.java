@@ -75,8 +75,8 @@ public class RunJar {
   }
 
   /**
-   * Run a Hama job jar. If the main class is not in the jar's manifest, then
-   * it must be provided on the command line.
+   * Run a Hama job jar. If the main class is not in the jar's manifest, then it
+   * must be provided on the command line.
    */
   public static void main(String[] args) throws Throwable {
     String usage = "Usage: hama jar <jar> [mainClass] args...";
@@ -133,15 +133,14 @@ public class RunJar {
         classPath.add(lib.toURI().toURL());
       }
     }
-    ClassLoader loader = new URLClassLoader(classPath
-      .toArray(new URL[classPath.size()]));
+    ClassLoader loader = new URLClassLoader(classPath.toArray(new URL[classPath
+        .size()]));
 
     Thread.currentThread().setContextClassLoader(loader);
     Class<?> mainClass = loader.loadClass(mainClassName);
-    Method main = mainClass.getMethod("main", new Class[] { Array.newInstance(
-        String.class, 0).getClass() });
-    List<String> var = Arrays.asList(args).subList(firstArg,
-      args.length);
+    Method main = mainClass.getMethod("main",
+        new Class[] { Array.newInstance(String.class, 0).getClass() });
+    List<String> var = Arrays.asList(args).subList(firstArg, args.length);
     String[] newArgs = var.toArray(new String[var.size()]);
     try {
       main.invoke(null, new Object[] { newArgs });

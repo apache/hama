@@ -1,4 +1,3 @@
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -24,19 +23,19 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
 /**
- * A utility class to just hold the byte buffer to read back the written data
- * or write data to read back. Buffer overflow, underflow conditions are not
+ * A utility class to just hold the byte buffer to read back the written data or
+ * write data to read back. Buffer overflow, underflow conditions are not
  * enforced.
- *
+ * 
  */
 public class DuplexByteArrayChannel implements WritableByteChannel,
     ReadableByteChannel {
 
   private boolean open;
   private ByteBuffer buffer;
-  
-  DuplexByteArrayChannel(){
-    
+
+  DuplexByteArrayChannel() {
+
   }
 
   @Override
@@ -71,8 +70,8 @@ public class DuplexByteArrayChannel implements WritableByteChannel,
   public void flip() {
     buffer.flip();
   }
-  
-  public ByteBuffer getBuffer(){
+
+  public ByteBuffer getBuffer() {
     return buffer;
   }
 }

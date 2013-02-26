@@ -187,8 +187,8 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
    * @return The instance of Writable object.
    * @throws IOException
    */
-  protected boolean getValueFromBytes(byte[] data,
-      Writable valueHolder) throws IOException {
+  protected boolean getValueFromBytes(byte[] data, Writable valueHolder)
+      throws IOException {
     if (data != null) {
       ByteArrayInputStream istream = new ByteArrayInputStream(data);
       DataInputStream diStream = new DataInputStream(istream);
@@ -210,8 +210,7 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
    * @return The Writable object constructed from the value read from the
    *         Zookeeper node.
    */
-  protected boolean extractData(String path,
-      Writable valueHolder) {
+  protected boolean extractData(String path, Writable valueHolder) {
     try {
       Stat stat = getStat(path);
       if (stat != null) {

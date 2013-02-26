@@ -60,8 +60,8 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
   public static void setOutputCompressorClass(BSPJob conf,
       Class<? extends CompressionCodec> codecClass) {
     setCompressOutput(conf, true);
-    conf.getConfiguration().setClass("bsp.output.compression.codec", codecClass,
-        CompressionCodec.class);
+    conf.getConfiguration().setClass("bsp.output.compression.codec",
+        codecClass, CompressionCodec.class);
   }
 
   /**

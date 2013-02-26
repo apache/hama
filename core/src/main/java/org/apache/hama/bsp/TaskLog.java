@@ -112,9 +112,9 @@ public class TaskLog {
     File[] oldTaskLogs = LOG_DIR.listFiles(new TaskLogsPurgeFilter(
         purgeTimeStamp));
     if (oldTaskLogs != null) {
-        for (File oldTaskLog : oldTaskLogs) {
-            FileUtil.fullyDelete(oldTaskLog);
-        }
+      for (File oldTaskLog : oldTaskLogs) {
+        FileUtil.fullyDelete(oldTaskLog);
+      }
     }
   }
 

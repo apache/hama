@@ -123,7 +123,7 @@ public class TaskRunner extends Thread {
 
         int exit_code = bspProcess.waitFor();
         if (!bspKilled && exit_code != 0) {
-          
+
           throw new IOException("BSP task process exit with nonzero status of "
               + exit_code + ". command = " + commands);
         }
@@ -181,11 +181,11 @@ public class TaskRunner extends Thread {
       }
       File[] libs = new File(workDir, "lib").listFiles();
       if (libs != null) {
-          for (File lib : libs) {
-              // add libs from jar to classpath
-              classPath.append(SYSTEM_PATH_SEPARATOR);
-              classPath.append(lib);
-          }
+        for (File lib : libs) {
+          // add libs from jar to classpath
+          classPath.append(SYSTEM_PATH_SEPARATOR);
+          classPath.append(lib);
+        }
       }
       classPath.append(SYSTEM_PATH_SEPARATOR);
       classPath.append(new File(workDir, "classes"));
@@ -204,11 +204,12 @@ public class TaskRunner extends Thread {
     vargs.add(jvm.toString());
 
     // bsp.child.java.opts
-    String javaOpts = jobConf.getConfiguration().get("bsp.child.java.opts", "-Xmx200m");
+    String javaOpts = jobConf.getConfiguration().get("bsp.child.java.opts",
+        "-Xmx200m");
     javaOpts = javaOpts.replace("@taskid@", task.getTaskID().toString());
 
     String[] javaOptsSplit = javaOpts.split(" ");
-      Collections.addAll(vargs, javaOptsSplit);
+    Collections.addAll(vargs, javaOptsSplit);
 
     // Add classpath.
     vargs.add("-classpath");
@@ -225,15 +226,14 @@ public class TaskRunner extends Thread {
       vargs.add(groomServer.groomHostName);
       vargs.add(Long.toString(groomServer.getStartSuperstep(task.getTaskID())));
       TaskStatus status = groomServer.getTaskStatus(task.getTaskID());
-      
-      if(status != null && 
-          TaskStatus.State.RECOVERING.equals(status.getRunState())){
+
+      if (status != null
+          && TaskStatus.State.RECOVERING.equals(status.getRunState())) {
         vargs.add(TaskStatus.State.RECOVERING.name());
-      }
-      else{
+      } else {
         vargs.add(TaskStatus.State.RUNNING.name());
       }
-      
+
     }
     return vargs;
   }
@@ -296,7 +296,7 @@ public class TaskRunner extends Thread {
     if (bspProcess != null) {
       bspProcess.destroy();
     }
-    
+
   }
 
   /**

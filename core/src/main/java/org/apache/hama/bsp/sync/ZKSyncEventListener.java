@@ -23,10 +23,10 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 
-public abstract class ZKSyncEventListener extends SyncEventListener
- implements Watcher {
-Log LOG = LogFactory.getLog(SyncEventListener.class);
-  
+public abstract class ZKSyncEventListener extends SyncEventListener implements
+    Watcher {
+  Log LOG = LogFactory.getLog(SyncEventListener.class);
+
   private ZKSyncClient client;
   private SyncEvent event;
 
@@ -35,39 +35,36 @@ Log LOG = LogFactory.getLog(SyncEventListener.class);
    */
   @Override
   public void process(WatchedEvent event) {
-    
-    client.registerListener(event.getPath(),
-        ZKSyncEventFactory.getValueChangeEvent()
-        , this);    
-    //if(LOG.isDebugEnabled()){
-      LOG.debug(event.toString());
-    //}
 
-    if(event.getType().equals(EventType.NodeChildrenChanged)){
+    client.registerListener(event.getPath(),
+        ZKSyncEventFactory.getValueChangeEvent(), this);
+    // if(LOG.isDebugEnabled()){
+    LOG.debug(event.toString());
+    // }
+
+    if (event.getType().equals(EventType.NodeChildrenChanged)) {
       LOG.debug("Node children changed - " + event.getPath());
       onChildKeySetChange();
-    }
-    else if (event.getType().equals(EventType.NodeDeleted)){
+    } else if (event.getType().equals(EventType.NodeDeleted)) {
       LOG.debug("Node children deleted - " + event.getPath());
       onDelete();
-    }
-    else if (event.getType().equals(EventType.NodeDataChanged)){
+    } else if (event.getType().equals(EventType.NodeDataChanged)) {
       LOG.debug("Node children changed - " + event.getPath());
-      
+
       onChange();
     }
 
   }
-  
-  public void setZKSyncClient(ZKSyncClient zkClient){
+
+  public void setZKSyncClient(ZKSyncClient zkClient) {
     client = zkClient;
   }
-  
-  public void setSyncEvent(SyncEvent event){
+
+  public void setSyncEvent(SyncEvent event) {
     this.event = event;
   }
-  
-  public SyncEvent getEvent(){
+
+  public SyncEvent getEvent() {
     return this.event;
   }
 
@@ -88,7 +85,7 @@ Log LOG = LogFactory.getLog(SyncEventListener.class);
 
   @Override
   public void handleEvent(int eventId) {
-    
+
   }
 
 }

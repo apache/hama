@@ -20,11 +20,11 @@ package org.apache.hama.bsp.sync;
 import org.apache.hama.HamaConfiguration;
 
 /**
- * MasterSyncClient defines the behavior that BSPMaster should follow
- * to perform different required globally synchronized state changes. 
- *
+ * MasterSyncClient defines the behavior that BSPMaster should follow to perform
+ * different required globally synchronized state changes.
+ * 
  */
-public interface MasterSyncClient extends SyncClient{
+public interface MasterSyncClient extends SyncClient {
 
   /**
    * Initialize the Synchronization client.
@@ -32,22 +32,24 @@ public interface MasterSyncClient extends SyncClient{
    * @param conf The configuration parameters to initialize the client.
    */
   public void init(HamaConfiguration conf);
-  
+
   /**
    * Clears all information stored.
    */
   public void clear();
-  
+
   /**
-   * Register a newly added job 
+   * Register a newly added job
+   * 
    * @param string
    */
   public void registerJob(String string);
 
   /**
    * Deregister the job from the system.
+   * 
    * @param string
    */
   public void deregisterJob(String string);
-    
+
 }

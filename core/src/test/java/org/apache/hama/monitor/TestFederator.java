@@ -71,8 +71,7 @@ public class TestFederator extends TestCase {
     final Act act = new Act(new DummyCollector(expected),
         new CollectorHandler() {
           @Override
-          public void handle(@SuppressWarnings("rawtypes")
-          Future future) {
+          public void handle(@SuppressWarnings("rawtypes") Future future) {
             try {
               finalResult.set(((Integer) future.get()).intValue());
               LOG.info("Value after submitted: " + finalResult);

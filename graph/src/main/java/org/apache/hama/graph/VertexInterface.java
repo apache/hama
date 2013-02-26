@@ -18,11 +18,11 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
 /**
  * The vertex interface.
@@ -33,7 +33,9 @@ import org.apache.hadoop.io.Writable;
  *          edge.
  * @param <M> the type used for messaging, usually the value of a vertex.
  */
-public interface VertexInterface<V extends Writable, E extends Writable, M extends Writable> {
+@SuppressWarnings("rawtypes")
+public interface VertexInterface<V extends WritableComparable, E extends Writable, M extends Writable>
+    extends WritableComparable<VertexInterface<V, E, M>> {
 
   /**
    * Used to setup a vertex.
@@ -53,7 +55,7 @@ public interface VertexInterface<V extends Writable, E extends Writable, M exten
   /**
    * The user-defined function
    */
-  public void compute(Iterator<M> messages) throws IOException;
+  public void compute(Iterable<M> messages) throws IOException;
 
   /**
    * @return a list of outgoing edges of this vertex in the input graph.

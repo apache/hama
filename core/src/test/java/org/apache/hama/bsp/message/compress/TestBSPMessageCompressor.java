@@ -36,7 +36,7 @@ public class TestBSPMessageCompressor extends TestCase {
         SnappyCompressor.class, BSPMessageCompressor.class);
     compressor = new BSPMessageCompressorFactory<IntegerMessage>()
         .getCompressor(configuration);
-    
+
     assertNotNull(compressor);
 
     int n = 20;

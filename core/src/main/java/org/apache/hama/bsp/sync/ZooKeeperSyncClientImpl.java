@@ -276,9 +276,9 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
     if (allPeers == null) {
       TreeMap<Integer, String> sortedMap = new TreeMap<Integer, String>();
       try {
-          List<String> var = zk.getChildren(constructKey(taskId.getJobID(), "peers"),
-                  this);
-          allPeers = var.toArray(new String[var.size()]);
+        List<String> var = zk.getChildren(
+            constructKey(taskId.getJobID(), "peers"), this);
+        allPeers = var.toArray(new String[var.size()]);
 
         for (String s : allPeers) {
           byte[] data = zk.getData(constructKey(taskId.getJobID(), "peers", s),

@@ -17,8 +17,6 @@
  */
 package org.apache.hama.examples;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -59,22 +57,15 @@ public final class BipartiteMatching {
     private final static Text LEFT = new Text("L");
     private final static Text RIGHT = new Text("R");
 
-    // Needed because Vertex value and message sent have same types.
-    private TextPair reusableMessage;
-    private Random random;
-
     @Override
     public void setup(Configuration conf) {
       this.getPeer().getNumCurrentMessages();
-      reusableMessage = new TextPair(new Text(getVertexID()), new Text("1"))
-          .setNames("SourceVertex", "Vestige");
-      random = new Random(Long.parseLong(getConf().get(SEED_CONFIGURATION_KEY,
-          System.currentTimeMillis() + "")));
     }
 
     @Override
-    public void compute(Iterator<TextPair> messages) throws IOException {
-
+    public void compute(Iterable<TextPair> msgs) throws IOException {
+      Random random = new Random(Long.parseLong(getConf().get(
+          SEED_CONFIGURATION_KEY)));
       if (isMatched()) {
         voteToHalt();
         return;
@@ -90,8 +81,8 @@ public final class BipartiteMatching {
         case 1:
           if (Objects.equal(getComponent(), RIGHT)) {
             List<TextPair> buffer = new ArrayList<TextPair>();
-            while (messages.hasNext()) {
-              buffer.add(messages.next());
+            for (TextPair next : msgs) {
+              buffer.add(new TextPair(next.getFirst(), next.getSecond()));
             }
             if (buffer.size() > 0) {
               TextPair luckyMsg = buffer.get(RandomUtils.nextInt(random,
@@ -106,9 +97,8 @@ public final class BipartiteMatching {
         case 2:
           if (Objects.equal(getComponent(), LEFT)) {
             List<TextPair> buffer = new ArrayList<TextPair>();
-
-            while (messages.hasNext()) {
-              buffer.add(messages.next());
+            for (TextPair next : msgs) {
+              buffer.add(new TextPair(next.getFirst(), next.getSecond()));
             }
             if (buffer.size() > 0) {
               TextPair luckyMsg = buffer.get(RandomUtils.nextInt(random,
@@ -123,8 +113,10 @@ public final class BipartiteMatching {
 
         case 3:
           if (Objects.equal(getComponent(), RIGHT)) {
+            Iterator<TextPair> messages = msgs.iterator();
             if (messages.hasNext()) {
-              Text sourceVertex = getSourceVertex(messages.next());
+              TextPair next = messages.next();
+              Text sourceVertex = getSourceVertex(next);
               setMatchVertex(sourceVertex);
             }
           }
@@ -147,7 +139,7 @@ public final class BipartiteMatching {
     }
 
     private TextPair getNewMessage() {
-      return reusableMessage;
+      return new TextPair(new Text(getVertexID()), new Text("1"));
     }
 
     /**
@@ -159,41 +151,6 @@ public final class BipartiteMatching {
 
     private boolean isMatched() {
       return !getValue().getFirst().equals(UNMATCHED);
-    }
-
-    @Override
-    public void readState(DataInput in) throws IOException {
-      if (in.readBoolean()) {
-        reusableMessage = new TextPair();
-        reusableMessage.readFields(in);
-      }
-
-    }
-
-    @Override
-    public void writeState(DataOutput out) throws IOException {
-      if (reusableMessage == null) {
-        out.writeBoolean(false);
-      } else {
-        out.writeBoolean(true);
-        reusableMessage.write(out);
-      }
-
-    }
-
-    @Override
-    public Text createVertexIDObject() {
-      return new Text();
-    }
-
-    @Override
-    public NullWritable createEdgeCostObject() {
-      return NullWritable.get();
-    }
-
-    @Override
-    public TextPair createVertexValue() {
-      return new TextPair();
     }
 
   }
@@ -219,8 +176,7 @@ public final class BipartiteMatching {
       String[] selfArray = tokenArray[0].trim().split(" ");
 
       vertex.setVertexID(new Text(selfArray[0]));
-      vertex.setValue(new TextPair(UNMATCHED, new Text(selfArray[1])).setNames(
-          "MatchVertex", "Component"));
+      vertex.setValue(new TextPair(UNMATCHED, new Text(selfArray[1])));
       // initially a node is unmatched, which is denoted by U.
 
       for (String adjNode : adjArray) {
@@ -236,9 +192,10 @@ public final class BipartiteMatching {
     System.exit(-1);
   }
 
-  public static GraphJob createJob(String[] args, HamaConfiguration conf) throws IOException{
+  public static GraphJob createJob(String[] args, HamaConfiguration conf)
+      throws IOException {
     GraphJob job = new GraphJob(conf, BipartiteMatching.class);
-    
+
     // set the defaults
     job.setMaxIteration(30);
     job.setNumBspTask(2);
@@ -268,8 +225,7 @@ public final class BipartiteMatching {
     job.setOutputValueClass(TextPair.class);
     return job;
   }
-  
-  
+
   public static void main(String... args) throws IOException,
       InterruptedException, ClassNotFoundException {
 
@@ -278,7 +234,7 @@ public final class BipartiteMatching {
     }
 
     HamaConfiguration conf = new HamaConfiguration(new Configuration());
-    
+
     GraphJob job = createJob(args, conf);
 
     long startTime = System.currentTimeMillis();

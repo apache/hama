@@ -28,8 +28,8 @@ import org.apache.hadoop.io.Writable;
 /**
  * This class represents sparse vector. It will give improvement in memory
  * consumption in case of vectors which sparsity is close to zero. Can be used
- * in SpMV for representing input matrix rows efficiently. Internally
- * represents values as list of indeces and list of values.
+ * in SpMV for representing input matrix rows efficiently. Internally represents
+ * values as list of indeces and list of values.
  */
 public class SparseVectorWritable implements Writable {
 
@@ -41,10 +41,10 @@ public class SparseVectorWritable implements Writable {
     indeces = new ArrayList<Integer>();
     values = new ArrayList<Double>();
   }
-  
-  public void clear(){
+
+  public void clear() {
     indeces = new ArrayList<Integer>();
-    values = new ArrayList<Double>();    
+    values = new ArrayList<Double>();
   }
 
   public void addCell(int index, double value) {
@@ -96,9 +96,9 @@ public class SparseVectorWritable implements Writable {
   @Override
   public String toString() {
     StringBuilder st = new StringBuilder();
-    st.append(" "+getSize()+" "+indeces.size());
-    for (int i = 0; i < indeces.size(); i++) 
-      st.append(" "+indeces.get(i)+" "+values.get(i));
+    st.append(" " + getSize() + " " + indeces.size());
+    for (int i = 0; i < indeces.size(); i++)
+      st.append(" " + indeces.get(i) + " " + values.get(i));
     return st.toString();
   }
 

@@ -17,28 +17,74 @@
  */
 package org.apache.hama.graph;
 
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.bsp.TaskAttemptID;
 
 /**
- * VerticesInfo encapsulates the storage of vertices in a BSP Task.
- *
+ * VerticesInfo interface encapsulates the storage of vertices in a BSP Task.
+ * 
  * @param <V> Vertex ID object type
  * @param <E> Edge cost object type
  * @param <M> Vertex value object type
  */
+@SuppressWarnings("rawtypes")
+public interface VerticesInfo<V extends WritableComparable, E extends Writable, M extends Writable> {
 
-public interface VerticesInfo<V extends Writable, E extends Writable, M extends Writable>
-        extends Iterable<Vertex<V, E, M>> {
+  /**
+   * Initialization of internal structures.
+   */
+  public void init(GraphJobRunner<V, E, M> runner, Configuration conf,
+      TaskAttemptID attempt) throws IOException;
 
-    /**
-     * add a vertex to this storage
-     * @param vertex
-     */
-    public void addVertex(Vertex<V, E, M> vertex);
+  /**
+   * Cleanup of internal structures.
+   */
+  public void cleanup(Configuration conf, TaskAttemptID attempt)
+      throws IOException;
 
-    /**
-     * gives the no. of vertices contained in this storage
-     * @return
-     */
-    public int size();
+  /**
+   * Add a vertex to the underlying structure.
+   */
+  public void addVertex(Vertex<V, E, M> vertex) throws IOException;
+
+  /**
+   * Finish the additions, from this point on the implementations should close
+   * the adds and throw exceptions in case something is added after this call.
+   */
+  public void finishAdditions();
+
+  /**
+   * Called once a superstep starts.
+   */
+  public void startSuperstep() throws IOException;
+
+  /**
+   * Called once completed a superstep.
+   */
+  public void finishSuperstep() throws IOException;
+
+  /**
+   * Must be called once a vertex is guaranteed not to change any more and can
+   * safely be persisted to a secondary storage.
+   */
+  public void finishVertexComputation(Vertex<V, E, M> vertex)
+      throws IOException;
+
+  /**
+   * @return true of all vertices are added.
+   */
+  public boolean isFinishedAdditions();
+
+  /**
+   * @return the number of vertices added to the underlying structure.
+   *         Implementations should take care this is a constant time operation.
+   */
+  public int size();
+
+  public IDSkippingIterator<V, E, M> skippingIterator();
+
 }

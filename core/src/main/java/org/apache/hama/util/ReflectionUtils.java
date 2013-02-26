@@ -20,8 +20,11 @@ package org.apache.hama.util;
 import java.lang.reflect.Constructor;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Refelction utility for BSP programmes.
@@ -35,12 +38,18 @@ public class ReflectionUtils {
   @SuppressWarnings("unchecked")
   public static <T> T newInstance(String className)
       throws ClassNotFoundException {
+    return newInstance((Class<T>) Class.forName(className));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T newInstance(Class<T> theClass) {
+    Preconditions.checkNotNull(theClass);
     T result;
     try {
-      Class<T> theClass = (Class<T>) Class.forName(className);
       Constructor<T> meth = (Constructor<T>) CONSTRUCTOR_CACHE.get(theClass);
       if (null == meth) {
         meth = theClass.getDeclaredConstructor(new Class[0]);
+        meth.setAccessible(true);
         CONSTRUCTOR_CACHE.put(theClass, meth);
       }
       result = meth.newInstance();

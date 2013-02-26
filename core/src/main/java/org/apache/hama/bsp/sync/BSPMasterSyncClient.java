@@ -19,7 +19,7 @@ package org.apache.hama.bsp.sync;
 
 import org.apache.hama.HamaConfiguration;
 
-public abstract class BSPMasterSyncClient implements MasterSyncClient{
+public abstract class BSPMasterSyncClient implements MasterSyncClient {
 
   /**
    * Initialize the Synchronization client.
@@ -27,24 +27,26 @@ public abstract class BSPMasterSyncClient implements MasterSyncClient{
    * @param conf The configuration parameters to initialize the client.
    */
   public abstract void init(HamaConfiguration conf);
-  
+
   /**
    * Clears all information stored.
    */
   public abstract void clear();
-  
+
   /**
-   * Register a newly added job 
+   * Register a newly added job
+   * 
    * @param string
    */
   public abstract void registerJob(String string);
 
   /**
    * Deregister the job from the system.
+   * 
    * @param string
    */
   public abstract void deregisterJob(String string);
-    
+
   /**
    * Closes the client.
    */

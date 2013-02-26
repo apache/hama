@@ -24,7 +24,7 @@ package org.apache.hama.util;
  * numbers.
  */
 public class RandomVariable {
-  
+
   /**
    * Generate a random number between 0 and 1.
    * 
@@ -45,22 +45,21 @@ public class RandomVariable {
     double x = rand();
     return i0 + (int) Math.floor((i1 - i0 + 1) * x);
   }
-  
+
   /**
-    * Generate a random string using the specified prefix and a fixed length. 
-    * @param prefix
-    *        the specified string prefix.
-    * @param length
-    *        the length of the string to be appended.
-    * @return random string.
-    */
+   * Generate a random string using the specified prefix and a fixed length.
+   * 
+   * @param prefix the specified string prefix.
+   * @param length the length of the string to be appended.
+   * @return random string.
+   */
   public static String randString(String prefix, int length) {
     StringBuilder result = new StringBuilder(prefix);
     for (int i = 0; i < length; i++) {
       char ch = (char) ((Math.random() * 26) + 97);
       result.append(ch);
     }
-      
+
     return result.toString();
   }
 
@@ -156,8 +155,8 @@ public class RandomVariable {
    * @return a double.
    */
   public static double triangular(double min, double max) {
-    return min / 2 + (max - min) * rand() / 2 + min / 2 + (max - min)
-        * rand() / 2;
+    return min / 2 + (max - min) * rand() / 2 + min / 2 + (max - min) * rand()
+        / 2;
   }
 
   /**
@@ -170,9 +169,9 @@ public class RandomVariable {
    */
   public static double triangular(double min, double med, double max) {
     double y = rand();
-    return (y < ((med - min) / (max - min))) ? (min + Math.sqrt(y
-        * (max - min) * (med - min))) : (max - Math.sqrt((1 - y) * (max - min)
-        * (max - med)));
+    return (y < ((med - min) / (max - min))) ? (min + Math.sqrt(y * (max - min)
+        * (med - min)))
+        : (max - Math.sqrt((1 - y) * (max - min) * (max - med)));
   }
 
   /**

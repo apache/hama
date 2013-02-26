@@ -28,9 +28,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hama.bsp.message.io.PreFetchCache;
-import org.apache.hama.bsp.message.io.SpilledDataInputBuffer;
-import org.apache.hama.bsp.message.io.SpilledDataReadStatus;
 
 public class PreFetchCache<M extends Writable> {
   private static final Log LOG = LogFactory.getLog(PreFetchCache.class);
@@ -147,7 +144,7 @@ public class PreFetchCache<M extends Writable> {
     preFetchThread = new PreFetchThread<M>(classObject, objectListArr,
         capacity, buffer, totalMessages, status, conf);
     preFetchThread.start();
-    if(!status.startReading()){
+    if (!status.startReading()) {
       throw new IOException("Failed to start reading the spilled file: ");
     }
     arrIndex = status.getReadBufferIndex();

@@ -17,73 +17,105 @@
  */
 package org.apache.hama.graph;
 
-import java.io.DataInput;
-import java.io.DataOutput;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.bsp.TaskAttemptID;
 
 /**
- * {@link List} based {@link VerticesInfo} implementation
- * @param <V>
- * @param <E>
- * @param <M>
+ * VerticesInfo encapsulates the storage of vertices in a BSP Task.
+ * 
+ * @param <V> Vertex ID object type
+ * @param <E> Edge cost object type
+ * @param <M> Vertex value object type
  */
-public class ListVerticesInfo<V extends Writable, E extends Writable,
-        M extends Writable> implements VerticesInfo<V, E, M>{
+public final class ListVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
+    implements VerticesInfo<V, E, M> {
 
-  private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(100);
+  private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(
+      100);
 
+  @Override
   public void addVertex(Vertex<V, E, M> vertex) {
-    int i = 0;
-    for (Vertex<V, E, M> check : this) {
-      if (check.getVertexID().equals(vertex.getVertexID())) {
-        this.vertices.set(i, vertex);
-        return;
-      }
-      ++i;
-    }
     vertices.add(vertex);
-  }
-
-  public Vertex<V, E, M> getVertex(V vertexId) {
-    for (Vertex<V, E, M> vertex : this) {
-      if (vertex.getVertexID().equals(vertexId)) {
-        return vertex;
-      }
-    }
-    return null;
-  }
-
-  public boolean containsVertex(V vertexId) {
-    for (Vertex<V, E, M> vertex : this) {
-      if (vertex.getVertexID().equals(vertexId)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   public void clear() {
     vertices.clear();
   }
 
+  @Override
   public int size() {
     return this.vertices.size();
   }
 
   @Override
-  public Iterator<Vertex<V, E, M>> iterator() {
-    return vertices.iterator();
+  public IDSkippingIterator<V, E, M> skippingIterator() {
+    return new IDSkippingIterator<V, E, M>() {
+      int currentIndex = 0;
+
+      @Override
+      public boolean hasNext(V e,
+          org.apache.hama.graph.IDSkippingIterator.Strategy strat) {
+        if (currentIndex < vertices.size()) {
+
+          while (!strat.accept(vertices.get(currentIndex), e)) {
+            currentIndex++;
+          }
+
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      @Override
+      public Vertex<V, E, M> next() {
+        return vertices.get(currentIndex++);
+      }
+
+    };
   }
 
-  public void recoverState(DataInput in) {
+  @Override
+  public void finishVertexComputation(Vertex<V, E, M> vertex) {
 
   }
 
-  public void saveState(DataOutput out) {
+  @Override
+  public void finishAdditions() {
 
   }
+
+  @Override
+  public boolean isFinishedAdditions() {
+    return false;
+  }
+
+  @Override
+  public void finishSuperstep() {
+
+  }
+
+  @Override
+  public void cleanup(Configuration conf, TaskAttemptID attempt)
+      throws IOException {
+
+  }
+
+  @Override
+  public void startSuperstep() throws IOException {
+
+  }
+
+  @Override
+  public void init(GraphJobRunner<V, E, M> runner, Configuration conf,
+      TaskAttemptID attempt) throws IOException {
+
+  }
+
 }

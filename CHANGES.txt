@@ -4,6 +4,7 @@ Release 0.7 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-736: Add one pass graph generator (tjungblut)
    HAMA-722: Messaging queue should construct sender and receiver queue. (surajsmenon)
    HAMA-721: Added spilling queue with combiner. (surajsmenon)
    HAMA-559: Added spilling queue. (surajsmenon)
@@ -12,12 +13,15 @@ Release 0.7 (unreleased changes)
    HAMA-658: Add random symmetric sparse matrix generator (edwardyoon)
 
   BUG FIXES
- 
+
+   HAMA-739: WritableComparable doesn't work with IntWritable (tjungblut) 
    HAMA-716: Splits should be assigned based on PartitionID (edwardyoon)
    HAMA-712: PartitioningRunner should works for multiple input files (surajsmenon via edwardyoon)
 
   IMPROVEMENTS
 
+   HAMA-704:  Optimization of memory usage during message processing (tjungblut)
+   HAMA-735: Tighten the graph API (tjungblut)
    HAMA-714: Align format consistency between examples and generators (edwardyoon)
    HAMA-531: Reimplementation of partitioner (edwardyoon)
 

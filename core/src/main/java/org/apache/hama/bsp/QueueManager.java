@@ -18,9 +18,8 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
-
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.hadoop.conf.Configuration;
 

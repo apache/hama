@@ -22,24 +22,25 @@ import org.apache.hama.bsp.TaskInProgress;
 
 /**
  * <code>RawSplitResource</code> defines the data block resource that could be
- * used to find which groom to schedule for data-locality. 
+ * used to find which groom to schedule for data-locality.
  */
-public class RawSplitResource extends BSPResource{
+public class RawSplitResource extends BSPResource {
 
   private RawSplit split;
-  
-  public RawSplitResource(){
-    
+
+  public RawSplitResource() {
+
   }
-  
+
   /**
    * Initialize the resource with data block split information.
+   * 
    * @param split The data-split provided by <code>BSPJobClient</client>
    */
-  public RawSplitResource(RawSplit split){
+  public RawSplitResource(RawSplit split) {
     this.split = split;
   }
-  
+
   @Override
   public String[] getGrooms(TaskInProgress tip) {
     return split.getLocations();

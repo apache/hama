@@ -24,8 +24,6 @@ import java.io.IOException;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
-import com.google.common.base.Objects;
-
 /**
  * TextPair class for use in BipartiteMatching algorithm.
  * 
@@ -35,9 +33,6 @@ public final class TextPair implements Writable {
   Text first;
   Text second;
 
-  String nameFirst = "First";
-  String nameSecond = "Second";
-
   public TextPair() {
     first = new Text();
     second = new Text();
@@ -46,15 +41,6 @@ public final class TextPair implements Writable {
   public TextPair(Text first, Text second) {
     this.first = first;
     this.second = second;
-  }
-
-  /**
-   * Sets the names of the attributes
-   */
-  public TextPair setNames(String nameFirst, String nameSecond) {
-    this.nameFirst = nameFirst;
-    this.nameSecond = nameSecond;
-    return this;
   }
 
   public Text getFirst() {
@@ -75,8 +61,6 @@ public final class TextPair implements Writable {
 
   @Override
   public void write(DataOutput out) throws IOException {
-    (new Text(nameFirst)).write(out);
-    (new Text(nameSecond)).write(out);
     first.write(out);
     second.write(out);
   }
@@ -84,20 +68,13 @@ public final class TextPair implements Writable {
   @Override
   public void readFields(DataInput in) throws IOException {
 
-    Text t1 = new Text();
-    Text t2 = new Text();
-    t1.readFields(in);
-    t2.readFields(in);
-    nameFirst = t1.toString();
-    nameSecond = t2.toString();
     first.readFields(in);
     second.readFields(in);
   }
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(this).add(nameFirst, getFirst())
-        .add(nameSecond, getSecond()).toString();
+    return first + " " + second;
   }
 
 }

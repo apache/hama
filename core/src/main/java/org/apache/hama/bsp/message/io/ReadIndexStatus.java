@@ -18,15 +18,15 @@
 package org.apache.hama.bsp.message.io;
 
 /**
- * The base class that defines the shared object that synchronizes the
- * indexes for the byte array such that there is no loss of data.
+ * The base class that defines the shared object that synchronizes the indexes
+ * for the byte array such that there is no loss of data.
  * 
  */
 abstract class ReadIndexStatus {
 
   /**
-   * Returns index of the byte array that is ready for the data to be read
-   * from. The implementation may or may not block depending on the spilling
+   * Returns index of the byte array that is ready for the data to be read from.
+   * The implementation may or may not block depending on the spilling
    * situation.
    * 
    * @return the index.
@@ -35,9 +35,9 @@ abstract class ReadIndexStatus {
   public abstract int getReadBufferIndex() throws InterruptedException;
 
   /**
-   * Returns the index of the byte array that could used to load the data
-   * from the spilled file. The implementation may or may not block
-   * depending on the spilling situation.
+   * Returns the index of the byte array that could used to load the data from
+   * the spilled file. The implementation may or may not block depending on the
+   * spilling situation.
    * 
    * @return
    * @throws InterruptedException
@@ -55,4 +55,3 @@ abstract class ReadIndexStatus {
   public abstract boolean startReading();
 
 }
-

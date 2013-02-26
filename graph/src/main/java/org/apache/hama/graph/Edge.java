@@ -19,13 +19,19 @@ package org.apache.hama.graph;
 
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
 /**
  * The edge class
  */
-public final class Edge<VERTEX_ID extends Writable, EDGE_VALUE_TYPE extends Writable> {
-  private final VERTEX_ID destinationVertexID;
-  private final EDGE_VALUE_TYPE cost;
+@SuppressWarnings("rawtypes")
+public final class Edge<VERTEX_ID extends WritableComparable, EDGE_VALUE_TYPE extends Writable> {
+
+  private VERTEX_ID destinationVertexID;
+  private EDGE_VALUE_TYPE cost;
+
+  public Edge() {
+  }
 
   public Edge(VERTEX_ID sourceVertexID, EDGE_VALUE_TYPE cost) {
     this.destinationVertexID = sourceVertexID;
@@ -42,6 +48,18 @@ public final class Edge<VERTEX_ID extends Writable, EDGE_VALUE_TYPE extends Writ
 
   public EDGE_VALUE_TYPE getValue() {
     return cost;
+  }
+
+  public EDGE_VALUE_TYPE getCost() {
+    return cost;
+  }
+
+  void setCost(EDGE_VALUE_TYPE cost) {
+    this.cost = cost;
+  }
+
+  void setDestinationVertexID(VERTEX_ID destinationVertexID) {
+    this.destinationVertexID = destinationVertexID;
   }
 
   @Override

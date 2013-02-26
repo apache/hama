@@ -17,11 +17,10 @@
  */
 package org.apache.hama.examples;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -43,7 +42,8 @@ public class SSSP {
   public static class ShortestPathVertex extends
       Vertex<Text, IntWritable, IntWritable> {
 
-    public ShortestPathVertex() {
+    @Override
+    public void setup(Configuration conf) {
       this.setValue(new IntWritable(Integer.MAX_VALUE));
     }
 
@@ -53,11 +53,10 @@ public class SSSP {
     }
 
     @Override
-    public void compute(Iterator<IntWritable> messages) throws IOException {
+    public void compute(Iterable<IntWritable> messages) throws IOException {
       int minDist = isStartVertex() ? 0 : Integer.MAX_VALUE;
 
-      while (messages.hasNext()) {
-        IntWritable msg = messages.next();
+      for (IntWritable msg : messages) {
         if (msg.get() < minDist) {
           minDist = msg.get();
         }
@@ -73,28 +72,6 @@ public class SSSP {
       }
     }
 
-    @Override
-    public void readState(DataInput in) throws IOException {}
-
-    @Override
-    public void writeState(DataOutput out) throws IOException {}
-
-    @Override
-    public Text createVertexIDObject() {
-      return new Text();
-    }
-
-    @Override
-    public IntWritable createEdgeCostObject() {
-      return new IntWritable();
-    }
-
-    @Override
-    public IntWritable createVertexValue() {
-      return new IntWritable();
-    }
-
-    
   }
 
   public static class MinIntCombiner extends Combiner<IntWritable> {

@@ -46,7 +46,8 @@ import org.apache.hama.bsp.TaskAttemptID;
  * configuration. <br/>
  * <b>It is experimental to use.</b>
  */
-public final class DiskQueue<M extends Writable> implements MessageQueue<M>, MessageTransferQueue<M> {
+public final class DiskQueue<M extends Writable> implements MessageQueue<M>,
+    MessageTransferQueue<M> {
 
   public static final String DISK_QUEUE_PATH_KEY = "bsp.disk.queue.dir";
 

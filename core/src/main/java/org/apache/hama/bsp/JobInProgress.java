@@ -120,13 +120,14 @@ public class JobInProgress {
   private TaskAllocationStrategy taskAllocationStrategy;
 
   private FaultTolerantMasterService faultToleranceService;
-  
+
   /**
    * Used only for unit tests.
+   * 
    * @param jobId
    * @param conf
    */
-  public JobInProgress(BSPJobID jobId, Configuration conf){
+  public JobInProgress(BSPJobID jobId, Configuration conf) {
     this.conf = conf;
     this.jobId = jobId;
     master = null;
@@ -161,8 +162,8 @@ public class JobInProgress {
     this.taskCompletionEvents = new ArrayList<TaskCompletionEvent>(
         numBSPTasks + 10);
 
-    this.maxTaskAttempts = job.getConfiguration().getInt(Constants.MAX_TASK_ATTEMPTS,
-        Constants.DEFAULT_MAX_TASK_ATTEMPTS);
+    this.maxTaskAttempts = job.getConfiguration().getInt(
+        Constants.MAX_TASK_ATTEMPTS, Constants.DEFAULT_MAX_TASK_ATTEMPTS);
 
     this.profile = new JobProfile(job.getUser(), jobId, jobFile.toString(),
         job.getJobName());
@@ -300,9 +301,8 @@ public class JobInProgress {
 
     if (conf.getBoolean(Constants.FAULT_TOLERANCE_FLAG, false)) {
 
-      Class<?> ftClass = conf.getClass(Constants.FAULT_TOLERANCE_CLASS, 
-          AsyncRcvdMsgCheckpointImpl.class ,
-          BSPFaultTolerantService.class);
+      Class<?> ftClass = conf.getClass(Constants.FAULT_TOLERANCE_CLASS,
+          AsyncRcvdMsgCheckpointImpl.class, BSPFaultTolerantService.class);
       if (ftClass != null) {
         try {
           faultToleranceService = ((BSPFaultTolerantService<?>) ReflectionUtils
@@ -340,25 +340,25 @@ public class JobInProgress {
     Task result = null;
     BSPResource[] resources = new BSPResource[0];
 
-      for (TaskInProgress task : tasks) {
-          if (!task.isRunning() && !task.isComplete()) {
+    for (TaskInProgress task : tasks) {
+      if (!task.isRunning() && !task.isComplete()) {
 
-              String[] selectedGrooms = taskAllocationStrategy.selectGrooms(
-                      groomStatuses, taskCountInGroomMap, resources, task);
-              GroomServerStatus groomStatus = taskAllocationStrategy
-                      .getGroomToAllocate(groomStatuses, selectedGrooms,
-                              taskCountInGroomMap, resources, task);
-              if (groomStatus != null) {
-                  result = task.constructTask(groomStatus);
-              } else if (LOG.isDebugEnabled()) {
-                  LOG.debug("Could not find a groom to schedule task");
-              }
-              if (result != null) {
-                  updateGroomTaskDetails(task.getGroomServerStatus(), result);
-              }
-              break;
-          }
+        String[] selectedGrooms = taskAllocationStrategy.selectGrooms(
+            groomStatuses, taskCountInGroomMap, resources, task);
+        GroomServerStatus groomStatus = taskAllocationStrategy
+            .getGroomToAllocate(groomStatuses, selectedGrooms,
+                taskCountInGroomMap, resources, task);
+        if (groomStatus != null) {
+          result = task.constructTask(groomStatus);
+        } else if (LOG.isDebugEnabled()) {
+          LOG.debug("Could not find a groom to schedule task");
+        }
+        if (result != null) {
+          updateGroomTaskDetails(task.getGroomServerStatus(), result);
+        }
+        break;
       }
+    }
 
     counters.incrCounter(JobCounter.LAUNCHED_TASKS, 1L);
     return result;
@@ -542,9 +542,9 @@ public class JobInProgress {
       //
       // kill all TIPs.
       //
-        for (TaskInProgress task : tasks) {
-            task.kill();
-        }
+      for (TaskInProgress task : tasks) {
+        task.kill();
+      }
 
       garbageCollect();
     }
@@ -557,12 +557,12 @@ public class JobInProgress {
    */
   synchronized void garbageCollect() {
     try {
-      
-      if(LOG.isDebugEnabled()){
+
+      if (LOG.isDebugEnabled()) {
         LOG.debug("Removing " + localJobFile + " and " + localJarFile
             + " getJobFile = " + profile.getJobFile());
       }
-      
+
       // Definitely remove the local-disk copy of the job file
       if (localJobFile != null) {
         localFs.delete(localJobFile, true);
@@ -644,21 +644,19 @@ public class JobInProgress {
       return false;
 
     if (!faultToleranceService.isAlreadyRecovered(tip)) {
-      if(LOG.isDebugEnabled()){
+      if (LOG.isDebugEnabled()) {
         LOG.debug("Adding recovery task " + tip.getCurrentTaskAttemptId());
       }
       recoveryTasks.add(tip);
       status.setRunState(JobStatus.RECOVERING);
       return true;
-    }
-    else if(LOG.isDebugEnabled()){
+    } else if (LOG.isDebugEnabled()) {
       LOG.debug("Avoiding recovery task " + tip.getCurrentTaskAttemptId());
     }
     return false;
-    
+
   }
-  
-  
+
   /**
    * 
    * @return Returns the list of tasks in progress that has to be recovered.

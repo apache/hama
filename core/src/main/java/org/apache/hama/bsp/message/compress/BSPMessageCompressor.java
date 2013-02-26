@@ -46,5 +46,6 @@ public abstract class BSPMessageCompressor<M extends Writable> {
    * @param compMsgBundle
    * @return
    */
-  public abstract BSPMessageBundle<M> decompressBundle(BSPCompressedBundle compMsgBundle);
+  public abstract BSPMessageBundle<M> decompressBundle(
+      BSPCompressedBundle compMsgBundle);
 }

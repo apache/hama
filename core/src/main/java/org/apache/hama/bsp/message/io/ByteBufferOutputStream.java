@@ -23,9 +23,9 @@ import java.nio.ByteBuffer;
 
 /**
  * ByteBufferOutputStream encapsulates a byte buffer to write data into. The
- * function {@link ByteBufferOutputStream#onBufferFull(byte[], int, int)} 
- * should be overriden to handle the case when the size of data exceeds the size
- * of buffer. The default behavior is to throw an exception.
+ * function {@link ByteBufferOutputStream#onBufferFull(byte[], int, int)} should
+ * be overriden to handle the case when the size of data exceeds the size of
+ * buffer. The default behavior is to throw an exception.
  */
 class ByteBufferOutputStream extends OutputStream {
 
@@ -43,16 +43,17 @@ class ByteBufferOutputStream extends OutputStream {
 
   /**
    * Sets the buffer for the stream.
+   * 
    * @param buffer byte buffer to hold within.
    */
   public void setBuffer(ByteBuffer buffer) {
     this.buffer = buffer;
     this.interBufferDataSize = 0;
-    int interSize = Math.min(buffer.capacity()/2, 8192);
-    if(interBuffer == null){
+    int interSize = Math.min(buffer.capacity() / 2, 8192);
+    if (interBuffer == null) {
       interBuffer = new byte[interSize];
     }
-    
+
   }
 
   @Override
@@ -98,7 +99,7 @@ class ByteBufferOutputStream extends OutputStream {
   }
 
   /**
-   * Action to take when the data to be written exceeds the size of the byte 
+   * Action to take when the data to be written exceeds the size of the byte
    * buffer inside.
    * 
    * @return
@@ -116,6 +117,7 @@ class ByteBufferOutputStream extends OutputStream {
 
   /**
    * Called when the byte buffer stream is closed.
+   * 
    * @throws IOException
    */
   protected void onFlush() throws IOException {

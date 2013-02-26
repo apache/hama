@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -98,7 +98,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     NORMAL, COMPUTE, SYNC, BARRIER, STALE, INTERRUPTED, DENIED
   }
 
-    private HttpServer server;
+  private HttpServer server;
   private ZooKeeper zk = null;
 
   // Running States and its related things
@@ -276,17 +276,17 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
         LOG.debug("Got " + outOfContactTasks.size() + " oblivious tasks");
       }
 
-        for (TaskInProgress tip : outOfContactTasks) {
-            try {
-                LOG.debug("Purging task " + tip);
-                purgeTask(tip, true);
-            } catch (Exception e) {
-                LOG.error(
-                        new StringBuilder("Error while removing a timed-out task - ")
-                                .append(tip.toString()), e);
+      for (TaskInProgress tip : outOfContactTasks) {
+        try {
+          LOG.debug("Purging task " + tip);
+          purgeTask(tip, true);
+        } catch (Exception e) {
+          LOG.error(
+              new StringBuilder("Error while removing a timed-out task - ")
+                  .append(tip.toString()), e);
 
-            }
         }
+      }
       outOfContactTasks.clear();
 
     }
@@ -464,15 +464,15 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     LOG.debug(localDirs);
 
     if (localDirs != null) {
-        for (String localDir : localDirs) {
-            try {
-                LOG.info(localDir);
-                DiskChecker.checkDir(new File(localDir));
-                writable = true;
-            } catch (DiskErrorException e) {
-                LOG.warn("BSP Processor local " + e.getMessage());
-            }
+      for (String localDir : localDirs) {
+        try {
+          LOG.info(localDir);
+          DiskChecker.checkDir(new File(localDir));
+          writable = true;
+        } catch (DiskErrorException e) {
+          LOG.warn("BSP Processor local " + e.getMessage());
         }
+      }
     }
 
     if (!writable)
@@ -485,18 +485,17 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
   public void deleteLocalFiles() throws IOException {
     String[] localDirs = getLocalDirs();
-      for (String localDir : localDirs) {
-          FileSystem.getLocal(this.conf).delete(new Path(localDir), true);
-      }
+    for (String localDir : localDirs) {
+      FileSystem.getLocal(this.conf).delete(new Path(localDir), true);
+    }
   }
 
   public void deleteLocalFiles(String subdir) throws IOException {
     try {
       String[] localDirs = getLocalDirs();
-        for (String localDir : localDirs) {
-            FileSystem.getLocal(this.conf).delete(new Path(localDir, subdir),
-                    true);
-        }
+      for (String localDir : localDirs) {
+        FileSystem.getLocal(this.conf).delete(new Path(localDir, subdir), true);
+      }
     } catch (NullPointerException e) {
       LOG.info(e);
     }
@@ -808,10 +807,10 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       // Task is out of contact if it has not pinged since more than
       // monitorPeriod. A task is given a leeway of 10 times monitorPeriod
       // to get started.
-      
+
       // TODO Please refactor this conditions
-      // NOTE: (currentTime - tip.lastPingedTimestamp) > 6 * monitorPeriod 
- 
+      // NOTE: (currentTime - tip.lastPingedTimestamp) > 6 * monitorPeriod
+
       if (tip.taskStatus.getRunState().equals(TaskStatus.State.RUNNING)
           && (((tip.lastPingedTimestamp == 0 && ((currentTime - tip.startTime) > 10 * monitorPeriod)) || ((tip.lastPingedTimestamp > 0) && (currentTime - tip.lastPingedTimestamp) > 6 * monitorPeriod)))) {
 

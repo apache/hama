@@ -17,17 +17,17 @@
  */
 package org.apache.hama.monitor;
 
-import org.apache.hama.monitor.Monitor.Result; 
+import org.apache.hama.monitor.Monitor.Result;
 
 /**
- * MonitorListener passes the result for notification. 
+ * MonitorListener passes the result for notification.
  */
-public interface MonitorListener { 
-  
+public interface MonitorListener {
+
   /**
-   * When an event is triggered, the task passes the result to notify
-   * the monitor.
+   * When an event is triggered, the task passes the result to notify the
+   * monitor.
    */
-  void notify(Result result); 
+  void notify(Result result);
 
 }

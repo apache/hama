@@ -35,10 +35,13 @@ public class TestConfigurator extends TestCase {
    */
   public void testPluginDirNotPresented() throws Exception {
     System.setProperty("hama.home.dir", System.getProperty("user.dir"));
-    Map<String, Task> tasks = Configurator.configure(new HamaConfiguration(), null);    
-    LOG.info("Plugins dir is not created, returned tasks should be null -> "+tasks);
-    assertNull("Tasks returned should be null because no plugins dir is created.", tasks);
+    Map<String, Task> tasks = Configurator.configure(new HamaConfiguration(),
+        null);
+    LOG.info("Plugins dir is not created, returned tasks should be null -> "
+        + tasks);
+    assertNull(
+        "Tasks returned should be null because no plugins dir is created.",
+        tasks);
   }
 
-  
 }

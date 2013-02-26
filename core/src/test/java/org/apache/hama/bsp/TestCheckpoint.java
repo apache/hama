@@ -442,8 +442,8 @@ public class TestCheckpoint extends TestCase {
   }
 
   private static void checkSuperstepMsgCount(PeerSyncClient syncClient,
-      @SuppressWarnings("rawtypes")
-      BSPPeer bspTask, BSPJob job, long step, long count) {
+      @SuppressWarnings("rawtypes") BSPPeer bspTask, BSPJob job, long step,
+      long count) {
 
     ArrayWritable writableVal = new ArrayWritable(LongWritable.class);
 

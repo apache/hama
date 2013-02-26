@@ -35,15 +35,15 @@ import org.apache.hama.bsp.taskallocation.TaskAllocationStrategy;
  * <code>BSPFaultTolerantService</code> defines the fault tolerance service
  * behavior. The fault tolerance service is a feature of a running job and not
  * the system. A class defined on this behavior has the responsibility to create
- * two objects. The first object <code>FaultTolerantMasterService</code> is
- * used by the job at BSPMaster to handle fault tolerance related steps at the
+ * two objects. The first object <code>FaultTolerantMasterService</code> is used
+ * by the job at BSPMaster to handle fault tolerance related steps at the
  * master. The second object <code>FaultTolerantPeerService</code> is used to
  * define the behavior of object that would implement the fault tolerance
  * related steps for recovery inside <code>BSPPeer</code> (in each of the BSP
  * peers doing computations)
  */
 public interface BSPFaultTolerantService<M extends Writable> {
-  
+
   /**
    * The token by which a job can register its fault-tolerance service.
    */
@@ -81,8 +81,7 @@ public interface BSPFaultTolerantService<M extends Writable> {
    *         <code>FaultTolerantPeerService</code>
    */
   public FaultTolerantPeerService<M> constructPeerFaultTolerance(BSPJob job,
-      @SuppressWarnings("rawtypes")
-      BSPPeer bspPeer, PeerSyncClient syncClient,
+      @SuppressWarnings("rawtypes") BSPPeer bspPeer, PeerSyncClient syncClient,
       InetSocketAddress peerAddress, TaskAttemptID taskAttemptId,
       long superstep, Configuration conf, MessageManager<M> messenger)
       throws Exception;

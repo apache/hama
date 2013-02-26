@@ -38,10 +38,10 @@ import org.apache.hama.HamaConfiguration;
 public class UDPSensor implements Sensor, Callable<Object> {
 
   public static final Log LOG = LogFactory.getLog(UDPSensor.class);
-  /** 
+  /**
    * The default interval hearbeat.
    */
-  private static long HEARTBEAT_INTERVAL; 
+  private static long HEARTBEAT_INTERVAL;
 
   /* UDP server host and port */
   private String host;
@@ -53,95 +53,94 @@ public class UDPSensor implements Sensor, Callable<Object> {
   private final ExecutorService scheduler;
 
   /**
-   * Constructor for UDP client. Setting up configuration 
-   * and open DatagramSocket.
+   * Constructor for UDP client. Setting up configuration and open
+   * DatagramSocket.
    */
-  public UDPSensor(HamaConfiguration configuration){
+  public UDPSensor(HamaConfiguration configuration) {
     this.host = configuration.get("bsp.monitor.fd.udp_host", "localhost");
     this.port = configuration.getInt("bsp.monitor.fd.udp_port", 16384);
-    HEARTBEAT_INTERVAL = 
-      configuration.getInt("bsp.monitor.fd.heartbeat_interval", 1000);
+    HEARTBEAT_INTERVAL = configuration.getInt(
+        "bsp.monitor.fd.heartbeat_interval", 1000);
     DatagramChannel tmp = null;
-    try{
+    try {
       tmp = DatagramChannel.open();
-    }catch(IOException ioe){
+    } catch (IOException ioe) {
       LOG.error("Unable to open datagram channel.", ioe);
     }
     this.channel = tmp;
-    if(null == this.channel)
+    if (null == this.channel)
       throw new NullPointerException("Fail to open udp channel.");
     this.scheduler = Executors.newSingleThreadExecutor();
-  } 
-
+  }
 
   /**
    * The heartbeat function, signifying its existence.
    */
   @Override
-  public void heartbeat() throws IOException{
+  public void heartbeat() throws IOException {
     ByteBuffer heartbeat = ByteBuffer.allocate(8);
     heartbeat.clear();
-    heartbeat.putLong(sequence.incrementAndGet()); 
+    heartbeat.putLong(sequence.incrementAndGet());
     heartbeat.flip();
     channel.send(heartbeat, new InetSocketAddress(this.host, this.port));
-    if(LOG.isDebugEnabled()){
-      LOG.debug("Heartbeat sequence "+sequence.get()+ " is sent to "+this.host+
-      ":"+ this.port);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Heartbeat sequence " + sequence.get() + " is sent to "
+          + this.host + ":" + this.port);
     }
   }
 
-  public String getHost(){
+  public String getHost() {
     return this.host;
   }
-  
-  public int getPort(){
+
+  public int getPort() {
     return this.port;
   }
 
-  public long heartbeatInterval(){
+  public long heartbeatInterval() {
     return HEARTBEAT_INTERVAL;
   }
 
   @Override
   public Object call() throws Exception {
-    while(running.get()){
-      try{
+    while (running.get()) {
+      try {
         heartbeat();
         Thread.sleep(HEARTBEAT_INTERVAL);
-      }catch(InterruptedException ie){
+      } catch (InterruptedException ie) {
         LOG.error("UDPSensor is interrupted.", ie);
         Thread.currentThread().interrupt();
-      }catch(IOException ioe){ 
+      } catch (IOException ioe) {
         LOG.error("Sensor fails in sending heartbeat.", ioe);
       }
     }
-    LOG.info("Sensor at "+this.host+" stops sending heartbeat.");
+    LOG.info("Sensor at " + this.host + " stops sending heartbeat.");
     return null;
   }
 
   @Override
   public void start() {
-    if(!running.compareAndSet(false, true)) {
-      throw new IllegalStateException("Sensor is already started."); 
+    if (!running.compareAndSet(false, true)) {
+      throw new IllegalStateException("Sensor is already started.");
     }
     this.scheduler.submit(this);
   }
 
   @Override
-  public void stop(){
+  public void stop() {
     running.set(false);
-    if(null != this.channel) {
-      try{ 
+    if (null != this.channel) {
+      try {
         this.channel.socket().close();
-        this.channel.close(); 
-      }catch(IOException ioe){ 
-        LOG.error("Error closing sensor channel.",ioe); 
+        this.channel.close();
+      } catch (IOException ioe) {
+        LOG.error("Error closing sensor channel.", ioe);
       }
     }
     this.scheduler.shutdown();
   }
 
-  public boolean isShutdown(){
+  public boolean isShutdown() {
     return this.channel.socket().isClosed() && !running.get();
   }
 

@@ -35,7 +35,7 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.persistence.FileTxnLog;
 
 /**
- * This class starts and runs the MiniZookeeperCluster. 
+ * This class starts and runs the MiniZookeeperCluster.
  */
 public class MiniZooKeeperCluster {
   private static final Log LOG = LogFactory.getLog(MiniZooKeeperCluster.class);
@@ -77,8 +77,7 @@ public class MiniZooKeeperCluster {
    * @throws IOException
    * @throws InterruptedException
    */
-  public int startup(File baseDir) throws IOException,
-      InterruptedException {
+  public int startup(File baseDir) throws IOException, InterruptedException {
 
     setupTestEnv();
 
@@ -96,12 +95,12 @@ public class MiniZooKeeperCluster {
     ZooKeeperServer server = new ZooKeeperServer(dir, dir, tickTimeToUse);
     while (true) {
       try {
-        standaloneServerFactory =
-          new NIOServerCnxnFactory();
-          standaloneServerFactory.configure(new InetSocketAddress(clientPort), CONNECTION_TIMEOUT);
+        standaloneServerFactory = new NIOServerCnxnFactory();
+        standaloneServerFactory.configure(new InetSocketAddress(clientPort),
+            CONNECTION_TIMEOUT);
       } catch (BindException e) {
         LOG.info("Faild binding ZK Server to client port: " + clientPort);
-        //this port is already in use. try to use another
+        // this port is already in use. try to use another
         clientPort++;
         continue;
       }

@@ -18,6 +18,7 @@
 package org.apache.hama.bsp.sync;
 
 import java.util.concurrent.Callable;
+
 import org.apache.hadoop.conf.Configuration;
 
 /**

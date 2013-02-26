@@ -21,7 +21,7 @@ package org.apache.hama.monitor.fd;
 import java.io.IOException;
 
 /**
- * Failure detector client, sending heartbeat to supervisor. 
+ * Failure detector client, sending heartbeat to supervisor.
  */
 public interface Sensor {
 
@@ -39,6 +39,5 @@ public interface Sensor {
    * Stop sensor.
    */
   void stop();
-
 
 }

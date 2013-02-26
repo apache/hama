@@ -18,6 +18,5 @@
 package org.apache.hama.monitor.fd;
 
 public enum NodeStatus {
-    Alive, Dead
+  Alive, Dead
 }
-

@@ -17,10 +17,7 @@
  */
 package org.apache.hama.examples;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -28,23 +25,24 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
-import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TextArrayWritable;
+import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.Vertex;
+
+import com.google.common.base.Optional;
 
 public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
 
   @Override
-  public void compute(Iterator<IntWritable> messages) throws IOException {
+  public void compute(Iterable<IntWritable> messages) throws IOException {
 
     if (getSuperstepCount() == 0L) {
       setValue(new IntWritable(0));
       sendMessageToNeighbors(new IntWritable(1));
     } else {
-      while (messages.hasNext()) {
-        IntWritable msg = messages.next();
+      for (IntWritable msg : messages) {
         this.setValue(new IntWritable(this.getValue().get() + msg.get()));
       }
       voteToHalt();
@@ -56,28 +54,24 @@ public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
     System.exit(-1);
   }
 
-  public static void main(String[] args) throws IOException,
-      InterruptedException, ClassNotFoundException {
-
-    if (args.length < 2)
-      printUsage();
-
+  public static GraphJob getJob(String inpath, String outpath,
+      Optional<Integer> numBspTasks) throws IOException {
     // Graph job configuration
     HamaConfiguration conf = new HamaConfiguration();
     GraphJob inlinkJob = new GraphJob(conf, InlinkCount.class);
     // Set the job name
     inlinkJob.setJobName("Inlink Count");
 
-    inlinkJob.setInputPath(new Path(args[0]));
-    inlinkJob.setOutputPath(new Path(args[1]));
+    inlinkJob.setInputPath(new Path(inpath));
+    inlinkJob.setOutputPath(new Path(outpath));
 
-    if (args.length == 3) {
-      inlinkJob.setNumBspTask(Integer.parseInt(args[2]));
+    if (numBspTasks.isPresent()) {
+      inlinkJob.setNumBspTask(numBspTasks.get());
     }
 
     inlinkJob.setVertexClass(InlinkCount.class);
 
-    inlinkJob.setInputFormat(SequenceFileInputFormat.class);
+    inlinkJob.setInputFormat(TextInputFormat.class);
     inlinkJob.setInputKeyClass(Text.class);
     inlinkJob.setInputValueClass(TextArrayWritable.class);
 
@@ -89,6 +83,18 @@ public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
     inlinkJob.setOutputFormat(SequenceFileOutputFormat.class);
     inlinkJob.setOutputKeyClass(Text.class);
     inlinkJob.setOutputValueClass(IntWritable.class);
+    return inlinkJob;
+  }
+
+  public static void main(String[] args) throws IOException,
+      InterruptedException, ClassNotFoundException {
+
+    if (args.length < 2)
+      printUsage();
+
+    Optional<Integer> absent = Optional.absent();
+    GraphJob inlinkJob = getJob(args[0], args[1],
+        args.length >= 3 ? Optional.of(Integer.parseInt(args[3])) : absent);
 
     long startTime = System.currentTimeMillis();
     if (inlinkJob.waitForCompletion(true)) {
@@ -96,27 +102,4 @@ public class InlinkCount extends Vertex<Text, NullWritable, IntWritable> {
           + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
-
-  @Override
-  public void readState(DataInput in) throws IOException {}
-
-  @Override
-  public void writeState(DataOutput out) throws IOException {}
-
-  @Override
-  public Text createVertexIDObject() {
-    return new Text();
-  }
-
-  @Override
-  public NullWritable createEdgeCostObject() {
-    return NullWritable.get();
-  }
-
-  @Override
-  public IntWritable createVertexValue() {
-    return new IntWritable();
-  }
-
-  
 }

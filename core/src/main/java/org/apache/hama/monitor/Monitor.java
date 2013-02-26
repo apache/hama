@@ -215,7 +215,7 @@ public final class Monitor extends Thread implements MonitorListener {
             // znode must exists so that child (znode/name) can be created.
             if (null != this.zk.exists(znode, false)) {
               String suffix = suffix(value);
-                if (LOG.isDebugEnabled()) {
+              if (LOG.isDebugEnabled()) {
                 LOG.debug("Publish name [" + name + "] and value [" + value
                     + "] to zk.");
               }

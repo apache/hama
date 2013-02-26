@@ -76,7 +76,7 @@ public class Kmeans {
     int k = Integer.parseInt(args[3]);
     if (args.length == 7 && args[4].equals("-g")) {
       int count = Integer.parseInt(args[5]);
-      if(k > count)
+      if (k > count)
         throw new IllegalArgumentException("K can't be greater than n!");
       int dimension = Integer.parseInt(args[6]);
       System.out.println("N: " + count + " Dimension: " + dimension

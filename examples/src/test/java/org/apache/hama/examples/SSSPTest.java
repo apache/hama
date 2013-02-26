@@ -32,22 +32,23 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.HamaConfiguration;
+import org.junit.Test;
 
 /**
  * Testcase for {@link ShortestPaths}
  */
 public class SSSPTest extends TestCase {
-  String[] input = new String[] { 
-      "1:85\t2:217\t4:173", 
-      "0:85\t5:80",
-      "0:217\t6:186\t7:103", 
-      "7:183", 
-      "0:173\t9:502", 
-      "1:80\t8:250", 
-      "2:186",
-      "3:183\t9:167\t2:103", 
-      "5:250\t9:84", 
-      "4:502\t7:167\t8:84" };
+  String[] input = new String[] { "1:85\t2:217\t4:173",// 0
+      "0:85\t5:80",// 1
+      "0:217\t6:186\t7:103",// 2
+      "7:183",// 3
+      "0:173\t9:502", // 4
+      "1:80\t8:250", // 5
+      "2:186", // 6
+      "3:183\t9:167\t2:103", // 7
+      "5:250\t9:84", // 8
+      "4:502\t7:167\t8:84" // 9
+  };
 
   private static String INPUT = "/tmp/sssp-tmp.seq";
   private static String TEXT_INPUT = "/tmp/sssp.txt";
@@ -62,6 +63,7 @@ public class SSSPTest extends TestCase {
     fs = FileSystem.get(conf);
   }
 
+  @Test
   public void testShortestPaths() throws IOException, InterruptedException,
       ClassNotFoundException, InstantiationException, IllegalAccessException {
 
@@ -94,7 +96,7 @@ public class SSSPTest extends TestCase {
       String line = null;
       while ((line = reader.readLine()) != null) {
         String[] split = line.split("\t");
-        System.out.println(split[1] + " = " + (int) rs.get(split[0]));
+        System.out.println(split[1] + " = " + rs.get(split[0]));
         assertEquals(Integer.parseInt(split[1]), (int) rs.get(split[0]));
       }
     }

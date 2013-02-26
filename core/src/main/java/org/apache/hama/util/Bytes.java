@@ -17,13 +17,6 @@
  */
 package org.apache.hama.util;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.RawComparator;
-import org.apache.hadoop.io.WritableComparator;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.hama.Constants;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -31,6 +24,13 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Comparator;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.RawComparator;
+import org.apache.hadoop.io.WritableComparator;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.hama.Constants;
 
 /**
  * Utility class that handles byte arrays, conversions to/from other types,
@@ -892,7 +892,10 @@ public class Bytes {
   public static boolean equals(final byte[] left, final byte[] right) {
     // Could use Arrays.equals?
     // noinspection SimplifiableConditionalExpression
-    return left == null && right == null || (!(left == null || right == null || (left.length != right.length)) && compareTo(left, right) == 0);
+    return left == null
+        && right == null
+        || (!(left == null || right == null || (left.length != right.length)) && compareTo(
+            left, right) == 0);
   }
 
   /**

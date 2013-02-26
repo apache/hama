@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +34,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.net.NetworkTopology;
@@ -210,12 +210,12 @@ public abstract class CombineFileInputFormat<K, V> extends
 
     // Finally, process all paths that do not belong to any pool.
     ArrayList<Path> myPaths = new ArrayList<Path>();
-      for (Path path : paths) {
-          if (path == null) { // already processed
-              continue;
-          }
-          myPaths.add(path);
+    for (Path path : paths) {
+      if (path == null) { // already processed
+        continue;
       }
+      myPaths.add(path);
+    }
     // create splits for all files that are not in any pool.
     getMoreSplits(bspJob, myPaths.toArray(new Path[myPaths.size()]), maxSize,
         minSizeNode, minSizeRack, splits);
@@ -261,48 +261,47 @@ public abstract class CombineFileInputFormat<K, V> extends
 
     // process all nodes and create splits that are local
     // to a node.
-      for (Map.Entry<String, List<OneBlockInfo>> one : nodeToBlocks
-              .entrySet()) {
+    for (Map.Entry<String, List<OneBlockInfo>> one : nodeToBlocks.entrySet()) {
 
-          nodes.add(one.getKey());
-          List<OneBlockInfo> blocksInNode = one.getValue();
+      nodes.add(one.getKey());
+      List<OneBlockInfo> blocksInNode = one.getValue();
 
-          // for each block, copy it into validBlocks. Delete it from
-          // blockToNodes so that the same block does not appear in
-          // two different splits.
-          for (OneBlockInfo oneblock : blocksInNode) {
-              if (blockToNodes.containsKey(oneblock)) {
-                  validBlocks.add(oneblock);
-                  blockToNodes.remove(oneblock);
-                  curSplitSize += oneblock.length;
+      // for each block, copy it into validBlocks. Delete it from
+      // blockToNodes so that the same block does not appear in
+      // two different splits.
+      for (OneBlockInfo oneblock : blocksInNode) {
+        if (blockToNodes.containsKey(oneblock)) {
+          validBlocks.add(oneblock);
+          blockToNodes.remove(oneblock);
+          curSplitSize += oneblock.length;
 
-                  // if the accumulated split size exceeds the maximum, then
-                  // create this split.
-                  if (maxSize != 0 && curSplitSize >= maxSize) {
-                      // create an input split and add it to the splits array
-                      addCreatedSplit(job, splits, nodes, validBlocks);
-                      curSplitSize = 0;
-                      validBlocks.clear();
-                  }
-              }
+          // if the accumulated split size exceeds the maximum, then
+          // create this split.
+          if (maxSize != 0 && curSplitSize >= maxSize) {
+            // create an input split and add it to the splits array
+            addCreatedSplit(job, splits, nodes, validBlocks);
+            curSplitSize = 0;
+            validBlocks.clear();
           }
-          // if there were any blocks left over and their combined size is
-          // larger than minSplitNode, then combine them into one split.
-          // Otherwise add them back to the unprocessed pool. It is likely
-          // that they will be combined with other blocks from the same rack later
-          // on.
-          if (minSizeNode != 0 && curSplitSize >= minSizeNode) {
-              // create an input split and add it to the splits array
-              addCreatedSplit(job, splits, nodes, validBlocks);
-          } else {
-              for (OneBlockInfo oneblock : validBlocks) {
-                  blockToNodes.put(oneblock, oneblock.hosts);
-              }
-          }
-          validBlocks.clear();
-          nodes.clear();
-          curSplitSize = 0;
+        }
       }
+      // if there were any blocks left over and their combined size is
+      // larger than minSplitNode, then combine them into one split.
+      // Otherwise add them back to the unprocessed pool. It is likely
+      // that they will be combined with other blocks from the same rack later
+      // on.
+      if (minSizeNode != 0 && curSplitSize >= minSizeNode) {
+        // create an input split and add it to the splits array
+        addCreatedSplit(job, splits, nodes, validBlocks);
+      } else {
+        for (OneBlockInfo oneblock : validBlocks) {
+          blockToNodes.put(oneblock, oneblock.hosts);
+        }
+      }
+      validBlocks.clear();
+      nodes.clear();
+      curSplitSize = 0;
+    }
 
     // if blocks in a rack are below the specified minimum size, then keep them
     // in 'overflow'. After the processing of all racks is complete, these
@@ -322,57 +321,56 @@ public abstract class CombineFileInputFormat<K, V> extends
       // split size).
 
       // iterate over all racks
-        for (Map.Entry<String, List<OneBlockInfo>> one : rackToBlocks
-                .entrySet()) {
+      for (Map.Entry<String, List<OneBlockInfo>> one : rackToBlocks.entrySet()) {
 
-            racks.add(one.getKey());
-            List<OneBlockInfo> blocks = one.getValue();
+        racks.add(one.getKey());
+        List<OneBlockInfo> blocks = one.getValue();
 
-            // for each block, copy it into validBlocks. Delete it from
-            // blockToNodes so that the same block does not appear in
-            // two different splits.
-            boolean createdSplit = false;
-            for (OneBlockInfo oneblock : blocks) {
-                if (blockToNodes.containsKey(oneblock)) {
-                    validBlocks.add(oneblock);
-                    blockToNodes.remove(oneblock);
-                    curSplitSize += oneblock.length;
+        // for each block, copy it into validBlocks. Delete it from
+        // blockToNodes so that the same block does not appear in
+        // two different splits.
+        boolean createdSplit = false;
+        for (OneBlockInfo oneblock : blocks) {
+          if (blockToNodes.containsKey(oneblock)) {
+            validBlocks.add(oneblock);
+            blockToNodes.remove(oneblock);
+            curSplitSize += oneblock.length;
 
-                    // if the accumulated split size exceeds the maximum, then
-                    // create this split.
-                    if (maxSize != 0 && curSplitSize >= maxSize) {
-                        // create an input split and add it to the splits array
-                        addCreatedSplit(job, splits, getHosts(racks), validBlocks);
-                        createdSplit = true;
-                        break;
-                    }
-                }
+            // if the accumulated split size exceeds the maximum, then
+            // create this split.
+            if (maxSize != 0 && curSplitSize >= maxSize) {
+              // create an input split and add it to the splits array
+              addCreatedSplit(job, splits, getHosts(racks), validBlocks);
+              createdSplit = true;
+              break;
             }
-
-            // if we created a split, then just go to the next rack
-            if (createdSplit) {
-                curSplitSize = 0;
-                validBlocks.clear();
-                racks.clear();
-                continue;
-            }
-
-            if (!validBlocks.isEmpty()) {
-                if (minSizeRack != 0 && curSplitSize >= minSizeRack) {
-                    // if there is a mimimum size specified, then create a single split
-                    // otherwise, store these blocks into overflow data structure
-                    addCreatedSplit(job, splits, getHosts(racks), validBlocks);
-                } else {
-                    // There were a few blocks in this rack that remained to be
-                    // processed.
-                    // Keep them in 'overflow' block list. These will be combined later.
-                    overflowBlocks.addAll(validBlocks);
-                }
-            }
-            curSplitSize = 0;
-            validBlocks.clear();
-            racks.clear();
+          }
         }
+
+        // if we created a split, then just go to the next rack
+        if (createdSplit) {
+          curSplitSize = 0;
+          validBlocks.clear();
+          racks.clear();
+          continue;
+        }
+
+        if (!validBlocks.isEmpty()) {
+          if (minSizeRack != 0 && curSplitSize >= minSizeRack) {
+            // if there is a mimimum size specified, then create a single split
+            // otherwise, store these blocks into overflow data structure
+            addCreatedSplit(job, splits, getHosts(racks), validBlocks);
+          } else {
+            // There were a few blocks in this rack that remained to be
+            // processed.
+            // Keep them in 'overflow' block list. These will be combined later.
+            overflowBlocks.addAll(validBlocks);
+          }
+        }
+        curSplitSize = 0;
+        validBlocks.clear();
+        racks.clear();
+      }
     }
 
     assert blockToNodes.isEmpty();
@@ -387,7 +385,7 @@ public abstract class CombineFileInputFormat<K, V> extends
 
       // This might cause an exiting rack location to be re-added,
       // but it should be ok.
-        Collections.addAll(racks, oneblock.racks);
+      Collections.addAll(racks, oneblock.racks);
 
       // if the accumulated split size exceeds the maximum, then
       // create this split.
@@ -425,7 +423,7 @@ public abstract class CombineFileInputFormat<K, V> extends
 
     // add this split to the list that is returned
     CombineFileSplit thissplit = new CombineFileSplit(job, fl, offset, length,
-            locations.toArray(new String[locations.size()]));
+        locations.toArray(new String[locations.size()]));
     splitList.add(thissplit);
   }
 

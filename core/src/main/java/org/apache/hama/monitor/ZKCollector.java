@@ -115,7 +115,8 @@ public final class ZKCollector implements Collector {
             LOG.info("metrics " + name + " value:" + lv);
             record.add(new Metric<Long>(name, lv));
           } else if ("b".equals(dataType)) {
-            LOG.info("metrics" + name + " value:" + Arrays.toString(dataInBytes));
+            LOG.info("metrics" + name + " value:"
+                + Arrays.toString(dataInBytes));
             record.add(new Metric<byte[]>(name, dataInBytes));
           } else {
             LOG.warn("Unkown data type for metrics name: " + child);

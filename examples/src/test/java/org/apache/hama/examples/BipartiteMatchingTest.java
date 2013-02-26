@@ -46,15 +46,13 @@ public class BipartiteMatchingTest extends TestCase {
 
   private final static String DELIMETER = "\t";
 
-  @SuppressWarnings("serial")
-  private Map<String, String> output1 = new HashMap<String, String>() {
-    {
-      put("C", "TextPair{MatchVertex=D, Component=L}");
-      put("A", "TextPair{MatchVertex=B, Component=L}");
-      put("D", "TextPair{MatchVertex=C, Component=R}");
-      put("B", "TextPair{MatchVertex=A, Component=R}");
-    }
-  };
+  private Map<String, String> output1 = new HashMap<String, String>();
+  {
+    output1.put("A", "D L");
+    output1.put("B", "C R");
+    output1.put("C", "B L");
+    output1.put("D", "A R");
+  }
 
   public static class CustomTextPartitioner implements
       Partitioner<Text, TextPair> {
@@ -110,34 +108,25 @@ public class BipartiteMatchingTest extends TestCase {
 
   private void verifyResult() throws IOException {
     FileStatus[] files = fs.globStatus(new Path(OUTPUT + "/part-*"));
-    assertTrue(files.length == 2);
-
-    Text key = new Text();
-    Text value = new Text();
+    assertTrue("Not enough files found: " + files.length, files.length == 2);
 
     for (FileStatus file : files) {
       if (file.getLen() > 0) {
         FSDataInputStream in = fs.open(file.getPath());
         BufferedReader bin = new BufferedReader(new InputStreamReader(in));
 
-        String s = bin.readLine();
-        while (s != null) {
-          next(key, value, s);
-          String expValue = output1.get(key.toString());
-          System.out.println(key + " " + value + " expvalue = " + expValue);
-          assertEquals(expValue, value.toString());
-
-          s = bin.readLine();
+        String s = null;
+        while ((s = bin.readLine()) != null) {
+          String[] lineA = s.split(DELIMETER);
+          String expValue = output1.get(lineA[0]);
+          assertNotNull(expValue);
+          System.out.println(lineA[0] + " -> " + lineA[1] + " expvalue = "
+              + expValue);
+          assertEquals(expValue, lineA[1]);
         }
         in.close();
       }
     }
-  }
-
-  private static void next(Text key, Text value, String line) {
-    String[] lineA = line.split(DELIMETER);
-    key.set(lineA[0]);
-    value.set(lineA[1]);
   }
 
   private void deleteTempDirs() {

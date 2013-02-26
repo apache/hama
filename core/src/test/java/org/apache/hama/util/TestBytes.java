@@ -24,7 +24,7 @@ import junit.framework.TestCase;
 
 public class TestBytes extends TestCase {
   public void testNullHashCode() {
-    byte [] b = null;
+    byte[] b = null;
     Exception ee = null;
     try {
       Bytes.hashCode(b);
@@ -35,16 +35,16 @@ public class TestBytes extends TestCase {
   }
 
   public void testSplit() throws Exception {
-    byte [] lowest = Bytes.toBytes("AAA");
-    byte [] middle = Bytes.toBytes("CCC");
-    byte [] highest = Bytes.toBytes("EEE");
-    byte [][] parts = Bytes.split(lowest, highest, 1);
+    byte[] lowest = Bytes.toBytes("AAA");
+    byte[] middle = Bytes.toBytes("CCC");
+    byte[] highest = Bytes.toBytes("EEE");
+    byte[][] parts = Bytes.split(lowest, highest, 1);
     for (int i = 0; i < parts.length; i++) {
       System.out.println(Bytes.toString(parts[i]));
     }
     assertEquals(3, parts.length);
     assertTrue(Bytes.equals(parts[1], middle));
-    // Now divide into three parts.  Change highest so split is even.
+    // Now divide into three parts. Change highest so split is even.
     highest = Bytes.toBytes("DDD");
     parts = Bytes.split(lowest, highest, 2);
     for (int i = 0; i < parts.length; i++) {
@@ -57,10 +57,10 @@ public class TestBytes extends TestCase {
 
   public void testSplit2() throws Exception {
     // More split tests.
-    byte [] lowest = Bytes.toBytes("http://A");
-    byte [] highest = Bytes.toBytes("http://z");
-    byte [] middle = Bytes.toBytes("http://]");
-    byte [][] parts = Bytes.split(lowest, highest, 1);
+    byte[] lowest = Bytes.toBytes("http://A");
+    byte[] highest = Bytes.toBytes("http://z");
+    byte[] middle = Bytes.toBytes("http://]");
+    byte[][] parts = Bytes.split(lowest, highest, 1);
     for (int i = 0; i < parts.length; i++) {
       System.out.println(Bytes.toString(parts[i]));
     }
@@ -69,61 +69,52 @@ public class TestBytes extends TestCase {
   }
 
   public void testToLong() throws Exception {
-    long [] longs = {-1l, 123l, 122232323232l};
+    long[] longs = { -1l, 123l, 122232323232l };
     for (int i = 0; i < longs.length; i++) {
-      byte [] b = Bytes.toBytes(longs[i]);
+      byte[] b = Bytes.toBytes(longs[i]);
       assertEquals(longs[i], Bytes.toLong(b));
     }
   }
 
   public void testToFloat() throws Exception {
-    float [] floats = {-1f, 123.123f, Float.MAX_VALUE};
+    float[] floats = { -1f, 123.123f, Float.MAX_VALUE };
     for (int i = 0; i < floats.length; i++) {
-      byte [] b = Bytes.toBytes(floats[i]);
+      byte[] b = Bytes.toBytes(floats[i]);
       assertEquals(floats[i], Bytes.toFloat(b));
     }
   }
 
   public void testToDouble() throws Exception {
-    double [] doubles = {Double.MIN_VALUE, Double.MAX_VALUE};
+    double[] doubles = { Double.MIN_VALUE, Double.MAX_VALUE };
     for (int i = 0; i < doubles.length; i++) {
-      byte [] b = Bytes.toBytes(doubles[i]);
+      byte[] b = Bytes.toBytes(doubles[i]);
       assertEquals(doubles[i], Bytes.toDouble(b));
     }
   }
 
   public void testBinarySearch() throws Exception {
-    byte [][] arr = {
-        {1},
-        {3},
-        {5},
-        {7},
-        {9},
-        {11},
-        {13},
-        {15},
-    };
-    byte [] key1 = {3,1};
-    byte [] key2 = {4,9};
-    byte [] key2_2 = {4};
-    byte [] key3 = {5,11};
-    
-    assertEquals(1, Bytes.binarySearch(arr, key1, 0, 1,
-      Bytes.BYTES_RAWCOMPARATOR));
-    assertEquals(0, Bytes.binarySearch(arr, key1, 1, 1,
-      Bytes.BYTES_RAWCOMPARATOR));
-    assertEquals(-(2+1), Arrays.binarySearch(arr, key2_2,
-      Bytes.BYTES_COMPARATOR));
-    assertEquals(-(2+1), Bytes.binarySearch(arr, key2, 0, 1,
-      Bytes.BYTES_RAWCOMPARATOR));
-    assertEquals(4, Bytes.binarySearch(arr, key2, 1, 1,
-      Bytes.BYTES_RAWCOMPARATOR));
-    assertEquals(2, Bytes.binarySearch(arr, key3, 0, 1,
-      Bytes.BYTES_RAWCOMPARATOR));
-    assertEquals(5, Bytes.binarySearch(arr, key3, 1, 1,
-      Bytes.BYTES_RAWCOMPARATOR));
+    byte[][] arr = { { 1 }, { 3 }, { 5 }, { 7 }, { 9 }, { 11 }, { 13 }, { 15 }, };
+    byte[] key1 = { 3, 1 };
+    byte[] key2 = { 4, 9 };
+    byte[] key2_2 = { 4 };
+    byte[] key3 = { 5, 11 };
+
+    assertEquals(1,
+        Bytes.binarySearch(arr, key1, 0, 1, Bytes.BYTES_RAWCOMPARATOR));
+    assertEquals(0,
+        Bytes.binarySearch(arr, key1, 1, 1, Bytes.BYTES_RAWCOMPARATOR));
+    assertEquals(-(2 + 1),
+        Arrays.binarySearch(arr, key2_2, Bytes.BYTES_COMPARATOR));
+    assertEquals(-(2 + 1),
+        Bytes.binarySearch(arr, key2, 0, 1, Bytes.BYTES_RAWCOMPARATOR));
+    assertEquals(4,
+        Bytes.binarySearch(arr, key2, 1, 1, Bytes.BYTES_RAWCOMPARATOR));
+    assertEquals(2,
+        Bytes.binarySearch(arr, key3, 0, 1, Bytes.BYTES_RAWCOMPARATOR));
+    assertEquals(5,
+        Bytes.binarySearch(arr, key3, 1, 1, Bytes.BYTES_RAWCOMPARATOR));
   }
-  
+
   public void testIncrementBytes() throws IOException {
 
     assertTrue(checkTestIncrementBytes(10, 1));
@@ -144,11 +135,11 @@ public class TestBytes extends TestCase {
     assertTrue(checkTestIncrementBytes(-12, -34565445));
     assertTrue(checkTestIncrementBytes(-1546543452, -34565445));
   }
-  
-  private static boolean checkTestIncrementBytes(long val, long amount) 
-  throws IOException {
+
+  private static boolean checkTestIncrementBytes(long val, long amount)
+      throws IOException {
     byte[] value = Bytes.toBytes(val);
-    byte [] testValue = {-1, -1, -1, -1, -1, -1, -1, -1};
+    byte[] testValue = { -1, -1, -1, -1, -1, -1, -1, -1 };
     if (value[0] > 0) {
       testValue = new byte[Bytes.SIZEOF_LONG];
     }

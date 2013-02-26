@@ -45,8 +45,8 @@ public class RecoverTaskAction extends GroomServerAction {
   public Task getTask() {
     return task;
   }
-  
-  public long getSuperstepCount(){
+
+  public long getSuperstepCount() {
     return superstepNumber.get();
   }
 
@@ -54,7 +54,7 @@ public class RecoverTaskAction extends GroomServerAction {
   public void write(DataOutput out) throws IOException {
     task.write(out);
     superstepNumber.write(out);
-    
+
   }
 
   @Override

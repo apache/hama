@@ -22,7 +22,7 @@ public class SyncException extends Exception {
    * 
    */
   private static final long serialVersionUID = 1L;
-  
+
   String info;
 
   public SyncException(String info) {

@@ -223,13 +223,13 @@ public class TestIPC extends TestCase {
     } catch (IOException e) {
       String message = e.getMessage();
       String addressText = address.toString();
-      assertTrue("Did not find " + addressText + " in " + message, message
-          .contains(addressText));
+      assertTrue("Did not find " + addressText + " in " + message,
+          message.contains(addressText));
       Throwable cause = e.getCause();
       assertNotNull("No nested exception in " + e, cause);
       String causeText = cause.getMessage();
-      assertTrue("Did not find " + causeText + " in " + message, message
-          .contains(causeText));
+      assertTrue("Did not find " + causeText + " in " + message,
+          message.contains(causeText));
     }
   }
 

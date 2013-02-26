@@ -22,6 +22,8 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 
+import junit.framework.TestCase;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -29,8 +31,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.ipc.VersionedProtocol;
-
-import junit.framework.TestCase;
 
 public class TestRPC extends TestCase {
   private static final int PORT = 1234;

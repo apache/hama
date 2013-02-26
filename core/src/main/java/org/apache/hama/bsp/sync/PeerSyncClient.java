@@ -23,10 +23,10 @@ import org.apache.hama.bsp.TaskAttemptID;
 
 /**
  * PeerSyncClient defines the behavior that a BSPPeer performs to maintain
- * synchronized global state as it progresses. 
+ * synchronized global state as it progresses.
  */
 
-public interface PeerSyncClient extends SyncClient{
+public interface PeerSyncClient extends SyncClient {
 
   /**
    * Init will be called within a spawned task, it should be used to initialize

@@ -23,16 +23,16 @@ import org.apache.hama.bsp.Directive;
 import org.apache.hama.bsp.GroomServerStatus;
 
 /**
- * A new protocol for GroomServers communicate with BSPMaster. This
- * protocol paired with WorkerProtocl, let GroomServers enrol with 
- * BSPMaster, so that BSPMaster can dispatch tasks to GroomServers.
+ * A new protocol for GroomServers communicate with BSPMaster. This protocol
+ * paired with WorkerProtocl, let GroomServers enrol with BSPMaster, so that
+ * BSPMaster can dispatch tasks to GroomServers.
  */
 public interface MasterProtocol extends HamaRPCProtocolVersion {
 
   /**
    * A GroomServer register with its status to BSPMaster, which will update
    * GroomServers cache.
-   *
+   * 
    * @param status to be updated in cache.
    * @return true if successfully register with BSPMaster; false if fail.
    */
@@ -40,7 +40,8 @@ public interface MasterProtocol extends HamaRPCProtocolVersion {
 
   /**
    * A GroomServer (periodically) reports task statuses back to the BSPMaster.
-   * @param directive 
+   * 
+   * @param directive
    */
   boolean report(Directive directive) throws IOException;
 

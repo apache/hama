@@ -143,8 +143,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
       } else {
         for (FileStatus globStat : matches) {
           if (globStat.isDir()) {
-              Collections.addAll(result, fs.listStatus(globStat.getPath(),
-                      inputFilter));
+            Collections.addAll(result,
+                fs.listStatus(globStat.getPath(), inputFilter));
           } else {
             result.add(globStat);
           }

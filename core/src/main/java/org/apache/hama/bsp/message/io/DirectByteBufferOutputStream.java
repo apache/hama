@@ -22,30 +22,30 @@ import java.nio.ByteBuffer;
 
 /**
  * Encapsulates a {@link DirectByteBufferOutputStream}.
- *
+ * 
  */
 public class DirectByteBufferOutputStream extends DataOutputStream {
 
   public DirectByteBufferOutputStream() {
     super(new ByteBufferOutputStream());
   }
-  
-  public DirectByteBufferOutputStream(ByteBufferOutputStream stream){
+
+  public DirectByteBufferOutputStream(ByteBufferOutputStream stream) {
     super(stream);
   }
 
   public ByteBuffer getBuffer() {
-    ByteBufferOutputStream stream = (ByteBufferOutputStream)this.out;
+    ByteBufferOutputStream stream = (ByteBufferOutputStream) this.out;
     return stream.getBuffer();
   }
 
   public void setBuffer(ByteBuffer buffer) {
-    ByteBufferOutputStream stream = (ByteBufferOutputStream)this.out;
+    ByteBufferOutputStream stream = (ByteBufferOutputStream) this.out;
     stream.setBuffer(buffer);
   }
 
-  public void clear(){
-    ByteBufferOutputStream stream = (ByteBufferOutputStream)this.out;
+  public void clear() {
+    ByteBufferOutputStream stream = (ByteBufferOutputStream) this.out;
     stream.clear();
   }
 }

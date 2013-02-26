@@ -33,13 +33,13 @@ public class TestLocalRunner extends TestCase {
     conf.set("bsp.local.dir", "/tmp/hama-test");
     BSPJob bsp = new BSPJob(new HamaConfiguration(conf));
     bsp.setJobName("Test Serialize Printing with Output");
-    
+
     bsp.setBspClass(org.apache.hama.examples.ClassSerializePrinting.class);
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
     bsp.setOutputKeyClass(IntWritable.class);
     bsp.setOutputValueClass(Text.class);
     bsp.setOutputPath(TestBSPMasterGroomServer.OUTPUT_PATH);
-    
+
     conf.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 600);
     bsp.setNumBspTask(2);
     bsp.setInputFormat(NullInputFormat.class);

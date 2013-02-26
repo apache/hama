@@ -30,6 +30,9 @@ import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
+import org.apache.hama.bsp.message.MessageManager;
+import org.apache.hama.bsp.message.queue.MessageQueue;
+import org.apache.hama.bsp.message.queue.SortedMessageQueue;
 
 import com.google.common.base.Preconditions;
 
@@ -42,6 +45,7 @@ public class GraphJob extends BSPJob {
 
   public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";
   public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
+
   /**
    * Creates a new Graph Job with the given configuration and an exampleClass.
    * The exampleClass is used to determine the user's jar to distribute in the
@@ -133,8 +137,8 @@ public class GraphJob extends BSPJob {
   }
 
   @Override
-  public void setPartitioner(@SuppressWarnings("rawtypes")
-  Class<? extends Partitioner> theClass) {
+  public void setPartitioner(
+      @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
   }
@@ -169,6 +173,17 @@ public class GraphJob extends BSPJob {
         .checkArgument(this.getConfiguration()
             .get(VERTEX_EDGE_VALUE_CLASS_ATTR) != null,
             "Please provide an edge value class, if you don't need one, use NullWritable!");
+
+    Preconditions
+        .checkArgument(
+            this.getConfiguration().get(
+                Constants.RUNTIME_PARTITION_RECORDCONVERTER) != null,
+            "Please provide a converter class for your vertex by using GraphJob#setVertexInputReaderClass!");
+
+    // add the default message queue to the sorted one
+    this.getConfiguration().setClass(MessageManager.QUEUE_TYPE_CLASS,
+        SortedMessageQueue.class, MessageQueue.class);
+
     super.submit();
   }
 

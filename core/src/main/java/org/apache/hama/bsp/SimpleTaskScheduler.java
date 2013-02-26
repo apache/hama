@@ -251,16 +251,16 @@ class SimpleTaskScheduler extends TaskScheduler {
       }
 
       // assembly into actions
-        for (Task task : taskSet) {
-            GroomServerStatus groomStatus = jip.getGroomStatusForTask(task);
-            List<GroomServerAction> taskActions = actionMap.get(groomStatus);
-            if (taskActions == null) {
-                taskActions = new ArrayList<GroomServerAction>(
-                        groomStatus.getMaxTasks());
-            }
-            taskActions.add(new LaunchTaskAction(task));
-            actionMap.put(groomStatus, taskActions);
+      for (Task task : taskSet) {
+        GroomServerStatus groomStatus = jip.getGroomStatusForTask(task);
+        List<GroomServerAction> taskActions = actionMap.get(groomStatus);
+        if (taskActions == null) {
+          taskActions = new ArrayList<GroomServerAction>(
+              groomStatus.getMaxTasks());
         }
+        taskActions.add(new LaunchTaskAction(task));
+        actionMap.put(groomStatus, taskActions);
+      }
 
       sendDirectivesToGrooms(actionMap);
 
@@ -357,8 +357,7 @@ class SimpleTaskScheduler extends TaskScheduler {
         final Act act = new Act(new ZKCollector(zk, "jvm", "Jvm metrics.",
             jvmPath), new CollectorHandler() {
           @Override
-          public void handle(@SuppressWarnings("rawtypes")
-          Future future) {
+          public void handle(@SuppressWarnings("rawtypes") Future future) {
             try {
               MetricsRecord record = (MetricsRecord) future.get();
               if (null != record) {

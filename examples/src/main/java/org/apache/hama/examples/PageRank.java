@@ -17,10 +17,7 @@
  */
 package org.apache.hama.examples;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -33,7 +30,6 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.bsp.TextOutputFormat;
-import org.apache.hama.graph.AbstractAggregator;
 import org.apache.hama.graph.AverageAggregator;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
@@ -51,8 +47,6 @@ public class PageRank {
     static double DAMPING_FACTOR = 0.85;
     static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
 
-    int numEdges;
-
     @Override
     public void setup(Configuration conf) {
       String val = conf.get("hama.pagerank.alpha");
@@ -63,30 +57,20 @@ public class PageRank {
       if (val != null) {
         MAXIMUM_CONVERGENCE_ERROR = Double.parseDouble(val);
       }
-      numEdges = this.getEdges().size();
     }
 
     @Override
-    public void compute(Iterator<DoubleWritable> messages) throws IOException {
+    public void compute(Iterable<DoubleWritable> messages) throws IOException {
       // initialize this vertex to 1 / count of global vertices in this graph
       if (this.getSuperstepCount() == 0) {
         this.setValue(new DoubleWritable(1.0 / this.getNumVertices()));
       } else if (this.getSuperstepCount() >= 1) {
-        DoubleWritable danglingNodeContribution = getLastAggregatedValue(1);
         double sum = 0;
-        while (messages.hasNext()) {
-          DoubleWritable msg = messages.next();
+        for (DoubleWritable msg : messages) {
           sum += msg.get();
         }
-        if (danglingNodeContribution == null) {
-          double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
-          this.setValue(new DoubleWritable(alpha + (DAMPING_FACTOR * sum)));
-        } else {
-          double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
-          this.setValue(new DoubleWritable(alpha
-              + (DAMPING_FACTOR * (sum + danglingNodeContribution.get()
-                  / this.getNumVertices()))));
-        }
+        double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
+        this.setValue(new DoubleWritable(alpha + (sum * DAMPING_FACTOR)));
       }
 
       // if we have not reached our global error yet, then proceed.
@@ -96,57 +80,10 @@ public class PageRank {
         voteToHalt();
         return;
       }
+
       // in each superstep we are going to send a new rank to our neighbours
       sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
-          / numEdges));
-    }
-
-    @Override
-    public void readState(DataInput in) throws IOException {
-    }
-
-    @Override
-    public void writeState(DataOutput out) throws IOException {
-    }
-
-    @Override
-    public Text createVertexIDObject() {
-      return new Text();
-    }
-
-    @Override
-    public NullWritable createEdgeCostObject() {
-      return NullWritable.get();
-    }
-
-    @Override
-    public DoubleWritable createVertexValue() {
-      return new DoubleWritable();
-    }
-
-  }
-
-  public static class DanglingNodeAggregator
-      extends
-      AbstractAggregator<DoubleWritable, Vertex<Text, NullWritable, DoubleWritable>> {
-
-    double danglingNodeSum;
-
-    @Override
-    public void aggregate(Vertex<Text, NullWritable, DoubleWritable> vertex,
-        DoubleWritable value) {
-      if (vertex != null) {
-        if (vertex.getEdges().size() == 0) {
-          danglingNodeSum += value.get();
-        }
-      } else {
-        danglingNodeSum += value.get();
-      }
-    }
-
-    @Override
-    public DoubleWritable getValue() {
-      return new DoubleWritable(danglingNodeSum);
+          / this.getEdges().size()));
     }
 
   }
@@ -167,12 +104,11 @@ public class PageRank {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public static GraphJob createJob(String[] args, HamaConfiguration conf)
       throws IOException {
     GraphJob pageJob = new GraphJob(conf, PageRank.class);
     pageJob.setJobName("Pagerank");
-    
+
     pageJob.setVertexClass(PageRankVertex.class);
     pageJob.setInputPath(new Path(args[0]));
     pageJob.setOutputPath(new Path(args[1]));
@@ -180,19 +116,21 @@ public class PageRank {
     // set the defaults
     pageJob.setMaxIteration(30);
     pageJob.set("hama.pagerank.alpha", "0.85");
+    // reference vertices to itself, because we don't have a dangling node
+    // contribution here
+    pageJob.set("hama.graph.self.ref", "true");
     pageJob.set("hama.graph.max.convergence.error", "0.001");
 
     if (args.length == 3) {
       pageJob.setNumBspTask(Integer.parseInt(args[2]));
     }
 
-    // error, dangling node probability sum
-    pageJob.setAggregatorClass(AverageAggregator.class,
-        DanglingNodeAggregator.class);
+    // error
+    pageJob.setAggregatorClass(AverageAggregator.class);
 
     // Vertex reader
     pageJob.setVertexInputReaderClass(PagerankSeqReader.class);
-    
+
     pageJob.setVertexIDClass(Text.class);
     pageJob.setVertexValueClass(DoubleWritable.class);
     pageJob.setEdgeValueClass(NullWritable.class);

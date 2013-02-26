@@ -29,7 +29,7 @@ public class TaskCompletionEvent implements Writable {
     FAILED, KILLED, SUCCEEDED, OBSOLETE, TIPFAILED
   }
 
-    private int eventId;
+  private int eventId;
   private String groomServerInfo;
   private int taskRunTime; // using int since runtime is the time difference
   private TaskAttemptID taskId;

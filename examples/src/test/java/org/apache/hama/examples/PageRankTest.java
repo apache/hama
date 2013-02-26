@@ -27,18 +27,24 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.examples.util.SymmetricMatrixGen;
-import org.apache.hama.graph.GraphJob;
-import org.apache.hama.graph.GraphJobRunner;
+import org.apache.hama.bsp.TextArrayWritable;
+import org.junit.Test;
 
+/**
+ * Testcase for {@link PageRank}
+ */
 public class PageRankTest extends TestCase {
+  String[] input = new String[] { "1\t2\t3", "2", "3\t1\t2\t5", "4\t5\t6",
+      "5\t4\t6", "6\t4", "7\t2\t4" };
 
-  private static String INPUT = "/tmp/pagerank/";
-  private static String TEXT_INPUT = "/tmp/pagerank/pagerank.txt";
-  private static String TEXT_OUTPUT = INPUT + "pagerank.txt.seq";
-
-  private static String OUTPUT = "/tmp/pagerank/pagerank-out";
+  private static String INPUT = "/tmp/page-tmp.seq";
+  private static String TEXT_INPUT = "/tmp/page.txt";
+  private static String TEXT_OUTPUT = INPUT + "page.txt.seq";
+  private static String OUTPUT = "/tmp/page-out";
   private Configuration conf = new HamaConfiguration();
   private FileSystem fs;
 
@@ -48,45 +54,59 @@ public class PageRankTest extends TestCase {
     fs = FileSystem.get(conf);
   }
 
-  private void verifyResult() throws IOException {
-    double sum = 0.0;
-    FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
-    for (FileStatus fts : globStatus) {
-      BufferedReader reader = new BufferedReader(new InputStreamReader(
-          fs.open(fts.getPath())));
-      String line = null;
-      while ((line = reader.readLine()) != null) {
-        String[] split = line.split("\t");
-        System.out.println(split[0] + " / " + split[1]);
-        sum += Double.parseDouble(split[1]);
-      }
-    }
-    System.out.println("Sum is: " + sum);
-    assertTrue(sum > 0.99d && sum <= 1.1d);
-  }
+  @Test
+  public void testPageRank() throws IOException, InterruptedException,
+      ClassNotFoundException, InstantiationException, IllegalAccessException {
 
-  public void testRepairFunctionality() throws Exception {
     generateTestData();
     try {
-      HamaConfiguration conf = new HamaConfiguration(new Configuration());
-      conf.set("bsp.local.tasks.maximum", "10");
-      conf.setInt("bsp.peers.num", 7);
-      conf.setBoolean(GraphJobRunner.GRAPH_REPAIR, true);
-      GraphJob pageJob = PageRank.createJob(
-          new String[] { INPUT, OUTPUT, "7" }, conf);
-
-      if (!pageJob.waitForCompletion(true)) {
-        fail("Job did not complete normally!");
-      }
+      PageRank.main(new String[] { INPUT, OUTPUT, "3" });
       verifyResult();
     } finally {
       deleteTempDirs();
     }
   }
 
-  private void generateTestData() throws ClassNotFoundException,
-      InterruptedException, IOException {
-    SymmetricMatrixGen.main(new String[] { "40", "10", INPUT, "20" });
+  private void verifyResult() throws IOException {
+    FileStatus[] globStatus = fs.globStatus(new Path(OUTPUT + "/part-*"));
+    double sum = 0d;
+    for (FileStatus fts : globStatus) {
+      BufferedReader reader = new BufferedReader(new InputStreamReader(
+          fs.open(fts.getPath())));
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+        String[] split = line.split("\t");
+        sum += Double.parseDouble(split[1]);
+      }
+    }
+    System.out.println(sum);
+    assertTrue("Sum was: " + sum, sum > 0.9 && sum < 1.1);
+  }
+
+  private void generateTestData() {
+    try {
+      SequenceFile.Writer writer1 = SequenceFile.createWriter(fs, conf,
+          new Path(INPUT + "/part0"), Text.class, TextArrayWritable.class);
+
+      for (int i = 0; i < input.length; i++) {
+        String[] x = input[i].split("\t");
+
+        Text vertex = new Text(x[0]);
+        TextArrayWritable arr = new TextArrayWritable();
+        Writable[] values = new Writable[x.length - 1];
+        for (int j = 1; j < x.length; j++) {
+          values[j - 1] = new Text(x[j]);
+        }
+        arr.set(values);
+        writer1.append(vertex, arr);
+      }
+
+      writer1.close();
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   private void deleteTempDirs() {
@@ -103,5 +123,4 @@ public class PageRankTest extends TestCase {
       e.printStackTrace();
     }
   }
-
 }

@@ -29,13 +29,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.examples.MindistSearch.MinTextCombiner;
-import org.apache.hama.examples.MindistSearch.MindistSearchVertex;
-import org.apache.hama.graph.Edge;
+import org.apache.hama.graph.GraphJob;
+
+import com.google.common.base.Optional;
 
 public class MindistSearchTest extends TestCase {
 
@@ -60,7 +62,12 @@ public class MindistSearchTest extends TestCase {
   public void testMindistSearch() throws Exception {
     generateTestData();
     try {
-      MindistSearch.main(new String[] { INPUT, OUTPUT, "30", "3" });
+      GraphJob job = MindistSearch.getJob(INPUT, OUTPUT, Optional.of(3),
+          Optional.of(30));
+      job.setInputFormat(SequenceFileInputFormat.class);
+      job.setInputKeyClass(LongWritable.class);
+      job.setInputValueClass(Text.class);
+      assertTrue(job.waitForCompletion(true));
 
       verifyResult();
     } finally {
@@ -99,18 +106,10 @@ public class MindistSearchTest extends TestCase {
   private void generateTestData() {
     try {
       SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
-          new Path(INPUT), MindistSearchVertex.class, NullWritable.class);
+          new Path(INPUT), LongWritable.class, Text.class);
 
       for (int i = 0; i < input.length; i++) {
-        String[] x = input[i].split("\t");
-        Text key = new Text(x[0]);
-        MindistSearchVertex vertex = new MindistSearchVertex();
-        vertex.setVertexID(key);
-        for (int j = 1; j < x.length; j++) {
-          vertex.addEdge(new Edge<Text, NullWritable>(new Text(x[j]),
-              NullWritable.get()));
-        }
-        writer.append(vertex, NullWritable.get());
+        writer.append(new LongWritable(i), new Text(input[i]));
       }
 
       writer.close();

@@ -56,7 +56,7 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
     conf.set("hama.zookeeper.property.clientPort", Integer.toString(clientPort));
     conf.set(Constants.GROOM_RPC_HOST, "localhost");
     assertEquals(conf.get(Constants.GROOM_RPC_HOST), "localhost");
-    bspCluster = new MiniBSPCluster(this.conf, numOfGroom); 
+    bspCluster = new MiniBSPCluster(this.conf, numOfGroom);
     bspCluster.startBSPCluster();
   }
 
@@ -66,14 +66,14 @@ public abstract class HamaClusterTestCase extends HamaTestCase {
       if (this.startDfs) {
         // This spews a bunch of warnings about missing scheme. TODO: fix.
         this.dfsCluster = new MiniDFSCluster(0, this.conf, 2, true, true, true,
-          null, null, null, null);
+            null, null, null, null);
 
         // mangle the conf so that the fs parameter points to the minidfs we
         // just started up
         FileSystem filesystem = dfsCluster.getFileSystem();
         conf.set("fs.defaultFS", filesystem.getUri().toString());
         Path parentdir = filesystem.getHomeDirectory();
-        
+
         filesystem.mkdirs(parentdir);
       }
 

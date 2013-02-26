@@ -298,7 +298,8 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
     }
 
     public void readKeyValue() throws IOException {
-      boolean nullinput = peer.getConfiguration().get(Constants.INPUT_FORMAT_CLASS) == null
+      boolean nullinput = peer.getConfiguration().get(
+          Constants.INPUT_FORMAT_CLASS) == null
           || peer.getConfiguration().get(Constants.INPUT_FORMAT_CLASS)
               .equals("org.apache.hama.bsp.NullInputFormat");
 

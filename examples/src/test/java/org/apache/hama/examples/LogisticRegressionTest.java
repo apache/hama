@@ -20,12 +20,14 @@ package org.apache.hama.examples;
 import org.junit.Test;
 
 /**
- * Testcase for {@link GradientDescentExample} execution for 'logistic regression'
+ * Testcase for {@link GradientDescentExample} execution for 'logistic
+ * regression'
  */
 public class LogisticRegressionTest {
 
   @Test
   public void testCorrectGDWithLogisticRegressionExecution() throws Exception {
-    GradientDescentExample.main(new String[]{"src/test/resources/logistic_regression_sample.txt", "logistic"});
+    GradientDescentExample.main(new String[] {
+        "src/test/resources/logistic_regression_sample.txt", "logistic" });
   }
 }

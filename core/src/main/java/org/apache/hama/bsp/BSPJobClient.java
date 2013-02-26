@@ -375,13 +375,13 @@ public class BSPJobClient extends Configured implements Tool {
     if (fs.isFile(inputDir)) {
       inputDir = inputDir.getParent();
     }
-    
+
     Path partitionDir = new Path(inputDir + "/partitions");
 
     if (fs.exists(partitionDir)) {
       fs.delete(partitionDir, true);
     }
-    
+
     if (job.get("bsp.partitioning.runner.job") != null) {
       return job;
     }// Early exit for the partitioner job.
@@ -477,7 +477,9 @@ public class BSPJobClient extends Configured implements Tool {
 
     if (maxTasks < job.getNumBspTask()) {
       throw new IOException(
-          "Job failed! The number of tasks has exceeded the maximum allowed.");
+          "Job failed! The number of tasks has exceeded the maximum allowed. Maxtasks: "
+              + maxTasks + " < configured number of tasks: "
+              + job.getNumBspTask());
     }
     return maxTasks;
   }
@@ -560,7 +562,8 @@ public class BSPJobClient extends Configured implements Tool {
             && job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null
             && job.get("bsp.partitioning.runner.job") == null) {
           LOG.debug(((FileSplit) split).getPath().getName());
-          String[] extractPartitionID = ((FileSplit) split).getPath().getName().split("[-]");
+          String[] extractPartitionID = ((FileSplit) split).getPath().getName()
+              .split("[-]");
           rawSplit.setPartitionID(Integer.parseInt(extractPartitionID[1]));
         }
 
@@ -1122,9 +1125,9 @@ public class BSPJobClient extends Configured implements Tool {
       out.writeInt(partitionID);
       bytes.write(out);
       WritableUtils.writeVInt(out, locations.length);
-        for (String location : locations) {
-            Text.writeString(out, location);
-        }
+      for (String location : locations) {
+        Text.writeString(out, location);
+      }
     }
 
     public long getDataLength() {

@@ -20,12 +20,13 @@ package org.apache.hama.graph;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
 
@@ -45,8 +46,9 @@ import org.apache.hama.bsp.Partitioner;
  * @param <E> Edge cost object type
  * @param <M> Vertex value object type
  */
-public abstract class Vertex<V extends Writable, E extends Writable, M extends Writable>
-    implements VertexInterface<V, E, M>, Writable {
+@SuppressWarnings("rawtypes")
+public abstract class Vertex<V extends WritableComparable, E extends Writable, M extends Writable>
+    implements VertexInterface<V, E, M> {
 
   GraphJobRunner<?, ?, ?> runner;
 
@@ -92,7 +94,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
         getPartitioner().getPartition(vertexId, value,
             runner.getPeer().getNumPeers()));
   }
-  
+
   @Override
   public void sendMessageToNeighbors(M msg) throws IOException {
     final List<Edge<V, E>> outEdges = this.getEdges();
@@ -121,7 +123,7 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
 
   public void addEdge(Edge<V, E> edge) {
     if (edges == null) {
-      this.edges = new LinkedList<Edge<V, E>>();
+      this.edges = new ArrayList<Edge<V, E>>();
     }
     this.edges.add(edge);
   }
@@ -211,6 +213,10 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
     return votedToHalt;
   }
 
+  void setVotedToHalt(boolean votedToHalt) {
+    this.votedToHalt = votedToHalt;
+  }
+
   @Override
   public int hashCode() {
     return ((vertexID == null) ? 0 : vertexID.hashCode());
@@ -235,34 +241,34 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
 
   @Override
   public String toString() {
-    return getVertexID() + (getValue() != null ? " = " + getValue() : "")
-        + " // " + edges;
+    return "Active: " + !votedToHalt + " -> ID: " + getVertexID()
+        + (getValue() != null ? " = " + getValue() : "") + " // " + edges;
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     if (in.readBoolean()) {
       if (vertexID == null) {
-        vertexID = createVertexIDObject();
+        vertexID = GraphJobRunner.createVertexIDObject();
       }
       vertexID.readFields(in);
     }
     if (in.readBoolean()) {
       if (this.value == null) {
-        value = createVertexValue();
+        value = GraphJobRunner.createVertexValue();
       }
       value.readFields(in);
     }
-    this.edges = new LinkedList<Edge<V, E>>();
+    this.edges = new ArrayList<Edge<V, E>>();
     if (in.readBoolean()) {
       int num = in.readInt();
       if (num > 0) {
         for (int i = 0; i < num; ++i) {
-          V vertex = createVertexIDObject();
+          V vertex = GraphJobRunner.createVertexIDObject();
           vertex.readFields(in);
           E edgeCost = null;
           if (in.readBoolean()) {
-            edgeCost = this.createEdgeCostObject();
+            edgeCost = GraphJobRunner.createEdgeCostObject();
             edgeCost.readFields(in);
           }
           Edge<V, E> edge = new Edge<V, E>(vertex, edgeCost);
@@ -309,50 +315,31 @@ public abstract class Vertex<V extends Writable, E extends Writable, M extends W
 
   }
 
-  /**
-   * Create the vertex id object. This function is used by the framework to
-   * construct the vertex id object.
-   * 
-   * @return instance of V
-   */
-  public abstract V createVertexIDObject();
-
-  /**
-   * Create the Edge cost object. This function is used by the framework to
-   * construct the edge cost object
-   * 
-   * @return instance of E
-   */
-  public abstract E createEdgeCostObject();
-
-  /**
-   * Create the vertex value object. This function is used by the framework to
-   * construct the vertex value object.
-   * 
-   * @return
-   */
-  public abstract M createVertexValue();
+  // compare across the vertex ID
+  @SuppressWarnings("unchecked")
+  @Override
+  public final int compareTo(VertexInterface<V, E, M> o) {
+    return getVertexID().compareTo(o.getVertexID());
+  }
 
   /**
    * Read the state of the vertex from the input stream. The framework would
    * have already constructed and loaded the vertex-id, edges and voteToHalt
    * state. This function is essential if there is any more properties of vertex
    * to be read from.
-   * 
-   * @param in
-   * @throws IOException
    */
-  public abstract void readState(DataInput in) throws IOException;
+  public void readState(DataInput in) throws IOException {
+
+  }
 
   /**
    * Writes the state of vertex to the output stream. The framework writes the
    * vertex and edge information to the output stream. This function could be
    * used to save the state variable of the vertex added in the implementation
    * of object.
-   * 
-   * @param out
-   * @throws IOException
    */
-  public abstract void writeState(DataOutput out) throws IOException;
+  public void writeState(DataOutput out) throws IOException {
+
+  }
 
 }
