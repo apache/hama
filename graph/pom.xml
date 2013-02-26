@@ -43,6 +43,16 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.directmemory</groupId>
+      <artifactId>directmemory-cache</artifactId>
+      <version>0.2-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.directmemory</groupId>
+      <artifactId>directmemory-protostuff</artifactId>
+      <version>0.2-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>hama-graph-${project.version}</finalName>
