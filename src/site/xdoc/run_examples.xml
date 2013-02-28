@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <title>Run Examples</title>
+  <body>
+    <section name="Run Examples"></section>
+    <p>Hama Examples package allows you to quickly run examples on your Hama Cluster.<br/>
+    This document describes how to quickly run examples, assume that you have already installed Hama cluster and you have tested it.</p>
+
+    <subsection name="Run PageRank on your Hama Cluster"></subsection>
+    <p>1. First, you need to generate a symmetric adjacency matrix using the 'gen' command:</p>
+    
+    <pre>
+    % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar gen symmetric 100 10 randomgraph 2</pre>
+
+    <p>This will create a graph with 100 nodes and 1K edges and store 2 partitions on HDFS as the sequence file. 
+    You can adjust partition and tasks numbers to fit your cluster. Then, run PageRank using:</p>
+  <pre>
+  % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar pagerank randomgraph pagerankresult 4</pre>
+    </body>
+</document>

@@ -119,8 +119,5 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
   % $HAMA_HOME/bin/stop-bspd.sh</pre>
 
     <p>to stop all the daemons running on your cluster.</p>
-    <subsection name="Execute Hama Examples"></subsection>
-  <pre>
-  % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar [args]</pre>
     </body>
 </document>
