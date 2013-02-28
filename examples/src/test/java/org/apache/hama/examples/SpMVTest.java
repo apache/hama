@@ -47,14 +47,12 @@ public class SpMVTest {
   protected static final Log LOG = LogFactory.getLog(SpMVTest.class);
 
   private HamaConfiguration conf;
-  private FileSystem fs;
   private String baseDir;
 
   @Before
   public void prepare() throws IOException {
     conf = new HamaConfiguration();
-    fs = FileSystem.get(conf);
-    baseDir = fs.getHomeDirectory().toString() + "/spmv";
+    baseDir = "/tmp/spmv";
   }
 
   /**
