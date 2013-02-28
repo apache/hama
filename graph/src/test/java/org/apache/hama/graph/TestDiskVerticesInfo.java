@@ -64,10 +64,13 @@ public class TestDiskVerticesInfo extends TestCase {
       }
 
       info.finishAdditions();
+      // implicitly finish the superstep here as the new softfile must be
+      // generated, the currentStep must be incremented etc.
+      info.finishSuperstep();
 
       assertEquals(10, info.size());
       // no we want to iterate and check if the result can properly be obtained
-
+      info.startSuperstep();
       int index = 0;
       IDSkippingIterator<Text, NullWritable, DoubleWritable> iterator = info
           .skippingIterator();
@@ -89,14 +92,14 @@ public class TestDiskVerticesInfo extends TestCase {
         assertEquals(pageRankVertex.getEdges().get(0).getDestinationVertexID()
             .toString(), edge.getDestinationVertexID().toString());
         assertNull(edge.getValue());
-
+        info.finishVertexComputation(next);
         index++;
       }
       assertEquals(index, list.size());
       info.finishSuperstep();
       // iterate again and compute so vertices change internally
-      iterator = info.skippingIterator();
       info.startSuperstep();
+      iterator = info.skippingIterator();
       while (iterator.hasNext()) {
         Vertex<Text, NullWritable, DoubleWritable> next = iterator.next();
         // override everything with constant 2
