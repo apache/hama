@@ -85,6 +85,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private long iteration;
 
   private AggregationRunner<V, E, M> aggregationRunner;
+  private VertexOutputWriter<Writable, Writable, V, E, M> vertexOutputWriter;
 
   private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
 
@@ -143,10 +144,10 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
+    vertexOutputWriter.setup(conf);
     IDSkippingIterator<V, E, M> skippingIterator = vertices.skippingIterator();
     while (skippingIterator.hasNext()) {
-      Vertex<V, E, M> e = skippingIterator.next();
-      peer.write(e.getVertexID(), e.getValue());
+      vertexOutputWriter.write(skippingIterator.next(), peer);
     }
     vertices.cleanup(conf, peer.getTaskId());
   }
@@ -335,6 +336,11 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
           .newInstance(conf.getClass("hama.vertex.message.combiner.class",
               Combiner.class), conf);
     }
+
+    Class<?> outputWriter = conf.getClass(
+        GraphJob.VERTEX_OUTPUT_WRITER_CLASS_ATTR, VertexOutputWriter.class);
+    vertexOutputWriter = (VertexOutputWriter<Writable, Writable, V, E, M>) ReflectionUtils
+        .newInstance(outputWriter);
 
     aggregationRunner = new AggregationRunner<V, E, M>();
     aggregationRunner.setupAggregators(peer);

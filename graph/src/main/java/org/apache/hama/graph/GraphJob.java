@@ -43,6 +43,7 @@ public class GraphJob extends BSPJob {
   public final static String VERTEX_VALUE_CLASS_ATTR = "hama.graph.vertex.value.class";
   public final static String VERTEX_EDGE_VALUE_CLASS_ATTR = "hama.graph.vertex.edge.value.class";
 
+  public final static String VERTEX_OUTPUT_WRITER_CLASS_ATTR = "hama.graph.vertex.output.writer.class";
   public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";
   public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
 
@@ -123,11 +124,22 @@ public class GraphJob extends BSPJob {
    * Sets the input reader for parsing the input to vertices.
    */
   public void setVertexInputReaderClass(
-      Class<? extends VertexInputReader<?, ?, ?, ?, ?>> cls) {
+      @SuppressWarnings("rawtypes") Class<? extends VertexInputReader> cls) {
     ensureState(JobState.DEFINE);
     conf.setClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, cls,
         RecordConverter.class);
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
+  }
+
+  /**
+   * Sets the output writer for materializing vertices to the output sink. If
+   * not set, the default DefaultVertexOutputWriter will be used.
+   */
+  public void setVertexOutputWriterClass(
+      @SuppressWarnings("rawtypes") Class<? extends VertexOutputWriter> cls) {
+    ensureState(JobState.DEFINE);
+    conf.setClass(VERTEX_OUTPUT_WRITER_CLASS_ATTR, cls,
+        VertexOutputWriter.class);
   }
 
   @SuppressWarnings("unchecked")
@@ -179,6 +191,10 @@ public class GraphJob extends BSPJob {
             this.getConfiguration().get(
                 Constants.RUNTIME_PARTITION_RECORDCONVERTER) != null,
             "Please provide a converter class for your vertex by using GraphJob#setVertexInputReaderClass!");
+
+    if (this.getConfiguration().get(VERTEX_OUTPUT_WRITER_CLASS_ATTR) == null) {
+      this.setVertexOutputWriterClass(DefaultVertexOutputWriter.class);
+    }
 
     // add the default message queue to the sorted one
     this.getConfiguration().setClass(MessageManager.QUEUE_TYPE_CLASS,
