@@ -90,7 +90,13 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         </tr>
 
     </table>
-      
+
+    <subsection name="Emeritus Members"></subsection>
+    <br/>
+    <ul>
+      <li>Thomas Jungblut</li>
+    </ul>
+    
     <subsection name="Contributors"></subsection>
 
     <table align="center" border="0">
@@ -125,7 +131,12 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">University of Pannonia</td>
           <td align="center">Message Bundler and Performance improvement issues</td>
         </tr>
-
+       <tr valign="top">
+          <td align="center">Mikalaj Parafeniuk</td>
+          <td align="center">Belarussian State University of Informatics and Radioelectronics</td>
+          <td align="center">GSoC 2012, Sparse Matrix-Vector multiplication(SpMV) on Hama</td>
+        </tr>
+        
     </table>
   </body>
 </document>
