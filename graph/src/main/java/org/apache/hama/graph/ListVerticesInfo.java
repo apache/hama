@@ -19,6 +19,7 @@ package org.apache.hama.graph;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -88,7 +89,7 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
 
   @Override
   public void finishAdditions() {
-
+    Collections.sort(vertices);
   }
 
   @Override

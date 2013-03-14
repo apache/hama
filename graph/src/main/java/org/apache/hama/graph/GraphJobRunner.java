@@ -345,7 +345,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     aggregationRunner = new AggregationRunner<V, E, M>();
     aggregationRunner.setupAggregators(peer);
 
-    vertices = new DiskVerticesInfo<V, E, M>();
+    // FIXME We should make this configurable.
+    vertices = new ListVerticesInfo();
     vertices.init(this, conf, peer.getTaskId());
   }
 
@@ -388,7 +389,13 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       if (selfReference) {
         vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
       }
+
       vertices.addVertex(vertex);
+
+      // Reinitializing vertex object for memory based implementations of
+      // VerticesInfo
+      vertex = GraphJobRunner.<V, E, M> newVertexInstance(VERTEX_CLASS);
+      vertex.runner = this;
     }
     vertices.finishAdditions();
     // finish the "superstep" because we have written a new file here

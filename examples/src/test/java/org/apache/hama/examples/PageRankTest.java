@@ -27,20 +27,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.TextArrayWritable;
+import org.apache.hama.examples.util.FastGraphGen;
 import org.junit.Test;
 
 /**
  * Testcase for {@link PageRank}
  */
 public class PageRankTest extends TestCase {
-  String[] input = new String[] { "1\t2\t3", "2", "3\t1\t2\t5", "4\t5\t6",
-      "5\t4\t6", "6\t4", "7\t2\t4" };
-
   private static String INPUT = "/tmp/page-tmp.seq";
   private static String TEXT_INPUT = "/tmp/page.txt";
   private static String TEXT_OUTPUT = INPUT + "page.txt.seq";
@@ -75,7 +69,6 @@ public class PageRankTest extends TestCase {
           fs.open(fts.getPath())));
       String line = null;
       while ((line = reader.readLine()) != null) {
-        System.out.println(line);
         String[] split = line.split("\t");
         sum += Double.parseDouble(split[1]);
       }
@@ -86,25 +79,8 @@ public class PageRankTest extends TestCase {
 
   private void generateTestData() {
     try {
-      SequenceFile.Writer writer1 = SequenceFile.createWriter(fs, conf,
-          new Path(INPUT + "/part0"), Text.class, TextArrayWritable.class);
-
-      for (int i = 0; i < input.length; i++) {
-        String[] x = input[i].split("\t");
-
-        Text vertex = new Text(x[0]);
-        TextArrayWritable arr = new TextArrayWritable();
-        Writable[] values = new Writable[x.length - 1];
-        for (int j = 1; j < x.length; j++) {
-          values[j - 1] = new Text(x[j]);
-        }
-        arr.set(values);
-        writer1.append(vertex, arr);
-      }
-
-      writer1.close();
-
-    } catch (IOException e) {
+      FastGraphGen.main(new String[] { "400", "10", INPUT, "2" });
+    } catch (Exception e) {
       e.printStackTrace();
     }
   }
