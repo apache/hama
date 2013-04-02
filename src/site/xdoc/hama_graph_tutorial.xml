@@ -41,6 +41,29 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
    <p>The user overrides the Compute() method, which will be executed at each active vertex in every superstep. Predefined Vertex methods allow Compute() to query information about the current vertex and its edges, and to send messages to other vertices. Compute() can inspect the value associated with its vertex via GetValue().</p>
 
+   <subsection name="VertexReader API"></subsection>
+   <p>You can create your own VertexReader for your data format by exending org.apache.hama.graph.<b>VertexInputReader</b> class.
+
+   For example, an sequence file contains a linked list of Vertex, can be parse as following:
+   </p>
+   <pre>
+  public static class PagerankSeqReader
+      extends
+      VertexInputReader&lt;Text, TextArrayWritable, Text, NullWritable, DoubleWritable&gt; {
+    @Override
+    public boolean parseVertex(Text key, TextArrayWritable value,
+        Vertex&lt;Text, NullWritable, DoubleWritable&gt; vertex) throws Exception {
+      vertex.setVertexID(key);
+
+      for (Writable v : value.get()) {
+        vertex.addEdge(new Edge&lt;Text, NullWritable&gt;((Text) v, null));
+      }
+
+      return true;
+    }
+  }
+</pre>
+
    <subsection name="Example: PageRankVertex"></subsection>
    <p>To solve the Page Rank problem using Hama Graph, you can extends the Vertex class to create a PageRankVertex class.
 In this example, the algorithm described Google's Pregel paper was used. The value of a vertex represents the tentative page rank of the vertex. The graph is intialized with each vertex value equal to 1/numOfVertices. In each of the first 30 supersteps, each vertex sends its tentative page rank along all of its outgoing edges.

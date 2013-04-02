@@ -27,7 +27,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <subsection name="Requirements"></subsection>
     <p>1. Make sure all required software is installed on all nodes in your cluster:</p>
     <ul>
-      <li>hadoop-0.20.x (non-secure version)</li>
+      <li>hadoop-1.0.x or higher version (non-secure version)</li>
       <li>Sun Java JDK 1.6.x or higher version</li>
       <li>SSH access to manage BSP deamons</li>
     </ul>
