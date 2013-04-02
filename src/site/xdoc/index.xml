@@ -29,13 +29,10 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
       <div class="green">
           <h3 align="center">Recent News</h3>
           <ul>
-            <li>November 28, 2012: release 0.6.0 available [<a href="downloads.html">downloads</a>]</li>
+            <li>April 01, 2013: release 0.6.1. available</li>
+            <li>November 28, 2012: release 0.6.0 available</li>
             <li>June 31, 2012: release 0.5.0 available</li>
             <li>May 17, 2012: Apache Hama graduated as a Top Level Project!</li>
-            <li>Feb 5, 2012: release 0.4.0 available</li>
-            <li>July 28, 2011: release 0.3.0 available</li>
-            <li>June 2, 2011: release 0.2.0 available</li>
-            <li>Apr 30, 2010: Introduced in the <a href="http://www.bsp-worldwide.org/bspww3000.html">BSP Worldwide</a></li>
           </ul>
       </div>
     <subsection name="Why Hama and BSP?"></subsection>
