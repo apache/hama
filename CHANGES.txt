@@ -4,6 +4,14 @@ Release 0.7 (unreleased changes)
 
   NEW FEATURES
 
+  BUG FIXES
+
+  IMPROVEMENTS
+
+Release 0.6.1 - April 01, 2013
+
+  NEW FEATURES
+
    HAMA-737: Add graph output writer (tjungblut)	   
    HAMA-736: Add one pass graph generator (tjungblut)
    HAMA-722: Messaging queue should construct sender and receiver queue. (surajsmenon)

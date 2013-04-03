@@ -48,6 +48,11 @@ ul {
  margin-left:10px; 
 }
 
+#bodyColumn {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
 .green {
  color: #0f7355;
  width: 95%;
