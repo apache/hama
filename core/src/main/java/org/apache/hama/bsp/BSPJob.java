@@ -23,6 +23,7 @@ import java.net.URLDecoder;
 import java.util.Enumeration;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -31,6 +32,13 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
+import org.apache.hama.pipes.PipesApplicable;
+import org.apache.hama.pipes.PipesApplication;
+import org.apache.hama.pipes.PipesPartitioner;
+import org.apache.hama.pipes.util.DistributedCacheUtil;
+
+import com.sun.org.apache.commons.logging.Log;
+import com.sun.org.apache.commons.logging.LogFactory;
 
 /**
  * A BSP job configuration.
@@ -46,6 +54,9 @@ public class BSPJob extends BSPJobContext {
   private JobState state = JobState.DEFINE;
   private BSPJobClient jobClient;
   private RunningJob info;
+
+  private PipesApplication<?, ?, ?, ?, ?> pipesApp = null;
+  private static final Log LOG = LogFactory.getLog(BSPJob.class);
 
   public BSPJob() throws IOException {
     this(new HamaConfiguration());
@@ -241,6 +252,31 @@ public class BSPJob extends BSPJobContext {
     conf.set(name, value);
   }
 
+  public void setBoolean(String name, boolean value) {
+    conf.setBoolean(name, value);
+  }
+
+  public boolean getBoolean(String name, boolean defaultValue) {
+    return conf.getBoolean(name, defaultValue);
+  }
+
+  public final <K1 extends Writable, V1 extends Writable, K2 extends Writable, V2 extends Writable> PipesApplication<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable> getPipesApplication() {
+    if (pipesApp == null)
+      pipesApp = new PipesApplication<K1, V1, K2, V2, BytesWritable>();
+
+    return pipesApp;
+  }
+
+  public void cleanup() {
+    try {
+      // Close client pipesApplication
+      if (this.getPipesApplication() != null)
+        this.getPipesApplication().cleanup();
+    } catch (IOException e) {
+      LOG.error(e);
+    }
+  }
+
   public void setNumBspTask(int tasks) {
     conf.setInt("bsp.peers.num", tasks);
   }
@@ -381,9 +417,32 @@ public class BSPJob extends BSPJobContext {
 
   @SuppressWarnings("rawtypes")
   public Partitioner getPartitioner() {
-    return ReflectionUtils.newInstance(conf.getClass(
+
+    Class<? extends Partitioner> partitionerClass = conf.getClass(
         Constants.RUNTIME_PARTITIONING_CLASS, HashPartitioner.class,
-        Partitioner.class), conf);
+        Partitioner.class);
+
+    LOG.info("DEBUG: " + Constants.RUNTIME_PARTITIONING_CLASS + ": "
+        + partitionerClass.toString());
+
+    Partitioner partitioner = ReflectionUtils.newInstance(partitionerClass,
+        conf);
+
+    /* PipesPartitioner usage */
+    if (PipesPartitioner.class.equals(partitionerClass)) {
+      ((PipesApplicable) partitioner)
+          .setApplication(this.getPipesApplication());
+
+      try {
+        DistributedCacheUtil.moveLocalFiles(conf);
+        this.getPipesApplication().start(conf);
+      } catch (IOException e) {
+        LOG.error(e);
+      } catch (InterruptedException e) {
+        LOG.error(e);
+      }
+    }
+    return partitioner;
   }
 
   @SuppressWarnings("rawtypes")

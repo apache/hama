@@ -32,26 +32,53 @@ import org.apache.hama.bsp.sync.SyncException;
  * runtimes.
  */
 public class PipesBSP<K1 extends Writable, V1 extends Writable, K2 extends Writable, V2 extends Writable, M extends Writable>
-    extends BSP<K1, V1, K2, V2, BytesWritable> {
+    extends BSP<K1, V1, K2, V2, BytesWritable> implements PipesApplicable {
 
   private static final Log LOG = LogFactory.getLog(PipesBSP.class);
-  private Application<K1, V1, K2, V2, BytesWritable> application;
+  private PipesApplication<K1, V1, K2, V2, BytesWritable> application;
 
   @Override
   public void setup(BSPPeer<K1, V1, K2, V2, BytesWritable> peer)
       throws IOException, SyncException, InterruptedException {
 
-    this.application = new Application<K1, V1, K2, V2, BytesWritable>(peer);
-    application.getDownlink().runSetup(false, false);
+    this.application.start(peer);
+
+    this.application.getDownlink().runSetup(false, false);
+
+    try {
+      this.application.waitForFinish();
+    } catch (IOException e) {
+      LOG.error(e);
+      throw e;
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
   public void bsp(BSPPeer<K1, V1, K2, V2, BytesWritable> peer)
       throws IOException, SyncException, InterruptedException {
 
-    application.getDownlink().runBsp(false, false);
+    this.application.getDownlink().runBsp(false, false);
+
+    try {
+      this.application.waitForFinish();
+    } catch (IOException e) {
+      LOG.error(e);
+      throw e;
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
+  /**
+   * This method is called after the BSP method. It can be used for cleanup
+   * purposes. Cleanup is guranteed to be called after the BSP runs, even in
+   * case of exceptions.
+   * 
+   * @param peer Your BSPPeer instance.
+   * @throws IOException
+   */
   @Override
   public void cleanup(BSPPeer<K1, V1, K2, V2, BytesWritable> peer)
       throws IOException {
@@ -59,15 +86,23 @@ public class PipesBSP<K1 extends Writable, V1 extends Writable, K2 extends Writa
     application.getDownlink().runCleanup(false, false);
 
     try {
-      application.waitForFinish();
+      this.application.waitForFinish();
     } catch (IOException e) {
       LOG.error(e);
       throw e;
     } catch (InterruptedException e) {
       e.printStackTrace();
     } finally {
-      application.cleanup();
+      this.application.cleanup();
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void setApplication(
+      PipesApplication<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable> pipesApp) {
+
+    this.application = (PipesApplication<K1, V1, K2, V2, BytesWritable>) pipesApp;
   }
 
 }

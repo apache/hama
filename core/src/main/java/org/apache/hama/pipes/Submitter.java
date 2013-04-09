@@ -52,6 +52,7 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.InputFormat;
 import org.apache.hama.bsp.OutputFormat;
 import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.pipes.util.DistributedCacheUtil;
 
 import com.google.common.base.Joiner;
 
@@ -277,6 +278,19 @@ public class Submitter implements Tool {
       throw ie;
     }
     DistributedCache.setCacheFiles(fileCache, job.getConfiguration());
+
+    // Add libjars to HDFS
+    String tmpjars = job.getConfiguration().get("tmpjars");
+    LOG.debug("conf.get(tmpjars): " + tmpjars);
+
+    if (tmpjars != null) {
+      String hdfsFileUrls = DistributedCacheUtil.addFilesToHDFS(
+          job.getConfiguration(), job.getConfiguration().get("tmpjars"));
+      job.getConfiguration().set("tmpjars", hdfsFileUrls);
+
+      LOG.info("conf.get(tmpjars): " + job.getConfiguration().get("tmpjars"));
+    }
+
   }
 
   /**
@@ -353,6 +367,8 @@ public class Submitter implements Tool {
       cli.printUsage();
       return 1;
     }
+
+    LOG.debug("Hama pipes Submitter started!");
 
     cli.addOption("input", false, "input path for bsp", "path");
     cli.addOption("output", false, "output path from bsp", "path");

@@ -4,6 +4,8 @@ Release 0.7 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-619: Hama Pipes (Martin Illecker via edwardyoon)
+
   BUG FIXES
 
   IMPROVEMENTS

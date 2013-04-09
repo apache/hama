@@ -61,6 +61,7 @@ if [ $# = 0 ]; then
   echo "  job                  manipulate BSP jobs"
   echo "  jar <jar>            run a jar file"
   echo "  pipes	               run a pipe job"
+  echo "  seqdumper            run SequenceFileDumper"
   echo " or"
   echo "  CLASSNAME            run the class named CLASSNAME"
   echo "Most commands print help when invoked w/o parameters."
@@ -163,6 +164,8 @@ elif [ "$COMMAND" = "job" ] ; then
   CLASS='org.apache.hama.bsp.BSPJobClient'
 elif [ "$COMMAND" = "pipes" ] ; then
   CLASS='org.apache.hama.pipes.Submitter'
+elif [ "$COMMAND" = "seqdumper" ] ; then
+  CLASS='org.apache.hama.pipes.util.SequenceFileDumper'
 elif [ "$COMMAND" = "jar" ] ; then
   CLASS=org.apache.hama.util.RunJar
   BSP_OPTS="$BSP_OPTS"

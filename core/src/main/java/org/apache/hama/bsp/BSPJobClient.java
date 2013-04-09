@@ -769,6 +769,9 @@ public class BSPJobClient extends Configured implements Tool {
     // TODO if error found, kill job
     // running.killJob();
     jc.close();
+
+    // Added cleanup for Client PipesApp and DistributedCache
+    job.cleanup();
   }
 
   /**

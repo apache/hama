@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.pipes;
+package org.apache.hama.pipes.protocol;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -61,14 +61,15 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
     super(peer, out, in);
   }
 
-  public class StreamingUplinkReaderThread extends UplinkReaderThread {
+  public class StreamingUplinkReaderThread extends
+      UplinkReader<K1, V1, Text, Text> {
 
     private BufferedReader reader;
 
     public StreamingUplinkReaderThread(
         BSPPeer<K1, V1, Text, Text, BytesWritable> peer, InputStream stream)
         throws IOException {
-      super(peer, stream);
+      super(null, peer, stream);
       reader = new BufferedReader(new InputStreamReader(inStream));
     }
 
@@ -165,7 +166,7 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
           return -1;
         try {
           int parseInt = Integer.parseInt(split[0]);
-          if (parseInt == BinaryProtocol.MessageType.LOG.code) {
+          if (parseInt == MessageType.LOG.code) {
             LOG.info(split[1]);
             return -1;
           }
@@ -207,7 +208,7 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
   public void start() throws IOException {
     writeLine(MessageType.START, null);
     writeLine("" + CURRENT_PROTOCOL_VERSION);
-    setBSPJob(peer.getConfiguration());
+    setBSPJobConf(peer.getConfiguration());
     try {
       ackBarrier.await();
     } catch (InterruptedException e) {
@@ -218,7 +219,7 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
   }
 
   @Override
-  public void setBSPJob(Configuration conf) throws IOException {
+  public void setBSPJobConf(Configuration conf) throws IOException {
     writeLine(MessageType.SET_BSPJOB_CONF, null);
     List<String> list = new ArrayList<String>();
     for (Map.Entry<String, String> itm : conf) {
@@ -264,12 +265,11 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
     waitOnAck();
   }
 
-  @Override
-  public UplinkReaderThread getUplinkReader(
-      BSPPeer<K1, V1, Text, Text, BytesWritable> peer, InputStream in)
-      throws IOException {
-    return new StreamingUplinkReaderThread(peer, in);
-  }
+  /*
+   * @Override public UplinkReaderThread getUplinkReader( BSPPeer<K1, V1, Text,
+   * Text, BytesWritable> peer, InputStream in) throws IOException { return new
+   * StreamingUplinkReaderThread(peer, in); }
+   */
 
   public void writeLine(int msg) throws IOException {
     writeLine("" + msg);

@@ -302,7 +302,7 @@
         <configuration>
           <excludes>
             <exclude>.idea/**</exclude>
-	    <exclude>.git/**</exclude>
+            <exclude>.git/**</exclude>
             <exclude>.classpath/**</exclude>
             <exclude>.project</exclude>
             <exclude>**/*.asc</exclude>
@@ -314,6 +314,7 @@
             <exclude>**/src/test/resources/*.properties</exclude>
             <exclude>**dependency-reduced-pom.xml</exclude>
             <exclude>**/src/test/resources/*.txt</exclude>
+            <exclude>c++/**</exclude>
           </excludes>
         </configuration>
       </plugin>
