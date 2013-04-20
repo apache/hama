@@ -441,6 +441,7 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
         }
 
       }
+      closed_ = true;
     }
 
   }

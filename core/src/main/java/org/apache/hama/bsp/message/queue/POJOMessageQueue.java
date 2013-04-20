@@ -17,23 +17,21 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.message.bundle.BSPMessageBundle;
+import org.apache.hama.bsp.message.bundle.POJOMessageBundle;
 
 /**
- * Interface to define the sender queue and receiver queue protocol.
- * 
- * @param <M>
+ * Java object message queue.
+ *
+ * @param <M> Message type.
  */
-public interface MessageTransferQueue<M> {
+public abstract class POJOMessageQueue<M extends Writable> implements
+    BSPMessageInterface<M>, Iterable<M>, MessageQueue<M> {
+
+  @Override
+  public void add(BSPMessageBundle<M> bundle){
+    this.addAll((POJOMessageBundle<M>)bundle);
+  }
   
-  /**
-   * Instantiate a sender queue.
-   */
-  public MessageQueue<M> getSenderQueue(Configuration conf);
-
-  /**
-   * Instantiate a receiver queue.
-   */
-  public MessageQueue<M> getReceiverQueue(Configuration conf);
-
 }

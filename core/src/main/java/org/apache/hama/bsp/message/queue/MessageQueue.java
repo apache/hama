@@ -17,8 +17,6 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.Collection;
-
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.TaskAttemptID;
@@ -51,7 +49,7 @@ public interface MessageQueue<M> extends Iterable<M>, Configurable {
   /**
    * Adds a whole Java Collection to the implementing queue.
    */
-  public void addAll(Collection<M> col);
+  public void addAll(Iterable<M> col);
 
   /**
    * Adds the other queue to this queue.

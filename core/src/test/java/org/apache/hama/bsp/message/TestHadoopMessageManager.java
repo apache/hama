@@ -33,8 +33,10 @@ import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.Counters;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.DiskQueue;
-import org.apache.hama.bsp.message.queue.MemoryQueue;
+import org.apache.hama.bsp.message.queue.DiskTransferProtocolQueue;
+import org.apache.hama.bsp.message.queue.MemoryTransferProtocol;
 import org.apache.hama.bsp.message.queue.MessageQueue;
+import org.apache.hama.bsp.message.queue.MessageTransferQueue;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestHadoopMessageManager extends TestCase {
@@ -46,8 +48,8 @@ public class TestHadoopMessageManager extends TestCase {
 
   public void testMemoryMessaging() throws Exception {
     Configuration conf = new Configuration();
-    conf.set(MessageManager.QUEUE_TYPE_CLASS,
-        MemoryQueue.class.getCanonicalName());
+    conf.setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
+        MemoryTransferProtocol.class, MessageTransferQueue.class);
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     messagingInternal(conf);
   }
@@ -55,6 +57,8 @@ public class TestHadoopMessageManager extends TestCase {
   public void testDiskMessaging() throws Exception {
     Configuration conf = new Configuration();
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
+    conf.setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
+        DiskTransferProtocolQueue.class, MessageTransferQueue.class);
     messagingInternal(conf);
   }
 

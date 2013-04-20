@@ -18,22 +18,24 @@
 package org.apache.hama.bsp.message.queue;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 
 /**
- * Interface to define the sender queue and receiver queue protocol.
- * 
+ * The disk transfer queue protocol.
+ *
  * @param <M>
  */
-public interface MessageTransferQueue<M> {
-  
-  /**
-   * Instantiate a sender queue.
-   */
-  public MessageQueue<M> getSenderQueue(Configuration conf);
+public class DiskTransferProtocolQueue<M extends Writable> implements
+    MessageTransferQueue<M> {
 
-  /**
-   * Instantiate a receiver queue.
-   */
-  public MessageQueue<M> getReceiverQueue(Configuration conf);
+  @Override
+  public MessageQueue<M> getSenderQueue(Configuration conf) {
+    return new DiskQueue<M>();
+  }
+
+  @Override
+  public MessageQueue<M> getReceiverQueue(Configuration conf) {
+    return new DiskQueue<M>();
+  }
 
 }

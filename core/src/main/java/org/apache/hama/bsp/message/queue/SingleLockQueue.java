@@ -17,7 +17,6 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.Collection;
 import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
@@ -117,9 +116,10 @@ public final class SingleLockQueue<T> implements SynchronizedQueue<T> {
    * org.apache.hama.bsp.message.SynchronizedQueue#addAll(java.util.Collection)
    */
   @Override
-  public void addAll(Collection<T> col) {
+  public void addAll(Iterable<T> col) {
     synchronized (mutex) {
-      queue.addAll(col);
+      for (T m : col)
+        queue.add(m);
     }
   }
 

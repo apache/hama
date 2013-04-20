@@ -18,7 +18,6 @@
 package org.apache.hama.bsp.message.queue;
 
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 
@@ -29,15 +28,15 @@ import org.apache.hama.bsp.TaskAttemptID;
 /**
  * LinkedList backed queue structure for bookkeeping messages.
  */
-public final class MemoryQueue<M extends Writable> implements MessageQueue<M>,
-    MessageTransferQueue<M> {
+public final class MemoryQueue<M extends Writable> extends POJOMessageQueue<M> {
 
   private final Deque<M> deque = new ArrayDeque<M>();
   private Configuration conf;
 
   @Override
-  public final void addAll(Collection<M> col) {
-    deque.addAll(col);
+  public final void addAll(Iterable<M> col) {
+    for (M m : col)
+      deque.add(m);
   }
 
   @Override
@@ -108,15 +107,4 @@ public final class MemoryQueue<M extends Writable> implements MessageQueue<M>,
   public boolean isMessageSerialized() {
     return false;
   }
-
-  @Override
-  public MessageQueue<M> getSenderQueue() {
-    return this;
-  }
-
-  @Override
-  public MessageQueue<M> getReceiverQueue() {
-    return this;
-  }
-
 }

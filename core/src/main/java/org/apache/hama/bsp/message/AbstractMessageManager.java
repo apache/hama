@@ -32,7 +32,6 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
@@ -40,7 +39,6 @@ import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.bsp.message.queue.MemoryQueue;
 import org.apache.hama.bsp.message.queue.MessageQueue;
-import org.apache.hama.bsp.message.queue.MessageTransferQueue;
 import org.apache.hama.bsp.message.queue.SingleLockQueue;
 import org.apache.hama.bsp.message.queue.SynchronizedQueue;
 import org.apache.hama.util.BSPNetUtils;
@@ -208,12 +206,9 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    * @return a <b>new</b> queue implementation.
    */
   protected MessageQueue<M> getSenderQueue() {
-    Class<?> queueClass = conf.getClass(QUEUE_TYPE_CLASS, MemoryQueue.class);
-    LOG.debug("Creating new " + queueClass);
     @SuppressWarnings("unchecked")
-    MessageTransferQueue<M> newInstance = (MessageTransferQueue<M>) ReflectionUtils
-        .newInstance(queueClass, conf);
-    MessageQueue<M> queue = newInstance.getSenderQueue();
+    MessageQueue<M> queue = MessageTransferQueueFactory
+        .getMessageTransferQueue(conf).getSenderQueue(conf);
     queue.init(conf, attemptId);
     return queue;
   }
@@ -227,12 +222,9 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    * @return a <b>new</b> queue implementation.
    */
   protected MessageQueue<M> getReceiverQueue() {
-    Class<?> queueClass = conf.getClass(QUEUE_TYPE_CLASS, MemoryQueue.class);
-    LOG.debug("Creating new " + queueClass);
     @SuppressWarnings("unchecked")
-    MessageTransferQueue<M> newInstance = (MessageTransferQueue<M>) ReflectionUtils
-        .newInstance(queueClass, conf);
-    MessageQueue<M> queue = newInstance.getReceiverQueue();
+    MessageQueue<M> queue = MessageTransferQueueFactory
+        .getMessageTransferQueue(conf).getReceiverQueue(conf);
     queue.init(conf, attemptId);
     return queue;
   }

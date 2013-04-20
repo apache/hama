@@ -8,7 +8,11 @@ Release 0.7 (unreleased changes)
 
   BUG FIXES
 
+
   IMPROVEMENTS
+   
+   HAMA-707: BSPMessageBundle should be able to encapsulate messages serialized in ByteBuffer (surajsmenon) 
+   HAMA-722: Messaging queue should construct sender and receiver queue.(surajsmenon)
 
 Release 0.6.1 - April 01, 2013
 

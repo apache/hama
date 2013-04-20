@@ -17,20 +17,21 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.message.bundle.BSPMessageBundle;
+import org.apache.hama.bsp.message.bundle.POJOMessageBundle;
 
 /**
  * Heap (Java's priority queue) based message queue implementation that supports
  * sorted receive and send.
  */
 public final class SortedMessageQueue<M extends WritableComparable<M>>
-    implements MessageQueue<M>, MessageTransferQueue<M> {
+    implements MessageQueue<M>, BSPMessageInterface<M> {
 
   private final PriorityQueue<M> queue = new PriorityQueue<M>();
   private Configuration conf;
@@ -51,8 +52,9 @@ public final class SortedMessageQueue<M extends WritableComparable<M>>
   }
 
   @Override
-  public void addAll(Collection<M> col) {
-    queue.addAll(col);
+  public void addAll(Iterable<M> col) {
+    for (M m : col)
+      queue.add(m);
   }
 
   @Override
@@ -111,13 +113,8 @@ public final class SortedMessageQueue<M extends WritableComparable<M>>
   }
 
   @Override
-  public MessageQueue<M> getSenderQueue() {
-    return this;
-  }
-
-  @Override
-  public MessageQueue<M> getReceiverQueue() {
-    return this;
+  public void add(BSPMessageBundle<M> bundle) {
+    addAll((POJOMessageBundle<M>) bundle);
   }
 
 }

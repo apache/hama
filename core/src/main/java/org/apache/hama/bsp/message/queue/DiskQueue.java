@@ -18,7 +18,6 @@
 package org.apache.hama.bsp.message.queue;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
@@ -46,8 +45,7 @@ import org.apache.hama.bsp.TaskAttemptID;
  * configuration. <br/>
  * <b>It is experimental to use.</b>
  */
-public final class DiskQueue<M extends Writable> implements MessageQueue<M>,
-    MessageTransferQueue<M> {
+public final class DiskQueue<M extends Writable> extends POJOMessageQueue<M> {
 
   public static final String DISK_QUEUE_PATH_KEY = "bsp.disk.queue.dir";
 
@@ -172,7 +170,7 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M>,
   }
 
   @Override
-  public final void addAll(Collection<M> col) {
+  public final void addAll(Iterable<M> col) {
     for (M item : col) {
       add(item);
     }
@@ -310,15 +308,4 @@ public final class DiskQueue<M extends Writable> implements MessageQueue<M>,
   public boolean isMessageSerialized() {
     return false;
   }
-
-  @Override
-  public MessageQueue<M> getSenderQueue() {
-    return this;
-  }
-
-  @Override
-  public MessageQueue<M> getReceiverQueue() {
-    return this;
-  }
-
 }

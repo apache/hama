@@ -15,25 +15,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message.queue;
+package org.apache.hama.bsp.message.bundle;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 
 /**
- * Interface to define the sender queue and receiver queue protocol.
+ * BSP Message Bundle that stores the messages as heap byte arrays.
  * 
- * @param <M>
+ * @param <M> Message type.
  */
-public interface MessageTransferQueue<M> {
-  
-  /**
-   * Instantiate a sender queue.
-   */
-  public MessageQueue<M> getSenderQueue(Configuration conf);
+public class HeapByteArrayBSPMessageBundle<M extends Writable> implements
+    BSPMessageBundle<M> {
 
-  /**
-   * Instantiate a receiver queue.
-   */
-  public MessageQueue<M> getReceiverQueue(Configuration conf);
+  byte[] byteArr;
+  int count;
 
+  public HeapByteArrayBSPMessageBundle(byte[] buffer) {
+    this(buffer, -1);
+  }
+
+  public HeapByteArrayBSPMessageBundle(byte[] buffer, int count) {
+    byteArr = buffer;
+    this.count = count;
+  }
+
+  public byte[] getBuffer() {
+    return byteArr;
+  }
+
+  @Override
+  public long getSize() {
+    return byteArr.length;
+  }
+
+  @Override
+  public int getNumElements() {
+    return byteArr.length;
+  }
 }

@@ -22,7 +22,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Collection;
 import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
@@ -33,6 +32,8 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.message.bundle.BSPMessageBundle;
+import org.apache.hama.bsp.message.bundle.HeapByteArrayBSPMessageBundle;
 import org.apache.hama.bsp.message.io.CombineSpilledDataProcessor;
 import org.apache.hama.bsp.message.io.PreFetchCache;
 import org.apache.hama.bsp.message.io.SpilledDataInputBuffer;
@@ -44,8 +45,8 @@ import org.apache.hama.bsp.message.io.SpillingDataOutputBuffer;
  * 
  * @param <M>
  */
-public class SpillingQueue<M extends Writable> implements MessageQueue<M>,
-    MessageTransferQueue<M> {
+public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M>
+    implements MessageTransferQueue<M> {
 
   private static final Log LOG = LogFactory.getLog(SpillingQueue.class);
 
@@ -144,7 +145,7 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M>,
   }
 
   @Override
-  public void addAll(Collection<M> msgs) {
+  public void addAll(Iterable<M> msgs) {
     for (M msg : msgs) {
       add(msg);
     }
@@ -342,13 +343,23 @@ public class SpillingQueue<M extends Writable> implements MessageQueue<M>,
   }
 
   @Override
-  public MessageQueue<M> getSenderQueue() {
+  public MessageQueue<M> getSenderQueue(Configuration conf) {
     return this;
   }
 
   @Override
-  public MessageQueue<M> getReceiverQueue() {
+  public MessageQueue<M> getReceiverQueue(Configuration conf) {
     return this;
+  }
+
+  @Override
+  public void add(BSPMessageBundle<M> bundle) {
+    try {
+      this.spillOutputBuffer.write(((HeapByteArrayBSPMessageBundle<M>) bundle)
+          .getBuffer());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
 }

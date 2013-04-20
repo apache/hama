@@ -15,25 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message.queue;
+package org.apache.hama.bsp.message.bundle;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 
 /**
- * Interface to define the sender queue and receiver queue protocol.
+ * BSPMessageBundle stores a group of BSPMessages so that they can be sent in
+ * batch rather than individually.
  * 
- * @param <M>
  */
-public interface MessageTransferQueue<M> {
-  
-  /**
-   * Instantiate a sender queue.
-   */
-  public MessageQueue<M> getSenderQueue(Configuration conf);
+public interface BSPMessageBundle<M extends Writable> {
 
   /**
-   * Instantiate a receiver queue.
+   * Returns the size of the message.
+   * 
+   * @return Size of serialized message bundle. -1 if the size is not known.
    */
-  public MessageQueue<M> getReceiverQueue(Configuration conf);
+  public long getSize();
+
+  /**
+   * Returns the number of elements.
+   * 
+   * @return Number of elements. -1 if the number of elements is not known.
+   */
+  public int getNumElements();
 
 }
