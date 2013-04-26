@@ -19,8 +19,6 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -30,19 +28,54 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.util.KeyValuePair;
 
-public class TestPartitioning extends TestCase {
+public class TestPartitioning extends HamaCluster {
 
   public static final Log LOG = LogFactory.getLog(TestPartitioning.class);
+
+  public static String TMP_OUTPUT = "/tmp/test-example/";
+  public static final String TMP_OUTPUT_PATH = "/tmp/test-example/output.txt";
+  public static Path OUTPUT_PATH = new Path(TMP_OUTPUT);
+
+  protected HamaConfiguration configuration;
+
+  // these variables are preventing from rebooting the whole stuff again since
+  // setup and teardown are called per method.
+
+  public TestPartitioning() {
+    configuration = new HamaConfiguration();
+    configuration.set("bsp.master.address", "localhost");
+    configuration.set("hama.child.redirect.log.console", "true");
+    assertEquals("Make sure master addr is set to localhost:", "localhost",
+        configuration.get("bsp.master.address"));
+    configuration.set("bsp.local.dir", "/tmp/hama-test");
+    configuration.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
+    configuration.set(Constants.ZOOKEEPER_QUORUM, "localhost");
+    configuration.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
+    configuration.set("hama.sync.client.class",
+        org.apache.hama.bsp.sync.ZooKeeperSyncClientImpl.class
+            .getCanonicalName());
+  }
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+  }
+
+  @Override
+  public void tearDown() throws Exception {
+    super.tearDown();
+  }
 
   public void testPartitioner() throws Exception {
 
     Configuration conf = new Configuration();
     conf.set("bsp.local.dir", "/tmp/hama-test/partitioning");
-    conf.set("bsp.partitioning.dir", "/tmp/hama-test/partitioning/localtest");
     conf.setBoolean("bsp.input.runtime.partitioning", true);
     BSPJob bsp = new BSPJob(new HamaConfiguration(conf));
     bsp.setJobName("Test partitioning with input");
@@ -51,12 +84,12 @@ public class TestPartitioning extends TestCase {
     conf.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 600);
     bsp.setInputFormat(TextInputFormat.class);
     bsp.setOutputFormat(NullOutputFormat.class);
-    bsp.setInputPath(new Path("../CHANGES.txt"));
+    FileInputFormat.setInputPaths(bsp, "../CHANGES.txt,../README.txt");
     bsp.setPartitioner(HashPartitioner.class);
     assertTrue(bsp.waitForCompletion(true));
 
     FileSystem fs = FileSystem.get(conf);
-    fs.delete(new Path("/tmp/hama-test/partitioning/localtest"), true);
+    fs.delete(OUTPUT_PATH, true);
   }
 
   public static class PartionedBSP extends

@@ -8,6 +8,7 @@ Release 0.7 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-750: Fix bug of comma separated input paths (edwardyoon)
 
   IMPROVEMENTS
    

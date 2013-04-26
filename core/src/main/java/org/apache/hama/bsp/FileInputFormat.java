@@ -135,7 +135,14 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
 
     for (Path p : dirs) {
       FileSystem fs = p.getFileSystem(job.getConfiguration());
-      FileStatus[] matches = fs.globStatus(p, inputFilter);
+
+      FileStatus[] matches = null;
+      try {
+        matches = fs.globStatus(p, inputFilter);
+      } catch (Exception e) {
+        LOG.info(p + "\n" + e.toString());
+      }
+
       if (matches == null) {
         errors.add(new IOException("Input path does not exist: " + p));
       } else if (matches.length == 0) {
@@ -167,7 +174,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   public InputSplit[] getSplits(BSPJob job, int numSplits) throws IOException {
     long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
     long maxSize = getMaxSplitSize(job);
-
+    
     // generate splits
     List<InputSplit> splits = new ArrayList<InputSplit>();
     FileStatus[] files = listStatus(job);

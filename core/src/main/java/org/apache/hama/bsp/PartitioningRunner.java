@@ -57,18 +57,13 @@ public class PartitioningRunner extends
 
     this.fs = FileSystem.get(conf);
 
-    Path inputDir = new Path(conf.get(Constants.JOB_INPUT_DIR));
-    if (fs.isFile(inputDir)) {
-      inputDir = inputDir.getParent();
-    }
-
     converter = ReflectionUtils.newInstance(conf.getClass(
         Constants.RUNTIME_PARTITION_RECORDCONVERTER,
         DefaultRecordConverter.class, RecordConverter.class), conf);
     converter.setup(conf);
 
     if (conf.get(Constants.RUNTIME_PARTITIONING_DIR) == null) {
-      this.partitionDir = new Path(inputDir + "/partitions");
+      this.partitionDir = new Path(conf.get("bsp.output.dir"));
     } else {
       this.partitionDir = new Path(conf.get(Constants.RUNTIME_PARTITIONING_DIR));
     }

@@ -325,10 +325,21 @@ public class BSPJobClient extends Configured implements Tool {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
 
-      job = partition(job, maxTasks);
+      InputSplit[] splits = job.getInputFormat().getSplits(
+          job,
+          (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
+              : maxTasks);
+
+      job = partition(job, splits, maxTasks);
       maxTasks = job.getInt("hama.partition.count", maxTasks);
 
-      job.setNumBspTask(writeSplits(job, submitSplitFile, maxTasks));
+      if (job.getBoolean("input.has.partitioned", false)) {
+        splits = job.getInputFormat().getSplits(
+            job,
+            (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
+                : maxTasks);
+      }
+      job.setNumBspTask(writeSplits(job, splits, submitSplitFile, maxTasks));
       job.set("bsp.job.split.file", submitSplitFile.toString());
     }
 
@@ -369,15 +380,11 @@ public class BSPJobClient extends Configured implements Tool {
     return launchJob(jobId, job, submitJobFile, fs);
   }
 
-  protected BSPJob partition(BSPJob job, int maxTasks) throws IOException {
+  protected BSPJob partition(BSPJob job, InputSplit[] splits, int maxTasks)
+      throws IOException {
     String inputPath = job.getConfiguration().get(Constants.JOB_INPUT_DIR);
-    Path inputDir = new Path(inputPath);
-    if (fs.isFile(inputDir)) {
-      inputDir = inputDir.getParent();
-    }
 
-    Path partitionDir = new Path(inputDir + "/partitions");
-
+    Path partitionDir = new Path("/tmp/hama-parts/" + job.getJobID() + "/");
     if (fs.exists(partitionDir)) {
       fs.delete(partitionDir, true);
     }
@@ -385,11 +392,6 @@ public class BSPJobClient extends Configured implements Tool {
     if (job.get("bsp.partitioning.runner.job") != null) {
       return job;
     }// Early exit for the partitioner job.
-
-    InputSplit[] splits = job.getInputFormat().getSplits(
-        job,
-        (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
-            : maxTasks);
 
     if (inputPath != null) {
       int numSplits = splits.length;
@@ -427,8 +429,7 @@ public class BSPJobClient extends Configured implements Tool {
               job.get(Constants.RUNTIME_PARTITIONING_CLASS));
         }
         BSPJob partitioningJob = new BSPJob(conf);
-        partitioningJob.setInputPath(new Path(job.getConfiguration().get(
-            Constants.JOB_INPUT_DIR)));
+        LOG.debug("partitioningJob input: " + partitioningJob.get(Constants.JOB_INPUT_DIR));
         partitioningJob.setInputFormat(job.getInputFormat().getClass());
         partitioningJob.setInputKeyClass(job.getInputKeyClass());
         partitioningJob.setInputValueClass(job.getInputValueClass());
@@ -439,6 +440,7 @@ public class BSPJobClient extends Configured implements Tool {
         partitioningJob.set("bsp.partitioning.runner.job", "true");
         partitioningJob.getConfiguration().setBoolean(
             Constants.ENABLE_RUNTIME_PARTITIONING, false);
+        partitioningJob.setOutputPath(partitionDir);
 
         boolean isPartitioned = false;
         try {
@@ -448,13 +450,15 @@ public class BSPJobClient extends Configured implements Tool {
         } catch (ClassNotFoundException e) {
           LOG.error("Class not found error partitioning run-time.", e);
         }
+
         if (isPartitioned) {
           if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_DIR) != null) {
             job.setInputPath(new Path(conf
                 .get(Constants.RUNTIME_PARTITIONING_DIR)));
           } else {
-            job.setInputPath(new Path(inputDir + "/partitions"));
+            job.setInputPath(partitionDir);
           }
+          job.setBoolean("input.has.partitioned", true);
           job.setInputFormat(SequenceFileInputFormat.class);
         } else {
           LOG.error("Error partitioning the input path.");
@@ -543,13 +547,8 @@ public class BSPJobClient extends Configured implements Tool {
     return codecClass;
   }
 
-  private static int writeSplits(BSPJob job, Path submitSplitFile, int maxTasks)
-      throws IOException {
-    InputSplit[] splits = job.getInputFormat().getSplits(
-        job,
-        (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
-            : maxTasks);
-
+  private static int writeSplits(BSPJob job, InputSplit[] splits,
+      Path submitSplitFile, int maxTasks) throws IOException {
     final DataOutputStream out = writeSplitsFileHeader(job.getConfiguration(),
         submitSplitFile, splits.length);
     try {

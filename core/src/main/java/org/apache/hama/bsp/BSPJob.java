@@ -235,6 +235,7 @@ public class BSPJob extends BSPJobContext {
     if (state == JobState.DEFINE) {
       submit();
     }
+
     if (verbose) {
       jobClient.monitorAndPrintJob(this, info);
     } else {
