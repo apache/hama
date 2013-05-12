@@ -14,6 +14,7 @@ Release 0.7 (unreleased changes)
 
   IMPROVEMENTS
    
+   HAMA-754: PartitioningRunner should write raw records to partition files (edwardyoon)
    HAMA-707: BSPMessageBundle should be able to encapsulate messages serialized in ByteBuffer (surajsmenon) 
    HAMA-722: Messaging queue should construct sender and receiver queue (surajsmenon)
 

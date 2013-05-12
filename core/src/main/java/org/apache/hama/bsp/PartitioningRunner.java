@@ -146,8 +146,6 @@ public class PartitioningRunner extends
 
     Class keyClass = null;
     Class valueClass = null;
-    Class outputKeyClass = null;
-    Class outputValueClass = null;
     while ((pair = peer.readNext()) != null) {
       if (keyClass == null && valueClass == null) {
         keyClass = pair.getKey().getClass();
@@ -160,11 +158,6 @@ public class PartitioningRunner extends
         continue;
       }
 
-      if (outputKeyClass == null && outputValueClass == null) {
-        outputKeyClass = outputPair.getKey().getClass();
-        outputValueClass = outputPair.getValue().getClass();
-      }
-
       int index = converter.getPartitionId(outputPair, partitioner, conf, peer,
           desiredNum);
 
@@ -173,7 +166,7 @@ public class PartitioningRunner extends
         map = converter.newMap();
         values.put(index, map);
       }
-      map.put(outputPair.getKey(), outputPair.getValue());
+      map.put(pair.getKey(), pair.getValue());
     }
 
     // The reason of use of Memory is to reduce file opens
@@ -181,7 +174,7 @@ public class PartitioningRunner extends
       Path destFile = new Path(partitionDir + "/part-" + e.getKey() + "/file-"
           + peer.getPeerIndex());
       SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
-          destFile, outputKeyClass, outputValueClass, CompressionType.NONE);
+          destFile, keyClass, valueClass, CompressionType.NONE);
 
       for (Map.Entry<Writable, Writable> v : e.getValue().entrySet()) {
         writer.append(v.getKey(), v.getValue());
@@ -210,8 +203,7 @@ public class PartitioningRunner extends
 
         FileStatus[] files = fs.listStatus(stat.getPath());
         SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
-            partitionFile, outputKeyClass, outputValueClass,
-            CompressionType.NONE);
+            partitionFile, keyClass, valueClass, CompressionType.NONE);
 
         for (int i = 0; i < files.length; i++) {
           LOG.debug("merge '" + files[i].getPath() + "' into " + partitionDir
@@ -220,10 +212,9 @@ public class PartitioningRunner extends
           SequenceFile.Reader reader = new SequenceFile.Reader(fs,
               files[i].getPath(), conf);
 
-          Writable key = (Writable) ReflectionUtils.newInstance(outputKeyClass,
+          Writable key = (Writable) ReflectionUtils.newInstance(keyClass, conf);
+          Writable value = (Writable) ReflectionUtils.newInstance(valueClass,
               conf);
-          Writable value = (Writable) ReflectionUtils.newInstance(
-              outputValueClass, conf);
 
           while (reader.next(key, value)) {
             writer.append(key, value);

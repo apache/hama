@@ -26,17 +26,20 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.bsp.PartitioningRunner.DefaultRecordConverter;
+import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.graph.IDSkippingIterator.Strategy;
+import org.apache.hama.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
 
 /**
@@ -373,19 +376,27 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   /**
    * Loads vertices into memory of each peer.
    */
+  @SuppressWarnings("unchecked")
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
     final boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
 
-    LOG.debug("Vertex class: " + vertexClass);
+    RecordConverter converter = org.apache.hadoop.util.ReflectionUtils
+        .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
+            DefaultRecordConverter.class, RecordConverter.class), conf);
 
     // our VertexInputReader ensures incoming vertices are sorted by their ID
     Vertex<V, E, M> vertex = GraphJobRunner
         .<V, E, M> newVertexInstance(VERTEX_CLASS);
-    vertex.runner = this;
-    while (peer.readNext(vertex, NullWritable.get())) {
+    KeyValuePair<Writable, Writable> record = null;
+    KeyValuePair<Writable, Writable> converted = null;
+    while ((record = peer.readNext()) != null) {
+      converted = converter.convertRecord(record, conf);
+      vertex = (Vertex<V, E, M>) converted.getKey();
+      vertex.runner = this;
       vertex.setup(conf);
+
       if (selfReference) {
         vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
       }
