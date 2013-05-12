@@ -8,6 +8,7 @@ Release 0.7 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-756: Timing issue and file merging algorithm in PartitioningRunner make job fail (MaoYuan Xian via edwardyoon)
    HAMA-755: registerJob of ZKSyncBSPMasterClient makes a useless node in zookeeper (MaoYuan Xian via edwardyoon)
    HAMA-750: Fix bug of comma separated input paths (edwardyoon)
 
