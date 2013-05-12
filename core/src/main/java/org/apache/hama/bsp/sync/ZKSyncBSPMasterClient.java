@@ -92,7 +92,7 @@ public class ZKSyncBSPMasterClient extends ZKSyncClient implements
   @Override
   public void registerJob(String string) {
     // TODO: delete job root if key is present.
-    createJobRoot(string);
+    createJobRoot(bspRoot + "/" + string);
   }
 
   @Override
