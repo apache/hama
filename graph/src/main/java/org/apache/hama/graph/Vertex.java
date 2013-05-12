@@ -130,7 +130,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   @Override
   public List<Edge<V, E>> getEdges() {
-    return edges;
+    return (edges == null) ? new ArrayList<Edge<V, E>>() : edges;
   }
 
   @Override
