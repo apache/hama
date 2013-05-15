@@ -459,7 +459,7 @@ public class BSPJobClient extends Configured implements Tool {
             job.setInputPath(partitionDir);
           }
           job.setBoolean("input.has.partitioned", true);
-          job.setInputFormat(SequenceFileInputFormat.class);
+          job.setInputFormat(NonSplitSequenceFileInputFormat.class);
         } else {
           LOG.error("Error partitioning the input path.");
           throw new IOException("Runtime partition failed for the job.");
