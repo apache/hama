@@ -279,11 +279,22 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer) {
     @SuppressWarnings("unchecked")
     int comparision = firstMessageId.compareTo(vertex.getVertexID());
-    if (comparision < 0) {
-      throw new IllegalArgumentException(
+    if (conf.getBoolean("hama.check.missing.vertex", true)) {
+      if (comparision < 0) {
+        throw new IllegalArgumentException(
           "Messages must never be behind the vertex in ID! Current Message ID: "
               + firstMessageId + " vs. " + vertex.getVertexID());
-    } else if (comparision == 0) {
+      } 
+    } else {
+      while (comparision < 0) {
+        VertexMessageIterable<V, M> messageIterable = new VertexMessageIterable<V, M>(currentMessage,
+          firstMessageId, peer);
+        currentMessage = messageIterable.getOverflowMessage();
+        firstMessageId = (V)currentMessage.getVertexId();
+        comparision = firstMessageId.compareTo(vertex.getVertexID());
+      }
+    }
+    if (comparision == 0) {
       // vertex id matches with the vertex, return an iterator with newest
       // message
       return new VertexMessageIterable<V, M>(currentMessage,

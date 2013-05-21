@@ -14,6 +14,7 @@ Release 0.7 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-758: Send message to non-exist vertex makes the job fail (MaoYuan Xian via edwardyoon)
    HAMA-757: The partitioning job output should be un-splitable (MaoYuan Xian via edwardyoon)
    HAMA-754: PartitioningRunner should write raw records to partition files (edwardyoon)
    HAMA-707: BSPMessageBundle should be able to encapsulate messages serialized in ByteBuffer (surajsmenon) 
