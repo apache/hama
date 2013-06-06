@@ -4,6 +4,7 @@ Release 0.7 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-681: Add Multi Layer Perceptron (Yexi Jiang via edwardyoon)
    HAMA-619: Hama Pipes (Martin Illecker via edwardyoon)
 
   BUG FIXES
