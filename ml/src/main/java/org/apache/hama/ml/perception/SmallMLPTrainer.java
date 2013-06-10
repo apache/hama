@@ -33,7 +33,7 @@ import org.apache.hama.ml.writable.VectorWritable;
 /**
  * The perceptron trainer for small scale MLP.
  */
-public class SmallMLPTrainer extends PerceptronTrainer {
+class SmallMLPTrainer extends PerceptronTrainer {
 
   private static final Log LOG = LogFactory.getLog(SmallMLPTrainer.class);
   /* used by master only, check whether all slaves finishes reading */
@@ -66,7 +66,7 @@ public class SmallMLPTrainer extends PerceptronTrainer {
     // build model from scratch
     if (modelPath == null || modelPath.trim().length() == 0) {
       double learningRate = Double.parseDouble(conf.get("learningRate"));
-      boolean regularization = Boolean.parseBoolean(conf.get("regularization"));
+      double regularization = Double.parseDouble(conf.get("regularization"));
       double momentum = Double.parseDouble(conf.get("momentum"));
       String squashingFunctionName = conf.get("squashingFunctionName");
       String costFunctionName = conf.get("costFunctionName");
@@ -184,7 +184,7 @@ public class SmallMLPTrainer extends PerceptronTrainer {
         this.statusSet.set(message.getOwner());
       }
 
-      DenseDoubleMatrix[] weightUpdates = message.getWeightsUpdatedMatrices();
+      DenseDoubleMatrix[] weightUpdates = message.getWeightUpdatedMatrices();
       for (int m = 0; m < mergedUpdates.length; ++m) {
         mergedUpdates[m] = (DenseDoubleMatrix) mergedUpdates[m]
             .add(weightUpdates[m]);
@@ -206,12 +206,14 @@ public class SmallMLPTrainer extends PerceptronTrainer {
 
       // update the weight matrices
       this.inMemoryPerceptron.updateWeightMatrices(mergedUpdates);
+      this.inMemoryPerceptron.setPrevWeightUpdateMatrices(mergedUpdates);
     }
 
     // broadcast updated weight matrices
     for (String peerName : peer.getAllPeerNames()) {
       SmallMLPMessage msg = new SmallMLPMessage(peer.getPeerIndex(),
-          this.terminateTraining, this.inMemoryPerceptron.getWeightMatrices());
+          this.terminateTraining, this.inMemoryPerceptron.getWeightMatrices(),
+          this.inMemoryPerceptron.getPrevWeightUpdateMatrices());
       peer.send(peerName, msg);
     }
 
@@ -233,7 +235,9 @@ public class SmallMLPTrainer extends PerceptronTrainer {
       this.terminateTraining = message.isTerminated();
       // each slave renew its weight matrices
       this.inMemoryPerceptron.setWeightMatrices(message
-          .getWeightsUpdatedMatrices());
+          .getWeightUpdatedMatrices());
+      this.inMemoryPerceptron.setPrevWeightUpdateMatrices(message
+          .getPrevWeightsUpdatedMatrices());
       if (this.terminateTraining) {
         return true;
       }
@@ -272,8 +276,8 @@ public class SmallMLPTrainer extends PerceptronTrainer {
       weightUpdates[m] = (DenseDoubleMatrix) weightUpdates[m].divide(count);
     }
 
-    LOG.info(String.format("Task %d has read %d records.",
-        peer.getPeerIndex(), this.numTrainingInstanceRead));
+    LOG.info(String.format("Task %d has read %d records.", peer.getPeerIndex(),
+        this.numTrainingInstanceRead));
 
     // send the weight updates to master task
     SmallMLPMessage message = new SmallMLPMessage(peer.getPeerIndex(),

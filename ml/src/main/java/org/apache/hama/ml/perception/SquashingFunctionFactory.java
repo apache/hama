@@ -36,7 +36,8 @@ public class SquashingFunctionFactory {
     } else if (name.equalsIgnoreCase("Tanh")) {
       return new Tanh();
     }
-    return new Sigmoid();
+    throw new IllegalStateException(String.format(
+        "No squashing function with name '%s' found.", name));
   }
 
 }

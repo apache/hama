@@ -18,21 +18,36 @@
 package org.apache.hama.ml.perception;
 
 /**
- * The Sigmoid function
+ * The cross entropy cost function.
  * 
  * <pre>
- * f(z) = 1 / (1 + e^{-z})
+ * cost(t, y) = - t * log(y) - (1 - t) * log(1 - y),
+ * where t denotes the target value, y denotes the estimated value.
  * </pre>
  */
-public class Sigmoid extends SquashingFunction {
+public class CrossEntropy extends CostFunction {
 
   @Override
-  public double calculate(int index, double value) {
-    return 1.0 / (1 + Math.exp(-value));
+  public double calculate(double target, double actual) {
+    return -target * Math.log(actual) - (1 - target) * Math.log(1 - actual);
   }
 
   @Override
-  public double calculateDerivative(double value) {
-    return value * (1 - value);
+  public double calculateDerivative(double target, double actual) {
+    double adjustedTarget = target;
+    double adjustedActual = actual;
+    if (adjustedActual == 1) {
+      adjustedActual = 0.999;
+    } else if (actual == 0) {
+      adjustedActual = 0.001;
+    }
+    if (adjustedTarget == 1) {
+      adjustedTarget = 0.999;
+    } else if (adjustedTarget == 0) {
+      adjustedTarget = 0.001;
+    }
+    return -adjustedTarget / adjustedActual + (1 - adjustedTarget)
+        / (1 - adjustedActual);
   }
+
 }

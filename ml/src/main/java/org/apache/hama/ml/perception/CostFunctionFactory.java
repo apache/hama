@@ -32,9 +32,10 @@ public class CostFunctionFactory {
   public static CostFunction getCostFunction(String name) {
     if (name.equalsIgnoreCase("SquaredError")) {
       return new SquaredError();
-    } else if (name.equalsIgnoreCase("LogisticError")) {
-      return new LogisticCostFunction();
+    } else if (name.equalsIgnoreCase("CrossEntropy")) {
+      return new CrossEntropy();
     }
-    return new SquaredError();
+    throw new IllegalStateException(String.format(
+        "No cost function with name '%s' found.", name));
   }
 }

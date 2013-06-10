@@ -29,18 +29,47 @@ import org.apache.hama.ml.writable.MatrixWritable;
  * {@link SmallMultiLayerPerceptron}. It send the whole parameter matrix from
  * one task to another.
  */
-public class SmallMLPMessage extends MLPMessage {
+class SmallMLPMessage extends MLPMessage {
 
   private int owner; // the ID of the task who creates the message
+  private int numOfUpdatedMatrices;
   private DenseDoubleMatrix[] weightUpdatedMatrices;
-  private int numOfMatrices;
+  private int numOfPrevUpdatedMatrices;
+  private DenseDoubleMatrix[] prevWeightUpdatedMatrices;
 
-  public SmallMLPMessage(int owner, boolean terminated, DenseDoubleMatrix[] mat) {
+  /**
+   * When slave send message to master, use this constructor.
+   * 
+   * @param owner The owner that create the message
+   * @param terminated Whether the training is terminated for the owner task
+   * @param weightUpdatedMatrics The weight updates
+   */
+  public SmallMLPMessage(int owner, boolean terminated,
+      DenseDoubleMatrix[] weightUpdatedMatrics) {
     super(terminated);
     this.owner = owner;
-    this.weightUpdatedMatrices = mat;
-    this.numOfMatrices = this.weightUpdatedMatrices == null ? 0
+    this.weightUpdatedMatrices = weightUpdatedMatrics;
+    this.numOfUpdatedMatrices = this.weightUpdatedMatrices == null ? 0
         : this.weightUpdatedMatrices.length;
+    this.numOfPrevUpdatedMatrices = 0;
+    this.prevWeightUpdatedMatrices = null;
+  }
+
+  /**
+   * When master send message to slave, use this constructor.
+   * 
+   * @param owner The owner that create the message
+   * @param terminated Whether the training is terminated for the owner task
+   * @param weightUpdatedMatrics The weight updates
+   * @param prevWeightUpdatedMatrices
+   */
+  public SmallMLPMessage(int owner, boolean terminated,
+      DenseDoubleMatrix[] weightUpdatedMatrices,
+      DenseDoubleMatrix[] prevWeightUpdatedMatrices) {
+    this(owner, terminated, weightUpdatedMatrices);
+    this.prevWeightUpdatedMatrices = prevWeightUpdatedMatrices;
+    this.numOfPrevUpdatedMatrices = this.prevWeightUpdatedMatrices == null ? 0
+        : this.prevWeightUpdatedMatrices.length;
   }
 
   /**
@@ -57,18 +86,28 @@ public class SmallMLPMessage extends MLPMessage {
    * 
    * @return
    */
-  public DenseDoubleMatrix[] getWeightsUpdatedMatrices() {
+  public DenseDoubleMatrix[] getWeightUpdatedMatrices() {
     return this.weightUpdatedMatrices;
+  }
+
+  public DenseDoubleMatrix[] getPrevWeightsUpdatedMatrices() {
+    return this.prevWeightUpdatedMatrices;
   }
 
   @Override
   public void readFields(DataInput input) throws IOException {
     this.owner = input.readInt();
     this.terminated = input.readBoolean();
-    this.numOfMatrices = input.readInt();
-    this.weightUpdatedMatrices = new DenseDoubleMatrix[this.numOfMatrices];
-    for (int i = 0; i < this.numOfMatrices; ++i) {
+    this.numOfUpdatedMatrices = input.readInt();
+    this.weightUpdatedMatrices = new DenseDoubleMatrix[this.numOfUpdatedMatrices];
+    for (int i = 0; i < this.numOfUpdatedMatrices; ++i) {
       this.weightUpdatedMatrices[i] = (DenseDoubleMatrix) MatrixWritable
+          .read(input);
+    }
+    this.numOfPrevUpdatedMatrices = input.readInt();
+    this.prevWeightUpdatedMatrices = new DenseDoubleMatrix[this.numOfPrevUpdatedMatrices];
+    for (int i = 0; i < this.numOfPrevUpdatedMatrices; ++i) {
+      this.prevWeightUpdatedMatrices[i] = (DenseDoubleMatrix) MatrixWritable
           .read(input);
     }
   }
@@ -77,9 +116,13 @@ public class SmallMLPMessage extends MLPMessage {
   public void write(DataOutput output) throws IOException {
     output.writeInt(this.owner);
     output.writeBoolean(this.terminated);
-    output.writeInt(this.numOfMatrices);
-    for (int i = 0; i < this.numOfMatrices; ++i) {
+    output.writeInt(this.numOfUpdatedMatrices);
+    for (int i = 0; i < this.numOfUpdatedMatrices; ++i) {
       MatrixWritable.write(this.weightUpdatedMatrices[i], output);
+    }
+    output.writeInt(this.numOfPrevUpdatedMatrices);
+    for (int i = 0; i < this.numOfPrevUpdatedMatrices; ++i) {
+      MatrixWritable.write(this.prevWeightUpdatedMatrices[i], output);
     }
   }
 

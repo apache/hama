@@ -19,7 +19,6 @@ package org.apache.hama.ml.perception;
 
 /**
  * The common interface for cost functions.
- * 
  */
 public abstract class CostFunction {
 

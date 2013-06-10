@@ -65,16 +65,19 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
   /* The in-memory weight matrix */
   private DenseDoubleMatrix[] weightMatrice;
 
+  /* Previous weight updates, used for momentum */
+  private DenseDoubleMatrix[] prevWeightUpdateMatrices;
+
   /**
    * {@inheritDoc}
    */
-  public SmallMultiLayerPerceptron(double learningRate, boolean regularization,
+  public SmallMultiLayerPerceptron(double learningRate, double regularization,
       double momentum, String squashingFunctionName, String costFunctionName,
       int[] layerSizeArray) {
     super(learningRate, regularization, momentum, squashingFunctionName,
         costFunctionName, layerSizeArray);
-    this.MLPType = "SmallMLP";
     initializeWeightMatrix();
+    this.initializePrevWeightUpdateMatrix();
   }
 
   /**
@@ -85,6 +88,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     if (modelPath != null) {
       try {
         this.readFromModel();
+        this.initializePrevWeightUpdateMatrix();
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -113,20 +117,30 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     }
   }
 
+  /**
+   * Initial the momentum weight matrices.
+   */
+  private void initializePrevWeightUpdateMatrix() {
+    this.prevWeightUpdateMatrices = new DenseDoubleMatrix[this.numberOfLayers - 1];
+    for (int i = 0; i < this.prevWeightUpdateMatrices.length; ++i) {
+      int row = this.layerSizeArray[i] + 1;
+      int col = this.layerSizeArray[i + 1];
+      this.prevWeightUpdateMatrices[i] = new DenseDoubleMatrix(row, col);
+    }
+  }
+
   @Override
   /**
    * {@inheritDoc}
    * The model meta-data is stored in memory.
    */
-  public DoubleVector output(DoubleVector featureVector) throws Exception {
+  public DoubleVector output(DoubleVector featureVector) {
     List<double[]> outputCache = this.outputInternal(featureVector);
     // the output of the last layer is the output of the MLP
     return new DenseDoubleVector(outputCache.get(outputCache.size() - 1));
   }
 
-  private List<double[]> outputInternal(DoubleVector featureVector)
-      throws Exception {
-
+  private List<double[]> outputInternal(DoubleVector featureVector) {
     // store the output of the hidden layers and output layer, each array store
     // one layer
     List<double[]> outputCache = new ArrayList<double[]>();
@@ -134,7 +148,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     // start from the first hidden layer
     double[] intermediateResults = new double[this.layerSizeArray[0] + 1];
     if (intermediateResults.length - 1 != featureVector.getDimension()) {
-      throw new Exception(
+      throw new IllegalStateException(
           "Input feature dimension incorrect! The dimension of input layer is "
               + (this.layerSizeArray[0] - 1)
               + ", but the dimension of input feature is "
@@ -227,17 +241,31 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     double[] outputLayerOutput = outputCache.get(outputCache.size() - 1);
     double[] lastHiddenLayerOutput = outputCache.get(outputCache.size() - 2);
 
+    DenseDoubleMatrix prevWeightUpdateMatrix = this.prevWeightUpdateMatrices[this.prevWeightUpdateMatrices.length - 1];
     for (int j = 0; j < delta.length; ++j) {
-      delta[j] = this.squashingFunction
-          .calculateDerivative(outputLayerOutput[j])
-          * this.costFunction.calculateDerivative(trainingLabels[j],
-              outputLayerOutput[j]);
+      delta[j] = this.costFunction.calculateDerivative(trainingLabels[j],
+          outputLayerOutput[j]);
+      // add regularization term
+      if (this.regularization != 0.0) {
+        double derivativeRegularization = 0.0;
+        DenseDoubleMatrix weightMatrix = this.weightMatrice[this.weightMatrice.length - 1];
+        for (int k = 0; k < this.layerSizeArray[this.layerSizeArray.length - 1]; ++k) {
+          derivativeRegularization += weightMatrix.get(k, j);
+        }
+        derivativeRegularization /= this.layerSizeArray[this.layerSizeArray.length - 1];
+        delta[j] += this.regularization * derivativeRegularization;
+      }
+
+      delta[j] *= this.squashingFunction
+          .calculateDerivative(outputLayerOutput[j]);
 
       // calculate the weight update matrix between the last hidden layer and
       // the output layer
       for (int i = 0; i < this.layerSizeArray[this.layerSizeArray.length - 2] + 1; ++i) {
-        double updatedValue = this.learningRate * delta[j]
+        double updatedValue = -this.learningRate * delta[j]
             * lastHiddenLayerOutput[i];
+        // add momentum
+        updatedValue += this.momentum * prevWeightUpdateMatrix.get(i, j);
         weightUpdateMatrices[weightUpdateMatrices.length - 1].set(i, j,
             updatedValue);
       }
@@ -270,6 +298,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     double[] curLayerOutput = outputCache.get(curLayerIdx);
     double[] prevLayerOutput = outputCache.get(prevLayerIdx);
 
+    DenseDoubleMatrix prevWeightUpdateMatrix = this.prevWeightUpdateMatrices[curLayerIdx - 1];
     // for each neuron j in nextLayer, calculate the delta
     for (int j = 0; j < delta.length; ++j) {
       // aggregate delta from next layer
@@ -283,7 +312,10 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
       // calculate the weight update matrix between the previous layer and the
       // current layer
       for (int i = 0; i < weightUpdateMatrices[prevLayerIdx].getRowCount(); ++i) {
-        double updatedValue = this.learningRate * delta[j] * prevLayerOutput[i];
+        double updatedValue = -this.learningRate * delta[j]
+            * prevLayerOutput[i];
+        // add momemtum
+        updatedValue += this.momentum * prevWeightUpdateMatrix.get(i, j);
         weightUpdateMatrices[prevLayerIdx].set(i, j, updatedValue);
       }
     }
@@ -349,7 +381,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
   public void readFields(DataInput input) throws IOException {
     this.MLPType = WritableUtils.readString(input);
     this.learningRate = input.readDouble();
-    this.regularization = input.readBoolean();
+    this.regularization = input.readDouble();
     this.momentum = input.readDouble();
     this.numberOfLayers = input.readInt();
     this.squashingFunctionName = WritableUtils.readString(input);
@@ -373,7 +405,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
   public void write(DataOutput output) throws IOException {
     WritableUtils.writeString(output, MLPType);
     output.writeDouble(learningRate);
-    output.writeBoolean(regularization);
+    output.writeDouble(regularization);
     output.writeDouble(momentum);
     output.writeInt(numberOfLayers);
     WritableUtils.writeString(output, squashingFunctionName);
@@ -402,6 +434,11 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
       FileSystem fs = FileSystem.get(uri, conf);
       FSDataInputStream is = new FSDataInputStream(fs.open(new Path(modelPath)));
       this.readFields(is);
+      if (!this.MLPType.equals(this.getClass().getName())) {
+        throw new IllegalStateException(String.format(
+            "Model type incorrect, cannot load model '%s' for '%s'.",
+            this.MLPType, this.getClass().getName()));
+      }
     } catch (URISyntaxException e) {
       e.printStackTrace();
     }
@@ -425,8 +462,17 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     return this.weightMatrice;
   }
 
+  DenseDoubleMatrix[] getPrevWeightUpdateMatrices() {
+    return this.prevWeightUpdateMatrices;
+  }
+
   void setWeightMatrices(DenseDoubleMatrix[] newMatrices) {
     this.weightMatrice = newMatrices;
+  }
+
+  void setPrevWeightUpdateMatrices(
+      DenseDoubleMatrix[] newPrevWeightUpdateMatrices) {
+    this.prevWeightUpdateMatrices = newPrevWeightUpdateMatrices;
   }
 
   /**
@@ -460,6 +506,11 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
       sb.append('\n');
     }
     return sb.toString();
+  }
+
+  @Override
+  protected String getTypeName() {
+    return this.getClass().getName();
   }
 
 }

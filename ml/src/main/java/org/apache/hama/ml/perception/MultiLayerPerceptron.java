@@ -36,7 +36,7 @@ public abstract class MultiLayerPerceptron {
   /* Model meta-data */
   protected String MLPType;
   protected double learningRate;
-  protected boolean regularization;
+  protected double regularization;
   protected double momentum;
   protected int numberOfLayers;
   protected String squashingFunctionName;
@@ -50,20 +50,33 @@ public abstract class MultiLayerPerceptron {
    * Initialize the MLP.
    * 
    * @param learningRate Larger learningRate makes MLP learn more aggressive.
-   * @param regularization Turn on regularization make MLP less likely to
-   *          overfit.
+   *          Learning rate cannot be negative.
+   * @param regularization Regularization makes MLP less likely to overfit. The
+   *          value of regularization cannot be negative or too large,
+   *          otherwise it will affect the precision.
    * @param momentum The momentum makes the historical adjust have affect to
-   *          current adjust.
+   *          current adjust. The weight of momentum cannot be negative.
    * @param squashingFunctionName The name of squashing function.
    * @param costFunctionName The name of the cost function.
    * @param layerSizeArray The number of neurons for each layer. Note that the
    *          actual size of each layer is one more than the input size.
    */
-  public MultiLayerPerceptron(double learningRate, boolean regularization,
+  public MultiLayerPerceptron(double learningRate, double regularization,
       double momentum, String squashingFunctionName, String costFunctionName,
       int[] layerSizeArray) {
+    this.MLPType = getTypeName();
+    if (learningRate <= 0) {
+      throw new IllegalStateException("learning rate cannot be negative.");
+    }
     this.learningRate = learningRate;
+    if (regularization < 0 || regularization >= 0.5) {
+      throw new IllegalStateException(
+          "regularization weight must be in range (0, 0.5).");
+    }
     this.regularization = regularization; // no regularization
+    if (momentum < 0) {
+      throw new IllegalStateException("momentum weight cannot be negative.");
+    }
     this.momentum = momentum; // no momentum
     this.squashingFunctionName = squashingFunctionName;
     this.costFunctionName = costFunctionName;
@@ -101,8 +114,12 @@ public abstract class MultiLayerPerceptron {
    * @param featureVector The feature of an instance to feed the perceptron.
    * @return The results.
    */
-  public abstract DoubleVector output(DoubleVector featureVector)
-      throws Exception;
+  public abstract DoubleVector output(DoubleVector featureVector);
+
+  /**
+   * Use the class name as the type name.
+   */
+  protected abstract String getTypeName();
 
   /**
    * Read the model meta-data from the specified location.
@@ -131,7 +148,7 @@ public abstract class MultiLayerPerceptron {
     return learningRate;
   }
 
-  public boolean isRegularization() {
+  public double isRegularization() {
     return regularization;
   }
 
