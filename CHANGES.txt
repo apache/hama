@@ -15,6 +15,7 @@ Release 0.7 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-761: Improvement for GraphJobMessage comparation operation (MaoYuan Xian)
    HAMA-760: Add new features to existing Multi Layer Perceptron (Yexi Jiang via edwardyoon)
    HAMA-758: Send message to non-exist vertex makes the job fail (MaoYuan Xian via edwardyoon)
    HAMA-757: The partitioning job output should be un-splitable (MaoYuan Xian via edwardyoon)
