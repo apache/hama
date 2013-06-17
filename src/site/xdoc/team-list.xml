@@ -53,9 +53,27 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         </th>
        </tr>
        <tr valign="top">
-          <td align="center">tommaso</td>
-          <td align="center">Tommaso Teofili</td>
-          <td align="center">Adobe</td>
+          <td align="center">apurv</td>
+          <td align="center">Apurv Verma</td>
+          <td align="center">.</td>
+          <td align="center">committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">chl501</td>
+          <td align="center">Chia-Hung Lin</td>
+          <td align="center">.</td>
+          <td align="center">PMC member, committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">kennethxian</td>
+          <td align="center">MaoYuan Xian</td>
+          <td align="center">.</td>
+          <td align="center">committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">millecker</td>
+          <td align="center">Martin Illecker</td>
+          <td align="center">University of Innsbruck</td>
           <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
@@ -71,24 +89,23 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
-          <td align="center">apurv</td>
-          <td align="center">Apurv Verma</td>
-          <td align="center">.</td>
-          <td align="center">committer</td>
-        </tr>
-       <tr valign="top">
-          <td align="center">chl501</td>
-          <td align="center">Chia-Hung Lin</td>
-          <td align="center">.</td>
-          <td align="center">PMC member, committer</td>
-        </tr>
-       <tr valign="top">
           <td align="center">surajsmenon</td>
           <td align="center">Suraj Menon</td>
           <td align="center">Verisign</td>
           <td align="center">PMC member, committer</td>
         </tr>
-
+       <tr valign="top">
+          <td align="center">tommaso</td>
+          <td align="center">Tommaso Teofili</td>
+          <td align="center">Adobe</td>
+          <td align="center">PMC member, committer</td>
+        </tr>
+       <tr valign="top">
+          <td align="center">yxjiang</td>
+          <td align="center">Yexi Jiang</td>
+          <td align="center">Florida International University</td>
+          <td align="center">committer</td>
+        </tr>
     </table>
 
     <subsection name="Emeritus Members"></subsection>
