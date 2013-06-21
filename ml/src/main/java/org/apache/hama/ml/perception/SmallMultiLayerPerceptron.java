@@ -41,7 +41,9 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.ml.math.DenseDoubleMatrix;
 import org.apache.hama.ml.math.DenseDoubleVector;
+import org.apache.hama.ml.math.DoubleFunction;
 import org.apache.hama.ml.math.DoubleVector;
+import org.apache.hama.ml.math.FunctionFactory;
 import org.apache.hama.ml.writable.MatrixWritable;
 import org.apache.hama.ml.writable.VectorWritable;
 import org.mortbay.log.Log;
@@ -102,18 +104,34 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
   private void initializeWeightMatrix() {
     this.weightMatrice = new DenseDoubleMatrix[this.numberOfLayers - 1];
     // each layer contains one bias neuron
-    Random rnd = new Random();
     for (int i = 0; i < this.numberOfLayers - 1; ++i) {
       // add weights for bias
       this.weightMatrice[i] = new DenseDoubleMatrix(this.layerSizeArray[i] + 1,
           this.layerSizeArray[i + 1]);
-      int rowCount = this.weightMatrice[i].getRowCount();
-      int colCount = this.weightMatrice[i].getColumnCount();
-      for (int row = 0; row < rowCount; ++row) {
-        for (int col = 0; col < colCount; ++col) {
-          this.weightMatrice[i].set(row, col, rnd.nextDouble() - 0.5);
+      
+      this.weightMatrice[i].applyToElements(new DoubleFunction() {
+
+        private Random rnd = new Random();
+        
+        @Override
+        public double apply(double value) {
+          return rnd.nextDouble() - 0.5;
         }
-      }
+
+        @Override
+        public double applyDerivative(double value) {
+          throw new UnsupportedOperationException("Not supported");
+        }
+        
+      });
+      
+//      int rowCount = this.weightMatrice[i].getRowCount();
+//      int colCount = this.weightMatrice[i].getColumnCount();
+//      for (int row = 0; row < rowCount; ++row) {
+//        for (int col = 0; col < colCount; ++col) {
+//          this.weightMatrice[i].set(row, col, rnd.nextDouble() - 0.5);
+//        }
+//      }
     }
   }
 
@@ -199,8 +217,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
             prevNeuronIdx, neuronIdx) * intermediateResult[prevNeuronIdx];
       }
       // calculate via squashing function
-      results[neuronIdx + offset] = this.squashingFunction.calculate(0,
-          results[neuronIdx + offset]);
+      results[neuronIdx + offset] = this.squashingFunction.apply(results[neuronIdx + offset]);
     }
 
     return results;
@@ -243,7 +260,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
 
     DenseDoubleMatrix prevWeightUpdateMatrix = this.prevWeightUpdateMatrices[this.prevWeightUpdateMatrices.length - 1];
     for (int j = 0; j < delta.length; ++j) {
-      delta[j] = this.costFunction.calculateDerivative(trainingLabels[j],
+      delta[j] = this.costFunction.applyDerivative(trainingLabels[j],
           outputLayerOutput[j]);
       // add regularization term
       if (this.regularization != 0.0) {
@@ -257,7 +274,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
       }
 
       delta[j] *= this.squashingFunction
-          .calculateDerivative(outputLayerOutput[j]);
+          .applyDerivative(outputLayerOutput[j]);
 
       // calculate the weight update matrix between the last hidden layer and
       // the output layer
@@ -307,7 +324,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
         delta[j] += weight * nextLayerDelta[k];
       }
       delta[j] *= this.squashingFunction
-          .calculateDerivative(curLayerOutput[j + 1]);
+          .applyDerivative(curLayerOutput[j + 1]);
 
       // calculate the weight update matrix between the previous layer and the
       // current layer
@@ -395,10 +412,10 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     for (int i = 0; i < numberOfLayers - 1; ++i) {
       this.weightMatrice[i] = (DenseDoubleMatrix) MatrixWritable.read(input);
     }
-    this.squashingFunction = SquashingFunctionFactory
-        .getSquashingFunction(this.squashingFunctionName);
-    this.costFunction = CostFunctionFactory
-        .getCostFunction(this.costFunctionName);
+    this.squashingFunction = FunctionFactory
+        .createDoubleFunction(this.squashingFunctionName);
+    this.costFunction = FunctionFactory
+        .createDoubleDoubleFunction(this.costFunctionName);
   }
 
   @Override

@@ -15,27 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ml.perception;
+package org.apache.hama.ml.math;
 
 /**
- * The cost function factory that generates the cost function by name.
+ * Tanh function.
+ * 
  */
-public class CostFunctionFactory {
+public class Tanh extends DoubleFunction {
 
-  /**
-   * Get the cost function according to the name. If no matched cost function is
-   * found, return the SquaredError by default.
-   * 
-   * @param name The name of the cost function.
-   * @return The cost function instance.
-   */
-  public static CostFunction getCostFunction(String name) {
-    if (name.equalsIgnoreCase("SquaredError")) {
-      return new SquaredError();
-    } else if (name.equalsIgnoreCase("CrossEntropy")) {
-      return new CrossEntropy();
-    }
-    throw new IllegalStateException(String.format(
-        "No cost function with name '%s' found.", name));
+  @Override
+  public double apply(double value) {
+    return Math.tanh(value);
   }
+
+  @Override
+  public double applyDerivative(double value) {
+    return 1 - value * value;
+  }
+  
 }

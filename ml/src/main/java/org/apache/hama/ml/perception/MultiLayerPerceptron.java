@@ -21,7 +21,10 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hama.ml.math.DoubleDoubleFunction;
+import org.apache.hama.ml.math.DoubleFunction;
 import org.apache.hama.ml.math.DoubleVector;
+import org.apache.hama.ml.math.FunctionFactory;
 
 /**
  * PerceptronBase defines the common behavior of all the concrete perceptrons.
@@ -43,8 +46,8 @@ public abstract class MultiLayerPerceptron {
   protected String costFunctionName;
   protected int[] layerSizeArray;
 
-  protected CostFunction costFunction;
-  protected SquashingFunction squashingFunction;
+  protected DoubleDoubleFunction costFunction;
+  protected DoubleFunction squashingFunction;
 
   /**
    * Initialize the MLP.
@@ -83,10 +86,10 @@ public abstract class MultiLayerPerceptron {
     this.layerSizeArray = layerSizeArray;
     this.numberOfLayers = this.layerSizeArray.length;
 
-    this.costFunction = CostFunctionFactory
-        .getCostFunction(this.costFunctionName);
-    this.squashingFunction = SquashingFunctionFactory
-        .getSquashingFunction(this.squashingFunctionName);
+    this.costFunction = FunctionFactory
+        .createDoubleDoubleFunction(this.costFunctionName);
+    this.squashingFunction = FunctionFactory
+        .createDoubleFunction(this.squashingFunctionName);
   }
 
   /**

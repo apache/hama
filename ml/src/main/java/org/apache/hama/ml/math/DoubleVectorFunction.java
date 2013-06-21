@@ -20,7 +20,10 @@ package org.apache.hama.ml.math;
 /**
  * A function that can be applied to a double vector via {@link DoubleVector}
  * #apply({@link DoubleVectorFunction} f);
+ * 
+ * This class will be replaced by {@link DoubleFunction}
  */
+@Deprecated
 public interface DoubleVectorFunction {
 
   /**

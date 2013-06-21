@@ -15,24 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ml.perception;
+package org.apache.hama.ml.math;
 
 /**
- * The Sigmoid function
+ * Square error cost function.
  * 
  * <pre>
- * f(z) = 1 / (1 + e^{-z})
+ * cost(t, y) = 0.5 * (t - y) &circ; 2
  * </pre>
  */
-public class Sigmoid extends SquashingFunction {
+public class SquaredError extends DoubleDoubleFunction {
 
   @Override
-  public double calculate(int index, double value) {
-    return 1.0 / (1 + Math.exp(-value));
+  /**
+   * {@inheritDoc}
+   */
+  public double apply(double target, double actual) {
+    double diff = target - actual;
+    return 0.5 * diff * diff;
   }
 
   @Override
-  public double calculateDerivative(double value) {
-    return value * (1 - value);
+  /**
+   * {@inheritDoc}
+   */
+  public double applyDerivative(double target, double actual) {
+    // return target - actual;
+    return actual - target;
   }
+
 }

@@ -15,27 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ml.perception;
-
-import org.apache.hama.ml.math.DoubleVectorFunction;
+package org.apache.hama.ml.math;
 
 /**
- * The squashing function to activate the neurons.
+ * A double double function takes two arguments. A vector or matrix can apply
+ * the double function to each element.
  * 
  */
-public abstract class SquashingFunction implements DoubleVectorFunction {
+public abstract class DoubleFunction extends Function {
 
   /**
-   * Calculates the result with a given index and value of a vector.
-   */
-  @Override
-  public abstract double calculate(int index, double value);
-
-  /**
-   * Apply the gradient descent to each of the elements in vector.
+   * Apply the function to element.
    * 
-   * @param vector
+   * @param elem The element that the function apply to.
+   * @return The result after applying the function.
+   */
+  public abstract double apply(double value);
+
+  /**
+   * Apply the gradient of the function.
+   * 
+   * @param elem
    * @return
    */
-  public abstract double calculateDerivative(double value);
+  public abstract double applyDerivative(double value);
+
 }

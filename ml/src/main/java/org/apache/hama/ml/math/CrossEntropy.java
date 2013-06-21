@@ -15,25 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ml.perception;
+package org.apache.hama.ml.math;
 
 /**
- * The logistic cost function.
+ * The cross entropy cost function.
  * 
  * <pre>
  * cost(t, y) = - t * log(y) - (1 - t) * log(1 - y),
  * where t denotes the target value, y denotes the estimated value.
  * </pre>
  */
-public class LogisticCostFunction extends CostFunction {
+public class CrossEntropy extends DoubleDoubleFunction {
 
   @Override
-  public double calculate(double target, double actual) {
+  public double apply(double target, double actual) {
     return -target * Math.log(actual) - (1 - target) * Math.log(1 - actual);
   }
 
   @Override
-  public double calculateDerivative(double target, double actual) {
+  public double applyDerivative(double target, double actual) {
     double adjustedTarget = target;
     double adjustedActual = actual;
     if (adjustedActual == 1) {

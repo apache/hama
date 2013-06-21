@@ -15,22 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ml.perception;
+package org.apache.hama.ml.math;
 
 /**
- * The hyperbolic tangent function. It is used as a squashing function in
- * multi-layer perceptron.
+ * A double double function takes two arguments. A vector or matrix can apply
+ * the double function to each element.
+ * 
  */
-public class Tanh extends SquashingFunction {
+public abstract class DoubleDoubleFunction extends Function {
 
-  @Override
-  public double calculate(int index, double value) {
-    return Math.tanh(value);
-  }
+  /**
+   * Apply the function to elements to two given arguments.
+   * 
+   * @param x1
+   * @param x2
+   * @return The result based on the calculation on two arguments.
+   */
+  public abstract double apply(double x1, double x2);
 
-  @Override
-  public double calculateDerivative(double value) {
-    return 1 - value * value;
-  }
+  /**
+   * Apply the derivative of this function to two given arguments.
+   * 
+   * @param x1
+   * @param x2
+   * @return The result based on the calculation on two arguments.
+   */
+  public abstract double applyDerivative(double x1, double x2);
 
 }

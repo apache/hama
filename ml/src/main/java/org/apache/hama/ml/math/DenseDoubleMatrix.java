@@ -778,4 +778,37 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
     return a.subtract(b).sum();
   }
 
+  @Override
+  /**
+   * {@inheritDoc}
+   */
+  public DoubleMatrix applyToElements(DoubleFunction fun) {
+    for (int r = 0; r < this.numRows; ++r) {
+      for (int c = 0; c < this.numColumns; ++c) {
+        this.set(r, c, fun.apply(this.get(r, c)));
+      }
+    }
+    return this;
+  }
+
+  @Override
+  /**
+   * {@inheritDoc}
+   */
+  public DoubleMatrix applyToElements(DoubleMatrix other, DoubleDoubleFunction fun) {
+    if (this.numRows != other.getRowCount()
+        || this.numColumns != other.getColumnCount()) {
+      throw new IllegalArgumentException(
+          "Cannot apply double double function to matrices with different sizes.");
+    }
+    
+    for (int r = 0; r < this.numRows; ++r) {
+      for (int c = 0; c < this.numColumns; ++c) {
+        this.set(r, c, fun.apply(this.get(r, c), other.get(r, c)));
+      }
+    }
+    
+    return this;
+  }
+
 }

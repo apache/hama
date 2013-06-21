@@ -15,29 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ml.perception;
+package org.apache.hama.ml.math;
 
 /**
- * Get the squashing function according to the name.
+ * The Sigmoid function
+ * 
+ * <pre>
+ * f(x) = 1 / (1 + e^{-x})
+ * </pre>
  */
-public class SquashingFunctionFactory {
+public class Sigmoid extends DoubleFunction {
 
-  /**
-   * Get the squashing function instance according to the name. If no matched
-   * squahsing function is found, return the sigmoid squashing function by
-   * default.
-   * 
-   * @param name The name of the squashing function.
-   * @return The instance of the squashing function.
-   */
-  public static SquashingFunction getSquashingFunction(String name) {
-    if (name.equalsIgnoreCase("Sigmoid")) {
-      return new Sigmoid();
-    } else if (name.equalsIgnoreCase("Tanh")) {
-      return new Tanh();
-    }
-    throw new IllegalStateException(String.format(
-        "No squashing function with name '%s' found.", name));
+  @Override
+  public double apply(double value) {
+    return 1.0 / (1 + Math.exp(-value));
+  }
+
+  @Override
+  public double applyDerivative(double value) {
+    return value * (1 - value);
   }
 
 }

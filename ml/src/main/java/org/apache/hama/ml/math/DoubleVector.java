@@ -58,6 +58,27 @@ public interface DoubleVector {
    * @param value the value at the index of the vector to set.
    */
   public void set(int index, double value);
+  
+  /**
+   * Apply a given {@link DoubleVectorFunction} to this vector and return a new
+   * one.
+   * 
+   * @param func the function to apply.
+   * @return a new vector with the applied function.
+   */
+  @Deprecated
+  public DoubleVector apply(DoubleVectorFunction func);
+  
+  /**
+   * Apply a given {@link DoubleDoubleVectorFunction} to this vector and the
+   * other given vector.
+   * 
+   * @param other the other vector.
+   * @param func the function to apply on this and the other vector.
+   * @return a new vector with the result of the function of the two vectors.
+   */
+  @Deprecated
+  public DoubleVector apply(DoubleVector other, DoubleDoubleVectorFunction func);
 
   /**
    * Apply a given {@link DoubleVectorFunction} to this vector and return a new
@@ -66,7 +87,7 @@ public interface DoubleVector {
    * @param func the function to apply.
    * @return a new vector with the applied function.
    */
-  public DoubleVector apply(DoubleVectorFunction func);
+  public DoubleVector applyToElements(DoubleFunction func);
 
   /**
    * Apply a given {@link DoubleDoubleVectorFunction} to this vector and the
@@ -76,7 +97,7 @@ public interface DoubleVector {
    * @param func the function to apply on this and the other vector.
    * @return a new vector with the result of the function of the two vectors.
    */
-  public DoubleVector apply(DoubleVector other, DoubleDoubleVectorFunction func);
+  public DoubleVector applyToElements(DoubleVector other, DoubleDoubleFunction func);
 
   /**
    * Adds the given {@link DoubleVector} to this vector.

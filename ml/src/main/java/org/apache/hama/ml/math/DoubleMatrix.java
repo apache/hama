@@ -184,4 +184,25 @@ public interface DoubleMatrix {
    */
   public DoubleMatrix slice(int rowOffset, int rowMax, int colOffset, int colMax);
 
+  /**
+   * Apply a double function f(x) onto each element of the matrix. After
+   * applying, each element of the current matrix will be changed from x to
+   * f(x).
+   * 
+   * @param fun The function.
+   * @return The matrix itself, supply for chain operation.
+   */
+  public DoubleMatrix applyToElements(DoubleFunction fun);
+
+  /**
+   * Apply a double double function f(x, y) onto each pair of the current matrix
+   * elements and given matrix. After applying, each element of the current
+   * matrix will be changed from x to f(x, y).
+   * 
+   * @param other The matrix contributing the second argument of the function.
+   * @param fun The function that takes two arguments.
+   * @return The matrix itself, supply for chain operation.
+   */
+  public DoubleMatrix applyToElements(DoubleMatrix other, DoubleDoubleFunction fun);
+
 }

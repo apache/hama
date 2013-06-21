@@ -15,29 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ml.perception;
+package org.apache.hama.ml.math;
 
 /**
- * The common interface for cost functions.
+ * A generic function.
+ * 
  */
-public abstract class CostFunction {
-
+public abstract class Function {
   /**
-   * Get the error evaluated by squared error.
+   * Get the name of the function.
    * 
-   * @param target The target value.
-   * @param actual The actual value.
-   * @return
+   * @return The name of the function.
    */
-  public abstract double calculate(double target, double actual);
-
-  /**
-   * Get the partial derivative of squared error.
-   * 
-   * @param target
-   * @param actual
-   * @return
-   */
-  public abstract double calculateDerivative(double target, double actual);
-
+  final public String getFunctionName() {
+    return this.getClass().getSimpleName();
+  }
 }
