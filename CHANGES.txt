@@ -1,6 +1,16 @@
 Hama Change Log
 
-Release 0.7 (unreleased changes)
+Release 0.6.3 (unreleased changes)
+
+  NEW FEATURES
+
+  BUG FIXES
+
+  IMPROVEMENTS
+
+   HAMA-765: Add apply method to Vector/Matrix (Yexi Jiang)
+
+Release 0.6.2 - June 26, 2013
 
   NEW FEATURES
 
@@ -22,7 +32,6 @@ Release 0.7 (unreleased changes)
    HAMA-754: PartitioningRunner should write raw records to partition files (edwardyoon)
    HAMA-707: BSPMessageBundle should be able to encapsulate messages serialized in ByteBuffer (surajsmenon) 
    HAMA-722: Messaging queue should construct sender and receiver queue (surajsmenon)
-   HAMA-765: Add apply method to Vector/Matrix (Yexi Jiang)
 
 Release 0.6.1 - April 01, 2013
 
