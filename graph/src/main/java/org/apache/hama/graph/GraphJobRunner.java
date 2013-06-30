@@ -246,10 +246,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
           currentMessage = iterable.getOverflowMessage();
         }
         aggregationRunner.aggregateVertex(lastValue, vertex);
-        // check for halt again after computation
-        if (!vertex.isHalted()) {
-          activeVertices++;
-        }
+        activeVertices++;
       }
 
       // note that we even need to rewrite the vertex if it is halted for
@@ -274,10 +271,10 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
    * reached. <br/>
    * - if vertex is inactive, and received no message, return null.
    */
+  @SuppressWarnings("unchecked")
   private VertexMessageIterable<V, M> iterate(GraphJobMessage currentMessage,
       V firstMessageId, Vertex<V, E, M> vertex,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer) {
-    @SuppressWarnings("unchecked")
     int comparision = firstMessageId.compareTo(vertex.getVertexID());
     if (conf.getBoolean("hama.check.missing.vertex", true)) {
       if (comparision < 0) {

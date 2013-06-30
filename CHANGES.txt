@@ -6,6 +6,8 @@ Release 0.6.3 (unreleased changes)
 
   BUG FIXES
 
+  HAMA-771: Determining the count of active vertices (edwardyoon)
+
   IMPROVEMENTS
 
    HAMA-765: Add apply method to Vector/Matrix (Yexi Jiang)

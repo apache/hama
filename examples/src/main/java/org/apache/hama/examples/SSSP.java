@@ -67,9 +67,8 @@ public class SSSP {
         for (Edge<Text, IntWritable> e : this.getEdges()) {
           sendMessage(e, new IntWritable(minDist + e.getValue().get()));
         }
-      } else {
-        voteToHalt();
       }
+      voteToHalt();
     }
 
   }
