@@ -385,6 +385,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       } catch (Exception e) {
         LOG.error("Error while sending messages", e);
       }
+      MessageQueue<M> msgQueue = (MessageQueue<M>) messages;
+      if (msgQueue != null) {
+        msgQueue.close();
+      }
     }
 
     if (this.faultToleranceService != null) {

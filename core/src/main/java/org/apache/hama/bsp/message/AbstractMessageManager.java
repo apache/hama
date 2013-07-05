@@ -157,6 +157,9 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    */
   @Override
   public final void clearOutgoingQueues() {
+    if (localQueue != null) {
+      localQueue.close();
+    }
     localQueue = localQueueForNextIteration.getMessageQueue();
     localQueue.prepareRead();
     localQueueForNextIteration = getSynchronizedReceiverQueue();

@@ -6,6 +6,7 @@ Release 0.6.3 (unreleased changes)
 
   BUG FIXES
 
+  HAMA-769: Intermediate queue's close method is not called, clean work may be omitted (kennethxian)
   HAMA-771: Determining the count of active vertices (edwardyoon)
 
   IMPROVEMENTS
