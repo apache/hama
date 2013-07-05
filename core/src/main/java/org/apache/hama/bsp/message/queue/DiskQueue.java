@@ -88,11 +88,11 @@ public final class DiskQueue<M extends Writable> extends POJOMessageQueue<M> {
   @Override
   public void close() {
     closeInternal(true);
-    try {
-      fs.delete(queuePath.getParent(), true);
-    } catch (IOException e) {
-      LOG.error(e);
-    }
+    // try {
+    // fs.delete(queuePath.getParent(), true);
+    // } catch (IOException e) {
+    // LOG.error(e);
+    // }
   }
 
   /**
