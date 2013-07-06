@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.AbstractIterator;
 
 /**
@@ -112,16 +113,17 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
-   * {@inheritDoc}}
+   * {@inheritDoc}
    */
   @Override
-  public DoubleVector applyToElements(DoubleVector other, DoubleDoubleFunction func) {
+  public DoubleVector applyToElements(DoubleVector other,
+      DoubleDoubleFunction func) {
     for (int i = 0; i < vector.length; i++) {
       this.vector[i] = func.apply(vector[i], other.get(i));
     }
     return this;
   }
-  
+
   /*
    * (non-Javadoc)
    * @see de.jungblut.math.DoubleVector#apply(de.jungblut.math.function.
@@ -157,7 +159,7 @@ public final class DenseDoubleVector implements DoubleVector {
    * @see de.jungblut.math.DoubleVector#add(de.jungblut.math.DoubleVector)
    */
   @Override
-  public final DoubleVector add(DoubleVector v) {
+  public final DoubleVector addUnsafe(DoubleVector v) {
     DenseDoubleVector newv = new DenseDoubleVector(v.getLength());
     for (int i = 0; i < v.getLength(); i++) {
       newv.set(i, this.get(i) + v.get(i));
@@ -183,7 +185,7 @@ public final class DenseDoubleVector implements DoubleVector {
    * @see de.jungblut.math.DoubleVector#subtract(de.jungblut.math.DoubleVector)
    */
   @Override
-  public final DoubleVector subtract(DoubleVector v) {
+  public final DoubleVector subtractUnsafe(DoubleVector v) {
     DoubleVector newv = new DenseDoubleVector(v.getLength());
     for (int i = 0; i < v.getLength(); i++) {
       newv.set(i, this.get(i) - v.get(i));
@@ -235,7 +237,7 @@ public final class DenseDoubleVector implements DoubleVector {
    * @see de.jungblut.math.DoubleVector#multiply(de.jungblut.math.DoubleVector)
    */
   @Override
-  public DoubleVector multiply(DoubleVector vector) {
+  public DoubleVector multiplyUnsafe(DoubleVector vector) {
     DoubleVector v = new DenseDoubleVector(this.getLength());
     for (int i = 0; i < v.getLength(); i++) {
       v.set(i, this.get(i) * vector.get(i));
@@ -338,10 +340,10 @@ public final class DenseDoubleVector implements DoubleVector {
    * @see de.jungblut.math.DoubleVector#dot(de.jungblut.math.DoubleVector)
    */
   @Override
-  public double dot(DoubleVector s) {
+  public double dotUnsafe(DoubleVector vector) {
     double dotProduct = 0.0d;
     for (int i = 0; i < getLength(); i++) {
-      dotProduct += this.get(i) * s.get(i);
+      dotProduct += this.get(i) * vector.get(i);
     }
     return dotProduct;
   }
@@ -650,6 +652,56 @@ public final class DenseDoubleVector implements DoubleVector {
   @Override
   public String getName() {
     return null;
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.ml.math.DoubleVector#safeAdd(org.apache.hama.ml.math.
+   * DoubleVector)
+   */
+  @Override
+  public DoubleVector add(DoubleVector vector) {
+    Preconditions.checkArgument(this.vector.length == vector.getDimension(),
+        "Dimensions of two vectors do not equal.");
+    return this.addUnsafe(vector);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see
+   * org.apache.hama.ml.math.DoubleVector#safeSubtract(org.apache.hama.ml.math
+   * .DoubleVector)
+   */
+  @Override
+  public DoubleVector subtract(DoubleVector vector) {
+    Preconditions.checkArgument(this.vector.length == vector.getDimension(),
+        "Dimensions of two vectors do not equal.");
+    return this.subtractUnsafe(vector);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see
+   * org.apache.hama.ml.math.DoubleVector#safeMultiplay(org.apache.hama.ml.math
+   * .DoubleVector)
+   */
+  @Override
+  public DoubleVector multiply(DoubleVector vector) {
+    Preconditions.checkArgument(this.vector.length == vector.getDimension(),
+        "Dimensions of two vectors do not equal.");
+    return this.multiplyUnsafe(vector);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.ml.math.DoubleVector#safeDot(org.apache.hama.ml.math.
+   * DoubleVector)
+   */
+  @Override
+  public double dot(DoubleVector vector) {
+    Preconditions.checkArgument(this.vector.length == vector.getDimension(),
+        "Dimensions of two vectors do not equal.");
+    return this.dotUnsafe(vector);
   }
 
 }

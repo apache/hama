@@ -119,7 +119,7 @@ public final class VectorWritable implements WritableComparable<VectorWritable> 
   }
 
   public static int compareVector(DoubleVector a, DoubleVector o) {
-    DoubleVector subtract = a.subtract(o);
+    DoubleVector subtract = a.subtractUnsafe(o);
     return (int) subtract.sum();
   }
 

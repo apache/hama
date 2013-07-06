@@ -80,17 +80,46 @@ public interface DoubleMatrix {
 
   /**
    * Multiplies this matrix with the given other matrix.
+   * 
+   * @param other the other matrix.
+   * @return
+   */
+  public DoubleMatrix multiplyUnsafe(DoubleMatrix other);
+
+  /**
+   * Validates the input and multiplies this matrix with the given other matrix.
+   * 
+   * @param other the other matrix.
+   * @return
    */
   public DoubleMatrix multiply(DoubleMatrix other);
 
   /**
    * Multiplies this matrix per element with a given matrix.
    */
+  public DoubleMatrix multiplyElementWiseUnsafe(DoubleMatrix other);
+
+  /**
+   * Validates the input and multiplies this matrix per element with a given
+   * matrix.
+   * 
+   * @param other the other matrix
+   * @return
+   */
   public DoubleMatrix multiplyElementWise(DoubleMatrix other);
 
   /**
    * Multiplies this matrix with a given vector v. The returning vector contains
    * the sum of the rows.
+   */
+  public DoubleVector multiplyVectorUnsafe(DoubleVector v);
+
+  /**
+   * Multiplies this matrix with a given vector v. The returning vector contains
+   * the sum of the rows.
+   * 
+   * @param v the vector
+   * @return
    */
   public DoubleVector multiplyVector(DoubleVector v);
 
@@ -114,11 +143,28 @@ public interface DoubleMatrix {
   /**
    * Subtracts this matrix by the given other matrix.
    */
+  public DoubleMatrix subtractUnsafe(DoubleMatrix other);
+
+  /**
+   * Validates the input and subtracts this matrix by the given other matrix.
+   * 
+   * @param other
+   * @return
+   */
   public DoubleMatrix subtract(DoubleMatrix other);
 
   /**
    * Subtracts each element in a column by the related element in the given
    * vector.
+   */
+  public DoubleMatrix subtractUnsafe(DoubleVector vec);
+
+  /**
+   * Validates and subtracts each element in a column by the related element in
+   * the given vector.
+   * 
+   * @param vec
+   * @return
    */
   public DoubleMatrix subtract(DoubleVector vec);
 
@@ -126,10 +172,28 @@ public interface DoubleMatrix {
    * Divides each element in a column by the related element in the given
    * vector.
    */
+  public DoubleMatrix divideUnsafe(DoubleVector vec);
+
+  /**
+   * Validates and divides each element in a column by the related element in
+   * the given vector.
+   * 
+   * @param vec
+   * @return
+   */
   public DoubleMatrix divide(DoubleVector vec);
 
   /**
    * Divides this matrix by the given other matrix. (Per element division).
+   */
+  public DoubleMatrix divideUnsafe(DoubleMatrix other);
+
+  /**
+   * Validates and divides this matrix by the given other matrix. (Per element
+   * division).
+   * 
+   * @param other
+   * @return
    */
   public DoubleMatrix divide(DoubleMatrix other);
 
@@ -203,6 +267,7 @@ public interface DoubleMatrix {
    * @param fun The function that takes two arguments.
    * @return The matrix itself, supply for chain operation.
    */
-  public DoubleMatrix applyToElements(DoubleMatrix other, DoubleDoubleFunction fun);
+  public DoubleMatrix applyToElements(DoubleMatrix other,
+      DoubleDoubleFunction fun);
 
 }

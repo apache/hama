@@ -53,7 +53,7 @@ public class LogisticRegressionModel implements RegressionModel {
       DoubleVector x) {
     return BigDecimal.valueOf(1).divide(
         BigDecimal.valueOf(1d).add(
-            BigDecimal.valueOf(Math.exp(-1d * theta.dot(x)))),
+            BigDecimal.valueOf(Math.exp(-1d * theta.dotUnsafe(x)))),
         MathContext.DECIMAL128);
   }
 

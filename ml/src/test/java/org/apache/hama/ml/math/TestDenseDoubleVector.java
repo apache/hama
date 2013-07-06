@@ -18,8 +18,11 @@
 package org.apache.hama.ml.math;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 /**
  * Testcase for {@link DenseDoubleVector}
@@ -76,5 +79,80 @@ public class TestDenseDoubleVector {
     
     assertArrayEquals(result, vec1.toArray(), 0.0001);
     
+  }
+  
+  @Test
+  public void testAddNormal() {
+    double[] arr1 = new double[] {1, 2, 3};
+    double[] arr2 = new double[] {4, 5, 6};
+    DoubleVector vec1 = new DenseDoubleVector(arr1);
+    DoubleVector vec2 = new DenseDoubleVector(arr2);
+    double[] arrExp = new double[] {5, 7, 9};
+    assertArrayEquals(arrExp, vec1.add(vec2).toArray(), 0.000001);
+  }
+  
+  @Test(expected = IllegalArgumentException.class)
+  public void testAddAbnormal() {
+    double[] arr1 = new double[] {1, 2, 3};
+    double[] arr2 = new double[] {4, 5};
+    DoubleVector vec1 = new DenseDoubleVector(arr1);
+    DoubleVector vec2 = new DenseDoubleVector(arr2);
+    vec1.add(vec2);
+  }
+  
+  @Test
+  public void testSubtractNormal() {
+    double[] arr1 = new double[] {1, 2, 3};
+    double[] arr2 = new double[] {4, 5, 6};
+    DoubleVector vec1 = new DenseDoubleVector(arr1);
+    DoubleVector vec2 = new DenseDoubleVector(arr2);
+    double[] arrExp = new double[] {-3, -3, -3};
+    assertArrayEquals(arrExp, vec1.subtract(vec2).toArray(), 0.000001);
+  }
+  
+  @Test(expected = IllegalArgumentException.class)
+  public void testSubtractAbnormal() {
+    double[] arr1 = new double[] {1, 2, 3};
+    double[] arr2 = new double[] {4, 5};
+    DoubleVector vec1 = new DenseDoubleVector(arr1);
+    DoubleVector vec2 = new DenseDoubleVector(arr2);
+    vec1.subtract(vec2);
+  }
+  
+  @Test
+  public void testMultiplyNormal() {
+    double[] arr1 = new double[] {1, 2, 3};
+    double[] arr2 = new double[] {4, 5, 6};
+    DoubleVector vec1 = new DenseDoubleVector(arr1);
+    DoubleVector vec2 = new DenseDoubleVector(arr2);
+    double[] arrExp = new double[] {4, 10, 18};
+    assertArrayEquals(arrExp, vec1.multiply(vec2).toArray(), 0.000001);
+  }
+  
+  @Test(expected = IllegalArgumentException.class)
+  public void testMultiplyAbnormal() {
+    double[] arr1 = new double[] {1, 2, 3};
+    double[] arr2 = new double[] {4, 5};
+    DoubleVector vec1 = new DenseDoubleVector(arr1);
+    DoubleVector vec2 = new DenseDoubleVector(arr2);
+    vec1.multiply(vec2);
+  }
+  
+  @Test
+  public void testDotNormal() {
+    double[] arr1 = new double[] {1, 2, 3};
+    double[] arr2 = new double[] {4, 5, 6};
+    DoubleVector vec1 = new DenseDoubleVector(arr1);
+    DoubleVector vec2 = new DenseDoubleVector(arr2);
+    assertEquals(32.0, vec1.dot(vec2), 0.000001);
+  }
+  
+  @Test(expected = IllegalArgumentException.class)
+  public void testDotAbnormal() {
+    double[] arr1 = new double[] {1, 2, 3};
+    double[] arr2 = new double[] {4, 5};
+    DoubleVector vec1 = new DenseDoubleVector(arr1);
+    DoubleVector vec2 = new DenseDoubleVector(arr2);
+    vec1.add(vec2);
   }
 }

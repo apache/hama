@@ -38,7 +38,7 @@ public class LinearRegressionModel implements RegressionModel {
 
   @Override
   public double applyHypothesis(DoubleVector theta, DoubleVector x) {
-    return theta.dot(x);
+    return theta.dotUnsafe(x);
   }
 
   @Override

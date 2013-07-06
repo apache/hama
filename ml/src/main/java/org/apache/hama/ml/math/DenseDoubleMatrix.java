@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Dense double matrix implementation, internally uses two dimensional double
  * arrays.
@@ -384,7 +386,7 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
    * @see de.jungblut.math.DoubleMatrix#multiply(de.jungblut.math.DoubleMatrix)
    */
   @Override
-  public final DoubleMatrix multiply(DoubleMatrix other) {
+  public final DoubleMatrix multiplyUnsafe(DoubleMatrix other) {
     DenseDoubleMatrix matrix = new DenseDoubleMatrix(this.getRowCount(),
         other.getColumnCount());
 
@@ -412,7 +414,7 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
    * )
    */
   @Override
-  public final DoubleMatrix multiplyElementWise(DoubleMatrix other) {
+  public final DoubleMatrix multiplyElementWiseUnsafe(DoubleMatrix other) {
     DenseDoubleMatrix matrix = new DenseDoubleMatrix(this.numRows,
         this.numColumns);
 
@@ -431,7 +433,7 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
    * de.jungblut.math.DoubleMatrix#multiplyVector(de.jungblut.math.DoubleVector)
    */
   @Override
-  public final DoubleVector multiplyVector(DoubleVector v) {
+  public final DoubleVector multiplyVectorUnsafe(DoubleVector v) {
     DoubleVector vector = new DenseDoubleVector(this.getRowCount());
     for (int row = 0; row < numRows; row++) {
       double sum = 0.0d;
@@ -494,7 +496,7 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
    * @see de.jungblut.math.DoubleMatrix#subtract(de.jungblut.math.DoubleMatrix)
    */
   @Override
-  public DoubleMatrix subtract(DoubleMatrix other) {
+  public DoubleMatrix subtractUnsafe(DoubleMatrix other) {
     DoubleMatrix m = new DenseDoubleMatrix(this.numRows, this.numColumns);
     for (int i = 0; i < numRows; i++) {
       for (int j = 0; j < numColumns; j++) {
@@ -509,7 +511,7 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
    * @see de.jungblut.math.DoubleMatrix#subtract(de.jungblut.math.DoubleVector)
    */
   @Override
-  public DenseDoubleMatrix subtract(DoubleVector vec) {
+  public DenseDoubleMatrix subtractUnsafe(DoubleVector vec) {
     DenseDoubleMatrix cop = new DenseDoubleMatrix(this.getRowCount(),
         this.getColumnCount());
     for (int i = 0; i < this.getColumnCount(); i++) {
@@ -523,7 +525,7 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
    * @see de.jungblut.math.DoubleMatrix#divide(de.jungblut.math.DoubleVector)
    */
   @Override
-  public DoubleMatrix divide(DoubleVector vec) {
+  public DoubleMatrix divideUnsafe(DoubleVector vec) {
     DoubleMatrix cop = new DenseDoubleMatrix(this.getRowCount(),
         this.getColumnCount());
     for (int i = 0; i < this.getColumnCount(); i++) {
@@ -532,12 +534,22 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
     return cop;
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public DoubleMatrix divide(DoubleVector vec) {
+    Preconditions.checkArgument(this.getColumnCount() == vec.getDimension(),
+        "Dimension mismatch.");
+    return this.divideUnsafe(vec);
+  }
+
   /*
    * (non-Javadoc)
    * @see de.jungblut.math.DoubleMatrix#divide(de.jungblut.math.DoubleMatrix)
    */
   @Override
-  public DoubleMatrix divide(DoubleMatrix other) {
+  public DoubleMatrix divideUnsafe(DoubleMatrix other) {
     DoubleMatrix m = new DenseDoubleMatrix(this.numRows, this.numColumns);
     for (int i = 0; i < numRows; i++) {
       for (int j = 0; j < numColumns; j++) {
@@ -545,6 +557,13 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
       }
     }
     return m;
+  }
+
+  @Override
+  public DoubleMatrix divide(DoubleMatrix other) {
+    Preconditions.checkArgument(this.getRowCount() == other.getRowCount()
+        && this.getColumnCount() == other.getColumnCount());
+    return divideUnsafe(other);
   }
 
   /*
@@ -775,7 +794,7 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
    * Just a absolute error function.
    */
   public static double error(DenseDoubleMatrix a, DenseDoubleMatrix b) {
-    return a.subtract(b).sum();
+    return a.subtractUnsafe(b).sum();
   }
 
   @Override
@@ -795,20 +814,91 @@ public final class DenseDoubleMatrix implements DoubleMatrix {
   /**
    * {@inheritDoc}
    */
-  public DoubleMatrix applyToElements(DoubleMatrix other, DoubleDoubleFunction fun) {
-    if (this.numRows != other.getRowCount()
-        || this.numColumns != other.getColumnCount()) {
-      throw new IllegalArgumentException(
-          "Cannot apply double double function to matrices with different sizes.");
-    }
-    
+  public DoubleMatrix applyToElements(DoubleMatrix other,
+      DoubleDoubleFunction fun) {
+    Preconditions
+        .checkArgument(this.numRows == other.getRowCount()
+            && this.numColumns == other.getColumnCount(),
+            "Cannot apply double double function to matrices with different sizes.");
+
     for (int r = 0; r < this.numRows; ++r) {
       for (int c = 0; c < this.numColumns; ++c) {
         this.set(r, c, fun.apply(this.get(r, c), other.get(r, c)));
       }
     }
-    
+
     return this;
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see
+   * org.apache.hama.ml.math.DoubleMatrix#safeMultiply(org.apache.hama.ml.math
+   * .DoubleMatrix)
+   */
+  @Override
+  public DoubleMatrix multiply(DoubleMatrix other) {
+    Preconditions
+        .checkArgument(
+            this.numColumns == other.getRowCount(),
+            String
+                .format(
+                    "Matrix with size [%d, %d] cannot multiple matrix with size [%d, %d]",
+                    this.numRows, this.numColumns, other.getRowCount(),
+                    other.getColumnCount()));
+
+    return this.multiplyUnsafe(other);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see
+   * org.apache.hama.ml.math.DoubleMatrix#safeMultiplyElementWise(org.apache
+   * .hama.ml.math.DoubleMatrix)
+   */
+  @Override
+  public DoubleMatrix multiplyElementWise(DoubleMatrix other) {
+    Preconditions.checkArgument(this.numRows == other.getRowCount()
+        && this.numColumns == other.getColumnCount(),
+        "Matrices with different dimensions cannot be multiplied elementwise.");
+    return this.multiplyElementWiseUnsafe(other);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see
+   * org.apache.hama.ml.math.DoubleMatrix#safeMultiplyVector(org.apache.hama
+   * .ml.math.DoubleVector)
+   */
+  @Override
+  public DoubleVector multiplyVector(DoubleVector v) {
+    Preconditions.checkArgument(this.numColumns == v.getDimension(),
+        "Dimension mismatch.");
+    return this.multiplyVectorUnsafe(v);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.ml.math.DoubleMatrix#subtract(org.apache.hama.ml.math.
+   * DoubleMatrix)
+   */
+  @Override
+  public DoubleMatrix subtract(DoubleMatrix other) {
+    Preconditions.checkArgument(this.numRows == other.getRowCount()
+        && this.numColumns == other.getColumnCount(), "Dimension mismatch.");
+    return subtractUnsafe(other);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.apache.hama.ml.math.DoubleMatrix#subtract(org.apache.hama.ml.math.
+   * DoubleVector)
+   */
+  @Override
+  public DoubleMatrix subtract(DoubleVector vec) {
+    Preconditions.checkArgument(this.numColumns == vec.getDimension(),
+        "Dimension mismatch.");
+    return null;
   }
 
 }

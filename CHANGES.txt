@@ -12,6 +12,7 @@ Release 0.6.3 (unreleased changes)
   IMPROVEMENTS
 
    HAMA-765: Add apply method to Vector/Matrix (Yexi Jiang)
+	 HAMA-773: Matrix/Vector operation does not validate the input argument (Yexi Jiang)
 
 Release 0.6.2 - June 26, 2013
 

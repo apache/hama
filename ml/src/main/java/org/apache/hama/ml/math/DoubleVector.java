@@ -58,7 +58,7 @@ public interface DoubleVector {
    * @param value the value at the index of the vector to set.
    */
   public void set(int index, double value);
-  
+
   /**
    * Apply a given {@link DoubleVectorFunction} to this vector and return a new
    * one.
@@ -68,7 +68,7 @@ public interface DoubleVector {
    */
   @Deprecated
   public DoubleVector apply(DoubleVectorFunction func);
-  
+
   /**
    * Apply a given {@link DoubleDoubleVectorFunction} to this vector and the
    * other given vector.
@@ -97,15 +97,24 @@ public interface DoubleVector {
    * @param func the function to apply on this and the other vector.
    * @return a new vector with the result of the function of the two vectors.
    */
-  public DoubleVector applyToElements(DoubleVector other, DoubleDoubleFunction func);
+  public DoubleVector applyToElements(DoubleVector other,
+      DoubleDoubleFunction func);
 
   /**
    * Adds the given {@link DoubleVector} to this vector.
    * 
-   * @param v the other vector.
+   * @param vector the other vector.
    * @return a new vector with the sum of both vectors at each element index.
    */
-  public DoubleVector add(DoubleVector v);
+  public DoubleVector addUnsafe(DoubleVector vector);
+
+  /**
+   * Validates the input and adds the given {@link DoubleVector} to this vector.
+   * 
+   * @param vector the other vector.
+   * @return a new vector with the sum of both vectors at each element index.
+   */
+  public DoubleVector add(DoubleVector vector);
 
   /**
    * Adds the given scalar to this vector.
@@ -118,10 +127,19 @@ public interface DoubleVector {
   /**
    * Subtracts this vector by the given {@link DoubleVector}.
    * 
-   * @param v the other vector.
+   * @param vector the other vector.
    * @return a new vector with the difference of both vectors.
    */
-  public DoubleVector subtract(DoubleVector v);
+  public DoubleVector subtractUnsafe(DoubleVector vector);
+
+  /**
+   * Validates the input and subtracts this vector by the given
+   * {@link DoubleVector}.
+   * 
+   * @param vector the other vector.
+   * @return a new vector with the difference of both vectors.
+   */
+  public DoubleVector subtract(DoubleVector vector);
 
   /**
    * Subtracts the given scalar to this vector. (vector - scalar).
@@ -149,6 +167,15 @@ public interface DoubleVector {
 
   /**
    * Multiplies the given {@link DoubleVector} with this vector.
+   * 
+   * @param vector the other vector.
+   * @return a new vector with the result of the operation.
+   */
+  public DoubleVector multiplyUnsafe(DoubleVector vector);
+
+  /**
+   * Validates the input and multiplies the given {@link DoubleVector} with this
+   * vector.
    * 
    * @param vector the other vector.
    * @return a new vector with the result of the operation.
@@ -201,10 +228,19 @@ public interface DoubleVector {
   /**
    * Calculates the dot product between this vector and the given vector.
    * 
-   * @param s the given vector s.
+   * @param vector the given vector.
    * @return the dot product as a double.
    */
-  public double dot(DoubleVector s);
+  public double dotUnsafe(DoubleVector vector);
+
+  /**
+   * Validates the input and calculates the dot product between this vector and
+   * the given vector.
+   * 
+   * @param vector the given vector.
+   * @return the dot product as a double.
+   */
+  public double dot(DoubleVector vector);
 
   /**
    * Slices this vector from index 0 to the given length.

@@ -50,7 +50,7 @@ public final class CosineDistance implements DistanceMeasurer {
     double lengthSquaredv1 = vec1.pow(2).sum();
     double lengthSquaredv2 = vec2.pow(2).sum();
 
-    double dotProduct = vec2.dot(vec1);
+    double dotProduct = vec2.dotUnsafe(vec1);
     double denominator = Math.sqrt(lengthSquaredv1)
         * Math.sqrt(lengthSquaredv2);
 

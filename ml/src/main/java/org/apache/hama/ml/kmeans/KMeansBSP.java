@@ -162,7 +162,7 @@ public final class KMeansBSP
       if (oldCenter == null) {
         msgCenters[msg.getCenterIndex()] = newCenter;
       } else {
-        msgCenters[msg.getCenterIndex()] = oldCenter.add(newCenter);
+        msgCenters[msg.getCenterIndex()] = oldCenter.addUnsafe(newCenter);
       }
     }
     // divide by how often we globally summed vectors
@@ -177,7 +177,7 @@ public final class KMeansBSP
     for (int i = 0; i < msgCenters.length; i++) {
       final DoubleVector oldCenter = centers[i];
       if (msgCenters[i] != null) {
-        double calculateError = oldCenter.subtract(msgCenters[i]).abs().sum();
+        double calculateError = oldCenter.subtractUnsafe(msgCenters[i]).abs().sum();
         if (calculateError > 0.0d) {
           centers[i] = msgCenters[i];
           convergedCounter++;
@@ -241,7 +241,7 @@ public final class KMeansBSP
     } else {
       // add the vector to the center
       newCenterArray[lowestDistantCenter] = newCenterArray[lowestDistantCenter]
-          .add(key);
+          .addUnsafe(key);
       summationCount[lowestDistantCenter]++;
     }
   }
