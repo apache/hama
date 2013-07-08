@@ -104,6 +104,7 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
       if (compressor != null
           && (bundle.getApproximateSize() > conf.getLong(
               "hama.messenger.compression.threshold", 1048576))) {
+        
         BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
         bspPeerConnection.put(compMsgBundle);
         peer.incrementCounter(BSPPeerImpl.PeerCounter.COMPRESSED_MESSAGES, 1L);

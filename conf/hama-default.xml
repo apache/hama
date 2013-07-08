@@ -218,14 +218,15 @@
     <value>org.apache.hama.bsp.message.HadoopMessageManagerImpl</value>
   </property>
 
+  <!-- The message compression is not recommended for a large production environment -->
   <property>
     <name>hama.messenger.compression.class</name>
-    <value>org.apache.hama.bsp.message.compress.SnappyCompressor</value>
-    <description>The message compression algorithm to choose.</description>
+    <value></value>
+    <description>The message compression algorithm to choose. Default is null.</description>
   </property>
   <property>
     <name>hama.messenger.compression.threshold</name>
-    <value>1048576</value>
+    <value></value>
     <description>The Compressor threshold sets the level at which compression begins.</description>
   </property>
   
