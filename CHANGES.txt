@@ -6,13 +6,14 @@ Release 0.6.3 (unreleased changes)
 
   BUG FIXES
 
-  HAMA-769: Intermediate queue's close method is not called, clean work may be omitted (kennethxian)
-  HAMA-771: Determining the count of active vertices (edwardyoon)
+   HAMA-769: Intermediate queue's close method is not called, clean work may be omitted (kennethxian)
+   HAMA-771: Determining the count of active vertices (edwardyoon)
 
   IMPROVEMENTS
 
+   HAMA-671: Clean up Maven build scripts (edwardyoon)
    HAMA-765: Add apply method to Vector/Matrix (Yexi Jiang)
-	 HAMA-773: Matrix/Vector operation does not validate the input argument (Yexi Jiang)
+   HAMA-773: Matrix/Vector operation does not validate the input argument (Yexi Jiang)
 
 Release 0.6.2 - June 26, 2013
 
