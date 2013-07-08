@@ -366,6 +366,7 @@
             <exclude>**dependency-reduced-pom.xml</exclude>
             <exclude>**/src/test/resources/*.txt</exclude>
             <exclude>c++/**</exclude>
+            <exclude>**/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>
