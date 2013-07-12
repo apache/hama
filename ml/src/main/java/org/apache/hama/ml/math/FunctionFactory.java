@@ -30,10 +30,13 @@ public class FunctionFactory {
    * @return
    */
   public static DoubleFunction createDoubleFunction(String functionName) {
-    if (functionName.equals(Sigmoid.class.getSimpleName())) {
+    if (functionName.equalsIgnoreCase(Sigmoid.class.getSimpleName())) {
       return new Sigmoid();
-    } else if (functionName.equals(Tanh.class.getSimpleName())) {
+    } else if (functionName.equalsIgnoreCase(Tanh.class.getSimpleName())) {
       return new Tanh();
+    } else if (functionName.equalsIgnoreCase(IdentityFunction.class
+        .getSimpleName())) {
+      return new IdentityFunction();
     }
 
     throw new IllegalArgumentException(String.format(
@@ -48,9 +51,10 @@ public class FunctionFactory {
    */
   public static DoubleDoubleFunction createDoubleDoubleFunction(
       String functionName) {
-    if (functionName.equals(SquaredError.class.getSimpleName())) {
+    if (functionName.equalsIgnoreCase(SquaredError.class.getSimpleName())) {
       return new SquaredError();
-    } else if (functionName.equals(CrossEntropy.class.getSimpleName())) {
+    } else if (functionName
+        .equalsIgnoreCase(CrossEntropy.class.getSimpleName())) {
       return new CrossEntropy();
     }
 

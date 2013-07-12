@@ -19,6 +19,8 @@ package org.apache.hama.ml.math;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Random;
+
 import org.junit.Test;
 
 /**
@@ -39,12 +41,21 @@ public class TestFunctionFactory {
     double sigmoidExcepted = 0.68997448;
     assertEquals(sigmoidExcepted, sigmoidFunction.apply(input), 0.000001);
     
+    
     String tanhName = "Tanh";
     DoubleFunction tanhFunction = FunctionFactory.createDoubleFunction(tanhName);
     assertEquals(tanhName, tanhFunction.getFunctionName());
     
     double tanhExpected = 0.66403677;
     assertEquals(tanhExpected, tanhFunction.apply(input), 0.00001);
+    
+    
+    String identityFunctionName = "IdentityFunction";
+    DoubleFunction identityFunction = FunctionFactory.createDoubleFunction(identityFunctionName);
+    
+    Random rnd = new Random();
+    double identityExpected = rnd.nextDouble();
+    assertEquals(identityExpected, identityFunction.apply(identityExpected), 0.000001);
   }
   
   @Test

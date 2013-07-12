@@ -8,6 +8,7 @@ Release 0.6.3 (unreleased changes)
 
    HAMA-769: Intermediate queue's close method is not called, clean work may be omitted (kennethxian)
    HAMA-771: Determining the count of active vertices (edwardyoon)
+   HAMA-777: FunctionFactory does not work when create IdentityFunction (Yexi Jiang)
 
   IMPROVEMENTS
 
