@@ -104,6 +104,9 @@
   <profiles>
     <profile>
       <id>hadoop1</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <dependencies>
         <!-- build for Hadoop 1.x -->
         <dependency>
@@ -354,6 +357,7 @@
             <exclude>.git/**</exclude>
             <exclude>**/.classpath/**</exclude>
             <exclude>**/.project</exclude>
+            <exclude>**/*.iml</exclude>
             <exclude>**/.settings/**</exclude>
             <exclude>**/*.asc</exclude>
             <exclude>**/dependency-reduced-pom.xml</exclude>
