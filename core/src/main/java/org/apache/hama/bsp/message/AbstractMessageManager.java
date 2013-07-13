@@ -90,7 +90,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     this.peer = peer;
     this.conf = conf;
     this.peerAddress = peerAddress;
-    this.localQueue = getSenderQueue();
+    this.localQueue = getReceiverQueue();
     this.localQueueForNextIteration = getSynchronizedReceiverQueue();
     this.maxCachedConnections = conf.getInt(MAX_CACHED_CONNECTIONS_KEY, 100);
   }
