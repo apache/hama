@@ -81,8 +81,10 @@ public class MessageTransferQueueFactory<M> {
   public static MessageTransferQueue getMessageTransferQueue(Configuration conf) {
 
     if (conf.getClass(MessageManager.QUEUE_TYPE_CLASS, null) != null) {
-      LOG.warn("Message queue is configured on deprecated parameter:"
-          + MessageManager.QUEUE_TYPE_CLASS);
+      // TODO print only once -- Ed
+      
+      // LOG.warn("Message queue is configured on deprecated parameter:"
+      //   + MessageManager.QUEUE_TYPE_CLASS);
       return new BackwardCompatibleTransferQueue();
     }
     return (MessageTransferQueue) ReflectionUtils.newInstance(conf.getClass(
