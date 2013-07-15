@@ -19,6 +19,8 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -45,7 +47,7 @@ public class PartitioningRunner extends
   private FileSystem fs = null;
   private Path partitionDir;
   private RecordConverter converter;
-  private Map<Integer, Map<Writable, Writable>> values = new HashMap<Integer, Map<Writable, Writable>>();
+  private Map<Integer,LinkedList<KeyValuePair<Writable,Writable>>> values = new HashMap<Integer, LinkedList<KeyValuePair<Writable,Writable>>>();
 
   @Override
   public final void setup(
@@ -101,6 +103,11 @@ public class PartitioningRunner extends
      *         needed.
      */
     public Map<Writable, Writable> newMap();
+    
+    /**
+     * @return a list implementation, so order will not be changed in subclasses
+     */
+    public List<KeyValuePair<Writable, Writable>> newList();
   }
 
   /**
@@ -133,6 +140,11 @@ public class PartitioningRunner extends
     public Map<Writable, Writable> newMap() {
       return new HashMap<Writable, Writable>();
     }
+
+    @Override
+    public List<KeyValuePair<Writable, Writable>> newList() {
+      return new LinkedList<KeyValuePair<Writable,Writable>>();
+    }
   }
 
   @Override
@@ -160,23 +172,23 @@ public class PartitioningRunner extends
 
       int index = converter.getPartitionId(outputPair, partitioner, conf, peer,
           desiredNum);
-
-      Map<Writable, Writable> map = values.get(index);
-      if (map == null) {
-        map = converter.newMap();
-        values.put(index, map);
+      
+      LinkedList<KeyValuePair<Writable, Writable>> list = values.get(index);
+      if (list == null) {
+        list = (LinkedList<KeyValuePair<Writable, Writable>>) converter.newList();
+        values.put(index, list);
       }
-      map.put(pair.getKey(), pair.getValue());
+      list.add(new KeyValuePair<Writable, Writable>(pair.getKey(), pair.getValue()));
     }
 
     // The reason of use of Memory is to reduce file opens
-    for (Map.Entry<Integer, Map<Writable, Writable>> e : values.entrySet()) {
+    for (Map.Entry<Integer, LinkedList<KeyValuePair<Writable, Writable>>> e : values.entrySet()) {
       Path destFile = new Path(partitionDir + "/part-" + e.getKey() + "/file-"
           + peer.getPeerIndex());
       SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
           destFile, keyClass, valueClass, CompressionType.NONE);
 
-      for (Map.Entry<Writable, Writable> v : e.getValue().entrySet()) {
+      for (KeyValuePair<Writable, Writable> v : e.getValue()) {
         writer.append(v.getKey(), v.getValue());
       }
       writer.close();

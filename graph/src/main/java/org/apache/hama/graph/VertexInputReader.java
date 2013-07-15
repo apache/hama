@@ -17,6 +17,8 @@
  */
 package org.apache.hama.graph;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -101,6 +103,11 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
   @Override
   public final Map<Writable, Writable> newMap() {
     return new TreeMap<Writable, Writable>();
+  }
+
+  @Override
+  public List<KeyValuePair<Writable, Writable>> newList() {
+    return new LinkedList<KeyValuePair<Writable,Writable>>();
   }
 
 }

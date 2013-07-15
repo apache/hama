@@ -6,6 +6,7 @@ Release 0.6.3 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-772: When selected KeyValueTextInputFormat, workers get only one value for key (Ikhtiyor Ahmedov via edwardyoon)
    HAMA-776: localQueue is set as Send queue in init function of AbstractMessageManager (kennethxian)
    HAMA-769: Intermediate queue's close method is not called, clean work may be omitted (kennethxian)
    HAMA-771: Determining the count of active vertices (edwardyoon)
