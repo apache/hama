@@ -26,7 +26,6 @@ import java.net.UnknownHostException;
 import java.util.NoSuchElementException;
 
 import org.apache.hama.Constants;
-import org.apache.mina.util.AvailablePortFinder;
 
 /**
  * NetUtils for our needs.
@@ -61,7 +60,7 @@ public class BSPNetUtils {
    */
   public static int getFreePort(int pStartPort) {
     int startPort = pStartPort;
-    while (!AvailablePortFinder.available(startPort)) {
+    while (!available(startPort)) {
       startPort++;
     }
     return startPort;
@@ -92,7 +91,7 @@ public class BSPNetUtils {
    * @param port the port to check for availability
    */
   public static boolean available(int port) {
-    if (port < Constants.DEFAULT_PEER_PORT || port > MAX_PORT_NUMBER) {
+    if (port < 1000 || port > MAX_PORT_NUMBER) {
       throw new IllegalArgumentException("Invalid start port: " + port);
     }
 
