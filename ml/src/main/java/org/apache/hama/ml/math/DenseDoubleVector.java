@@ -354,22 +354,37 @@ public final class DenseDoubleVector implements DoubleVector {
    */
   @Override
   public DoubleVector slice(int length) {
-    return slice(0, length);
+    return slice(0, length - 1);
   }
-
+  
+  @Override
+  public DoubleVector sliceUnsafe(int length) {
+    return sliceUnsafe(0, length - 1);
+  }
+  
   /*
    * (non-Javadoc)
    * @see de.jungblut.math.DoubleVector#slice(int, int)
    */
   @Override
-  public DoubleVector slice(int offset, int length) {
-    DoubleVector nv = new DenseDoubleVector(length - offset);
-    int index = 0;
-    for (int i = offset; i < length; i++) {
-      nv.set(index++, vector[i]);
+  public DoubleVector slice(int start, int end) {
+    Preconditions.checkArgument(start >= 0 && start <= end
+        && end < vector.length, "The given from and to is invalid");
+
+    return sliceUnsafe(start, end);
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public DoubleVector sliceUnsafe(int start, int end) {
+    DoubleVector newVec = new DenseDoubleVector(end - start + 1);
+    for (int i = start, j = 0; i <= end; ++i, ++j) {
+      newVec.set(j, vector[i]);
     }
 
-    return nv;
+    return newVec;
   }
 
   /*

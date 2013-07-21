@@ -243,23 +243,43 @@ public interface DoubleVector {
   public double dot(DoubleVector vector);
 
   /**
-   * Slices this vector from index 0 to the given length.
+   * Validates the input and slices this vector from index 0 to the given length.
    * 
    * @param length must be > 0 and smaller than the dimension of the vector.
    * @return a new vector that is only length long.
    */
   public DoubleVector slice(int length);
+  
+  /**
+   * Slices this vector from index 0 to the given length.
+   * 
+   * @param length must be > 0 and smaller than the dimension of the vector.
+   * @return a new vector that is only length long.
+   */
+  public DoubleVector sliceUnsafe(int length);
 
   /**
-   * Slices this vector from index offset with the given length. So you end at
-   * the upper bound of (offset+length).
+   * Validates the input and then slices this vector from start to end, both are
+   * INCLUSIVE. For example vec = [0, 1, 2, 3, 4, 5], vec.slice(2, 5) = [2, 3,
+   * 4, 5].
    * 
    * @param offset must be > 0 and smaller than the dimension of the vector
    * @param length must be > 0 and smaller than the dimension of the vector.
    *          This must be greater than the offset.
    * @return a new vector that is only (length) long.
    */
-  public DoubleVector slice(int offset, int length);
+  public DoubleVector slice(int start, int end);
+
+  /**
+   * Slices this vector from start to end, both are INCLUSIVE. For example vec =
+   * [0, 1, 2, 3, 4, 5], vec.slice(2, 5) = [2, 3, 4, 5].
+   * 
+   * @param offset must be > 0 and smaller than the dimension of the vector
+   * @param length must be > 0 and smaller than the dimension of the vector.
+   *          This must be greater than the offset.
+   * @return a new vector that is only (length) long.
+   */
+  public DoubleVector sliceUnsafe(int start, int end);
 
   /**
    * @return the maximum element value in this vector.

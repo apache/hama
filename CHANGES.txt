@@ -5,7 +5,8 @@ Release 0.6.3 (unreleased changes)
   NEW FEATURES
 
   BUG FIXES
-
+  
+   HAMA-782: The arguments of DoubleVector.slice(int, int) method will mislead the user. (Yexi Jiang)
    HAMA-780: New launched child processes by fault tolerance may not be able to contact each other (kennethxian)
    HAMA-772: When selected KeyValueTextInputFormat, workers get only one value for key (Ikhtiyor Ahmedov via edwardyoon)
    HAMA-776: localQueue is set as Send queue in init function of AbstractMessageManager (kennethxian)
