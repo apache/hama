@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -280,6 +281,7 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
             constructKey(taskId.getJobID(), "peers"), this);
         allPeers = var.toArray(new String[var.size()]);
 
+        TreeMap<TaskAttemptID, String> taskAttemptSortedMap = new TreeMap<TaskAttemptID, String>();
         for (String s : allPeers) {
           byte[] data = zk.getData(constructKey(taskId.getJobID(), "peers", s),
               this, null);
@@ -287,13 +289,17 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
           boolean result = getValueFromBytes(data, thatTask);
 
           if (result) {
-            LOG.debug("TASK mapping from zookeeper: " + thatTask + " ID:"
-                + thatTask.getTaskID().getId() + " : " + s);
-            sortedMap.put(thatTask.getTaskID().getId(), s);
+            taskAttemptSortedMap.put(thatTask, s);
           }
-
         }
-
+        for (Map.Entry<TaskAttemptID, String> entry : taskAttemptSortedMap
+            .entrySet()) {
+          TaskAttemptID thatTask = entry.getKey();
+          String s = entry.getValue();
+          LOG.debug("TASK mapping from zookeeper: " + thatTask + " ID:"
+              + thatTask.getTaskID().getId() + " : " + s);
+          sortedMap.put(thatTask.getTaskID().getId(), s);
+        }
       } catch (Exception e) {
         LOG.error(e);
         throw new RuntimeException("All peer names could not be retrieved!");
