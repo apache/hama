@@ -4,6 +4,8 @@ Release 0.6.3 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-594: Semi-Clustering Algorithm Implementation (Renil Jeseph via edwardyoon)
+
   BUG FIXES
   
    HAMA-782: The arguments of DoubleVector.slice(int, int) method will mislead the user. (Yexi Jiang)
