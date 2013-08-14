@@ -30,7 +30,7 @@ public class IdentityFunction extends DoubleFunction {
 
   @Override
   public double applyDerivative(double value) {
-    return 0;
+    return 1;
   }
 
 }

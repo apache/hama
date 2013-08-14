@@ -40,7 +40,6 @@ import org.apache.hama.ml.math.DoubleMatrix;
 import org.apache.hama.ml.math.DoubleVector;
 import org.apache.hama.ml.writable.MatrixWritable;
 import org.apache.hama.ml.writable.VectorWritable;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestSmallMultiLayerPerceptron {
@@ -305,10 +304,9 @@ public class TestSmallMultiLayerPerceptron {
       e.printStackTrace();
     }
   }
-  
+
   /**
-   * Test training with momentum.
-   * The MLP can converge faster.
+   * Test training with momentum. The MLP can converge faster.
    */
   @Test
   public void testWithMomentum() {
@@ -359,7 +357,6 @@ public class TestSmallMultiLayerPerceptron {
    * Test the XOR problem.
    */
   @Test
-  @Ignore
   public void testTrainingByXOR() {
     // write in some training instances
     Configuration conf = new Configuration();

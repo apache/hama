@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hama.ml.ann.NeuralNetworkTrainer;
 import org.apache.hama.ml.math.DoubleDoubleFunction;
 import org.apache.hama.ml.math.DoubleFunction;
 import org.apache.hama.ml.math.DoubleVector;
@@ -32,7 +33,7 @@ import org.apache.hama.ml.math.FunctionFactory;
 public abstract class MultiLayerPerceptron {
 
   /* The trainer for the model */
-  protected PerceptronTrainer trainer;
+  protected NeuralNetworkTrainer trainer;
   /* The file path that contains the model meta-data */
   protected String modelPath;
 
@@ -55,8 +56,8 @@ public abstract class MultiLayerPerceptron {
    * @param learningRate Larger learningRate makes MLP learn more aggressive.
    *          Learning rate cannot be negative.
    * @param regularization Regularization makes MLP less likely to overfit. The
-   *          value of regularization cannot be negative or too large,
-   *          otherwise it will affect the precision.
+   *          value of regularization cannot be negative or too large, otherwise
+   *          it will affect the precision.
    * @param momentum The momentum makes the historical adjust have affect to
    *          current adjust. The weight of momentum cannot be negative.
    * @param squashingFunctionName The name of squashing function.

@@ -19,6 +19,7 @@ Release 0.6.3 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-770: Use a unified model to represent linear regression, logistic regression, MLP, autoencoder, and deepNets (Yexi Jiang)
    HAMA-671: Clean up Maven build scripts (edwardyoon)
    HAMA-765: Add apply method to Vector/Matrix (Yexi Jiang)
    HAMA-773: Matrix/Vector operation does not validate the input argument (Yexi Jiang)

@@ -108,11 +108,11 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
       // add weights for bias
       this.weightMatrice[i] = new DenseDoubleMatrix(this.layerSizeArray[i] + 1,
           this.layerSizeArray[i + 1]);
-      
+
       this.weightMatrice[i].applyToElements(new DoubleFunction() {
 
         private Random rnd = new Random();
-        
+
         @Override
         public double apply(double value) {
           return rnd.nextDouble() - 0.5;
@@ -122,16 +122,16 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
         public double applyDerivative(double value) {
           throw new UnsupportedOperationException("Not supported");
         }
-        
+
       });
-      
-//      int rowCount = this.weightMatrice[i].getRowCount();
-//      int colCount = this.weightMatrice[i].getColumnCount();
-//      for (int row = 0; row < rowCount; ++row) {
-//        for (int col = 0; col < colCount; ++col) {
-//          this.weightMatrice[i].set(row, col, rnd.nextDouble() - 0.5);
-//        }
-//      }
+
+      // int rowCount = this.weightMatrice[i].getRowCount();
+      // int colCount = this.weightMatrice[i].getColumnCount();
+      // for (int row = 0; row < rowCount; ++row) {
+      // for (int col = 0; col < colCount; ++col) {
+      // this.weightMatrice[i].set(row, col, rnd.nextDouble() - 0.5);
+      // }
+      // }
     }
   }
 
@@ -217,7 +217,8 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
             prevNeuronIdx, neuronIdx) * intermediateResult[prevNeuronIdx];
       }
       // calculate via squashing function
-      results[neuronIdx + offset] = this.squashingFunction.apply(results[neuronIdx + offset]);
+      results[neuronIdx + offset] = this.squashingFunction
+          .apply(results[neuronIdx + offset]);
     }
 
     return results;
@@ -273,8 +274,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
         delta[j] += this.regularization * derivativeRegularization;
       }
 
-      delta[j] *= this.squashingFunction
-          .applyDerivative(outputLayerOutput[j]);
+      delta[j] *= this.squashingFunction.applyDerivative(outputLayerOutput[j]);
 
       // calculate the weight update matrix between the last hidden layer and
       // the output layer
@@ -323,8 +323,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
         double weight = this.weightMatrice[curLayerIdx].get(j, k);
         delta[j] += weight * nextLayerDelta[k];
       }
-      delta[j] *= this.squashingFunction
-          .applyDerivative(curLayerOutput[j + 1]);
+      delta[j] *= this.squashingFunction.applyDerivative(curLayerOutput[j + 1]);
 
       // calculate the weight update matrix between the previous layer and the
       // current layer
@@ -332,7 +331,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
         double updatedValue = -this.learningRate * delta[j]
             * prevLayerOutput[i];
         // add momemtum
-        updatedValue += this.momentum * prevWeightUpdateMatrix.get(i, j);
+        // updatedValue += this.momentum * prevWeightUpdateMatrix.get(i, j);
         weightUpdateMatrices[prevLayerIdx].set(i, j, updatedValue);
       }
     }
