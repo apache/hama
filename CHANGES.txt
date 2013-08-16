@@ -4,6 +4,7 @@ Release 0.6.3 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-767: Add vertex addition/removal APIs (Anastasis Andronidis via edwardyoon)
    HAMA-594: Semi-Clustering Algorithm Implementation (Renil Jeseph via edwardyoon)
 
   BUG FIXES

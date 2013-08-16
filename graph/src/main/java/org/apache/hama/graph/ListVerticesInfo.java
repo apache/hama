@@ -18,9 +18,9 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
@@ -37,12 +37,24 @@ import org.apache.hama.bsp.TaskAttemptID;
 public final class ListVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
 
-  private final List<Vertex<V, E, M>> vertices = new ArrayList<Vertex<V, E, M>>(
-      100);
+  private final SortedSet<Vertex<V, E, M>> vertices = new TreeSet<Vertex<V, E, M>>();
+  // We will use this variable to make vertex removals, so we don't invoke GC too many times. 
+  private final Vertex<V, E, M> vertexTemplate = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
 
   @Override
   public void addVertex(Vertex<V, E, M> vertex) {
-    vertices.add(vertex);
+    if (!vertices.add(vertex)) {
+      throw new UnsupportedOperationException("Vertex with ID: " + vertex.getVertexID() + " already exists!");
+    }
+  }
+
+  @Override
+  public void removeVertex(V vertexID) throws UnsupportedOperationException {
+    vertexTemplate.setVertexID(vertexID);    
+    
+    if (!vertices.remove(vertexTemplate)) {
+      throw new UnsupportedOperationException("Vertex with ID: " + vertexID + " not found on this peer.");
+    }
   }
 
   public void clear() {
@@ -57,26 +69,40 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
   @Override
   public IDSkippingIterator<V, E, M> skippingIterator() {
     return new IDSkippingIterator<V, E, M>() {
-      int currentIndex = 0;
+      Iterator<Vertex<V, E, M>> it = vertices.iterator();
+      Vertex<V, E, M> v;
 
       @Override
-      public boolean hasNext(V e,
+      public boolean hasNext(V msgId,
           org.apache.hama.graph.IDSkippingIterator.Strategy strat) {
-        if (currentIndex < vertices.size()) {
 
-          while (!strat.accept(vertices.get(currentIndex), e)) {
-            currentIndex++;
+        if (it.hasNext()) {
+          v = it.next();
+
+          while (!strat.accept(v, msgId)) {
+            if (it.hasNext()) {
+              v = it.next();
+            } else {
+              return false;
+            }
           }
 
           return true;
         } else {
+          v = null;
           return false;
         }
       }
 
       @Override
       public Vertex<V, E, M> next() {
-        return vertices.get(currentIndex++);
+        if (v == null) {
+          throw new UnsupportedOperationException("You must invoke hasNext before ask for the next vertex.");
+        }
+
+        Vertex<V, E, M> tmp = v;
+        v = null;
+        return tmp;
       }
 
     };
@@ -89,7 +115,11 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
 
   @Override
   public void finishAdditions() {
-    Collections.sort(vertices);
+
+  }
+
+  @Override
+  public void finishRemovals() {
   }
 
   @Override

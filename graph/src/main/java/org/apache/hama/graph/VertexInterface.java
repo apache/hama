@@ -78,6 +78,16 @@ public interface VertexInterface<V extends WritableComparable, E extends Writabl
   public void sendMessage(V destinationVertexID, M msg) throws IOException;
 
   /**
+   * Sends a message to add a new vertex through the partitioner to the appropriate BSP peer 
+   */
+  public void addVertex(V vertexID, List<Edge<V, E>> edges, M value) throws IOException;
+
+  /**
+   * Removes current Vertex from local peer. 
+   */
+  public void remove() throws IOException;
+
+  /**
    * @return the superstep number of the current superstep (starting from 0).
    */
   public long getSuperstepCount();

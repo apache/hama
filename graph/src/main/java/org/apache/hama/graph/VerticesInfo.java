@@ -52,10 +52,21 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
   public void addVertex(Vertex<V, E, M> vertex) throws IOException;
 
   /**
+   * Remove a vertex to the underlying structure.
+   */
+  public void removeVertex(V vertexID) throws UnsupportedOperationException;
+
+  /**
    * Finish the additions, from this point on the implementations should close
    * the adds and throw exceptions in case something is added after this call.
    */
   public void finishAdditions();
+
+  /**
+   * Finish the removals, from this point on the implementations should close
+   * the removes and throw exceptions in case something is removed after this call.
+   */
+  public void finishRemovals();
 
   /**
    * Called once a superstep starts.

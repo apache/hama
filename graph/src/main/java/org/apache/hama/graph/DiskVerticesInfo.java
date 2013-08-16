@@ -120,6 +120,11 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
     size++;
   }
 
+  @Override
+  public void removeVertex(V vertexID) {
+    throw new UnsupportedOperationException ("Not yet implemented");
+  }
+
   /**
    * Serializes the vertex's soft parts to its file. If the vertex does not have
    * an index yet (e.G. at startup) you can provide -1 and it will be added to
@@ -167,6 +172,11 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
     IOUtils.cleanup(null, staticGraphPartsDos, softGraphPartsDos);
     // prevent additional vertices from beeing added
     lockedAdditions = true;
+  }
+
+  @Override
+  public void finishRemovals() {
+    throw new UnsupportedOperationException ("Not yet implemented");
   }
 
   private static long[] copy(ArrayList<Long> lst) {

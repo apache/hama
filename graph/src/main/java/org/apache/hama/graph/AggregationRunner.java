@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -90,14 +91,18 @@ public final class AggregationRunner<V extends WritableComparable, E extends Wri
 
   /**
    * Runs the aggregators by sending their values to the master task.
+   * @param changedVertexCnt 
    */
   public void sendAggregatorValues(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer,
-      int activeVertices) throws IOException {
+      int activeVertices, int changedVertexCnt) throws IOException {
     // send msgCounts to the master task
     MapWritable updatedCnt = new MapWritable();
     updatedCnt.put(GraphJobRunner.FLAG_MESSAGE_COUNTS, new IntWritable(
         activeVertices));
+    // send total number of vertices changes
+    updatedCnt.put(GraphJobRunner.FLAG_VERTEX_ALTER_COUNTER, new LongWritable(
+        changedVertexCnt));
     // also send aggregated values to the master
     if (aggregators != null) {
       for (int i = 0; i < this.aggregators.length; i++) {
