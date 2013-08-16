@@ -28,16 +28,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.ipc.RPC;
-import org.apache.hadoop.ipc.Server;
-import org.apache.hadoop.ipc.VersionedProtocol;
+import org.apache.hama.ipc.RPC;
+import org.apache.hama.ipc.Server;
+import org.apache.hama.ipc.VersionedProtocol;
 
 public class TestRPC extends TestCase {
   private static final int PORT = 1234;
   private static final String ADDRESS = "0.0.0.0";
 
   public static final Log LOG = LogFactory
-      .getLog("org.apache.hadoop.ipc.TestRPC");
+      .getLog("org.apache.hama.ipc.TestRPC");
 
   private static Configuration conf = new Configuration();
 

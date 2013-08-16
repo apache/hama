@@ -18,9 +18,15 @@
 package org.apache.hama.ipc;
 
 /**
- * There is one version id for all the RPC interfaces. If any interface is
- * changed, the versionID must be changed here.
+ * Status of a Hadoop IPC call.
  */
-public interface HamaRPCProtocolVersion extends VersionedProtocol {
-  public static final long versionID = 1L;
+enum Status {
+  SUCCESS (0),
+  ERROR (1),
+  FATAL (-1);
+  
+  int state;
+  private Status(int state) {
+    this.state = state;
+  }
 }

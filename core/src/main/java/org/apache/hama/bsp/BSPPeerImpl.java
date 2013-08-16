@@ -48,6 +48,7 @@ import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.pipes.util.DistributedCacheUtil;
+import org.apache.hama.util.DistCacheUtils;
 import org.apache.hama.util.KeyValuePair;
 
 /**
@@ -59,10 +60,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private static final Log LOG = LogFactory.getLog(BSPPeerImpl.class);
 
   public static enum PeerCounter {
-    COMPRESSED_MESSAGES, SUPERSTEP_SUM, TASK_INPUT_RECORDS,
-    TASK_OUTPUT_RECORDS, IO_BYTES_READ, MESSAGE_BYTES_TRANSFERED,
-    MESSAGE_BYTES_RECEIVED, TOTAL_MESSAGES_SENT, TOTAL_MESSAGES_RECEIVED,
-    COMPRESSED_BYTES_SENT, COMPRESSED_BYTES_RECEIVED, TIME_IN_SYNC_MS
+    COMPRESSED_MESSAGES, SUPERSTEP_SUM, TASK_INPUT_RECORDS, TASK_OUTPUT_RECORDS, IO_BYTES_READ, MESSAGE_BYTES_TRANSFERED, MESSAGE_BYTES_RECEIVED, TOTAL_MESSAGES_SENT, TOTAL_MESSAGES_RECEIVED, COMPRESSED_BYTES_SENT, COMPRESSED_BYTES_RECEIVED, TIME_IN_SYNC_MS
   }
 
   private final Configuration conf;
@@ -471,7 +469,11 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         }
       }
     }
-    DistributedCache.setLocalFiles(conf, "");
+
+    // I've replaced the use of the missing setLocalFiles and
+    // addLocalFiles methods (hadoop 0.23.x) with our own DistCacheUtils methods
+    // which set the cache configurations directly.
+    DistCacheUtils.setLocalFiles(conf, "");
   }
 
   public final void close() {

@@ -15,12 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.hama.ipc;
 
+import java.io.IOException;
+
 /**
- * There is one version id for all the RPC interfaces. If any interface is
- * changed, the versionID must be changed here.
+ * Superclass of all protocols that use Hadoop RPC.
+ * Subclasses of this interface are also supposed to have
+ * a static final long versionID field.
  */
-public interface HamaRPCProtocolVersion extends VersionedProtocol {
-  public static final long versionID = 1L;
+public interface VersionedProtocol {
+  
+  /**
+   * Return protocol version corresponding to protocol interface.
+   * @param protocol The classname of the protocol interface
+   * @param clientVersion The version of the protocol that the client speaks
+   * @return the version that the server will speak
+   */
+  public long getProtocolVersion(String protocol, 
+                                 long clientVersion) throws IOException;
 }

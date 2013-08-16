@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hama.util.DistCacheUtils;
 
 public class DistributedCacheUtil {
 
@@ -79,7 +80,10 @@ public class DistributedCacheUtil {
       }
     }
     if (files.length() > 0) {
-      DistributedCache.addLocalFiles(conf, files.toString());
+      // I've replaced the use of the missing setLocalFiles and
+      // addLocalFiles methods (hadoop 0.23.x) with our own DistCacheUtils methods
+      // which set the cache configurations directly.
+      DistCacheUtils.addLocalFiles(conf, files.toString());
     }
   }
 

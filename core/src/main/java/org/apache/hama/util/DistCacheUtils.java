@@ -15,12 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.ipc;
+package org.apache.hama.util;
 
-/**
- * There is one version id for all the RPC interfaces. If any interface is
- * changed, the versionID must be changed here.
- */
-public interface HamaRPCProtocolVersion extends VersionedProtocol {
-  public static final long versionID = 1L;
+import org.apache.hadoop.conf.Configuration;
+
+public class DistCacheUtils {
+  
+  private static final String CACHE_LOCALFILES = "mapred.cache.localFiles";
+  
+  public static void addLocalFiles(Configuration conf, String str) {
+     String files = conf.get(CACHE_LOCALFILES);
+     conf.set(CACHE_LOCALFILES, files == null ? str
+         : files + "," + str);
+   }
+
+  public static void setLocalFiles(Configuration conf, String str) {
+    conf.set(CACHE_LOCALFILES, str);
+  }
+  
 }

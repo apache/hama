@@ -19,8 +19,8 @@
  */
 package org.apache.hama.examples;
 
-import org.apache.hadoop.util.ProgramDriver;
 import org.apache.hama.examples.util.Generator;
+import org.apache.hama.util.ProgramDriver;
 
 public class ExampleDriver {
 

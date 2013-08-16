@@ -52,7 +52,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hadoop.ipc.RPC;
+import org.apache.hama.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Tool;
