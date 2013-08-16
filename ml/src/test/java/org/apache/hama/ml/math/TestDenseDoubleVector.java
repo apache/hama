@@ -185,4 +185,24 @@ public class TestDenseDoubleVector {
     DoubleVector vec = new DenseDoubleVector(arr1);
     vec.slice(4, 3);
   }
+  
+  @Test
+  public void testVectorMultiplyMatrix() {
+    DoubleVector vec = new DenseDoubleVector(new double[]{1, 2, 3});
+    DoubleMatrix mat = new DenseDoubleMatrix(new double[][] {
+        {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}
+    });
+    double[] expectedRes = new double[] {38, 44, 50, 56};
+    
+    assertArrayEquals(expectedRes, vec.multiply(mat).toArray(), 0.000001);
+  }
+  
+  @Test(expected = IllegalArgumentException.class)
+  public void testVectorMultiplyMatrixAbnormal() {
+    DoubleVector vec = new DenseDoubleVector(new double[]{1, 2, 3});
+    DoubleMatrix mat = new DenseDoubleMatrix(new double[][] {
+        {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}
+    });
+    vec.multiply(mat);
+  }
 }

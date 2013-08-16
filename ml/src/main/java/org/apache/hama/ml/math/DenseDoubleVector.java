@@ -245,6 +245,22 @@ public final class DenseDoubleVector implements DoubleVector {
     return v;
   }
 
+  @Override
+  public DoubleVector multiply(DoubleMatrix matrix) {
+    Preconditions.checkArgument(this.vector.length == matrix.getRowCount(),
+        "Dimension mismatch when multiply a vector to a matrix.");
+    return this.multiplyUnsafe(matrix);
+  }
+
+  @Override
+  public DoubleVector multiplyUnsafe(DoubleMatrix matrix) {
+    DoubleVector vec = new DenseDoubleVector(matrix.getColumnCount());
+    for (int i = 0; i < vec.getDimension(); ++i) {
+      vec.set(i, this.multiplyUnsafe(matrix.getColumnVector(i)).sum());
+    }
+    return vec;
+  }
+
   /*
    * (non-Javadoc)
    * @see de.jungblut.math.DoubleVector#divide(double)
@@ -356,12 +372,12 @@ public final class DenseDoubleVector implements DoubleVector {
   public DoubleVector slice(int length) {
     return slice(0, length - 1);
   }
-  
+
   @Override
   public DoubleVector sliceUnsafe(int length) {
     return sliceUnsafe(0, length - 1);
   }
-  
+
   /*
    * (non-Javadoc)
    * @see de.jungblut.math.DoubleVector#slice(int, int)
@@ -373,7 +389,7 @@ public final class DenseDoubleVector implements DoubleVector {
 
     return sliceUnsafe(start, end);
   }
-  
+
   /**
    * {@inheritDoc}
    */
