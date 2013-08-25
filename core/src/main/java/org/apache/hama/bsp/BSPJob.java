@@ -22,6 +22,8 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Enumeration;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -36,9 +38,6 @@ import org.apache.hama.pipes.PipesApplicable;
 import org.apache.hama.pipes.PipesApplication;
 import org.apache.hama.pipes.PipesPartitioner;
 import org.apache.hama.pipes.util.DistributedCacheUtil;
-
-import com.sun.org.apache.commons.logging.Log;
-import com.sun.org.apache.commons.logging.LogFactory;
 
 /**
  * A BSP job configuration.
