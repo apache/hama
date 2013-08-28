@@ -62,15 +62,23 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
   protected List<Integer> layerSizeList;
 
   protected TrainingMethod trainingMethod;
+  
+  protected LearningStyle learningStyle;
 
   public static enum TrainingMethod {
     GRADIATE_DESCENT
   }
-
+  
+  public static enum LearningStyle {
+    UNSUPERVISED,
+    SUPERVISED
+  }
+  
   public AbstractLayeredNeuralNetwork() {
     this.regularizationWeight = DEFAULT_REGULARIZATION_WEIGHT;
     this.momentumWeight = DEFAULT_MOMENTUM_WEIGHT;
     this.trainingMethod = TrainingMethod.GRADIATE_DESCENT;
+    this.learningStyle = LearningStyle.SUPERVISED;
   }
 
   public AbstractLayeredNeuralNetwork(String modelPath) {
@@ -115,6 +123,14 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
 
   public TrainingMethod getTrainingMethod() {
     return this.trainingMethod;
+  }
+  
+  public void setLearningStyle(LearningStyle style) {
+    this.learningStyle = style;
+  }
+  
+  public LearningStyle getLearningStyle() {
+    return this.learningStyle;
   }
 
   /**
@@ -219,6 +235,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
     }
 
     this.trainingMethod = WritableUtils.readEnum(input, TrainingMethod.class);
+    this.learningStyle = WritableUtils.readEnum(input, LearningStyle.class);
   }
 
   @Override
@@ -239,6 +256,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
     }
 
     WritableUtils.writeEnum(output, this.trainingMethod);
+    WritableUtils.writeEnum(output, this.learningStyle);
   }
 
 }

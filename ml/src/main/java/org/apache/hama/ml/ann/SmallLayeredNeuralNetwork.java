@@ -288,7 +288,6 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     // fill with instance
     DoubleVector intermediateOutput = instance;
     outputCache.add(intermediateOutput);
-    // System.out.printf("Input layer: %s\n", intermediateOutput.toString());
 
     for (int i = 0; i < this.layerSizeList.size() - 1; ++i) {
       intermediateOutput = forward(i, intermediateOutput);
@@ -308,11 +307,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     DoubleMatrix weightMatrix = this.weightMatrixList.get(fromLayer);
 
     DoubleVector vec = weightMatrix.multiplyVectorUnsafe(intermediateOutput);
-    // System.out.printf("Before applying squashing, from Layer %d to %d: %s\n",
-    // fromLayer, fromLayer + 1, vec.toString());
     vec = vec.applyToElements(this.squashingFunctionList.get(fromLayer));
-    // System.out.printf("After applying squashing, from Layer %d to %d: %s\n",
-    // fromLayer, fromLayer + 1, vec.toString());
 
     // add bias
     DoubleVector vecWithBias = new DenseDoubleVector(vec.getDimension() + 1);
@@ -330,31 +325,50 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   public void trainOnline(DoubleVector trainingInstance) {
     DoubleMatrix[] updateMatrices = this.trainByInstance(trainingInstance);
-    // System.out.printf("Sum: %f\n", updateMatrices[0].sum());
     this.updateWeightMatrices(updateMatrices);
   }
 
   @Override
   public DoubleMatrix[] trainByInstance(DoubleVector trainingInstance) {
-    // validate training instance
     int inputDimension = this.layerSizeList.get(0) - 1;
-    int outputDimension = this.layerSizeList.get(this.layerSizeList.size() - 1);
-    Preconditions.checkArgument(
-        inputDimension + outputDimension == trainingInstance.getDimension(),
-        String.format(
-            "The dimension of training instance is %d, but requires %d.",
-            trainingInstance.getDimension(), inputDimension + outputDimension));
+    int outputDimension;
+    DoubleVector inputInstance = null;
+    DoubleVector labels = null;
+    if (this.learningStyle == LearningStyle.SUPERVISED) {
+      outputDimension = this.layerSizeList.get(this.layerSizeList.size() - 1);
+      // validate training instance
+      Preconditions.checkArgument(
+          inputDimension + outputDimension == trainingInstance.getDimension(),
+          String
+              .format(
+                  "The dimension of training instance is %d, but requires %d.",
+                  trainingInstance.getDimension(), inputDimension
+                      + outputDimension));
 
-    // prepare the features and labels
-    DoubleVector inputInstance = new DenseDoubleVector(
-        this.layerSizeList.get(0));
-    inputInstance.set(0, 1); // add bias
-    for (int i = 0; i < inputDimension; ++i) {
-      inputInstance.set(i + 1, trainingInstance.get(i));
+      inputInstance = new DenseDoubleVector(this.layerSizeList.get(0));
+      inputInstance.set(0, 1); // add bias
+      for (int i = 0; i < inputDimension; ++i) {
+        inputInstance.set(i + 1, trainingInstance.get(i));
+      }
+
+      labels = trainingInstance.sliceUnsafe(inputInstance.getDimension() - 1,
+          trainingInstance.getDimension() - 1);
+    } else if (this.learningStyle == LearningStyle.UNSUPERVISED) {
+      // labels are identical to input features
+      outputDimension = inputDimension;
+      // validate training instance
+      Preconditions.checkArgument(inputDimension == trainingInstance
+          .getDimension(), String.format(
+          "The dimension of training instance is %d, but requires %d.",
+          trainingInstance.getDimension(), inputDimension));
+
+      inputInstance = new DenseDoubleVector(this.layerSizeList.get(0));
+      inputInstance.set(0, 1); // add bias
+      for (int i = 0; i < inputDimension; ++i) {
+        inputInstance.set(i + 1, trainingInstance.get(i));
+      }
+      labels = trainingInstance.deepCopy();
     }
-
-    DoubleVector labels = trainingInstance.sliceUnsafe(
-        inputInstance.getDimension() - 1, trainingInstance.getDimension() - 1);
 
     List<DoubleVector> internalResults = this.getOutputInternal(inputInstance);
     DoubleVector output = internalResults.get(internalResults.size() - 1);
@@ -391,24 +405,6 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     DoubleVector deltaVec = new DenseDoubleVector(
         this.layerSizeList.get(this.layerSizeList.size() - 1));
 
-    // // calculate norm-2 error ||t - o||^2
-    // DoubleVector errorVec = output.slice(output.getDimension() -
-    // 1).applyToElements(labels, new DoubleDoubleFunction() {
-    // @Override
-    // public double apply(double x1, double x2) {
-    // double v = x1 - x2;
-    // return v * v;
-    // }
-    // @Override
-    // public double applyDerivative(double x1, double x2) {
-    // throw new UnsupportedOperationException();
-    // }
-    // });
-    // double error = errorVec.sum();
-    // System.out.printf("Error: %f\n", error);
-
-    // System.out.printf("Output: %s\n", output);
-
     DoubleFunction squashingFunction = this.squashingFunctionList
         .get(this.squashingFunctionList.size() - 1);
 
@@ -426,8 +422,6 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
           deltaVec.get(i)
               * squashingFunction.applyDerivative(output.get(i + 1)));
     }
-
-    // System.out.printf("Delta output: %s\n", deltaVec.toString());
 
     // start from previous layer of output layer
     for (int layer = this.layerSizeList.size() - 2; layer >= 0; --layer) {
@@ -536,6 +530,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     job.setOutputFormat(org.apache.hama.bsp.NullOutputFormat.class);
 
     int numTasks = conf.getInt("tasks", 1);
+    Log.info(String.format("Number of tasks: %d\n", numTasks));
     job.setNumBspTask(numTasks);
     job.waitForCompletion(true);
 
@@ -552,6 +547,16 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     // System.out.printf("Labels: %s\tOutput: %s\n", labels, output);
     this.trainingError = errors.sum();
     // System.out.printf("Training error: %s\n", errors);
+  }
+
+  /**
+   * Get the squashing function of a specified layer.
+   * 
+   * @param idx
+   * @return
+   */
+  public DoubleFunction getSquashingFunction(int idx) {
+    return this.squashingFunctionList.get(idx);
   }
 
 }

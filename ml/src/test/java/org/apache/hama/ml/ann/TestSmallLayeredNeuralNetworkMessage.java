@@ -86,7 +86,7 @@ public class TestSmallLayeredNeuralNetworkMessage {
 
       DoubleMatrix[] readPrevMatrices = readMessage.getPrevMatrices();
       assertNull(readPrevMatrices);
-
+      
       // delete
       fs.delete(path, true);
     } catch (IOException e) {

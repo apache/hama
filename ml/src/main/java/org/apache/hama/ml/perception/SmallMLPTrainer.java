@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.bsp.BSPPeer;

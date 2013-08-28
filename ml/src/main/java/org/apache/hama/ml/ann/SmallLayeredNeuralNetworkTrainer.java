@@ -70,7 +70,7 @@ public final class SmallLayeredNeuralNetworkTrainer
     this.modelPath = conf.get("modelPath");
     this.maxIterations = conf.getLong("training.max.iterations", 100000);
     this.convergenceCheckInterval = conf.getLong("convergence.check.interval",
-        1000);
+        2000);
     this.modelPath = conf.get("modelPath");
     this.inMemoryModel = new SmallLayeredNeuralNetwork(modelPath);
     this.prevAvgTrainingError = Integer.MAX_VALUE;
