@@ -17,15 +17,24 @@
  */
 package org.apache.hama.ipc;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Random;
+
 import junit.framework.TestCase;
 
-//FIXME This unit tests doesn't work with Hadoop 2.0.
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.util.StringUtils;
+import org.apache.hama.util.BSPNetUtils;
 
 public class TestIPC extends TestCase {
 
-  /*
   public static final Log LOG = LogFactory.getLog(TestIPC.class);
-  
+
   final private static Configuration conf = new Configuration();
   final static private int PING_INTERVAL = 1000;
 
@@ -222,5 +231,4 @@ public class TestIPC extends TestCase {
           message.contains(causeText));
     }
   }
-  */
 }
