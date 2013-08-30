@@ -21,6 +21,7 @@ Release 0.6.3 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-749: Build for C++ Pipes (Martin Illecker)
    HAMA-796: Add Vector multiply Matrix for DoubleVector as well as DenseDoubleVector. (Yexi Jiang)
    HAMA-770: Use a unified model to represent linear regression, logistic regression, MLP, autoencoder, and deepNets (Yexi Jiang)
    HAMA-671: Clean up Maven build scripts (edwardyoon)

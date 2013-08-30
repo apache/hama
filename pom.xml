@@ -281,6 +281,7 @@
   </dependencyManagement>
 
   <modules>
+    <module>c++</module>
     <module>core</module>
     <module>graph</module>
     <module>examples</module>
@@ -355,6 +356,7 @@
           <excludes>
             <exclude>.idea/**</exclude>
             <exclude>.git/**</exclude>
+            <exclude>.gitignore</exclude>
             <exclude>**/.classpath/**</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/*.iml</exclude>
@@ -369,7 +371,6 @@
             <exclude>**/src/test/resources/*.properties</exclude>
             <exclude>**dependency-reduced-pom.xml</exclude>
             <exclude>**/src/test/resources/*.txt</exclude>
-            <exclude>c++/**</exclude>
             <exclude>**/target/**</exclude>
           </excludes>
         </configuration>
