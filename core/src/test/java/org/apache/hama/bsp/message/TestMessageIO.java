@@ -329,6 +329,7 @@ public class TestMessageIO extends TestCase {
       readBuff.flip();
       assertEquals(readBuff.getInt(), sum);
       assertEquals(readBuff.getInt(), sum + 99);
+      raf.close();
     } finally {
       assertTrue(f.delete());
     }
