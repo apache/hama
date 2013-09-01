@@ -116,7 +116,6 @@ public class TestSyncServiceFactory extends TestCase {
     conf.setInt(Constants.PEER_PORT, zkPort);
     conf.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     conf.setInt(Constants.ZOOKEEPER_CLIENT_PORT, zkPort);
-    conf.set(Constants.ZOOKEEPER_SESSION_TIMEOUT, "12000");
     System.setProperty("user.dir", "/tmp");
     // given null, should return zookeeper
     final SyncServer syncServer = SyncServiceFactory.getSyncServer(conf);
@@ -147,8 +146,11 @@ public class TestSyncServiceFactory extends TestCase {
         }
       }
     });
+    
+    Thread.sleep(3000);
 
     IntWritable data = new IntWritable(5);
+    
     syncClient.storeInformation(
         syncClient.constructKey(jobId, String.valueOf(1L), "test"), data, true,
         null);
