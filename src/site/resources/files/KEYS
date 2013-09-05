@@ -1,3 +1,9 @@
+pub   4096R/B2736DE5 2011-03-08
+uid                  Edward J. Yoon <edwardyoon@apache.org>
+sig 3        B2736DE5 2011-03-08  Edward J. Yoon <edwardyoon@apache.org>
+sub   4096R/4D24D89E 2011-03-08
+sig          B2736DE5 2011-03-08  Edward J. Yoon <edwardyoon@apache.org>
+
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v2.0.16 (FreeBSD)
 
