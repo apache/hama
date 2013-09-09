@@ -27,7 +27,7 @@
   <groupId>org.apache.hama</groupId>
   <artifactId>hama-parent</artifactId>
   <name>Apache Hama parent POM</name>
-  <version>0.6.3</version>
+  <version>0.7.0-SNAPSHOT</version>
   <url>http://hama.apache.org</url>
   <packaging>pom</packaging>
   <prerequisites>
@@ -75,12 +75,12 @@
     </license>
   </licenses>
   <scm>
-    <url>scm:svn:https://svn.apache.org/repos/asf/hama/tags/0.6.3-RC1</url>
+    <url>scm:svn:https://svn.apache.org/repos/asf/hama/</url>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/hama/tags/0.6.3-RC1
+      scm:svn:http://svn.apache.org/repos/asf/hama/trunk/
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/hama/tags/0.6.3-RC1
+      scm:svn:https://svn.apache.org/repos/asf/hama/trunk/
     </developerConnection>
   </scm>
 
