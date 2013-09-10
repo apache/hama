@@ -16,10 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hama.examples;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.apache.hama.ml.semiclustering;
 
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -27,6 +24,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * SemiClusterTextReader defines the way in which data is to be read from the

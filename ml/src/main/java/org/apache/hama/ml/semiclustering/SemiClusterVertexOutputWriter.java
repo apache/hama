@@ -16,9 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hama.examples;
-
-import java.io.IOException;
+package org.apache.hama.ml.semiclustering;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -28,6 +26,8 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.graph.GraphJobMessage;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexOutputWriter;
+
+import java.io.IOException;
 
 /**
  * The VertexOutputWriter defines what parts of the vertex shall be written to

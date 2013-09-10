@@ -16,22 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.hama.examples;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+package org.apache.hama.ml.semiclustering;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.Vertex;
+
+import java.io.IOException;
+import java.util.*;
 
 /**
  * SemiClusteringVertex Class defines each vertex in a Graph job and the
@@ -107,7 +101,7 @@ public class SemiClusteringVertex extends
   /**
    * Function which is executed in the first SuperStep
    * 
-   * @throws IOException
+   * @throws java.io.IOException
    */
   public void firstSuperStep() throws IOException {
     Vertex<Text, DoubleWritable, SemiClusterMessage> v = this;

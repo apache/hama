@@ -18,8 +18,6 @@
 
 package org.apache.hama.examples;
 
-import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
@@ -31,6 +29,12 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.GraphJob;
+import org.apache.hama.ml.semiclustering.SemiClusterMessage;
+import org.apache.hama.ml.semiclustering.SemiClusterTextReader;
+import org.apache.hama.ml.semiclustering.SemiClusterVertexOutputWriter;
+import org.apache.hama.ml.semiclustering.SemiClusteringVertex;
+
+import java.io.IOException;
 
 public class SemiClusterJobDriver {
 

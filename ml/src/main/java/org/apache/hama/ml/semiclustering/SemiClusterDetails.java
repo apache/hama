@@ -16,13 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.hama.examples;
+package org.apache.hama.ml.semiclustering;
+
+import org.apache.hadoop.io.WritableComparable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import org.apache.hadoop.io.WritableComparable;
 
 /**
  * The SemiClusterDetails class is used to store a Semi-Cluster ID and its
