@@ -20,13 +20,13 @@
     <parent>
       <groupId>org.apache.hama</groupId>
       <artifactId>hama-parent</artifactId>
-      <version>0.7.0-SNAPSHOT</version>
+      <version>0.6.3-SNAPSHOT</version>
     </parent>
     
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.hama</groupId>
     <artifactId>hama-pipes</artifactId>
-    <version>0.7.0-SNAPSHOT</version>
+    <version>0.6.3-SNAPSHOT</version>
     <name>pipes</name>
     <description>Apache Hama Pipes</description>
     <packaging>pom</packaging>
@@ -49,16 +49,17 @@
                   <goals><goal>run</goal></goals>
                   <configuration>
                     <target>
-                      <mkdir dir="${project.build.directory}/native" />
-                      <exec executable="cmake" dir="${project.build.directory}/native" failonerror="true">
-                        <arg line="${basedir}/src/ -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model}" />
+                      <mkdir dir="${project.build.directory}/native"/>
+                      <exec executable="cmake" dir="${project.build.directory}/native"
+                          failonerror="true">
+                        <arg line="${basedir}/src/ -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model}"/>
                       </exec>
                       <exec executable="make" dir="${project.build.directory}/native" failonerror="true">
-                        <arg line="VERBOSE=1" />
+                        <arg line="VERBOSE=1"/>
                       </exec>
                       <!-- The second make is a workaround for HADOOP-9215.  It can
                            be removed when version 2.6 of cmake is no longer supported . -->
-                      <exec executable="make" dir="${project.build.directory}/native" failonerror="true" />
+                      <exec executable="make" dir="${project.build.directory}/native" failonerror="true"></exec>
                     </target>
                   </configuration>
                 </execution>
@@ -94,9 +95,9 @@
               </goals>
               <configuration>
                 <target>
-                  <mkdir dir="${basedir}/../target/native" />
+                  <mkdir dir="${basedir}/../target/native"/>
                   <copy toDir="${basedir}/../target/native">
-                    <fileset dir="${basedir}/src/main/native" />
+                    <fileset dir="${basedir}/src/main/native"/>
                   </copy>
                 </target>
               </configuration>
