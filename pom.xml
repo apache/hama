@@ -126,6 +126,9 @@
       <modules>
         <module>yarn</module>
       </modules>
+      <properties>
+        <hadoop.version>2.1.0-beta</hadoop.version>
+      </properties>
 
       <dependencies>
         <!-- build for Hadoop 2.x -->
