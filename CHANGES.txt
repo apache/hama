@@ -30,6 +30,7 @@ Release 0.6.3 (unreleased changes)
    HAMA-773: Matrix/Vector operation does not validate the input argument (Yexi Jiang)
    
   TASKS
+
    HAMA-792: Add testing datasets for ML package (Yexi Jiang)
 
 Release 0.6.2 - June 26, 2013
