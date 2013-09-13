@@ -45,7 +45,12 @@ public interface MessageManager<M extends Writable> {
 
   /**
    * Init can be used to start servers and initialize internal state. If you are
-   * implementing a subclass, please call the super version of this method.
+   * implementing a subclass, please call the super version of this method. The
+   * socket address provided may be used for initializing the server connection.
+   * If it is used or not used, the message manager should provide a unique
+   * InetSocketAddress that identifies the server for the peer listening on the
+   * socket. This socket address should be returned in
+   * {@link MessageManager#getListenerAddress()}
    * 
    */
   public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
@@ -123,4 +128,9 @@ public interface MessageManager<M extends Writable> {
   public void registerListener(MessageEventListener<M> listener)
       throws IOException;
 
+  /**
+   * Returns the server address on which the incoming connections are listening
+   * on.
+   */
+  public InetSocketAddress getListenerAddress();
 }

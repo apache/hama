@@ -167,6 +167,16 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
 
+    // This function call may change the current peer address
+    initializeMessaging();
+    
+    conf.set(Constants.PEER_HOST, peerAddress.getHostName());
+    conf.setInt(Constants.PEER_PORT, peerAddress.getPort());
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Initialized Messaging service.");
+    }
+    
     initializeIO();
     initializeSyncService(superstep, state);
 
@@ -179,11 +189,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 1.0f, state,
         stateString, peerAddress.getHostName(), phase, counters));
-
-    initilizeMessaging();
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Initialized Messaging service.");
-    }
 
     final String combinerName = conf.get(Constants.COMBINER_CLASS);
     if (combinerName != null) {
@@ -288,9 +293,10 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     return in.getPos();
   }
 
-  public final void initilizeMessaging() throws ClassNotFoundException {
+  public final void initializeMessaging() throws ClassNotFoundException {
     messenger = MessageManagerFactory.getMessageManager(conf);
     messenger.init(taskId, this, conf, peerAddress);
+    peerAddress = messenger.getListenerAddress();
   }
 
   public final void initializeSyncService(long superstep, TaskStatus.State state)

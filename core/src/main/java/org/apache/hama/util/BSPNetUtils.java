@@ -98,14 +98,15 @@ public class BSPNetUtils {
    * @return the InetSocketAddress of the given BSP peer
    */
   public static InetSocketAddress getAddress(String peerName) {
-    String[] peerAddrParts = peerName.split(":");
-    if (peerAddrParts.length != 2) {
+    int index = peerName.lastIndexOf(':');
+    if (index <= 0 || index == peerName.length() - 1) {
       throw new ArrayIndexOutOfBoundsException(
-          "Peername must consist of exactly ONE \":\"! Given peername was: "
-              + peerName);
+          "Invalid host and port information. "
+              + "Peername must consist of atleast ONE \":\"! "
+              + "Given peername was: " + peerName);
     }
-    return new InetSocketAddress(peerAddrParts[0],
-        Integer.valueOf(peerAddrParts[1]));
+    return new InetSocketAddress(peerName.substring(0, index),
+        Integer.valueOf(peerName.substring(index + 1)));
   }
 
   /**

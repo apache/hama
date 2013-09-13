@@ -150,6 +150,12 @@ public class TestCheckpoint extends TestCase {
       this.listener = listener;
     }
 
+	@Override
+	public InetSocketAddress getListenerAddress() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
   }
 
   public static class TestBSPPeer implements

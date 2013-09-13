@@ -335,12 +335,14 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     @SuppressWarnings("rawtypes")
     private static final ConcurrentHashMap<InetSocketAddress, LocalMessageManager> MANAGER_MAP = new ConcurrentHashMap<InetSocketAddress, LocalBSPRunner.LocalMessageManager>();
+    private InetSocketAddress selfAddress;
 
     @Override
     public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
         Configuration conf, InetSocketAddress peerAddress) {
       super.init(attemptId, peer, conf, peerAddress);
       MANAGER_MAP.put(peerAddress, this);
+      selfAddress = peerAddress;
     }
 
     @SuppressWarnings("unchecked")
@@ -352,6 +354,11 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
             1L);
       }
+    }
+
+    @Override
+    public InetSocketAddress getListenerAddress() {
+      return selfAddress;
     }
   }
 
@@ -400,12 +407,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         throws IOException, InterruptedException {
       return true;
     }
-
-    @Override
-    public int getAssignedPortNum(TaskAttemptID taskid) {
-      return 0;
-    }
-
   }
 
   public static class LocalSyncClient extends BSPPeerSyncClient {

@@ -41,13 +41,13 @@ public class TestLocalRunner extends TestCase {
     bsp.setOutputPath(TestBSPMasterGroomServer.OUTPUT_PATH);
 
     conf.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 600);
-    bsp.setNumBspTask(2);
+    bsp.setNumBspTask(3);
     bsp.setInputFormat(NullInputFormat.class);
 
     FileSystem fileSys = FileSystem.get(conf);
 
     if (bsp.waitForCompletion(true)) {
-      TestBSPMasterGroomServer.checkOutput(fileSys, conf, 2);
+      TestBSPMasterGroomServer.checkOutput(fileSys, conf, 3);
     }
   }
 

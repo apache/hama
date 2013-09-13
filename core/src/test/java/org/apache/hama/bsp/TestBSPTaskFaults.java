@@ -148,11 +148,6 @@ public class TestBSPTaskFaults extends TestCase {
       return true;
     }
 
-    @Override
-    public int getAssignedPortNum(TaskAttemptID taskid) {
-      return 0;
-    }
-
     public synchronized int getPingCount() {
       return pingCount;
     }

@@ -25,14 +25,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.ipc.RPC;
-import org.apache.hama.ipc.RPC.Server;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
+import org.apache.hama.ipc.RPC;
+import org.apache.hama.ipc.RPC.Server;
 import org.apache.hama.util.LRUCache;
 
 /**
@@ -45,7 +46,7 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
   private static final Log LOG = LogFactory
       .getLog(HadoopMessageManagerImpl.class);
 
-  private Server server = null;
+  private Server server;
 
   private LRUCache<InetSocketAddress, HadoopMessageManager<M>> peersLRUCache = null;
 
@@ -74,11 +75,16 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
   private final void startRPCServer(Configuration conf,
       InetSocketAddress peerAddress) {
     try {
-      this.server = RPC.getServer(this, peerAddress.getHostName(),
-          peerAddress.getPort(), conf);
+      String bindAddress = conf.get(Constants.PEER_HOST,
+          Constants.DEFAULT_PEER_HOST);
+      InetSocketAddress selfAddress = new InetSocketAddress(bindAddress, 0);
+
+      this.server = RPC.getServer(this, selfAddress.getHostName(),
+          selfAddress.getPort(), conf);
       server.start();
-      LOG.info(" BSPPeer address:" + peerAddress.getHostName() + " port:"
-          + peerAddress.getPort());
+      
+      LOG.info(" BSPPeer address:" + server.getListenerAddress().getHostName()
+          + " port:" + server.getListenerAddress().getPort());
     } catch (IOException e) {
       LOG.error("Fail to start RPC server!", e);
       throw new RuntimeException("RPC Server could not be launched!");
@@ -158,4 +164,11 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
     return versionID;
   }
 
+  @Override
+  public InetSocketAddress getListenerAddress() {
+    if (this.server != null) {
+      return this.server.getListenerAddress();
+    }
+    return null;
+  }
 }

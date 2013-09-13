@@ -405,9 +405,4 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
 
   }
 
-  @Override
-  public int getAssignedPortNum(TaskAttemptID taskid) {
-    return 0;
-  }
-
 }

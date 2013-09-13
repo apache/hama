@@ -67,10 +67,4 @@ public interface BSPPeerProtocol extends HamaRPCProtocolVersion, Closeable,
   boolean statusUpdate(TaskAttemptID taskId, TaskStatus taskStatus)
       throws IOException, InterruptedException;
 
-  /**
-   * @param taskid
-   * @return assigned port number
-   */
-  int getAssignedPortNum(TaskAttemptID taskid);
-
 }

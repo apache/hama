@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
@@ -73,12 +74,16 @@ public class TestHadoopMessageManager extends TestCase {
     InetSocketAddress peer = new InetSocketAddress(
         BSPNetUtils.getCanonicalHostname(), BSPNetUtils.getFreePort()
             + (increment++));
+    conf.set(Constants.PEER_HOST, Constants.DEFAULT_PEER_HOST);
+    conf.setInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+
     BSPPeer<?, ?, ?, ?, IntWritable> dummyPeer = new BSPPeerImpl<NullWritable, NullWritable, NullWritable, NullWritable, IntWritable>(
         conf, FileSystem.get(conf), new Counters());
     TaskAttemptID id = new TaskAttemptID("1", 1, 1, 1);
     messageManager.init(id, dummyPeer, conf, peer);
+    peer = messageManager.getListenerAddress();
     String peerName = peer.getHostName() + ":" + peer.getPort();
-
+    System.out.println("Peer is " + peerName);
     messageManager.send(peerName, new IntWritable(1337));
 
     Iterator<Entry<InetSocketAddress, MessageQueue<IntWritable>>> messageIterator = messageManager

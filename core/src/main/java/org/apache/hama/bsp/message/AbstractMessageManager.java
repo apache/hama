@@ -65,8 +65,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   protected SynchronizedQueue<M> localQueueForNextIteration;
   // this peer object is just used for counter incrementation
   protected BSPPeer<?, ?, ?, ?, M> peer;
-  // the peer address of this peer
-  protected InetSocketAddress peerAddress;
+  
   // the task attempt id
   protected TaskAttemptID attemptId;
 
@@ -89,7 +88,6 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     this.attemptId = attemptId;
     this.peer = peer;
     this.conf = conf;
-    this.peerAddress = peerAddress;
     this.localQueue = getReceiverQueue();
     this.localQueueForNextIteration = getSynchronizedReceiverQueue();
     this.maxCachedConnections = conf.getInt(MAX_CACHED_CONNECTIONS_KEY, 100);
