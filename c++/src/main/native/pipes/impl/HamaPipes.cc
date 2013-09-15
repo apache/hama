@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 
+#include <unistd.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdint.h>

@@ -31,7 +31,7 @@
     <description>Apache Hama Pipes</description>
     <packaging>pom</packaging>
 
-    <profiles>
+    <profiles>     
       <profile>
         <id>native</id>
         <activation>
@@ -49,16 +49,32 @@
                   <goals><goal>run</goal></goals>
                   <configuration>
                     <target>
-                      <mkdir dir="${project.build.directory}/native" />
-                      <exec executable="cmake" dir="${project.build.directory}/native" failonerror="true">
-                        <arg line="${basedir}/src/ -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model}" />
-                      </exec>
-                      <exec executable="make" dir="${project.build.directory}/native" failonerror="true">
-                        <arg line="VERBOSE=1" />
-                      </exec>
-                      <!-- The second make is a workaround for HADOOP-9215.  It can
-                           be removed when version 2.6 of cmake is no longer supported . -->
-                      <exec executable="make" dir="${project.build.directory}/native" failonerror="true" />
+                      <taskdef resource="net/sf/antcontrib/antcontrib.properties" classpathref="maven.plugin.classpath" />
+                      <!-- Check if cmake is installed -->
+                      <property environment="env" />
+                      <if>
+                        <or>
+                          <available file="cmake" filepath="${env.PATH}" />
+                          <!--  on Windows it can be Path, path -->
+                          <available file="cmake" filepath="${env.Path}" />
+                          <available file="cmake" filepath="${env.path}" />
+                        </or>
+                        <then>
+                          <mkdir dir="${project.build.directory}/native" />
+                          <exec executable="cmake" dir="${project.build.directory}/native" failonerror="true">
+                            <arg line="${basedir}/src/ -DJVM_ARCH_DATA_MODEL=${sun.arch.data.model}" />
+                          </exec>
+                          <exec executable="make" dir="${project.build.directory}/native" failonerror="true">
+                            <arg line="VERBOSE=1" />
+                          </exec>
+                          <!-- The second make is a workaround for HADOOP-9215.  It can
+                               be removed when version 2.6 of cmake is no longer supported . -->  
+                          <exec executable="make" dir="${project.build.directory}/native" failonerror="true" />
+                        </then>
+                        <else>
+                      		<echo>CMAKE is missing! Skipping native build!</echo>                      
+                        </else>
+                      </if>
                     </target>
                   </configuration>
                 </execution>
@@ -75,6 +91,13 @@
                 </execution>
                 -->
               </executions>
+              <dependencies>
+                <dependency>
+                  <groupId>ant-contrib</groupId>
+                  <artifactId>ant-contrib</artifactId>
+                  <version>20020829</version>
+                </dependency>
+              </dependencies>
             </plugin>
           </plugins>
         </build>
