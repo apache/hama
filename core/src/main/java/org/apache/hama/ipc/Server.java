@@ -57,20 +57,14 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.security.AccessControlException;
-import org.apache.hadoop.security.SaslRpcServer;
 import org.apache.hadoop.security.SaslRpcServer.AuthMethod;
-import org.apache.hadoop.security.SaslRpcServer.SaslStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authorize.AuthorizationException;
 import org.apache.hadoop.security.authorize.ProxyUsers;
@@ -893,7 +887,6 @@ public abstract class Server {
 
     ConnectionHeader header = new ConnectionHeader();
     Class<?> protocol;
-    SaslServer saslServer;
     private AuthMethod authMethod;
     private boolean skipInitialSaslHandshake;
     private ByteBuffer rpcHeaderBuffer;
@@ -906,10 +899,6 @@ public abstract class Server {
     private final Call authFailedCall = new Call(AUTHROIZATION_FAILED_CALLID,
         null, this);
     private ByteArrayOutputStream authFailedResponse = new ByteArrayOutputStream();
-    // Fake 'call' for SASL context setup
-    private static final int SASL_CALLID = -33;
-    private final Call saslCall = new Call(SASL_CALLID, null, this);
-    private final ByteArrayOutputStream saslResponse = new ByteArrayOutputStream();
 
     private boolean useWrap = false;
 
@@ -979,30 +968,6 @@ public abstract class Server {
       return false;
     }
 
-    private void doSaslReply(SaslStatus status, Writable rv, String errorClass,
-        String error) throws IOException {
-      saslResponse.reset();
-      DataOutputStream out = new DataOutputStream(saslResponse);
-      out.writeInt(status.state); // write status
-      if (status == SaslStatus.SUCCESS) {
-        rv.write(out);
-      } else {
-        WritableUtils.writeString(out, errorClass);
-        WritableUtils.writeString(out, error);
-      }
-      saslCall.setResponse(ByteBuffer.wrap(saslResponse.toByteArray()));
-      responder.doRespond(saslCall);
-    }
-
-    private void disposeSasl() {
-      if (saslServer != null) {
-        try {
-          saslServer.dispose();
-        } catch (SaslException ignored) {
-        }
-      }
-    }
-
     public int readAndProcess() throws IOException, InterruptedException {
       while (true) {
         /*
@@ -1055,8 +1020,6 @@ public abstract class Server {
             throw ae;
           }
           if (!isSecurityEnabled && authMethod != AuthMethod.SIMPLE) {
-            doSaslReply(SaslStatus.SUCCESS, new IntWritable(
-                SaslRpcServer.SWITCH_TO_SIMPLE_AUTH), null, null);
             authMethod = AuthMethod.SIMPLE;
             // client has already sent the initial Sasl message and we
             // should ignore it. Both client and server should fall back
@@ -1186,7 +1149,6 @@ public abstract class Server {
     }
 
     private synchronized void close() throws IOException {
-      disposeSasl();
       data = null;
       dataLengthBuffer = null;
       if (!channel.isOpen())
@@ -1354,10 +1316,6 @@ public abstract class Server {
 
     // Create the responder here
     responder = new Responder();
-
-    if (isSecurityEnabled) {
-      SaslRpcServer.init(conf);
-    }
   }
 
   private void closeConnection(Connection connection) {
