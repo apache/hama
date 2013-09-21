@@ -18,6 +18,9 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -36,6 +39,7 @@ import org.apache.hama.bsp.TestBSPMasterGroomServer;
 import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.graph.example.PageRank;
 import org.apache.hama.graph.example.PageRank.PagerankSeqReader;
+import org.junit.Before;
 
 public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
 
@@ -49,6 +53,16 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   private static String INPUT = "/tmp/pagerank/real-tmp.seq";
   private static String OUTPUT = "/tmp/pagerank/real-out";
 
+  private static final List<Class<? extends VerticesInfo>> vi = new ArrayList<Class<? extends VerticesInfo>>();
+
+  @Before
+  public void setUp() throws Exception  {
+    super.setUp();
+    vi.add(ListVerticesInfo.class);
+    vi.add(DiskVerticesInfo.class);
+    vi.add(OffHeapVerticesInfo.class);
+  }
+
   @Override
   public void testSubmitJob() throws Exception {
 
@@ -60,6 +74,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     BSPJobClient jobClient = new BSPJobClient(configuration);
     configuration.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 6000);
     configuration.set("hama.graph.self.ref", "true");
+    injectVerticesInfo();
     ClusterStatus cluster = jobClient.getClusterStatus(false);
     assertEquals(this.numOfGroom, cluster.getGroomServers());
     LOG.info("Client finishes execution job.");
@@ -96,6 +111,11 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     } finally {
       deleteTempDirs();
     }
+  }
+
+  protected void injectVerticesInfo() {
+    Class<? extends VerticesInfo> verticesInfoClass = vi.get(Math.abs(new Random().nextInt() % 3));
+    LOG.info("using vertices info of type : "+verticesInfoClass.getName());
   }
 
   private void verifyResult() throws IOException {

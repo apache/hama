@@ -37,6 +37,16 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.directmemory</groupId>
+      <artifactId>directmemory-cache</artifactId>
+      <version>0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.directmemory</groupId>
+      <artifactId>directmemory-kryo</artifactId>
+      <version>0.2</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.hama</groupId>
       <artifactId>hama-core</artifactId>
       <version>${project.version}</version>

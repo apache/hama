@@ -122,12 +122,7 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
   public void finishRemovals() {
   }
 
-  @Override
-  public boolean isFinishedAdditions() {
-    return false;
-  }
-
-  @Override
+   @Override
   public void finishSuperstep() {
 
   }

@@ -86,11 +86,6 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
       throws IOException;
 
   /**
-   * @return true of all vertices are added.
-   */
-  public boolean isFinishedAdditions();
-
-  /**
    * @return the number of vertices added to the underlying structure.
    *         Implementations should take care this is a constant time operation.
    */
