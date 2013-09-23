@@ -18,15 +18,16 @@
 
 package org.apache.hama.ml.semiclustering;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * SemiClusterTextReader defines the way in which data is to be read from the
@@ -46,24 +47,15 @@ public class SemiClusterTextReader extends
     String line = value.toString();
     String[] lineSplit = line.split("\t");
     if (!line.startsWith("#")) {
-      if (lastVertexId == null) {
-        lastVertexId = lineSplit[0];
+      lastVertexId = lineSplit[0];
+      adjacents = Arrays.asList(lineSplit[1].split(","));
+      vertex.setVertexID(new Text(lastVertexId));
+      for (String adjacent : adjacents) {
+        String[] ValueSplit = adjacent.split("-");
+        vertex.addEdge(new Edge<Text, DoubleWritable>(new Text(ValueSplit[0]),
+            new DoubleWritable(Double.parseDouble(ValueSplit[1]))));
       }
-      if (lastVertexId.equals(lineSplit[0])) {
-        adjacents.add(lineSplit[1]);
-      } else {
-        vertex.setVertexID(new Text(lastVertexId));
-        for (String adjacent : adjacents) {
-          String[] ValueSplit = adjacent.split("-");
-          vertex.addEdge(new Edge<Text, DoubleWritable>(
-              new Text(ValueSplit[0]), new DoubleWritable(Double
-                  .parseDouble(ValueSplit[1]))));
-        }
-        adjacents.clear();
-        lastVertexId = lineSplit[0];
-        adjacents.add(lineSplit[1]);
-        return true;
-      }
+      return true;
     }
     return false;
   }
