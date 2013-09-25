@@ -43,10 +43,12 @@ public class NeuralNetworkTest {
     this.testNeuralNetworkTraining();
 
     String dataPath = "src/test/resources/neuralnets_classification_test.txt";
-    String modelPath = "tmp/neuralnets.model";
-    String resultPath = "tmp/neuralnets.txt";
+    String modelPath = "/tmp/neuralnets.model";
+    String resultPath = "/tmp/neuralnets.txt";
     String mode = "label";
+    Configuration conf = new Configuration();
     try {
+      FileSystem fs = FileSystem.get(conf);
       NeuralNetwork
           .main(new String[] { mode, modelPath, dataPath, resultPath });
 
@@ -76,6 +78,9 @@ public class NeuralNetworkTest {
         }
       }
       System.out.printf("Precision: %f\n", correct / total);
+      fs.delete(new Path(resultPath), true);
+      fs.delete(new Path(modelPath), true);
+
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -84,14 +89,15 @@ public class NeuralNetworkTest {
   private void testNeuralNetworkTraining() {
     String mode = "train";
     String strTrainingDataPath = "src/test/resources/neuralnets_classification_training.txt";
-    String strSequenceTrainingDataPath = "tmp/test-neuralnets.data";
+    String strSequenceTrainingDataPath = "/tmp/test-neuralnets.data";
     int featureDimension = 8;
     int labelDimension = 1;
 
     Path sequenceTrainingDataPath = new Path(strSequenceTrainingDataPath);
     Configuration conf = new Configuration();
+    FileSystem fs;
     try {
-      FileSystem fs = FileSystem.get(conf);
+      fs = FileSystem.get(conf);
       SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf,
           sequenceTrainingDataPath, LongWritable.class, VectorWritable.class);
       BufferedReader br = new BufferedReader(
@@ -113,10 +119,13 @@ public class NeuralNetworkTest {
       e1.printStackTrace();
     }
 
-    String modelPath = "tmp/neuralnets.model";
+    String modelPath = "/tmp/neuralnets.model";
     try {
       NeuralNetwork.main(new String[] { mode, strSequenceTrainingDataPath,
           modelPath, "" + featureDimension, "" + labelDimension });
+      fs = FileSystem.get(conf);
+      fs.delete(new Path(strSequenceTrainingDataPath), true);
+      fs.delete(new Path(modelPath), true);
     } catch (Exception e) {
       e.printStackTrace();
     }
