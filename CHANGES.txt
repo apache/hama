@@ -10,7 +10,8 @@ Release 0.6.3 (unreleased changes)
    HAMA-801: Snappy fails on Mac OS with JDK 1.7 (Anastasis Andronidis via tommaso)
 
   BUG FIXES
-  
+
+   HAMA-805: Problem initializing pipes in HamaStreaming (Martin Illecker)  
    HAMA-789: BspPeer launched fail because port is bound by others (Suraj Menon via edwardyoon)
    HAMA-791: Fix the problem that MultilayerPerceptron fails to learn a good hypothesis sometimes. (Yexi Jiang)
    HAMA-782: The arguments of DoubleVector.slice(int, int) method will mislead the user. (Yexi Jiang)
