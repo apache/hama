@@ -23,34 +23,42 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import junit.framework.TestCase;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ml.math.DenseDoubleVector;
 import org.apache.hama.ml.writable.VectorWritable;
-import org.junit.Test;
 
 /**
  * Test the functionality of NeuralNetwork Example.
  * 
  */
-public class NeuralNetworkTest {
+public class NeuralNetworkTest extends TestCase {
+  private Configuration conf = new HamaConfiguration();
+  private FileSystem fs;
+  private String MODEL_PATH = "/tmp/neuralnets.model";
+  private String RESULT_PATH = "/tmp/neuralnets.txt";
+  private String SEQTRAIN_DATA = "/tmp/test-neuralnets.data";
+  
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    fs = FileSystem.get(conf);
+  }
 
-  @Test
-  public void testNeuralnetsLabeling() {
-    this.testNeuralNetworkTraining();
+  public void testNeuralnetsLabeling() throws IOException {
+    this.neuralNetworkTraining();
 
     String dataPath = "src/test/resources/neuralnets_classification_test.txt";
-    String modelPath = "/tmp/neuralnets.model";
-    String resultPath = "/tmp/neuralnets.txt";
     String mode = "label";
-    Configuration conf = new Configuration();
     try {
-      FileSystem fs = FileSystem.get(conf);
       NeuralNetwork
-          .main(new String[] { mode, modelPath, dataPath, resultPath });
+          .main(new String[] { mode, MODEL_PATH, dataPath, RESULT_PATH });
 
       // compare results with ground-truth
       BufferedReader groundTruthReader = new BufferedReader(new FileReader(
@@ -61,8 +69,9 @@ public class NeuralNetworkTest {
         groundTruthList.add(Double.parseDouble(line));
       }
       groundTruthReader.close();
-      
-      BufferedReader resultReader = new BufferedReader(new FileReader(resultPath));
+
+      BufferedReader resultReader = new BufferedReader(new FileReader(
+          RESULT_PATH));
       List<Double> resultList = new ArrayList<Double>();
       while ((line = resultReader.readLine()) != null) {
         resultList.add(Double.parseDouble(line));
@@ -78,22 +87,23 @@ public class NeuralNetworkTest {
         }
       }
       System.out.printf("Precision: %f\n", correct / total);
-      fs.delete(new Path(resultPath), true);
-      fs.delete(new Path(modelPath), true);
 
     } catch (Exception e) {
       e.printStackTrace();
+    } finally {
+      fs.delete(new Path(RESULT_PATH), true);
+      fs.delete(new Path(MODEL_PATH), true);
+      fs.delete(new Path(SEQTRAIN_DATA), true);
     }
   }
-  
-  private void testNeuralNetworkTraining() {
+
+  private void neuralNetworkTraining() {
     String mode = "train";
     String strTrainingDataPath = "src/test/resources/neuralnets_classification_training.txt";
-    String strSequenceTrainingDataPath = "/tmp/test-neuralnets.data";
     int featureDimension = 8;
     int labelDimension = 1;
 
-    Path sequenceTrainingDataPath = new Path(strSequenceTrainingDataPath);
+    Path sequenceTrainingDataPath = new Path(SEQTRAIN_DATA);
     Configuration conf = new Configuration();
     FileSystem fs;
     try {
@@ -119,13 +129,9 @@ public class NeuralNetworkTest {
       e1.printStackTrace();
     }
 
-    String modelPath = "/tmp/neuralnets.model";
     try {
-      NeuralNetwork.main(new String[] { mode, strSequenceTrainingDataPath,
-          modelPath, "" + featureDimension, "" + labelDimension });
-      fs = FileSystem.get(conf);
-      fs.delete(new Path(strSequenceTrainingDataPath), true);
-      fs.delete(new Path(modelPath), true);
+      NeuralNetwork.main(new String[] { mode, SEQTRAIN_DATA,
+          MODEL_PATH, "" + featureDimension, "" + labelDimension });
     } catch (Exception e) {
       e.printStackTrace();
     }
