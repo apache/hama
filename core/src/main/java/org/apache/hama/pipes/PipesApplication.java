@@ -119,6 +119,9 @@ public class PipesApplication<K1 extends Writable, V1 extends Writable, K2 exten
         executable = DistributedCache.getLocalCacheFiles(conf)[0].toString();
 
         LOG.debug("DEBUG: executable: " + executable);
+      } else {
+        LOG.debug("DEBUG: DistributedCache.getLocalCacheFiles(conf) returns null.");
+        throw new IOException("Executable is missing!");
       }
     } catch (Exception e) {
       LOG.error("Executable: " + executable + " fs.default.name: "
