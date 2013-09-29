@@ -34,7 +34,8 @@ import org.apache.hama.ml.math.DoubleVector;
 import org.apache.hama.ml.math.FunctionFactory;
 
 /**
- * 
+ * The example of using {@link SmallLayeredNeuralNetwork}, including the
+ * training phase and labeling phase.
  */
 public class NeuralNetwork {
 
@@ -50,9 +51,9 @@ public class NeuralNetwork {
         return;
       }
 
-      String modelPath = args[1];
-      String featureDataPath = args[2];
-      String resultDataPath = args[3];
+      String featureDataPath = args[1];
+      String resultDataPath = args[2];
+      String modelPath = args[3];
 
       SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork(modelPath);
 
@@ -187,14 +188,14 @@ public class NeuralNetwork {
     System.out
         .println("\tMODE\t- train: train the model with given training data.");
     System.out
-        .println("\t\t- evaluate: obtain the result by feeding the features to the neural network.");
+        .println("\t\t- label: obtain the result by feeding the features to the neural network.");
     System.out
-        .println("\tINPUT_PATH\tin 'train' mode, it is the path of the training data; in 'evaluate' mode, it is the path of the to be evaluated data that lacks the label.");
+        .println("\tINPUT_PATH\tin 'train' mode, it is the path of the training data; in 'label' mode, it is the path of the to be evaluated data that lacks the label.");
     System.out
-        .println("\tOUTPUT_PATH\tin 'train' mode, it is where the trained model is stored; in 'evaluate' mode, it is where the labeled data is stored.");
+        .println("\tOUTPUT_PATH\tin 'train' mode, it is where the trained model is stored; in 'label' mode, it is where the labeled data is stored.");
     System.out.println("\n\tConditional Parameters:");
     System.out
-        .println("\tMODEL_PATH\tonly required in 'evaluate' mode. It specifies where to load the trained neural network model.");
+        .println("\tMODEL_PATH\tonly required in 'label' mode. It specifies where to load the trained neural network model.");
     System.out
         .println("\tMAX_ITERATION\tonly used in 'train' mode. It specifies how many iterations for the neural network to run. Default is 0.01.");
     System.out
@@ -205,9 +206,9 @@ public class NeuralNetwork {
         .println("\tREGULARIZATION_WEIGHT\tonly required in 'train' model. It specifies the weight of reqularization.");
     System.out.println("\nExample:");
     System.out
-        .println("Train a neural network with default setting:\n\tneuralnets train hdfs://localhost:30002/training_data hdfs://localhost:30002/model 8 1");
+        .println("Train a neural network with with feature dimension 8, label dimension 1 and default setting:\n\tneuralnets train hdfs://localhost:30002/training_data hdfs://localhost:30002/model 8 1");
     System.out
-        .println("Train a neural network by specify learning rate as 0.1, momemtum rate as 0.2, and regularization weight as 0.01:\n\tneuralnets.train hdfs://localhost:30002/training_data hdfs://localhost:30002/model 0.1 0.2 0.01");
+        .println("Train a neural network with with feature dimension 8, label dimension 1 and specify learning rate as 0.1, momemtum rate as 0.2, and regularization weight as 0.01:\n\tneuralnets.train hdfs://localhost:30002/training_data hdfs://localhost:30002/model 8 1 0.1 0.2 0.01");
     System.out
         .println("Label the data with trained model:\n\tneuralnets evaluate hdfs://localhost:30002/unlabeled_data hdfs://localhost:30002/result hdfs://localhost:30002/model");
   }

@@ -3,6 +3,7 @@ Hama Change Log
 Release 0.6.3 (unreleased changes)
 
   NEW FEATURES
+  
    HAMA-804: Create NeuralNetwork Example (Yexi Jiang)
    HAMA-795: Implement Autoencoder based on NeuralNetwork (Yexi Jiang)
    HAMA-767: Add vertex addition/removal APIs (Anastasis Andronidis via edwardyoon)
@@ -24,6 +25,7 @@ Release 0.6.3 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-806: Make the description of NeuralNetwork example more clear (Yexi Jiang)
    HAMA-749: Build for C++ Pipes (Martin Illecker)
    HAMA-796: Add Vector multiply Matrix for DoubleVector as well as DenseDoubleVector. (Yexi Jiang)
    HAMA-770: Use a unified model to represent linear regression, logistic regression, MLP, autoencoder, and deepNets (Yexi Jiang)

@@ -58,7 +58,7 @@ public class NeuralNetworkTest extends TestCase {
     String mode = "label";
     try {
       NeuralNetwork
-          .main(new String[] { mode, MODEL_PATH, dataPath, RESULT_PATH });
+          .main(new String[] { mode, dataPath, RESULT_PATH, MODEL_PATH });
 
       // compare results with ground-truth
       BufferedReader groundTruthReader = new BufferedReader(new FileReader(
