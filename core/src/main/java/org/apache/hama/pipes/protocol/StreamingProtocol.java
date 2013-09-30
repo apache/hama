@@ -35,8 +35,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.pipes.protocol.UplinkReader;
-import org.apache.hama.pipes.protocol.StreamingProtocol.StreamingUplinkReaderThread;
 import org.apache.hama.util.KeyValuePair;
 
 /**

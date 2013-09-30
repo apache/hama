@@ -315,10 +315,10 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
 
       WritableUtils.writeVInt(stream, MessageType.READ_KEYVALUE.code);
       if (pair != null) {
-        binProtocol.writeObject(pair.getKey());
-        binProtocol.writeObject(pair.getValue());
-
+        binProtocol.writeObject(new Text(pair.getKey().toString()));
         String valueStr = pair.getValue().toString();
+        binProtocol.writeObject(new Text(valueStr));
+
         LOG.debug("Responded MessageType.READ_KEYVALUE - Key: "
             + pair.getKey()
             + " Value: "

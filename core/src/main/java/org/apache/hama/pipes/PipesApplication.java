@@ -213,9 +213,6 @@ public class PipesApplication<K1 extends Writable, V1 extends Writable, K2 exten
     LOG.debug("DEBUG: cmd: " + cmd);
     process = runClient(cmd, env); // fork c++ binary
 
-    LOG.debug("DEBUG: waiting for Client at "
-        + serverSocket.getLocalSocketAddress());
-
     try {
       if (!streamingEnabled) {
         LOG.debug("DEBUG: waiting for Client at "

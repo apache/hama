@@ -45,24 +45,25 @@ include_directories(
 )
 
 # Example programs
-# add_executable(wordcount-simple main/native/examples/impl/wordcount-simple.cc)
-# target_link_libraries(wordcount-simple hadooppipes hadooputils)
-# output_directory(wordcount-simple examples)
+add_executable(summation main/native/examples/impl/summation.cc)
+target_link_libraries(summation hamapipes hadooputils)
+output_directory(summation examples)
 
-# add_executable(wordcount-part main/native/examples/impl/wordcount-part.cc)
-# target_link_libraries(wordcount-part hadooppipes hadooputils)
-# output_directory(wordcount-part examples)
+add_executable(piestimator main/native/examples/impl/piestimator.cc)
+target_link_libraries(piestimator hamapipes hadooputils)
+output_directory(piestimator examples)
 
-# add_executable(wordcount-nopipe main/native/examples/impl/wordcount-nopipe.cc)
-# target_link_libraries(wordcount-nopipe hadooppipes hadooputils)
-# output_directory(wordcount-nopipe examples)
+add_executable(matrixmultiplication main/native/examples/impl/matrixmultiplication.cc)
+target_link_libraries(matrixmultiplication DenseDoubleVector hamapipes hadooputils)
+output_directory(matrixmultiplication examples)
 
-# add_executable(pipes-sort main/native/examples/impl/sort.cc)
-# target_link_libraries(pipes-sort hadooppipes hadooputils)
-# output_directory(pipes-sort examples)
+add_library(DenseDoubleVector 
+    main/native/examples/impl/DenseDoubleVector.cc
+)
 
 add_library(hadooputils STATIC
     main/native/utils/impl/StringUtils.cc
+    main/native/utils/impl/Splitter.cc
     main/native/utils/impl/SerialUtils.cc
 )
 
