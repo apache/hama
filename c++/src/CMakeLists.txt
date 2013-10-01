@@ -19,6 +19,9 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 find_package(OpenSSL REQUIRED)
 
+message(">>>>> OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
+message(">>>>> OpenSSL libraries: ${OPENSSL_LIBRARIES}")
+
 set(CMAKE_BUILD_TYPE, Release)
 
 set(PIPES_FLAGS "-g -Wall -O2 -D_REENTRANT -D_GNU_SOURCE")
