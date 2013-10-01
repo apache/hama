@@ -75,6 +75,6 @@ add_library(hamapipes STATIC
 )
 
 target_link_libraries(hamapipes
-    ${OPENSSL_LIBRARIES}
+    "/usr/lib/x86_64-linux-gnu/libssl.so.1.0.0;/usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0"
     pthread
 )
