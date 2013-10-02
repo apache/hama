@@ -17,10 +17,10 @@
 #
 
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-find_package(OpenSSL REQUIRED)
+#find_package(OpenSSL REQUIRED)
 
-message(">>>>> OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
-message(">>>>> OpenSSL libraries: ${OPENSSL_LIBRARIES}")
+#message(">>>>> OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
+#message(">>>>> OpenSSL libraries: ${OPENSSL_LIBRARIES}")
 
 set(CMAKE_BUILD_TYPE, Release)
 
@@ -44,7 +44,7 @@ include_directories(
     main/native/utils/api
     main/native/pipes/api
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${OPENSSL_INCLUDE_DIR}
+#    ${OPENSSL_INCLUDE_DIR}
 )
 
 # Example programs
@@ -75,6 +75,6 @@ add_library(hamapipes STATIC
 )
 
 target_link_libraries(hamapipes
-    #${OPENSSL_LIBRARIES}
-    #pthread
+#    ${OPENSSL_LIBRARIES}
+    pthread
 )

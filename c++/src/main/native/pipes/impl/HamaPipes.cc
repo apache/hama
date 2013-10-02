@@ -36,9 +36,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <openssl/hmac.h>
-#include <openssl/buffer.h>
-
 #define stringify( name ) # name
 
 using std::map;
