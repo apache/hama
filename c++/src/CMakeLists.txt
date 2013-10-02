@@ -75,6 +75,6 @@ add_library(hamapipes STATIC
 )
 
 target_link_libraries(hamapipes
-    ${OPENSSL_LIBRARIES}
-    pthread
+    #${OPENSSL_LIBRARIES}
+    #pthread
 )
