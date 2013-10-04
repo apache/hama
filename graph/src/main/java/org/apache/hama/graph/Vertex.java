@@ -228,7 +228,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
    * @return the configured partitioner instance to message vertices.
    */
   public Partitioner<V, M> getPartitioner() {
-    return (Partitioner<V, M>) runner.getPartitioner();
+    return runner.getPartitioner();
   }
 
   @Override
@@ -239,6 +239,21 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   @Override
   public void voteToHalt() {
     this.votedToHalt = true;
+  }
+
+  /**
+   * Disable an aggregator for the next superstep. The returning value of 
+   * the aggregator will be null.
+   */
+  public void skipAggregator(int index) throws IOException {
+    MapWritable msg = new MapWritable();
+    msg.put(GraphJobRunner.FLAG_AGGREGATOR_SKIP, new IntWritable(index));
+    
+    this.runner.getAggregationRunner().addSkipAggregator(index);
+    
+    // Get master task peer.
+    String destPeer = GraphJobRunner.getMasterTask(this.getPeer());
+    runner.getPeer().send(destPeer, new GraphJobMessage(msg));
   }
 
   void setActive() {
