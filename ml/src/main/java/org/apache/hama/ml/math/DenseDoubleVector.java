@@ -17,6 +17,7 @@
  */
 package org.apache.hama.ml.math;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -357,11 +358,11 @@ public final class DenseDoubleVector implements DoubleVector {
    */
   @Override
   public double dotUnsafe(DoubleVector vector) {
-    double dotProduct = 0.0d;
+    BigDecimal dotProduct = BigDecimal.valueOf(0.0d);
     for (int i = 0; i < getLength(); i++) {
-      dotProduct += this.get(i) * vector.get(i);
+      dotProduct = dotProduct.add(BigDecimal.valueOf(this.get(i)).multiply(BigDecimal.valueOf(vector.get(i))));
     }
-    return dotProduct;
+    return dotProduct.doubleValue();
   }
 
   /*

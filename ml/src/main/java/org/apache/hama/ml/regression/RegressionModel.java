@@ -17,6 +17,8 @@
  */
 package org.apache.hama.ml.regression;
 
+import java.math.BigDecimal;
+
 import org.apache.hama.ml.math.DoubleVector;
 
 /**
@@ -32,9 +34,9 @@ public interface RegressionModel extends HypothesisFunction {
    * @param y the learned output for x
    * @param m the total number of existing items
    * @param theta the parameters vector theta
-   * @return the calculated cost for input x and output y
+   * @return the calculated cost for input x and output y as a <code>BigDecimal</code>
    */
-  public double calculateCostForItem(DoubleVector x, double y, int m,
+  public BigDecimal calculateCostForItem(DoubleVector x, double y, int m,
       DoubleVector theta);
 
 }

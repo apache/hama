@@ -17,6 +17,8 @@
  */
 package org.apache.hama.ml.regression;
 
+import java.math.BigDecimal;
+
 import org.apache.hama.ml.math.DoubleVector;
 
 /**
@@ -25,13 +27,13 @@ import org.apache.hama.ml.math.DoubleVector;
 public interface HypothesisFunction {
 
   /**
-   * Applies the applyHypothesis given a set of parameters theta to a given
+   * Applies this <code>HypothesisFunction</code> to given a set of parameters theta and 
    * input x
    * 
    * @param theta the parameters vector
    * @param x the input
-   * @return a <code>double</code> number
+   * @return a <code>BigDecimal</code> representing the number
    */
-  public double applyHypothesis(DoubleVector theta, DoubleVector x);
+  public BigDecimal applyHypothesis(DoubleVector theta, DoubleVector x);
 
 }

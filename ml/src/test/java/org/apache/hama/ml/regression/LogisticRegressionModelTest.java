@@ -17,11 +17,14 @@
  */
 package org.apache.hama.ml.regression;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+import java.math.BigDecimal;
+
 import org.apache.hama.ml.math.DenseDoubleVector;
 import org.apache.hama.ml.math.DoubleVector;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Testcase for {@link LogisticRegressionModel}
@@ -34,15 +37,40 @@ public class LogisticRegressionModelTest {
     DoubleVector x = new DenseDoubleVector(new double[]{2, 3, 4});
     double y = 1;
     DoubleVector theta = new DenseDoubleVector(new double[]{1, 1, 1});
-    Double cost = logisticRegressionModel.calculateCostForItem(x, y, 2, theta);
-    assertEquals("wrong cost calculation for logistic regression", Double.valueOf(6.170109486162941E-5), cost);
+    BigDecimal cost = logisticRegressionModel.calculateCostForItem(x, y, 2, theta);
+    assertEquals("wrong cost calculation for logistic regression", 6.170109486162941E-5d, cost.doubleValue(), 0.000001);
   }
 
   @Test
   public void testCorrectHypothesisCalculation() throws Exception {
     LogisticRegressionModel logisticRegressionModel = new LogisticRegressionModel();
-    Double hypothesisValue = logisticRegressionModel.applyHypothesis(new DenseDoubleVector(new double[]{1, 1, 1}),
+    BigDecimal hypothesisValue = logisticRegressionModel.applyHypothesis(new DenseDoubleVector(new double[]{1, 1, 1}),
             new DenseDoubleVector(new double[]{2, 3, 4}));
-    assertEquals("wrong hypothesis value for logistic regression", Double.valueOf(0.9998766054240138), hypothesisValue);
+    assertEquals("wrong hypothesis value for logistic regression", 0.9998766054240137682597533152954043d, hypothesisValue.doubleValue(), 0.000001);
+  }
+  
+  @Test
+  public void testMultipleCostCalculation() throws Exception {
+    LogisticRegressionModel logisticRegressionModel = new LogisticRegressionModel();
+    double[] theta1 = new double[] { 10.010000000474975, 10.050000002374873, 10.01600000075996,
+        10.018000000854954, 10.024000001139939, 10.038000001804903, 10.036000001709908 };
+    double[] theta2 = new double[] { 13.000000142492354, 25.00000071246177, 14.800000227987766,
+        15.400000256486237, 17.20000034198165, 21.400000541470945, 20.800000512972474 };
+
+    DenseDoubleVector theta1Vector = new DenseDoubleVector(theta1);
+    DenseDoubleVector theta2Vector = new DenseDoubleVector(theta2);
+
+    DenseDoubleVector x = new DenseDoubleVector(new double[] { 1, 10, 3, 2, 1, 6, 1 });
+
+    BigDecimal res1 = logisticRegressionModel.applyHypothesis(theta1Vector, x);
+    BigDecimal res2 = logisticRegressionModel.applyHypothesis(theta2Vector, x);
+
+    assertFalse(res1 + " shouldn't be the same as " + res2, res1.equals(res2));
+
+    BigDecimal itemCost1 = logisticRegressionModel.calculateCostForItem(x, 2, 8, theta1Vector);
+    BigDecimal itemCost2 = logisticRegressionModel.calculateCostForItem(x, 2, 8, theta2Vector);
+
+    assertFalse(itemCost1 + " shouldn't be the same as " + itemCost2, itemCost1.equals(itemCost2));
+
   }
 }

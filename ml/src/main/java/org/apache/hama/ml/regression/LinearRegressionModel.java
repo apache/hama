@@ -17,6 +17,8 @@
  */
 package org.apache.hama.ml.regression;
 
+import java.math.BigDecimal;
+
 import org.apache.hama.ml.math.DoubleVector;
 
 /**
@@ -29,20 +31,20 @@ public class LinearRegressionModel implements RegressionModel {
   public LinearRegressionModel() {
     costFunction = new CostFunction() {
       @Override
-      public double calculateCostForItem(DoubleVector x, double y, int m,
+      public BigDecimal calculateCostForItem(DoubleVector x, double y, int m,
           DoubleVector theta, HypothesisFunction hypothesis) {
-        return y * Math.pow(applyHypothesis(theta, x) - y, 2) / (2 * m);
+        return BigDecimal.valueOf(y * Math.pow(applyHypothesis(theta, x).doubleValue() - y, 2) / (2 * m));
       }
     };
   }
 
   @Override
-  public double applyHypothesis(DoubleVector theta, DoubleVector x) {
-    return theta.dotUnsafe(x);
+  public BigDecimal applyHypothesis(DoubleVector theta, DoubleVector x) {
+    return BigDecimal.valueOf(theta.dotUnsafe(x));
   }
 
   @Override
-  public double calculateCostForItem(DoubleVector x, double y, int m,
+  public BigDecimal calculateCostForItem(DoubleVector x, double y, int m,
       DoubleVector theta) {
     return costFunction.calculateCostForItem(x, y, m, theta, this);
   }

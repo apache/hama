@@ -17,6 +17,8 @@
  */
 package org.apache.hama.ml.regression;
 
+import java.math.BigDecimal;
+
 import org.apache.hama.ml.math.DoubleVector;
 
 /**
@@ -33,9 +35,9 @@ public interface CostFunction {
    * @param m the number of existing items
    * @param theta the parameters vector theta
    * @param hypothesis the hypothesis function to model the problem
-   * @return the calculated cost for input x and output y
+   * @return the calculated cost for input x and output y as a <code>BigDecimal</code>
    */
-  public double calculateCostForItem(DoubleVector x, double y, int m,
+  public BigDecimal calculateCostForItem(DoubleVector x, double y, int m,
       DoubleVector theta, HypothesisFunction hypothesis);
 
 }

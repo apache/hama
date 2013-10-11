@@ -17,6 +17,10 @@
  */
 package org.apache.hama.ml.regression;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.Arrays;
+
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
@@ -27,9 +31,6 @@ import org.apache.hama.ml.writable.VectorWritable;
 import org.apache.hama.util.KeyValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * A gradient descent (see
@@ -133,9 +134,7 @@ public class GradientDescentBSP
       updateTheta(newTheta);
 
       if (log.isDebugEnabled()) {
-        log.debug(new StringBuilder(peer.getPeerName())
-            .append(": new theta for cost ").append(cost).append(" is ")
-            .append(theta.toString()).toString());
+        log.debug("{}: new theta for cost {} is {}", new Object[]{peer.getPeerName(), cost, theta});
       }
       // master writes down the output
       if (master) {
@@ -206,8 +205,7 @@ public class GradientDescentBSP
     } else {
       cost = totalCost;
       if (log.isDebugEnabled()) {
-        log.debug(new StringBuilder(peer.getPeerName())
-            .append(": current cost is ").append(cost).toString());
+        log.debug("{}: current cost is {}", peer.getPeerName(), cost);
       }
       return false;
     }
@@ -224,7 +222,7 @@ public class GradientDescentBSP
       // calculate cost for given input
       double y = kvp.getValue().get();
       DoubleVector x = kvp.getKey().getVector();
-      double costForX = regressionModel.calculateCostForItem(x, y, m, theta);
+      double costForX = regressionModel.calculateCostForItem(x, y, m, theta).doubleValue();
 
       // adds to local cost
       localCost += costForX;
@@ -250,9 +248,9 @@ public class GradientDescentBSP
     while ((kvp = peer.readNext()) != null) {
       DoubleVector x = kvp.getKey().getVector();
       double y = kvp.getValue().get();
-      double difference = regressionModel.applyHypothesis(theta, x) - y;
+      BigDecimal difference = regressionModel.applyHypothesis(theta, x).subtract(BigDecimal.valueOf(y));
       for (int j = 0; j < theta.getLength(); j++) {
-        thetaDelta[j] += difference * x.get(j);
+        thetaDelta[j] += difference.multiply(BigDecimal.valueOf(x.get(j))).doubleValue();
       }
     }
     return thetaDelta;
@@ -266,9 +264,7 @@ public class GradientDescentBSP
     if (master) {
       peer.write(new VectorWritable(theta), new DoubleWritable(cost));
       if (log.isInfoEnabled()) {
-        log.info(new StringBuilder(peer.getPeerName())
-            .append(":computation finished with cost ").append(cost)
-            .append(" for theta ").append(theta).toString());
+        log.info("{}:computation finished with cost {} and theta {}", new Object[]{peer.getPeerName(), cost, theta});
       }
     }
   }
@@ -283,14 +279,12 @@ public class GradientDescentBSP
             INITIAL_THETA_VALUES, 1));
         broadcastVector(peer, theta.toArray());
         if (log.isDebugEnabled()) {
-          log.debug(new StringBuilder(peer.getPeerName()).append(
-              ": sending theta").toString());
+          log.debug("{}: sending theta", peer.getPeerName());
         }
         peer.sync();
       } else {
         if (log.isDebugEnabled()) {
-          log.debug(new StringBuilder(peer.getPeerName()).append(
-              ": getting theta").toString());
+          log.debug("{}: getting theta", peer.getPeerName());
         }
         peer.sync();
         VectorWritable vectorWritable = peer.getCurrentMessage();
