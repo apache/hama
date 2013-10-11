@@ -29,6 +29,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
       <div class="green">
           <h3 align="center">Recent News</h3>
           <ul>
+            <li>October 11, 2013: release 0.6.3. available</li>
             <li>June 26, 2013: release 0.6.2. available</li>
             <li>April 01, 2013: release 0.6.1. available</li>
             <li>November 28, 2012: release 0.6.0 available</li>
