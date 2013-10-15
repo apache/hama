@@ -327,29 +327,36 @@ public class Submitter implements Tool {
     void printUsage() {
       // The CLI package should do this for us, but I can't figure out how
       // to make it print something reasonable.
-      System.out.println("bin/hama pipes");
-      System.out.println("  [-input <path>] // Input directory");
-      System.out.println("  [-output <path>] // Output directory");
-      System.out.println("  [-jar <jar file> // jar filename");
-      System.out.println("  [-inputformat <class>] // InputFormat class");
-      System.out
-          .println("  [-bspTasks <number>] // Number of bsp tasks to launch");
-      System.out.println("  [-partitioner <class>] // Java Partitioner");
-      System.out.println("  [-combiner <class>] // Java Combiner class");
-      System.out.println("  [-outputformat <class>] // Java RecordWriter");
-      System.out
-          .println("  [-cachefiles <space separated paths>] // Additional cache files like libs, can be globbed with wildcards");
-      System.out.println("  [-program <executable>] // executable URI");
-      System.out
-          .println("  [-programArgs <argument>] // arguments for the program");
-      System.out
-          .println("  [-interpreter <executable>] // interpreter, like python or bash");
-      System.out
-          .println("  [-streaming <true|false>] // if supplied, streaming is used instead of pipes");
-      System.out.println("  [-jobname <name>] // sets the name of this job");
-
+      System.out.println("bin/hama pipes [genericOptions] [pipesOptions]");
       System.out.println();
-      GenericOptionsParser.printGenericCommandUsage(System.out);
+
+      // Generic options
+      // GenericOptionsParser.printGenericCommandUsage(System.out);
+      System.out.println("Generic options supported are");
+      System.out
+          .println(" -conf <configuration file>\tSpecify an application configuration file");
+      System.out.println(" -D <property=value>\tUse value for given property");
+      System.out.println();
+
+      // Pipes options
+      System.out.println("Pipes options supported are");
+      System.out.println(" -input <path>\tInput directory");
+      System.out.println(" -output <path>\tOutput directory");
+      System.out.println(" -jar <jar file>\tJar filename");
+      System.out.println(" -inputformat <class>\tInputFormat class");
+      System.out.println(" -bspTasks <number>\tNumber of bsp tasks to launch");
+      System.out.println(" -partitioner <class>\tJava Partitioner");
+      System.out.println(" -combiner <class>\tJava Combiner class");
+      System.out.println(" -outputformat <class>\tJava RecordWriter");
+      System.out
+          .println(" -cachefiles <space separated paths>\tAdditional cache files like libs, can be globbed with wildcards");
+      System.out.println(" -program <executable>\tExecutable URI");
+      System.out.println(" -programArgs <argument>\tArguments for the program");
+      System.out
+          .println(" -interpreter <executable>\tInterpreter, like python or bash");
+      System.out
+          .println(" -streaming <true|false>\tIf supplied, streaming is used instead of pipes");
+      System.out.println(" -jobname <name>\tSets the name of this job");
     }
   }
 
