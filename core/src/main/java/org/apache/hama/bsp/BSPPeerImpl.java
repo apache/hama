@@ -46,10 +46,10 @@ import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.sync.PeerSyncClient;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
+import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.pipes.util.DistributedCacheUtil;
 import org.apache.hama.util.DistCacheUtils;
-import org.apache.hama.util.KeyValuePair;
 
 /**
  * This class represents a BSP peer.

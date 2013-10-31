@@ -44,7 +44,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.util.KeyValuePair;
+import org.apache.hama.commons.util.KeyValuePair;
 
 public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends Writable, V2 extends Writable>
     extends Thread {

@@ -42,9 +42,9 @@ import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.examples.util.DenseVectorWritable;
-import org.apache.hama.examples.util.SparseVectorWritable;
-import org.apache.hama.util.KeyValuePair;
+import org.apache.hama.commons.io.DenseVectorWritable;
+import org.apache.hama.commons.io.SparseVectorWritable;
+import org.apache.hama.commons.util.KeyValuePair;
 
 /**
  * Sparse matrix vector multiplication. Currently it uses row-wise access.

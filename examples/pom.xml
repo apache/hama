@@ -33,6 +33,11 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.hama</groupId>
+      <artifactId>hama-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hama</groupId>
       <artifactId>hama-core</artifactId>
       <version>${project.version}</version>
     </dependency>

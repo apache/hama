@@ -282,6 +282,7 @@
 
   <modules>
     <module>c++</module>
+    <module>commons</module>
     <module>core</module>
     <module>graph</module>
     <module>examples</module>

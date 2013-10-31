@@ -25,9 +25,9 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleMatrix;
 import org.apache.hama.ml.ann.NeuralNetworkTrainer;
-import org.apache.hama.ml.math.DenseDoubleMatrix;
-import org.apache.hama.ml.writable.VectorWritable;
 
 /**
  * The perceptron trainer for small scale MLP.

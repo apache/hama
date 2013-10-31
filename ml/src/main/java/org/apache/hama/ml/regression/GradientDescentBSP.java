@@ -25,10 +25,10 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.ml.math.DenseDoubleVector;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.writable.VectorWritable;
-import org.apache.hama.util.KeyValuePair;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.util.KeyValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -17,17 +17,19 @@
  */
 package org.apache.hama.ml.regression;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.FileSplit;
 import org.apache.hama.bsp.InputSplit;
 import org.apache.hama.bsp.RecordReader;
-import org.apache.hama.ml.math.DenseDoubleVector;
-import org.apache.hama.ml.writable.VectorWritable;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleVector;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  * Testcase for {@link VectorDoubleFileInputFormat}

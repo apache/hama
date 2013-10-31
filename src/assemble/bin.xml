@@ -27,6 +27,18 @@
   
   <fileSets>
     <fileSet>
+      <directory>../commons/target</directory>
+      <includes>
+        <include>hama-*.jar</include>
+      </includes>
+      <excludes>
+        <exclude>*sources.jar</exclude>
+        <exclude>*tests.jar</exclude>
+        <exclude>*javadoc.jar</exclude>
+      </excludes>
+      <outputDirectory>../hama-${project.version}/</outputDirectory>
+    </fileSet>
+    <fileSet>
       <directory>../core/target</directory>
       <includes>
         <include>hama-*.jar</include>

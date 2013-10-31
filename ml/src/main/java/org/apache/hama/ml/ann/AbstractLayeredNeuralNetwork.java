@@ -24,11 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.hama.ml.math.DoubleDoubleFunction;
-import org.apache.hama.ml.math.DoubleFunction;
-import org.apache.hama.ml.math.DoubleMatrix;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.math.FunctionFactory;
+import org.apache.hama.commons.math.DoubleDoubleFunction;
+import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.DoubleMatrix;
+import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FunctionFactory;
 
 import com.google.common.base.Preconditions;
 

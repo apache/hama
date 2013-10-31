@@ -22,8 +22,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.bsp.BSPJob;
+import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.ml.kmeans.KMeansBSP;
-import org.apache.hama.ml.writable.VectorWritable;
 
 /**
  * Uses the {@link KMeansBSP} class to run a Kmeans Clustering with BSP. You can

@@ -29,7 +29,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hama.ml.math.DenseDoubleMatrix;
+import org.apache.hama.commons.math.DenseDoubleMatrix;
 import org.junit.Test;
 
 /**

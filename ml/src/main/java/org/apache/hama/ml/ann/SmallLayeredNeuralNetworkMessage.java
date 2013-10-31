@@ -22,9 +22,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.ml.math.DenseDoubleMatrix;
-import org.apache.hama.ml.math.DoubleMatrix;
-import org.apache.hama.ml.writable.MatrixWritable;
+import org.apache.hama.commons.io.MatrixWritable;
+import org.apache.hama.commons.math.DenseDoubleMatrix;
+import org.apache.hama.commons.math.DoubleMatrix;
 
 /**
  * NeuralNetworkMessage transmits the messages between peers during the training

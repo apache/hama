@@ -39,13 +39,13 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.ml.math.DenseDoubleMatrix;
-import org.apache.hama.ml.math.DenseDoubleVector;
-import org.apache.hama.ml.math.DoubleFunction;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.math.FunctionFactory;
-import org.apache.hama.ml.writable.MatrixWritable;
-import org.apache.hama.ml.writable.VectorWritable;
+import org.apache.hama.commons.io.MatrixWritable;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleMatrix;
+import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FunctionFactory;
 import org.mortbay.log.Log;
 
 /**

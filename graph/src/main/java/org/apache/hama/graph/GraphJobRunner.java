@@ -39,8 +39,8 @@ import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.DefaultRecordConverter;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.sync.SyncException;
+import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.graph.IDSkippingIterator.Strategy;
-import org.apache.hama.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
 
 /**

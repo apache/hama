@@ -58,8 +58,8 @@ import org.apache.hama.bsp.sync.SyncEvent;
 import org.apache.hama.bsp.sync.SyncEventListener;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
+import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.BSPNetUtils;
-import org.apache.hama.util.KeyValuePair;
 
 public class TestCheckpoint extends TestCase {
 

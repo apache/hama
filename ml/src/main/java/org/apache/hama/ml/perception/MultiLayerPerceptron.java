@@ -21,11 +21,11 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hama.commons.math.DoubleDoubleFunction;
+import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.ann.NeuralNetworkTrainer;
-import org.apache.hama.ml.math.DoubleDoubleFunction;
-import org.apache.hama.ml.math.DoubleFunction;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.math.FunctionFactory;
 
 /**
  * PerceptronBase defines the common behavior of all the concrete perceptrons.

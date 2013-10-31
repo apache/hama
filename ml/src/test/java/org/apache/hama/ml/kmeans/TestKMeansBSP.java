@@ -28,8 +28,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.ml.kmeans.KMeansBSP;
-import org.apache.hama.ml.math.DoubleVector;
+import org.apache.hama.commons.math.DoubleVector;
 
 public class TestKMeansBSP extends TestCase {
 

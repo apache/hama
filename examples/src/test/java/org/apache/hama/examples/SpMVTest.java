@@ -32,8 +32,8 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.examples.util.DenseVectorWritable;
-import org.apache.hama.examples.util.SparseVectorWritable;
+import org.apache.hama.commons.io.DenseVectorWritable;
+import org.apache.hama.commons.io.SparseVectorWritable;
 import org.junit.Before;
 import org.junit.Test;
 

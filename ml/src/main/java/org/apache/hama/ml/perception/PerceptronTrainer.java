@@ -25,7 +25,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.ml.writable.VectorWritable;
+import org.apache.hama.commons.io.VectorWritable;
 
 /**
  * The trainer that is used to train the perceptron with BSP. The trainer would

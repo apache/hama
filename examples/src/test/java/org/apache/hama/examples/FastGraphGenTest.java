@@ -28,7 +28,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.bsp.TextArrayWritable;
+import org.apache.hama.commons.io.TextArrayWritable;
 import org.apache.hama.examples.util.FastGraphGen;
 import org.junit.Test;
 

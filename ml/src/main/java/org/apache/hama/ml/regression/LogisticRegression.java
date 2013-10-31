@@ -22,9 +22,9 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.ann.SmallLayeredNeuralNetwork;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.math.FunctionFactory;
 
 /**
  * The logistic regression model. It can be used to conduct 2-class

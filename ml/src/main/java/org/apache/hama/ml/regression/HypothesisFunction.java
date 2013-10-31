@@ -19,7 +19,7 @@ package org.apache.hama.ml.regression;
 
 import java.math.BigDecimal;
 
-import org.apache.hama.ml.math.DoubleVector;
+import org.apache.hama.commons.math.DoubleVector;
 
 /**
  * The mathematical model chosen for a specific learning problem

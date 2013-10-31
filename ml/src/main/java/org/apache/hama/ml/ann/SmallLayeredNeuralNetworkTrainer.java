@@ -25,10 +25,10 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.ml.math.DenseDoubleMatrix;
-import org.apache.hama.ml.math.DoubleMatrix;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.writable.VectorWritable;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleMatrix;
+import org.apache.hama.commons.math.DoubleMatrix;
+import org.apache.hama.commons.math.DoubleVector;
 import org.mortbay.log.Log;
 
 /**

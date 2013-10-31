@@ -1,6 +1,12 @@
 Hama Change Log
 
-Release 0.6.3 (unreleased changes)
+Release 0.7.0 (unreleased changes)
+
+  IMPROVEMENTS
+
+   HAMA-699: Add commons module (Martin Illecker)
+
+Release 0.6.3 - October 11, 2013
 
   NEW FEATURES
   

@@ -31,8 +31,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.ml.math.DenseDoubleVector;
-import org.apache.hama.ml.writable.VectorWritable;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleVector;
 
 /**
  * Test the functionality of NeuralNetwork Example.

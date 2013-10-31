@@ -17,6 +17,9 @@
  */
 package org.apache.hama.ml.regression;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -27,13 +30,14 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
-import org.apache.hama.bsp.*;
-import org.apache.hama.ml.math.DenseDoubleVector;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.writable.VectorWritable;
-
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.hama.bsp.BSPJob;
+import org.apache.hama.bsp.FileInputFormat;
+import org.apache.hama.bsp.FileSplit;
+import org.apache.hama.bsp.InputSplit;
+import org.apache.hama.bsp.RecordReader;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.math.DoubleVector;
 
 /**
  * A {@link FileInputFormat} for files containing one vector and one double per

@@ -36,7 +36,7 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TestBSPMasterGroomServer;
-import org.apache.hama.bsp.TextArrayWritable;
+import org.apache.hama.commons.io.TextArrayWritable;
 import org.apache.hama.graph.example.PageRank;
 import org.apache.hama.graph.example.PageRank.PagerankSeqReader;
 import org.junit.Before;

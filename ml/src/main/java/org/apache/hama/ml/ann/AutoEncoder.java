@@ -21,12 +21,12 @@ package org.apache.hama.ml.ann;
 import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.math.DoubleFunction;
+import org.apache.hama.commons.math.DoubleMatrix;
+import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.ann.AbstractLayeredNeuralNetwork.LearningStyle;
-import org.apache.hama.ml.math.DenseDoubleVector;
-import org.apache.hama.ml.math.DoubleFunction;
-import org.apache.hama.ml.math.DoubleMatrix;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.math.FunctionFactory;
 
 import com.google.common.base.Preconditions;
 

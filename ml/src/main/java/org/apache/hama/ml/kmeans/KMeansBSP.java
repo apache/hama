@@ -40,11 +40,11 @@ import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.ml.distance.DistanceMeasurer;
 import org.apache.hama.ml.distance.EuclidianDistance;
-import org.apache.hama.ml.math.DenseDoubleVector;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.writable.VectorWritable;
 import org.apache.hama.util.ReflectionUtils;
 
 import com.google.common.base.Preconditions;

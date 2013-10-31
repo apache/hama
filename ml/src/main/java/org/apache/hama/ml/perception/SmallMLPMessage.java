@@ -21,8 +21,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.hama.ml.math.DenseDoubleMatrix;
-import org.apache.hama.ml.writable.MatrixWritable;
+import org.apache.hama.commons.io.MatrixWritable;
+import org.apache.hama.commons.math.DenseDoubleMatrix;
 
 /**
  * SmallMLPMessage is used to exchange information for the

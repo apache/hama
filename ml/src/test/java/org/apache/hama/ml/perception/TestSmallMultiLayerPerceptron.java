@@ -19,7 +19,6 @@ package org.apache.hama.ml.perception;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
@@ -34,12 +33,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.hama.ml.math.DenseDoubleMatrix;
-import org.apache.hama.ml.math.DenseDoubleVector;
-import org.apache.hama.ml.math.DoubleMatrix;
-import org.apache.hama.ml.math.DoubleVector;
-import org.apache.hama.ml.writable.MatrixWritable;
-import org.apache.hama.ml.writable.VectorWritable;
+import org.apache.hama.commons.io.MatrixWritable;
+import org.apache.hama.commons.io.VectorWritable;
+import org.apache.hama.commons.math.DenseDoubleMatrix;
+import org.apache.hama.commons.math.DenseDoubleVector;
+import org.apache.hama.commons.math.DoubleMatrix;
+import org.apache.hama.commons.math.DoubleVector;
 import org.junit.Test;
 import org.mortbay.log.Log;
 

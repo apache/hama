@@ -34,8 +34,8 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
-import org.apache.hama.bsp.TextArrayWritable;
 import org.apache.hama.bsp.sync.SyncException;
+import org.apache.hama.commons.io.TextArrayWritable;
 
 import com.google.common.collect.Sets;
 

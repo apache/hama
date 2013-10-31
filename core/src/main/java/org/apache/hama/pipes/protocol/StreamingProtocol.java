@@ -35,7 +35,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.util.KeyValuePair;
+import org.apache.hama.commons.util.KeyValuePair;
 
 /**
  * Streaming protocol that inherits from the binary protocol. Basically it

@@ -24,7 +24,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.sync.SyncException;
-import org.apache.hama.util.KeyValuePair;
+import org.apache.hama.commons.util.KeyValuePair;
 
 /**
  * BSP communication interface. Reads key-value inputs, with K1 typed keys and

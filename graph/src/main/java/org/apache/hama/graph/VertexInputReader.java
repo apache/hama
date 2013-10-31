@@ -31,7 +31,7 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
-import org.apache.hama.util.KeyValuePair;
+import org.apache.hama.commons.util.KeyValuePair;
 
 /**
  * A reader to read Hama's input files and parses a vertex out of it.

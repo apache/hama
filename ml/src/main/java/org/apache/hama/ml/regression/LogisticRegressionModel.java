@@ -20,7 +20,7 @@ package org.apache.hama.ml.regression;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
-import org.apache.hama.ml.math.DoubleVector;
+import org.apache.hama.commons.math.DoubleVector;
 
 /**
  * A {@link RegressionModel} for logistic regression

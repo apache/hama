@@ -17,7 +17,7 @@
  */
 package org.apache.hama.ml.distance;
 
-import org.apache.hama.ml.math.DoubleVector;
+import org.apache.hama.commons.math.DoubleVector;
 
 public final class EuclidianDistance implements DistanceMeasurer {
 

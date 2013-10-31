@@ -29,11 +29,11 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
+import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.ml.regression.GradientDescentBSP;
 import org.apache.hama.ml.regression.LogisticRegressionModel;
 import org.apache.hama.ml.regression.RegressionModel;
 import org.apache.hama.ml.regression.VectorDoubleFileInputFormat;
-import org.apache.hama.ml.writable.VectorWritable;
 
 /**
  * A {@link GradientDescentBSP} job example

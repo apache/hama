@@ -36,7 +36,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Partitioner;
-import org.apache.hama.examples.util.TextPair;
+import org.apache.hama.commons.util.TextPair;
 import org.apache.hama.graph.GraphJob;
 import org.junit.Test;
 
