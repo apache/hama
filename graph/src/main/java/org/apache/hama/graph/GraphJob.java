@@ -31,8 +31,8 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.message.MessageManager;
-import org.apache.hama.bsp.message.queue.MessageQueue;
-import org.apache.hama.bsp.message.queue.SortedMessageQueue;
+import org.apache.hama.bsp.message.queue.MessageTransferQueue;
+import org.apache.hama.bsp.message.queue.SortedMessageTransferProtocol;
 
 import com.google.common.base.Preconditions;
 
@@ -123,8 +123,8 @@ public class GraphJob extends BSPJob {
   /**
    * Sets the input reader for parsing the input to vertices.
    */
-  public void setVertexInputReaderClass(
-      @SuppressWarnings("rawtypes") Class<? extends VertexInputReader> cls) {
+  public void setVertexInputReaderClass(@SuppressWarnings("rawtypes")
+  Class<? extends VertexInputReader> cls) {
     ensureState(JobState.DEFINE);
     conf.setClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, cls,
         RecordConverter.class);
@@ -135,8 +135,8 @@ public class GraphJob extends BSPJob {
    * Sets the output writer for materializing vertices to the output sink. If
    * not set, the default DefaultVertexOutputWriter will be used.
    */
-  public void setVertexOutputWriterClass(
-      @SuppressWarnings("rawtypes") Class<? extends VertexOutputWriter> cls) {
+  public void setVertexOutputWriterClass(@SuppressWarnings("rawtypes")
+  Class<? extends VertexOutputWriter> cls) {
     ensureState(JobState.DEFINE);
     conf.setClass(VERTEX_OUTPUT_WRITER_CLASS_ATTR, cls,
         VertexOutputWriter.class);
@@ -149,8 +149,8 @@ public class GraphJob extends BSPJob {
   }
 
   @Override
-  public void setPartitioner(
-      @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
+  public void setPartitioner(@SuppressWarnings("rawtypes")
+  Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
   }
@@ -197,8 +197,8 @@ public class GraphJob extends BSPJob {
     }
 
     // add the default message queue to the sorted one
-    this.getConfiguration().setClass(MessageManager.QUEUE_TYPE_CLASS,
-        SortedMessageQueue.class, MessageQueue.class);
+    this.getConfiguration().setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
+        SortedMessageTransferProtocol.class, MessageTransferQueue.class);
 
     super.submit();
   }

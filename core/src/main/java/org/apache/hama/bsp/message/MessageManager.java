@@ -36,8 +36,6 @@ import org.apache.hama.bsp.message.queue.MessageQueue;
  */
 public interface MessageManager<M extends Writable> {
 
-  @Deprecated
-  public static final String QUEUE_TYPE_CLASS = "hama.messenger.queue.class";
   public static final String RECEIVE_QUEUE_TYPE_CLASS = "hama.messenger.receive.queue.class";
   public static final String SENDER_QUEUE_TYPE_CLASS = "hama.messenger.sender.queue.class";
   public static final String TRANSFER_QUEUE_TYPE_CLASS = "hama.messenger.xfer.queue.class";
