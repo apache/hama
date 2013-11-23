@@ -27,41 +27,41 @@
 using std::string;
 
 namespace HadoopUtils {
-
+  
   Error::Error(const std::string& msg): error(msg) {
   }
-
-  Error::Error(const std::string& msg, 
-               const std::string& file, int line, 
+  
+  Error::Error(const std::string& msg,
+               const std::string& file, int line,
                const std::string& function) {
-    error = msg + " at " + file + ":" + toString(line) + 
-            " in " + function;
+    error = msg + " at " + file + ":" + toString(line) +
+    " in " + function;
   }
-
+  
   const std::string& Error::getMessage() const {
     return error;
   }
-
+  
   FileInStream::FileInStream()
   {
     mFile = NULL;
     isOwned = false;
   }
-
+  
   bool FileInStream::open(const std::string& name)
   {
     mFile = fopen(name.c_str(), "rb");
     isOwned = true;
     return (mFile != NULL);
   }
-
+  
   bool FileInStream::open(FILE* file)
   {
     mFile = file;
     isOwned = false;
     return (mFile != NULL);
   }
-
+  
   void FileInStream::read(void *buf, size_t len)
   {
     size_t result = fread(buf, len, 1, mFile);
@@ -73,12 +73,12 @@ namespace HadoopUtils {
       }
     }
   }
-
+  
   bool FileInStream::skip(size_t nbytes)
   {
     return (0==fseek(mFile, nbytes, SEEK_CUR));
   }
-
+  
   bool FileInStream::close()
   {
     int ret = 0;
@@ -88,20 +88,20 @@ namespace HadoopUtils {
     mFile = NULL;
     return (ret==0);
   }
-
+  
   FileInStream::~FileInStream()
   {
     if (mFile != NULL) {
       close();
     }
   }
-
+  
   FileOutStream::FileOutStream()
   {
     mFile = NULL;
     isOwned = false;
   }
-
+  
   bool FileOutStream::open(const std::string& name, bool overwrite)
   {
     if (!overwrite) {
@@ -115,26 +115,26 @@ namespace HadoopUtils {
     isOwned = true;
     return (mFile != NULL);
   }
-
+  
   bool FileOutStream::open(FILE* file)
   {
     mFile = file;
     isOwned = false;
     return (mFile != NULL);
   }
-
+  
   void FileOutStream::write(const void* buf, size_t len)
   {
     size_t result = fwrite(buf, len, 1, mFile);
     HADOOP_ASSERT(result == 1,
                   string("write error to file: ") + strerror(errno));
   }
-
+  
   bool FileOutStream::advance(size_t nbytes)
   {
     return (0==fseek(mFile, nbytes, SEEK_CUR));
   }
-
+  
   bool FileOutStream::close()
   {
     int ret = 0;
@@ -144,23 +144,23 @@ namespace HadoopUtils {
     mFile = NULL;
     return (ret == 0);
   }
-
+  
   void FileOutStream::flush()
   {
     fflush(mFile);
   }
-
+  
   FileOutStream::~FileOutStream()
   {
     if (mFile != NULL) {
       close();
     }
   }
-
+  
   StringInStream::StringInStream(const std::string& str): buffer(str) {
     itr = buffer.begin();
   }
-
+  
   void StringInStream::read(void *buf, size_t buflen) {
     size_t bytes = 0;
     char* output = (char*) buf;
@@ -174,11 +174,11 @@ namespace HadoopUtils {
     }
     HADOOP_ASSERT(bytes == buflen, "unexpected end of string reached");
   }
-
+  
   void serializeInt(int32_t t, OutStream& stream) {
     serializeLong(t,stream);
   }
-
+  
   void serializeLong(int64_t t, OutStream& stream)
   {
     if (t >= -112 && t <= 127) {
@@ -186,22 +186,22 @@ namespace HadoopUtils {
       stream.write(&b, 1);
       return;
     }
-        
+    
     int8_t len = -112;
     if (t < 0) {
       t ^= -1ll; // reset the sign bit
       len = -120;
     }
-        
+    
     uint64_t tmp = t;
     while (tmp != 0) {
       tmp = tmp >> 8;
       len--;
     }
-  
-    stream.write(&len, 1);      
+    
+    stream.write(&len, 1);
     len = (len < -120) ? -(len + 120) : -(len + 112);
-        
+    
     for (uint32_t idx = len; idx != 0; idx--) {
       uint32_t shiftbits = (idx - 1) * 8;
       uint64_t mask = 0xFFll << shiftbits;
@@ -209,11 +209,11 @@ namespace HadoopUtils {
       stream.write(&b, 1);
     }
   }
-
+  
   int32_t deserializeInt(InStream& stream) {
     return deserializeLong(stream);
   }
-
+  
   int64_t deserializeLong(InStream& stream)
   {
     int8_t b;
@@ -242,7 +242,7 @@ namespace HadoopUtils {
     }
     return t;
   }
-
+  
   void serializeFloat(float t, OutStream& stream)
   {
     char buf[sizeof(float)];
@@ -251,16 +251,38 @@ namespace HadoopUtils {
     xdr_float(&xdrs, &t);
     stream.write(buf, sizeof(float));
   }
-
-  void deserializeFloat(float& t, InStream& stream)
+  
+  float deserializeFloat(InStream& stream)
   {
+    float t;
     char buf[sizeof(float)];
     stream.read(buf, sizeof(float));
     XDR xdrs;
     xdrmem_create(&xdrs, buf, sizeof(float), XDR_DECODE);
     xdr_float(&xdrs, &t);
+    return t;
   }
-
+  
+  void serializeDouble(double t, OutStream& stream)
+  {
+    char buf[sizeof(double)];
+    XDR xdrs;
+    xdrmem_create(&xdrs, buf, sizeof(double), XDR_ENCODE);
+    xdr_double(&xdrs, &t);
+    stream.write(buf, sizeof(double));
+  }
+  
+  double deserializeDouble(InStream& stream)
+  {
+    double t;
+    char buf[sizeof(double)];
+    stream.read(buf, sizeof(double));
+    XDR xdrs;
+    xdrmem_create(&xdrs, buf, sizeof(double), XDR_DECODE);
+    xdr_double(&xdrs, &t);
+    return t;
+  }
+  
   void serializeString(const std::string& t, OutStream& stream)
   {
     serializeInt(t.length(), stream);
@@ -268,9 +290,10 @@ namespace HadoopUtils {
       stream.write(t.data(), t.length());
     }
   }
-
-  void deserializeString(std::string& t, InStream& stream)
+  
+  std::string deserializeString(InStream& stream)
   {
+    std::string t;
     int32_t len = deserializeInt(stream);
     if (len > 0) {
       // resize the string to the right length
@@ -289,6 +312,6 @@ namespace HadoopUtils {
     } else {
       t.clear();
     }
+    return t;
   }
-
 }

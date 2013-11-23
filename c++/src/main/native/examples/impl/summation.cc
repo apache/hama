@@ -29,46 +29,46 @@ using std::string;
 using HamaPipes::BSP;
 using HamaPipes::BSPContext;
 
-class SummationBSP: public BSP {
-private:
-  string masterTask;
-public:
-  SummationBSP(BSPContext& context) {  }
+class SummationBSP: public BSP<string,string,string,double,double> {
+  private:
+  string master_task_;
   
-  void setup(BSPContext& context) {
+  public:
+  SummationBSP(BSPContext<string,string,string,double,double>& context) {  }
+  
+  void setup(BSPContext<string,string,string,double,double>& context) {
     // Choose one as a master
-    masterTask = context.getPeerName(context.getNumPeers() / 2);
+    master_task_ = context.getPeerName(context.getNumPeers() / 2);
   }
   
-  void bsp(BSPContext& context) {
+  void bsp(BSPContext<string,string,string,double,double>& context) {
     
-    double intermediateSum = 0.0;
+    double intermediate_sum = 0.0;
     string key;
     string value;
     
     while(context.readNext(key,value)) {
-      intermediateSum += HadoopUtils::toDouble(value);
+      intermediate_sum += HadoopUtils::toDouble(value);
     }
     
-    context.sendMessage(masterTask, HadoopUtils::toString(intermediateSum));
+    context.sendMessage(master_task_, intermediate_sum);
     context.sync();
   }
   
-  void cleanup(BSPContext& context) {
-    if (context.getPeerName().compare(masterTask)==0) {
+  void cleanup(BSPContext<string,string,string,double,double>& context) {
+    if (context.getPeerName().compare(master_task_)==0) {
       
       double sum = 0.0;
-      int msgCount = context.getNumCurrentMessages();
-      for (int i=0; i<msgCount; i++) {
-        string received = context.getCurrentMessage();
-        sum += HadoopUtils::toDouble(received);
+      int msg_count = context.getNumCurrentMessages();
+      for (int i=0; i < msg_count; i++) {
+        sum += context.getCurrentMessage();
       }
-      context.write("Sum", HadoopUtils::toString(sum));
+      context.write("Sum", sum);
     }
   }
 };
 
 int main(int argc, char *argv[]) {
-  return HamaPipes::runTask(HamaPipes::TemplateFactory<SummationBSP>());
+  return HamaPipes::runTask<string,string,string,double,double>(HamaPipes::TemplateFactory<SummationBSP,string,string,string,double,double>());
 }
 

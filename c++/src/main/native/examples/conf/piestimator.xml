@@ -35,7 +35,19 @@
   </property>
   <property>
     <name>bsp.output.format.class</name>
-    <value>org.apache.hama.bsp.TextOutputFormat</value>
+    <value>org.apache.hama.bsp.SequenceFileOutputFormat</value>
+  </property>
+  <property>
+    <name>bsp.output.key.class</name>
+    <value>org.apache.hadoop.io.Text</value>
+  </property>
+  <property>
+    <name>bsp.output.value.class</name>
+    <value>org.apache.hadoop.io.DoubleWritable</value>
+  </property>
+  <property>
+    <name>bsp.message.class</name>
+    <value>org.apache.hadoop.io.IntWritable</value>
   </property>
   <property>
     <name>hama.pipes.logging</name>

@@ -52,7 +52,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hama.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.util.Tool;
@@ -61,6 +60,7 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.JobSubmissionProtocol;
+import org.apache.hama.ipc.RPC;
 
 /**
  * BSPJobClient is the primary interface for the user-job to interact with the
@@ -429,7 +429,8 @@ public class BSPJobClient extends Configured implements Tool {
               job.get(Constants.RUNTIME_PARTITIONING_CLASS));
         }
         BSPJob partitioningJob = new BSPJob(conf);
-        LOG.debug("partitioningJob input: " + partitioningJob.get(Constants.JOB_INPUT_DIR));
+        LOG.debug("partitioningJob input: "
+            + partitioningJob.get(Constants.JOB_INPUT_DIR));
         partitioningJob.setInputFormat(job.getInputFormat().getClass());
         partitioningJob.setInputKeyClass(job.getInputKeyClass());
         partitioningJob.setInputValueClass(job.getInputValueClass());
@@ -768,9 +769,6 @@ public class BSPJobClient extends Configured implements Tool {
     // TODO if error found, kill job
     // running.killJob();
     jc.close();
-
-    // Added cleanup for Client PipesApp and DistributedCache
-    job.cleanup();
   }
 
   /**

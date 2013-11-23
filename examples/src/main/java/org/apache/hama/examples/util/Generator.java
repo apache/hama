@@ -27,6 +27,8 @@ public class Generator {
       System.out
           .println("  fastgen: Generate random matrix, which can be used as a input of graph examples and is faster than symmetric.");
       System.out.println("  square: Generate random square matrix.");
+      System.out
+          .println("  vectorwritablematrix: Generate a random matrix, consisting of VectorWritables.");
       System.exit(1);
     }
 
@@ -37,6 +39,8 @@ public class Generator {
       SymmetricMatrixGen.main(newArgs);
     } else if (args[0].equals("fastgen")) {
       FastGraphGen.main(newArgs);
+    } else if (args[0].equals("vectorwritablematrix")) {
+      VectorWritableMatrixGen.main(newArgs);
     } else if (args[0].equals("square")) {
       System.out.println("Not implemented yet.");
       // SquareMatrixGen.main(newArgs);

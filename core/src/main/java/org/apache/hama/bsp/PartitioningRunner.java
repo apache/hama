@@ -18,6 +18,7 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +38,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
+import org.apache.hama.pipes.PipesPartitioner;
 
 public class PartitioningRunner extends
     BSP<Writable, Writable, Writable, Writable, NullWritable> {
@@ -47,7 +49,8 @@ public class PartitioningRunner extends
   private FileSystem fs = null;
   private Path partitionDir;
   private RecordConverter converter;
-  private Map<Integer,LinkedList<KeyValuePair<Writable,Writable>>> values = new HashMap<Integer, LinkedList<KeyValuePair<Writable,Writable>>>();
+  private Map<Integer, LinkedList<KeyValuePair<Writable, Writable>>> values = new HashMap<Integer, LinkedList<KeyValuePair<Writable, Writable>>>();
+  private PipesPartitioner<?, ?> pipesPartitioner = null;
 
   @Override
   public final void setup(
@@ -103,7 +106,7 @@ public class PartitioningRunner extends
      *         needed.
      */
     public Map<Writable, Writable> newMap();
-    
+
     /**
      * @return a list implementation, so order will not be changed in subclasses
      */
@@ -143,7 +146,7 @@ public class PartitioningRunner extends
 
     @Override
     public List<KeyValuePair<Writable, Writable>> newList() {
-      return new LinkedList<KeyValuePair<Writable,Writable>>();
+      return new LinkedList<KeyValuePair<Writable, Writable>>();
     }
   }
 
@@ -172,17 +175,20 @@ public class PartitioningRunner extends
 
       int index = converter.getPartitionId(outputPair, partitioner, conf, peer,
           desiredNum);
-      
+
       LinkedList<KeyValuePair<Writable, Writable>> list = values.get(index);
       if (list == null) {
-        list = (LinkedList<KeyValuePair<Writable, Writable>>) converter.newList();
+        list = (LinkedList<KeyValuePair<Writable, Writable>>) converter
+            .newList();
         values.put(index, list);
       }
-      list.add(new KeyValuePair<Writable, Writable>(pair.getKey(), pair.getValue()));
+      list.add(new KeyValuePair<Writable, Writable>(pair.getKey(), pair
+          .getValue()));
     }
 
     // The reason of use of Memory is to reduce file opens
-    for (Map.Entry<Integer, LinkedList<KeyValuePair<Writable, Writable>>> e : values.entrySet()) {
+    for (Map.Entry<Integer, LinkedList<KeyValuePair<Writable, Writable>>> e : values
+        .entrySet()) {
       Path destFile = new Path(partitionDir + "/part-" + e.getKey() + "/file-"
           + peer.getPeerIndex());
       SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
@@ -240,15 +246,43 @@ public class PartitioningRunner extends
     }
   }
 
+  @Override
+  public void cleanup(
+      BSPPeer<Writable, Writable, Writable, Writable, NullWritable> peer)
+      throws IOException {
+    if (this.pipesPartitioner != null) {
+      this.pipesPartitioner.cleanup();
+    }
+  }
+
   public static int getMergeProcessorID(int partitionID, int peerNum) {
     return partitionID % peerNum;
   }
 
   @SuppressWarnings("rawtypes")
   public Partitioner getPartitioner() {
-    return ReflectionUtils.newInstance(conf.getClass(
+    Class<? extends Partitioner> partitionerClass = conf.getClass(
         Constants.RUNTIME_PARTITIONING_CLASS, HashPartitioner.class,
-        Partitioner.class), conf);
+        Partitioner.class);
+
+    LOG.debug(Constants.RUNTIME_PARTITIONING_CLASS + ": "
+        + partitionerClass.toString());
+
+    // Check for Hama Pipes Partitioner
+    Partitioner partitioner = null;
+    if (PipesPartitioner.class.equals(partitionerClass)) {
+      try {
+        Constructor<? extends Partitioner> ctor = partitionerClass
+            .getConstructor(Configuration.class);
+        partitioner = ctor.newInstance(conf);
+        this.pipesPartitioner = (PipesPartitioner) partitioner;
+      } catch (Exception e) {
+        LOG.error(e);
+      }
+    } else {
+      partitioner = ReflectionUtils.newInstance(partitionerClass, conf);
+    }
+    return partitioner;
   }
 
   private static String getPartitionName(int i) {

@@ -21,7 +21,8 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hama.bsp.Partitioner;
 
 /**
@@ -30,12 +31,29 @@ import org.apache.hama.bsp.Partitioner;
  * BinaryProtocol -> C++ Partitioner and back
  * 
  */
-public class PipesPartitioner<K, V> implements Partitioner<K, V>,
-    PipesApplicable {
+public class PipesPartitioner<K, V> implements Partitioner<K, V> {
 
-  private static final Log LOG = LogFactory.getLog(PipesPartitioner.class
-      .getName());
-  private PipesApplication<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable> application = null;
+  private static final Log LOG = LogFactory.getLog(PipesPartitioner.class);
+  private PipesApplication<K, V, ?, ?, BytesWritable> application = new PipesApplication<K, V, Object, Object, BytesWritable>();
+
+  public PipesPartitioner(Configuration conf) {
+    LOG.debug("Start Pipes client for PipesPartitioner.");
+    try {
+      application.start(conf);
+    } catch (IOException e) {
+      LOG.error(e);
+    } catch (InterruptedException e) {
+      LOG.error(e);
+    }
+  }
+
+  public void cleanup() {
+    try {
+      application.cleanup();
+    } catch (IOException e) {
+      LOG.error(e);
+    }
+  }
 
   /**
    * Partitions a specific key value mapping to a bucket.
@@ -50,26 +68,20 @@ public class PipesPartitioner<K, V> implements Partitioner<K, V>,
   public int getPartition(K key, V value, int numTasks) {
     int returnVal = 0;
     try {
-      // LOG.info("pipesApp==null: " + ((pipesApp == null) ? "true" : "false"));
-      // LOG.info("pipesApp.getDownlink()==null: "
-      // + ((pipesApp.getDownlink() == null) ? "true" : "false"));
 
-      // LOG.info("Class: "+value.getClass().toString());
-      if ((application != null) && (application.getDownlink() != null))
-        returnVal = application.getDownlink().getPartition(key.toString(),
-            value.toString(), numTasks);
+      if ((application != null) && (application.getDownlink() != null)) {
+        returnVal = application.getDownlink()
+            .getPartition(key, value, numTasks);
+      } else {
+        LOG.warn("PipesApplication or application.getDownlink() might be null! (application==null): "
+            + ((application == null) ? "true" : "false"));
+      }
 
     } catch (IOException e) {
       LOG.error(e);
     }
+    LOG.debug("getPartition returns: " + returnVal);
     return returnVal;
   }
-
-  @Override
-  public void setApplication(
-      PipesApplication<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable> pipesApp) {
-
-    this.application = pipesApp;
-  }
-
+  
 }

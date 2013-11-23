@@ -37,7 +37,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.bsp.BSPPeer;
@@ -54,10 +53,9 @@ import org.apache.hama.pipes.protocol.StreamingProtocol;
  * Adapted from Hadoop Pipes.
  * 
  */
-public class PipesApplication<K1 extends Writable, V1 extends Writable, K2 extends Writable, V2 extends Writable, M extends Writable> {
+public class PipesApplication<K1, V1, K2, V2, M extends Writable> {
 
-  private static final Log LOG = LogFactory.getLog(PipesApplication.class
-      .getName());
+  private static final Log LOG = LogFactory.getLog(PipesApplication.class);
   private ServerSocket serverSocket;
   private Process process;
   private Socket clientSocket;
@@ -72,7 +70,7 @@ public class PipesApplication<K1 extends Writable, V1 extends Writable, K2 exten
   }
 
   /* Build Environment based on the Configuration */
-  private Map<String, String> setupEnvironment(Configuration conf)
+  public Map<String, String> setupEnvironment(Configuration conf)
       throws IOException {
 
     Map<String, String> env = new HashMap<String, String>();
@@ -220,7 +218,7 @@ public class PipesApplication<K1 extends Writable, V1 extends Writable, K2 exten
         clientSocket = serverSocket.accept();
         LOG.debug("DEBUG: Client connected! - start BinaryProtocol!");
 
-        downlink = new BinaryProtocol<K1, V1, K2, V2>(conf,
+        downlink = new BinaryProtocol<K1, V1, K2, V2, M>(conf,
             clientSocket.getOutputStream(), clientSocket.getInputStream());
 
         downlink.start();
@@ -249,8 +247,8 @@ public class PipesApplication<K1 extends Writable, V1 extends Writable, K2 exten
    * @throws IOException
    */
   @SuppressWarnings({ "rawtypes", "unchecked" })
-  public void start(BSPPeer<K1, V1, K2, V2, BytesWritable> peer)
-      throws IOException, InterruptedException {
+  public void start(BSPPeer<K1, V1, K2, V2, M> peer) throws IOException,
+      InterruptedException {
 
     Map<String, String> env = setupEnvironment(peer.getConfiguration());
     List<String> cmd = setupCommand(peer.getConfiguration());
@@ -291,7 +289,7 @@ public class PipesApplication<K1 extends Writable, V1 extends Writable, K2 exten
         clientSocket = serverSocket.accept();
         LOG.debug("DEBUG: Client connected! - start BinaryProtocol!");
 
-        downlink = new BinaryProtocol<K1, V1, K2, V2>(peer,
+        downlink = new BinaryProtocol<K1, V1, K2, V2, M>(peer,
             clientSocket.getOutputStream(), clientSocket.getInputStream());
       }
 

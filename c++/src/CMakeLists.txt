@@ -34,7 +34,7 @@ include(JNIFlags.cmake NO_POLICY_SCOPE)
 function(output_directory TGT DIR)
     SET_TARGET_PROPERTIES(${TGT} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DIR}")
-   SET_TARGET_PROPERTIES(${TGT} PROPERTIES
+    SET_TARGET_PROPERTIES(${TGT} PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DIR}")
     SET_TARGET_PROPERTIES(${TGT} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${DIR}")
@@ -49,15 +49,15 @@ include_directories(
 
 # Example programs
 add_executable(summation main/native/examples/impl/summation.cc)
-target_link_libraries(summation hamapipes hadooputils)
+target_link_libraries(summation hadooputils)
 output_directory(summation examples)
 
 add_executable(piestimator main/native/examples/impl/piestimator.cc)
-target_link_libraries(piestimator hamapipes hadooputils)
+target_link_libraries(piestimator hadooputils)
 output_directory(piestimator examples)
 
 add_executable(matrixmultiplication main/native/examples/impl/matrixmultiplication.cc)
-target_link_libraries(matrixmultiplication DenseDoubleVector hamapipes hadooputils)
+target_link_libraries(matrixmultiplication DenseDoubleVector hadooputils)
 output_directory(matrixmultiplication examples)
 
 add_library(DenseDoubleVector 
@@ -70,11 +70,11 @@ add_library(hadooputils STATIC
     main/native/utils/impl/SerialUtils.cc
 )
 
-add_library(hamapipes STATIC
-    main/native/pipes/impl/HamaPipes.cc
-)
+#add_library(hamapipes STATIC
+#    main/native/pipes/impl/Pipes.cc
+#)
 
-target_link_libraries(hamapipes
+#target_link_libraries(hamapipes
 #    ${OPENSSL_LIBRARIES}
-    pthread
-)
+#    pthread
+#)

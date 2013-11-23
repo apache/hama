@@ -32,7 +32,7 @@ namespace math {
     /// Creates a new vector with the given length and default value.
     DenseDoubleVector(int length, double val);
     // Creates a new vector with the given array.
-    DenseDoubleVector(double arr[]);
+    DenseDoubleVector(int length, double arr[]);
     DenseDoubleVector(const string values);
     ~DenseDoubleVector();  // Destructor
     

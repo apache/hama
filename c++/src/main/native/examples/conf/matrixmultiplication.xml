@@ -30,10 +30,6 @@
     <value>true</value>
   </property>
   <property>
-    <name>bsp.input.format.class</name>
-    <value>org.apache.hama.bsp.SequenceFileInputFormat</value>
-  </property>
-  <property>
     <name>bsp.input.dir</name>
     <value>/examples/input/matrixmultiplication/MatrixA.seq</value>                                            
   </property>
@@ -42,15 +38,47 @@
     <value>/examples/input/matrixmultiplication/MatrixB_transposed.seq</value>
   </property>
   <property>
-    <name>hama.pipes.logging</name>
-    <value>false</value>
+    <name>bsp.input.format.class</name>
+    <value>org.apache.hama.bsp.SequenceFileInputFormat</value>
   </property>
   <property>
-    <name>hama.messenger.queue.class</name>
-    <value>org.apache.hama.bsp.message.queue.SortedMessageQueue</value>                                            
+    <name>bsp.input.key.class</name>
+    <value>org.apache.hadoop.io.IntWritable</value>
+  </property>
+  <property>
+    <name>bsp.input.value.class</name>
+    <value>org.apache.hama.commons.io.PipesVectorWritable</value>
+  </property>
+  <property>
+    <name>bsp.output.format.class</name>
+    <value>org.apache.hama.bsp.SequenceFileOutputFormat</value>
+  </property>
+  <property>
+    <name>bsp.output.key.class</name>
+    <value>org.apache.hadoop.io.IntWritable</value>
+  </property>
+  <property>
+    <name>bsp.output.value.class</name>
+    <value>org.apache.hama.commons.io.PipesVectorWritable</value>
+  </property>
+  <property>
+    <name>bsp.message.class</name>
+    <value>org.apache.hama.commons.io.PipesKeyValueWritable</value>
+  </property>
+  <property>
+    <name>hama.messenger.xfer.queue.class</name>
+    <value>org.apache.hama.bsp.message.queue.SortedMessageTransferProtocol</value>
   </property>
   <property>
     <name>bsp.input.partitioner.class</name>
     <value>org.apache.hama.pipes.PipesPartitioner</value>                                            
+  </property>
+  <property>
+    <name>hama.pipes.logging</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>bsp.peers.num</name>
+    <value>3</value>
   </property>
 </configuration>

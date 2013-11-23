@@ -33,13 +33,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.pipes.Submitter;
-import org.apache.hama.pipes.protocol.UplinkReader;
 
 /**
  * This protocol is a binary implementation of the Hama Pipes protocol.
@@ -47,8 +47,8 @@ import org.apache.hama.pipes.protocol.UplinkReader;
  * Adapted from Hadoop Pipes.
  * 
  */
-public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends Writable, V2 extends Writable>
-    implements DownwardProtocol<K1, V1, K2, V2> {
+public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
+    DownwardProtocol<K1, V1, K2, V2> {
 
   protected static final Log LOG = LogFactory.getLog(BinaryProtocol.class
       .getName());
@@ -57,19 +57,16 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
    * The buffer size for the command socket
    */
   protected static final int BUFFER_SIZE = 128 * 1024;
-
-  protected final DataOutputStream stream;
-  protected final DataOutputBuffer buffer = new DataOutputBuffer();
-
-  private UplinkReader<K1, V1, K2, V2> uplink;
+  protected final DataOutputStream outStream;
+  /* protected final peer is only needed by the Streaming Protocol */
+  protected final BSPPeer<K1, V1, K2, V2, M> peer;
 
   public final Object hasTaskLock = new Object();
   private boolean hasTask = false;
   public final Object resultLock = new Object();
   private Integer resultInt = null;
 
-  /* Protected final peer is only needed by the Streaming Protocol */
-  protected final BSPPeer<K1, V1, K2, V2, BytesWritable> peer;
+  private UplinkReader<K1, V1, K2, V2, M> uplink;
   private Configuration conf;
 
   /**
@@ -91,11 +88,13 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
     if (Submitter.getKeepCommandFile(conf)) {
       out = new TeeOutputStream("downlink.data", out);
     }
-    stream = new DataOutputStream(new BufferedOutputStream(out, BUFFER_SIZE));
-    uplink = new UplinkReader<K1, V1, K2, V2>(this, conf, in);
 
-    uplink.setName("pipe-uplink-handler");
-    uplink.start();
+    this.outStream = new DataOutputStream(new BufferedOutputStream(out,
+        BUFFER_SIZE));
+
+    this.uplink = new UplinkReader<K1, V1, K2, V2, M>(this, conf, in);
+    this.uplink.setName("pipe-uplink-handler");
+    this.uplink.start();
   }
 
   /**
@@ -108,8 +107,8 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
    * @param in The input stream to communicate on.
    * @throws IOException
    */
-  public BinaryProtocol(BSPPeer<K1, V1, K2, V2, BytesWritable> peer,
-      OutputStream out, InputStream in) throws IOException {
+  public BinaryProtocol(BSPPeer<K1, V1, K2, V2, M> peer, OutputStream out,
+      InputStream in) throws IOException {
     this.peer = peer;
     this.conf = peer.getConfiguration();
 
@@ -117,20 +116,22 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
     if (Submitter.getKeepCommandFile(conf)) {
       out = new TeeOutputStream("downlink.data", out);
     }
-    stream = new DataOutputStream(new BufferedOutputStream(out, BUFFER_SIZE));
-    uplink = getUplinkReader(peer, in);
 
-    uplink.setName("pipe-uplink-handler");
-    uplink.start();
+    this.outStream = new DataOutputStream(new BufferedOutputStream(out,
+        BUFFER_SIZE));
+
+    this.uplink = getUplinkReader(peer, in);
+    this.uplink.setName("pipe-uplink-handler");
+    this.uplink.start();
   }
 
-  public UplinkReader<K1, V1, K2, V2> getUplinkReader(
-      BSPPeer<K1, V1, K2, V2, BytesWritable> peer, InputStream in) throws IOException {
-    return new UplinkReader<K1, V1, K2, V2>(this, peer, in);
+  public UplinkReader<K1, V1, K2, V2, M> getUplinkReader(
+      BSPPeer<K1, V1, K2, V2, M> peer, InputStream in) throws IOException {
+    return new UplinkReader<K1, V1, K2, V2, M>(this, peer, in);
   }
 
   public boolean isHasTask() {
-    return hasTask;
+    return this.hasTask;
   }
 
   public synchronized void setHasTask(boolean hasTask) {
@@ -141,8 +142,8 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
     this.resultInt = result;
   }
 
-  public DataOutputStream getStream() {
-    return stream;
+  public DataOutputStream getOutputStream() {
+    return this.outStream;
   }
 
   /**
@@ -189,8 +190,8 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
   @Override
   public void start() throws IOException {
     LOG.debug("starting downlink");
-    WritableUtils.writeVInt(stream, MessageType.START.code);
-    WritableUtils.writeVInt(stream, CURRENT_PROTOCOL_VERSION);
+    WritableUtils.writeVInt(this.outStream, MessageType.START.code);
+    WritableUtils.writeVInt(this.outStream, CURRENT_PROTOCOL_VERSION);
     flush();
     LOG.debug("Sent MessageType.START");
     setBSPJobConf(conf);
@@ -198,15 +199,15 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
 
   @Override
   public void setBSPJobConf(Configuration conf) throws IOException {
-    WritableUtils.writeVInt(stream, MessageType.SET_BSPJOB_CONF.code);
+    WritableUtils.writeVInt(this.outStream, MessageType.SET_BSPJOB_CONF.code);
     List<Entry<String, String>> list = new ArrayList<Entry<String, String>>();
     for (Entry<String, String> entry : conf) {
       list.add(entry);
     }
-    WritableUtils.writeVInt(stream, list.size());
+    WritableUtils.writeVInt(this.outStream, list.size());
     for (Entry<String, String> entry : list) {
-      Text.writeString(stream, entry.getKey());
-      Text.writeString(stream, entry.getValue());
+      Text.writeString(this.outStream, entry.getKey());
+      Text.writeString(this.outStream, entry.getValue());
     }
     flush();
     LOG.debug("Sent MessageType.SET_BSPJOB_CONF including " + list.size()
@@ -216,9 +217,9 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
   @Override
   public void setInputTypes(String keyType, String valueType)
       throws IOException {
-    WritableUtils.writeVInt(stream, MessageType.SET_INPUT_TYPES.code);
-    Text.writeString(stream, keyType);
-    Text.writeString(stream, valueType);
+    WritableUtils.writeVInt(this.outStream, MessageType.SET_INPUT_TYPES.code);
+    Text.writeString(this.outStream, keyType);
+    Text.writeString(this.outStream, valueType);
     flush();
     LOG.debug("Sent MessageType.SET_INPUT_TYPES");
   }
@@ -227,9 +228,9 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
   public void runSetup(boolean pipedInput, boolean pipedOutput)
       throws IOException {
 
-    WritableUtils.writeVInt(stream, MessageType.RUN_SETUP.code);
-    WritableUtils.writeVInt(stream, pipedInput ? 1 : 0);
-    WritableUtils.writeVInt(stream, pipedOutput ? 1 : 0);
+    WritableUtils.writeVInt(this.outStream, MessageType.RUN_SETUP.code);
+    WritableUtils.writeVInt(this.outStream, pipedInput ? 1 : 0);
+    WritableUtils.writeVInt(this.outStream, pipedOutput ? 1 : 0);
     flush();
     setHasTask(true);
     LOG.debug("Sent MessageType.RUN_SETUP");
@@ -239,9 +240,9 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
   public void runBsp(boolean pipedInput, boolean pipedOutput)
       throws IOException {
 
-    WritableUtils.writeVInt(stream, MessageType.RUN_BSP.code);
-    WritableUtils.writeVInt(stream, pipedInput ? 1 : 0);
-    WritableUtils.writeVInt(stream, pipedOutput ? 1 : 0);
+    WritableUtils.writeVInt(this.outStream, MessageType.RUN_BSP.code);
+    WritableUtils.writeVInt(this.outStream, pipedInput ? 1 : 0);
+    WritableUtils.writeVInt(this.outStream, pipedOutput ? 1 : 0);
     flush();
     setHasTask(true);
     LOG.debug("Sent MessageType.RUN_BSP");
@@ -251,32 +252,37 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
   public void runCleanup(boolean pipedInput, boolean pipedOutput)
       throws IOException {
 
-    WritableUtils.writeVInt(stream, MessageType.RUN_CLEANUP.code);
-    WritableUtils.writeVInt(stream, pipedInput ? 1 : 0);
-    WritableUtils.writeVInt(stream, pipedOutput ? 1 : 0);
+    WritableUtils.writeVInt(this.outStream, MessageType.RUN_CLEANUP.code);
+    WritableUtils.writeVInt(this.outStream, pipedInput ? 1 : 0);
+    WritableUtils.writeVInt(this.outStream, pipedOutput ? 1 : 0);
     flush();
     setHasTask(true);
     LOG.debug("Sent MessageType.RUN_CLEANUP");
   }
 
   @Override
-  public int getPartition(String key, String value, int numTasks)
-      throws IOException {
+  public int getPartition(K1 key, V1 value, int numTasks) throws IOException {
 
-    WritableUtils.writeVInt(stream, MessageType.PARTITION_REQUEST.code);
-    Text.writeString(stream, key);
-    Text.writeString(stream, value);
-    WritableUtils.writeVInt(stream, numTasks);
+    WritableUtils.writeVInt(this.outStream, MessageType.PARTITION_REQUEST.code);
+    writeObject((Writable) key);
+    writeObject((Writable) value);
+    WritableUtils.writeVInt(this.outStream, numTasks);
     flush();
-    LOG.debug("Sent MessageType.PARTITION_REQUEST - key: " + key + " value: "
-        + value.substring(0, 10) + "..." + " numTasks: " + numTasks);
+
+    LOG.debug("Sent MessageType.PARTITION_REQUEST - key: "
+        + ((key.toString().length() < 10) ? key.toString() : key.toString()
+            .substring(0, 9) + "...")
+        + " value: "
+        + ((value.toString().length() < 10) ? value.toString() : value
+            .toString().substring(0, 9) + "...") + " numTasks: " + numTasks);
 
     int resultVal = 0;
 
-    synchronized (resultLock) {
+    synchronized (this.resultLock) {
       try {
-        while (resultInt == null)
-          resultLock.wait();
+        while (resultInt == null) {
+          this.resultLock.wait();
+        }
 
         resultVal = resultInt;
         resultInt = null;
@@ -290,14 +296,14 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
 
   @Override
   public void abort() throws IOException {
-    WritableUtils.writeVInt(stream, MessageType.ABORT.code);
+    WritableUtils.writeVInt(this.outStream, MessageType.ABORT.code);
     flush();
     LOG.debug("Sent MessageType.ABORT");
   }
 
   @Override
   public void flush() throws IOException {
-    stream.flush();
+    this.outStream.flush();
   }
 
   /**
@@ -310,22 +316,26 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
   public void close() throws IOException, InterruptedException {
     // runCleanup(pipedInput,pipedOutput);
     LOG.debug("closing connection");
-    endOfInput();
 
-    uplink.interrupt();
-    uplink.join();
+    // Only send closing message back in Hama Pipes NOT in Hama Streaming
+    boolean streamingEnabled = conf.getBoolean("hama.streaming.enabled", false);
+    if (!streamingEnabled) {
+      endOfInput();
+    }
+    this.uplink.interrupt();
+    this.uplink.join();
 
-    uplink.closeConnection();
-    stream.close();
+    this.uplink.closeConnection();
+    this.outStream.close();
   }
 
   @Override
   public boolean waitForFinish() throws IOException, InterruptedException {
     // LOG.debug("waitForFinish... "+hasTask);
-    synchronized (hasTaskLock) {
+    synchronized (this.hasTaskLock) {
       try {
-        while (hasTask)
-          hasTaskLock.wait();
+        while (this.hasTask)
+          this.hasTaskLock.wait();
 
       } catch (InterruptedException e) {
         LOG.error(e);
@@ -336,40 +346,58 @@ public class BinaryProtocol<K1 extends Writable, V1 extends Writable, K2 extends
   }
 
   public void endOfInput() throws IOException {
-    WritableUtils.writeVInt(stream, MessageType.CLOSE.code);
+    WritableUtils.writeVInt(this.outStream, MessageType.CLOSE.code);
     flush();
     LOG.debug("Sent close command");
     LOG.debug("Sent MessageType.CLOSE");
   }
 
   /**
-   * Write the given object to the stream. If it is a Text or BytesWritable,
-   * write it directly. Otherwise, write it to a buffer and then write the
-   * length and data to the stream.
+   * Write the given object to the stream. If it is a IntWritable, LongWritable,
+   * FloatWritable, DoubleWritable, Text or BytesWritable, write it directly.
+   * Otherwise, write it to a buffer and then write the length and data to the
+   * stream.
    * 
    * @param obj the object to write
    * @throws IOException
    */
   protected void writeObject(Writable obj) throws IOException {
-    // For Text and BytesWritable, encode them directly, so that they end up
+    // For basic types IntWritable, LongWritable, FloatWritable, DoubleWritable,
+    // Text and BytesWritable, encode them directly, so that they end up
     // in C++ as the natural translations.
     if (obj instanceof Text) {
       Text t = (Text) obj;
       int len = t.getLength();
-      WritableUtils.writeVInt(stream, len);
-      stream.write(t.getBytes(), 0, len);
+      WritableUtils.writeVInt(this.outStream, len);
+      this.outStream.write(t.getBytes(), 0, len);
+
     } else if (obj instanceof BytesWritable) {
       BytesWritable b = (BytesWritable) obj;
       int len = b.getLength();
-      WritableUtils.writeVInt(stream, len);
-      stream.write(b.getBytes(), 0, len);
+      WritableUtils.writeVInt(this.outStream, len);
+      this.outStream.write(b.getBytes(), 0, len);
+
+    } else if (obj instanceof IntWritable) {
+      WritableUtils.writeVInt(this.outStream, ((IntWritable) obj).get());
+
+    } else if (obj instanceof LongWritable) {
+      WritableUtils.writeVLong(this.outStream, ((LongWritable) obj).get());
+
+      // else if ((obj instanceof FloatWritable) || (obj instanceof
+      // DoubleWritable))
+
     } else {
-      buffer.reset();
-      obj.write(buffer);
-      int length = buffer.getLength();
-      WritableUtils.writeVInt(stream, length);
-      stream.write(buffer.getData(), 0, length);
+      // Note: other types are transfered as String which should be implemented
+      // in Writable itself
+
+      // DataOutputBuffer buffer = new DataOutputBuffer();
+      // buffer.reset();
+      // obj.write(buffer);
+      // int length = buffer.getLength();
+      // WritableUtils.writeVInt(stream, length);
+      // stream.write(buffer.getData(), 0, length);
+
+      obj.write(this.outStream);
     }
   }
-
 }

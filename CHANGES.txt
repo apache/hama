@@ -2,6 +2,10 @@ Hama Change Log
 
 Release 0.7.0 (unreleased changes)
 
+  NEW FEATURES
+
+   HAMA-815: Hama Pipes uses C++ templates (Martin Illecker)  
+
   IMPROVEMENTS
 
    HAMA-699: Add commons module (Martin Illecker)
@@ -9,7 +13,7 @@ Release 0.7.0 (unreleased changes)
 Release 0.6.3 - October 11, 2013
 
   NEW FEATURES
-  
+
    HAMA-807: Make aggregators skip supersteps (Anastasis Andronidis)
    HAMA-800: Hama Pipes Examples (Martin Illecker)
    HAMA-804: Create NeuralNetwork Example (Yexi Jiang)

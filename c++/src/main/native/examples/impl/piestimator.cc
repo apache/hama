@@ -33,31 +33,32 @@ using HamaPipes::BSP;
 using HamaPipes::BSPContext;
 using namespace HadoopUtils;
 
-class PiEstimatorBSP: public BSP {
-private:
-  string masterTask;
-  long iterations; // iterations_per_bsp_task
-public:
-  PiEstimatorBSP(BSPContext& context) {
-    iterations = 1000000L;
+class PiEstimatorBSP: public BSP<string,string,string,double,int> {
+  private:
+  string master_task_;
+  long iterations_; // iterations_per_bsp_task
+  
+  public:
+  PiEstimatorBSP(BSPContext<string,string,string,double,int>& context) {
+    iterations_ = 1000000L;
   }
   
   inline double closed_interval_rand(double x0, double x1) {
     return x0 + (x1 - x0) * rand() / ((double) RAND_MAX);
   }
   
-  void setup(BSPContext& context) {
+  void setup(BSPContext<string,string,string,double,int>& context) {
     // Choose one as a master
-    masterTask = context.getPeerName(context.getNumPeers() / 2);
+    master_task_ = context.getPeerName(context.getNumPeers() / 2);
   }
   
-  void bsp(BSPContext& context) {
+  void bsp(BSPContext<string,string,string,double,int>& context) {
     
     /* initialize random seed */
     srand(time(NULL));
     
     int in = 0;
-    for (long i = 0; i < iterations; i++) {
+    for (long i = 0; i < iterations_; i++) {
       double x = 2.0 * closed_interval_rand(0, 1) - 1.0;
       double y = 2.0 * closed_interval_rand(0, 1) - 1.0;
       if (sqrt(x * x + y * y) < 1.0) {
@@ -65,28 +66,26 @@ public:
       }
     }
     
-    context.sendMessage(masterTask, toString(in));
+    context.sendMessage(master_task_, in);
     context.sync();
   }
   
-  void cleanup(BSPContext& context) {
-    if (context.getPeerName().compare(masterTask)==0) {
+  void cleanup(BSPContext<string,string,string,double,int>& context) {
+    if (context.getPeerName().compare(master_task_)==0) {
       
-      long totalHits = 0;
-      int msgCount = context.getNumCurrentMessages();
-      string received;
-      for (int i=0; i<msgCount; i++) {
-        string received = context.getCurrentMessage();
-        totalHits += toInt(received);
+      long total_hits = 0;
+      int msg_count = context.getNumCurrentMessages();
+      for (int i=0; i < msg_count; i++) {
+        total_hits += context.getCurrentMessage();
       }
       
-      double pi = 4.0 * totalHits / (msgCount * iterations);
-      context.write("Estimated value of PI is", toString(pi));
+      double pi = 4.0 * total_hits / (msg_count * iterations_);
+      context.write("Estimated value of PI", pi);
     }
   }
 };
 
 int main(int argc, char *argv[]) {
-  return HamaPipes::runTask(HamaPipes::TemplateFactory<PiEstimatorBSP>());
+  return HamaPipes::runTask<string,string,string,double,int>(HamaPipes::TemplateFactory<PiEstimatorBSP,string,string,string,double,int>());
 }
 

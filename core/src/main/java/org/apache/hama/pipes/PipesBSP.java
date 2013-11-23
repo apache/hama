@@ -32,10 +32,10 @@ import org.apache.hama.bsp.sync.SyncException;
  * runtimes.
  */
 public class PipesBSP<K1 extends Writable, V1 extends Writable, K2 extends Writable, V2 extends Writable, M extends Writable>
-    extends BSP<K1, V1, K2, V2, BytesWritable> implements PipesApplicable {
+    extends BSP<K1, V1, K2, V2, BytesWritable> {
 
   private static final Log LOG = LogFactory.getLog(PipesBSP.class);
-  private PipesApplication<K1, V1, K2, V2, BytesWritable> application;
+  private PipesApplication<K1, V1, K2, V2, BytesWritable> application = new PipesApplication<K1, V1, K2, V2, BytesWritable>();
 
   @Override
   public void setup(BSPPeer<K1, V1, K2, V2, BytesWritable> peer)
@@ -95,14 +95,6 @@ public class PipesBSP<K1 extends Writable, V1 extends Writable, K2 extends Writa
     } finally {
       this.application.cleanup();
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void setApplication(
-      PipesApplication<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable> pipesApp) {
-
-    this.application = (PipesApplication<K1, V1, K2, V2, BytesWritable>) pipesApp;
   }
 
 }

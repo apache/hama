@@ -32,25 +32,26 @@ using HadoopUtils::Splitter;
 
 namespace math {
   
-  DenseDoubleVector::DenseDoubleVector(int len) : size(len), vector(new double[len]) {
+  DenseDoubleVector::DenseDoubleVector(int len) : vector(new double[len]), size(len) {
   }
   
-  DenseDoubleVector::DenseDoubleVector(int len, double val) : size(len), vector(new double[len]) {
+  DenseDoubleVector::DenseDoubleVector(int len, double val) : vector(new double[len]), size(len) {
     for (int i=0; i<len; i++)
       vector[i] = val;
   }
   
-  DenseDoubleVector::DenseDoubleVector(double arr[]) : vector(arr) {
+  DenseDoubleVector::DenseDoubleVector(int len, double arr[]) : vector(arr), size(len) {
   }
-  
+
   DenseDoubleVector::DenseDoubleVector(const string values) {
     
     Splitter split ( values, "," );
     size = split.size();
     
     vector = new double[size];
-    for ( Splitter::size_type i = 0; i < split.size(); i++ )
+    for ( Splitter::size_type i = 0; i < split.size(); i++ ) {
       vector[i] = HadoopUtils::toDouble(split[i]);
+    }
   }
   
   DenseDoubleVector::~DenseDoubleVector() {

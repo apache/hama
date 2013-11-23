@@ -49,7 +49,7 @@ import org.apache.hama.commons.util.KeyValuePair;
  * @param <V2> output value.
  */
 public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
-    extends BinaryProtocol<K1, V1, Text, Text> {
+    extends BinaryProtocol<K1, V1, Text, Text, BytesWritable> {
 
   private static final Pattern PROTOCOL_STRING_PATTERN = Pattern.compile("=");
 
@@ -62,21 +62,22 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
   }
 
   @Override
-  public UplinkReader<K1, V1, Text, Text> getUplinkReader(
+  public UplinkReader<K1, V1, Text, Text, BytesWritable> getUplinkReader(
       BSPPeer<K1, V1, Text, Text, BytesWritable> peer, InputStream in)
       throws IOException {
-    return new StreamingUplinkReaderThread(peer, in);
+    return new StreamingUplinkReaderThread(this, peer, in);
   }
-  
+
   public class StreamingUplinkReaderThread extends
-      UplinkReader<K1, V1, Text, Text> {
+      UplinkReader<K1, V1, Text, Text, BytesWritable> {
 
     private BufferedReader reader;
 
     public StreamingUplinkReaderThread(
+        BinaryProtocol<K1, V1, Text, Text, BytesWritable> binaryProtocol,
         BSPPeer<K1, V1, Text, Text, BytesWritable> peer, InputStream stream)
         throws IOException {
-      super(null, peer, stream);
+      super(binaryProtocol, peer, stream);
       reader = new BufferedReader(new InputStreamReader(inStream));
     }
 
@@ -164,7 +165,7 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
     }
 
     @Override
-    public int readCommand() throws IOException {
+    protected int readCommand() throws IOException {
       String readLine = reader.readLine();
       if (readLine != null && !readLine.isEmpty()) {
         String[] split = PROTOCOL_STRING_PATTERN.split(readLine, 2);
@@ -210,6 +211,10 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
     }
 
   }
+
+  /* ************************************************************ */
+  /* Override Implementation of DownwardProtocol<K1, V1, K2, V2> */
+  /* ************************************************************ */
 
   @Override
   public void start() throws IOException {
@@ -277,14 +282,14 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
   }
 
   public void writeLine(String msg) throws IOException {
-    stream.write((msg + "\n").getBytes());
-    stream.flush();
+    outStream.write((msg + "\n").getBytes());
+    outStream.flush();
   }
 
   public void writeLine(MessageType type, String msg) throws IOException {
-    stream.write((getProtocolString(type) + (msg == null ? "" : msg) + "\n")
+    outStream.write((getProtocolString(type) + (msg == null ? "" : msg) + "\n")
         .getBytes());
-    stream.flush();
+    outStream.flush();
   }
 
   public String getProtocolString(MessageType type) {

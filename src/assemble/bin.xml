@@ -103,14 +103,6 @@
       <outputDirectory>../hama-${project.version}/lib</outputDirectory>
     </fileSet>
     <fileSet>
-      <directory>../c++/target/native</directory>
-      <includes>
-        <include>*.a</include>
-      </includes>
-      <fileMode>755</fileMode>
-      <outputDirectory>../hama-${project.version}/lib/native</outputDirectory>
-    </fileSet>
-    <fileSet>
       <directory>../bin</directory>
       <includes>
         <include>hama</include>

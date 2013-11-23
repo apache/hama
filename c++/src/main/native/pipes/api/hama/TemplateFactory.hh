@@ -19,27 +19,31 @@
 #define HAMA_PIPES_TEMPLATE_FACTORY_HH
 
 namespace HamaPipes {
-
-  template <class BSP>
-  class TemplateFactory2: public Factory {
+  
+  /* Generic template factory specification */
+  template <class BSP, class K1, class V1, class K2, class V2, class M>
+  class TemplateFactory2: public Factory<K1, V1, K2, V2, M> {
   public:
-    BSP* createBSP(BSPContext& context) const {
+    BSP* createBSP(BSPContext<K1, V1, K2, V2, M>& context) const {
       return new BSP(context);
     }
   };
-
-  template <class BSP, class partitioner=void>
-  class TemplateFactory: public TemplateFactory2<BSP> {
+  
+  /* Template factory including partitioner specification */
+  template <class BSP, class K1, class V1, class K2, class V2, class M, class partitioner=void>
+  class TemplateFactory: public TemplateFactory2<BSP, K1, V1, K2, V2, M> {
   public:
-      partitioner* createPartitioner(BSPContext& context) const {
-          return new partitioner(context);
-      }
+    partitioner* createPartitioner(BSPContext<K1, V1, K2, V2, M>& context) const {
+      return new partitioner(context);
+    }
   };
-  template <class BSP>
-  class TemplateFactory<BSP,void>
-      : public TemplateFactory2<BSP> {
+  
+  /* Template factory without partitioner specification */
+  template <class BSP, class K1, class V1, class K2, class V2, class M>
+  class TemplateFactory<BSP, K1, V1, K2, V2, M, void>
+  : public TemplateFactory2<BSP, K1, V1, K2, V2, M> {
   };
-    
+  
 }
 
 #endif

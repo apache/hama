@@ -28,7 +28,7 @@ import org.apache.hama.commons.math.DoubleVector;
 /**
  * Writable for dense vectors.
  */
-public final class VectorWritable implements WritableComparable<VectorWritable> {
+public class VectorWritable implements WritableComparable<VectorWritable> {
 
   private DoubleVector vector;
 
@@ -45,12 +45,12 @@ public final class VectorWritable implements WritableComparable<VectorWritable> 
   }
 
   @Override
-  public final void write(DataOutput out) throws IOException {
+  public void write(DataOutput out) throws IOException {
     writeVector(this.vector, out);
   }
 
   @Override
-  public final void readFields(DataInput in) throws IOException {
+  public void readFields(DataInput in) throws IOException {
     this.vector = readVector(in);
   }
 

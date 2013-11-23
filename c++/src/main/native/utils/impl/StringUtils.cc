@@ -32,14 +32,14 @@ using std::string;
 using std::vector;
 
 namespace HadoopUtils {
-
+  
   // Added by Apache Hama Pipes
   string toString(double x) {
     std::stringstream ss;
     ss << std::setprecision(16) << x;
     return ss.str();
   }
-
+  
   // Added by Apache Hama Pipes
   double toDouble(const string& val) {
     const char* begin = val.c_str();
@@ -47,36 +47,36 @@ namespace HadoopUtils {
     double result = strtod(begin, &end);
     size_t s = end - begin;
     if(s < val.size()) {
-      throw Error("Problem converting "+val+" to double. (result:"
+      throw Error("Problem converting '"+val+"' to double. (result:"
                   +toString(result)+")");
     }
     return result;
   }
-    
+  
   string toString(int32_t x) {
     char str[100];
     sprintf(str, "%d", x);
     return str;
   }
-
+  
   int toInt(const string& val) {
     int result;
     char trash;
     int num = sscanf(val.c_str(), "%d%c", &result, &trash);
     HADOOP_ASSERT(num == 1,
-                  "Problem converting " + val + " to integer.");
+                  "Problem converting '" + val + "' to integer.");
     return result;
   }
-
+  
   float toFloat(const string& val) {
     float result;
     char trash;
     int num = sscanf(val.c_str(), "%f%c", &result, &trash);
     HADOOP_ASSERT(num == 1,
-                  "Problem converting " + val + " to float.");
+                  "Problem converting '" + val + "' to float.");
     return result;
   }
-
+  
   bool toBool(const string& val) {
     if (val == "true") {
       return true;
@@ -84,10 +84,10 @@ namespace HadoopUtils {
       return false;
     } else {
       HADOOP_ASSERT(false,
-                    "Problem converting " + val + " to boolean.");
+                    "Problem converting '" + val + "' to boolean.");
     }
   }
-
+  
   /**
    * Get the current time in the number of milliseconds since 1970.
    */
@@ -98,15 +98,15 @@ namespace HadoopUtils {
     HADOOP_ASSERT(sys != -1, strerror(errno));
     return tv.tv_sec * 1000 + tv.tv_usec / 1000;
   }
-
+  
   vector<string> splitString(const std::string& str,
-			     const char* separator) {
+                             const char* separator) {
     vector<string> result;
     string::size_type prev_pos=0;
     string::size_type pos=0;
     while ((pos = str.find_first_of(separator, prev_pos)) != string::npos) {
       if (prev_pos < pos) {
-	result.push_back(str.substr(prev_pos, pos-prev_pos));
+        result.push_back(str.substr(prev_pos, pos-prev_pos));
       }
       prev_pos = pos + 1;
     }
@@ -115,7 +115,7 @@ namespace HadoopUtils {
     }
     return result;
   }
-
+  
   string quoteString(const string& str,
                      const char* deliminators) {
     
@@ -123,31 +123,31 @@ namespace HadoopUtils {
     for(int i=result.length() -1; i >= 0; --i) {
       char ch = result[i];
       if (!isprint(ch) ||
-          ch == '\\' || 
+          ch == '\\' ||
           strchr(deliminators, ch)) {
         switch (ch) {
-        case '\\':
-          result.replace(i, 1, "\\\\");
-          break;
-        case '\t':
-          result.replace(i, 1, "\\t");
-          break;
-        case '\n':
-          result.replace(i, 1, "\\n");
-          break;
-        case ' ':
-          result.replace(i, 1, "\\s");
-          break;
-        default:
-          char buff[4];
-          sprintf(buff, "\\%02x", static_cast<unsigned char>(result[i]));
-          result.replace(i, 1, buff);
+          case '\\':
+            result.replace(i, 1, "\\\\");
+            break;
+          case '\t':
+            result.replace(i, 1, "\\t");
+            break;
+          case '\n':
+            result.replace(i, 1, "\\n");
+            break;
+          case ' ':
+            result.replace(i, 1, "\\s");
+            break;
+          default:
+            char buff[4];
+            sprintf(buff, "\\%02x", static_cast<unsigned char>(result[i]));
+            result.replace(i, 1, buff);
         }
       }
     }
     return result;
   }
-
+  
   string unquoteString(const string& str) {
     string result(str);
     string::size_type current = result.find('\\');
@@ -158,8 +158,8 @@ namespace HadoopUtils {
         if (isxdigit(result[current+1])) {
           num_chars = 2;
           HADOOP_ASSERT(current + num_chars < result.size(),
-                     "escape pattern \\<hex><hex> is missing second digit in '"
-                     + str + "'");
+                        "escape pattern \\<hex><hex> is missing second digit in '"
+                        + str + "'");
           char sub_str[3];
           sub_str[0] = result[current+1];
           sub_str[1] = result[current+2];
@@ -167,27 +167,27 @@ namespace HadoopUtils {
           char* end_ptr = NULL;
           long int int_val = strtol(sub_str, &end_ptr, 16);
           HADOOP_ASSERT(*end_ptr == '\0' && int_val >= 0,
-                     "escape pattern \\<hex><hex> is broken in '" + str + "'");
+                        "escape pattern \\<hex><hex> is broken in '" + str + "'");
           new_ch = static_cast<char>(int_val);
         } else {
           num_chars = 1;
           switch(result[current+1]) {
-          case '\\':
-            new_ch = '\\';
-            break;
-          case 't':
-            new_ch = '\t';
-            break;
-          case 'n':
-            new_ch = '\n';
-            break;
-          case 's':
-            new_ch = ' ';
-            break;
-          default:
-            string msg("unknow n escape character '");
-            msg += result[current+1];
-            HADOOP_ASSERT(false, msg + "' found in '" + str + "'");
+            case '\\':
+              new_ch = '\\';
+              break;
+            case 't':
+              new_ch = '\t';
+              break;
+            case 'n':
+              new_ch = '\n';
+              break;
+            case 's':
+              new_ch = ' ';
+              break;
+            default:
+              string msg("unknow n escape character '");
+              msg += result[current+1];
+              HADOOP_ASSERT(false, msg + "' found in '" + str + "'");
           }
         }
         result.replace(current, 1 + num_chars, 1, new_ch);
@@ -198,5 +198,5 @@ namespace HadoopUtils {
     }
     return result;
   }
-
+  
 }

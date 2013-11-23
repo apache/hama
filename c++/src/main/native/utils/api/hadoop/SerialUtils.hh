@@ -22,7 +22,7 @@
 #include <stdint.h>
 
 namespace HadoopUtils {
-
+  
   /**
    * A simple exception class that records a message for the user.
    */
@@ -30,38 +30,38 @@ namespace HadoopUtils {
   private:
     std::string error;
   public:
-
+    
     /**
      * Create an error object with the given message.
      */
     Error(const std::string& msg);
-
+    
     /**
      * Construct an error object with the given message that was created on
      * the given file, line, and functino.
      */
-    Error(const std::string& msg, 
+    Error(const std::string& msg,
           const std::string& file, int line, const std::string& function);
-
+    
     /**
      * Get the error message.
      */
     const std::string& getMessage() const;
   };
-
+  
   /**
    * Check to make sure that the condition is true, and throw an exception
    * if it is not. The exception will contain the message and a description
    * of the source location.
    */
-  #define HADOOP_ASSERT(CONDITION, MESSAGE) \
-    { \
-      if (!(CONDITION)) { \
-        throw HadoopUtils::Error((MESSAGE), __FILE__, __LINE__, \
-                                    __PRETTY_FUNCTION__); \
-      } \
-    }
-
+#define HADOOP_ASSERT(CONDITION, MESSAGE) \
+{ \
+if (!(CONDITION)) { \
+throw HadoopUtils::Error((MESSAGE), __FILE__, __LINE__, \
+__PRETTY_FUNCTION__); \
+} \
+}
+  
   /**
    * An interface for an input stream.
    */
@@ -76,7 +76,7 @@ namespace HadoopUtils {
     virtual void read(void *buf, size_t len) = 0;
     virtual ~InStream() {}
   };
-
+  
   /**
    * An interface for an output stream.
    */
@@ -95,7 +95,7 @@ namespace HadoopUtils {
     virtual void flush() = 0;
     virtual ~OutStream() {}
   };
-
+  
   /**
    * A class to read a file as a stream.
    */
@@ -118,18 +118,18 @@ namespace HadoopUtils {
      */
     bool isOwned;
   };
-
+  
   /**
    * A class to write a stream to a file.
    */
   class FileOutStream: public OutStream {
   public:
-
+    
     /**
      * Create a stream that isn't bound to anything.
      */
     FileOutStream();
-
+    
     /**
      * Create the given file, potentially overwriting an existing file.
      */
@@ -144,7 +144,7 @@ namespace HadoopUtils {
     FILE *mFile;
     bool isOwned;
   };
-
+  
   /**
    * A stream that reads from a string.
    */
@@ -156,15 +156,17 @@ namespace HadoopUtils {
     const std::string& buffer;
     std::string::const_iterator itr;
   };
-
+  
   void serializeInt(int32_t t, OutStream& stream);
   int32_t deserializeInt(InStream& stream);
   void serializeLong(int64_t t, OutStream& stream);
   int64_t deserializeLong(InStream& stream);
   void serializeFloat(float t, OutStream& stream);
   float deserializeFloat(InStream& stream);
+  void serializeDouble(double t, OutStream& stream);
+  double deserializeDouble(InStream& stream);
   void serializeString(const std::string& t, OutStream& stream);
-  void deserializeString(std::string& t, InStream& stream);
+  std::string deserializeString(InStream& stream);
 }
 
 #endif

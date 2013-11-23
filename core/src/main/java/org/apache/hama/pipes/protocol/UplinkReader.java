@@ -34,6 +34,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
@@ -46,24 +48,23 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 
-public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends Writable, V2 extends Writable>
+public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
     extends Thread {
 
   private static final Log LOG = LogFactory.getLog(UplinkReader.class);
 
-  protected DataInputStream inStream;
-  private K2 key;
-  private V2 value;
-  
-  private BinaryProtocol<K1, V1, K2, V2> binProtocol;
-  private BSPPeer<K1, V1, K2, V2, BytesWritable> peer = null;
+  private BinaryProtocol<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> binProtocol;
+  private BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> peer = null;
   private Configuration conf;
-  
-  private Map<Integer, Entry<SequenceFile.Reader, Entry<String, String>>> sequenceFileReaders;
-  private Map<Integer, Entry<SequenceFile.Writer, Entry<String, String>>> sequenceFileWriters;
 
-  @SuppressWarnings("unchecked")
-  public UplinkReader(BinaryProtocol<K1, V1, K2, V2> binaryProtocol,
+  protected DataInputStream inStream;
+  protected DataOutputStream outStream;
+
+  private Map<Integer, Entry<SequenceFile.Reader, Entry<Writable, Writable>>> sequenceFileReaders;
+  private Map<Integer, Entry<SequenceFile.Writer, Entry<Writable, Writable>>> sequenceFileWriters;
+
+  public UplinkReader(
+      BinaryProtocol<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> binaryProtocol,
       Configuration conf, InputStream stream) throws IOException {
 
     this.binProtocol = binaryProtocol;
@@ -72,18 +73,15 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
     this.inStream = new DataInputStream(new BufferedInputStream(stream,
         BinaryProtocol.BUFFER_SIZE));
 
-    this.key = (K2) ReflectionUtils.newInstance((Class<? extends K2>) conf
-        .getClass("bsp.output.key.class", Object.class), conf);
+    this.outStream = binProtocol.getOutputStream();
 
-    this.value = (V2) ReflectionUtils.newInstance((Class<? extends V2>) conf
-        .getClass("bsp.output.value.class", Object.class), conf);
-
-    this.sequenceFileReaders = new HashMap<Integer, Entry<SequenceFile.Reader, Entry<String, String>>>();
-    this.sequenceFileWriters = new HashMap<Integer, Entry<SequenceFile.Writer, Entry<String, String>>>();
+    this.sequenceFileReaders = new HashMap<Integer, Entry<SequenceFile.Reader, Entry<Writable, Writable>>>();
+    this.sequenceFileWriters = new HashMap<Integer, Entry<SequenceFile.Writer, Entry<Writable, Writable>>>();
   }
 
-  public UplinkReader(BinaryProtocol<K1, V1, K2, V2> binaryProtocol,
-      BSPPeer<K1, V1, K2, V2, BytesWritable> peer, InputStream stream)
+  public UplinkReader(
+      BinaryProtocol<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> binaryProtocol,
+      BSPPeer<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M> peer, InputStream stream)
       throws IOException {
     this(binaryProtocol, peer.getConfiguration(), stream);
     this.peer = peer;
@@ -91,10 +89,6 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
 
   private boolean isPeerAvailable() {
     return this.peer != null;
-  }
-
-  public void closeConnection() throws IOException {
-    inStream.close();
   }
 
   @Override
@@ -108,7 +102,7 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
         int cmd = readCommand();
         if (cmd == -1)
           continue;
-        LOG.debug("Handling uplink command " + cmd);
+        LOG.debug("Handling uplink command: " + MessageType.values()[cmd]);
 
         if (cmd == MessageType.WRITE_KEYVALUE.code && isPeerAvailable()) { // INCOMING
           writeKeyValue();
@@ -182,12 +176,18 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
     }
   }
 
+  // onError is overwritten by StreamingProtocol in Hama Streaming
   protected void onError(Throwable e) {
     LOG.error(StringUtils.stringifyException(e));
   }
 
-  public int readCommand() throws IOException {
-    return WritableUtils.readVInt(inStream);
+  // readCommand is overwritten by StreamingProtocol in Hama Streaming
+  protected int readCommand() throws IOException {
+    return WritableUtils.readVInt(this.inStream);
+  }
+
+  public void closeConnection() throws IOException {
+    this.inStream.close();
   }
 
   public void reopenInput() throws IOException {
@@ -196,51 +196,47 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
   }
 
   public void getSuperstepCount() throws IOException {
-    DataOutputStream stream = binProtocol.getStream();
-    WritableUtils.writeVInt(stream, MessageType.GET_SUPERSTEP_COUNT.code);
-    WritableUtils.writeVLong(stream, peer.getSuperstepCount());
+    WritableUtils.writeVInt(this.outStream,
+        MessageType.GET_SUPERSTEP_COUNT.code);
+    WritableUtils.writeVLong(this.outStream, peer.getSuperstepCount());
     binProtocol.flush();
-
     LOG.debug("Responded MessageType.GET_SUPERSTEP_COUNT - SuperstepCount: "
         + peer.getSuperstepCount());
   }
 
   public void getPeerCount() throws IOException {
-    DataOutputStream stream = binProtocol.getStream();
-    WritableUtils.writeVInt(stream, MessageType.GET_PEER_COUNT.code);
-    WritableUtils.writeVInt(stream, peer.getNumPeers());
+    WritableUtils.writeVInt(this.outStream, MessageType.GET_PEER_COUNT.code);
+    WritableUtils.writeVInt(this.outStream, peer.getNumPeers());
     binProtocol.flush();
     LOG.debug("Responded MessageType.GET_PEER_COUNT - NumPeers: "
         + peer.getNumPeers());
   }
 
   public void getPeerIndex() throws IOException {
-    DataOutputStream stream = binProtocol.getStream();
-    WritableUtils.writeVInt(stream, MessageType.GET_PEER_INDEX.code);
-    WritableUtils.writeVInt(stream, peer.getPeerIndex());
+    WritableUtils.writeVInt(this.outStream, MessageType.GET_PEER_INDEX.code);
+    WritableUtils.writeVInt(this.outStream, peer.getPeerIndex());
     binProtocol.flush();
     LOG.debug("Responded MessageType.GET_PEER_INDEX - PeerIndex: "
         + peer.getPeerIndex());
   }
 
   public void getPeerName() throws IOException {
-    DataOutputStream stream = binProtocol.getStream();
-    int id = WritableUtils.readVInt(inStream);
+    int id = WritableUtils.readVInt(this.inStream);
     LOG.debug("Got MessageType.GET_PEERNAME id: " + id);
 
-    WritableUtils.writeVInt(stream, MessageType.GET_PEERNAME.code);
+    WritableUtils.writeVInt(this.outStream, MessageType.GET_PEERNAME.code);
     if (id == -1) { // -1 indicates get own PeerName
-      Text.writeString(stream, peer.getPeerName());
+      Text.writeString(this.outStream, peer.getPeerName());
       LOG.debug("Responded MessageType.GET_PEERNAME - Get Own PeerName: "
           + peer.getPeerName());
 
     } else if ((id < -1) || (id >= peer.getNumPeers())) {
       // if no PeerName for this index is found write emptyString
-      Text.writeString(stream, "");
+      Text.writeString(this.outStream, "");
       LOG.debug("Responded MessageType.GET_PEERNAME - Empty PeerName!");
 
     } else {
-      Text.writeString(stream, peer.getPeerName(id));
+      Text.writeString(this.outStream, peer.getPeerName(id));
       LOG.debug("Responded MessageType.GET_PEERNAME - PeerName: "
           + peer.getPeerName(id));
     }
@@ -248,13 +244,12 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
   }
 
   public void getAllPeerNames() throws IOException {
-    DataOutputStream stream = binProtocol.getStream();
     LOG.debug("Got MessageType.GET_ALL_PEERNAME");
-    WritableUtils.writeVInt(stream, MessageType.GET_ALL_PEERNAME.code);
-    WritableUtils.writeVInt(stream, peer.getAllPeerNames().length);
-    for (String s : peer.getAllPeerNames())
-      Text.writeString(stream, s);
-
+    WritableUtils.writeVInt(this.outStream, MessageType.GET_ALL_PEERNAME.code);
+    WritableUtils.writeVInt(this.outStream, peer.getAllPeerNames().length);
+    for (String s : peer.getAllPeerNames()) {
+      Text.writeString(this.outStream, s);
+    }
     binProtocol.flush();
     LOG.debug("Responded MessageType.GET_ALL_PEERNAME - peerNamesCount: "
         + peer.getAllPeerNames().length);
@@ -266,44 +261,59 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
   }
 
   public void getMessage() throws IOException {
-    DataOutputStream stream = binProtocol.getStream();
     LOG.debug("Got MessageType.GET_MSG");
-    WritableUtils.writeVInt(stream, MessageType.GET_MSG.code);
-    BytesWritable msg = peer.getCurrentMessage();
-    if (msg != null)
-      binProtocol.writeObject(msg);
-
+    WritableUtils.writeVInt(this.outStream, MessageType.GET_MSG.code);
+    Writable message = peer.getCurrentMessage();
+    if (message != null) {
+      binProtocol.writeObject(message);
+    }
     binProtocol.flush();
-    LOG.debug("Responded MessageType.GET_MSG - Message(BytesWritable) ");// +msg);
+    LOG.debug("Responded MessageType.GET_MSG - Message: "
+        + ((message.toString().length() < 10) ? message.toString() : message
+            .toString().substring(0, 9) + "..."));
   }
 
   public void getMessageCount() throws IOException {
-    DataOutputStream stream = binProtocol.getStream();
-    WritableUtils.writeVInt(stream, MessageType.GET_MSG_COUNT.code);
-    WritableUtils.writeVInt(stream, peer.getNumCurrentMessages());
+    WritableUtils.writeVInt(this.outStream, MessageType.GET_MSG_COUNT.code);
+    WritableUtils.writeVInt(this.outStream, peer.getNumCurrentMessages());
     binProtocol.flush();
     LOG.debug("Responded MessageType.GET_MSG_COUNT - Count: "
         + peer.getNumCurrentMessages());
   }
 
-  public void sendMessage() throws IOException {
-    String peerName = Text.readString(inStream);
-    BytesWritable msg = new BytesWritable();
-    readObject(msg);
-    LOG.debug("Got MessageType.SEND_MSG to peerName: " + peerName);
-    peer.send(peerName, msg);
+  public void incrementCounter() throws IOException {
+    String group = Text.readString(this.inStream);
+    String name = Text.readString(this.inStream);
+    long amount = WritableUtils.readVLong(this.inStream);
+    peer.incrementCounter(group, name, amount);
   }
 
-  public void incrementCounter() throws IOException {
-    // int id = WritableUtils.readVInt(inStream);
-    String group = Text.readString(inStream);
-    String name = Text.readString(inStream);
-    long amount = WritableUtils.readVLong(inStream);
-    peer.incrementCounter(name, group, amount);
+  @SuppressWarnings("unchecked")
+  public void sendMessage() throws IOException, InstantiationException,
+      IllegalAccessException {
+    String peerName = Text.readString(this.inStream);
+
+    M message = (M) ReflectionUtils.newInstance((Class<? extends M>) conf
+        .getClass("bsp.message.class", BytesWritable.class), conf);
+
+    LOG.debug("Got MessageType.SEND_MSG peerName: " + peerName
+        + " messageClass: " + message.getClass().getName());
+
+    readObject(message);
+
+    peer.send(peerName, message);
+
+    LOG.debug("Done MessageType.SEND_MSG to peerName: "
+        + peerName
+        + " messageClass: "
+        + message.getClass().getName()
+        + " Message: "
+        + ((message.toString().length() < 10) ? message.toString() : message
+            .toString().substring(0, 9) + "..."));
   }
 
   public void readKeyValue() throws IOException {
-    DataOutputStream stream = binProtocol.getStream();
+
     boolean nullinput = peer.getConfiguration().get(
         Constants.INPUT_FORMAT_CLASS) == null
         || peer.getConfiguration().get(Constants.INPUT_FORMAT_CLASS)
@@ -311,54 +321,73 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
 
     if (!nullinput) {
 
-      KeyValuePair<K1, V1> pair = peer.readNext();
+      KeyValuePair<KEYIN, VALUEIN> pair = peer.readNext();
 
-      WritableUtils.writeVInt(stream, MessageType.READ_KEYVALUE.code);
       if (pair != null) {
-        binProtocol.writeObject(new Text(pair.getKey().toString()));
-        String valueStr = pair.getValue().toString();
-        binProtocol.writeObject(new Text(valueStr));
+        WritableUtils.writeVInt(this.outStream, MessageType.READ_KEYVALUE.code);
+        binProtocol.writeObject((Writable) pair.getKey());
+        binProtocol.writeObject((Writable) pair.getValue());
 
-        LOG.debug("Responded MessageType.READ_KEYVALUE - Key: "
-            + pair.getKey()
+        LOG.debug("Responded MessageType.READ_KEYVALUE -"
+            + " Key: "
+            + ((pair.getKey().toString().length() < 10) ? pair.getKey()
+                .toString() : pair.getKey().toString().substring(0, 9) + "...")
             + " Value: "
-            + ((valueStr.length() < 10) ? valueStr : valueStr.substring(0, 9)
+            + ((pair.getValue().toString().length() < 10) ? pair.getValue()
+                .toString() : pair.getValue().toString().substring(0, 9)
                 + "..."));
 
       } else {
-        Text.writeString(stream, "");
-        Text.writeString(stream, "");
-        LOG.debug("Responded MessageType.READ_KEYVALUE - EMPTY KeyValue Pair");
+        WritableUtils.writeVInt(this.outStream, MessageType.END_OF_DATA.code);
+        LOG.debug("Responded MessageType.READ_KEYVALUE - END_OF_DATA");
       }
       binProtocol.flush();
 
     } else {
-      /* TODO */
-      /* Send empty Strings to show no KeyValue pair is available */
-      WritableUtils.writeVInt(stream, MessageType.READ_KEYVALUE.code);
-      Text.writeString(stream, "");
-      Text.writeString(stream, "");
+      WritableUtils.writeVInt(this.outStream, MessageType.END_OF_DATA.code);
       binProtocol.flush();
-      LOG.debug("Responded MessageType.READ_KEYVALUE - EMPTY KeyValue Pair");
+      LOG.debug("Responded MessageType.READ_KEYVALUE - END_OF_DATA");
     }
   }
 
+  @SuppressWarnings("unchecked")
   public void writeKeyValue() throws IOException {
-    readObject(key); // string or binary only
-    readObject(value); // string or binary only
-    if (LOG.isDebugEnabled())
-      LOG.debug("Got MessageType.WRITE_KEYVALUE - Key: " + key + " Value: "
-          + value);
-    peer.write(key, value);
+
+    KEYOUT keyOut = (KEYOUT) ReflectionUtils.newInstance(
+        (Class<? extends KEYOUT>) conf.getClass("bsp.output.key.class",
+            Object.class), conf);
+
+    VALUEOUT valueOut = (VALUEOUT) ReflectionUtils.newInstance(
+        (Class<? extends VALUEOUT>) conf.getClass("bsp.output.value.class",
+            Object.class), conf);
+
+    LOG.debug("Got MessageType.WRITE_KEYVALUE keyOutClass: "
+        + keyOut.getClass().getName() + " valueOutClass: " + valueOut.getClass().getName());
+
+    readObject((Writable) keyOut);
+    readObject((Writable) valueOut);
+
+    peer.write(keyOut, valueOut);
+
+    LOG.debug("Done MessageType.WRITE_KEYVALUE -"
+        + " Key: "
+        + ((keyOut.toString().length() < 10) ? keyOut.toString() : keyOut
+            .toString().substring(0, 9) + "...")
+        + " Value: "
+        + ((valueOut.toString().length() < 10) ? valueOut.toString() : valueOut
+            .toString().substring(0, 9) + "..."));
   }
 
   public void seqFileOpen() throws IOException {
-    String path = Text.readString(inStream);
+    String path = Text.readString(this.inStream);
     // option - read = "r" or write = "w"
-    String option = Text.readString(inStream);
-    // key and value Type stored in the SequenceFile
-    String keyType = Text.readString(inStream);
-    String valueType = Text.readString(inStream);
+    String option = Text.readString(this.inStream);
+    // key and value class stored in the SequenceFile
+    String keyClass = Text.readString(this.inStream);
+    String valueClass = Text.readString(this.inStream);
+    LOG.debug("GOT MessageType.SEQFILE_OPEN - Option: " + option);
+    LOG.debug("GOT MessageType.SEQFILE_OPEN - KeyClass: " + keyClass);
+    LOG.debug("GOT MessageType.SEQFILE_OPEN - ValueClass: " + valueClass);
 
     int fileID = -1;
 
@@ -367,98 +396,165 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
       SequenceFile.Reader reader;
       try {
         reader = new SequenceFile.Reader(fs, new Path(path), conf);
+
+        // try to load key and value class
+        Class<?> sequenceKeyClass = conf.getClassLoader().loadClass(keyClass);
+        Class<?> sequenceValueClass = conf.getClassLoader().loadClass(
+            valueClass);
+
+        // try to instantiate key and value class
+        Writable sequenceKeyWritable = (Writable) ReflectionUtils.newInstance(
+            sequenceKeyClass, conf);
+        Writable sequenceValueWritable = (Writable) ReflectionUtils
+            .newInstance(sequenceValueClass, conf);
+
+        // put new fileID and key and value Writable instances into HashMap
         fileID = reader.hashCode();
         sequenceFileReaders
             .put(
                 fileID,
-                new AbstractMap.SimpleEntry<SequenceFile.Reader, Entry<String, String>>(
-                    reader, new AbstractMap.SimpleEntry<String, String>(
-                        keyType, valueType)));
+                new AbstractMap.SimpleEntry<SequenceFile.Reader, Entry<Writable, Writable>>(
+                    reader, new AbstractMap.SimpleEntry<Writable, Writable>(
+                        sequenceKeyWritable, sequenceValueWritable)));
+
       } catch (IOException e) {
+        fileID = -1;
+      } catch (ClassNotFoundException e) {
         fileID = -1;
       }
 
     } else if (option.equals("w")) {
       SequenceFile.Writer writer;
       try {
-        writer = new SequenceFile.Writer(fs, conf, new Path(path), Text.class,
-            Text.class);
+
+        // try to load key and value class
+        Class<?> sequenceKeyClass = conf.getClassLoader().loadClass(keyClass);
+        Class<?> sequenceValueClass = conf.getClassLoader().loadClass(
+            valueClass);
+
+        writer = new SequenceFile.Writer(fs, conf, new Path(path),
+            sequenceKeyClass, sequenceValueClass);
+
+        // try to instantiate key and value class
+        Writable sequenceKeyWritable = (Writable) ReflectionUtils.newInstance(
+            sequenceKeyClass, conf);
+        Writable sequenceValueWritable = (Writable) ReflectionUtils
+            .newInstance(sequenceValueClass, conf);
+
+        // put new fileID and key and value Writable instances into HashMap
         fileID = writer.hashCode();
         sequenceFileWriters
             .put(
                 fileID,
-                new AbstractMap.SimpleEntry<SequenceFile.Writer, Entry<String, String>>(
-                    writer, new AbstractMap.SimpleEntry<String, String>(
-                        keyType, valueType)));
+                new AbstractMap.SimpleEntry<SequenceFile.Writer, Entry<Writable, Writable>>(
+                    writer, new AbstractMap.SimpleEntry<Writable, Writable>(
+                        sequenceKeyWritable, sequenceValueWritable)));
+
       } catch (IOException e) {
+        fileID = -1;
+      } catch (ClassNotFoundException e) {
         fileID = -1;
       }
     }
 
-    DataOutputStream stream = binProtocol.getStream();
-    WritableUtils.writeVInt(stream, MessageType.SEQFILE_OPEN.code);
-    WritableUtils.writeVInt(stream, fileID);
+    WritableUtils.writeVInt(this.outStream, MessageType.SEQFILE_OPEN.code);
+    WritableUtils.writeVInt(this.outStream, fileID);
     binProtocol.flush();
     LOG.debug("Responded MessageType.SEQFILE_OPEN - FileID: " + fileID);
   }
 
-  public void seqFileReadNext() throws IOException, ClassNotFoundException {
-    int fileID = WritableUtils.readVInt(inStream);
-    // LOG.debug("GOT MessageType.SEQFILE_READNEXT - FileID: " + fileID);
+  public void seqFileReadNext() throws IOException {
+    int fileID = WritableUtils.readVInt(this.inStream);
+    LOG.debug("GOT MessageType.SEQFILE_READNEXT - FileID: " + fileID);
 
-    Class<?> keyType = conf.getClassLoader().loadClass(
-        sequenceFileReaders.get(fileID).getValue().getKey());
-    Writable key = (Writable) ReflectionUtils.newInstance(keyType, conf);
+    // check if fileID is available in sequenceFileReader
+    if (sequenceFileReaders.containsKey(fileID)) {
 
-    Class<?> valueType = conf.getClassLoader().loadClass(
-        sequenceFileReaders.get(fileID).getValue().getValue());
-    Writable value = (Writable) ReflectionUtils.newInstance(valueType, conf);
+      Writable sequenceKeyWritable = sequenceFileReaders.get(fileID).getValue()
+          .getKey();
+      Writable sequenceValueWritable = sequenceFileReaders.get(fileID)
+          .getValue().getValue();
 
-    if (sequenceFileReaders.containsKey(fileID))
-      sequenceFileReaders.get(fileID).getKey().next(key, value);
+      // try to read next key/value pair from SequenceFile.Reader
+      if (sequenceFileReaders.get(fileID).getKey()
+          .next(sequenceKeyWritable, sequenceValueWritable)) {
 
-    // RESPOND
-    DataOutputStream stream = binProtocol.getStream();
-    WritableUtils.writeVInt(stream, MessageType.SEQFILE_READNEXT.code);
-    try {
-      String k = key.toString();
-      String v = value.toString();
-      Text.writeString(stream, k);
-      Text.writeString(stream, v);
-      LOG.debug("Responded MessageType.SEQFILE_READNEXT - key: " + k
-          + " value: " + ((v.length() < 10) ? v : v.substring(0, 9) + "..."));
+        WritableUtils.writeVInt(this.outStream,
+            MessageType.SEQFILE_READNEXT.code);
+        binProtocol.writeObject(sequenceKeyWritable);
+        binProtocol.writeObject(sequenceValueWritable);
 
-    } catch (NullPointerException e) { // key or value is null
+        LOG.debug("Responded MessageType.SEQFILE_READNEXT -"
+            + " Key: "
+            + ((sequenceKeyWritable.toString().length() < 10) ? sequenceKeyWritable
+                .toString() : sequenceKeyWritable.toString().substring(0, 9)
+                + "...")
+            + " Value: "
+            + ((sequenceValueWritable.toString().length() < 10) ? sequenceValueWritable
+                .toString() : sequenceValueWritable.toString().substring(0, 9)
+                + "..."));
 
-      Text.writeString(stream, "");
-      Text.writeString(stream, "");
-      LOG.debug("Responded MessageType.SEQFILE_READNEXT - EMPTY KeyValue Pair");
+      } else { // false when at end of file
+
+        WritableUtils.writeVInt(this.outStream, MessageType.END_OF_DATA.code);
+        LOG.debug("Responded MessageType.SEQFILE_READNEXT - END_OF_DATA");
+      }
+      binProtocol.flush();
+
+    } else { // no fileID stored
+      LOG.warn("SequenceFileReader: FileID " + fileID + " not found!");
+      WritableUtils.writeVInt(this.outStream, MessageType.END_OF_DATA.code);
+      LOG.debug("Responded MessageType.SEQFILE_READNEXT - END_OF_DATA");
+      binProtocol.flush();
     }
-    binProtocol.flush();
   }
 
   public void seqFileAppend() throws IOException {
-    int fileID = WritableUtils.readVInt(inStream);
-    String keyStr = Text.readString(inStream);
-    String valueStr = Text.readString(inStream);
+    int fileID = WritableUtils.readVInt(this.inStream);
+    LOG.debug("GOT MessageType.SEQFILE_APPEND - FileID: " + fileID);
 
     boolean result = false;
+
+    // check if fileID is available in sequenceFileWriter
     if (sequenceFileWriters.containsKey(fileID)) {
-      sequenceFileWriters.get(fileID).getKey()
-          .append(new Text(keyStr), new Text(valueStr));
-      result = true;
+
+      Writable sequenceKeyWritable = sequenceFileReaders.get(fileID).getValue()
+          .getKey();
+      Writable sequenceValueWritable = sequenceFileReaders.get(fileID)
+          .getValue().getValue();
+
+      // try to read key and value
+      readObject(sequenceKeyWritable);
+      readObject(sequenceValueWritable);
+
+      if ((sequenceKeyWritable != null) && (sequenceValueWritable != null)) {
+
+        // append to sequenceFile
+        sequenceFileWriters.get(fileID).getKey()
+            .append(sequenceKeyWritable, sequenceValueWritable);
+
+        LOG.debug("Stored data: Key: "
+            + ((sequenceKeyWritable.toString().length() < 10) ? sequenceKeyWritable
+                .toString() : sequenceKeyWritable.toString().substring(0, 9)
+                + "...")
+            + " Value: "
+            + ((sequenceValueWritable.toString().length() < 10) ? sequenceValueWritable
+                .toString() : sequenceValueWritable.toString().substring(0, 9)
+                + "..."));
+
+        result = true;
+      }
     }
 
     // RESPOND
-    DataOutputStream stream = binProtocol.getStream();
-    WritableUtils.writeVInt(stream, MessageType.SEQFILE_APPEND.code);
-    WritableUtils.writeVInt(stream, result ? 1 : 0);
+    WritableUtils.writeVInt(this.outStream, MessageType.SEQFILE_APPEND.code);
+    WritableUtils.writeVInt(this.outStream, result ? 1 : 0);
     binProtocol.flush();
     LOG.debug("Responded MessageType.SEQFILE_APPEND - Result: " + result);
   }
 
   public void seqFileClose() throws IOException {
-    int fileID = WritableUtils.readVInt(inStream);
+    int fileID = WritableUtils.readVInt(this.inStream);
 
     boolean result = false;
 
@@ -471,15 +567,14 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
     }
 
     // RESPOND
-    DataOutputStream stream = binProtocol.getStream();
-    WritableUtils.writeVInt(stream, MessageType.SEQFILE_CLOSE.code);
-    WritableUtils.writeVInt(stream, result ? 1 : 0);
+    WritableUtils.writeVInt(this.outStream, MessageType.SEQFILE_CLOSE.code);
+    WritableUtils.writeVInt(this.outStream, result ? 1 : 0);
     binProtocol.flush();
     LOG.debug("Responded MessageType.SEQFILE_CLOSE - Result: " + result);
   }
 
   public void partitionResponse() throws IOException {
-    int partResponse = WritableUtils.readVInt(inStream);
+    int partResponse = WritableUtils.readVInt(this.inStream);
     synchronized (binProtocol.resultLock) {
       binProtocol.setResult(partResponse);
       LOG.debug("Received MessageType.PARTITION_RESPONSE - Result: "
@@ -488,29 +583,61 @@ public class UplinkReader<K1 extends Writable, V1 extends Writable, K2 extends W
     }
   }
 
+  /**
+   * Read the given object from stream. If it is a IntWritable, LongWritable,
+   * FloatWritable, DoubleWritable, Text or BytesWritable, read it directly.
+   * Otherwise, read it to a buffer and then write the length and data to the
+   * stream.
+   * 
+   * @param obj the object to read
+   * @throws IOException
+   */
   protected void readObject(Writable obj) throws IOException {
-    int numBytes = readCommand();
     byte[] buffer;
+
     // For BytesWritable and Text, use the specified length to set the length
     // this causes the "obvious" translations to work. So that if you emit
     // a string "abc" from C++, it shows up as "abc".
-    if (obj instanceof BytesWritable) {
+
+    if (obj instanceof Text) {
+      int numBytes = WritableUtils.readVInt(this.inStream);
       buffer = new byte[numBytes];
-      inStream.readFully(buffer);
-      ((BytesWritable) obj).set(buffer, 0, numBytes);
-    } else if (obj instanceof Text) {
-      buffer = new byte[numBytes];
-      inStream.readFully(buffer);
+      this.inStream.readFully(buffer);
       ((Text) obj).set(buffer);
+
+    } else if (obj instanceof BytesWritable) {
+      int numBytes = WritableUtils.readVInt(this.inStream);
+      buffer = new byte[numBytes];
+      this.inStream.readFully(buffer);
+      ((BytesWritable) obj).set(buffer, 0, numBytes);
+
+    } else if (obj instanceof IntWritable) {
+      LOG.debug("read IntWritable");
+      ((IntWritable) obj).set(WritableUtils.readVInt(this.inStream));
+
+    } else if (obj instanceof LongWritable) {
+      ((LongWritable) obj).set(WritableUtils.readVLong(this.inStream));
+
+      // else if ((obj instanceof FloatWritable) || (obj instanceof
+      // DoubleWritable))
+
     } else if (obj instanceof NullWritable) {
-      throw new IOException(
-          "Cannot read data into NullWritable! Check OutputClasses!");
+      throw new IOException("Cannot read data into NullWritable!");
+
     } else {
-      /* TODO */
-      /* IntWritable, DoubleWritable */
-      throw new IOException(
-          "Hama Pipes does only support Text as Key/Value output!");
-      // obj.readFields(inStream);
+      // Note: other types are transfered as String which should be implemented
+      // in Writable itself
+      try {
+        LOG.debug("reading other type");
+        // try reading object
+        obj.readFields(this.inStream);
+        // String s = Text.readString(inStream);
+
+      } catch (IOException e) {
+
+        throw new IOException("Hama Pipes is not able to read "
+            + obj.getClass().getName(), e);
+      }
     }
   }
 }

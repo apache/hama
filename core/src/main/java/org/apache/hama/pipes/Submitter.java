@@ -40,6 +40,7 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
@@ -230,9 +231,12 @@ public class Submitter implements Tool {
     setIfUnset(job.getConfiguration(), "bsp.input.value.class", textClassname);
     setIfUnset(job.getConfiguration(), "bsp.output.key.class", textClassname);
     setIfUnset(job.getConfiguration(), "bsp.output.value.class", textClassname);
+    setIfUnset(job.getConfiguration(), "bsp.message.class",
+        BytesWritable.class.getName());
 
     setIfUnset(job.getConfiguration(), "bsp.job.name", "Hama Pipes Job");
 
+    // DEBUG Output
     LOG.debug("isJavaRecordReader: "
         + getIsJavaRecordReader(job.getConfiguration()));
     LOG.debug("BspClass: " + job.getBspClass().getName());
@@ -240,13 +244,10 @@ public class Submitter implements Tool {
     LOG.debug("InputFormat: " + job.getInputFormat());
     LOG.debug("InputKeyClass: " + job.getInputKeyClass().getName());
     LOG.debug("InputValueClass: " + job.getInputValueClass().getName());
+    LOG.debug("InputFormat: " + job.getOutputFormat());
     LOG.debug("OutputKeyClass: " + job.getOutputKeyClass().getName());
     LOG.debug("OutputValueClass: " + job.getOutputValueClass().getName());
-
-    if ((!job.getOutputKeyClass().getName().equals(textClassname))
-        || (!job.getOutputValueClass().getName().equals(textClassname)))
-      throw new IllegalArgumentException(
-          "Hama Pipes does only support Text as Key/Value output!");
+    LOG.debug("MessageClass: " + job.get("bsp.message.class"));
 
     LOG.debug("bsp.master.address: "
         + job.getConfiguration().get("bsp.master.address"));
@@ -258,7 +259,8 @@ public class Submitter implements Tool {
 
     String exec = getExecutable(job.getConfiguration());
     if (exec == null) {
-      throw new IllegalArgumentException("No application defined.");
+      throw new IllegalArgumentException(
+          "No application defined. (Set property hama.pipes.executable)");
     }
 
     URI[] fileCache = DistributedCache.getCacheFiles(job.getConfiguration());
@@ -273,7 +275,7 @@ public class Submitter implements Tool {
     try {
       fileCache[0] = new URI(exec);
     } catch (URISyntaxException e) {
-      IOException ie = new IOException("Problem parsing execable URI " + exec);
+      IOException ie = new IOException("Problem parsing executable URI " + exec);
       ie.initCause(e);
       throw ie;
     }
