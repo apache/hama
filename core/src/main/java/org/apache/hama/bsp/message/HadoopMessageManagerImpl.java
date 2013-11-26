@@ -79,6 +79,7 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
           Constants.DEFAULT_PEER_HOST);
       InetSocketAddress selfAddress = new InetSocketAddress(bindAddress, 0);
 
+      // TODO Make number of RPC Server threads configurable
       this.server = RPC.getServer(this, selfAddress.getHostName(),
           selfAddress.getPort(), conf);
       server.start();

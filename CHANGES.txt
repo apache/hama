@@ -6,9 +6,13 @@ Release 0.7.0 (unreleased changes)
 
    HAMA-815: Hama Pipes uses C++ templates (Martin Illecker)  
 
+  BUG FIXES
+
+
   IMPROVEMENTS
 
    HAMA-699: Add commons module (Martin Illecker)
+   HAMA-818: Remove useless comments in GroomServer (edwardyoon)
 
 Release 0.6.3 - October 11, 2013
 
