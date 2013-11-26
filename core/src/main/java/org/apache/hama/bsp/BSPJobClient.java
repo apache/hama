@@ -241,7 +241,10 @@ public class BSPJobClient extends Configured implements Tool {
    * Close the <code>JobClient</code>.
    */
   public synchronized void close() throws IOException {
-    RPC.stopProxy(jobSubmitClient);
+    String masterAdress = this.getConf().get("bsp.master.address");
+    if (masterAdress != null && !masterAdress.equals("local")) {
+      RPC.stopProxy(jobSubmitClient);
+    }
   }
 
   /**

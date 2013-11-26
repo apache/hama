@@ -8,6 +8,7 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-812: In local mode BSPJobClient.close throws Exception (Martin Illecker)
    HAMA-821: Fix bugs in KMeans example and make output more readable (edwardyoon)
 
   IMPROVEMENTS
