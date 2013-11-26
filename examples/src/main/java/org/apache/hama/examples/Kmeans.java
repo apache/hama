@@ -17,6 +17,8 @@
  */
 package org.apache.hama.examples;
 
+import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -54,7 +56,7 @@ import org.apache.hama.ml.kmeans.KMeansBSP;
 public class Kmeans {
 
   public static void main(String[] args) throws Exception {
-    if (args.length < 4 || args.length != 7) {
+    if (args.length < 4 || (args.length > 4 && args.length != 7)) {
       System.out
           .println("USAGE: <INPUT_PATH> <OUTPUT_PATH> <MAXITERATIONS> <K (how many centers)> -g [<COUNT> <DIMENSION OF VECTORS>]");
       return;
@@ -85,12 +87,18 @@ public class Kmeans {
       KMeansBSP.prepareInput(count, k, dimension, conf, in, center, out, fs);
     } else {
       KMeansBSP.prepareInputText(k, conf, in, center, out, fs);
-      in = new Path(args[0], "textinput/in.seq");
+      in = new Path(in.getParent(), "textinput/in.seq");
     }
 
     BSPJob job = KMeansBSP.createJob(conf, in, out, true);
 
     // just submit the job
     job.waitForCompletion(true);
+
+    List<String> results = KMeansBSP.readOutput(conf, out, fs, 5);
+    for (String line : results) {
+      System.out.println(line);
+    }
+    System.out.println("...");
   }
 }

@@ -8,6 +8,7 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-821: Fix bugs in KMeans example and make output more readable (edwardyoon)
 
   IMPROVEMENTS
 

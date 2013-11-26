@@ -28,6 +28,7 @@ import java.util.Random;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -106,17 +107,16 @@ public final class KMeansBSP
         "Centers file must contain at least a single center!");
     this.centers = centers.toArray(new DoubleVector[centers.size()]);
 
-
     String distanceClass = peer.getConfiguration().get(DISTANCE_MEASURE_CLASS);
     if (distanceClass != null) {
       try {
         distanceMeasurer = ReflectionUtils.newInstance(distanceClass);
       } catch (ClassNotFoundException e) {
-        throw new RuntimeException(new StringBuilder("Wrong DistanceMeasurer implementation ").
-            append(distanceClass).append(" provided").toString());
+        throw new RuntimeException(new StringBuilder(
+            "Wrong DistanceMeasurer implementation ").append(distanceClass)
+            .append(" provided").toString());
       }
-    }
-    else {
+    } else {
       distanceMeasurer = new EuclidianDistance();
     }
 
@@ -177,7 +177,8 @@ public final class KMeansBSP
     for (int i = 0; i < msgCenters.length; i++) {
       final DoubleVector oldCenter = centers[i];
       if (msgCenters[i] != null) {
-        double calculateError = oldCenter.subtractUnsafe(msgCenters[i]).abs().sum();
+        double calculateError = oldCenter.subtractUnsafe(msgCenters[i]).abs()
+            .sum();
         if (calculateError > 0.0d) {
           centers[i] = msgCenters[i];
           convergedCounter++;
@@ -366,12 +367,13 @@ public final class KMeansBSP
   }
 
   /**
-   * Reads the centers outputted from the clustering job.
+   * Reads the cluster centers.
    * 
    * @return an index on the key dimension, and a cluster center on the value.
    */
-  public static HashMap<Integer, DoubleVector> readOutput(Configuration conf,
-      Path out, Path centerPath, FileSystem fs) throws IOException {
+  public static HashMap<Integer, DoubleVector> readClusterCenters(
+      Configuration conf, Path out, Path centerPath, FileSystem fs)
+      throws IOException {
     HashMap<Integer, DoubleVector> centerMap = new HashMap<Integer, DoubleVector>();
     SequenceFile.Reader centerReader = new SequenceFile.Reader(fs, centerPath,
         conf);
@@ -382,6 +384,37 @@ public final class KMeansBSP
     }
     centerReader.close();
     return centerMap;
+  }
+
+  /**
+   * Reads output. The list of output records can be restricted to maxlines.
+   * 
+   * @param conf
+   * @param outPath
+   * @param fs
+   * @param maxlines
+   * @return the list of output records
+   * @throws IOException
+   */
+  public static List<String> readOutput(Configuration conf, Path outPath,
+      FileSystem fs, int maxlines) throws IOException {
+    List<String> output = new ArrayList<String>();
+
+    FileStatus[] globStatus = fs.globStatus(new Path(outPath + "/part-*"));
+    for (FileStatus fts : globStatus) {
+      BufferedReader reader = new BufferedReader(new InputStreamReader(
+          fs.open(fts.getPath())));
+      String line = null;
+      while ((line = reader.readLine()) != null) {
+        String[] split = line.split("\t");
+        output.add(split[1] + " belongs to cluster " + split[0]);
+
+        if (output.size() >= maxlines)
+          return output;
+      }
+    }
+
+    return output;
   }
 
   /**
@@ -396,7 +429,7 @@ public final class KMeansBSP
     } else {
       in = new Path(txtIn, "textinput/in.seq");
     }
-
+    
     if (fs.exists(out))
       fs.delete(out, true);
 
@@ -428,8 +461,8 @@ public final class KMeansBSP
       VectorWritable vector = new VectorWritable(vec);
       dataWriter.append(vector, value);
       if (k > i) {
-          assert centerWriter != null;
-          centerWriter.append(vector, value);
+        assert centerWriter != null;
+        centerWriter.append(vector, value);
       } else {
         if (centerWriter != null) {
           centerWriter.close();
