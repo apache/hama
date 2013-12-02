@@ -324,7 +324,8 @@ public class BSPJobClient extends Configured implements Tool {
     short replication = (short) job.getInt("bsp.submit.replication", 10);
 
     // only create the splits if we have an input
-    if (job.get("bsp.input.dir") != null) {
+    if ((job.get("bsp.input.dir") != null)
+        || (job.get("bsp.join.expr") != null)) {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
 

@@ -4,6 +4,7 @@ Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-774: CompositeInputFormat in Hama (Martin Illecker)
    HAMA-815: Hama Pipes uses C++ templates (Martin Illecker)  
 
   BUG FIXES
