@@ -27,6 +27,7 @@ import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.ann.AbstractLayeredNeuralNetwork.LearningStyle;
+import org.apache.hama.ml.util.FeatureTransformer;
 
 import com.google.common.base.Preconditions;
 
@@ -176,8 +177,21 @@ public class AutoEncoder {
     return this.transform(inputInstance, 1);
   }
   
+  /**
+   * Get the label(s) according to the given features.
+   * @param inputInstance
+   * @return
+   */
   public DoubleVector getOutput(DoubleVector inputInstance) {
     return model.getOutput(inputInstance);
+  }
+  
+  /**
+   * Set the feature transformer.
+   * @param featureTransformer
+   */
+  public void setFeatureTransformer(FeatureTransformer featureTransformer) {
+    this.model.setFeatureTransformer(featureTransformer);
   }
 
 }

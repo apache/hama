@@ -20,6 +20,8 @@ package org.apache.hama.ml.perception;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -46,6 +49,7 @@ import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
+import org.apache.hama.ml.util.FeatureTransformer;
 import org.mortbay.log.Log;
 
 /**
@@ -152,7 +156,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
    * {@inheritDoc}
    * The model meta-data is stored in memory.
    */
-  public DoubleVector output(DoubleVector featureVector) {
+  public DoubleVector outputWrapper(DoubleVector featureVector) {
     List<double[]> outputCache = this.outputInternal(featureVector);
     // the output of the last layer is the output of the MLP
     return new DenseDoubleVector(outputCache.get(outputCache.size() - 1));
@@ -175,6 +179,10 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
 
     // fill with input features
     intermediateResults[0] = 1.0; // bias
+
+    // transform the original features to another space
+    featureVector = this.featureTransformer.transform(featureVector);
+
     for (int i = 0; i < featureVector.getDimension(); ++i) {
       intermediateResults[i + 1] = featureVector.get(i);
     }
@@ -245,9 +253,10 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
       return weightUpdateMatrices;
     }
 
+    // transform the features (exclude the labels) to new space
     double[] trainingVec = trainingInstance.toArray();
-    double[] trainingFeature = Arrays.copyOfRange(trainingVec, 0,
-        this.layerSizeArray[0]);
+    double[] trainingFeature = this.featureTransformer.transform(
+        trainingInstance.sliceUnsafe(0, this.layerSizeArray[0] - 1)).toArray();
     double[] trainingLabels = Arrays.copyOfRange(trainingVec,
         this.layerSizeArray[0], trainingVec.length);
 
@@ -402,6 +411,12 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     this.numberOfLayers = input.readInt();
     this.squashingFunctionName = WritableUtils.readString(input);
     this.costFunctionName = WritableUtils.readString(input);
+
+    this.squashingFunction = FunctionFactory
+        .createDoubleFunction(this.squashingFunctionName);
+    this.costFunction = FunctionFactory
+        .createDoubleDoubleFunction(this.costFunctionName);
+
     // read the number of neurons for each layer
     this.layerSizeArray = new int[this.numberOfLayers];
     for (int i = 0; i < numberOfLayers; ++i) {
@@ -411,10 +426,28 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     for (int i = 0; i < numberOfLayers - 1; ++i) {
       this.weightMatrice[i] = (DenseDoubleMatrix) MatrixWritable.read(input);
     }
-    this.squashingFunction = FunctionFactory
-        .createDoubleFunction(this.squashingFunctionName);
-    this.costFunction = FunctionFactory
-        .createDoubleDoubleFunction(this.costFunctionName);
+
+    // read feature transformer
+    int bytesLen = input.readInt();
+    byte[] featureTransformerBytes = new byte[bytesLen];
+    for (int i = 0; i < featureTransformerBytes.length; ++i) {
+      featureTransformerBytes[i] = input.readByte();
+    }
+    Class featureTransformerCls = (Class) SerializationUtils
+        .deserialize(featureTransformerBytes);
+    Constructor constructor = featureTransformerCls.getConstructors()[0];
+    try {
+      this.featureTransformer = (FeatureTransformer) constructor
+          .newInstance(new Object[] {});
+    } catch (InstantiationException e) {
+      e.printStackTrace();
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
@@ -435,6 +468,14 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
       MatrixWritable matrixWritable = new MatrixWritable(this.weightMatrice[i]);
       matrixWritable.write(output);
     }
+
+    // serialize the feature transformer
+    Class<? extends FeatureTransformer> featureTransformerCls = this.featureTransformer
+        .getClass();
+    byte[] featureTransformerBytes = SerializationUtils
+        .serialize(featureTransformerCls);
+    output.writeInt(featureTransformerBytes.length);
+    output.write(featureTransformerBytes);
   }
 
   /**

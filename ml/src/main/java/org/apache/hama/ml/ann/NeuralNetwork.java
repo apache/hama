@@ -20,10 +20,14 @@ package org.apache.hama.ml.ann;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -31,6 +35,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hama.ml.util.DefaultFeatureTransformer;
+import org.apache.hama.ml.util.FeatureTransformer;
 
 import com.google.common.base.Preconditions;
 
@@ -53,9 +59,12 @@ abstract class NeuralNetwork implements Writable {
   // the path to store the model
   protected String modelPath;
 
+  protected FeatureTransformer featureTransformer;
+
   public NeuralNetwork() {
     this.learningRate = DEFAULT_LEARNING_RATE;
     this.modelType = this.getClass().getSimpleName();
+    this.featureTransformer = new DefaultFeatureTransformer();
   }
 
   public NeuralNetwork(String modelPath) {
@@ -179,6 +188,8 @@ abstract class NeuralNetwork implements Writable {
     return this.modelPath;
   }
 
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @Override
   public void readFields(DataInput input) throws IOException {
     // read model type
     this.modelType = WritableUtils.readString(input);
@@ -186,11 +197,40 @@ abstract class NeuralNetwork implements Writable {
     this.learningRate = input.readDouble();
     // read model path
     this.modelPath = WritableUtils.readString(input);
+
     if (this.modelPath.equals("null")) {
       this.modelPath = null;
     }
+
+    // read feature transformer
+    int bytesLen = input.readInt();
+    byte[] featureTransformerBytes = new byte[bytesLen];
+    for (int i = 0; i < featureTransformerBytes.length; ++i) {
+      featureTransformerBytes[i] = input.readByte();
+    }
+
+    Class<? extends FeatureTransformer> featureTransformerCls = (Class<? extends FeatureTransformer>) SerializationUtils
+        .deserialize(featureTransformerBytes);
+
+    Constructor[] constructors = featureTransformerCls
+        .getDeclaredConstructors();
+    Constructor constructor = constructors[0];
+    
+    try {
+      this.featureTransformer = (FeatureTransformer) constructor
+          .newInstance(new Object[] {});
+    } catch (InstantiationException e) {
+      e.printStackTrace();
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
   }
 
+  @Override
   public void write(DataOutput output) throws IOException {
     // write model type
     WritableUtils.writeString(output, modelType);
@@ -202,6 +242,22 @@ abstract class NeuralNetwork implements Writable {
     } else {
       WritableUtils.writeString(output, "null");
     }
+
+    // serialize the class
+    Class<? extends FeatureTransformer> featureTransformerCls = this.featureTransformer
+        .getClass();
+    byte[] featureTransformerBytes = SerializationUtils
+        .serialize(featureTransformerCls);
+    output.writeInt(featureTransformerBytes.length);
+    output.write(featureTransformerBytes);
+  }
+
+  public void setFeatureTransformer(FeatureTransformer featureTransformer) {
+    this.featureTransformer = featureTransformer;
+  }
+
+  public FeatureTransformer getFeatureTransformer() {
+    return this.featureTransformer;
   }
 
 }

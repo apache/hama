@@ -47,6 +47,8 @@ import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.MLTestBase;
 import org.apache.hama.ml.ann.AbstractLayeredNeuralNetwork.LearningStyle;
 import org.apache.hama.ml.ann.AbstractLayeredNeuralNetwork.TrainingMethod;
+import org.apache.hama.ml.util.DefaultFeatureTransformer;
+import org.apache.hama.ml.util.FeatureTransformer;
 import org.junit.Test;
 import org.mortbay.log.Log;
 
@@ -79,6 +81,10 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     matrices[1] = new DenseDoubleMatrix(1, 6, 0.8);
     ann.setWeightMatrices(matrices);
     ann.setLearningStyle(LearningStyle.UNSUPERVISED);
+    
+    FeatureTransformer defaultFeatureTransformer = new DefaultFeatureTransformer();
+    ann.setFeatureTransformer(defaultFeatureTransformer);
+    
 
     // write to file
     String modelPath = "/tmp/testSmallLayeredNeuralNetworkReadWrite";
@@ -111,6 +117,9 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
         }
       }
     }
+    
+    FeatureTransformer copyTransformer = annCopy.getFeatureTransformer();
+    assertEquals(defaultFeatureTransformer.getClass().getName(), copyTransformer.getClass().getName());
   }
 
   @Test
@@ -408,8 +417,13 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
 
     Log.info(String.format("Relative error: %f%%\n", errorRate * 100));
   }
-
+  
   @Test
+  public void testLogisticRegression() {
+    this.testLogisticRegressionDistributedVersion();
+    this.testLogisticRegressionDistributedVersionWithFeatureTransformer();
+  }
+
   public void testLogisticRegressionDistributedVersion() {
     // write data into a sequence file
     String tmpStrDatasetPath = "/tmp/logistic_regression_data";
@@ -503,6 +517,117 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
       DoubleVector instance = new DenseDoubleVector(testInstance);
       double expected = instance.get(instance.getDimension() - 1);
       instance = instance.slice(instance.getDimension() - 1);
+      double actual = ann.getOutput(instance).get(0);
+      if (actual < 0.5 && expected >= 0.5 || actual >= 0.5 && expected < 0.5) {
+        ++errorRate;
+      }
+    }
+    errorRate /= testInstances.size();
+
+    Log.info(String.format("Training time: %fs\n",
+        (double) (end - start) / 1000));
+    Log.info(String.format("Relative error: %f%%\n", errorRate * 100));
+  }
+  
+  public void testLogisticRegressionDistributedVersionWithFeatureTransformer() {
+    // write data into a sequence file
+    String tmpStrDatasetPath = "/tmp/logistic_regression_data_feature_transformer";
+    Path tmpDatasetPath = new Path(tmpStrDatasetPath);
+    String strDataPath = "src/test/resources/logistic_regression_data.txt";
+    String modelPath = "/tmp/logistic-regression-distributed-model-feature-transformer";
+
+    Configuration conf = new Configuration();
+    List<double[]> instanceList = new ArrayList<double[]>();
+    List<double[]> trainingInstances = null;
+    List<double[]> testInstances = null;
+
+    try {
+      FileSystem fs = FileSystem.get(new URI(tmpStrDatasetPath), conf);
+      fs.delete(tmpDatasetPath, true);
+      if (fs.exists(tmpDatasetPath)) {
+        fs.createNewFile(tmpDatasetPath);
+      }
+
+      BufferedReader br = new BufferedReader(new FileReader(strDataPath));
+      String line = null;
+      int count = 0;
+      while ((line = br.readLine()) != null) {
+        String[] tokens = line.trim().split(",");
+        double[] instance = new double[tokens.length];
+        for (int i = 0; i < tokens.length; ++i) {
+          instance[i] = Double.parseDouble(tokens[i]);
+        }
+        instanceList.add(instance);
+      }
+      br.close();
+      
+      zeroOneNormalization(instanceList, instanceList.get(0).length - 1);
+      
+      // write training data to temporal sequence file
+      SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf,
+          tmpDatasetPath, LongWritable.class, VectorWritable.class);
+      int testSize = 150;
+
+      Collections.shuffle(instanceList);
+      testInstances = new ArrayList<double[]>();
+      testInstances.addAll(instanceList.subList(instanceList.size() - testSize,
+          instanceList.size()));
+      trainingInstances = instanceList.subList(0, instanceList.size()
+          - testSize);
+
+      for (double[] instance : trainingInstances) {
+        DoubleVector vec = new DenseDoubleVector(instance);
+        writer.append(new LongWritable(count++), new VectorWritable(vec));
+      }
+      writer.close();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    }
+
+    // create model
+    int dimension = 8;
+    SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork();
+    ann.setLearningRate(0.7);
+    ann.setMomemtumWeight(0.5);
+    ann.setRegularizationWeight(0.1);
+    ann.addLayer(dimension, false,
+        FunctionFactory.createDoubleFunction("Sigmoid"));
+    ann.addLayer(dimension, false,
+        FunctionFactory.createDoubleFunction("Sigmoid"));
+    ann.addLayer(dimension, false,
+        FunctionFactory.createDoubleFunction("Sigmoid"));
+    ann.addLayer(1, true, FunctionFactory.createDoubleFunction("Sigmoid"));
+    ann.setCostFunction(FunctionFactory
+        .createDoubleDoubleFunction("CrossEntropy"));
+    ann.setModelPath(modelPath);
+    
+    FeatureTransformer featureTransformer = new DefaultFeatureTransformer();
+    
+    ann.setFeatureTransformer(featureTransformer);
+
+    long start = new Date().getTime();
+    Map<String, String> trainingParameters = new HashMap<String, String>();
+    trainingParameters.put("tasks", "5");
+    trainingParameters.put("training.max.iterations", "2000");
+    trainingParameters.put("training.batch.size", "300");
+    trainingParameters.put("convergence.check.interval", "1000");
+    ann.train(tmpDatasetPath, trainingParameters);
+    
+
+    long end = new Date().getTime();
+
+    // validate results
+    double errorRate = 0;
+    // calculate the error on test instance
+    for (double[] testInstance : testInstances) {
+      DoubleVector instance = new DenseDoubleVector(testInstance);
+      double expected = instance.get(instance.getDimension() - 1);
+      instance = instance.slice(instance.getDimension() - 1);
+      instance = featureTransformer.transform(instance);
       double actual = ann.getOutput(instance).get(0);
       if (actual < 0.5 && expected >= 0.5 || actual >= 0.5 && expected < 0.5) {
         ++errorRate;

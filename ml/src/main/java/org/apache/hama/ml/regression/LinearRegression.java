@@ -26,6 +26,7 @@ import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.ann.SmallLayeredNeuralNetwork;
+import org.apache.hama.ml.util.FeatureTransformer;
 
 /**
  * Linear regression model. It can be used for numeric regression or prediction.
@@ -174,6 +175,14 @@ public class LinearRegression {
    */
   public DoubleVector getWeights() {
     return ann.getWeightsByLayer(0).getRowVector(0);
+  }
+  
+  /**
+   * Set the feature transformer.
+   * @param transformer
+   */
+  public void setFeatureTransformer(FeatureTransformer featureTransformer) {
+    this.ann.setFeatureTransformer(featureTransformer);
   }
 
 }

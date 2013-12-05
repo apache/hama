@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.ann.SmallLayeredNeuralNetwork;
+import org.apache.hama.ml.util.FeatureTransformer;
 
 /**
  * The logistic regression model. It can be used to conduct 2-class
@@ -169,4 +170,11 @@ public class LogisticRegression {
     return ann.getWeightsByLayer(0).getRowVector(0);
   }
 
+  /**
+   * Set the feature transformer.
+   * @param featureTransformer
+   */
+  public void setFeatureTransformer(FeatureTransformer featureTransformer) {
+    this.ann.setFeatureTransformer(featureTransformer);
+  }
 }

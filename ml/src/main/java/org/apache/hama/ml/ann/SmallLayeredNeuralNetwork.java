@@ -255,18 +255,22 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   /**
    * Get the output of the model according to given feature instance.
    */
+  @Override
   public DoubleVector getOutput(DoubleVector instance) {
     Preconditions.checkArgument(this.layerSizeList.get(0) == instance
         .getDimension() + 1, String.format(
         "The dimension of input instance should be %d.",
         this.layerSizeList.get(0) - 1));
+    // transform the features to another space
+    DoubleVector transformedInstance = this.featureTransformer
+        .transform(instance);
     // add bias feature
     DoubleVector instanceWithBias = new DenseDoubleVector(
-        instance.getDimension() + 1);
+        transformedInstance.getDimension() + 1);
     instanceWithBias.set(0, 0.99999); // set bias to be a little bit less than
                                       // 1.0
     for (int i = 1; i < instanceWithBias.getDimension(); ++i) {
-      instanceWithBias.set(i, instance.get(i - 1));
+      instanceWithBias.set(i, transformedInstance.get(i - 1));
     }
 
     List<DoubleVector> outputCache = getOutputInternal(instanceWithBias);
@@ -280,13 +284,13 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * Calculate output internally, the intermediate output of each layer will be
    * stored.
    * 
-   * @param instance The instance contains the features.
+   * @param instanceWithBias The instance contains the features.
    * @return Cached output of each layer.
    */
-  public List<DoubleVector> getOutputInternal(DoubleVector instance) {
+  public List<DoubleVector> getOutputInternal(DoubleVector instanceWithBias) {
     List<DoubleVector> outputCache = new ArrayList<DoubleVector>();
     // fill with instance
-    DoubleVector intermediateOutput = instance;
+    DoubleVector intermediateOutput = instanceWithBias;
     outputCache.add(intermediateOutput);
 
     for (int i = 0; i < this.layerSizeList.size() - 1; ++i) {
@@ -330,6 +334,11 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   @Override
   public DoubleMatrix[] trainByInstance(DoubleVector trainingInstance) {
+    DoubleVector transformedVector = this.featureTransformer
+        .transform(trainingInstance.sliceUnsafe(this.layerSizeList.get(0) - 1));
+    
+    
+
     int inputDimension = this.layerSizeList.get(0) - 1;
     int outputDimension;
     DoubleVector inputInstance = null;
@@ -347,10 +356,11 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
       inputInstance = new DenseDoubleVector(this.layerSizeList.get(0));
       inputInstance.set(0, 1); // add bias
+      // get the features from the transformed vector
       for (int i = 0; i < inputDimension; ++i) {
-        inputInstance.set(i + 1, trainingInstance.get(i));
+        inputInstance.set(i + 1, transformedVector.get(i));
       }
-
+      // get the labels from the original training instance
       labels = trainingInstance.sliceUnsafe(inputInstance.getDimension() - 1,
           trainingInstance.getDimension() - 1);
     } else if (this.learningStyle == LearningStyle.UNSUPERVISED) {
@@ -364,10 +374,12 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
       inputInstance = new DenseDoubleVector(this.layerSizeList.get(0));
       inputInstance.set(0, 1); // add bias
+      // get the features from the transformed vector
       for (int i = 0; i < inputDimension; ++i) {
-        inputInstance.set(i + 1, trainingInstance.get(i));
+        inputInstance.set(i + 1, transformedVector.get(i));
       }
-      labels = trainingInstance.deepCopy();
+      // get the labels by copying the transformed vector
+      labels = transformedVector.deepCopy();
     }
 
     List<DoubleVector> internalResults = this.getOutputInternal(inputInstance);

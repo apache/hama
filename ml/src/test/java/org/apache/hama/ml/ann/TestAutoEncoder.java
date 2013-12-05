@@ -40,7 +40,6 @@ import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.ml.MLTestBase;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mortbay.log.Log;
 
@@ -77,7 +76,6 @@ public class TestAutoEncoder extends MLTestBase {
 
   }
   
-  @Ignore
   @Test
   public void testAutoEncoderSwissRollDataset() {
     List<double[]> instanceList = new ArrayList<double[]>();

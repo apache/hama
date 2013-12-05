@@ -281,9 +281,9 @@ public interface DoubleVector {
    * INCLUSIVE. For example vec = [0, 1, 2, 3, 4, 5], vec.slice(2, 5) = [2, 3,
    * 4, 5].
    * 
-   * @param offset must be > 0 and smaller than the dimension of the vector
-   * @param length must be > 0 and smaller than the dimension of the vector.
-   *          This must be greater than the offset.
+   * @param start must be >= 0 and smaller than the dimension of the vector
+   * @param end must be >= 0 and smaller than the dimension of the vector.
+   *          This must be greater than or equal to the start.
    * @return a new vector that is only (length) long.
    */
   public DoubleVector slice(int start, int end);
@@ -292,9 +292,9 @@ public interface DoubleVector {
    * Slices this vector from start to end, both are INCLUSIVE. For example vec =
    * [0, 1, 2, 3, 4, 5], vec.slice(2, 5) = [2, 3, 4, 5].
    * 
-   * @param offset must be > 0 and smaller than the dimension of the vector
-   * @param length must be > 0 and smaller than the dimension of the vector.
-   *          This must be greater than the offset.
+   * @param start must be >= 0 and smaller than the dimension of the vector
+   * @param end must be >= 0 and smaller than the dimension of the vector.
+   *          This must be greater than or equal to the start.
    * @return a new vector that is only (length) long.
    */
   public DoubleVector sliceUnsafe(int start, int end);

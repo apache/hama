@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -39,6 +40,8 @@ import org.apache.hama.commons.math.DenseDoubleMatrix;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleMatrix;
 import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.ml.util.DefaultFeatureTransformer;
+import org.apache.hama.ml.util.FeatureTransformer;
 import org.junit.Test;
 import org.mortbay.log.Log;
 
@@ -59,6 +62,8 @@ public class TestSmallMultiLayerPerceptron {
     MultiLayerPerceptron mlp = new SmallMultiLayerPerceptron(learningRate,
         regularization, momentum, squashingFunctionName, costFunctionName,
         layerSizeArray);
+    FeatureTransformer transformer = new DefaultFeatureTransformer();
+    mlp.setFeatureTransformer(transformer);
     try {
       mlp.writeModelToFile(modelPath);
     } catch (IOException e) {
@@ -78,6 +83,7 @@ public class TestSmallMultiLayerPerceptron {
       assertEquals(squashingFunctionName, mlp.getSquashingFunctionName());
       assertEquals(costFunctionName, mlp.getCostFunctionName());
       assertArrayEquals(layerSizeArray, mlp.getLayerSizeArray());
+      assertEquals(transformer.getClass().getName(), mlp.getFeatureTransformer().getClass().getName());
       // delete test file
       fs.delete(new Path(modelPath), true);
     } catch (IOException e) {
@@ -134,6 +140,14 @@ public class TestSmallMultiLayerPerceptron {
       for (DoubleMatrix mat : matrices) {
         MatrixWritable.write(mat, output);
       }
+
+      // serialize the feature transformer
+      FeatureTransformer transformer = new DefaultFeatureTransformer();
+      Class<? extends FeatureTransformer> featureTransformerCls = transformer.getClass();
+      byte[] featureTransformerBytes = SerializationUtils.serialize(featureTransformerCls);
+      output.writeInt(featureTransformerBytes.length);
+      output.write(featureTransformerBytes);
+      
       output.close();
 
     } catch (IOException e) {
@@ -352,11 +366,16 @@ public class TestSmallMultiLayerPerceptron {
       e.printStackTrace();
     }
   }
+  
+  @Test
+  public void testByRunningJobs() {
+    this.testTrainingByXOR();
+    this.testFeatureTransformer();
+  }
 
   /**
    * Test the XOR problem.
    */
-  @Test
   public void testTrainingByXOR() {
     // write in some training instances
     Configuration conf = new Configuration();
@@ -428,6 +447,78 @@ public class TestSmallMultiLayerPerceptron {
         e.printStackTrace();
       }
     }
+  }
+  
+  /**
+   * Use transformer to extract the first half features of the original features.
+   */
+  public void testFeatureTransformer() {
+ // write in some training instances
+    Configuration conf = new Configuration();
+    String strDataPath = "/tmp/xor-training-by-xor";
+    Path dataPath = new Path(strDataPath);
+
+    // generate training data
+    DoubleVector[] trainingData = new DenseDoubleVector[] {
+        new DenseDoubleVector(new double[] { 0, 0, 0 }),
+        new DenseDoubleVector(new double[] { 0, 1, 1 }),
+        new DenseDoubleVector(new double[] { 1, 0, 1 }),
+        new DenseDoubleVector(new double[] { 1, 1, 0 }) };
+    
+    try {
+      URI uri = new URI(strDataPath);
+      FileSystem fs = FileSystem.get(uri, conf);
+      fs.delete(dataPath, true);
+      if (!fs.exists(dataPath)) {
+        fs.createNewFile(dataPath);
+        SequenceFile.Writer writer = new SequenceFile.Writer(fs, conf,
+            dataPath, LongWritable.class, VectorWritable.class);
+
+        for (int i = 0; i < 1000; ++i) {
+          VectorWritable vecWritable = new VectorWritable(trainingData[i % 4]);
+          writer.append(new LongWritable(i), vecWritable);
+        }
+        writer.close();
+      }
+
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    // begin training
+    String modelPath = "/tmp/xorModel-training-by-xor.data";
+    double learningRate = 0.6;
+    double regularization = 0.02; // no regularization
+    double momentum = 0.3; // no momentum
+    String squashingFunctionName = "Tanh";
+    String costFunctionName = "SquaredError";
+    int[] layerSizeArray = new int[] { 1, 5, 1 };
+    SmallMultiLayerPerceptron mlp = new SmallMultiLayerPerceptron(learningRate,
+        regularization, momentum, squashingFunctionName, costFunctionName,
+        layerSizeArray);
+    
+    mlp.setFeatureTransformer(new FeatureTransformer() {
+
+      @Override
+      public DoubleVector transform(DoubleVector originalFeatures) {
+        return originalFeatures.sliceUnsafe(originalFeatures.getDimension() / 2);
+      }
+      
+    });
+
+    Map<String, String> trainingParams = new HashMap<String, String>();
+    trainingParams.put("training.iteration", "2000");
+    trainingParams.put("training.mode", "minibatch.gradient.descent");
+    trainingParams.put("training.batch.size", "100");
+    trainingParams.put("tasks", "3");
+    trainingParams.put("modelPath", modelPath);
+
+    try {
+      mlp.train(dataPath, trainingParams);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
   }
 
 }

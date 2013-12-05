@@ -26,6 +26,8 @@ import org.apache.hama.commons.math.DoubleFunction;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.ann.NeuralNetworkTrainer;
+import org.apache.hama.ml.util.DefaultFeatureTransformer;
+import org.apache.hama.ml.util.FeatureTransformer;
 
 /**
  * PerceptronBase defines the common behavior of all the concrete perceptrons.
@@ -49,6 +51,9 @@ public abstract class MultiLayerPerceptron {
 
   protected DoubleDoubleFunction costFunction;
   protected DoubleFunction squashingFunction;
+
+  // transform the original features to new space
+  protected FeatureTransformer featureTransformer;
 
   /**
    * Initialize the MLP.
@@ -91,6 +96,8 @@ public abstract class MultiLayerPerceptron {
         .createDoubleDoubleFunction(this.costFunctionName);
     this.squashingFunction = FunctionFactory
         .createDoubleFunction(this.squashingFunctionName);
+
+    this.featureTransformer = new DefaultFeatureTransformer();
   }
 
   /**
@@ -118,7 +125,11 @@ public abstract class MultiLayerPerceptron {
    * @param featureVector The feature of an instance to feed the perceptron.
    * @return The results.
    */
-  public abstract DoubleVector output(DoubleVector featureVector);
+  public DoubleVector output(DoubleVector featureVector) {
+    return this.outputWrapper(this.featureTransformer.transform(featureVector));
+  }
+
+  public abstract DoubleVector outputWrapper(DoubleVector featureVector);
 
   /**
    * Use the class name as the type name.
@@ -174,6 +185,19 @@ public abstract class MultiLayerPerceptron {
 
   public int[] getLayerSizeArray() {
     return layerSizeArray;
+  }
+
+  /**
+   * Set the feature transformer.
+   * 
+   * @param featureTransformer
+   */
+  public void setFeatureTransformer(FeatureTransformer featureTransformer) {
+    this.featureTransformer = featureTransformer;
+  }
+  
+  public FeatureTransformer getFeatureTransformer() {
+    return this.featureTransformer;
   }
 
 }

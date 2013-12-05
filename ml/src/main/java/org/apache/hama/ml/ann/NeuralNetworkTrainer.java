@@ -29,6 +29,8 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.ml.perception.MLPMessage;
+import org.apache.hama.ml.util.DefaultFeatureTransformer;
+import org.apache.hama.ml.util.FeatureTransformer;
 
 /**
  * The trainer that is used to train the {@link SmallLayeredNeuralNetwork} with
@@ -46,13 +48,15 @@ public abstract class NeuralNetworkTrainer extends
   protected int maxIteration;
   protected int batchSize;
   protected String trainingMode;
-
+  
+  protected FeatureTransformer featureTransformer;
+  
   @Override
   final public void setup(
       BSPPeer<LongWritable, VectorWritable, NullWritable, NullWritable, MLPMessage> peer)
       throws IOException, SyncException, InterruptedException {
     conf = peer.getConfiguration();
-
+    featureTransformer = new DefaultFeatureTransformer();
     this.extraSetup(peer);
   }
 
