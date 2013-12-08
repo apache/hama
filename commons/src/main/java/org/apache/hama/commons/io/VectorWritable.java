@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.NamedDoubleVector;
 
 /**
  * Writable for dense vectors.
@@ -102,6 +103,13 @@ public class VectorWritable implements WritableComparable<VectorWritable> {
     for (int i = 0; i < vector.getDimension(); i++) {
       out.writeDouble(vector.get(i));
     }
+
+    if (vector.isNamed() && vector.getName() != null) {
+      out.writeBoolean(true);
+      out.writeUTF(vector.getName());
+    } else {
+      out.writeBoolean(false);
+    }
   }
 
   public static DoubleVector readVector(DataInput in) throws IOException {
@@ -110,6 +118,10 @@ public class VectorWritable implements WritableComparable<VectorWritable> {
     vector = new DenseDoubleVector(length);
     for (int i = 0; i < length; i++) {
       vector.set(i, in.readDouble());
+    }
+
+    if (in.readBoolean()) {
+      vector = new NamedDoubleVector(in.readUTF(), vector);
     }
     return vector;
   }

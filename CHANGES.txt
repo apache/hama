@@ -4,6 +4,7 @@ Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-827: Add NamedVector (edwardyoon)
    HAMA-822: Add feature transformer interface to improve the power and flexibility of existing machine learning model (Yexi Jiang)
    HAMA-774: CompositeInputFormat in Hama (Martin Illecker)
    HAMA-815: Hama Pipes uses C++ templates (Martin Illecker)  

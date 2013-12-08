@@ -86,7 +86,8 @@ public class Kmeans {
       // prepare the input, like deleting old versions and creating centers
       KMeansBSP.prepareInput(count, k, dimension, conf, in, center, out, fs);
     } else {
-      KMeansBSP.prepareInputText(k, conf, in, center, out, fs);
+      // Set the last argument to TRUE if first column is required to be the key
+      KMeansBSP.prepareInputText(k, conf, in, center, out, fs, true);
       in = new Path(in.getParent(), "textinput/in.seq");
     }
 
@@ -95,10 +96,9 @@ public class Kmeans {
     // just submit the job
     job.waitForCompletion(true);
 
-    List<String> results = KMeansBSP.readOutput(conf, out, fs, 5);
+    List<String> results = KMeansBSP.readOutput(conf, out, fs, 10);
     for (String line : results) {
       System.out.println(line);
     }
-    System.out.println("...");
   }
 }

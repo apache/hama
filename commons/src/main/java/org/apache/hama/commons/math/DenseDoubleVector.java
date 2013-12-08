@@ -181,10 +181,6 @@ public final class DenseDoubleVector implements DoubleVector {
     return newv;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see de.jungblut.math.DoubleVector#subtract(de.jungblut.math.DoubleVector)
-   */
   @Override
   public final DoubleVector subtractUnsafe(DoubleVector v) {
     DoubleVector newv = new DenseDoubleVector(v.getLength());
@@ -194,10 +190,6 @@ public final class DenseDoubleVector implements DoubleVector {
     return newv;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see de.jungblut.math.DoubleVector#subtract(double)
-   */
   @Override
   public final DoubleVector subtract(double v) {
     DenseDoubleVector newv = new DenseDoubleVector(vector.length);

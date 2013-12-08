@@ -63,7 +63,7 @@ public class TestKMeansBSP extends TestCase {
       bw.write(sb.toString());
       bw.close();
 
-      in = KMeansBSP.prepareInputText(k, conf, in, center, out, fs);
+      in = KMeansBSP.prepareInputText(k, conf, in, center, out, fs, false);
 
       BSPJob job = KMeansBSP.createJob(conf, in, out, true);
 

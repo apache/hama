@@ -44,6 +44,7 @@ import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
+import org.apache.hama.commons.math.NamedDoubleVector;
 import org.apache.hama.ml.distance.DistanceMeasurer;
 import org.apache.hama.ml.distance.EuclidianDistance;
 import org.apache.hama.util.ReflectionUtils;
@@ -80,7 +81,6 @@ public final class KMeansBSP
   public final void setup(
       BSPPeer<VectorWritable, NullWritable, IntWritable, VectorWritable, CenterMessage> peer)
       throws IOException, InterruptedException {
-
     conf = peer.getConfiguration();
 
     Path centroids = new Path(peer.getConfiguration().get(CENTER_IN_PATH));
@@ -195,6 +195,7 @@ public final class KMeansBSP
     // needs to be broadcasted.
     final DoubleVector[] newCenterArray = new DoubleVector[centers.length];
     final int[] summationCount = new int[centers.length];
+
     // if our cache is not enabled, iterate over the disk items
     if (cache == null) {
       // we have an assignment step
@@ -222,6 +223,7 @@ public final class KMeansBSP
         }
       }
     }
+
     // now send messages about the local updates to each other peer
     for (int i = 0; i < newCenterArray.length; i++) {
       if (newCenterArray[i] != null) {
@@ -237,6 +239,7 @@ public final class KMeansBSP
       final int[] summationCount, final DoubleVector key) {
     final int lowestDistantCenter = getNearestCenter(key);
     final DoubleVector clusterCenter = newCenterArray[lowestDistantCenter];
+
     if (clusterCenter == null) {
       newCenterArray[lowestDistantCenter] = key;
     } else {
@@ -250,6 +253,7 @@ public final class KMeansBSP
   private int getNearestCenter(DoubleVector key) {
     int lowestDistantCenter = 0;
     double lowestDistance = Double.MAX_VALUE;
+
     for (int i = 0; i < centers.length; i++) {
       final double estimatedDistance = distanceMeasurer.measureDistance(
           centers[i], key);
@@ -419,9 +423,19 @@ public final class KMeansBSP
 
   /**
    * Reads input text files and writes it to a sequencefile.
+   * 
+   * @param k
+   * @param conf
+   * @param txtIn
+   * @param center
+   * @param out
+   * @param fs
+   * @param hasKey true if first column is required to be the key.
+   * @return
+   * @throws IOException
    */
   public static Path prepareInputText(int k, Configuration conf, Path txtIn,
-      Path center, Path out, FileSystem fs) throws IOException {
+      Path center, Path out, FileSystem fs, boolean hasKey) throws IOException {
 
     Path in;
     if (fs.isFile(txtIn)) {
@@ -429,7 +443,7 @@ public final class KMeansBSP
     } else {
       in = new Path(txtIn, "textinput/in.seq");
     }
-    
+
     if (fs.exists(out))
       fs.delete(out, true);
 
@@ -454,11 +468,26 @@ public final class KMeansBSP
     String line;
     while ((line = br.readLine()) != null) {
       String[] split = line.split("\t");
-      DenseDoubleVector vec = new DenseDoubleVector(split.length);
-      for (int j = 0; j < split.length; j++) {
-        vec.set(j, Double.parseDouble(split[j]));
+      int columnLength = split.length;
+      int indexPos = 0;
+      if (hasKey) {
+        columnLength = columnLength - 1;
+        indexPos++;
       }
-      VectorWritable vector = new VectorWritable(vec);
+
+      DenseDoubleVector vec = new DenseDoubleVector(columnLength);
+      for (int j = 0; j < columnLength; j++) {
+        vec.set(j, Double.parseDouble(split[j + indexPos]));
+      }
+
+      VectorWritable vector;
+      if (hasKey) {
+        NamedDoubleVector named = new NamedDoubleVector(split[0], vec);
+        vector = new VectorWritable(named);
+      } else {
+        vector = new VectorWritable(vec);
+      }
+
       dataWriter.append(vector, value);
       if (k > i) {
         assert centerWriter != null;
