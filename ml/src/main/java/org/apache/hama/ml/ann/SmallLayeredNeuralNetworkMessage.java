@@ -78,12 +78,12 @@ public class SmallLayeredNeuralNetworkMessage implements Writable {
     } else {
       output.writeBoolean(true);
     }
-    for (int i = 0; i < curMatrices.length; ++i) {
-      MatrixWritable.write(curMatrices[i], output);
+    for (DoubleMatrix matrix : curMatrices) {
+      MatrixWritable.write(matrix, output);
     }
     if (prevMatrices != null) {
-      for (int i = 0; i < prevMatrices.length; ++i) {
-        MatrixWritable.write(prevMatrices[i], output);
+      for (DoubleMatrix matrix : prevMatrices) {
+        MatrixWritable.write(matrix, output);
       }
     }
   }

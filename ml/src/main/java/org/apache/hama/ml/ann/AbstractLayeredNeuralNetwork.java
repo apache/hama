@@ -31,6 +31,7 @@ import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 /**
  * AbstractLayeredNeuralNetwork defines the general operations for derivative
@@ -66,7 +67,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
   protected LearningStyle learningStyle;
 
   public static enum TrainingMethod {
-    GRADIATE_DESCENT
+    GRADIENT_DESCENT
   }
   
   public static enum LearningStyle {
@@ -77,7 +78,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
   public AbstractLayeredNeuralNetwork() {
     this.regularizationWeight = DEFAULT_REGULARIZATION_WEIGHT;
     this.momentumWeight = DEFAULT_MOMENTUM_WEIGHT;
-    this.trainingMethod = TrainingMethod.GRADIATE_DESCENT;
+    this.trainingMethod = TrainingMethod.GRADIENT_DESCENT;
     this.learningStyle = LearningStyle.SUPERVISED;
   }
 
@@ -229,7 +230,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
 
     // read layer size list
     int numLayers = input.readInt();
-    this.layerSizeList = new ArrayList<Integer>();
+    this.layerSizeList = Lists.newArrayList();
     for (int i = 0; i < numLayers; ++i) {
       this.layerSizeList.add(input.readInt());
     }

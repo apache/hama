@@ -39,6 +39,7 @@ import org.apache.hama.ml.util.DefaultFeatureTransformer;
 import org.apache.hama.ml.util.FeatureTransformer;
 
 import com.google.common.base.Preconditions;
+import com.google.common.io.Closeables;
 
 /**
  * NeuralNetwork defines the general operations for all the derivative models.
@@ -85,7 +86,7 @@ abstract class NeuralNetwork implements Writable {
    */
   public void setLearningRate(double learningRate) {
     Preconditions.checkArgument(learningRate > 0,
-        "Learning rate must larger than 0.");
+        "Learning rate must be larger than 0.");
     this.learningRate = learningRate;
   }
 
@@ -144,13 +145,16 @@ abstract class NeuralNetwork implements Writable {
     Preconditions.checkArgument(this.modelPath != null,
         "Model path has not been set.");
     Configuration conf = new Configuration();
+    FSDataInputStream is = null;
     try {
       URI uri = new URI(this.modelPath);
       FileSystem fs = FileSystem.get(uri, conf);
-      FSDataInputStream is = new FSDataInputStream(fs.open(new Path(modelPath)));
+      is = new FSDataInputStream(fs.open(new Path(modelPath)));
       this.readFields(is);
     } catch (URISyntaxException e) {
       e.printStackTrace();
+    } finally {
+      Closeables.close(is, false);
     }
   }
 
@@ -164,10 +168,17 @@ abstract class NeuralNetwork implements Writable {
     Preconditions.checkArgument(this.modelPath != null,
         "Model path has not been set.");
     Configuration conf = new Configuration();
-    FileSystem fs = FileSystem.get(conf);
-    FSDataOutputStream stream = fs.create(new Path(this.modelPath), true);
-    this.write(stream);
-    stream.close();
+    FSDataOutputStream is = null;
+    try {
+      URI uri = new URI(this.modelPath);
+      FileSystem fs = FileSystem.get(uri, conf);
+      is = fs.create(new Path(this.modelPath), true);
+      this.write(is);
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    }
+
+    Closeables.close(is, false);
   }
 
   /**
@@ -215,7 +226,7 @@ abstract class NeuralNetwork implements Writable {
     Constructor[] constructors = featureTransformerCls
         .getDeclaredConstructors();
     Constructor constructor = constructors[0];
-    
+
     try {
       this.featureTransformer = (FeatureTransformer) constructor
           .newInstance(new Object[] {});

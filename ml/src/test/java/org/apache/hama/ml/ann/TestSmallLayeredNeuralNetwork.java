@@ -103,7 +103,7 @@ public class TestSmallLayeredNeuralNetwork extends MLTestBase {
     assertEquals(momentumWeight, annCopy.getMomemtumWeight(), 0.000001);
     assertEquals(regularizationWeight, annCopy.getRegularizationWeight(),
         0.000001);
-    assertEquals(TrainingMethod.GRADIATE_DESCENT, annCopy.getTrainingMethod());
+    assertEquals(TrainingMethod.GRADIENT_DESCENT, annCopy.getTrainingMethod());
     assertEquals(LearningStyle.UNSUPERVISED, annCopy.getLearningStyle());
 
     // compare weights

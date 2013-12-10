@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
+import org.apache.commons.lang.math.RandomUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -43,6 +43,7 @@ import org.apache.hama.commons.math.FunctionFactory;
 import org.mortbay.log.Log;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 /**
  * SmallLayeredNeuralNetwork defines the general operations for derivative
@@ -70,10 +71,10 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   protected int finalLayerIdx;
 
   public SmallLayeredNeuralNetwork() {
-    this.layerSizeList = new ArrayList<Integer>();
-    this.weightMatrixList = new ArrayList<DoubleMatrix>();
-    this.prevWeightUpdatesList = new ArrayList<DoubleMatrix>();
-    this.squashingFunctionList = new ArrayList<DoubleFunction>();
+    this.layerSizeList = Lists.newArrayList();
+    this.weightMatrixList = Lists.newArrayList();
+    this.prevWeightUpdatesList = Lists.newArrayList();
+    this.squashingFunctionList = Lists.newArrayList();
   }
 
   public SmallLayeredNeuralNetwork(String modelPath) {
@@ -86,7 +87,8 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   public int addLayer(int size, boolean isFinalLayer,
       DoubleFunction squashingFunction) {
-    Preconditions.checkArgument(size > 0, "Size of layer must larger than 0.");
+    Preconditions.checkArgument(size > 0,
+        "Size of layer must be larger than 0.");
     if (!isFinalLayer) {
       size += 1;
     }
@@ -107,11 +109,10 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       int col = sizePrevLayer;
       DoubleMatrix weightMatrix = new DenseDoubleMatrix(row, col);
       // initialize weights
-      final Random rnd = new Random();
       weightMatrix.applyToElements(new DoubleFunction() {
         @Override
         public double apply(double value) {
-          return rnd.nextDouble() - 0.5;
+          return RandomUtils.nextDouble() - 0.5;
         }
 
         @Override
@@ -138,6 +139,10 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     }
   }
 
+  /**
+   * Set the previous weight matrices.
+   * @param prevUpdates
+   */
   void setPrevWeightMatrices(DoubleMatrix[] prevUpdates) {
     this.prevWeightUpdatesList.clear();
     for (DoubleMatrix prevUpdate : prevUpdates) {
@@ -176,8 +181,8 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   public void setWeightMatrices(DoubleMatrix[] matrices) {
     this.weightMatrixList = new ArrayList<DoubleMatrix>();
-    for (int i = 0; i < matrices.length; ++i) {
-      this.weightMatrixList.add(matrices[i]);
+    for (DoubleMatrix matrix : matrices) {
+      this.weightMatrixList.add(matrix);
     }
   }
 
@@ -197,8 +202,9 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
   public void setWeightMatrix(int index, DoubleMatrix matrix) {
     Preconditions.checkArgument(
-        0 <= index && index < this.weightMatrixList.size(),
-        String.format("index [%d] out of range.", index));
+        0 <= index && index < this.weightMatrixList.size(), String.format(
+            "index [%d] should be in range[%d, %d].", index, 0,
+            this.weightMatrixList.size()));
     this.weightMatrixList.set(index, matrix);
   }
 
@@ -208,7 +214,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
     // read squash functions
     int squashingFunctionSize = input.readInt();
-    this.squashingFunctionList = new ArrayList<DoubleFunction>();
+    this.squashingFunctionList = Lists.newArrayList();
     for (int i = 0; i < squashingFunctionSize; ++i) {
       this.squashingFunctionList.add(FunctionFactory
           .createDoubleFunction(WritableUtils.readString(input)));
@@ -216,8 +222,8 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
     // read weights and construct matrices of previous updates
     int numOfMatrices = input.readInt();
-    this.weightMatrixList = new ArrayList<DoubleMatrix>();
-    this.prevWeightUpdatesList = new ArrayList<DoubleMatrix>();
+    this.weightMatrixList = Lists.newArrayList();
+    this.prevWeightUpdatesList = Lists.newArrayList();
     for (int i = 0; i < numOfMatrices; ++i) {
       DoubleMatrix matrix = MatrixWritable.read(input);
       this.weightMatrixList.add(matrix);
@@ -257,8 +263,8 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   @Override
   public DoubleVector getOutput(DoubleVector instance) {
-    Preconditions.checkArgument(this.layerSizeList.get(0) == instance
-        .getDimension() + 1, String.format(
+    Preconditions.checkArgument(this.layerSizeList.get(0) - 1 == instance
+        .getDimension(), String.format(
         "The dimension of input instance should be %d.",
         this.layerSizeList.get(0) - 1));
     // transform the features to another space
@@ -336,8 +342,6 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   public DoubleMatrix[] trainByInstance(DoubleVector trainingInstance) {
     DoubleVector transformedVector = this.featureTransformer
         .transform(trainingInstance.sliceUnsafe(this.layerSizeList.get(0) - 1));
-    
-    
 
     int inputDimension = this.layerSizeList.get(0) - 1;
     int outputDimension;
@@ -389,11 +393,12 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
     calculateTrainingError(labels,
         output.deepCopy().sliceUnsafe(1, output.getDimension() - 1));
 
-    if (this.trainingMethod.equals(TrainingMethod.GRADIATE_DESCENT)) {
+    if (this.trainingMethod.equals(TrainingMethod.GRADIENT_DESCENT)) {
       return this.trainByInstanceGradientDescent(labels, internalResults);
+    } else {
+      throw new IllegalArgumentException(
+          String.format("Training method is not supported."));
     }
-    throw new IllegalArgumentException(
-        String.format("Training method is not supported."));
   }
 
   /**
@@ -483,9 +488,6 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
               * squashingFunction.applyDerivative(curLayerOutput.get(i)));
     }
 
-    // System.out.printf("Delta layer: %d, %s\n", curLayerIdx,
-    // delta.toString());
-
     // update weights
     for (int i = 0; i < weightUpdateMatrix.getRowCount(); ++i) {
       for (int j = 0; j < weightUpdateMatrix.getColumnCount(); ++j) {
@@ -494,9 +496,6 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
                 + this.momentumWeight * prevWeightMatrix.get(i, j));
       }
     }
-
-    // System.out.printf("Weight Layer %d, %s\n", curLayerIdx,
-    // weightUpdateMatrix.toString());
 
     return delta;
   }
@@ -556,9 +555,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   protected void calculateTrainingError(DoubleVector labels, DoubleVector output) {
     DoubleVector errors = labels.deepCopy().applyToElements(output,
         this.costFunction);
-    // System.out.printf("Labels: %s\tOutput: %s\n", labels, output);
     this.trainingError = errors.sum();
-    // System.out.printf("Training error: %s\n", errors);
   }
 
   /**
