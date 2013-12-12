@@ -19,9 +19,9 @@ package org.apache.hama.bsp;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
@@ -140,7 +140,7 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
   /**
    * @return the jobs configuration
    */
-  public Configuration getConfiguration();
+  public HamaConfiguration getConfiguration();
 
   /**
    * Get the {@link Counter} of the given group with the given name.

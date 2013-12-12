@@ -46,6 +46,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.ft.AsyncRcvdMsgCheckpointImpl;
 import org.apache.hama.bsp.ft.FaultTolerantPeerService;
@@ -267,7 +268,7 @@ public class TestCheckpoint extends TestCase {
     }
 
     @Override
-    public Configuration getConfiguration() {
+    public HamaConfiguration getConfiguration() {
       return null;
     }
 

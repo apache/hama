@@ -18,14 +18,20 @@
 
 package org.apache.hama.ml.semiclustering;
 
-import org.apache.hadoop.conf.Configuration;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.Vertex;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * SemiClusteringVertex Class defines each vertex in a Graph job and the
@@ -40,7 +46,7 @@ public class SemiClusteringVertex extends
   private int graphJobVertexMaxClusterCount;
 
   @Override
-  public void setup(Configuration conf) {
+  public void setup(HamaConfiguration conf) {
     semiClusterMaximumVertexCount = conf.getInt("semicluster.max.vertex.count",
         10);
     graphJobMessageSentCount = conf.getInt(

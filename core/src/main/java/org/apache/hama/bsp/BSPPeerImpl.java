@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -36,6 +35,7 @@ import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.ft.AsyncRcvdMsgCheckpointImpl;
 import org.apache.hama.bsp.ft.BSPFaultTolerantService;
@@ -63,7 +63,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     COMPRESSED_MESSAGES, SUPERSTEP_SUM, TASK_INPUT_RECORDS, TASK_OUTPUT_RECORDS, IO_BYTES_READ, MESSAGE_BYTES_TRANSFERED, MESSAGE_BYTES_RECEIVED, TOTAL_MESSAGES_SENT, TOTAL_MESSAGES_RECEIVED, COMPRESSED_BYTES_SENT, COMPRESSED_BYTES_RECEIVED, TIME_IN_SYNC_MS
   }
 
-  private final Configuration conf;
+  private final HamaConfiguration conf;
   private final FileSystem fs;
   private BSPJob bspJob;
 
@@ -110,7 +110,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
    * @param conf is the configuration file.
    * @param dfs is the Hadoop FileSystem.
    */
-  protected BSPPeerImpl(final Configuration conf, FileSystem dfs) {
+  protected BSPPeerImpl(final HamaConfiguration conf, FileSystem dfs) {
     this.conf = conf;
     this.fs = dfs;
   }
@@ -122,12 +122,12 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
    * @param dfs is the Hadoop FileSystem.
    * @param counters is the counters from outside.
    */
-  public BSPPeerImpl(final Configuration conf, FileSystem dfs, Counters counters) {
+  public BSPPeerImpl(final HamaConfiguration conf, FileSystem dfs, Counters counters) {
     this(conf, dfs);
     this.counters = counters;
   }
 
-  public BSPPeerImpl(BSPJob job, Configuration conf, TaskAttemptID taskId,
+  public BSPPeerImpl(BSPJob job, HamaConfiguration conf, TaskAttemptID taskId,
       BSPPeerProtocol umbilical, int partition, String splitClass,
       BytesWritable split, Counters counters) throws Exception {
     this(job, conf, taskId, umbilical, partition, splitClass, split, counters,
@@ -145,7 +145,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
    * @throws Exception
    */
   @SuppressWarnings("unchecked")
-  public BSPPeerImpl(BSPJob job, Configuration conf, TaskAttemptID taskId,
+  public BSPPeerImpl(BSPJob job, HamaConfiguration conf, TaskAttemptID taskId,
       BSPPeerProtocol umbilical, int partition, String splitClass,
       BytesWritable split, Counters counters, long superstep,
       TaskStatus.State state) throws Exception {
@@ -591,7 +591,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
    * @return the conf
    */
   @Override
-  public final Configuration getConfiguration() {
+  public final HamaConfiguration getConfiguration() {
     return conf;
   }
 

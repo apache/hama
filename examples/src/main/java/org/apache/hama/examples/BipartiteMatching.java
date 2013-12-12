@@ -58,7 +58,7 @@ public final class BipartiteMatching {
     private final static Text RIGHT = new Text("R");
 
     @Override
-    public void setup(Configuration conf) {
+    public void setup(HamaConfiguration conf) {
       this.getPeer().getNumCurrentMessages();
     }
 

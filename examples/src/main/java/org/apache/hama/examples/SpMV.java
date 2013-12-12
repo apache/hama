@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -81,7 +80,7 @@ public class SpMV {
    * IMPORTANT: This can be a bottle neck. Problem can be here{@core
    * WritableUtil.convertSpMVOutputToDenseVector()}
    */
-  private static void convertToDenseVector(Configuration conf)
+  private static void convertToDenseVector(HamaConfiguration conf)
       throws IOException {
     String resultPath = convertSpMVOutputToDenseVector(
         conf.get(outputPathString), conf);
@@ -104,7 +103,7 @@ public class SpMV {
         BSPPeer<IntWritable, SparseVectorWritable, IntWritable, DoubleWritable, NullWritable> peer)
         throws IOException, SyncException, InterruptedException {
       // reading input vector, which represented as matrix row
-      Configuration conf = peer.getConfiguration();
+      HamaConfiguration conf = (HamaConfiguration) peer.getConfiguration();
       v = new DenseVectorWritable();
       readFromFile(conf.get(inputVectorPathString), v, conf);
       peer.sync();
@@ -234,7 +233,7 @@ public class SpMV {
    * @throws IOException
    */
   public static String convertSpMVOutputToDenseVector(
-      String SpMVoutputPathString, Configuration conf) throws IOException {
+      String SpMVoutputPathString, HamaConfiguration conf) throws IOException {
     List<Integer> indeces = new ArrayList<Integer>();
     List<Double> values = new ArrayList<Double>();
 
@@ -270,7 +269,7 @@ public class SpMV {
   }
 
   public static void readFromFile(String pathString, Writable result,
-      Configuration conf) throws IOException {
+      HamaConfiguration conf) throws IOException {
     FileSystem fs = FileSystem.get(conf);
     SequenceFile.Reader reader = null;
     Path path = new Path(pathString);
@@ -306,7 +305,7 @@ public class SpMV {
    * @throws IOException
    */
   public static void writeToFile(String pathString, Writable result,
-      Configuration conf) throws IOException {
+      HamaConfiguration conf) throws IOException {
     FileSystem fs = FileSystem.get(conf);
     SequenceFile.Writer writer = null;
     try {

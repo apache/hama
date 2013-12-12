@@ -20,9 +20,9 @@ package org.apache.hama.graph;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.HamaConfiguration;
 
 /**
  * The vertex interface.
@@ -40,7 +40,7 @@ public interface VertexInterface<V extends WritableComparable, E extends Writabl
   /**
    * Used to setup a vertex.
    */
-  public void setup(Configuration conf);
+  public void setup(HamaConfiguration conf);
 
   /**
    * @return the unique identification for the vertex.

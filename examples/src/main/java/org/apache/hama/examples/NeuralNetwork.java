@@ -25,9 +25,9 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.math.DenseDoubleVector;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
@@ -50,6 +50,7 @@ public class NeuralNetwork {
         printUsage();
         return;
       }
+      HamaConfiguration conf = new HamaConfiguration();
 
       String featureDataPath = args[1];
       String resultDataPath = args[2];
@@ -58,8 +59,7 @@ public class NeuralNetwork {
       SmallLayeredNeuralNetwork ann = new SmallLayeredNeuralNetwork(modelPath);
 
       // process data in streaming approach
-      FileSystem fs = FileSystem.get(new URI(featureDataPath),
-          new Configuration());
+      FileSystem fs = FileSystem.get(new URI(featureDataPath), conf);
       BufferedReader br = new BufferedReader(new InputStreamReader(
           fs.open(new Path(featureDataPath))));
       Path outputPath = new Path(resultDataPath);

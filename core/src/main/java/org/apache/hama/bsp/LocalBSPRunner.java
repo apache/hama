@@ -150,8 +150,8 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     peerNames = new String[numBspTask];
     for (int i = 0; i < numBspTask; i++) {
       peerNames[i] = "local:" + i;
-      completionService.submit(new BSPRunner(new Configuration(conf), job, i,
-          splits));
+      completionService.submit(new BSPRunner(new HamaConfiguration(conf), job,
+          i, splits));
       globalCounters.incrCounter(JobInProgress.JobCounter.LAUNCHED_TASKS, 1L);
     }
 
@@ -211,14 +211,15 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
   @SuppressWarnings({ "rawtypes" })
   static class BSPRunner implements Callable<BSPPeerImpl> {
 
-    private final Configuration conf;
+    private final HamaConfiguration conf;
     private final BSPJob job;
     private final int id;
     private final BSP bsp;
     private final RawSplit[] splits;
     private BSPPeerImpl peer;
 
-    public BSPRunner(Configuration conf, BSPJob job, int id, RawSplit[] splits) {
+    public BSPRunner(HamaConfiguration conf, BSPJob job, int id,
+        RawSplit[] splits) {
       super();
       this.conf = conf;
       this.job = job;

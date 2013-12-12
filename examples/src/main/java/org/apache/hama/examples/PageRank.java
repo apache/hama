@@ -48,7 +48,7 @@ public class PageRank {
     static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
 
     @Override
-    public void setup(Configuration conf) {
+    public void setup(HamaConfiguration conf) {
       String val = conf.get("hama.pagerank.alpha");
       if (val != null) {
         DAMPING_FACTOR = Double.parseDouble(val);

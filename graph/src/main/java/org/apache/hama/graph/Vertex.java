@@ -23,11 +23,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
 
@@ -59,7 +59,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   private boolean votedToHalt = false;
 
-  public Configuration getConf() {
+  public HamaConfiguration getConf() {
     return runner.getPeer().getConfiguration();
   }
 
@@ -69,7 +69,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   }
 
   @Override
-  public void setup(Configuration conf) {
+  public void setup(HamaConfiguration conf) {
   }
 
   @Override

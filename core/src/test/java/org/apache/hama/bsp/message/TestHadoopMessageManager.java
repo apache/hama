@@ -23,11 +23,11 @@ import java.util.Map.Entry;
 
 import junit.framework.TestCase;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
@@ -48,7 +48,7 @@ public class TestHadoopMessageManager extends TestCase {
   public static volatile int increment = 1;
 
   public void testMemoryMessaging() throws Exception {
-    Configuration conf = new Configuration();
+    HamaConfiguration conf = new HamaConfiguration();
     conf.setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
         MemoryTransferProtocol.class, MessageTransferQueue.class);
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
@@ -56,14 +56,14 @@ public class TestHadoopMessageManager extends TestCase {
   }
 
   public void testDiskMessaging() throws Exception {
-    Configuration conf = new Configuration();
+    HamaConfiguration conf = new HamaConfiguration();
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     conf.setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
         DiskTransferProtocolQueue.class, MessageTransferQueue.class);
     messagingInternal(conf);
   }
 
-  private static void messagingInternal(Configuration conf) throws Exception {
+  private static void messagingInternal(HamaConfiguration conf) throws Exception {
     conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS,
         "org.apache.hama.bsp.message.HadoopMessageManagerImpl");
     MessageManager<IntWritable> messageManager = MessageManagerFactory

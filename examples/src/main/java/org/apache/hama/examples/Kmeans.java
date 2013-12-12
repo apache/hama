@@ -19,10 +19,10 @@ package org.apache.hama.examples;
 
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.ml.kmeans.KMeansBSP;
@@ -61,7 +61,8 @@ public class Kmeans {
           .println("USAGE: <INPUT_PATH> <OUTPUT_PATH> <MAXITERATIONS> <K (how many centers)> -g [<COUNT> <DIMENSION OF VECTORS>]");
       return;
     }
-    Configuration conf = new Configuration();
+    HamaConfiguration conf = new HamaConfiguration();
+    
     Path in = new Path(args[0]);
     Path out = new Path(args[1]);
     FileSystem fs = FileSystem.get(conf);
