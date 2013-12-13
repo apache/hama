@@ -214,7 +214,7 @@ public class Submitter implements Tool {
    * Submit a job to the cluster. All of the necessary modifications to the job
    * to run under pipes are made to the configuration.
    * 
-   * @param conf the job to submit to the cluster (MODIFIED)
+   * @param job to submit to the cluster
    * @throws IOException
    */
   public static void runJob(BSPJob job) throws IOException {

@@ -45,8 +45,6 @@ import org.apache.hama.commons.util.KeyValuePair;
  * 
  * @param <K1> input key.
  * @param <V1> input value.
- * @param <K2> output key.
- * @param <V2> output value.
  */
 public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
     extends BinaryProtocol<K1, V1, Text, Text, BytesWritable> {

@@ -79,7 +79,7 @@
                         </else>
                       </if>
                     </target>
-                  <exportAntProperties>true</exportAntProperties>
+                    <exportAntProperties>true</exportAntProperties>
                   </configuration>
                 </execution>
                 <!-- TODO wire here native testcases
@@ -103,7 +103,7 @@
                 </dependency>
               </dependencies>
             </plugin>
-          <plugin>
+            <plugin>
               <groupId>org.codehaus.groovy.maven</groupId>
               <artifactId>gmaven-plugin</artifactId>
               <version>1.0</version>

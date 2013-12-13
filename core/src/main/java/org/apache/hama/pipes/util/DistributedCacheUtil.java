@@ -43,6 +43,7 @@ public class DistributedCacheUtil {
    * symbolic links for URIs specified with a fragment if
    * DistributedCache.getSymlinks() is true.
    * 
+   * @param conf The job's configuration
    * @throws IOException If a DistributedCache file cannot be found.
    */
   public static final void moveLocalFiles(Configuration conf)
@@ -81,8 +82,8 @@ public class DistributedCacheUtil {
     }
     if (files.length() > 0) {
       // I've replaced the use of the missing setLocalFiles and
-      // addLocalFiles methods (hadoop 0.23.x) with our own DistCacheUtils methods
-      // which set the cache configurations directly.
+      // addLocalFiles methods (hadoop 0.23.x) with our own DistCacheUtils
+      // methods which set the cache configurations directly.
       DistCacheUtils.addLocalFiles(conf, files.toString());
     }
   }
@@ -90,8 +91,8 @@ public class DistributedCacheUtil {
   /**
    * Add the Files to HDFS
    * 
-   * @param conf
-   * @param paths
+   * @param conf The job's configuration
+   * @param files Paths that should be transfered to HDFS
    */
   public static String addFilesToHDFS(Configuration conf, String files) {
     if (files == null)
@@ -139,8 +140,7 @@ public class DistributedCacheUtil {
   /**
    * Add the JARs from the given HDFS paths to the Classpath
    * 
-   * @param conf
-   * @param urls
+   * @param conf The job's configuration
    */
   public static URL[] addJarsToJobClasspath(Configuration conf) {
     URL[] classLoaderURLs = ((URLClassLoader) conf.getClassLoader()).getURLs();

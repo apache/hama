@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.pipes.util;
 
 import java.io.FileWriter;
@@ -36,7 +35,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
-//import org.apache.hama.util.GenericOptionsParser;
 
 public class SequenceFileDumper {
 
@@ -63,28 +61,23 @@ public class SequenceFileDumper {
       Option option = OptionBuilder.withArgName(name).hasArgs(1)
           .withDescription(description).isRequired(required).create();
       options.addOption(option);
-
     }
 
     Parser createParser() {
-      Parser result = new BasicParser();
-      return result;
+      return new BasicParser();
     }
 
     void printUsage() {
       // The CLI package should do this for us, but I can't figure out how
       // to make it print something reasonable.
       System.out.println("hama seqdumper");
+      System.out.println("  [-file <path>] // The sequence file to read");
       System.out
-          .println("  [-seqFile <path>] // The Sequence File containing the Clusters");
+          .println("  [-output <path>] // The output file. If not specified, dumps to the console");
       System.out
-          .println("  [-output <path>] // The output file.  If not specified, dumps to the console");
-      System.out
-          .println("  [-substring <number> // The number of chars of the FormatString() to print");
+          .println("  [-substring <number> // The number of chars of value to print");
       System.out.println("  [-count <true>] // Report the count only");
-      System.out.println("  [-help] // Print out help");
       System.out.println();
-      //GenericOptionsParser.printGenericCommandUsage(System.out);
     }
   }
 
@@ -95,36 +88,22 @@ public class SequenceFileDumper {
       return;
     }
 
-    LOG.info("DEBUG: Hama SequenceFileDumper started!");
-
-    cli.addOption("seqFile", false,
-        "The Sequence File containing the Clusters", "path");
+    // Add arguments
+    cli.addOption("file", false, "The Sequence File containing the Clusters",
+        "path");
     cli.addOption("output", false,
         "The output file.  If not specified, dumps to the console", "path");
-
     cli.addOption("substring", false,
         "The number of chars of the FormatString() to print", "number");
     cli.addOption("count", false, "Report the count only", "number");
-    cli.addOption("help", false, "Print out help", "class");
 
     Parser parser = cli.createParser();
-
     try {
       HamaConfiguration conf = new HamaConfiguration();
-
-      //GenericOptionsParser genericParser = new GenericOptionsParser(conf, args);
-
       CommandLine cmdLine = parser.parse(cli.options, args);
-      //    genericParser.getRemainingArgs());
-      LOG.debug("DEBUG: Arguments: " + args); //genericParser.getRemainingArgs());
 
-      if (cmdLine.hasOption("help")) {
-        cli.printUsage();
-        return;
-      }
-
-      if (cmdLine.hasOption("seqFile")) {
-        Path path = new Path(cmdLine.getOptionValue("seqFile"));
+      if (cmdLine.hasOption("file")) {
+        Path path = new Path(cmdLine.getOptionValue("file"));
 
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
@@ -135,6 +114,7 @@ public class SequenceFileDumper {
         } else {
           writer = new OutputStreamWriter(System.out);
         }
+
         writer.append("Input Path: ").append(String.valueOf(path))
             .append(LINE_SEP);
 
@@ -143,10 +123,9 @@ public class SequenceFileDumper {
           sub = Integer.parseInt(cmdLine.getOptionValue("substring"));
         }
 
-        boolean countOnly = cmdLine.hasOption("count");
-
         Writable key = (Writable) reader.getKeyClass().newInstance();
         Writable value = (Writable) reader.getValueClass().newInstance();
+
         writer.append("Key class: ")
             .append(String.valueOf(reader.getKeyClass()))
             .append(" Value Class: ").append(String.valueOf(value.getClass()))
@@ -154,6 +133,7 @@ public class SequenceFileDumper {
         writer.flush();
 
         long count = 0;
+        boolean countOnly = cmdLine.hasOption("count");
         if (countOnly == false) {
           while (reader.next(key, value)) {
             writer.append("Key: ").append(String.valueOf(key));
@@ -166,7 +146,8 @@ public class SequenceFileDumper {
           }
           writer.append("Count: ").append(String.valueOf(count))
               .append(LINE_SEP);
-        } else {
+
+        } else { // count only
           while (reader.next(key, value)) {
             count++;
           }
@@ -179,10 +160,13 @@ public class SequenceFileDumper {
           writer.close();
         }
         reader.close();
+
+      } else {
+        cli.printUsage();
       }
 
     } catch (ParseException e) {
-      LOG.info("Error : " + e);
+      LOG.error(e.getMessage());
       cli.printUsage();
       return;
     }

@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.pipes.protocol;
 
 import java.io.IOException;
@@ -42,6 +41,7 @@ public interface DownwardProtocol<K1, V1, K2, V2> {
   /**
    * Set the BSP Job Configuration
    * 
+   * @param conf The job's configuration
    * @throws IOException
    */
   void setBSPJobConf(Configuration conf) throws IOException;
@@ -58,6 +58,8 @@ public interface DownwardProtocol<K1, V1, K2, V2> {
   /**
    * runSetup
    * 
+   * @param pipedInput use pipedInput
+   * @param pipedOutput use pipedOutput
    * @throws IOException
    */
   void runSetup(boolean pipedInput, boolean pipedOutput) throws IOException;
@@ -65,6 +67,8 @@ public interface DownwardProtocol<K1, V1, K2, V2> {
   /**
    * runBsp
    * 
+   * @param pipedInput use pipedInput
+   * @param pipedOutput use pipedOutput
    * @throws IOException
    */
   void runBsp(boolean pipedInput, boolean pipedOutput) throws IOException;
@@ -72,6 +76,8 @@ public interface DownwardProtocol<K1, V1, K2, V2> {
   /**
    * runCleanup
    * 
+   * @param pipedInput use pipedInput
+   * @param pipedOutput use pipedOutput
    * @throws IOException
    */
   void runCleanup(boolean pipedInput, boolean pipedOutput) throws IOException;
@@ -79,6 +85,9 @@ public interface DownwardProtocol<K1, V1, K2, V2> {
   /**
    * getPartition
    * 
+   * @param key
+   * @param value
+   * @param numTasks number of available tasks
    * @throws IOException
    */
   int getPartition(K1 key, V1 value, int numTasks) throws IOException;

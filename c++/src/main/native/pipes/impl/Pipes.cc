@@ -28,9 +28,9 @@ public:
     HADOOP_ASSERT(out_stream_->open(out_stream), "problem opening stream");
   }
   
-  /* local function */
+  /* local sendCommand function */
   void sendCommand(int32_t cmd, bool flush) {
-    serializeInt(cmd, *out_stream_);
+    serialize<int32_t>(cmd, *out_stream_);
     if (flush) {
       out_stream_->flush();
     }
@@ -111,25 +111,25 @@ public:
   /*
    virtual void registerCounter(int id, const string& group,
    const string& name) {
-   serializeInt(REGISTER_COUNTER, *stream);
-   serializeInt(id, *stream);
-   serializeString(group, *stream);
-   serializeString(name, *stream);
+   serialize<int32_t>(REGISTER_COUNTER, *stream);
+   serialize<int32_t>(id, *stream);
+   serialize<string>(group, *stream);
+   serialize<string>(name, *stream);
    }
    
    virtual void incrementCounter(const TaskContext::Counter* counter,
    uint64_t amount) {
-   serializeInt(INCREMENT_COUNTER, *stream);
-   serializeInt(counter->getId(), *stream);
-   serializeLong(amount, *stream);
+   serialize<int32_t>(INCREMENT_COUNTER, *stream);
+   serialize<int32_t>(counter->getId(), *stream);
+   serialize<int64_t>(amount, *stream);
    }
    */
   
   virtual void incrementCounter(const string& group, const string& name, uint64_t amount) {
-    serializeInt(INCREMENT_COUNTER, *out_stream_);
-    serializeString(group, *out_stream_);
-    serializeString(name, *out_stream_);
-    serializeLong(amount, *out_stream_);
+    serialize<int32_t>(INCREMENT_COUNTER, *out_stream_);
+    serialize<string>(group, *out_stream_);
+    serialize<string>(name, *out_stream_);
+    serialize<int64_t>(amount, *out_stream_);
     out_stream_->flush();
     if(logging) {
       fprintf(stderr,"HamaPipes::BinaryUpwardProtocol sent incrementCounter\n");
@@ -173,7 +173,7 @@ public:
     cmd = deserializeInt(*in_stream_);
     
     switch (cmd) {
-      
+        
       case START_MESSAGE: {
         int32_t protocol_version;
         protocol_version = deserialize<int32_t>(*in_stream_);
@@ -293,6 +293,17 @@ public:
   }
   
   /**
+   * Check for valid response command
+   */
+  bool verifyResult(int32_t expected_response_cmd) {
+    int32_t response = deserialize<int32_t>(*in_stream_);
+    if (response != expected_response_cmd) {
+      return false;
+    }
+    return true;
+  }
+  
+  /**
    * Wait for next event, which should be a response for
    * a previously sent command (expected_response_cmd)
    * and return the generic result
@@ -303,14 +314,13 @@ public:
     T result = T();
     
     // read response command
-    int32_t cmd;
-    cmd = deserializeInt(*in_stream_);
+    int32_t cmd = deserialize<int32_t>(*in_stream_);
     
     // check if response is expected
     if (expected_response_cmd == cmd) {
       
       switch (cmd) {
-        
+          
         case GET_MSG_COUNT: {
           T msg_count;
           msg_count = deserialize<T>(*in_stream_);
@@ -362,7 +372,7 @@ public:
           }
           return superstep_count;
         }
-        
+          
         case SEQFILE_OPEN: {
           T file_id = deserialize<T>(*in_stream_);
           if(logging) {
@@ -421,8 +431,7 @@ public:
     vector<T> results;
     
     // read response command
-    int32_t cmd;
-    cmd = deserializeInt(*in_stream_);
+    int32_t cmd = deserialize<int32_t>(*in_stream_);
     
     // check if response is expected
     if (expected_response_cmd == cmd) {
@@ -467,14 +476,13 @@ public:
     KeyValuePair<K,V> key_value_pair;
     
     // read response command
-    int32_t cmd;
-    cmd = deserializeInt(*in_stream_);
+    int32_t cmd = deserialize<int32_t>(*in_stream_);
     
     // check if response is expected or END_OF_DATA
     if ((expected_response_cmd == cmd) || (cmd == END_OF_DATA) ) {
       
       switch (cmd) {
-        
+          
         case READ_KEYVALUE: {
           K key = deserialize<K>(*in_stream_);
           V value = deserialize<V>(*in_stream_);
@@ -727,20 +735,27 @@ public:
   /**
    * Register a counter with the given group and name.
    */
-  /*
-   virtual Counter* getCounter(const std::string& group,
-   const std::string& name) {
-   int id = registeredCounterIds.size();
-   registeredCounterIds.push_back(id);
-   uplink->registerCounter(id, group, name);
-   return new Counter(id);
-   }*/
+  virtual long getCounter(const string& group, const string& name) {
+   // TODO
+   // int id = registeredCounterIds.size();
+   // registeredCounterIds.push_back(id);
+   // uplink->registerCounter(id, group, name);
+   // return new Counter(id);
+   return 0;
+  }
   
   /**
-   * Increment the value of the counter with the given amount.
+   * Increments the counter identified by the group and counter name by the
+   * specified amount.
    */
   virtual void incrementCounter(const string& group, const string& name, uint64_t amount)  {
     uplink_->incrementCounter(group, name, amount);
+    
+    // Verify response command
+    bool response = protocol_->verifyResult(INCREMENT_COUNTER);
+    if (response == false) {
+      throw Error("incrementCounter received wrong response!");
+    }
   }
   
   /********************************************/
@@ -775,6 +790,12 @@ public:
    */
   virtual void sendMessage(const string& peer_name, const M& msg) {
     uplink_->sendCommand<string,M>(SEND_MSG, peer_name, msg);
+    
+    // Verify response command
+    bool response = protocol_->verifyResult(SEND_MSG);
+    if (response == false) {
+      throw Error("sendMessage received wrong response!");
+    }
   }
   
   /**
@@ -815,6 +836,12 @@ public:
    */
   virtual void sync() {
     uplink_->sendCommand(SYNC);
+    
+    // Verify response command
+    bool response = protocol_->verifyResult(SYNC);
+    if (response == false) {
+      throw Error("sync received wrong response!");
+    }
   }
   
   /**
@@ -911,6 +938,12 @@ public:
    */
   virtual void clear() {
     uplink_->sendCommand(CLEAR);
+    
+    // Verify response command
+    bool response = protocol_->verifyResult(CLEAR);
+    if (response == false) {
+      throw Error("clear received wrong response!");
+    }
   }
   
   /**
@@ -918,9 +951,15 @@ public:
    */
   virtual void write(const K2& key, const V2& value) {
     if (writer_ != NULL) {
-      writer_->emit(key, value);
+      writer_->emit(key, value); // TODO writer not implemented
     } else {
       uplink_->sendCommand<K2,V2>(WRITE_KEYVALUE, key, value);
+    }
+
+    // Verify response command
+    bool response = protocol_->verifyResult(WRITE_KEYVALUE);
+    if (response == false) {
+      throw Error("write received wrong response!");
     }
   }
   
@@ -952,6 +991,12 @@ public:
    */
   virtual void reopenInput() {
     uplink_->sendCommand(REOPEN_INPUT);
+    
+    // Verify response command
+    bool response = protocol_->verifyResult(REOPEN_INPUT);
+    if (response == false) {
+      throw Error("reopenInput received wrong response!");
+    }
   }
   
   

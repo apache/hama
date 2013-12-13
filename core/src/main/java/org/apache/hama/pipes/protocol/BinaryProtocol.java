@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.pipes.protocol;
 
 import java.io.BufferedOutputStream;
@@ -50,8 +49,7 @@ import org.apache.hama.pipes.Submitter;
 public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
     DownwardProtocol<K1, V1, K2, V2> {
 
-  protected static final Log LOG = LogFactory.getLog(BinaryProtocol.class
-      .getName());
+  protected static final Log LOG = LogFactory.getLog(BinaryProtocol.class);
   public static final int CURRENT_PROTOCOL_VERSION = 0;
   /**
    * The buffer size for the command socket
@@ -74,7 +72,7 @@ public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
    * Upward messages are passed on the specified handler and downward downward
    * messages are public methods on this object.
    * 
-   * @param jobConfig The job's configuration
+   * @param conf The job's configuration
    * @param out The output stream to communicate on.
    * @param in The input stream to communicate on.
    * @throws IOException
@@ -362,8 +360,8 @@ public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
    * @throws IOException
    */
   protected void writeObject(Writable obj) throws IOException {
-    // For basic types IntWritable, LongWritable, FloatWritable, DoubleWritable,
-    // Text and BytesWritable, encode them directly, so that they end up
+    // For basic types IntWritable, LongWritable, Text and BytesWritable,
+    // encode them directly, so that they end up
     // in C++ as the natural translations.
     if (obj instanceof Text) {
       Text t = (Text) obj;
@@ -383,20 +381,8 @@ public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
     } else if (obj instanceof LongWritable) {
       WritableUtils.writeVLong(this.outStream, ((LongWritable) obj).get());
 
-      // else if ((obj instanceof FloatWritable) || (obj instanceof
-      // DoubleWritable))
-
     } else {
-      // Note: other types are transfered as String which should be implemented
-      // in Writable itself
-
-      // DataOutputBuffer buffer = new DataOutputBuffer();
-      // buffer.reset();
-      // obj.write(buffer);
-      // int length = buffer.getLength();
-      // WritableUtils.writeVInt(stream, length);
-      // stream.write(buffer.getData(), 0, length);
-
+      // Note: FloatWritable and DoubleWritable are written here
       obj.write(this.outStream);
     }
   }

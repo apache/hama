@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.pipes.protocol;
 
 import java.io.BufferedInputStream;
@@ -100,8 +99,9 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
         }
 
         int cmd = readCommand();
-        if (cmd == -1)
+        if (cmd == -1) {
           continue;
+        }
         LOG.debug("Handling uplink command: " + MessageType.values()[cmd]);
 
         if (cmd == MessageType.WRITE_KEYVALUE.code && isPeerAvailable()) { // INCOMING
@@ -114,8 +114,8 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
         } else if (cmd == MessageType.REGISTER_COUNTER.code
             && isPeerAvailable()) { // INCOMING
           /*
-           * Is not used in HAMA -> Hadoop Pipes - maybe for performance, skip
-           * transferring group and name each INCREMENT
+           * Is not used in Hama. Hadoop Pipes uses it - maybe for performance
+           * issue, skip transferring group and name each INCREMENT
            */
         } else if (cmd == MessageType.TASK_DONE.code) { // INCOMING
           synchronized (binProtocol.hasTaskLock) {
@@ -149,8 +149,8 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
         } else if (cmd == MessageType.REOPEN_INPUT.code && isPeerAvailable()) { // INCOMING
           reopenInput();
         } else if (cmd == MessageType.CLEAR.code && isPeerAvailable()) { // INCOMING
-          LOG.debug("Got MessageType.CLEAR");
-          peer.clear();
+          clear();
+
           /* SequenceFileConnector Implementation */
         } else if (cmd == MessageType.SEQFILE_OPEN.code) { // OUTGOING
           seqFileOpen();
@@ -161,6 +161,7 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
         } else if (cmd == MessageType.SEQFILE_CLOSE.code) { // OUTGOING
           seqFileClose();
           /* SequenceFileConnector Implementation */
+
         } else if (cmd == MessageType.PARTITION_RESPONSE.code) { // INCOMING
           partitionResponse();
         } else {
@@ -192,7 +193,22 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
 
   public void reopenInput() throws IOException {
     LOG.debug("Got MessageType.REOPEN_INPUT");
+
     peer.reopenInput();
+
+    WritableUtils.writeVInt(this.outStream, MessageType.REOPEN_INPUT.code);
+    binProtocol.flush();
+    LOG.debug("Responded MessageType.REOPEN_INPUT");
+  }
+
+  public void clear() throws IOException {
+    LOG.debug("Got MessageType.CLEAR");
+
+    peer.clear();
+
+    WritableUtils.writeVInt(this.outStream, MessageType.CLEAR.code);
+    binProtocol.flush();
+    LOG.debug("Responded MessageType.CLEAR");
   }
 
   public void getSuperstepCount() throws IOException {
@@ -257,7 +273,12 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
 
   public void sync() throws IOException, SyncException, InterruptedException {
     LOG.debug("Got MessageType.SYNC");
+
     peer.sync(); // this call blocks
+
+    WritableUtils.writeVInt(this.outStream, MessageType.SYNC.code);
+    binProtocol.flush();
+    LOG.debug("Responded MessageType.SYNC");
   }
 
   public void getMessage() throws IOException {
@@ -282,10 +303,20 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
   }
 
   public void incrementCounter() throws IOException {
+    LOG.debug("Got MessageType.INCREMENT_COUNTER");
+
     String group = Text.readString(this.inStream);
     String name = Text.readString(this.inStream);
     long amount = WritableUtils.readVLong(this.inStream);
+
+    LOG.debug("Got MessageType.INCREMENT_COUNTER group: " + group + " name: "
+        + name + " amount: " + amount);
+
     peer.incrementCounter(group, name, amount);
+
+    WritableUtils.writeVInt(this.outStream, MessageType.INCREMENT_COUNTER.code);
+    binProtocol.flush();
+    LOG.debug("Responded MessageType.INCREMENT_COUNTER");
   }
 
   @SuppressWarnings("unchecked")
@@ -303,7 +334,11 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
 
     peer.send(peerName, message);
 
-    LOG.debug("Done MessageType.SEND_MSG to peerName: "
+    WritableUtils.writeVInt(this.outStream, MessageType.SEND_MSG.code);
+    binProtocol.flush();
+    LOG.debug("Responded MessageType.SEND_MSG");
+
+    LOG.debug("Sent message to peerName: "
         + peerName
         + " messageClass: "
         + message.getClass().getName()
@@ -362,13 +397,18 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
             Object.class), conf);
 
     LOG.debug("Got MessageType.WRITE_KEYVALUE keyOutClass: "
-        + keyOut.getClass().getName() + " valueOutClass: " + valueOut.getClass().getName());
+        + keyOut.getClass().getName() + " valueOutClass: "
+        + valueOut.getClass().getName());
 
     readObject((Writable) keyOut);
     readObject((Writable) valueOut);
 
     peer.write(keyOut, valueOut);
 
+    WritableUtils.writeVInt(this.outStream, MessageType.WRITE_KEYVALUE.code);
+    binProtocol.flush();
+    LOG.debug("Responded MessageType.WRITE_KEYVALUE");
+    
     LOG.debug("Done MessageType.WRITE_KEYVALUE -"
         + " Key: "
         + ((keyOut.toString().length() < 10) ? keyOut.toString() : keyOut
@@ -385,6 +425,7 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
     // key and value class stored in the SequenceFile
     String keyClass = Text.readString(this.inStream);
     String valueClass = Text.readString(this.inStream);
+    LOG.debug("GOT MessageType.SEQFILE_OPEN - Path: " + path);
     LOG.debug("GOT MessageType.SEQFILE_OPEN - Option: " + option);
     LOG.debug("GOT MessageType.SEQFILE_OPEN - KeyClass: " + keyClass);
     LOG.debug("GOT MessageType.SEQFILE_OPEN - ValueClass: " + valueClass);
@@ -418,8 +459,10 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
                         sequenceKeyWritable, sequenceValueWritable)));
 
       } catch (IOException e) {
+        LOG.error("SEQFILE_OPEN - " + e.getMessage());
         fileID = -1;
       } catch (ClassNotFoundException e) {
+        LOG.error("SEQFILE_OPEN - " + e.getMessage());
         fileID = -1;
       }
 
@@ -451,10 +494,14 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
                         sequenceKeyWritable, sequenceValueWritable)));
 
       } catch (IOException e) {
+        LOG.error("SEQFILE_OPEN - " + e.getMessage());
         fileID = -1;
       } catch (ClassNotFoundException e) {
+        LOG.error("SEQFILE_OPEN - " + e.getMessage());
         fileID = -1;
       }
+    } else { // wrong option
+      LOG.error("SEQFILE_OPEN - Wrong option: '" + option + "'");
     }
 
     WritableUtils.writeVInt(this.outStream, MessageType.SEQFILE_OPEN.code);
@@ -518,9 +565,9 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
     // check if fileID is available in sequenceFileWriter
     if (sequenceFileWriters.containsKey(fileID)) {
 
-      Writable sequenceKeyWritable = sequenceFileReaders.get(fileID).getValue()
+      Writable sequenceKeyWritable = sequenceFileWriters.get(fileID).getValue()
           .getKey();
-      Writable sequenceValueWritable = sequenceFileReaders.get(fileID)
+      Writable sequenceValueWritable = sequenceFileWriters.get(fileID)
           .getValue().getValue();
 
       // try to read key and value
@@ -555,6 +602,7 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
 
   public void seqFileClose() throws IOException {
     int fileID = WritableUtils.readVInt(this.inStream);
+    LOG.debug("GOT MessageType.SEQFILE_CLOSE - FileID: " + fileID);
 
     boolean result = false;
 
@@ -594,11 +642,9 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
    */
   protected void readObject(Writable obj) throws IOException {
     byte[] buffer;
-
     // For BytesWritable and Text, use the specified length to set the length
     // this causes the "obvious" translations to work. So that if you emit
     // a string "abc" from C++, it shows up as "abc".
-
     if (obj instanceof Text) {
       int numBytes = WritableUtils.readVInt(this.inStream);
       buffer = new byte[numBytes];
@@ -612,29 +658,22 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
       ((BytesWritable) obj).set(buffer, 0, numBytes);
 
     } else if (obj instanceof IntWritable) {
-      LOG.debug("read IntWritable");
       ((IntWritable) obj).set(WritableUtils.readVInt(this.inStream));
 
     } else if (obj instanceof LongWritable) {
       ((LongWritable) obj).set(WritableUtils.readVLong(this.inStream));
 
-      // else if ((obj instanceof FloatWritable) || (obj instanceof
-      // DoubleWritable))
-
     } else if (obj instanceof NullWritable) {
       throw new IOException("Cannot read data into NullWritable!");
 
     } else {
-      // Note: other types are transfered as String which should be implemented
-      // in Writable itself
       try {
-        LOG.debug("reading other type");
+        LOG.debug("reading type: " + obj.getClass().getName());
+
         // try reading object
         obj.readFields(this.inStream);
-        // String s = Text.readString(inStream);
 
       } catch (IOException e) {
-
         throw new IOException("Hama Pipes is not able to read "
             + obj.getClass().getName(), e);
       }

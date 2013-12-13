@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.pipes;
 
 import java.io.BufferedReader;
@@ -361,12 +360,12 @@ public class PipesApplication<K1, V1, K2, V2, M extends Writable> {
    * 
    * @throws IOException
    */
-  public void cleanup() throws IOException {
+  public void cleanup(boolean sendClose) throws IOException {
     if (serverSocket != null) {
       serverSocket.close();
     }
     try {
-      if (downlink != null) {
+      if ((downlink != null) && (sendClose)) {
         downlink.close();
       }
     } catch (InterruptedException ie) {

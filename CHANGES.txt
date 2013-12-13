@@ -17,6 +17,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-829: Improve code and fix Javadoc warnings in org.apache.hama.pipes (Martin Illecker)
    HAMA-808: Hama Pipes Testcase (Martin Illecker)
    HAMA-828: Improve code, fix typo and modify unclear comment in org.apache.hama.ml.ann package (Yexi Jiang)
    HAMA-699: Add commons module (Martin Illecker)

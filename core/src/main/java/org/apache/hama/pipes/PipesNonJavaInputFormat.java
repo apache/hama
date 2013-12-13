@@ -31,12 +31,11 @@ import org.apache.hama.bsp.TextInputFormat;
 
 /**
  * Dummy input format used when non-Java a {@link RecordReader} is used by the
- * Pipes' application.
+ * Pipes application.
  * 
- * The only useful thing this does is set up the Map-Reduce job to get the
- * {@link PipesDummyRecordReader}, everything else left for the 'actual'
- * InputFormat specified by the user which is given by
- * <i>mapred.pipes.user.inputformat</i>.
+ * The only useful thing this does is set up the BSP job to get the
+ * PipesDummyRecordReader, everything else left for the 'actual' InputFormat
+ * specified by the user which is given by <i>hama.pipes.user.inputformat</i>.
  * 
  * Adapted from Hadoop Pipes.
  * 

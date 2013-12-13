@@ -238,6 +238,7 @@ namespace HamaPipes {
      * Register a counter with the given group and name.
      */
     //virtual Counter* getCounter(const string& group, const string& name) = 0;
+    virtual long getCounter(const string& group, const string& name) = 0;
     
     /**
      * Increment the value of the counter with the given amount.
@@ -329,6 +330,7 @@ namespace HamaPipes {
     }
     
     virtual void nextEvent() = 0;
+    virtual bool verifyResult(int32_t expected_response_cmd) = 0;
     virtual UpwardProtocol<BinaryUpwardProtocol>* getUplink() = 0;
     virtual ~Protocol(){}
   };

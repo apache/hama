@@ -37,7 +37,7 @@ Run summation example
 View input and output data
 
 % hadoop fs -cat /examples/input/summation/input.txt
-% hama seqdumper -seqFile /examples/output/summation/part-00000
+% hama seqdumper -file /examples/output/summation/part-00000
 
 You should see
 # Input Path: /examples/output/summation/part-00000
@@ -68,7 +68,7 @@ Run piestimator example because no input data is needed
 
 View output data
 
-% hama seqdumper -seqFile /examples/output/piestimator/part-00001
+% hama seqdumper -file /examples/output/piestimator/part-00001
 
 You should see
 # Input Path: /examples/output/piestimator/part-00001
@@ -111,14 +111,14 @@ Run matrixmultiplication example
 View input and output data
 
 % hama seqdumper \
- -seqFile /examples/input/matrixmultiplication/MatrixA.seq
+ -file /examples/input/matrixmultiplication/MatrixA.seq
 
 % hama seqdumper \
- -seqFile  \
+ -file  \
  /examples/input/matrixmultiplication/MatrixB_transposed.seq
 
-% hama seqdumper -seqFile \
-  /examples/output/matrixmultiplication/part-00001
+% hama seqdumper \
+ -file /examples/output/matrixmultiplication/part-00001
 
 Delete output folder
 

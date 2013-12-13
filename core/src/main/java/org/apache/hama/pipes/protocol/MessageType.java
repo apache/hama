@@ -15,13 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.hama.pipes.protocol;
 
 /**
  * The integer codes to represent the different messages. These must match the
  * C++ codes or massive confusion will result.
- * 
  */
 public enum MessageType {
   START(0), SET_BSPJOB_CONF(1), SET_INPUT_TYPES(2), RUN_SETUP(3), RUN_BSP(4),

@@ -93,7 +93,7 @@ public class PipesBSP<K1 extends Writable, V1 extends Writable, K2 extends Writa
     } catch (InterruptedException e) {
       e.printStackTrace();
     } finally {
-      this.application.cleanup();
+      this.application.cleanup(true);
     }
   }
 
