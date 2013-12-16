@@ -62,7 +62,7 @@ public class Kmeans {
       return;
     }
     HamaConfiguration conf = new HamaConfiguration();
-    
+
     Path in = new Path(args[0]);
     Path out = new Path(args[1]);
     FileSystem fs = FileSystem.get(conf);
@@ -94,12 +94,18 @@ public class Kmeans {
 
     BSPJob job = KMeansBSP.createJob(conf, in, out, true);
 
+    long startTime = System.currentTimeMillis();
     // just submit the job
-    job.waitForCompletion(true);
+    if (job.waitForCompletion(true)) {
+      System.out.println("Job Finished in "
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+    }
 
-    List<String> results = KMeansBSP.readOutput(conf, out, fs, 10);
+    System.out.println("\nHere are a few lines of output:");
+    List<String> results = KMeansBSP.readOutput(conf, out, fs, 4);
     for (String line : results) {
       System.out.println(line);
     }
+    System.out.println("...");
   }
 }
