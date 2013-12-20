@@ -33,7 +33,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <br/><br/>
     Hama can make jobs that take hours in Hadoop run in minutes. For details, see the <a href="http://wiki.apache.org/hama/Benchmarks">Performance Benchmarks</a>.
     </td><td width="505" valign="top">
-    <div align="center"><img src="/images/mahout_vs_hama.png" width="500"/>
+    <div align="center"><img src="images/mahout_vs_hama.png" width="500"/>
     </div>
     </td></tr></table>
 
