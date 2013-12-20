@@ -23,29 +23,20 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
   <body>
 
     <section name="Apache Hama"></section>
-      <p>
-      <strong>Apache Hama</strong> is a pure BSP (Bulk Synchronous Parallel) computing framework on top of HDFS (Hadoop Distributed File System) for massive scientific computations 
-      such as matrix, graph and network algorithms.</p>
-      <div class="green">
-          <h3 align="center">Recent News</h3>
-          <ul>
-            <li>October 11, 2013: release 0.6.3. available</li>
-            <li>June 26, 2013: release 0.6.2. available</li>
-            <li>April 01, 2013: release 0.6.1. available</li>
-            <li>November 28, 2012: release 0.6.0 available</li>
-            <li>June 31, 2012: release 0.5.0 available</li>
-            <li>May 17, 2012: Apache Hama graduated as a Top Level Project!</li>
-          </ul>
-      </div>
-    <subsection name="Why Hama and BSP?"></subsection>
-    <p>Today, many practical data processing applications require a more flexible programming abstraction model that is compatible to run on highly scalable and massive data systems (e.g., HDFS, HBase, etc). A message passing paradigm beyond Map-Reduce framework would increase its flexibility in its communication capability. Bulk Synchronous Parallel (BSP) model fills the bill appropriately. Some of its significant advantages over MapReduce and MPI are:</p>
-    <ul>
-      <li>Supports message passing paradigm style of application development</li>
-      <li>Provides a flexible, simple, and easy-to-use small APIs</li>
-      <li>Enables to perform better than MPI for communication-intensive applications</li>
-      <li>Guarantees impossibility of deadlocks or collisions in the communication mechanisms</li>
-    </ul>
-    
+
+    <table class="maintable"><tr><td valign="top">
+    <strong>Apache Hama</strong> is an Apache Top-Level open source project, allowing you to do advanced analytics beyond MapReduce.
+    <br/><br/>
+    Many data analysis techniques such as machine learning and graph algorithms require iterative computations, 
+    this is where Bulk Synchronous Parallel model can be more effective than "plain" MapReduce. 
+    Therefore To run such iterative data analysis applications more efficiently, Hama offers pure Bulk Synchronous Parallel computing engine. 
+    <br/><br/>
+    Hama can make jobs that take hours in Hadoop run in minutes. For details, see the <a href="http://wiki.apache.org/hama/Benchmarks">Performance Benchmarks</a>.
+    </td><td width="505" valign="top">
+    <div align="center"><img src="https://lh4.googleusercontent.com/-lFlUUZS0nOI/UrJ5PwxAX4I/AAAAAAAAEv4/UzSD2NzsWPw/w820-h449-no/xx.png" width="500"/>
+    </div>
+    </td></tr></table>
+
     <subsection name="Getting Started"></subsection>
       <p>
       Start by installing Hama on a Hadoop cluster.

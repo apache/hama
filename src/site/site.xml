@@ -48,7 +48,6 @@
 
   ga('create', 'UA-46300992-1', 'apache.org');
   ga('send', 'pageview');
-
   </script>
   </head>
     <links position="left">
@@ -82,7 +81,6 @@
       <item name="Run Examples" href="run_examples.html" />
       <item name="BSP tutorial" href="hama_bsp_tutorial.html" />
       <item name="Graph tutorial" href="hama_graph_tutorial.html" />
-      <item name="Benchmarks" href="http://wiki.apache.org/hama/Benchmarks" />
       <item name="Presentations" href="http://wiki.apache.org/hama/Presentations" />
       <item name="Research Papers" href="http://wiki.apache.org/hama/Articles" />
       <item name="Books" href="http://wiki.apache.org/hama/Books" />

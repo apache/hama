@@ -16,7 +16,7 @@
 */
 
 p {
-  padding: 0px 13px 0px 13px;
+  padding: 0px 0px 0px 0px;
 }
 
 body a:link {
@@ -40,12 +40,18 @@ h5 {
 }
 
 table {
-  width: 95%;
-  margin-left:2em;
+  width: 100%;
 }
 
 ul {
- margin-left:10px; 
+  margin-left:10px; 
+}
+
+.maintable {
+  width: 100%;
+  margin-left: 0em;
+  padding: 0px 0px 0px 0px;
+  border: 0px;
 }
 
 #bodyColumn {
