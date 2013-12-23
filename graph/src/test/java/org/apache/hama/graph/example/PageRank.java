@@ -43,7 +43,7 @@ public class PageRank {
 
   public static class PageRankVertex extends
       Vertex<Text, NullWritable, DoubleWritable> {
-
+    
     static double DAMPING_FACTOR = 0.85;
     static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
 

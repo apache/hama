@@ -44,7 +44,8 @@ import org.junit.Before;
 public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
 
   String[] input = new String[] { "stackoverflow.com\tyahoo.com",
-      "facebook.com\ttwitter.com\tgoogle.com\tnasa.gov",
+      "facebook.com\ttwitter.com", 
+      "facebook.com\tgoogle.com\tnasa.gov",
       "yahoo.com\tnasa.gov\tstackoverflow.com",
       "twitter.com\tgoogle.com\tfacebook.com",
       "nasa.gov\tyahoo.com\tstackoverflow.com",
@@ -52,11 +53,11 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
 
   private static String INPUT = "/tmp/pagerank/real-tmp.seq";
   private static String OUTPUT = "/tmp/pagerank/real-out";
-
+  @SuppressWarnings("rawtypes")
   private static final List<Class<? extends VerticesInfo>> vi = new ArrayList<Class<? extends VerticesInfo>>();
 
   @Before
-  public void setUp() throws Exception  {
+  public void setUp() throws Exception {
     super.setUp();
     vi.add(ListVerticesInfo.class);
     vi.add(DiskVerticesInfo.class);
@@ -113,9 +114,11 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     }
   }
 
+  @SuppressWarnings("rawtypes")
   protected void injectVerticesInfo() {
-    Class<? extends VerticesInfo> verticesInfoClass = vi.get(Math.abs(new Random().nextInt() % 3));
-    LOG.info("using vertices info of type : "+verticesInfoClass.getName());
+    Class<? extends VerticesInfo> verticesInfoClass = vi.get(Math
+        .abs(new Random().nextInt() % 3));
+    LOG.info("using vertices info of type : " + verticesInfoClass.getName());
   }
 
   private void verifyResult() throws IOException {

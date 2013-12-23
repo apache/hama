@@ -71,11 +71,16 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   public static final String S_FLAG_VERTEX_TOTAL_VERTICES = "hama.6";
   public static final String S_FLAG_AGGREGATOR_SKIP = "hama.7";
   public static final Text FLAG_MESSAGE_COUNTS = new Text(S_FLAG_MESSAGE_COUNTS);
-  public static final Text FLAG_VERTEX_INCREASE = new Text(S_FLAG_VERTEX_INCREASE);
-  public static final Text FLAG_VERTEX_DECREASE = new Text(S_FLAG_VERTEX_DECREASE);
-  public static final Text FLAG_VERTEX_ALTER_COUNTER = new Text(S_FLAG_VERTEX_ALTER_COUNTER);
-  public static final Text FLAG_VERTEX_TOTAL_VERTICES = new Text(S_FLAG_VERTEX_TOTAL_VERTICES);
-  public static final Text FLAG_AGGREGATOR_SKIP = new Text(S_FLAG_AGGREGATOR_SKIP);
+  public static final Text FLAG_VERTEX_INCREASE = new Text(
+      S_FLAG_VERTEX_INCREASE);
+  public static final Text FLAG_VERTEX_DECREASE = new Text(
+      S_FLAG_VERTEX_DECREASE);
+  public static final Text FLAG_VERTEX_ALTER_COUNTER = new Text(
+      S_FLAG_VERTEX_ALTER_COUNTER);
+  public static final Text FLAG_VERTEX_TOTAL_VERTICES = new Text(
+      S_FLAG_VERTEX_TOTAL_VERTICES);
+  public static final Text FLAG_AGGREGATOR_SKIP = new Text(
+      S_FLAG_AGGREGATOR_SKIP);
 
   public static final String MESSAGE_COMBINER_CLASS_KEY = "hama.vertex.message.combiner.class";
   public static final String VERTEX_CLASS_KEY = "hama.graph.vertex.class";
@@ -180,18 +185,24 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     if (isMasterTask(peer) && iteration == 1) {
       MapWritable updatedCnt = new MapWritable();
-      updatedCnt.put(FLAG_VERTEX_TOTAL_VERTICES, new LongWritable((peer.getCounter(GraphJobCounter.INPUT_VERTICES).getCounter())));
+      updatedCnt.put(
+          FLAG_VERTEX_TOTAL_VERTICES,
+          new LongWritable((peer.getCounter(GraphJobCounter.INPUT_VERTICES)
+              .getCounter())));
       // send the updates from the master tasks back to the slaves
       for (String peerName : peer.getAllPeerNames()) {
         peer.send(peerName, new GraphJobMessage(updatedCnt));
       }
     }
-    
+
     // this is only done in every second iteration
     if (isMasterTask(peer) && iteration > 1) {
       MapWritable updatedCnt = new MapWritable();
-      // send total number of vertices.      
-      updatedCnt.put(FLAG_VERTEX_TOTAL_VERTICES, new LongWritable((peer.getCounter(GraphJobCounter.INPUT_VERTICES).getCounter())));
+      // send total number of vertices.
+      updatedCnt.put(
+          FLAG_VERTEX_TOTAL_VERTICES,
+          new LongWritable((peer.getCounter(GraphJobCounter.INPUT_VERTICES)
+              .getCounter())));
       // exit if there's no update made
       if (globalUpdateCounts == 0) {
         updatedCnt.put(FLAG_MESSAGE_COUNTS, new IntWritable(Integer.MIN_VALUE));
@@ -217,8 +228,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       // now sync
       peer.sync();
       // now the map message must be read that might be send from the master
-      updated = getAggregationRunner().receiveAggregatedValues(peer
-          .getCurrentMessage().getMap(), iteration);
+      updated = getAggregationRunner().receiveAggregatedValues(
+          peer.getCurrentMessage().getMap(), iteration);
       // set the first vertex message back to the message it had before sync
       firstVertexMessage = peer.getCurrentMessage();
     }
@@ -281,7 +292,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     }
     vertices.finishSuperstep();
 
-    getAggregationRunner().sendAggregatorValues(peer, activeVertices, this.changedVertexCnt);
+    getAggregationRunner().sendAggregatorValues(peer, activeVertices,
+        this.changedVertexCnt);
     iteration++;
   }
 
@@ -305,15 +317,15 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     if (conf.getBoolean("hama.check.missing.vertex", true)) {
       if (comparision < 0) {
         throw new IllegalArgumentException(
-          "Messages must never be behind the vertex in ID! Current Message ID: "
-              + firstMessageId + " vs. " + vertex.getVertexID());
-      } 
+            "Messages must never be behind the vertex in ID! Current Message ID: "
+                + firstMessageId + " vs. " + vertex.getVertexID());
+      }
     } else {
       while (comparision < 0) {
-        VertexMessageIterable<V, M> messageIterable = new VertexMessageIterable<V, M>(currentMessage,
-          firstMessageId, peer);
+        VertexMessageIterable<V, M> messageIterable = new VertexMessageIterable<V, M>(
+            currentMessage, firstMessageId, peer);
         currentMessage = messageIterable.getOverflowMessage();
-        firstMessageId = (V)currentMessage.getVertexId();
+        firstMessageId = (V) currentMessage.getVertexId();
         comparision = firstMessageId.compareTo(vertex.getVertexID());
       }
     }
@@ -383,7 +395,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     setAggregationRunner(new AggregationRunner<V, E, M>());
     getAggregationRunner().setupAggregators(peer);
 
-    Class<? extends VerticesInfo<V, E, M>> verticesInfoClass = (Class<? extends VerticesInfo<V, E, M>>) conf.getClass("hama.graph.vertices.info", ListVerticesInfo.class, VerticesInfo.class);
+    Class<? extends VerticesInfo<V, E, M>> verticesInfoClass = (Class<? extends VerticesInfo<V, E, M>>) conf
+        .getClass("hama.graph.vertices.info", ListVerticesInfo.class,
+            VerticesInfo.class);
     vertices = ReflectionUtils.newInstance(verticesInfoClass);
     vertices.init(this, conf, peer.getTaskId());
   }
@@ -424,25 +438,44 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     // our VertexInputReader ensures incoming vertices are sorted by their ID
     Vertex<V, E, M> vertex = GraphJobRunner
         .<V, E, M> newVertexInstance(VERTEX_CLASS);
+    Vertex<V, E, M> currentVertex = GraphJobRunner
+        .<V, E, M> newVertexInstance(VERTEX_CLASS);
+
     KeyValuePair<Writable, Writable> record = null;
     KeyValuePair<Writable, Writable> converted = null;
+
     while ((record = peer.readNext()) != null) {
       converted = converter.convertRecord(record, conf);
-      vertex = (Vertex<V, E, M>) converted.getKey();
-      vertex.setRunner(this);
-      vertex.setup(conf);
+      currentVertex = (Vertex<V, E, M>) converted.getKey();
 
-      if (selfReference) {
-        vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
+      if (vertex.getVertexID() == null) {
+        vertex = currentVertex;
+      } else {
+        if (vertex.getVertexID().equals(currentVertex.getVertexID())) {
+          for (Edge<V, E> edge : currentVertex.getEdges()) {
+            vertex.addEdge(edge);
+          }
+        } else {
+          vertex.setRunner(this);
+          vertex.setup(conf);
+
+          if (selfReference) {
+            vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
+          }
+
+          vertices.addVertex(vertex);
+          vertex = currentVertex;
+        }
       }
-
-      vertices.addVertex(vertex);
-
-      // Reinitializing vertex object for memory based implementations of
-      // VerticesInfo
-      vertex = GraphJobRunner.<V, E, M> newVertexInstance(VERTEX_CLASS);
-      vertex.setRunner(this);
     }
+    // add last vertex.
+    vertex.setRunner(this);
+    vertex.setup(conf);
+    if (selfReference) {
+      vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
+    }
+    vertices.addVertex(vertex);
+
     vertices.finishAdditions();
     // finish the "superstep" because we have written a new file here
     vertices.finishSuperstep();
@@ -454,32 +487,37 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   /**
    * Add new vertex into memory of each peer.
-   * @throws IOException 
+   * 
+   * @throws IOException
    */
   private void addVertex(Vertex<V, E, M> vertex) throws IOException {
     vertex.setRunner(this);
     vertex.setup(conf);
-          
+
     if (conf.getBoolean("hama.graph.self.ref", false)) {
       vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
     }
-    
-    LOG.debug("Added VertexID: " + vertex.getVertexID() + " in peer " + peer.getPeerName());
+
+    LOG.debug("Added VertexID: " + vertex.getVertexID() + " in peer "
+        + peer.getPeerName());
     vertices.addVertex(vertex);
   }
 
   /**
    * Remove vertex from this peer.
-   * @throws IOException 
+   * 
+   * @throws IOException
    */
   private void removeVertex(V vertexID) {
     vertices.removeVertex(vertexID);
-    LOG.debug("Removed VertexID: " + vertexID + " in peer " + peer.getPeerName());
+    LOG.debug("Removed VertexID: " + vertexID + " in peer "
+        + peer.getPeerName());
   }
 
   /**
    * After all inserts are done, we must finalize the VertexInfo data structure.
-   * @throws IOException 
+   * 
+   * @throws IOException
    */
   private void finishAdditions() throws IOException {
     vertices.finishAdditions();
@@ -489,7 +527,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   /**
    * After all inserts are done, we must finalize the VertexInfo data structure.
-   * @throws IOException 
+   * 
+   * @throws IOException
    */
   private void finishRemovals() throws IOException {
     vertices.finishRemovals();
@@ -534,8 +573,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       throws IOException, SyncException, InterruptedException {
     GraphJobMessage msg = null;
     boolean dynamicAdditions = false;
-    boolean dynamicRemovals  = false;
-    
+    boolean dynamicRemovals = false;
+
     while ((msg = peer.getCurrentMessage()) != null) {
       // either this is a vertex message or a directive that must be read
       // as map
@@ -559,8 +598,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
                 (M) e.getValue());
           } else if (getAggregationRunner().isEnabled()
               && vertexID.toString().startsWith(S_FLAG_AGGREGATOR_INCREMENT)) {
-            getAggregationRunner().masterReadAggregatedIncrementalValue(vertexID,
-                (M) e.getValue());
+            getAggregationRunner().masterReadAggregatedIncrementalValue(
+                vertexID, (M) e.getValue());
           } else if (FLAG_VERTEX_INCREASE.equals(vertexID)) {
             dynamicAdditions = true;
             addVertex((Vertex<V, E, M>) e.getValue());
@@ -571,15 +610,20 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
             this.numberVertices = ((LongWritable) e.getValue()).get();
           } else if (FLAG_VERTEX_ALTER_COUNTER.equals(vertexID)) {
             if (isMasterTask(peer)) {
-              peer.getCounter(GraphJobCounter.INPUT_VERTICES).increment(((LongWritable) e.getValue()).get());
+              peer.getCounter(GraphJobCounter.INPUT_VERTICES).increment(
+                  ((LongWritable) e.getValue()).get());
             } else {
-              throw new UnsupportedOperationException("A message to increase vertex count is in a wrong place: " + peer);
+              throw new UnsupportedOperationException(
+                  "A message to increase vertex count is in a wrong place: "
+                      + peer);
             }
           } else if (FLAG_AGGREGATOR_SKIP.equals(vertexID)) {
             if (isMasterTask(peer)) {
-              this.getAggregationRunner().addSkipAggregator(((IntWritable) e.getValue()).get());
+              this.getAggregationRunner().addSkipAggregator(
+                  ((IntWritable) e.getValue()).get());
             } else {
-              throw new UnsupportedOperationException("A message to skip aggregators is in a wrong peer: " + peer);
+              throw new UnsupportedOperationException(
+                  "A message to skip aggregators is in a wrong peer: " + peer);
             }
           }
         }
@@ -590,14 +634,15 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     }
 
-    // If we applied any changes to vertices, we need to call finishAdditions and finishRemovals in the end.
+    // If we applied any changes to vertices, we need to call finishAdditions
+    // and finishRemovals in the end.
     if (dynamicAdditions) {
       finishAdditions();
     }
     if (dynamicRemovals) {
       finishRemovals();
     }
-    
+
     return msg;
   }
 
