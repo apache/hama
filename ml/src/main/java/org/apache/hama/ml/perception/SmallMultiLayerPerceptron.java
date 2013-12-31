@@ -115,7 +115,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
 
       this.weightMatrice[i].applyToElements(new DoubleFunction() {
 
-        private Random rnd = new Random();
+        private final Random rnd = new Random();
 
         @Override
         public double apply(double value) {
@@ -556,8 +556,8 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     for (int i = 0; i < mat.length; ++i) {
       sb.append(String.format("Matrix [%d]\n", i));
       double[][] values = mat[i].getValues();
-      for (int d = 0; d < values.length; ++d) {
-        sb.append(Arrays.toString(values[d]));
+      for (double[] value : values) {
+        sb.append(Arrays.toString(value));
         sb.append('\n');
       }
       sb.append('\n');

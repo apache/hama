@@ -35,7 +35,7 @@ import org.apache.hama.ml.util.FeatureTransformer;
 public class LinearRegression {
 
   /* Internal model */
-  private SmallLayeredNeuralNetwork ann;
+  private final SmallLayeredNeuralNetwork ann;
 
   public LinearRegression(int dimension) {
     ann = new SmallLayeredNeuralNetwork();

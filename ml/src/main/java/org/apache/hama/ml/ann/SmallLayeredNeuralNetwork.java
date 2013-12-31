@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -145,9 +146,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   void setPrevWeightMatrices(DoubleMatrix[] prevUpdates) {
     this.prevWeightUpdatesList.clear();
-    for (DoubleMatrix prevUpdate : prevUpdates) {
-      this.prevWeightUpdatesList.add(prevUpdate);
-    }
+    Collections.addAll(this.prevWeightUpdatesList, prevUpdates);
   }
 
   /**
@@ -181,9 +180,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    */
   public void setWeightMatrices(DoubleMatrix[] matrices) {
     this.weightMatrixList = new ArrayList<DoubleMatrix>();
-    for (DoubleMatrix matrix : matrices) {
-      this.weightMatrixList.add(matrix);
-    }
+    Collections.addAll(this.weightMatrixList, matrices);
   }
 
   /**
@@ -239,15 +236,15 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
 
     // write squashing functions
     output.writeInt(this.squashingFunctionList.size());
-    for (int i = 0; i < this.squashingFunctionList.size(); ++i) {
-      WritableUtils.writeString(output, this.squashingFunctionList.get(i)
-          .getFunctionName());
+    for (DoubleFunction aSquashingFunctionList : this.squashingFunctionList) {
+      WritableUtils.writeString(output, aSquashingFunctionList
+              .getFunctionName());
     }
 
     // write weight matrices
     output.writeInt(this.weightMatrixList.size());
-    for (int i = 0; i < this.weightMatrixList.size(); ++i) {
-      MatrixWritable.write(this.weightMatrixList.get(i), output);
+    for (DoubleMatrix aWeightMatrixList : this.weightMatrixList) {
+      MatrixWritable.write(aWeightMatrixList, output);
     }
 
     // DO NOT WRITE WEIGHT UPDATE

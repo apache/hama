@@ -112,9 +112,7 @@ public final class KMeansBSP
       try {
         distanceMeasurer = ReflectionUtils.newInstance(distanceClass);
       } catch (ClassNotFoundException e) {
-        throw new RuntimeException(new StringBuilder(
-            "Wrong DistanceMeasurer implementation ").append(distanceClass)
-            .append(" provided").toString());
+        throw new RuntimeException("Wrong DistanceMeasurer implementation " + distanceClass + " provided");
       }
     } else {
       distanceMeasurer = new EuclidianDistance();

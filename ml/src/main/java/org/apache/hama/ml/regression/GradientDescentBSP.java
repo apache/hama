@@ -17,10 +17,6 @@
  */
 package org.apache.hama.ml.regression;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.Arrays;
-
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
@@ -31,6 +27,10 @@ import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.Arrays;
 
 /**
  * A gradient descent (see
@@ -195,9 +195,7 @@ public class GradientDescentBSP
       BSPPeer<VectorWritable, DoubleWritable, VectorWritable, DoubleWritable, VectorWritable> peer,
       int iterations, double totalCost) {
     if (iterations > 0 && cost < totalCost) {
-      throw new RuntimeException(new StringBuilder(
-          "gradient descent failed to converge with alpha ").append(alpha)
-          .toString());
+      throw new RuntimeException("gradient descent failed to converge with alpha " + alpha);
     } else if (totalCost == 0 || totalCost < costThreshold
         || iterations >= iterationsThreshold) {
       cost = totalCost;

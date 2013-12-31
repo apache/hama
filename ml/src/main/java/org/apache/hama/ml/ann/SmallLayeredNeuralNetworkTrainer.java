@@ -153,7 +153,7 @@ public final class SmallLayeredNeuralNetworkTrainer
     LongWritable key = new LongWritable();
     VectorWritable value = new VectorWritable();
     for (int recordsRead = 0; recordsRead < batchSize; ++recordsRead) {
-      if (peer.readNext(key, value) == false) {
+      if (!peer.readNext(key, value)) {
         peer.reopenInput();
         peer.readNext(key, value);
       }

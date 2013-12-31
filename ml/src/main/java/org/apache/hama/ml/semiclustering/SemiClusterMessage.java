@@ -138,9 +138,7 @@ public class SemiClusterMessage implements
       }
     }
     out.writeInt(semiClusterContainThis.size());
-    Iterator<SemiClusterDetails> itr = semiClusterContainThis.iterator();
-    while (itr.hasNext())
-      itr.next().write(out);
+    for (SemiClusterDetails semiClusterContainThi : semiClusterContainThis) semiClusterContainThi.write(out);
   }
 
   public Set<SemiClusterDetails> getSemiClusterContainThis() {

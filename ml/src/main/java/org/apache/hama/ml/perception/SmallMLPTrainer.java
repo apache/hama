@@ -315,8 +315,8 @@ class SmallMLPTrainer extends NeuralNetworkTrainer {
     for (int i = 0; i < mat.length; ++i) {
       sb.append(String.format("Matrix [%d]\n", i));
       double[][] values = mat[i].getValues();
-      for (int d = 0; d < values.length; ++d) {
-        sb.append(Arrays.toString(values[d]));
+      for (double[] value : values) {
+        sb.append(Arrays.toString(value));
         sb.append('\n');
       }
       sb.append('\n');

@@ -40,7 +40,7 @@ import com.google.common.base.Preconditions;
  */
 public class AutoEncoder {
 
-  private SmallLayeredNeuralNetwork model;
+  private final SmallLayeredNeuralNetwork model;
 
   /**
    * Initialize the autoencoder.

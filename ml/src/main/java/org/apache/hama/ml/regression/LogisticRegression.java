@@ -18,14 +18,14 @@
 
 package org.apache.hama.ml.regression;
 
-import java.io.IOException;
-import java.util.Map;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hama.commons.math.DoubleVector;
 import org.apache.hama.commons.math.FunctionFactory;
 import org.apache.hama.ml.ann.SmallLayeredNeuralNetwork;
 import org.apache.hama.ml.util.FeatureTransformer;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * The logistic regression model. It can be used to conduct 2-class
@@ -34,7 +34,7 @@ import org.apache.hama.ml.util.FeatureTransformer;
  */
 public class LogisticRegression {
   
-  private SmallLayeredNeuralNetwork ann;
+  private final SmallLayeredNeuralNetwork ann;
   
   public LogisticRegression(int dimension) {
     this.ann = new SmallLayeredNeuralNetwork();

@@ -89,10 +89,8 @@ public class SemiClusterDetails implements
         return false;
     } else if (!semiClusterId.equals(other.semiClusterId))
       return false;
-    if (Double.doubleToLongBits(semiClusterScore) != Double
-        .doubleToLongBits(other.semiClusterScore))
-      return false;
-    return true;
+    return Double.doubleToLongBits(semiClusterScore) == Double
+            .doubleToLongBits(other.semiClusterScore);
   }
 
   @Override

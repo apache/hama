@@ -20,7 +20,6 @@ package org.apache.hama.ml.ann;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.io.WritableUtils;
@@ -252,8 +251,8 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
 
     // write layer size list
     output.writeInt(this.layerSizeList.size());
-    for (int i = 0; i < this.layerSizeList.size(); ++i) {
-      output.writeInt(this.layerSizeList.get(i));
+    for (Integer aLayerSizeList : this.layerSizeList) {
+      output.writeInt(aLayerSizeList);
     }
 
     WritableUtils.writeEnum(output, this.trainingMethod);
