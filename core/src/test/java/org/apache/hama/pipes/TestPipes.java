@@ -110,9 +110,6 @@ public class TestPipes extends HamaCluster {
   }
 
   public void testPipes() throws Exception {
-    System.setProperty(EXAMPLES_INSTALL_PROPERTY,
-        "/home/edward/workspace/hama-trunk/c++/target/native/");
-
     assertNotNull("System property " + EXAMPLES_INSTALL_PROPERTY
         + " is not defined!", System.getProperty(EXAMPLES_INSTALL_PROPERTY));
 
