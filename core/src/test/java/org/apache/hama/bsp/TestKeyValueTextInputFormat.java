@@ -33,6 +33,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
@@ -159,6 +160,7 @@ public class TestKeyValueTextInputFormat extends TestCase {
       job.setJobName("Test KeyValueTextInputFormat together with HashPartitioner");
       job.setBspClass(KeyValueHashPartitionedBSP.class);
       
+      job.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
       job.setPartitioner(HashPartitioner.class);
 
       job.setInputPath(dataPath);

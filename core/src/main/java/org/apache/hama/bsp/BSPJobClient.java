@@ -412,14 +412,13 @@ public class BSPJobClient extends Configured implements Tool {
                 Constants.RUNTIME_PARTITIONING_CLASS)));
       }
 
-      if ((numTasks > 0 && numTasks != numSplits)
-          || (job.getConfiguration().getBoolean(
-              Constants.ENABLE_RUNTIME_PARTITIONING, false) && job
-              .getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null)) {
+      if (numTasks == 0) {
+        numTasks = numSplits;
+      }
 
-        if (numTasks == 0) {
-          numTasks = numSplits;
-        }
+      if (job.getConfiguration().getBoolean(
+          Constants.ENABLE_RUNTIME_PARTITIONING, false)
+          && job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null) {
 
         HamaConfiguration conf = new HamaConfiguration(job.getConfiguration());
 
@@ -428,10 +427,9 @@ public class BSPJobClient extends Configured implements Tool {
           conf.set(Constants.RUNTIME_PARTITIONING_DIR, job.getConfiguration()
               .get(Constants.RUNTIME_PARTITIONING_DIR));
         }
-        if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null) {
-          conf.set(Constants.RUNTIME_PARTITIONING_CLASS,
-              job.get(Constants.RUNTIME_PARTITIONING_CLASS));
-        }
+
+        conf.set(Constants.RUNTIME_PARTITIONING_CLASS,
+            job.get(Constants.RUNTIME_PARTITIONING_CLASS));
         BSPJob partitioningJob = new BSPJob(conf);
         LOG.debug("partitioningJob input: "
             + partitioningJob.get(Constants.JOB_INPUT_DIR));

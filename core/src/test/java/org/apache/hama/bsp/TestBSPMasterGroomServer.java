@@ -107,7 +107,8 @@ public class TestBSPMasterGroomServer extends HamaCluster {
 
   public static void checkOutput(FileSystem fileSys, Configuration conf,
       int tasks) throws Exception {
-    FileStatus[] listStatus = fileSys.listStatus(OUTPUT_PATH);
+    FileStatus[] listStatus = fileSys.globStatus(new Path(OUTPUT_PATH + "/part-*"));
+    
     assertEquals(listStatus.length, tasks);
     for (FileStatus status : listStatus) {
       if (!status.isDir()) {
