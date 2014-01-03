@@ -78,7 +78,7 @@ public class DenseVectorWritable implements Writable {
   @Override
   public String toString() {
     StringBuilder st = new StringBuilder();
-    st.append(" " + getSize() + " " + getSize());
+    st.append("Length: " + getSize() + " Arrays:");
     for (int i = 0; i < getSize(); i++)
       st.append(" " + i + " " + values[i]);
     return st.toString();
