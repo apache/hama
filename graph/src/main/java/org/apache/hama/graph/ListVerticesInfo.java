@@ -96,13 +96,13 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
           throws IOException {
 
         if (it.hasNext()) {
-          V vertexKey = it.next();
-          v = deserialize(verticesMap.get(vertexKey));
+          V vertexID = it.next();
+          v = deserialize(vertexID, verticesMap.get(vertexID));
 
           while (!strat.accept(v, msgId)) {
             if (it.hasNext()) {
-              vertexKey = it.next();
-              v = deserialize(verticesMap.get(vertexKey));
+              vertexID = it.next();
+              v = deserialize(vertexID, verticesMap.get(vertexID));
             } else {
               return false;
             }
@@ -131,19 +131,26 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
   }
 
   public byte[] serialize(Vertex<V, E, M> vertex) throws IOException {
+    v = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
+    v.setEdges(vertex.getEdges());
+    v.setValue(vertex.getValue());
+    if(vertex.isHalted()) {
+      v.voteToHalt();
+    }
     bos = new ByteArrayOutputStream();
     dos = new DataOutputStream(bos);
-    vertex.write(dos);
+    v.write(dos);
     return bos.toByteArray();
   }
 
-  public Vertex<V, E, M> deserialize(byte[] serialized) throws IOException {
+  public Vertex<V, E, M> deserialize(V vertexID, byte[] serialized) throws IOException {
     bis = new ByteArrayInputStream(serialized);
     dis = new DataInputStream(bis);
     v = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
 
     v.readFields(dis);
     v.setRunner(runner);
+    v.setVertexID(vertexID);
     return v;
   }
 
