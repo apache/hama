@@ -69,7 +69,6 @@ public class SSSP {
       }
       voteToHalt();
     }
-
   }
 
   public static class MinIntCombiner extends Combiner<IntWritable> {

@@ -19,9 +19,9 @@ package org.apache.hama.graph;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
@@ -37,13 +37,13 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
   /**
    * Initialization of internal structures.
    */
-  public void init(GraphJobRunner<V, E, M> runner, Configuration conf,
+  public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
       TaskAttemptID attempt) throws IOException;
 
   /**
    * Cleanup of internal structures.
    */
-  public void cleanup(Configuration conf, TaskAttemptID attempt)
+  public void cleanup(HamaConfiguration conf, TaskAttemptID attempt)
       throws IOException;
 
   /**
@@ -92,5 +92,4 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
   public int size();
 
   public IDSkippingIterator<V, E, M> skippingIterator();
-
 }

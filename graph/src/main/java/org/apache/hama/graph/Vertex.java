@@ -71,7 +71,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   @Override
   public void setup(HamaConfiguration conf) {
   }
-
+  
   @Override
   public void sendMessage(Edge<V, E> e, M msg) throws IOException {
     runner.getPeer().send(getDestinationPeerName(e),
@@ -172,7 +172,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   @Override
   public M getValue() {
-    return value;
+    return this.value;
   }
 
   @Override
@@ -306,10 +306,11 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
     }
     if (in.readBoolean()) {
       if (this.value == null) {
-        value = GraphJobRunner.createVertexValue();
+        this.value = GraphJobRunner.createVertexValue();
       }
-      value.readFields(in);
+      this.value.readFields(in);
     }
+    
     this.edges = new ArrayList<Edge<V, E>>();
     if (in.readBoolean()) {
       int num = in.readInt();
@@ -340,6 +341,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
       out.writeBoolean(true);
       vertexID.write(out);
     }
+    
     if (value == null) {
       out.writeBoolean(false);
     } else {

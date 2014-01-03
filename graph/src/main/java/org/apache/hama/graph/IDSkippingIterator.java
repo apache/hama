@@ -17,6 +17,8 @@
  */
 package org.apache.hama.graph;
 
+import java.io.IOException;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
@@ -54,8 +56,9 @@ public abstract class IDSkippingIterator<V extends WritableComparable, E extends
    * Skips nothing, accepts everything.
    * 
    * @return true if the strategy found a new item, false if not.
+   * @throws IOException 
    */
-  public boolean hasNext() {
+  public boolean hasNext() throws IOException {
     return hasNext(null, Strategy.ALL);
   }
 
@@ -63,8 +66,9 @@ public abstract class IDSkippingIterator<V extends WritableComparable, E extends
    * Skips until the given strategy is satisfied.
    * 
    * @return true if the strategy found a new item, false if not.
+   * @throws IOException 
    */
-  public abstract boolean hasNext(V e, Strategy strat);
+  public abstract boolean hasNext(V e, Strategy strat) throws IOException;
 
   /**
    * @return a found vertex that can be read safely.

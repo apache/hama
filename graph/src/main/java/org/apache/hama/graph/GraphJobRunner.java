@@ -248,12 +248,14 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     int activeVertices = 0;
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
+
     /*
      * We iterate over our messages and vertices in sorted order. That means
      * that we need to seek the first vertex that has the same ID as the
      * currentMessage or the first vertex that is active.
      */
     IDSkippingIterator<V, E, M> iterator = vertices.skippingIterator();
+    
     // note that can't skip inactive vertices because we have to rewrite the
     // complete vertex file in each iteration
     while (iterator.hasNext(
@@ -266,9 +268,11 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         iterable = iterate(currentMessage, (V) currentMessage.getVertexId(),
             vertex, peer);
       }
+      
       if (iterable != null && vertex.isHalted()) {
         vertex.setActive();
       }
+      
       if (!vertex.isHalted()) {
         M lastValue = vertex.getValue();
         if (iterable == null) {
@@ -285,7 +289,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         getAggregationRunner().aggregateVertex(lastValue, vertex);
         activeVertices++;
       }
-
+      
       // note that we even need to rewrite the vertex if it is halted for
       // consistency reasons
       vertices.finishVertexComputation(vertex);
@@ -352,7 +356,10 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     IDSkippingIterator<V, E, M> skippingIterator = vertices.skippingIterator();
     while (skippingIterator.hasNext()) {
       Vertex<V, E, M> vertex = skippingIterator.next();
+      
       M lastValue = vertex.getValue();
+      // Calls setup method.
+      vertex.setup(conf);
       vertex.compute(Collections.singleton(vertex.getValue()));
       getAggregationRunner().aggregateVertex(lastValue, vertex);
       vertices.finishVertexComputation(vertex);
@@ -456,9 +463,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
             vertex.addEdge(edge);
           }
         } else {
-          vertex.setRunner(this);
-          vertex.setup(conf);
-
           if (selfReference) {
             vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
           }
@@ -469,8 +473,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       }
     }
     // add last vertex.
-    vertex.setRunner(this);
-    vertex.setup(conf);
     if (selfReference) {
       vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
     }

@@ -35,9 +35,9 @@ import java.util.*;
  */
 public class SemiClusteringVertex extends
     Vertex<Text, DoubleWritable, SemiClusterMessage> {
-  private int semiClusterMaximumVertexCount;
-  private int graphJobMessageSentCount;
-  private int graphJobVertexMaxClusterCount;
+  private static int semiClusterMaximumVertexCount;
+  private static int graphJobMessageSentCount;
+  private static int graphJobVertexMaxClusterCount;
 
   @Override
   public void setup(HamaConfiguration conf) {

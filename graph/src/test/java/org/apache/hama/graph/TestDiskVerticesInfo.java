@@ -22,10 +22,10 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.graph.example.PageRank;
 import org.apache.hama.graph.example.PageRank.PageRankVertex;
@@ -36,7 +36,7 @@ public class TestDiskVerticesInfo extends TestCase {
   @Test
   public void testDiskVerticesInfoLifeCycle() throws Exception {
     DiskVerticesInfo<Text, NullWritable, DoubleWritable> info = new DiskVerticesInfo<Text, NullWritable, DoubleWritable>();
-    Configuration conf = new Configuration();
+    HamaConfiguration conf = new HamaConfiguration();
     conf.set(GraphJob.VERTEX_CLASS_ATTR, PageRankVertex.class.getName());
     conf.set(GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR,
         NullWritable.class.getName());

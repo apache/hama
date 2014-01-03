@@ -17,12 +17,13 @@
  */
 package org.apache.hama.graph;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -31,10 +32,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.graph.IDSkippingIterator.Strategy;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 @SuppressWarnings("rawtypes")
 public final class DiskVerticesInfo<V extends WritableComparable, E extends Writable, M extends Writable>
@@ -67,12 +67,12 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
   private Vertex<V, E, M> cachedVertexInstance;
   private int currentStep = 0;
   private int index = 0;
-  private Configuration conf;
+  private HamaConfiguration conf;
   private GraphJobRunner<V, E, M> runner;
   private String staticFile;
 
   @Override
-  public void init(GraphJobRunner<V, E, M> runner, Configuration conf,
+  public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
       TaskAttemptID attempt) throws IOException {
     this.runner = runner;
     this.conf = conf;
@@ -92,7 +92,7 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
   }
 
   @Override
-  public void cleanup(Configuration conf, TaskAttemptID attempt)
+  public void cleanup(HamaConfiguration conf, TaskAttemptID attempt)
       throws IOException {
     IOUtils.cleanup(null, softGraphPartsDos, softGraphPartsNextIterationDos,
         staticGraphPartsDis, softGraphPartsDis);
@@ -122,7 +122,7 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
 
   @Override
   public void removeVertex(V vertexID) {
-    throw new UnsupportedOperationException ("Not yet implemented");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   /**
@@ -176,7 +176,7 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
 
   @Override
   public void finishRemovals() {
-    throw new UnsupportedOperationException ("Not yet implemented");
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   private static long[] copy(ArrayList<Long> lst) {

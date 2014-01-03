@@ -17,14 +17,18 @@
  */
 package org.apache.hama.graph;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
@@ -36,52 +40,69 @@ import org.apache.hama.bsp.TaskAttemptID;
  */
 public final class ListVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
+  private GraphJobRunner<V, E, M> runner;
+  Vertex<V, E, M> v;
 
-  private final SortedSet<Vertex<V, E, M>> vertices = new TreeSet<Vertex<V, E, M>>();
-  // We will use this variable to make vertex removals, so we don't invoke GC too many times. 
-  private final Vertex<V, E, M> vertexTemplate = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
+  private final Map<V, byte[]> verticesMap = new TreeMap<V, byte[]>();
+
+  private ByteArrayOutputStream bos = null;
+  private DataOutputStream dos = null;
+  private ByteArrayInputStream bis = null;
+  private DataInputStream dis = null;
 
   @Override
-  public void addVertex(Vertex<V, E, M> vertex) {
-    if (!vertices.add(vertex)) {
-      throw new UnsupportedOperationException("Vertex with ID: " + vertex.getVertexID() + " already exists!");
+  public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
+      TaskAttemptID attempt) throws IOException {
+    this.runner = runner;
+  }
+
+  @Override
+  public void addVertex(Vertex<V, E, M> vertex) throws IOException {
+    if (verticesMap.containsKey(vertex.getVertexID())) {
+      throw new UnsupportedOperationException("Vertex with ID: "
+          + vertex.getVertexID() + " already exists!");
+    } else {
+      verticesMap.put(vertex.getVertexID(), serialize(vertex));
     }
   }
 
   @Override
   public void removeVertex(V vertexID) throws UnsupportedOperationException {
-    vertexTemplate.setVertexID(vertexID);    
-    
-    if (!vertices.remove(vertexTemplate)) {
-      throw new UnsupportedOperationException("Vertex with ID: " + vertexID + " not found on this peer.");
+    if (verticesMap.containsKey(vertexID)) {
+      verticesMap.remove(vertexID);
+    } else {
+      throw new UnsupportedOperationException("Vertex with ID: " + vertexID
+          + " not found on this peer.");
     }
   }
 
   public void clear() {
-    vertices.clear();
+    verticesMap.clear();
   }
 
   @Override
   public int size() {
-    return this.vertices.size();
+    return this.verticesMap.size();
   }
 
   @Override
   public IDSkippingIterator<V, E, M> skippingIterator() {
     return new IDSkippingIterator<V, E, M>() {
-      Iterator<Vertex<V, E, M>> it = vertices.iterator();
-      Vertex<V, E, M> v;
+      Iterator<V> it = verticesMap.keySet().iterator();
 
       @Override
       public boolean hasNext(V msgId,
-          org.apache.hama.graph.IDSkippingIterator.Strategy strat) {
+          org.apache.hama.graph.IDSkippingIterator.Strategy strat)
+          throws IOException {
 
         if (it.hasNext()) {
-          v = it.next();
+          V vertexKey = it.next();
+          v = deserialize(verticesMap.get(vertexKey));
 
           while (!strat.accept(v, msgId)) {
             if (it.hasNext()) {
-              v = it.next();
+              vertexKey = it.next();
+              v = deserialize(verticesMap.get(vertexKey));
             } else {
               return false;
             }
@@ -97,7 +118,8 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
       @Override
       public Vertex<V, E, M> next() {
         if (v == null) {
-          throw new UnsupportedOperationException("You must invoke hasNext before ask for the next vertex.");
+          throw new UnsupportedOperationException(
+              "You must invoke hasNext before ask for the next vertex.");
         }
 
         Vertex<V, E, M> tmp = v;
@@ -108,9 +130,27 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
     };
   }
 
-  @Override
-  public void finishVertexComputation(Vertex<V, E, M> vertex) {
+  public byte[] serialize(Vertex<V, E, M> vertex) throws IOException {
+    bos = new ByteArrayOutputStream();
+    dos = new DataOutputStream(bos);
+    vertex.write(dos);
+    return bos.toByteArray();
+  }
 
+  public Vertex<V, E, M> deserialize(byte[] serialized) throws IOException {
+    bis = new ByteArrayInputStream(serialized);
+    dis = new DataInputStream(bis);
+    v = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
+
+    v.readFields(dis);
+    v.setRunner(runner);
+    return v;
+  }
+
+  @Override
+  public void finishVertexComputation(Vertex<V, E, M> vertex)
+      throws IOException {
+    verticesMap.put(vertex.getVertexID(), serialize(vertex));
   }
 
   @Override
@@ -122,13 +162,13 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
   public void finishRemovals() {
   }
 
-   @Override
+  @Override
   public void finishSuperstep() {
 
   }
 
   @Override
-  public void cleanup(Configuration conf, TaskAttemptID attempt)
+  public void cleanup(HamaConfiguration conf, TaskAttemptID attempt)
       throws IOException {
 
   }
@@ -137,11 +177,4 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
   public void startSuperstep() throws IOException {
 
   }
-
-  @Override
-  public void init(GraphJobRunner<V, E, M> runner, Configuration conf,
-      TaskAttemptID attempt) throws IOException {
-
-  }
-
 }

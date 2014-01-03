@@ -17,28 +17,28 @@
  */
 package org.apache.hama.graph;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.graph.example.PageRank.PageRankVertex;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 public class TestOffHeapVerticesInfo {
 
   @Test
   public void testOffHeapVerticesInfoLifeCycle() throws Exception {
     OffHeapVerticesInfo<Text, NullWritable, DoubleWritable> info = new OffHeapVerticesInfo<Text, NullWritable, DoubleWritable>();
-    Configuration conf = new Configuration();
+    HamaConfiguration conf = new HamaConfiguration();
     conf.set(GraphJob.VERTEX_CLASS_ATTR, PageRankVertex.class.getName());
     conf.set(GraphJob.VERTEX_EDGE_VALUE_CLASS_ATTR,
         NullWritable.class.getName());
@@ -121,7 +121,7 @@ public class TestOffHeapVerticesInfo {
   public void testAdditionWithDefaults() throws Exception {
     OffHeapVerticesInfo<Text, NullWritable, DoubleWritable> verticesInfo =
             new OffHeapVerticesInfo<Text, NullWritable, DoubleWritable>();
-    Configuration conf = new Configuration();
+    HamaConfiguration conf = new HamaConfiguration();
     verticesInfo.init(null, conf, null);
     Vertex<Text, NullWritable, DoubleWritable> vertex = new PageRankVertex();
     vertex.setVertexID(new Text("some-id"));
@@ -133,7 +133,7 @@ public class TestOffHeapVerticesInfo {
   public void testMassiveAdditionWithDefaults() throws Exception {
     OffHeapVerticesInfo<Text, NullWritable, DoubleWritable> verticesInfo =
             new OffHeapVerticesInfo<Text, NullWritable, DoubleWritable>();
-    Configuration conf = new Configuration();
+    HamaConfiguration conf = new HamaConfiguration();
     verticesInfo.init(null, conf, null);
     assertEquals("vertices info size should be 0 at startup", 0, verticesInfo.size());
     Random r = new Random();
