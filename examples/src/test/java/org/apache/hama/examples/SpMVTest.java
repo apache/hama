@@ -46,13 +46,15 @@ public class SpMVTest {
 
   protected static final Log LOG = LogFactory.getLog(SpMVTest.class);
 
-  private HamaConfiguration conf;
-  private String baseDir;
-
+  private static HamaConfiguration conf;
+  private static String baseDir;
+  private static FileSystem fs;
+  
   @Before
   public void prepare() throws IOException {
     conf = new HamaConfiguration();
     baseDir = "/tmp/spmv";
+    fs = FileSystem.get(conf);
   }
 
   /**
@@ -130,6 +132,10 @@ public class SpMVTest {
       DenseVectorWritable result = new DenseVectorWritable();
       SpMV.readFromFile(resultPath, result, conf);
 
+      LOG.info(resultPath +": " + fs.exists(new Path(resultPath)));
+      LOG.info(fs.getLength(new Path(resultPath)));
+      LOG.info(">>>>>>>>>>> " + result);
+      
       double expected[] = { 38, 12, 24, 11 };
       if (result.getSize() != size)
         throw new Exception("Incorrect size of output vector");
@@ -197,7 +203,6 @@ public class SpMVTest {
   public static void writeMatrix(String pathString, Configuration conf,
       Map<Integer, Writable> matrix) throws IOException {
     boolean inited = false;
-    FileSystem fs = FileSystem.get(conf);
     SequenceFile.Writer writer = null;
     try {
       for (Integer index : matrix.keySet()) {

@@ -282,6 +282,7 @@ public class SpMV {
     } else if (fs.isFile(path)) {
       filePaths.add(path.toString());
     }
+
     try {
       for (String filePath : filePaths) {
         reader = new SequenceFile.Reader(fs, new Path(filePath), conf);
