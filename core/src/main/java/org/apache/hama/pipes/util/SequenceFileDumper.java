@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
@@ -123,8 +124,18 @@ public class SequenceFileDumper {
           sub = Integer.parseInt(cmdLine.getOptionValue("substring"));
         }
 
-        Writable key = (Writable) reader.getKeyClass().newInstance();
-        Writable value = (Writable) reader.getValueClass().newInstance();
+        Writable key;
+        if (reader.getKeyClass() != NullWritable.class) {
+          key = (Writable) reader.getKeyClass().newInstance();
+        } else {
+          key = NullWritable.get();
+        }
+        Writable value;
+        if (reader.getValueClass() != NullWritable.class) {
+          value = (Writable) reader.getValueClass().newInstance();
+        } else {
+          value = NullWritable.get();
+        }
 
         writer.append("Key class: ")
             .append(String.valueOf(reader.getKeyClass()))
