@@ -19,6 +19,7 @@ package org.apache.hama.examples;
 
 import java.io.IOException;
 import java.util.ArrayList;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -31,50 +32,45 @@ import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
+import org.apache.hama.graph.GraphJobRunner.GraphJobCounter;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
-import org.apache.hama.graph.GraphJobRunner.GraphJobCounter;
 
 /**
- * This is an example of how to manipulate Graphs dynamically.
- * The input of this example is a number in each row. We assume
- * that the is a vertex with ID:1 which is responsible to create
- * a sum vertex that will aggregate the values of the other 
- * vertices. During the aggregation, sum vertex will delete all 
- * other vertices. 
+ * This is an example of how to manipulate Graphs dynamically. The input of this
+ * example is a number in each row. We assume that the is a vertex with ID:1
+ * which is responsible to create a sum vertex that will aggregate the values of
+ * the other vertices. During the aggregation, sum vertex will delete all other
+ * vertices.
  * 
- * Input example:
- * 1
- * 2
- * 3
- * 4
+ * Input example: 1 2 3 4
  * 
- * Output example:
- * sum  10
+ * Output example: sum 10
  */
 public class DynamicGraph {
 
-  public static class GraphTextReader extends 
+  public static class GraphTextReader extends
       VertexInputReader<LongWritable, Text, Text, NullWritable, IntWritable> {
 
     @Override
     public boolean parseVertex(LongWritable key, Text value,
-            Vertex<Text, NullWritable, IntWritable> vertex) throws Exception {
+        Vertex<Text, NullWritable, IntWritable> vertex) throws Exception {
 
-        vertex.setVertexID(value);
-        vertex.setValue(new IntWritable(Integer.parseInt(value.toString())));
+      vertex.setVertexID(value);
+      vertex.setValue(new IntWritable(Integer.parseInt(value.toString())));
 
-        return true;
+      return true;
     }
   }
 
-  public static class GraphVertex extends 
+  public static class GraphVertex extends
       Vertex<Text, NullWritable, IntWritable> {
-    
+
     private void createSumVertex() throws IOException {
       if (this.getVertexID().toString().equals("1")) {
         Text new_id = new Text("sum");
-        this.addVertex(new_id, new ArrayList<Edge<Text, NullWritable>>(), new IntWritable(0));
+        this.addVertex(new_id, new ArrayList<Edge<Text, NullWritable>>(),
+            new IntWritable(0));
       }
     }
 
@@ -92,10 +88,13 @@ public class DynamicGraph {
         for (IntWritable i : msgs) {
           s += i.get();
         }
-        s += this.getPeer().getCounter(GraphJobCounter.INPUT_VERTICES).getCounter();
-        this.setValue(new IntWritable(this.getValue().get() +s));
+        s += this.getPeer().getCounter(GraphJobCounter.INPUT_VERTICES)
+            .getCounter();
+        this.setValue(new IntWritable(this.getValue().get() + s));
       } else {
-        throw new UnsupportedOperationException("We have more vertecies than we expected: " + this.getVertexID() + " " + this.getValue()); 
+        throw new UnsupportedOperationException(
+            "We have more vertecies than we expected: " + this.getVertexID()
+                + " " + this.getValue());
       }
     }
 
@@ -113,8 +112,8 @@ public class DynamicGraph {
     }
   }
 
-  public static void main(String[] args) throws IOException, 
-        InterruptedException, ClassNotFoundException {
+  public static void main(String[] args) throws IOException,
+      InterruptedException, ClassNotFoundException {
     if (args.length != 2) {
       printUsage();
     }
@@ -132,7 +131,13 @@ public class DynamicGraph {
     System.exit(-1);
   }
 
-  private static GraphJob createJob(String[] args, HamaConfiguration conf) throws IOException {
+  private static GraphJob createJob(String[] args, HamaConfiguration conf)
+      throws IOException {
+
+    // NOTE Graph modification APIs can be used only with in-memory vertices storage.
+    conf.set("hama.graph.vertices.info",
+        "org.apache.hama.graph.ListVerticesInfo");
+
     GraphJob graphJob = new GraphJob(conf, DynamicGraph.class);
     graphJob.setJobName("Dynamic Graph");
     graphJob.setVertexClass(GraphVertex.class);
@@ -154,6 +159,5 @@ public class DynamicGraph {
     graphJob.setOutputValueClass(IntWritable.class);
 
     return graphJob;
-  }  
-
+  }
 }
