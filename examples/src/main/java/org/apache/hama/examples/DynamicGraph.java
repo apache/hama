@@ -33,10 +33,13 @@ import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.GraphJobRunner.GraphJobCounter;
+import org.apache.hama.graph.MapVerticesInfo;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
 
 /**
+ * NOTE: Graph modification APIs can be used only with {@link MapVerticesInfo}.
+ * 
  * This is an example of how to manipulate Graphs dynamically. The input of this
  * example is a number in each row. We assume that the is a vertex with ID:1
  * which is responsible to create a sum vertex that will aggregate the values of
@@ -134,9 +137,9 @@ public class DynamicGraph {
   private static GraphJob createJob(String[] args, HamaConfiguration conf)
       throws IOException {
 
-    // NOTE Graph modification APIs can be used only with in-memory vertices storage.
+    // NOTE: Graph modification APIs can be used only with MapVerticesInfo.
     conf.set("hama.graph.vertices.info",
-        "org.apache.hama.graph.ListVerticesInfo");
+        "org.apache.hama.graph.MapVerticesInfo");
 
     GraphJob graphJob = new GraphJob(conf, DynamicGraph.class);
     graphJob.setJobName("Dynamic Graph");

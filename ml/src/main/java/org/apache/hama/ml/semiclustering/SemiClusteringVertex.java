@@ -18,14 +18,20 @@
 
 package org.apache.hama.ml.semiclustering;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.Vertex;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * SemiClusteringVertex Class defines each vertex in a Graph job and the
@@ -57,6 +63,7 @@ public class SemiClusteringVertex extends
     if (this.getSuperstepCount() == 0) {
       firstSuperStep();
     }
+
     if (this.getSuperstepCount() >= 1) {
       Set<SemiClusterMessage> scListContainThis = new TreeSet<SemiClusterMessage>();
       Set<SemiClusterMessage> scListNotContainThis = new TreeSet<SemiClusterMessage>();
@@ -104,13 +111,14 @@ public class SemiClusteringVertex extends
    * @throws java.io.IOException
    */
   public void firstSuperStep() throws IOException {
-    Vertex<Text, DoubleWritable, SemiClusterMessage> v = this;
+    Vertex<Text, DoubleWritable, SemiClusterMessage> v = this.deepCopy();
     List<Vertex<Text, DoubleWritable, SemiClusterMessage>> lV = new ArrayList<Vertex<Text, DoubleWritable, SemiClusterMessage>>();
     lV.add(v);
     String newClusterName = "C" + createNewSemiClusterName(lV);
     SemiClusterMessage initialClusters = new SemiClusterMessage(newClusterName,
         lV, 1);
     sendMessageToNeighbors(initialClusters);
+
     Set<SemiClusterDetails> scList = new TreeSet<SemiClusterDetails>();
     scList.add(new SemiClusterDetails(newClusterName, 1.0));
     SemiClusterMessage vertexValue = new SemiClusterMessage(scList);
@@ -192,6 +200,7 @@ public class SemiClusteringVertex extends
     while (vertexItrator.hasNext()) {
       vertexId.add(vertexItrator.next().getVertexID().toString());
     }
+
     return vertexId;
   }
 
@@ -202,7 +211,7 @@ public class SemiClusteringVertex extends
   public boolean isVertexInSc(SemiClusterMessage msg) {
     List<String> vertexId = getSemiClusterVerticesIdList(msg.getVertexList());
     return vertexId.contains(this.getVertexID().toString())
-            && vertexId.size() < semiClusterMaximumVertexCount;
+        && vertexId.size() < semiClusterMaximumVertexCount;
   }
 
   /**

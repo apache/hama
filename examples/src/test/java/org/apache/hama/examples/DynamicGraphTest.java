@@ -31,13 +31,13 @@ import org.apache.hama.HamaConfiguration;
 import org.junit.Test;
 
 /**
- * Testcase for {@link org.apache.hama.examples.DynamicGraph}
+ * Unit test for {@link org.apache.hama.examples.DynamicGraph}
  */
 public class DynamicGraphTest extends TestCase {
   private static String OUTPUT = "/tmp/page-out";
   private Configuration conf = new HamaConfiguration();
   private FileSystem fs;
-  
+
   private void deleteTempDirs() {
     try {
       if (fs.exists(new Path(OUTPUT)))
@@ -61,7 +61,7 @@ public class DynamicGraphTest extends TestCase {
       }
     }
   }
-  
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
@@ -69,9 +69,10 @@ public class DynamicGraphTest extends TestCase {
   }
 
   @Test
-  public void test() throws IOException, InterruptedException, ClassNotFoundException {
+  public void test() throws IOException, InterruptedException,
+      ClassNotFoundException {
     try {
-      DynamicGraph.main(new String[] {"src/test/resources/dg.txt", OUTPUT });
+      DynamicGraph.main(new String[] { "src/test/resources/dg.txt", OUTPUT });
       verifyResult();
     } finally {
       deleteTempDirs();

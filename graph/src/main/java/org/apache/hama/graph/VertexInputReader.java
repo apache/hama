@@ -17,15 +17,9 @@
  */
 package org.apache.hama.graph;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.bsp.BSPPeer;
@@ -85,8 +79,9 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
     if (!vertexCreation) {
       return null;
     }
-    outputRecord.setKey(vertex);
-    outputRecord.setValue(NullWritable.get());
+
+    outputRecord.setKey(vertex.getVertexID());
+    outputRecord.setValue(vertex);
     return outputRecord;
   }
 
@@ -94,20 +89,10 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
   @Override
   public int getPartitionId(KeyValuePair<Writable, Writable> inputRecord,
       Partitioner partitioner, Configuration conf, BSPPeer peer, int numTasks) {
-    Vertex<V, E, M> vertex = (Vertex<V, E, M>) outputRecord.getKey();
+    Vertex<V, E, M> vertex = (Vertex<V, E, M>) outputRecord.getValue();
+
     return Math.abs(partitioner.getPartition(vertex.getVertexID(),
         vertex.getValue(), numTasks));
-  }
-
-  // final because we don't want vertices to change ordering
-  @Override
-  public final Map<Writable, Writable> newMap() {
-    return new TreeMap<Writable, Writable>();
-  }
-
-  @Override
-  public List<KeyValuePair<Writable, Writable>> newList() {
-    return new LinkedList<KeyValuePair<Writable,Writable>>();
   }
 
 }

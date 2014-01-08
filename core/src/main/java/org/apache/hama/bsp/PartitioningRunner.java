@@ -20,9 +20,10 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,10 +31,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.sync.SyncException;
@@ -49,7 +52,6 @@ public class PartitioningRunner extends
   private FileSystem fs = null;
   private Path partitionDir;
   private RecordConverter converter;
-  private Map<Integer, LinkedList<KeyValuePair<Writable, Writable>>> values = new HashMap<Integer, LinkedList<KeyValuePair<Writable, Writable>>>();
   private PipesPartitioner<?, ?> pipesPartitioner = null;
 
   @Override
@@ -72,7 +74,6 @@ public class PartitioningRunner extends
     } else {
       this.partitionDir = new Path(conf.get(Constants.RUNTIME_PARTITIONING_DIR));
     }
-
   }
 
   /**
@@ -97,20 +98,10 @@ public class PartitioningRunner extends
         KeyValuePair<Writable, Writable> inputRecord, Configuration conf);
 
     public int getPartitionId(KeyValuePair<Writable, Writable> inputRecord,
-        @SuppressWarnings("rawtypes") Partitioner partitioner,
-        Configuration conf, @SuppressWarnings("rawtypes") BSPPeer peer,
-        int numTasks);
-
-    /**
-     * @return a map implementation, so order can be changed in subclasses if
-     *         needed.
-     */
-    public Map<Writable, Writable> newMap();
-
-    /**
-     * @return a list implementation, so order will not be changed in subclasses
-     */
-    public List<KeyValuePair<Writable, Writable>> newList();
+        @SuppressWarnings("rawtypes")
+        Partitioner partitioner, Configuration conf,
+        @SuppressWarnings("rawtypes")
+        BSPPeer peer, int numTasks);
   }
 
   /**
@@ -127,34 +118,32 @@ public class PartitioningRunner extends
     @SuppressWarnings("unchecked")
     @Override
     public int getPartitionId(KeyValuePair<Writable, Writable> outputRecord,
-        @SuppressWarnings("rawtypes") Partitioner partitioner,
-        Configuration conf, @SuppressWarnings("rawtypes") BSPPeer peer,
-        int numTasks) {
+        @SuppressWarnings("rawtypes")
+        Partitioner partitioner, Configuration conf,
+        @SuppressWarnings("rawtypes")
+        BSPPeer peer, int numTasks) {
       return Math.abs(partitioner.getPartition(outputRecord.getKey(),
           outputRecord.getValue(), numTasks));
     }
 
     @Override
     public void setup(Configuration conf) {
-
     }
 
-    @Override
-    public Map<Writable, Writable> newMap() {
-      return new HashMap<Writable, Writable>();
-    }
-
-    @Override
-    public List<KeyValuePair<Writable, Writable>> newList() {
-      return new LinkedList<KeyValuePair<Writable, Writable>>();
-    }
   }
+
+  public Map<Integer, SequenceFile.Writer> writerCache = new HashMap<Integer, SequenceFile.Writer>();
+
+  @SuppressWarnings("rawtypes")
+  public SortedMap<WritableComparable, KeyValuePair<IntWritable, KeyValuePair>> sortedMap = new TreeMap<WritableComparable, KeyValuePair<IntWritable, KeyValuePair>>();
 
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public void bsp(
       BSPPeer<Writable, Writable, Writable, Writable, NullWritable> peer)
       throws IOException, SyncException, InterruptedException {
+
+    int peerNum = peer.getNumPeers();
     Partitioner partitioner = getPartitioner();
     KeyValuePair<Writable, Writable> pair = null;
     KeyValuePair<Writable, Writable> outputPair = null;
@@ -166,7 +155,6 @@ public class PartitioningRunner extends
         keyClass = pair.getKey().getClass();
         valueClass = pair.getValue().getClass();
       }
-
       outputPair = converter.convertRecord(pair, conf);
 
       if (outputPair == null) {
@@ -176,74 +164,153 @@ public class PartitioningRunner extends
       int index = converter.getPartitionId(outputPair, partitioner, conf, peer,
           desiredNum);
 
-      LinkedList<KeyValuePair<Writable, Writable>> list = values.get(index);
-      if (list == null) {
-        list = (LinkedList<KeyValuePair<Writable, Writable>>) converter
-            .newList();
-        values.put(index, list);
+      // if key is comparable and it need to be sorted by key,
+      if (outputPair.getKey() instanceof WritableComparable
+          && conf.getBoolean(Constants.PARTITION_SORT_BY_KEY, false)) {
+        sortedMap.put(
+            (WritableComparable) outputPair.getKey(),
+            new KeyValuePair(new IntWritable(index), new KeyValuePair(pair
+                .getKey(), pair.getValue())));
+      } else {
+        if (!writerCache.containsKey(index)) {
+          Path destFile = new Path(partitionDir + "/part-" + index + "/file-"
+              + peer.getPeerIndex());
+          SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
+              destFile, keyClass, valueClass, CompressionType.NONE);
+          writerCache.put(index, writer);
+        }
+
+        writerCache.get(index).append(pair.getKey(), pair.getValue());
       }
-      list.add(new KeyValuePair<Writable, Writable>(pair.getKey(), pair
-          .getValue()));
     }
 
-    // The reason of use of Memory is to reduce file opens
-    for (Map.Entry<Integer, LinkedList<KeyValuePair<Writable, Writable>>> e : values
-        .entrySet()) {
-      Path destFile = new Path(partitionDir + "/part-" + e.getKey() + "/file-"
-          + peer.getPeerIndex());
-      SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
-          destFile, keyClass, valueClass, CompressionType.NONE);
+    if (sortedMap.size() > 0) {
+      writeSortedFile(peer.getPeerIndex(), keyClass, valueClass);
+    }
 
-      for (KeyValuePair<Writable, Writable> v : e.getValue()) {
-        writer.append(v.getKey(), v.getValue());
-      }
-      writer.close();
+    for (SequenceFile.Writer w : writerCache.values()) {
+      w.close();
     }
 
     peer.sync();
     FileStatus[] status = fs.listStatus(partitionDir);
-    // To avoid race condition, we should store the peer number
-    int peerNum = peer.getNumPeers();
     // Call sync() one more time to avoid concurrent access
     peer.sync();
 
-    // merge files into one.
-    // TODO if we use header info, we might able to merge files without full
-    // scan.
     for (FileStatus stat : status) {
       int partitionID = Integer
           .parseInt(stat.getPath().getName().split("[-]")[1]);
 
-      // TODO set replica factor to 1.
       if (getMergeProcessorID(partitionID, peerNum) == peer.getPeerIndex()) {
-        Path partitionFile = new Path(partitionDir + "/"
+        Path destinationFilePath = new Path(partitionDir + "/"
             + getPartitionName(partitionID));
 
         FileStatus[] files = fs.listStatus(stat.getPath());
-        SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
-            partitionFile, keyClass, valueClass, CompressionType.NONE);
-
-        for (int i = 0; i < files.length; i++) {
-          LOG.debug("merge '" + files[i].getPath() + "' into " + partitionDir
-              + "/" + getPartitionName(partitionID));
-
-          SequenceFile.Reader reader = new SequenceFile.Reader(fs,
-              files[i].getPath(), conf);
-
-          Writable key = (Writable) ReflectionUtils.newInstance(keyClass, conf);
-          Writable value = (Writable) ReflectionUtils.newInstance(valueClass,
-              conf);
-
-          while (reader.next(key, value)) {
-            writer.append(key, value);
-          }
-          reader.close();
+        if (outputPair.getKey() instanceof WritableComparable
+            && conf.getBoolean(Constants.PARTITION_SORT_BY_KEY, false)) {
+          mergeSortedFiles(files, destinationFilePath, keyClass, valueClass);
+        } else {
+          mergeFiles(files, destinationFilePath, keyClass, valueClass);
         }
-
-        writer.close();
         fs.delete(stat.getPath(), true);
       }
     }
+  }
+
+  @SuppressWarnings("rawtypes")
+  private void writeSortedFile(int peerIndex, Class keyClass, Class valueClass)
+      throws IOException {
+    for (Entry<WritableComparable, KeyValuePair<IntWritable, KeyValuePair>> e : sortedMap
+        .entrySet()) {
+      int index = ((IntWritable) e.getValue().getKey()).get();
+      KeyValuePair rawRecord = e.getValue().getValue();
+
+      if (!writerCache.containsKey(index)) {
+        Path destFile = new Path(partitionDir + "/part-" + index + "/file-"
+            + peerIndex);
+        SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
+            destFile, keyClass, valueClass, CompressionType.NONE);
+        writerCache.put(index, writer);
+      }
+
+      writerCache.get(index).append(rawRecord.getKey(), rawRecord.getValue());
+    }
+
+    sortedMap.clear();
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private void mergeSortedFiles(FileStatus[] status, Path destinationFilePath,
+      Class keyClass, Class valueClass) throws IOException {
+    SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
+        destinationFilePath, keyClass, valueClass, CompressionType.NONE);
+    KeyValuePair outputPair = null;
+    Writable key;
+    Writable value;
+
+    Map<Integer, SequenceFile.Reader> readers = new HashMap<Integer, SequenceFile.Reader>();
+    for (int i = 0; i < status.length; i++) {
+      readers.put(i, new SequenceFile.Reader(fs, status[i].getPath(), conf));
+    }
+
+    for (int i = 0; i < readers.size(); i++) {
+      key = (Writable) ReflectionUtils.newInstance(keyClass, conf);
+      value = (Writable) ReflectionUtils.newInstance(valueClass, conf);
+
+      readers.get(i).next(key, value);
+      KeyValuePair record = new KeyValuePair(key, value);
+      outputPair = converter.convertRecord(record, conf);
+      sortedMap.put((WritableComparable) outputPair.getKey(), new KeyValuePair(
+          new IntWritable(i), record));
+    }
+
+    while (readers.size() > 0) {
+      key = (Writable) ReflectionUtils.newInstance(keyClass, conf);
+      value = (Writable) ReflectionUtils.newInstance(valueClass, conf);
+
+      WritableComparable firstKey = sortedMap.firstKey();
+      KeyValuePair kv = sortedMap.get(firstKey);
+      int readerIndex = ((IntWritable) kv.getKey()).get();
+      KeyValuePair rawRecord = (KeyValuePair) kv.getValue();
+      writer.append(rawRecord.getKey(), rawRecord.getValue());
+
+      sortedMap.remove(firstKey);
+
+      if (readers.get(readerIndex).next(key, value)) {
+        KeyValuePair record = new KeyValuePair(key, value);
+        outputPair = converter.convertRecord(record, conf);
+        sortedMap.put((WritableComparable) outputPair.getKey(),
+            new KeyValuePair(new IntWritable(readerIndex), record));
+      } else {
+        readers.get(readerIndex).close();
+        readers.remove(readerIndex);
+      }
+    }
+
+    sortedMap.clear();
+    writer.close();
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private void mergeFiles(FileStatus[] status, Path destinationFilePath,
+      Class keyClass, Class valueClass) throws IOException {
+    SequenceFile.Writer writer = SequenceFile.createWriter(fs, conf,
+        destinationFilePath, keyClass, valueClass, CompressionType.NONE);
+    Writable key;
+    Writable value;
+
+    for (int i = 0; i < status.length; i++) {
+      SequenceFile.Reader reader = new SequenceFile.Reader(fs,
+          status[i].getPath(), conf);
+      key = (Writable) ReflectionUtils.newInstance(keyClass, conf);
+      value = (Writable) ReflectionUtils.newInstance(valueClass, conf);
+
+      while (reader.next(key, value)) {
+        writer.append(key, value);
+      }
+      reader.close();
+    }
+    writer.close();
   }
 
   @Override

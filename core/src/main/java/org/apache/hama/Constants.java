@@ -120,6 +120,8 @@ public interface Constants {
   public static final String RUNTIME_PARTITIONING_CLASS = "bsp.input.partitioner.class";
   public static final String RUNTIME_DESIRED_PEERS_COUNT = "desired.num.of.tasks";
   public static final String RUNTIME_PARTITION_RECORDCONVERTER = "bsp.runtime.partition.recordconverter";
+  
+  public static final String PARTITION_SORT_BY_KEY = "bsp.partition.sort.by.converted.record";   
 
   // /////////////////////////////////////
   // Constants for ZooKeeper

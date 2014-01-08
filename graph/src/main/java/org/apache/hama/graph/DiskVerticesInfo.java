@@ -36,6 +36,14 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.graph.IDSkippingIterator.Strategy;
 
+/**
+ * Stores the sorted vertices into a local file. It doesn't allow modification
+ * and random access by vertexID.
+ * 
+ * @param <V>
+ * @param <E>
+ * @param <M>
+ */
 @SuppressWarnings("rawtypes")
 public final class DiskVerticesInfo<V extends WritableComparable, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
@@ -122,7 +130,8 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
 
   @Override
   public void removeVertex(V vertexID) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    throw new UnsupportedOperationException(
+        "DiskVerticesInfo doesn't support this operation. Please use the MapVerticesInfo.");
   }
 
   /**
@@ -176,7 +185,8 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
 
   @Override
   public void finishRemovals() {
-    throw new UnsupportedOperationException("Not yet implemented");
+    throw new UnsupportedOperationException(
+        "DiskVerticesInfo doesn't support this operation. Please use the MapVerticesInfo.");
   }
 
   private static long[] copy(ArrayList<Long> lst) {
@@ -378,5 +388,4 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
   private static String getSoftGraphFileName(String root, int step) {
     return root + "soft_" + step + ".graph";
   }
-
 }

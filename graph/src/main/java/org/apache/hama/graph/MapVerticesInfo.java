@@ -17,16 +17,14 @@
  */
 package org.apache.hama.graph;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -34,21 +32,21 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
- * Stores the serialized vertices into a memory-based list. It doesn't allow
- * modification and random access by vertexID.
+ * Stores the vertices into a memory-based tree map. This implementation allows
+ * the runtime graph modification and random access by vertex ID.
+ * 
+ * But it might be inefficient in memory usage.
  * 
  * @param <V> Vertex ID object type
  * @param <E> Edge cost object type
  * @param <M> Vertex value object type
  */
-public final class ListVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
+public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
   private GraphJobRunner<V, E, M> runner;
   Vertex<V, E, M> v;
 
-  private final List<byte[]> verticesList = new ArrayList<byte[]>();
-  private boolean lockedAdditions = false;
-  private int index = 0;
+  private final SortedMap<V, byte[]> verticesMap = new TreeMap<V, byte[]>();
 
   private ByteArrayOutputStream bos = null;
   private DataOutputStream dos = null;
@@ -63,32 +61,37 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
 
   @Override
   public void addVertex(Vertex<V, E, M> vertex) throws IOException {
-    // messages must be added in sorted order to work this out correctly
-    checkArgument(!lockedAdditions,
-        "Additions are locked now, nobody is allowed to change the structure anymore.");
-
-    verticesList.add(serialize(vertex));
+    if (verticesMap.containsKey(vertex.getVertexID())) {
+      throw new UnsupportedOperationException("Vertex with ID: "
+          + vertex.getVertexID() + " already exists!");
+    } else {
+      verticesMap.put(vertex.getVertexID(), serialize(vertex));
+    }
   }
 
   @Override
   public void removeVertex(V vertexID) throws UnsupportedOperationException {
-    throw new UnsupportedOperationException(
-        "ListVerticesInfo doesn't support this operation. Please use the MapVerticesInfo.");
+    if (verticesMap.containsKey(vertexID)) {
+      verticesMap.remove(vertexID);
+    } else {
+      throw new UnsupportedOperationException("Vertex with ID: " + vertexID
+          + " not found on this peer.");
+    }
   }
 
   public void clear() {
-    verticesList.clear();
+    verticesMap.clear();
   }
 
   @Override
   public int size() {
-    return this.verticesList.size();
+    return this.verticesMap.size();
   }
 
   @Override
   public IDSkippingIterator<V, E, M> skippingIterator() {
     return new IDSkippingIterator<V, E, M>() {
-      Iterator<byte[]> it = verticesList.iterator();
+      Iterator<V> it = verticesMap.keySet().iterator();
 
       @Override
       public boolean hasNext(V msgId,
@@ -96,13 +99,13 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
           throws IOException {
 
         if (it.hasNext()) {
-          byte[] serialized = it.next();
-          v = deserialize(serialized);
+          V vertexID = it.next();
+          v = deserialize(vertexID, verticesMap.get(vertexID));
 
           while (!strat.accept(v, msgId)) {
             if (it.hasNext()) {
-              serialized = it.next();
-              v = deserialize(serialized);
+              vertexID = it.next();
+              v = deserialize(vertexID, verticesMap.get(vertexID));
             } else {
               return false;
             }
@@ -137,37 +140,34 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
     return bos.toByteArray();
   }
 
-  public Vertex<V, E, M> deserialize(byte[] serialized) throws IOException {
+  public Vertex<V, E, M> deserialize(V vertexID, byte[] serialized)
+      throws IOException {
     bis = new ByteArrayInputStream(serialized);
     dis = new DataInputStream(bis);
     v = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
 
     v.readFields(dis);
     v.setRunner(runner);
+    v.setVertexID(vertexID);
     return v;
   }
 
   @Override
   public void finishVertexComputation(Vertex<V, E, M> vertex)
       throws IOException {
-    verticesList.set(index, serialize(vertex));
-    index++;
+    verticesMap.put(vertex.getVertexID(), serialize(vertex));
   }
 
   @Override
   public void finishAdditions() {
-    lockedAdditions = true;
   }
 
   @Override
   public void finishRemovals() {
-    throw new UnsupportedOperationException(
-        "ListVerticesInfo doesn't support this operation. Please use the MapVerticesInfo.");
   }
 
   @Override
   public void finishSuperstep() {
-
   }
 
   @Override
@@ -178,6 +178,6 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
 
   @Override
   public void startSuperstep() throws IOException {
-    index = 0;
+
   }
 }

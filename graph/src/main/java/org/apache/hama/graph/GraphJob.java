@@ -57,6 +57,7 @@ public class GraphJob extends BSPJob {
   public GraphJob(HamaConfiguration conf, Class<?> exampleClass)
       throws IOException {
     super(conf);
+    this.setBoolean(Constants.PARTITION_SORT_BY_KEY, true);
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
     this.setVertexIDClass(Text.class);
