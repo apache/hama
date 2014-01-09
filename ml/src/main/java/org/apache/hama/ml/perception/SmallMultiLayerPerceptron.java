@@ -324,7 +324,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     double[] curLayerOutput = outputCache.get(curLayerIdx);
     double[] prevLayerOutput = outputCache.get(prevLayerIdx);
 
-    DenseDoubleMatrix prevWeightUpdateMatrix = this.prevWeightUpdateMatrices[curLayerIdx - 1];
+    // DenseDoubleMatrix prevWeightUpdateMatrix = this.prevWeightUpdateMatrices[curLayerIdx - 1];
     // for each neuron j in nextLayer, calculate the delta
     for (int j = 0; j < delta.length; ++j) {
       // aggregate delta from next layer
@@ -402,6 +402,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
     this.readFromModel();
   }
 
+  @SuppressWarnings("rawtypes")
   @Override
   public void readFields(DataInput input) throws IOException {
     this.MLPType = WritableUtils.readString(input);

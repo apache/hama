@@ -29,6 +29,7 @@ import org.apache.hadoop.io.WritableComparable;
  * @param <K> the class of key
  * @param <V> the class of value
  */
+@SuppressWarnings("rawtypes")
 public class KeyValueWritable<K extends WritableComparable, V extends WritableComparable>
     implements WritableComparable<KeyValueWritable<K, V>> {
 
@@ -80,6 +81,7 @@ public class KeyValueWritable<K extends WritableComparable, V extends WritableCo
     return result;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
     if (this == obj) {
@@ -111,6 +113,7 @@ public class KeyValueWritable<K extends WritableComparable, V extends WritableCo
     return true;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public int compareTo(KeyValueWritable<K, V> obj) {
     int cmp = key.compareTo(obj.key);
