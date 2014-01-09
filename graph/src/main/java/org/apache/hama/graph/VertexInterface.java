@@ -112,4 +112,19 @@ public interface VertexInterface<V extends WritableComparable, E extends Writabl
    */
   public M getValue();
 
+  /**
+   * Provides a value to the specified aggregator.
+   * 
+   * @throws IOException
+   * 
+   * @param name identifies a aggregator
+   * @param value value to be aggregated
+   */
+  public void aggregate(String name, M value) throws IOException;
+
+  /**
+   * Returns the value of the specified aggregator.
+   */
+  public Writable getAggregatedValue(String name);
+
 }

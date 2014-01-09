@@ -102,23 +102,20 @@ public class GraphJob extends BSPJob {
   }
 
   /**
-   * Set the aggregator for the job.
-   */
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  public void setAggregatorClass(Class<? extends Aggregator> cls) {
-    this.setAggregatorClass(new Class[] { cls });
-  }
-
-  /**
-   * Sets multiple aggregators for the job.
-   */
+  * Custom aggregator registration. Add a custom aggregator
+  * that will aggregate massages sent from the user.
+  *
+  * @param name identifies an aggregator
+  * @param aggregatorClass the aggregator class
+  */
   @SuppressWarnings("rawtypes")
-  public void setAggregatorClass(Class<? extends Aggregator>... cls) {
-    String classNames = "";
-    for (Class<? extends Aggregator> cl : cls) {
-      classNames += cl.getName() + ";";
-    }
-    conf.set(AGGREGATOR_CLASS_ATTR, classNames);
+  public void registerAggregator(String name, Class<? extends
+      Aggregator> aggregatorClass) {
+    String prevAggrs = this.conf.get(AGGREGATOR_CLASS_ATTR, "");
+
+    prevAggrs += name + "@" + aggregatorClass.getName() + ";";
+
+    this.conf.set(AGGREGATOR_CLASS_ATTR, prevAggrs);
   }
 
   /**

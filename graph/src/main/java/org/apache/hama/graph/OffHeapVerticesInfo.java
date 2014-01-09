@@ -82,6 +82,7 @@ public class OffHeapVerticesInfo<V extends WritableComparable<?>, E extends Writ
     vertices.dump();
   }
 
+  @Override
   public void addVertex(Vertex<V, E, M> vertex) {
     vertices.put(vertex.getVertexID(), vertex);
   }
@@ -108,6 +109,7 @@ public class OffHeapVerticesInfo<V extends WritableComparable<?>, E extends Writ
     vertices.clear();
   }
 
+  @Override
   public int size() {
     return (int) this.vertices.entries();
   }

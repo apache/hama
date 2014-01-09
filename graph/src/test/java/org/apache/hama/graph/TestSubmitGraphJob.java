@@ -44,7 +44,7 @@ import org.junit.Before;
 public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
 
   String[] input = new String[] { "stackoverflow.com\tyahoo.com",
-      "facebook.com\ttwitter.com", 
+      "facebook.com\ttwitter.com",
       "facebook.com\tgoogle.com\tnasa.gov",
       "yahoo.com\tnasa.gov\tstackoverflow.com",
       "twitter.com\tgoogle.com\tfacebook.com",
@@ -56,6 +56,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   @SuppressWarnings("rawtypes")
   private static final List<Class<? extends VerticesInfo>> vi = new ArrayList<Class<? extends VerticesInfo>>();
 
+  @Override
   @Before
   public void setUp() throws Exception {
     super.setUp();
@@ -84,7 +85,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     // set the defaults
     bsp.setMaxIteration(30);
 
-    bsp.setAggregatorClass(AverageAggregator.class);
+    bsp.registerAggregator("avg", AverageAggregator.class);
 
     bsp.setInputFormat(SequenceFileInputFormat.class);
     bsp.setInputKeyClass(Text.class);

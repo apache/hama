@@ -20,6 +20,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-838: Refactor aggregators (Anastasis Andronidis)
    HAMA-783: Improve the InMemory verticesInfo implementations (edwardyoon)
    HAMA-829: Improve code and fix Javadoc warnings in org.apache.hama.pipes (Martin Illecker)
    HAMA-808: Hama Pipes Testcase (Martin Illecker)

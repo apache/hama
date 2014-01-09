@@ -92,7 +92,6 @@ public final class GraphJobMessage implements
     } else {
       vertexId.write(out);
     }
-
   }
 
   public void fastReadFields(DataInput in) throws IOException {
@@ -217,6 +216,7 @@ public final class GraphJobMessage implements
       buffer = new DataInputBuffer();
     }
 
+    @Override
     public synchronized int compare(byte[] b1, int s1, int l1, byte[] b2,
         int s2, int l2) {
       try {

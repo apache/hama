@@ -43,7 +43,7 @@ public class PageRank {
 
   public static class PageRankVertex extends
       Vertex<Text, NullWritable, DoubleWritable> {
-    
+
     static double DAMPING_FACTOR = 0.85;
     static double MAXIMUM_CONVERGENCE_ERROR = 0.001;
 
@@ -74,7 +74,7 @@ public class PageRank {
       }
 
       // if we have not reached our global error yet, then proceed.
-      DoubleWritable globalError = getLastAggregatedValue(0);
+      DoubleWritable globalError = (DoubleWritable) getAggregatedValue("avg");
       if (globalError != null && this.getSuperstepCount() > 2
           && MAXIMUM_CONVERGENCE_ERROR > globalError.get()) {
         voteToHalt();
@@ -84,6 +84,8 @@ public class PageRank {
       // in each superstep we are going to send a new rank to our neighbours
       sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
           / this.getEdges().size()));
+
+      this.aggregate("avg", this.getValue());
     }
 
   }
@@ -126,7 +128,7 @@ public class PageRank {
     }
 
     // error
-    pageJob.setAggregatorClass(AverageAggregator.class);
+    pageJob.registerAggregator("avg", AverageAggregator.class);
 
     // Vertex reader
     pageJob.setVertexInputReaderClass(PagerankSeqReader.class);
