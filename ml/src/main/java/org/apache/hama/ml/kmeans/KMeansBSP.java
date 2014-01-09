@@ -489,17 +489,12 @@ public final class KMeansBSP
 
       dataWriter.append(vector, value);
       if (k > i) {
-        assert centerWriter != null;
         centerWriter.append(vector, value);
-      } else {
-        if (centerWriter != null) {
-          centerWriter.close();
-          centerWriter = null;
-        }
       }
       i++;
     }
     br.close();
+    centerWriter.close();
     dataWriter.close();
     return in;
   }
@@ -539,10 +534,9 @@ public final class KMeansBSP
       dataWriter.append(vector, value);
       if (k > i) {
         centerWriter.append(vector, value);
-      } else if (k == i) {
-        centerWriter.close();
       }
     }
+    centerWriter.close();
     dataWriter.close();
   }
 }
