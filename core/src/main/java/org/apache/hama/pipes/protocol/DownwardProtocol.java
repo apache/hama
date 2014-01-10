@@ -58,29 +58,23 @@ public interface DownwardProtocol<K1, V1, K2, V2> {
   /**
    * runSetup
    * 
-   * @param pipedInput use pipedInput
-   * @param pipedOutput use pipedOutput
    * @throws IOException
    */
-  void runSetup(boolean pipedInput, boolean pipedOutput) throws IOException;
+  void runSetup() throws IOException;
 
   /**
    * runBsp
    * 
-   * @param pipedInput use pipedInput
-   * @param pipedOutput use pipedOutput
    * @throws IOException
    */
-  void runBsp(boolean pipedInput, boolean pipedOutput) throws IOException;
+  void runBsp() throws IOException;
 
   /**
    * runCleanup
    * 
-   * @param pipedInput use pipedInput
-   * @param pipedOutput use pipedOutput
    * @throws IOException
    */
-  void runCleanup(boolean pipedInput, boolean pipedOutput) throws IOException;
+  void runCleanup() throws IOException;
 
   /**
    * getPartition

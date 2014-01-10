@@ -18,7 +18,6 @@
 
 #include "hama/Pipes.hh"
 #include "hama/TemplateFactory.hh"
-#include "hadoop/StringUtils.hh"
 
 #include <time.h>
 #include <math.h>
@@ -27,32 +26,30 @@
 #include <iostream>
 
 using std::string;
-using std::cout;
 
 using HamaPipes::BSP;
 using HamaPipes::BSPContext;
-using namespace HadoopUtils;
 
-class PiEstimatorBSP: public BSP<string,string,string,double,int> {
-  private:
+class PiEstimatorBSP: public BSP<void,void,void,double,int> {
+private:
   string master_task_;
   long iterations_; // iterations_per_bsp_task
   
-  public:
-  PiEstimatorBSP(BSPContext<string,string,string,double,int>& context) {
-    iterations_ = 1000000L;
+public:
+  PiEstimatorBSP(BSPContext<void,void,void,double,int>& context) {
+    iterations_ = 10000000L;
   }
   
   inline double closed_interval_rand(double x0, double x1) {
     return x0 + (x1 - x0) * rand() / ((double) RAND_MAX);
   }
   
-  void setup(BSPContext<string,string,string,double,int>& context) {
+  void setup(BSPContext<void,void,void,double,int>& context) {
     // Choose one as a master
     master_task_ = context.getPeerName(context.getNumPeers() / 2);
   }
   
-  void bsp(BSPContext<string,string,string,double,int>& context) {
+  void bsp(BSPContext<void,void,void,double,int>& context) {
     
     /* initialize random seed */
     srand(time(NULL));
@@ -70,7 +67,7 @@ class PiEstimatorBSP: public BSP<string,string,string,double,int> {
     context.sync();
   }
   
-  void cleanup(BSPContext<string,string,string,double,int>& context) {
+  void cleanup(BSPContext<void,void,void,double,int>& context) {
     if (context.getPeerName().compare(master_task_)==0) {
       
       long total_hits = 0;
@@ -80,12 +77,12 @@ class PiEstimatorBSP: public BSP<string,string,string,double,int> {
       }
       
       double pi = 4.0 * total_hits / (msg_count * iterations_);
-      context.write("Estimated value of PI", pi);
+      context.write(pi);
     }
   }
 };
 
 int main(int argc, char *argv[]) {
-  return HamaPipes::runTask<string,string,string,double,int>(HamaPipes::TemplateFactory<PiEstimatorBSP,string,string,string,double,int>());
+  return HamaPipes::runTask<void,void,void,double,int>(HamaPipes::TemplateFactory<PiEstimatorBSP,void,void,void,double,int>());
 }
 

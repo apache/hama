@@ -107,6 +107,10 @@ public class SequenceFileDumper {
         Path path = new Path(cmdLine.getOptionValue("file"));
 
         FileSystem fs = FileSystem.get(path.toUri(), conf);
+        if (!fs.isFile(path)) {
+          System.out.println("File does not exist: " + path.toString());
+          return;
+        }
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
 
         Writer writer;

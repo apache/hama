@@ -22,14 +22,6 @@
     <value>hdfs:/examples/bin/matrixmultiplication</value>
   </property>
   <property>
-    <name>hama.pipes.java.recordreader</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>hama.pipes.java.recordwriter</name>
-    <value>true</value>
-  </property>
-  <property>
     <name>bsp.input.dir</name>
     <value>/examples/input/matrixmultiplication/MatrixA.seq</value>                                            
   </property>

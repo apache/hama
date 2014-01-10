@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
@@ -44,6 +45,7 @@ import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.FileInputFormat;
 import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.KeyValueTextInputFormat;
+import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.message.MessageManager;
@@ -62,6 +64,7 @@ public class TestPipes extends HamaCluster {
 
   public static final String EXAMPLES_INSTALL_PROPERTY = "hama.pipes.examples.install";
   public static final String EXAMPLE_SUMMATION_EXEC = "/examples/summation";
+  public static final String EXAMPLE_PIESTIMATOR_EXEC = "/examples/piestimator";
   public static final String EXAMPLE_MATRIXMULTIPLICATION_EXEC = "/examples/matrixmultiplication";
   public static final String EXAMPLE_TMP_OUTPUT = "/tmp/test-example/";
   public static final String HAMA_TMP_OUTPUT = "/tmp/hama-pipes/";
@@ -70,6 +73,7 @@ public class TestPipes extends HamaCluster {
 
   private HamaConfiguration configuration;
   private static FileSystem fs = null;
+  private String examplesInstallPath;
 
   public TestPipes() {
     configuration = new HamaConfiguration();
@@ -118,21 +122,25 @@ public class TestPipes extends HamaCluster {
           + " is empty! Skipping TestPipes!");
       return;
     }
+    this.examplesInstallPath = System.getProperty(EXAMPLES_INSTALL_PROPERTY);
 
     // *** Summation Test ***
     summation();
 
+    // *** PiEstimator Test ***
+    piestimation();
+
     // *** MatrixMultiplication Test ***
     matrixMult();
-    
+
     // Remove local temp folder
     cleanup(fs, new Path(EXAMPLE_TMP_OUTPUT));
   }
 
   private void summation() throws Exception {
     // Setup Paths
-    String examplesInstallPath = System.getProperty(EXAMPLES_INSTALL_PROPERTY);
-    Path summationExec = new Path(examplesInstallPath + EXAMPLE_SUMMATION_EXEC);
+    Path summationExec = new Path(this.examplesInstallPath
+        + EXAMPLE_SUMMATION_EXEC);
     Path inputPath = new Path(EXAMPLE_TMP_OUTPUT + "summation/in");
     Path outputPath = new Path(EXAMPLE_TMP_OUTPUT + "summation/out");
 
@@ -144,15 +152,36 @@ public class TestPipes extends HamaCluster {
         outputPath, 1, this.numOfGroom);
 
     // Verify output
-    verifySummationOutput(configuration, outputPath, sum);
+    verifyOutput(configuration, outputPath, sum.doubleValue(),
+        Math.pow(10, (DOUBLE_PRECISION * -1)));
+
+    // Clean input and output folder
+    cleanup(fs, inputPath);
+    cleanup(fs, outputPath);
+  }
+
+  private void piestimation() throws Exception {
+    // Setup Paths
+    Path piestimatorExec = new Path(this.examplesInstallPath
+        + EXAMPLE_PIESTIMATOR_EXEC);
+    Path inputPath = new Path(EXAMPLE_TMP_OUTPUT + "piestimator/in");
+    Path outputPath = new Path(EXAMPLE_TMP_OUTPUT + "piestimator/out");
+
+    // Run PiEstimator example
+    runProgram(getPiestimatorJob(configuration), piestimatorExec, inputPath,
+        outputPath, 3, this.numOfGroom);
+
+    // Verify output
+    verifyOutput(configuration, outputPath, Math.PI, Math.pow(10, (2 * -1)));
+
     // Clean input and output folder
     cleanup(fs, inputPath);
     cleanup(fs, outputPath);
   }
 
   private void matrixMult() throws Exception {
-    String examplesInstallPath = System.getProperty(EXAMPLES_INSTALL_PROPERTY);
-    Path matrixmultiplicationExec = new Path(examplesInstallPath
+    // Setup Paths
+    Path matrixmultiplicationExec = new Path(this.examplesInstallPath
         + EXAMPLE_MATRIXMULTIPLICATION_EXEC);
 
     Path inputPath = new Path(EXAMPLE_TMP_OUTPUT + "matmult/in");
@@ -192,10 +221,19 @@ public class TestPipes extends HamaCluster {
     bsp.setInputKeyClass(Text.class);
     bsp.setInputValueClass(Text.class);
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
-    bsp.setOutputKeyClass(Text.class);
+    bsp.setOutputKeyClass(NullWritable.class);
     bsp.setOutputValueClass(DoubleWritable.class);
     bsp.set("bsp.message.class", DoubleWritable.class.getName());
+    return bsp;
+  }
 
+  static BSPJob getPiestimatorJob(HamaConfiguration conf) throws IOException {
+    BSPJob bsp = new BSPJob(conf);
+    bsp.setInputFormat(NullInputFormat.class);
+    bsp.setOutputFormat(SequenceFileOutputFormat.class);
+    bsp.setOutputKeyClass(NullWritable.class);
+    bsp.setOutputValueClass(DoubleWritable.class);
+    bsp.set("bsp.message.class", IntWritable.class.getName());
     return bsp;
   }
 
@@ -211,10 +249,10 @@ public class TestPipes extends HamaCluster {
 
     bsp.set(Constants.RUNTIME_PARTITIONING_DIR, HAMA_TMP_OUTPUT + "/parts");
     bsp.set("bsp.message.class", PipesKeyValueWritable.class.getName());
-    
+
     bsp.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
     bsp.setPartitioner(PipesPartitioner.class);
-    
+
     // sort sent messages
     bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
         "org.apache.hama.bsp.message.queue.SortedMessageTransferProtocol");
@@ -256,7 +294,6 @@ public class TestPipes extends HamaCluster {
             * rand.nextDouble();
         matrix[i][j] = new BigDecimal(randomValue).setScale(DOUBLE_PRECISION,
             BigDecimal.ROUND_DOWN).doubleValue();
-        // matrix[i][j] = rand.nextInt(9) + 1;
       }
     }
     return matrix;
@@ -350,22 +387,21 @@ public class TestPipes extends HamaCluster {
     }
   }
 
-  static void verifySummationOutput(HamaConfiguration conf, Path outputPath,
-      BigDecimal sum) throws IOException {
+  static void verifyOutput(HamaConfiguration conf, Path outputPath,
+      double expectedResult, double delta) throws IOException {
     FileStatus[] listStatus = fs.listStatus(outputPath);
     for (FileStatus status : listStatus) {
       if (!status.isDir()) {
         SequenceFile.Reader reader = new SequenceFile.Reader(fs,
             status.getPath(), conf);
-        Text key = new Text();
+        NullWritable key = NullWritable.get();
         DoubleWritable value = new DoubleWritable();
         if (reader.next(key, value)) {
           LOG.info("Output File: " + status.getPath());
           LOG.info("key: '" + key + "' value: '" + value + "' expected: '"
-              + sum.doubleValue() + "'");
-          assertEquals("Expected value: '" + sum + "' != '" + value + "'",
-              sum.doubleValue(), value.get(),
-              Math.pow(10, (DOUBLE_PRECISION * -1)));
+              + expectedResult + "'");
+          assertEquals("Expected value: '" + expectedResult + "' != '" + value
+              + "'", expectedResult, value.get(), delta);
         }
         reader.close();
       }
@@ -416,9 +452,6 @@ public class TestPipes extends HamaCluster {
 
     FileInputFormat.setInputPaths(bsp, inputPath);
     FileOutputFormat.setOutputPath(bsp, outputPath);
-
-    Submitter.setIsJavaRecordReader(conf, true);
-    Submitter.setIsJavaRecordWriter(conf, true);
 
     BSPJobClient jobClient = new BSPJobClient(conf);
 

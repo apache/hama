@@ -19,8 +19,6 @@ package org.apache.hama.pipes;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSP;
@@ -34,24 +32,27 @@ import org.apache.hama.bsp.sync.SyncException;
 public class PipesBSP<K1 extends Writable, V1 extends Writable, K2 extends Writable, V2 extends Writable, M extends Writable>
     extends BSP<K1, V1, K2, V2, BytesWritable> {
 
-  private static final Log LOG = LogFactory.getLog(PipesBSP.class);
   private PipesApplication<K1, V1, K2, V2, BytesWritable> application = new PipesApplication<K1, V1, K2, V2, BytesWritable>();
+  private boolean applicationIsAlive = true;
 
   @Override
   public void setup(BSPPeer<K1, V1, K2, V2, BytesWritable> peer)
       throws IOException, SyncException, InterruptedException {
 
-    this.application.start(peer);
-
-    this.application.getDownlink().runSetup(false, false);
-
     try {
+      this.application.start(peer);
+
+      this.application.getDownlink().runSetup();
+
       this.application.waitForFinish();
+
     } catch (IOException e) {
-      LOG.error(e);
+      this.application.cleanup(false);
       throw e;
+
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      this.application.cleanup(false);
+      throw e;
     }
   }
 
@@ -59,15 +60,20 @@ public class PipesBSP<K1 extends Writable, V1 extends Writable, K2 extends Writa
   public void bsp(BSPPeer<K1, V1, K2, V2, BytesWritable> peer)
       throws IOException, SyncException, InterruptedException {
 
-    this.application.getDownlink().runBsp(false, false);
-
     try {
+      this.application.getDownlink().runBsp();
+
       this.application.waitForFinish();
+
     } catch (IOException e) {
-      LOG.error(e);
+      applicationIsAlive = false;
+      this.application.cleanup(false);
       throw e;
+
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      applicationIsAlive = false;
+      this.application.cleanup(false);
+      throw e;
     }
   }
 
@@ -83,17 +89,24 @@ public class PipesBSP<K1 extends Writable, V1 extends Writable, K2 extends Writa
   public void cleanup(BSPPeer<K1, V1, K2, V2, BytesWritable> peer)
       throws IOException {
 
-    application.getDownlink().runCleanup(false, false);
-
     try {
-      this.application.waitForFinish();
+      if (applicationIsAlive) {
+
+        this.application.getDownlink().runCleanup();
+
+        this.application.waitForFinish();
+
+        this.application.cleanup(true);
+      }
     } catch (IOException e) {
-      LOG.error(e);
+      applicationIsAlive = false;
+      this.application.cleanup(false);
       throw e;
+
     } catch (InterruptedException e) {
-      e.printStackTrace();
-    } finally {
-      this.application.cleanup(true);
+      applicationIsAlive = false;
+      this.application.cleanup(false);
+      throw new IOException(e);
     }
   }
 

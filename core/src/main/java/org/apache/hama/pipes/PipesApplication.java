@@ -53,8 +53,8 @@ import org.apache.hama.pipes.protocol.StreamingProtocol;
  * 
  */
 public class PipesApplication<K1, V1, K2, V2, M extends Writable> {
-
   private static final Log LOG = LogFactory.getLog(PipesApplication.class);
+  private static final int SERVER_SOCKET_TIMEOUT = 2000;
   private ServerSocket serverSocket;
   private Process process;
   private Socket clientSocket;
@@ -85,11 +85,9 @@ public class PipesApplication<K1, V1, K2, V2, M extends Writable> {
     // add TMPDIR environment variable with the value of java.io.tmpdir
     env.put("TMPDIR", System.getProperty("java.io.tmpdir"));
 
-    /* Set Logging Environment from Configuration */
+    // Set Logging Environment from Configuration
     env.put("hama.pipes.logging",
         conf.getBoolean("hama.pipes.logging", false) ? "1" : "0");
-    LOG.debug("DEBUG hama.pipes.logging: "
-        + conf.getBoolean("hama.pipes.logging", false));
 
     return env;
   }
@@ -213,7 +211,7 @@ public class PipesApplication<K1, V1, K2, V2, M extends Writable> {
       if (!streamingEnabled) {
         LOG.debug("DEBUG: waiting for Client at "
             + serverSocket.getLocalSocketAddress());
-        serverSocket.setSoTimeout(2000);
+        serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
         clientSocket = serverSocket.accept();
         LOG.debug("DEBUG: Client connected! - start BinaryProtocol!");
 
@@ -234,7 +232,7 @@ public class PipesApplication<K1, V1, K2, V2, M extends Writable> {
       br.close();
 
       throw new SocketException(
-          "Timout: Client pipes application was not connecting!");
+          "Timout: Client pipes application did not connect!");
     }
   }
 
@@ -284,7 +282,7 @@ public class PipesApplication<K1, V1, K2, V2, M extends Writable> {
       } else {
         LOG.debug("DEBUG: waiting for Client at "
             + serverSocket.getLocalSocketAddress());
-        serverSocket.setSoTimeout(2000);
+        serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
         clientSocket = serverSocket.accept();
         LOG.debug("DEBUG: Client connected! - start BinaryProtocol!");
 
@@ -305,7 +303,7 @@ public class PipesApplication<K1, V1, K2, V2, M extends Writable> {
       br.close();
 
       throw new SocketException(
-          "Timout: Client pipes application was not connecting!");
+          "Timout: Client pipes application did not connect!");
     }
   }
 

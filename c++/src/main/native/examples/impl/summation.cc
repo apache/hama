@@ -29,25 +29,27 @@ using std::string;
 using HamaPipes::BSP;
 using HamaPipes::BSPContext;
 
-class SummationBSP: public BSP<string,string,string,double,double> {
-  private:
+class SummationBSP: public BSP<string,string,void,double,double> {
+private:
   string master_task_;
   
-  public:
-  SummationBSP(BSPContext<string,string,string,double,double>& context) {  }
+public:
+  SummationBSP(BSPContext<string,string,void,double,double>& context) {  }
   
-  void setup(BSPContext<string,string,string,double,double>& context) {
+  void setup(BSPContext<string,string,void,double,double>& context) {
     // Choose one as a master
     master_task_ = context.getPeerName(context.getNumPeers() / 2);
   }
   
-  void bsp(BSPContext<string,string,string,double,double>& context) {
+  void bsp(BSPContext<string,string,void,double,double>& context) {
     
     double intermediate_sum = 0.0;
     string key;
     string value;
     
     while(context.readNext(key,value)) {
+      // We are using the KeyValueTextInputFormat,
+      // therefore we have to convert string value to double
       intermediate_sum += HadoopUtils::toDouble(value);
     }
     
@@ -55,7 +57,7 @@ class SummationBSP: public BSP<string,string,string,double,double> {
     context.sync();
   }
   
-  void cleanup(BSPContext<string,string,string,double,double>& context) {
+  void cleanup(BSPContext<string,string,void,double,double>& context) {
     if (context.getPeerName().compare(master_task_)==0) {
       
       double sum = 0.0;
@@ -63,12 +65,12 @@ class SummationBSP: public BSP<string,string,string,double,double> {
       for (int i=0; i < msg_count; i++) {
         sum += context.getCurrentMessage();
       }
-      context.write("Sum", sum);
+      context.write(sum);
     }
   }
 };
 
 int main(int argc, char *argv[]) {
-  return HamaPipes::runTask<string,string,string,double,double>(HamaPipes::TemplateFactory<SummationBSP,string,string,string,double,double>());
+  return HamaPipes::runTask<string,string,void,double,double>(HamaPipes::TemplateFactory<SummationBSP,string,string,void,double,double>());
 }
 

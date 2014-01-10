@@ -22,14 +22,6 @@
     <value>hdfs:/examples/bin/summation</value>
   </property>
   <property>
-    <name>hama.pipes.java.recordreader</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>hama.pipes.java.recordwriter</name>
-    <value>true</value>
-  </property>
-  <property>
     <name>bsp.input.format.class</name>
     <value>org.apache.hama.bsp.KeyValueTextInputFormat</value>
   </property>
@@ -47,7 +39,7 @@
   </property>
   <property>
     <name>bsp.output.key.class</name>
-    <value>org.apache.hadoop.io.Text</value>
+    <value>org.apache.hadoop.io.NullWritable</value>
   </property>
   <property>
     <name>bsp.output.value.class</name>

@@ -3,7 +3,8 @@ Hama Change Log
 Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
-  
+
+   HAMA-839: Support NullWritable in Hama Pipes (Martin Illecker)    
    HAMA-837: Add sort behaviour to runtime partitioner (edwardyoon)
    HAMA-827: Add NamedVector (edwardyoon)
    HAMA-822: Add feature transformer interface to improve the power and flexibility of existing machine learning model (Yexi Jiang)

@@ -44,8 +44,6 @@ using std::string;
 using std::vector;
 using std::pair;
 
-using namespace HadoopUtils;
-
 namespace HamaPipes {
   
   // global varibales
@@ -91,6 +89,9 @@ namespace HamaPipes {
     stringify( LOG ), stringify( END_OF_DATA )
   };
   
+  /********************************************/
+  /*************** KeyValuePair ***************/
+  /********************************************/
   /**
    * Generic KeyValuePair including is_empty
    */
@@ -103,10 +104,10 @@ namespace HamaPipes {
     explicit KeyValuePair(bool x) : is_empty(x) {}
     KeyValuePair(const K& k, const V& v) : base_t(k, v), is_empty(false) {}
     
-    template <class X, class Y>
+    template <typename X, typename Y>
     KeyValuePair(const pair<X,Y> &p) : base_t(p), is_empty(false) {}
     
-    template <class X, class Y>
+    template <typename X, typename Y>
     KeyValuePair(const KeyValuePair<X,Y> &p) : base_t(p), is_empty(p.is_empty) {}
   };
   
@@ -159,24 +160,24 @@ namespace HamaPipes {
     virtual const string& get(const string& key) const {
       map<string,string>::const_iterator itr = values_.find(key);
       if (itr == values_.end()) {
-        throw Error("Key " + key + " not found in BSPJob");
+        throw HadoopUtils::Error("Key " + key + " not found in BSPJob");
       }
       return itr->second;
     }
     
     virtual int getInt(const string& key) const {
       const string& val = get(key);
-      return toInt(val);
+      return HadoopUtils::toInt(val);
     }
     
     virtual float getFloat(const string& key) const {
       const string& val = get(key);
-      return toFloat(val);
+      return HadoopUtils::toFloat(val);
     }
     
     virtual bool getBoolean(const string& key) const {
       const string& val = get(key);
-      return toBool(val);
+      return HadoopUtils::toBool(val);
     }
   };
   
@@ -250,20 +251,52 @@ namespace HamaPipes {
   };
   
   /********************************************/
+  /******** DownwardProtocolPartition *********/
+  /********************************************/
+  /* DownwardProtocolPartition wraps void template parameter */
+  template<typename D, typename K, typename V>
+  class DownwardProtocolPartition {
+  public:
+    void runPartition(const K& key, const V& value, int32_t num_tasks) {
+      static_cast<D*>(this)->template runPartition<K,V>(key, value, num_tasks);
+    }
+  };
+  
+  template<typename D, typename K>
+  class DownwardProtocolPartition<D, K, void> {
+  public:
+    void runPartition(const K& key, int32_t num_tasks) {
+      static_cast<D*>(this)->template runPartition<K>(key, num_tasks);
+    }
+  };
+  
+  template<typename D, typename V>
+  class DownwardProtocolPartition<D, void, V> {
+  public:
+    void runPartition(const V& value, int32_t num_tasks) {
+      static_cast<D*>(this)->template runPartition<V>(value, num_tasks);
+    }
+  };
+  
+  template<typename D>
+  class DownwardProtocolPartition<D, void, void> {
+  public:
+    /* Partition nothing */
+  };
+  
+  /********************************************/
   /************* DownwardProtocol *************/
   /********************************************/
-  template<class K1, class V1>
-  class DownwardProtocol {
+  template<typename D, typename K1, typename V1>
+  class DownwardProtocol : public DownwardProtocolPartition<D, K1, V1>{
   public:
     virtual void start(int protocol_version) = 0;
     virtual void setBSPJob(vector<string> values) = 0;
     virtual void setInputTypes(string key_type, string value_type) = 0;
     
-    virtual void runBsp(bool piped_input, bool piped_output) = 0;
-    virtual void runCleanup(bool piped_input, bool piped_output) = 0;
-    virtual void runSetup(bool piped_input, bool piped_output) = 0;
-    
-    virtual void runPartition(const K1& key, const V1& value, int32_t num_tasks) = 0;
+    virtual void runBsp() = 0;
+    virtual void runCleanup() = 0;
+    virtual void runSetup() = 0;
     
     virtual void close() = 0;
     virtual void abort() = 0;
@@ -278,22 +311,27 @@ namespace HamaPipes {
   public:
     virtual void sendCommand(int32_t cmd) = 0;
     
-    template<class T>
+    template<typename T>
     void sendCommand(int32_t cmd, T value) {
       static_cast<D*>(this)->template sendCommand<T>(cmd, value);
     }
     
-    template<class T>
+    template<typename T>
     void sendCommand(int32_t cmd, const T values[], int size) {
       static_cast<D*>(this)->template sendCommand<T>(cmd, values, size);
     }
     
-    template<class T1, class T2>
+    template<typename T1, typename T2>
     void sendCommand(int32_t cmd, T1 value1, T2 value2) {
       static_cast<D*>(this)->template sendCommand<T1,T2>(cmd, value1, value2);
     }
     
-    template<class T1, class T2>
+    template<typename T1, typename T2, typename T3>
+    void sendCommand(int32_t cmd, T1 value1, T2 value2, T3 value3) {
+      static_cast<D*>(this)->template sendCommand<T1,T2,T3>(cmd, value1, value2, value3);
+    }
+    
+    template<typename T1, typename T2>
     void sendCommand(int32_t cmd, T1 value, const T2 values[], int size) {
       static_cast<D*>(this)->template sendCommand<T1,T2>(cmd, value, values, size);
     }
@@ -304,32 +342,75 @@ namespace HamaPipes {
     virtual ~UpwardProtocol() {}
   };
   
+  /********************************************/
+  /*********** ProtocolEventHandler ***********/
+  /********************************************/
+  /* ProtocolEventHandler wraps void template parameter */
+  template<typename D, typename K, typename V>
+  class ProtocolEventHandler {
+  public:
+    void nextEvent() {
+      static_cast<D*>(this)->template nextEvent<K,V>();
+    }
+  };
+  
+  template<typename D, typename K>
+  class ProtocolEventHandler<D, K, void> {
+  public:
+    void nextEvent() {
+      static_cast<D*>(this)->template nextEvent<K>();
+    }
+  };
+  
+  template<typename D, typename V>
+  class ProtocolEventHandler<D, void, V> {
+  public:
+    void nextEvent() {
+      static_cast<D*>(this)->template nextEvent<V>();
+    }
+  };
+  
+  template<typename D>
+  class ProtocolEventHandler<D, void, void> {
+  public:
+    void nextEvent() {
+      static_cast<D*>(this)->nextEvent();
+    }
+  };
+  
+  /********************************************/
+  /*********** BinaryUpwardProtocol ***********/
+  /********************************************/
   /* Forward definition of BinaryUpwardProtocol to pass to UpwardProtocol */
   class BinaryUpwardProtocol;
   
   /********************************************/
   /***************** Protocol *****************/
   /********************************************/
-  template<typename D>
-  class Protocol {
+  template<typename D, typename K1, typename V1>
+  class Protocol: public ProtocolEventHandler<D, K1, V1> {
   public:
     
-    template<class T>
+    template<typename T>
     T getResult(int32_t expected_response_cmd) {
       return static_cast<D*>(this)->template getResult<T>(expected_response_cmd);
     }
     
-    template<class T>
+    template<typename T>
     vector<T> getVectorResult(int32_t expected_response_cmd) {
       return static_cast<D*>(this)->template getVectorResult<T>(expected_response_cmd);
     }
     
-    template<class K, class V>
+    template<typename K, typename V>
     KeyValuePair<K,V> getKeyValueResult(int32_t expected_response_cmd) {
       return static_cast<D*>(this)->template getKeyValueResult<K,V>(expected_response_cmd);
     }
     
-    virtual void nextEvent() = 0;
+    template<typename T>
+    KeyValuePair<T,T> getKeyValueResult(int32_t expected_response_cmd) {
+      return static_cast<D*>(this)->template getKeyValueResult<T>(expected_response_cmd);
+    }
+    
     virtual bool verifyResult(int32_t expected_response_cmd) = 0;
     virtual UpwardProtocol<BinaryUpwardProtocol>* getUplink() = 0;
     virtual ~Protocol(){}
@@ -362,28 +443,186 @@ namespace HamaPipes {
      * Read next key/value pair from the SequenceFile with fileID
      * Using Curiously recurring template pattern(CTRP)
      */
-    template<class K, class V>
+    template<typename K, typename V>
     bool sequenceFileReadNext(int32_t file_id, K& key, V& value) {
       return static_cast<D*>(this)->template sequenceFileReadNext<K,V>(file_id, key, value);
+    }
+    
+    /**
+     * Read next key OR value from the SequenceFile with fileID
+     * key OR value type is NullWritable
+     */
+    template<typename T>
+    bool sequenceFileReadNext(int32_t file_id, T& key_or_value) {
+      return static_cast<D*>(this)->template sequenceFileReadNext<T>(file_id, key_or_value);
     }
     
     /**
      * Append the next key/value pair to the SequenceFile with fileID
      * Using Curiously recurring template pattern(CTRP)
      */
-    template<class K, class V>
+    template<typename K, typename V>
     bool sequenceFileAppend(int32_t file_id, const K& key, const V& value) {
       return static_cast<D*>(this)->template sequenceFileAppend<K,V>(file_id, key, value);
     }
+    
+    /**
+     * Append the next key OR value pair to the SequenceFile with fileID
+     * key OR value type is NullWritable
+     */
+    template<typename T>
+    bool sequenceFileAppend(int32_t file_id, const T& key_or_value) {
+      return static_cast<D*>(this)->template sequenceFileAppend<T>(file_id, key_or_value);
+    }
   };
   
+  /********************************************/
+  /****************** Reader ******************/
+  /********************************************/
+  /* Reader wraps void template parameter */
+  template<typename D, typename K, typename V>
+  class Reader {
+  public:
+    /**
+     * Deserializes the next input key value into the given objects
+     */
+    bool readNext(K& key, V& value) {
+      return static_cast<D*>(this)->template readNext<K,V>(key, value);
+    }
+    
+    /**
+     * Reads the next key value pair and returns it as a pair. It may reuse a
+     * {@link KeyValuePair} instance to save garbage collection time.
+     *
+     * @return null if there are no records left.
+     * @throws IOException
+     */
+    //public KeyValuePair<K1, V1> readNext() throws IOException;
+  };
+  
+  template<typename D, typename K>
+  class Reader<D, K, void> {
+  public:
+    /**
+     * Deserializes the next input key into the given object
+     * value type is NullWritable
+     */
+    bool readNext(K& key) {
+      return static_cast<D*>(this)->template readNext<K>(key);
+    }
+  };
+  
+  template<typename D, typename V>
+  class Reader<D, void, V> {
+  public:
+    /**
+     * Deserializes the next input value into the given object
+     * key type is NullWritable
+     */
+    bool readNext(V& value) {
+      return static_cast<D*>(this)->template readNext<V>(value);
+    }
+  };
+  
+  template<typename D>
+  class Reader<D, void, void> {
+  public:
+    /* key AND value type are NullWritable */
+    /* Read nothing */
+  };
+  
+  /********************************************/
+  /****************** Writer ******************/
+  /********************************************/
+  /* Writer wraps void template parameter */
+  template<typename D, typename K, typename V>
+  class Writer {
+  public:
+    /**
+     * Writes a key/value pair to the output collector
+     */
+    void write(const K& key, const V& value) {
+      static_cast<D*>(this)->template write<K,V>(key, value);
+    }
+  };
+  
+  template<typename D, typename K>
+  class Writer<D, K, void> {
+  public:
+    /**
+     * Writes a key to the output collector
+     * value type is NullWritable
+     */
+    void write(const K& key) {
+      static_cast<D*>(this)->template write<K>(key);
+    }
+  };
+  
+  template<typename D, typename V>
+  class Writer<D, void, V> {
+  public:
+    /**
+     * Writes a value to the output collector
+     * key type is NullWritable
+     */
+    void write(const V& value) {
+      static_cast<D*>(this)->template write<V>(value);
+    }
+  };
+  
+  template<typename D>
+  class Writer<D, void, void> {
+  public:
+    /* key AND value type are NullWritable */
+    /* Write nothing */
+  };
+  
+  /********************************************/
+  /**************** Messenger *****************/
+  /********************************************/
+  /* Messenger wraps void template parameter */
+  template<typename D, typename M>
+  class Messenger {
+  public:
+    /**
+     * Send a data with a tag to another BSPSlave corresponding to hostname.
+     * Messages sent by this method are not guaranteed to be received in a sent
+     * order.
+     */
+    void sendMessage(const string& peer_name, const M& msg) {
+      static_cast<D*>(this)->template sendMessage<M>(peer_name, msg);
+    }
+    
+    /**
+     * @return A message from the peer's received messages queue (a FIFO).
+     */
+    virtual M getCurrentMessage() {
+      return static_cast<D*>(this)->template getCurrentMessage<M>();
+    }
+  };
+  
+  template<typename D>
+  class Messenger<D, void> {
+  public:
+    /* message type is NullWritable */
+    /* therefore messenger is not available */
+  };
+  
+  /********************************************/
+  /************** BSPContextImpl **************/
+  /********************************************/
   /* Forward definition of BSPContextImpl to pass to SequenceFileConnector */
-  template<class K1, class V1, class K2, class V2, class M>
+  template<typename K1, typename V1, typename K2, typename V2, typename M>
   class BSPContextImpl;
   
-  
-  template<class K1, class V1, class K2, class V2, class M>
-  class BSPContext: public TaskContext, public SequenceFileConnector<BSPContextImpl<K1, V1, K2, V2, M> > {
+  /********************************************/
+  /***************** BSPContext ***************/
+  /********************************************/
+  template<typename K1, typename V1, typename K2, typename V2, typename M>
+  class BSPContext: public TaskContext, public SequenceFileConnector<BSPContextImpl<K1, V1, K2, V2, M> >,
+  public Reader<BSPContextImpl<K1, V1, K2, V2, M>, K1, V1>,
+  public Writer<BSPContextImpl<K1, V1, K2, V2, M>, K2, V2>,
+  public Messenger<BSPContextImpl<K1, V1, K2, V2, M>, M> {
   public:
     
     /**
@@ -400,18 +639,6 @@ namespace HamaPipes {
      * Get the name of the value class of the input to this task.
      */
     virtual string getInputValueClass() = 0;
-    
-    /**
-     * Send a data with a tag to another BSPSlave corresponding to hostname.
-     * Messages sent by this method are not guaranteed to be received in a sent
-     * order.
-     */
-    virtual void sendMessage(const string& peer_name, const M& msg) = 0;
-    
-    /**
-     * @return A message from the peer's received messages queue (a FIFO).
-     */
-    virtual M getCurrentMessage() = 0;
     
     /**
      * @return The number of messages in the peer's received messages queue.
@@ -463,49 +690,37 @@ namespace HamaPipes {
     virtual void clear() = 0;
     
     /**
-     * Writes a key/value pair to the output collector
-     */
-    virtual void write(const K2& key, const V2& value) = 0;
-    
-    /**
-     * Deserializes the next input key value into the given objects;
-     */
-    virtual bool readNext(K1& key, V1& value) = 0;
-    
-    /**
-     * Reads the next key value pair and returns it as a pair. It may reuse a
-     * {@link KeyValuePair} instance to save garbage collection time.
-     *
-     * @return null if there are no records left.
-     * @throws IOException
-     */
-    //public KeyValuePair<K1, V1> readNext() throws IOException;
-    
-    /**
      * Closes the input and opens it right away, so that the file pointer is at
      * the beginning again.
      */
     virtual void reopenInput() = 0;
-    
   };
   
+  /********************************************/
+  /****************** Closable ****************/
+  /********************************************/
   class Closable {
   public:
     virtual void close() {}
     virtual ~Closable() {}
   };
   
+  /********************************************/
+  /******************* BSP ********************/
+  /********************************************/
   /**
    * The application's BSP class to do bsp.
    */
-  template<class K1, class V1, class K2, class V2, class M>
+  template<typename K1, typename V1, typename K2, typename V2, typename M>
   class BSP: public Closable {
   public:
     /**
      * This method is called before the BSP method. It can be used for setup
      * purposes.
      */
-    virtual void setup(BSPContext<K1, V1, K2, V2, M>& context) = 0;
+    virtual void setup(BSPContext<K1, V1, K2, V2, M>& context) {
+      // empty implementation, because overriding is optional
+    }
     
     /**
      * This method is your computation method, the main work of your BSP should be
@@ -518,49 +733,51 @@ namespace HamaPipes {
      * purposes. Cleanup is guranteed to be called after the BSP runs, even in
      * case of exceptions.
      */
-    virtual void cleanup(BSPContext<K1, V1, K2, V2, M>& context) = 0;
+    virtual void cleanup(BSPContext<K1, V1, K2, V2, M>& context) {
+      // empty implementation, because overriding is optional
+    }
   };
   
+  /********************************************/
+  /**************** Partitioner ***************/
+  /********************************************/
   /**
    * User code to decide where each key should be sent.
    */
-  template<class K1, class V1, class K2, class V2, class M>
+  template<typename K1, typename V1>
   class Partitioner {
   public:
-    
     virtual int partition(const K1& key, const V1& value, int32_t num_tasks) = 0;
     virtual ~Partitioner() {}
   };
   
-  /**
-   * For applications that want to read the input directly for the map function
-   * they can define RecordReaders in C++.
-   */
-  template<class K, class V>
-  class RecordReader: public Closable {
+  template<typename K1>
+  class Partitioner<K1, void> {
   public:
-    virtual bool next(K& key, V& value) = 0;
-    
-    /**
-     * The progress of the record reader through the split as a value between
-     * 0.0 and 1.0.
-     */
-    virtual float getProgress() = 0;
+    virtual int partition(const K1& key, int32_t num_tasks) = 0;
+    virtual ~Partitioner() {}
   };
   
-  /**
-   * An object to write key/value pairs as they are emited from the reduce.
-   */
-  template<class K, class V>
-  class RecordWriter: public Closable {
+  template<typename V1>
+  class Partitioner<void, V1> {
   public:
-    virtual void emit(const K& key, const V& value) = 0;
+    virtual int partition(const V1& value, int32_t num_tasks) = 0;
+    virtual ~Partitioner() {}
   };
   
+  template<>
+  class Partitioner<void, void> {
+  public:
+    /* Partition nothing */
+  };
+  
+  /********************************************/
+  /****************** Factory *****************/
+  /********************************************/
   /**
    * A factory to create the necessary application objects.
    */
-  template<class K1, class V1, class K2, class V2, class M>
+  template<typename K1, typename V1, typename K2, typename V2, typename M>
   class Factory {
   public:
     virtual BSP<K1, V1, K2, V2, M>* createBSP(BSPContext<K1, V1, K2, V2, M>& context) const = 0;
@@ -570,35 +787,20 @@ namespace HamaPipes {
      * @return the new partitioner or NULL, if the default partitioner should be
      * used.
      */
-    virtual Partitioner<K1, V1, K2, V2, M>* createPartitioner(BSPContext<K1, V1, K2, V2, M>& context) const {
-      return NULL;
-    }
-    
-    /**
-     * Create an application record reader.
-     * @return the new RecordReader or NULL, if the Java RecordReader should be
-     *    used.
-     */
-    virtual RecordReader<K1,V1>* createRecordReader(BSPContext<K1, V1, K2, V2, M>& context) const {
-      return NULL;
-    }
-    
-    /**
-     * Create an application record writer.
-     * @return the new RecordWriter or NULL, if the Java RecordWriter should be
-     *    used.
-     */
-    virtual RecordWriter<K2,V2>* createRecordWriter(BSPContext<K1, V1, K2, V2, M>& context) const {
+    virtual Partitioner<K1, V1>* createPartitioner(BSPContext<K1, V1, K2, V2, M>& context) const {
       return NULL;
     }
     
     virtual ~Factory() {}
   };
   
+  /********************************************/
+  /***************** toString *****************/
+  /********************************************/
   /**
    * Generic toString
    */
-  template <class T>
+  template <typename T>
   string toString(const T& t)
   {
     std::ostringstream oss;
@@ -612,94 +814,100 @@ namespace HamaPipes {
     return t;
   }
   
+  /********************************************/
+  /*************** Serialization **************/
+  /********************************************/
   /**
    * Generic serialization
    */
-  template<class T>
-  void serialize(T t, OutStream& stream) {
-    serializeString(toString<T>(t), stream);
+  template<typename T>
+  void serialize(T t, HadoopUtils::OutStream& stream) {
+    HadoopUtils::serializeString(toString<T>(t), stream);
   }
   
   /**
    * Generic serialization template specializations
    */
-  template <> void serialize<int32_t>(int32_t t, OutStream& stream) {
-    serializeInt(t, stream);
+  template <> void serialize<int32_t>(int32_t t, HadoopUtils::OutStream& stream) {
+    HadoopUtils::serializeInt(t, stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::serializeInt '%d'\n", t);
     }
   }
-  template <> void serialize<int64_t>(int64_t t, OutStream& stream) {
-    serializeLong(t, stream);
+  template <> void serialize<int64_t>(int64_t t, HadoopUtils::OutStream& stream) {
+    HadoopUtils::serializeLong(t, stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::serializeLong '%ld'\n", (long)t);
     }
   }
-  template <> void serialize<float>(float t, OutStream& stream) {
-    serializeFloat(t, stream);
+  template <> void serialize<float>(float t, HadoopUtils::OutStream& stream) {
+    HadoopUtils::serializeFloat(t, stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::serializeFloat '%f'\n", t);
     }
   }
-  template <> void serialize<double>(double t, OutStream& stream) {
-    serializeDouble(t, stream);
+  template <> void serialize<double>(double t, HadoopUtils::OutStream& stream) {
+    HadoopUtils::serializeDouble(t, stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::serializeDouble '%f'\n", t);
     }
   }
-  template <> void serialize<string>(string t, OutStream& stream) {
-    serializeString(t, stream);
+  template <> void serialize<string>(string t, HadoopUtils::OutStream& stream) {
+    HadoopUtils::serializeString(t, stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::serializeString '%s'\n", t.c_str());
     }
   }
   
+  /********************************************/
+  /************** Deserialization *************/
+  /********************************************/
   /**
    * Generic deserialization
    */
-  template<class T>
-  T deserialize(InStream& stream) {
+  template<typename T>
+  T deserialize(HadoopUtils::InStream& stream) {
     string str = "Not able to deserialize type: ";
-    throw Error(str.append(typeid(T).name()));
+    throw HadoopUtils::Error(str.append(typeid(T).name()));
   }
   
   /**
    * Generic deserialization template specializations
    */
-  template <> int32_t deserialize<int32_t>(InStream& stream) {
-    int32_t result = deserializeInt(stream);
+  template <> int32_t deserialize<int32_t>(HadoopUtils::InStream& stream) {
+    int32_t result = HadoopUtils::deserializeInt(stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::deserializeInt result: '%d'\n",
               result);
     }
     return result;
   }
-  template <> int64_t deserialize<int64_t>(InStream& stream) {
-    int64_t result = deserializeLong(stream);
+  template <> int64_t deserialize<int64_t>(HadoopUtils::InStream& stream) {
+    int64_t result = HadoopUtils::deserializeLong(stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::deserializeLong result: '%ld'\n",
               (long)result);
     }
     return result;
   }
-  template <> float deserialize<float>(InStream& stream) {
-    float result = deserializeFloat(stream);
+  template <> float deserialize<float>(HadoopUtils::InStream& stream) {
+    float result = HadoopUtils::deserializeFloat(stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::deserializeFloat result: '%f'\n",
               result);
     }
     return result;
   }
-  template <> double deserialize<double>(InStream& stream) {
-    double result = deserializeDouble(stream);
+  template <> double deserialize<double>(HadoopUtils::InStream& stream) {
+    double result = HadoopUtils::deserializeDouble(stream);
     if (logging) {
       fprintf(stderr,"HamaPipes::BinaryProtocol::deserializeDouble result: '%f'\n",
               result);
     }
     return result;
   }
-  template <> string deserialize<string>(InStream& stream) {
-    string result = deserializeString(stream);
+  template <> string deserialize<string>(HadoopUtils::InStream& stream) {
+    string result = HadoopUtils::deserializeString(stream);
     
     if (logging) {
       if (result.empty()) {
@@ -712,17 +920,20 @@ namespace HamaPipes {
     return result;
   }
   
+  /********************************************/
+  /*********** runTask entry method ***********/
+  /********************************************/
   /**
    * Run the assigned task in the framework.
    * The user's main function should set the various functions using the
    * set* functions above and then call this.
    * @return true, if the task succeeded.
    */
-  template<class K1, class V1, class K2, class V2, class M>
+  template<typename K1, typename V1, typename K2, typename V2, typename M>
   bool runTask(const Factory<K1, V1, K2, V2, M>& factory);
   
   // Include implementation in header because of templates
-  #include "../../impl/Pipes.cc"
+#include "../../impl/Pipes.cc"
 }
 
 #endif

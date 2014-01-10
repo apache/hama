@@ -244,15 +244,13 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
   }
 
   @Override
-  public void runSetup(boolean pipedInput, boolean pipedOutput)
-      throws IOException {
+  public void runSetup() throws IOException {
     writeLine(MessageType.RUN_SETUP, null);
     waitOnAck();
   }
 
   @Override
-  public void runBsp(boolean pipedInput, boolean pipedOutput)
-      throws IOException {
+  public void runBsp() throws IOException {
     writeLine(MessageType.RUN_BSP, null);
     waitOnAck();
   }
@@ -269,8 +267,7 @@ public class StreamingProtocol<K1 extends Writable, V1 extends Writable>
   }
 
   @Override
-  public void runCleanup(boolean pipedInput, boolean pipedOutput)
-      throws IOException {
+  public void runCleanup() throws IOException {
     writeLine(MessageType.RUN_CLEANUP, null);
     waitOnAck();
   }

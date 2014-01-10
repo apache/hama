@@ -109,46 +109,6 @@ public class Submitter implements Tool {
   }
 
   /**
-   * Set whether the job is using a Java RecordReader.
-   * 
-   * @param conf the configuration to modify
-   * @param value the new value
-   */
-  public static void setIsJavaRecordReader(Configuration conf, boolean value) {
-    conf.setBoolean("hama.pipes.java.recordreader", value);
-  }
-
-  /**
-   * Check whether the job is using a Java RecordReader
-   * 
-   * @param conf the configuration to check
-   * @return is it a Java RecordReader?
-   */
-  public static boolean getIsJavaRecordReader(Configuration conf) {
-    return conf.getBoolean("hama.pipes.java.recordreader", false);
-  }
-
-  /**
-   * Set whether the job will use a Java RecordWriter.
-   * 
-   * @param conf the configuration to modify
-   * @param value the new value to set
-   */
-  public static void setIsJavaRecordWriter(Configuration conf, boolean value) {
-    conf.setBoolean("hama.pipes.java.recordwriter", value);
-  }
-
-  /**
-   * Will the job use a Java RecordWriter?
-   * 
-   * @param conf the configuration to check
-   * @return true, if the output of the job will be written by Java
-   */
-  public static boolean getIsJavaRecordWriter(Configuration conf) {
-    return conf.getBoolean("hama.pipes.java.recordwriter", false);
-  }
-
-  /**
    * Set the configuration, if it doesn't already have a value for the given
    * key.
    * 
@@ -237,8 +197,6 @@ public class Submitter implements Tool {
     setIfUnset(job.getConfiguration(), "bsp.job.name", "Hama Pipes Job");
 
     // DEBUG Output
-    LOG.debug("isJavaRecordReader: "
-        + getIsJavaRecordReader(job.getConfiguration()));
     LOG.debug("BspClass: " + job.getBspClass().getName());
     // conf.setInputFormat(NLineInputFormat.class);
     LOG.debug("InputFormat: " + job.getInputFormat());
@@ -440,7 +398,6 @@ public class Submitter implements Tool {
       }
 
       if (results.hasOption("inputformat")) {
-        setIsJavaRecordReader(job.getConfiguration(), true);
         job.setInputFormat(getClass(results, "inputformat", conf,
             InputFormat.class));
       }
@@ -451,7 +408,6 @@ public class Submitter implements Tool {
       }
 
       if (results.hasOption("outputformat")) {
-        setIsJavaRecordWriter(job.getConfiguration(), true);
         job.setOutputFormat(getClass(results, "outputformat", conf,
             OutputFormat.class));
       }

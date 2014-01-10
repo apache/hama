@@ -37,6 +37,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.util.StringUtils;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.pipes.Submitter;
 
@@ -61,6 +62,7 @@ public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
 
   public final Object hasTaskLock = new Object();
   private boolean hasTask = false;
+  private Throwable uplinkException = null;
   public final Object resultLock = new Object();
   private Integer resultInt = null;
 
@@ -126,6 +128,10 @@ public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
   public UplinkReader<K1, V1, K2, V2, M> getUplinkReader(
       BSPPeer<K1, V1, K2, V2, M> peer, InputStream in) throws IOException {
     return new UplinkReader<K1, V1, K2, V2, M>(this, peer, in);
+  }
+
+  public void setUplinkException(Throwable e) {
+    this.uplinkException = e;
   }
 
   public boolean isHasTask() {
@@ -223,36 +229,24 @@ public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
   }
 
   @Override
-  public void runSetup(boolean pipedInput, boolean pipedOutput)
-      throws IOException {
-
+  public void runSetup() throws IOException {
     WritableUtils.writeVInt(this.outStream, MessageType.RUN_SETUP.code);
-    WritableUtils.writeVInt(this.outStream, pipedInput ? 1 : 0);
-    WritableUtils.writeVInt(this.outStream, pipedOutput ? 1 : 0);
     flush();
     setHasTask(true);
     LOG.debug("Sent MessageType.RUN_SETUP");
   }
 
   @Override
-  public void runBsp(boolean pipedInput, boolean pipedOutput)
-      throws IOException {
-
+  public void runBsp() throws IOException {
     WritableUtils.writeVInt(this.outStream, MessageType.RUN_BSP.code);
-    WritableUtils.writeVInt(this.outStream, pipedInput ? 1 : 0);
-    WritableUtils.writeVInt(this.outStream, pipedOutput ? 1 : 0);
     flush();
     setHasTask(true);
     LOG.debug("Sent MessageType.RUN_BSP");
   }
 
   @Override
-  public void runCleanup(boolean pipedInput, boolean pipedOutput)
-      throws IOException {
-
+  public void runCleanup() throws IOException {
     WritableUtils.writeVInt(this.outStream, MessageType.RUN_CLEANUP.code);
-    WritableUtils.writeVInt(this.outStream, pipedInput ? 1 : 0);
-    WritableUtils.writeVInt(this.outStream, pipedOutput ? 1 : 0);
     flush();
     setHasTask(true);
     LOG.debug("Sent MessageType.RUN_CLEANUP");
@@ -279,7 +273,7 @@ public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
     synchronized (this.resultLock) {
       try {
         while (resultInt == null) {
-          this.resultLock.wait();
+          this.resultLock.wait(); // this call blocks
         }
 
         resultVal = resultInt;
@@ -329,17 +323,19 @@ public class BinaryProtocol<K1, V1, K2, V2, M extends Writable> implements
 
   @Override
   public boolean waitForFinish() throws IOException, InterruptedException {
-    // LOG.debug("waitForFinish... "+hasTask);
+    // LOG.debug("waitForFinish... " + hasTask);
     synchronized (this.hasTaskLock) {
-      try {
-        while (this.hasTask)
-          this.hasTaskLock.wait();
 
-      } catch (InterruptedException e) {
-        LOG.error(e);
+      while (this.hasTask) {
+        this.hasTaskLock.wait(); // this call blocks
+      }
+
+      // Check if UplinkReader thread has thrown exception
+      if (uplinkException != null) {
+        throw new InterruptedException(
+            StringUtils.stringifyException(uplinkException));
       }
     }
-
     return hasTask;
   }
 

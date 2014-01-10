@@ -130,7 +130,7 @@ public:
   
 };
 
-class MatrixRowPartitioner: public Partitioner<int,string,int,string,string> {
+class MatrixRowPartitioner: public Partitioner<int,string> {
 public:
   MatrixRowPartitioner(BSPContext<int,string,int,string,string>& context) { }
   
