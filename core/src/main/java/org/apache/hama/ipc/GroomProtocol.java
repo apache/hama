@@ -27,7 +27,7 @@ import org.apache.hama.bsp.Directive;
 public interface GroomProtocol extends HamaRPCProtocolVersion {
 
   /**
-   * Instruct GroomServer performaning tasks.
+   * Instruct GroomServer performing tasks.
    * 
    * @param directive instructs a GroomServer performing necessary execution.
    * @throws IOException
