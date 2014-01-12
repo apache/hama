@@ -173,10 +173,10 @@ public class SemiClusteringVertex extends
       for (Edge<Text, DoubleWritable> e : eL) {
         eC++;
         if (vertexId.contains(e.getDestinationVertexID().toString())
-            && e.getCost() != null) {
-          iC = iC + e.getCost().get();
-        } else if (e.getCost() != null) {
-          bC = bC + e.getCost().get();
+            && e.getValue() != null) {
+          iC = iC + e.getValue().get();
+        } else if (e.getValue() != null) {
+          bC = bC + e.getValue().get();
         }
       }
     }
