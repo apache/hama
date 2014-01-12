@@ -310,7 +310,7 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
   @SuppressWarnings({ "unchecked", "static-method" })
   private void ensureEdgeValueNotNull(Edge<V, E> edge) {
     if (edge.getValue() == null) {
-      edge.setCost((E) GraphJobRunner.createEdgeCostObject());
+      edge.setValue((E) GraphJobRunner.createEdgeCostObject());
     }
   }
 
@@ -370,9 +370,9 @@ public final class DiskVerticesInfo<V extends WritableComparable, E extends Writ
         edge.getDestinationVertexID().readFields(staticGraphPartsDis);
         if (softGraphPartsDis.readByte() == NOT_NULL) {
           ensureEdgeValueNotNull(edge);
-          edge.getCost().readFields(softGraphPartsDis);
+          edge.getValue().readFields(softGraphPartsDis);
         } else {
-          edge.setCost(null);
+          edge.setValue(null);
         }
         edges.add(edge);
       }

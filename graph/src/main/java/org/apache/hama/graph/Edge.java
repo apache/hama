@@ -50,7 +50,7 @@ public final class Edge<VERTEX_ID extends WritableComparable, EDGE_VALUE_TYPE ex
     return cost;
   }
 
-  void setCost(EDGE_VALUE_TYPE cost) {
+  void setValue(EDGE_VALUE_TYPE cost) {
     this.cost = cost;
   }
 
