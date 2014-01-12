@@ -46,10 +46,6 @@ public final class Edge<VERTEX_ID extends WritableComparable, EDGE_VALUE_TYPE ex
     return destinationVertexID;
   }
 
-  public EDGE_VALUE_TYPE getValue() {
-    return cost;
-  }
-
   public EDGE_VALUE_TYPE getCost() {
     return cost;
   }
