@@ -82,7 +82,7 @@ public class QuorumPeer implements Constants {
   /**
    * Parse ZooKeeper configuration from Hama XML config and run a QuorumPeer.
    * 
-   * @param baseConf Hadoop Configuration.
+   * @param conf Hadoop Configuration.
    */
   public static void runZooKeeper(Configuration conf) throws Exception {
     Properties zkProperties = makeZKProps(conf);
@@ -96,8 +96,8 @@ public class QuorumPeer implements Constants {
    * Runs a shutdownable Zookeeper main server. This does not work with multiple
    * quorums!
    * 
-   * @param conf
-   * @return
+   * @param conf the configuration to be used to start ZK
+   * @return a <code>ZookeeperTuple</code>
    * @throws Exception
    */
   public static ZookeeperTuple runShutdownableZooKeeper(Configuration conf)
@@ -326,7 +326,7 @@ public class QuorumPeer implements Constants {
    * Return the ZK Quorum servers string given zk properties returned by
    * makeZKProps
    * 
-   * @param properties
+   * @param properties the ZK properties
    * @return Quorum servers String
    */
   public static String getZKQuorumServersString(Properties properties) {
@@ -388,7 +388,7 @@ public class QuorumPeer implements Constants {
   /**
    * Return the ZK Quorum servers string given the specified configuration.
    * 
-   * @param conf
+   * @param conf the configuration to be used to get ZK Quorum servers
    * @return Quorum servers
    */
   public static String getZKQuorumServersString(Configuration conf) {
