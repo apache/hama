@@ -25,10 +25,10 @@ import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
 
 /**
- * Hadoop RPC Interface for messaging.
+ * Hama RPC Interface for messaging.
  * 
  */
-public interface HadoopMessageManager<M extends Writable> extends
+public interface HamaMessageManager<M extends Writable> extends
     HamaRPCProtocolVersion {
 
   /**

@@ -37,18 +37,18 @@ import org.apache.hama.ipc.RPC.Server;
 import org.apache.hama.util.LRUCache;
 
 /**
- * Implementation of the {@link HadoopMessageManager}.
+ * Implementation of the {@link HamaMessageManager}.
  * 
  */
-public final class HadoopMessageManagerImpl<M extends Writable> extends
-    CompressableMessageManager<M> implements HadoopMessageManager<M> {
+public final class HamaMessageManagerImpl<M extends Writable> extends
+    CompressableMessageManager<M> implements HamaMessageManager<M> {
 
   private static final Log LOG = LogFactory
-      .getLog(HadoopMessageManagerImpl.class);
+      .getLog(HamaMessageManagerImpl.class);
 
   private Server server;
 
-  private LRUCache<InetSocketAddress, HadoopMessageManager<M>> peersLRUCache = null;
+  private LRUCache<InetSocketAddress, HamaMessageManager<M>> peersLRUCache = null;
 
   @SuppressWarnings("serial")
   @Override
@@ -57,13 +57,13 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
     super.init(attemptId, peer, conf, peerAddress);
     super.initCompression(conf);
     startRPCServer(conf, peerAddress);
-    peersLRUCache = new LRUCache<InetSocketAddress, HadoopMessageManager<M>>(
+    peersLRUCache = new LRUCache<InetSocketAddress, HamaMessageManager<M>>(
         maxCachedConnections) {
       @Override
       protected final boolean removeEldestEntry(
-          Map.Entry<InetSocketAddress, HadoopMessageManager<M>> eldest) {
+          Map.Entry<InetSocketAddress, HamaMessageManager<M>> eldest) {
         if (size() > this.capacity) {
-          HadoopMessageManager<M> proxy = eldest.getValue();
+          HamaMessageManager<M> proxy = eldest.getValue();
           RPC.stopProxy(proxy);
           return true;
         }
@@ -103,7 +103,7 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
   @Override
   public final void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException {
-    HadoopMessageManager<M> bspPeerConnection = this.getBSPPeerConnection(addr);
+    HamaMessageManager<M> bspPeerConnection = this.getBSPPeerConnection(addr);
     if (bspPeerConnection == null) {
       throw new IllegalArgumentException("Can not find " + addr.toString()
           + " to transfer messages to!");
@@ -129,12 +129,12 @@ public final class HadoopMessageManagerImpl<M extends Writable> extends
    * @throws IOException
    */
   @SuppressWarnings("unchecked")
-  protected final HadoopMessageManager<M> getBSPPeerConnection(
+  protected final HamaMessageManager<M> getBSPPeerConnection(
       InetSocketAddress addr) throws IOException {
-    HadoopMessageManager<M> bspPeerConnection;
+    HamaMessageManager<M> bspPeerConnection;
     if (!peersLRUCache.containsKey(addr)) {
-      bspPeerConnection = (HadoopMessageManager<M>) RPC.getProxy(
-          HadoopMessageManager.class, HamaRPCProtocolVersion.versionID, addr,
+      bspPeerConnection = (HamaMessageManager<M>) RPC.getProxy(
+          HamaMessageManager.class, HamaRPCProtocolVersion.versionID, addr,
           this.conf);
       peersLRUCache.put(addr, bspPeerConnection);
     } else {

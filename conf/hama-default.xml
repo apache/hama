@@ -228,7 +228,7 @@
   
   <property>
     <name>hama.messenger.class</name>
-    <value>org.apache.hama.bsp.message.HadoopMessageManagerImpl</value>
+    <value>org.apache.hama.bsp.message.HamaMessageManagerImpl</value>
   </property>
 
   <!-- The message compression is not recommended for a large production environment -->
