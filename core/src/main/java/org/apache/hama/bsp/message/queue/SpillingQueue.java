@@ -336,7 +336,7 @@ public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M>
 
   @Override
   public int size() {
-    return numMessagesWritten;
+    return numMessagesWritten - numMessagesRead;
   }
 
   @Override

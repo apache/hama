@@ -14,6 +14,7 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-845: The size() of Spilling Queue returns always numMessagesWritten (edwardyoon)
    HAMA-834: Fix KMeans example (Martin Illecker)
    HAMA-831: Support for multi records with same vertexID (edwardyoon)
    HAMA-830: KMeans and NeuralNetwork doesn't load config file (edwardyoon)

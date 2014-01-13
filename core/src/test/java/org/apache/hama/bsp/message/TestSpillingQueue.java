@@ -57,11 +57,13 @@ public class TestSpillingQueue extends TestCase {
     for (int i = 0; i < 1000; ++i) {
       queue.add(text);
     }
+    assertEquals(queue.size(), 1000);
     queue.prepareRead();
-    for (Text t : queue) {
+    Text t;
+    while ((t = queue.poll()) != null) {
       assertTrue(msg.equals(t.toString()));
-      text.clear();
     }
+    assertEquals(queue.size(), 0);
 
     assertTrue(queue.poll() == null);
 
