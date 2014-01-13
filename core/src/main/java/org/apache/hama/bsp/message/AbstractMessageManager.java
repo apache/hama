@@ -65,7 +65,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   protected SynchronizedQueue<M> localQueueForNextIteration;
   // this peer object is just used for counter incrementation
   protected BSPPeer<?, ?, ?, ?, M> peer;
-  
+
   // the task attempt id
   protected TaskAttemptID attemptId;
 
@@ -155,10 +155,38 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    */
   @Override
   public final void clearOutgoingQueues() {
-    if (localQueue != null) {
-      localQueue.close();
+    if (conf.getBoolean(MessageQueue.PERSISTENT_QUEUE, false)
+        && localQueue.size() > 0) {
+
+      if (localQueue.isMemoryBasedQueue()
+          && localQueueForNextIteration.isMemoryBasedQueue()) {
+
+        // To reduce the number of element additions
+        if (localQueue.size() > localQueueForNextIteration.size()) {
+          localQueue.addAll(localQueueForNextIteration);
+        } else {
+          localQueueForNextIteration.addAll(localQueue);
+          localQueue = localQueueForNextIteration.getMessageQueue();
+        }
+
+      } else {
+
+        // TODO find the way to switch disk-based queue efficiently.
+        localQueueForNextIteration.addAll(localQueue);
+        if (localQueue != null) {
+          localQueue.close();
+        }
+        localQueue = localQueueForNextIteration.getMessageQueue();
+
+      }
+    } else {
+      if (localQueue != null) {
+        localQueue.close();
+      }
+
+      localQueue = localQueueForNextIteration.getMessageQueue();
     }
-    localQueue = localQueueForNextIteration.getMessageQueue();
+
     localQueue.prepareRead();
     localQueueForNextIteration = getSynchronizedReceiverQueue();
     notifyInit();

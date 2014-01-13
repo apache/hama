@@ -26,6 +26,8 @@ import org.apache.hama.bsp.TaskAttemptID;
  */
 public interface MessageQueue<M> extends Iterable<M>, Configurable {
 
+  public static final String PERSISTENT_QUEUE = "hama.queue.behaviour.persistent";
+
   /**
    * Used to initialize the queue.
    */
@@ -83,5 +85,7 @@ public interface MessageQueue<M> extends Iterable<M>, Configurable {
    * @return true if the messages in the queue are serialized to byte buffers.
    */
   public boolean isMessageSerialized();
+  
+  public boolean isMemoryBasedQueue();
 
 }

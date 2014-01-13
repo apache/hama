@@ -177,8 +177,10 @@ public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M>
 
     try {
       this.spillOutputBuffer.close();
-      this.spilledInput.close();
-      this.spilledInput.completeReading(true);
+      if (this.spilledInput != null) {
+        this.spilledInput.close();
+        this.spilledInput.completeReading(true);
+      }
     } catch (IOException e) {
       LOG.error("Error closing the spilled input stream.", e);
       throw new RuntimeException(e);
@@ -360,6 +362,11 @@ public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M>
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public boolean isMemoryBasedQueue() {
+    return false;
   }
 
 }

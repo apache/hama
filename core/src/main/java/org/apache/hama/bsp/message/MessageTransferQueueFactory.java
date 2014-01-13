@@ -51,6 +51,7 @@ public class MessageTransferQueueFactory<M> {
 
   }
 
+  @SuppressWarnings("rawtypes")
   public static MessageTransferQueue getMessageTransferQueue(Configuration conf) {
     return (MessageTransferQueue) ReflectionUtils.newInstance(conf.getClass(
         MessageManager.TRANSFER_QUEUE_TYPE_CLASS,

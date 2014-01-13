@@ -117,4 +117,9 @@ public final class SortedMessageQueue<M extends WritableComparable<M>>
     addAll((POJOMessageBundle<M>) bundle);
   }
 
+  @Override
+  public boolean isMemoryBasedQueue() {
+    return true;
+  }
+
 }

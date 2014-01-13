@@ -211,4 +211,9 @@ public final class SingleLockQueue<T> implements SynchronizedQueue<T> {
       return queue.isMessageSerialized();
     }
   }
+
+  @Override
+  public boolean isMemoryBasedQueue() {
+    return true;
+  }
 }

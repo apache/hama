@@ -308,4 +308,9 @@ public final class DiskQueue<M extends Writable> extends POJOMessageQueue<M> {
   public boolean isMessageSerialized() {
     return false;
   }
+
+  @Override
+  public boolean isMemoryBasedQueue() {
+    return false;
+  }
 }

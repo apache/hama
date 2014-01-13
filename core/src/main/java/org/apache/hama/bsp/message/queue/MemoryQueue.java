@@ -107,4 +107,9 @@ public final class MemoryQueue<M extends Writable> extends POJOMessageQueue<M> {
   public boolean isMessageSerialized() {
     return false;
   }
+
+  @Override
+  public boolean isMemoryBasedQueue() {
+    return true;
+  }
 }

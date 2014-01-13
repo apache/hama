@@ -145,6 +145,7 @@ public class BipartiteMatchingTest extends TestCase {
   @Test
   public void testBipartiteMatching() throws IOException, InterruptedException,
       ClassNotFoundException {
+    deleteTempDirs();
     generateTestData();
     try {
       String seed = "2";

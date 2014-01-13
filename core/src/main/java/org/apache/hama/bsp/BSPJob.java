@@ -31,6 +31,7 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
+import org.apache.hama.bsp.message.queue.MessageQueue;
 
 /**
  * A BSP job configuration.
@@ -410,5 +411,10 @@ public class BSPJob extends BSPJobContext {
    */
   public void setCompressionThreshold(long ct) {
     conf.setLong("hama.messenger.compression.threshold", ct);
+  }
+
+  public void setMessageQueueBehaviour(String queueBehaviour) {
+    if (queueBehaviour.equals(MessageQueue.PERSISTENT_QUEUE))
+      conf.setBoolean(MessageQueue.PERSISTENT_QUEUE, true);
   }
 }
