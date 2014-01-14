@@ -18,23 +18,22 @@
 package org.apache.hama.bsp.message.queue;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Writable;
 
 /**
- * Queue transfer protocol for spilling queue.
- *
- * @param <M> The message type.
+ * Interface to define the sender queue and receiver queue protocol.
+ * 
+ * @param <M>
  */
-public class SpillingQueueTransferProtocol<M extends Writable> implements
-    MessageTransferQueue<M> {
+public interface MessageTransferProtocol<M> {
+  
+  /**
+   * Instantiate a sender queue.
+   */
+  public MessageQueue<M> getSenderQueue(Configuration conf);
 
-  @Override
-  public MessageQueue<M> getSenderQueue(Configuration conf) {
-    return new SpillingQueue<M>();
-  }
+  /**
+   * Instantiate a receiver queue.
+   */
+  public MessageQueue<M> getReceiverQueue(Configuration conf);
 
-  @Override
-  public MessageQueue<M> getReceiverQueue(Configuration conf) {
-    return new SpillingQueue<M>();
-  }
 }

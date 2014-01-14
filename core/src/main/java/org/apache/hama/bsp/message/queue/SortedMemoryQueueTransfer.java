@@ -18,24 +18,24 @@
 package org.apache.hama.bsp.message.queue;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
 /**
- * The disk transfer queue protocol.
+ * Queue transfer protocol for sorted message queue.
  *
  * @param <M>
  */
-public class DiskTransferProtocolQueue<M extends Writable> implements
-    MessageTransferQueue<M> {
+public class SortedMemoryQueueTransfer<M extends WritableComparable<M>> implements
+    MessageTransferProtocol<M> {
 
   @Override
-  public MessageQueue<M> getSenderQueue(Configuration conf) {
-    return new DiskQueue<M>();
+  public SortedMemoryQueue<M> getSenderQueue(Configuration conf) {
+    return new SortedMemoryQueue<M>();
   }
 
   @Override
-  public MessageQueue<M> getReceiverQueue(Configuration conf) {
-    return new DiskQueue<M>();
+  public SortedMemoryQueue<M> getReceiverQueue(Configuration conf) {
+    return new SortedMemoryQueue<M>();
   }
 
 }

@@ -34,10 +34,10 @@ import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.Counters;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.DiskQueue;
-import org.apache.hama.bsp.message.queue.DiskTransferProtocolQueue;
-import org.apache.hama.bsp.message.queue.MemoryTransferProtocol;
+import org.apache.hama.bsp.message.queue.DiskQueueTransfer;
+import org.apache.hama.bsp.message.queue.MemoryQueueTransfer;
 import org.apache.hama.bsp.message.queue.MessageQueue;
-import org.apache.hama.bsp.message.queue.MessageTransferQueue;
+import org.apache.hama.bsp.message.queue.MessageTransferProtocol;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestHamaMessageManager extends TestCase {
@@ -50,7 +50,7 @@ public class TestHamaMessageManager extends TestCase {
   public void testMemoryMessaging() throws Exception {
     HamaConfiguration conf = new HamaConfiguration();
     conf.setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        MemoryTransferProtocol.class, MessageTransferQueue.class);
+        MemoryQueueTransfer.class, MessageTransferProtocol.class);
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     messagingInternal(conf);
   }
@@ -59,7 +59,7 @@ public class TestHamaMessageManager extends TestCase {
     HamaConfiguration conf = new HamaConfiguration();
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     conf.setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        DiskTransferProtocolQueue.class, MessageTransferQueue.class);
+        DiskQueueTransfer.class, MessageTransferProtocol.class);
     messagingInternal(conf);
   }
 

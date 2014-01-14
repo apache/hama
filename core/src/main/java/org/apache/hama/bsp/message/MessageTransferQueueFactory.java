@@ -20,7 +20,7 @@ package org.apache.hama.bsp.message;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.message.queue.MemoryQueue;
 import org.apache.hama.bsp.message.queue.MessageQueue;
-import org.apache.hama.bsp.message.queue.MessageTransferQueue;
+import org.apache.hama.bsp.message.queue.MessageTransferProtocol;
 import org.apache.hama.util.ReflectionUtils;
 
 /**
@@ -31,7 +31,7 @@ import org.apache.hama.util.ReflectionUtils;
 public class MessageTransferQueueFactory<M> {
 
   private static class DefaultMessageTransferQueue<M> implements
-      MessageTransferQueue<M> {
+      MessageTransferProtocol<M> {
 
     @SuppressWarnings("unchecked")
     @Override
@@ -52,10 +52,10 @@ public class MessageTransferQueueFactory<M> {
   }
 
   @SuppressWarnings("rawtypes")
-  public static MessageTransferQueue getMessageTransferQueue(Configuration conf) {
-    return (MessageTransferQueue) ReflectionUtils.newInstance(conf.getClass(
+  public static MessageTransferProtocol getMessageTransferQueue(Configuration conf) {
+    return (MessageTransferProtocol) ReflectionUtils.newInstance(conf.getClass(
         MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        DefaultMessageTransferQueue.class, MessageTransferQueue.class));
+        DefaultMessageTransferQueue.class, MessageTransferProtocol.class));
 
   }
 }

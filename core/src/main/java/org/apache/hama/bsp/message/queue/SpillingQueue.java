@@ -46,7 +46,7 @@ import org.apache.hama.bsp.message.io.SpillingDataOutputBuffer;
  * @param <M>
  */
 public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M>
-    implements MessageTransferQueue<M> {
+    implements MessageTransferProtocol<M> {
 
   private static final Log LOG = LogFactory.getLog(SpillingQueue.class);
 

@@ -59,7 +59,7 @@
   </property>
   <property>
     <name>hama.messenger.xfer.queue.class</name>
-    <value>org.apache.hama.bsp.message.queue.SortedMessageTransferProtocol</value>
+    <value>org.apache.hama.bsp.message.queue.SortedMemoryQueueTransfer</value>
   </property>
   <property>
     <name>bsp.input.partitioner.class</name>

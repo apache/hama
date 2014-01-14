@@ -40,7 +40,7 @@ public class TestPersistQueue extends TestCase {
   public void testDiskQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
     bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.DiskTransferProtocolQueue");
+        "org.apache.hama.bsp.message.queue.DiskQueueTransfer");
 
     assertTrue(bsp.waitForCompletion(true));
   }
@@ -48,7 +48,7 @@ public class TestPersistQueue extends TestCase {
   public void testMemoryQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
     bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.MemoryTransferProtocol");
+        "org.apache.hama.bsp.message.queue.MemoryQueueTransfer");
 
     assertTrue(bsp.waitForCompletion(true));
   }
@@ -56,7 +56,7 @@ public class TestPersistQueue extends TestCase {
   public void testSortedQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
     bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.SortedMessageTransferProtocol");
+        "org.apache.hama.bsp.message.queue.SortedMemoryQueueTransfer");
 
     assertTrue(bsp.waitForCompletion(true));
   }
@@ -64,7 +64,7 @@ public class TestPersistQueue extends TestCase {
   public void testSpillingQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
     bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.SpillingQueueTransferProtocol");
+        "org.apache.hama.bsp.message.queue.SpillingQueueTransfer");
 
     assertTrue(bsp.waitForCompletion(true));
   }

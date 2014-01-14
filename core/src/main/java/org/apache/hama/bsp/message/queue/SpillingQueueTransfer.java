@@ -18,24 +18,23 @@
 package org.apache.hama.bsp.message.queue;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.Writable;
 
 /**
- * Queue transfer protocol for sorted message queue.
+ * Queue transfer protocol for spilling queue.
  *
- * @param <M>
+ * @param <M> The message type.
  */
-public class SortedMessageTransferProtocol<M extends WritableComparable<M>> implements
-    MessageTransferQueue<M> {
+public class SpillingQueueTransfer<M extends Writable> implements
+    MessageTransferProtocol<M> {
 
   @Override
-  public SortedMessageQueue<M> getSenderQueue(Configuration conf) {
-    return new SortedMessageQueue<M>();
+  public MessageQueue<M> getSenderQueue(Configuration conf) {
+    return new SpillingQueue<M>();
   }
 
   @Override
-  public SortedMessageQueue<M> getReceiverQueue(Configuration conf) {
-    return new SortedMessageQueue<M>();
+  public MessageQueue<M> getReceiverQueue(Configuration conf) {
+    return new SpillingQueue<M>();
   }
-
 }

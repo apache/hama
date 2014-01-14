@@ -30,7 +30,7 @@ import org.apache.hama.bsp.message.bundle.POJOMessageBundle;
  * Heap (Java's priority queue) based message queue implementation that supports
  * sorted receive and send.
  */
-public final class SortedMessageQueue<M extends WritableComparable<M>>
+public final class SortedMemoryQueue<M extends WritableComparable<M>>
     implements MessageQueue<M>, BSPMessageInterface<M> {
 
   private final PriorityQueue<M> queue = new PriorityQueue<M>();

@@ -21,21 +21,21 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 
 /**
- * Queue transfer protocol for memory queue.
+ * The disk transfer queue protocol.
  *
  * @param <M>
  */
-public class MemoryTransferProtocol<M extends Writable> implements
-    MessageTransferQueue<M> {
+public class DiskQueueTransfer<M extends Writable> implements
+    MessageTransferProtocol<M> {
 
   @Override
   public MessageQueue<M> getSenderQueue(Configuration conf) {
-    return new MemoryQueue<M>();
+    return new DiskQueue<M>();
   }
 
   @Override
   public MessageQueue<M> getReceiverQueue(Configuration conf) {
-    return new MemoryQueue<M>();
+    return new DiskQueue<M>();
   }
 
 }

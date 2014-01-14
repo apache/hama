@@ -32,8 +32,8 @@ import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.queue.MessageQueue;
-import org.apache.hama.bsp.message.queue.MessageTransferQueue;
-import org.apache.hama.bsp.message.queue.SortedMessageTransferProtocol;
+import org.apache.hama.bsp.message.queue.MessageTransferProtocol;
+import org.apache.hama.bsp.message.queue.SortedMemoryQueueTransfer;
 
 import com.google.common.base.Preconditions;
 
@@ -198,7 +198,7 @@ public class GraphJob extends BSPJob {
 
     // add the default message queue to the sorted one
     this.getConfiguration().setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        SortedMessageTransferProtocol.class, MessageTransferQueue.class);
+        SortedMemoryQueueTransfer.class, MessageTransferProtocol.class);
 
     super.submit();
   }

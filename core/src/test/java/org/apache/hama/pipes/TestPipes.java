@@ -255,7 +255,7 @@ public class TestPipes extends HamaCluster {
 
     // sort sent messages
     bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.SortedMessageTransferProtocol");
+        "org.apache.hama.bsp.message.queue.SortedMemoryQueueTransfer");
     bsp.set("hama.mat.mult.B.path", transposedMatrixB.toString());
     return bsp;
   }
