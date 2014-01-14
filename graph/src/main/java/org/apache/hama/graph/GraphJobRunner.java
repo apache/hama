@@ -200,16 +200,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       }
     }
 
-    // in case we need to sync, we need to replay the messages that already
-    // are added to the queue. This prevents loosing messages when using
-    // aggregators.
     if (firstVertexMessage != null) {
       peer.send(peer.getPeerName(), firstVertexMessage);
-    }
-
-    GraphJobMessage msg = null;
-    while ((msg = peer.getCurrentMessage()) != null) {
-      peer.send(peer.getPeerName(), msg);
     }
 
     // now sync

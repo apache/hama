@@ -31,6 +31,7 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.message.MessageManager;
+import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.message.queue.MessageTransferQueue;
 import org.apache.hama.bsp.message.queue.SortedMessageTransferProtocol;
 
@@ -64,6 +65,7 @@ public class GraphJob extends BSPJob {
     this.setVertexValueClass(IntWritable.class);
     this.setEdgeValueClass(IntWritable.class);
     this.setPartitioner(HashPartitioner.class);
+    this.setMessageQueueBehaviour(MessageQueue.PERSISTENT_QUEUE);
   }
 
   /**
