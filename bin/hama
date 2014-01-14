@@ -109,6 +109,14 @@ if [ -d "$HAMA_HOME/core/target/test-classes/classes" ]; then
   CLASSPATH=${CLASSPATH}:$HAMA_HOME/core/target/test-classes
 fi
 
+# for developers, add Commons classes to CLASSPATH
+if [ -d "$HAMA_HOME/commons/target/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/commons/target/classes
+fi
+if [ -d "$HAMA_HOME/commons/target/test-classes/classes" ]; then
+  CLASSPATH=${CLASSPATH}:$HAMA_HOME/commons/target/test-classes
+fi
+
 # for developers, add Graph classes to CLASSPATH
 if [ -d "$HAMA_HOME/graph/target/classes" ]; then
   CLASSPATH=${CLASSPATH}:$HAMA_HOME/graph/target/classes
@@ -203,6 +211,5 @@ if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
   HAMA_OPTS="$HAMA_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi  
 HAMA_OPTS="$HAMA_OPTS -Dhama.policy.file=$HAMA_POLICYFILE"
-
 # run it
 exec "$JAVA" $JAVA_HEAP_MAX $HAMA_OPTS -classpath "$CLASSPATH" $CLASS "$@"
