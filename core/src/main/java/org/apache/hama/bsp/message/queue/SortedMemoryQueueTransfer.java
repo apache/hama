@@ -28,9 +28,12 @@ import org.apache.hadoop.io.WritableComparable;
 public class SortedMemoryQueueTransfer<M extends WritableComparable<M>> implements
     MessageTransferProtocol<M> {
 
+  /**
+   * OutgoingQueue doesn't need to be sorted.
+   */
   @Override
-  public SortedMemoryQueue<M> getSenderQueue(Configuration conf) {
-    return new SortedMemoryQueue<M>();
+  public MemoryQueue<M> getSenderQueue(Configuration conf) {
+    return new MemoryQueue<M>();
   }
 
   @Override
