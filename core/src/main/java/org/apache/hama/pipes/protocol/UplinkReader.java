@@ -354,7 +354,7 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
     String peerName = Text.readString(this.inStream);
 
     M message = (M) ReflectionUtils.newInstance((Class<? extends M>) conf
-        .getClass("bsp.message.class", BytesWritable.class), conf);
+        .getClass(Constants.MESSAGE_CLASS, BytesWritable.class), conf);
 
     LOG.debug("Got MessageType.SEND_MSG peerName: " + peerName
         + " messageClass: " + message.getClass().getName());

@@ -356,6 +356,24 @@ public class BSPJob extends BSPJobContext {
   }
 
   /**
+   * Get the message class.
+   * 
+   * @return the message class.
+   */
+  public Class<?> getMessageClass() {
+    return conf.getClass(Constants.MESSAGE_CLASS, Text.class, Object.class);
+  }
+
+  /**
+   * Set the message class.
+   * 
+   * @param theClass the message class.
+   */
+  public void setMessageClass(Class<?> theClass) {
+    conf.setClass(Constants.MESSAGE_CLASS, theClass, Object.class);
+  }
+
+  /**
    * Sets the output path for the job.
    * 
    * @param path where the output gets written.

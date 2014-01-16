@@ -223,7 +223,7 @@ public class TestPipes extends HamaCluster {
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
     bsp.setOutputKeyClass(NullWritable.class);
     bsp.setOutputValueClass(DoubleWritable.class);
-    bsp.set("bsp.message.class", DoubleWritable.class.getName());
+    bsp.setMessageClass(DoubleWritable.class);
     return bsp;
   }
 
@@ -233,7 +233,7 @@ public class TestPipes extends HamaCluster {
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
     bsp.setOutputKeyClass(NullWritable.class);
     bsp.setOutputValueClass(DoubleWritable.class);
-    bsp.set("bsp.message.class", IntWritable.class.getName());
+    bsp.setMessageClass(IntWritable.class);
     return bsp;
   }
 
@@ -246,10 +246,9 @@ public class TestPipes extends HamaCluster {
     bsp.setOutputFormat(SequenceFileOutputFormat.class);
     bsp.setOutputKeyClass(IntWritable.class);
     bsp.setOutputValueClass(PipesVectorWritable.class);
+    bsp.setMessageClass(PipesKeyValueWritable.class);
 
     bsp.set(Constants.RUNTIME_PARTITIONING_DIR, HAMA_TMP_OUTPUT + "/parts");
-    bsp.set("bsp.message.class", PipesKeyValueWritable.class.getName());
-
     bsp.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
     bsp.setPartitioner(PipesPartitioner.class);
 

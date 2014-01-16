@@ -44,6 +44,7 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.BSPJobClient;
@@ -191,7 +192,7 @@ public class Submitter implements Tool {
     setIfUnset(job.getConfiguration(), "bsp.input.value.class", textClassname);
     setIfUnset(job.getConfiguration(), "bsp.output.key.class", textClassname);
     setIfUnset(job.getConfiguration(), "bsp.output.value.class", textClassname);
-    setIfUnset(job.getConfiguration(), "bsp.message.class",
+    setIfUnset(job.getConfiguration(), Constants.MESSAGE_CLASS,
         BytesWritable.class.getName());
 
     setIfUnset(job.getConfiguration(), "bsp.job.name", "Hama Pipes Job");
@@ -205,7 +206,7 @@ public class Submitter implements Tool {
     LOG.debug("InputFormat: " + job.getOutputFormat());
     LOG.debug("OutputKeyClass: " + job.getOutputKeyClass().getName());
     LOG.debug("OutputValueClass: " + job.getOutputValueClass().getName());
-    LOG.debug("MessageClass: " + job.get("bsp.message.class"));
+    LOG.debug("MessageClass: " + job.get(Constants.MESSAGE_CLASS));
 
     LOG.debug("bsp.master.address: "
         + job.getConfiguration().get("bsp.master.address"));
