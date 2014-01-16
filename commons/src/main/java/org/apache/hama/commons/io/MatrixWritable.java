@@ -69,5 +69,9 @@ public final class MatrixWritable implements Writable {
     }
     return mat;
   }
+  
+  public DoubleMatrix getMatrix() {
+    return this.mat;
+  }
 
 }
