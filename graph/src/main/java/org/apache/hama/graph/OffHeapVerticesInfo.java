@@ -17,10 +17,6 @@
  */
 package org.apache.hama.graph;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.concurrent.ConcurrentSkipListMap;
-
 import org.apache.directmemory.DirectMemory;
 import org.apache.directmemory.cache.CacheService;
 import org.apache.directmemory.memory.Pointer;
@@ -32,6 +28,10 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.util.ReflectionUtils;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * An off heap version of a {@link org.apache.hama.graph.Vertex} storage.
@@ -143,7 +143,7 @@ public class OffHeapVerticesInfo<V extends WritableComparable<?>, E extends Writ
       @Override
       public Vertex<V, E, M> next() {
         currentIndex++;
-        if (currentVertex.getRunner() == null) {
+        if (currentVertex != null && currentVertex.getRunner() == null) {
           currentVertex.setRunner(runner);
         }
         return currentVertex;
