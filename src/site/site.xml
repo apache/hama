@@ -17,9 +17,10 @@
 -->
 <project name="Hama">
   <bannerLeft>
-    <name>Hama</name>
+    <name>Apache Hama</name>
     <src>/images/headerlogo.png</src>
     <href>/index.html</href>
+    <width>340</width>
   </bannerLeft>
 
   <publishDate position="right"/>
