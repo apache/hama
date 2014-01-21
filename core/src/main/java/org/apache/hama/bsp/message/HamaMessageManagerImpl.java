@@ -81,7 +81,7 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
 
       // TODO Make number of RPC Server threads configurable
       this.server = RPC.getServer(this, selfAddress.getHostName(),
-          selfAddress.getPort(), conf);
+          selfAddress.getPort(), conf.getInt("hama.default.messenger.handler.threads.num", 5), false, conf);
       server.start();
       
       LOG.info(" BSPPeer address:" + server.getListenerAddress().getHostName()

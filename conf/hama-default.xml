@@ -158,6 +158,12 @@
     </description>
   </property>
   <property>
+    <name>hama.default.messenger.handler.threads.num</name>
+    <value>5</value>
+    <description>The number of method handler threads to run.</description>
+  </property>
+  
+  <property>
     <name>bsp.input.runtime.partitioning</name>
     <value>true</value>
     <description>Basically, we provides a data partitioning program based on BSP job, 

@@ -352,9 +352,9 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     int tmpPort = socAddr.getPort();
 
     // RPC initialization
-    // TODO Make number of RPC Server threads configurable
-    this.taskReportServer = RPC.getServer(this, bindAddress, tmpPort, 10,
-        false, this.conf);
+    this.taskReportServer = RPC.getServer(this, bindAddress, tmpPort,
+        conf.getInt("hama.groom.report.server.handler.threads.num", 5), false,
+        this.conf);
 
     this.taskReportServer.start();
 
