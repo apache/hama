@@ -232,15 +232,16 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
      * currentMessage or the first vertex that is active.
      */
     IDSkippingIterator<V, E, M> iterator = vertices.skippingIterator();
-
+    VertexMessageIterable<V, M> iterable = null;
+    Vertex<V, E, M> vertex = null;
+    
     // note that can't skip inactive vertices because we have to rewrite the
     // complete vertex file in each iteration
     while (iterator.hasNext(
         currentMessage == null ? null : (V) currentMessage.getVertexId(),
         Strategy.ALL)) {
 
-      Vertex<V, E, M> vertex = iterator.next();
-      VertexMessageIterable<V, M> iterable = null;
+      vertex = iterator.next();
       if (currentMessage != null) {
         iterable = iterate(currentMessage, (V) currentMessage.getVertexId(),
             vertex, peer);
