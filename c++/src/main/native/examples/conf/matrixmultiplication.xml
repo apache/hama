@@ -58,8 +58,8 @@
     <value>org.apache.hama.commons.io.PipesKeyValueWritable</value>
   </property>
   <property>
-    <name>hama.messenger.xfer.queue.class</name>
-    <value>org.apache.hama.bsp.message.queue.SortedMemoryQueueTransfer</value>
+    <name>hama.messenger.receive.queue.class</name>
+    <value>org.apache.hama.bsp.message.queue.SortedMemoryQueue</value>
   </property>
   <property>
     <name>bsp.input.partitioner.class</name>

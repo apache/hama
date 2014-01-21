@@ -90,7 +90,7 @@ public final class MemoryQueue<M extends Writable> extends POJOMessageQueue<M> {
 
   @Override
   public void close() {
-
+    this.clear();
   }
 
   @Override

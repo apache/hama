@@ -94,7 +94,7 @@ public final class SortedMemoryQueue<M extends WritableComparable<M>>
 
   @Override
   public void close() {
-
+    this.clear();;
   }
 
   @Override

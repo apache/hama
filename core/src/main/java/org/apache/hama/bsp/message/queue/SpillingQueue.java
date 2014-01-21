@@ -45,8 +45,7 @@ import org.apache.hama.bsp.message.io.SpillingDataOutputBuffer;
  * 
  * @param <M>
  */
-public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M>
-    implements MessageTransferProtocol<M> {
+public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M> {
 
   private static final Log LOG = LogFactory.getLog(SpillingQueue.class);
 
@@ -342,16 +341,6 @@ public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M>
   @Override
   public boolean isMessageSerialized() {
     return true;
-  }
-
-  @Override
-  public MessageQueue<M> getSenderQueue(Configuration conf) {
-    return this;
-  }
-
-  @Override
-  public MessageQueue<M> getReceiverQueue(Configuration conf) {
-    return this;
   }
 
   @Override

@@ -32,8 +32,7 @@ import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.queue.MessageQueue;
-import org.apache.hama.bsp.message.queue.MessageTransferProtocol;
-import org.apache.hama.bsp.message.queue.SortedMemoryQueueTransfer;
+import org.apache.hama.bsp.message.queue.SortedMemoryQueue;
 
 import com.google.common.base.Preconditions;
 
@@ -104,15 +103,15 @@ public class GraphJob extends BSPJob {
   }
 
   /**
-  * Custom aggregator registration. Add a custom aggregator
-  * that will aggregate massages sent from the user.
-  *
-  * @param name identifies an aggregator
-  * @param aggregatorClass the aggregator class
-  */
+   * Custom aggregator registration. Add a custom aggregator that will aggregate
+   * massages sent from the user.
+   * 
+   * @param name identifies an aggregator
+   * @param aggregatorClass the aggregator class
+   */
   @SuppressWarnings("rawtypes")
-  public void registerAggregator(String name, Class<? extends
-      Aggregator> aggregatorClass) {
+  public void registerAggregator(String name,
+      Class<? extends Aggregator> aggregatorClass) {
     String prevAggrs = this.conf.get(AGGREGATOR_CLASS_ATTR, "");
 
     prevAggrs += name + "@" + aggregatorClass.getName() + ";";
@@ -197,8 +196,8 @@ public class GraphJob extends BSPJob {
     }
 
     // add the default message queue to the sorted one
-    this.getConfiguration().setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        SortedMemoryQueueTransfer.class, MessageTransferProtocol.class);
+    this.getConfiguration().setClass(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
+        SortedMemoryQueue.class, MessageQueue.class);
 
     super.submit();
   }

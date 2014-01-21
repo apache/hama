@@ -15,27 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message.queue;
+package org.apache.hama.bsp.message;
 
-import org.apache.hadoop.conf.Configuration;
+import java.net.InetSocketAddress;
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hama.bsp.Combiner;
 
-/**
- * The disk transfer queue protocol.
- *
- * @param <M>
- */
-public class DiskQueueTransfer<M extends Writable> implements
-    MessageTransferProtocol<M> {
+public interface OutgoingMessageManager<M extends Writable> {
 
-  @Override
-  public MessageQueue<M> getSenderQueue(Configuration conf) {
-    return new DiskQueue<M>();
-  }
+  public void setCombiner(Combiner<M> combiner);
 
-  @Override
-  public MessageQueue<M> getReceiverQueue(Configuration conf) {
-    return new DiskQueue<M>();
-  }
+  public void addMessage(String peerName, M msg);
+
+  public void clear();
+
+  public Iterator<Entry<InetSocketAddress, BSPMessageBundle<M>>> getBundleIterator();
 
 }

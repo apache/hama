@@ -253,8 +253,8 @@ public class TestPipes extends HamaCluster {
     bsp.setPartitioner(PipesPartitioner.class);
 
     // sort sent messages
-    bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.SortedMemoryQueueTransfer");
+    bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
+        "org.apache.hama.bsp.message.queue.SortedMemoryQueue");
     bsp.set("hama.mat.mult.B.path", transposedMatrixB.toString());
     return bsp;
   }

@@ -39,32 +39,32 @@ public class TestPersistQueue extends TestCase {
 
   public void testDiskQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
-    bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.DiskQueueTransfer");
+    bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
+        "org.apache.hama.bsp.message.queue.DiskQueue");
 
     assertTrue(bsp.waitForCompletion(true));
   }
 
   public void testMemoryQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
-    bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.MemoryQueueTransfer");
+    bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
+        "org.apache.hama.bsp.message.queue.MemoryQueue");
 
     assertTrue(bsp.waitForCompletion(true));
   }
 
   public void testSortedQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
-    bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.SortedMemoryQueueTransfer");
+    bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
+        "org.apache.hama.bsp.message.queue.SortedMemoryQueue");
 
     assertTrue(bsp.waitForCompletion(true));
   }
 
   public void testSpillingQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
-    bsp.set(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.SpillingQueueTransfer");
+    bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
+        "org.apache.hama.bsp.message.queue.SpillingQueue");
 
     assertTrue(bsp.waitForCompletion(true));
   }

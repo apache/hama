@@ -52,7 +52,6 @@ import org.apache.hama.bsp.ft.AsyncRcvdMsgCheckpointImpl;
 import org.apache.hama.bsp.ft.FaultTolerantPeerService;
 import org.apache.hama.bsp.message.MessageEventListener;
 import org.apache.hama.bsp.message.MessageManager;
-import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.sync.BSPPeerSyncClient;
 import org.apache.hama.bsp.sync.PeerSyncClient;
 import org.apache.hama.bsp.sync.SyncEvent;
@@ -102,11 +101,7 @@ public class TestCheckpoint extends TestCase {
     }
 
     @Override
-    public void finishSendPhase() throws IOException {
-    }
-
-    @Override
-    public Iterator<Entry<InetSocketAddress, MessageQueue<Text>>> getMessageIterator() {
+    public Iterator<Entry<InetSocketAddress, BSPMessageBundle<Text>>> getOutgoingBundles() {
       return null;
     }
 
@@ -118,7 +113,7 @@ public class TestCheckpoint extends TestCase {
     }
 
     @Override
-    public void clearOutgoingQueues() {
+    public void clearOutgoingMessages() {
     }
 
     @Override

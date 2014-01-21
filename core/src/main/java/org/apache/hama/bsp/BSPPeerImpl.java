@@ -42,7 +42,6 @@ import org.apache.hama.bsp.ft.BSPFaultTolerantService;
 import org.apache.hama.bsp.ft.FaultTolerantPeerService;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.MessageManagerFactory;
-import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.sync.PeerSyncClient;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
@@ -90,7 +89,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   private InetSocketAddress peerAddress;
 
   private Counters counters;
-  private Combiner<M> combiner;
 
   private FaultTolerantPeerService<M> faultToleranceService;
 
@@ -122,7 +120,8 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
    * @param dfs is the Hadoop FileSystem.
    * @param counters is the counters from outside.
    */
-  public BSPPeerImpl(final HamaConfiguration conf, FileSystem dfs, Counters counters) {
+  public BSPPeerImpl(final HamaConfiguration conf, FileSystem dfs,
+      Counters counters) {
     this(conf, dfs);
     this.counters = counters;
   }
@@ -169,14 +168,14 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     // This function call may change the current peer address
     initializeMessaging();
-    
+
     conf.set(Constants.PEER_HOST, peerAddress.getHostName());
     conf.setInt(Constants.PEER_PORT, peerAddress.getPort());
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("Initialized Messaging service.");
     }
-    
+
     initializeIO();
     initializeSyncService(superstep, state);
 
@@ -189,12 +188,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     setCurrentTaskStatus(new TaskStatus(taskId.getJobID(), taskId, 1.0f, state,
         stateString, peerAddress.getHostName(), phase, counters));
-
-    final String combinerName = conf.get(Constants.COMBINER_CLASS);
-    if (combinerName != null) {
-      combiner = (Combiner<M>) ReflectionUtils.newInstance(
-          conf.getClassByName(combinerName), conf);
-    }
 
     if (conf.getBoolean(Constants.FAULT_TOLERANCE_FLAG, false)) {
       if (LOG.isDebugEnabled()) {
@@ -372,26 +365,21 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       InterruptedException {
 
     // normally all messages should been send now, finalizing the send phase
-    messenger.finishSendPhase();
-    Iterator<Entry<InetSocketAddress, MessageQueue<M>>> it = messenger
-        .getMessageIterator();
+    Iterator<Entry<InetSocketAddress, BSPMessageBundle<M>>> it = messenger
+        .getOutgoingBundles();
 
     while (it.hasNext()) {
-      Entry<InetSocketAddress, MessageQueue<M>> entry = it.next();
+      Entry<InetSocketAddress, BSPMessageBundle<M>> entry = it.next();
       final InetSocketAddress addr = entry.getKey();
-      final Iterable<M> messages = entry.getValue();
 
-      final BSPMessageBundle<M> bundle = combineMessages(messages);
+      final BSPMessageBundle<M> bundle = entry.getValue();
+
       // remove this message during runtime to save a bit of memory
       it.remove();
       try {
         messenger.transfer(addr, bundle);
       } catch (Exception e) {
         LOG.error("Error while sending messages", e);
-      }
-      MessageQueue<M> msgQueue = (MessageQueue<M>) messages;
-      if (msgQueue != null) {
-        msgQueue.close();
       }
     }
 
@@ -415,7 +403,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     }
 
     // Clear outgoing queues.
-    messenger.clearOutgoingQueues();
+    messenger.clearOutgoingMessages();
 
     leaveBarrier();
 
@@ -435,18 +423,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
     umbilical.statusUpdate(taskId, currentTaskStatus);
 
-  }
-
-  private final BSPMessageBundle<M> combineMessages(Iterable<M> messages) {
-    BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
-    if (combiner != null) {
-      bundle.addMessage(combiner.combine(messages));
-    } else {
-      for (M message : messages) {
-        bundle.addMessage(message);
-      }
-    }
-    return bundle;
   }
 
   protected final void enterBarrier() throws SyncException {
@@ -520,7 +496,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   @Override
   public final void clear() {
-    messenger.clearOutgoingQueues();
+    messenger.clearOutgoingMessages();
   }
 
   /**

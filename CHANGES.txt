@@ -23,6 +23,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-853: Refactor Outgoing message manager (edwardyoon)
    HAMA-852: Add MessageClass property in BSPJob (Martin Illecker)
    HAMA-843: Message communication overhead between master aggregation and vertex computation supersteps (edwardyoon)
    HAMA-838: Refactor aggregators (Anastasis Andronidis)

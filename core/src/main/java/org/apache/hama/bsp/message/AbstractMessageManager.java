@@ -19,8 +19,6 @@ package org.apache.hama.bsp.message;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
@@ -32,16 +30,18 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
+import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.bsp.message.queue.MemoryQueue;
 import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.message.queue.SingleLockQueue;
 import org.apache.hama.bsp.message.queue.SynchronizedQueue;
-import org.apache.hama.util.BSPNetUtils;
+import org.apache.hama.util.ReflectionUtils;
 
 /**
  * Abstract baseclass that should contain all information and services needed
@@ -56,9 +56,8 @@ public abstract class AbstractMessageManager<M extends Writable> implements
 
   // conf is injected via reflection of the factory
   protected Configuration conf;
-  protected final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
-  protected final HashMap<InetSocketAddress, MessageQueue<M>> outgoingQueues = new HashMap<InetSocketAddress, MessageQueue<M>>();
 
+  protected OutgoingMessageManager<M> outgoingMessageManager;
   protected MessageQueue<M> localQueue;
 
   // this must be a synchronized implementation: this is accessed per RPC
@@ -81,6 +80,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    * TaskAttemptID, org.apache.hama.bsp.BSPPeer,
    * org.apache.hadoop.conf.Configuration, java.net.InetSocketAddress)
    */
+  @SuppressWarnings("unchecked")
   @Override
   public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
       Configuration conf, InetSocketAddress peerAddress) {
@@ -91,6 +91,19 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     this.localQueue = getReceiverQueue();
     this.localQueueForNextIteration = getSynchronizedReceiverQueue();
     this.maxCachedConnections = conf.getInt(MAX_CACHED_CONNECTIONS_KEY, 100);
+    this.outgoingMessageManager = getOutgoingMessageManager();
+
+    final String combinerName = conf.get(Constants.COMBINER_CLASS);
+    if (combinerName != null) {
+      try {
+        Combiner<M> combiner = (Combiner<M>) ReflectionUtils.newInstance(conf
+            .getClassByName(combinerName));
+        this.outgoingMessageManager.setCombiner(combiner);
+      } catch (ClassNotFoundException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
   }
 
   /*
@@ -100,10 +113,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   @Override
   public void close() {
     try {
-      Collection<MessageQueue<M>> values = outgoingQueues.values();
-      for (MessageQueue<M> msgQueue : values) {
-        msgQueue.close();
-      }
+      outgoingMessageManager.clear();
       localQueue.close();
       // remove possible disk queues from the path
       try {
@@ -117,18 +127,6 @@ public abstract class AbstractMessageManager<M extends Writable> implements
       notifyClose();
     }
 
-  }
-
-  /*
-   * (non-Javadoc)
-   * @see org.apache.hama.bsp.message.MessageManager#finishSendPhase()
-   */
-  @Override
-  public void finishSendPhase() throws IOException {
-    Collection<MessageQueue<M>> values = outgoingQueues.values();
-    for (MessageQueue<M> msgQueue : values) {
-      msgQueue.prepareRead();
-    }
   }
 
   /*
@@ -154,7 +152,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    * @see org.apache.hama.bsp.message.MessageManager#clearOutgoingQueues()
    */
   @Override
-  public final void clearOutgoingQueues() {
+  public final void clearOutgoingMessages() {
     if (conf.getBoolean(MessageQueue.PERSISTENT_QUEUE, false)
         && localQueue.size() > 0) {
 
@@ -199,21 +197,8 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    */
   @Override
   public void send(String peerName, M msg) throws IOException {
-    InetSocketAddress targetPeerAddress = null;
-    // Get socket for target peer.
-    if (peerSocketCache.containsKey(peerName)) {
-      targetPeerAddress = peerSocketCache.get(peerName);
-    } else {
-      targetPeerAddress = BSPNetUtils.getAddress(peerName);
-      peerSocketCache.put(peerName, targetPeerAddress);
-    }
-    MessageQueue<M> queue = outgoingQueues.get(targetPeerAddress);
-    if (queue == null) {
-      queue = getSenderQueue();
-    }
-    queue.add(msg);
+    outgoingMessageManager.addMessage(peerName, msg);
     peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_SENT, 1L);
-    outgoingQueues.put(targetPeerAddress, queue);
     notifySentMessage(peerName, msg);
   }
 
@@ -222,24 +207,16 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    * @see org.apache.hama.bsp.message.MessageManager#getMessageIterator()
    */
   @Override
-  public final Iterator<Entry<InetSocketAddress, MessageQueue<M>>> getMessageIterator() {
-    return this.outgoingQueues.entrySet().iterator();
+  public final Iterator<Entry<InetSocketAddress, BSPMessageBundle<M>>> getOutgoingBundles() {
+    return this.outgoingMessageManager.getBundleIterator();
   }
 
-  /**
-   * Returns a new queue implementation based on what was configured. If nothing
-   * has been configured for "hama.messenger.queue.class" then the
-   * {@link MemoryQueue} is used. If you have scalability issues, then better
-   * use {@link DiskQueue}.
-   * 
-   * @return a <b>new</b> queue implementation.
-   */
-  protected MessageQueue<M> getSenderQueue() {
+  protected OutgoingMessageManager<M> getOutgoingMessageManager() {
     @SuppressWarnings("unchecked")
-    MessageQueue<M> queue = MessageTransferQueueFactory
-        .getMessageTransferQueue(conf).getSenderQueue(conf);
-    queue.init(conf, attemptId);
-    return queue;
+    OutgoingMessageManager<M> messageManager = ReflectionUtils.newInstance(conf
+        .getClass(MessageManager.OUTGOING_MESSAGE_MANAGER_CLASS,
+            OutgoingPOJOMessageBundle.class, OutgoingMessageManager.class));
+    return messageManager;
   }
 
   /**
@@ -252,14 +229,11 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    */
   protected MessageQueue<M> getReceiverQueue() {
     @SuppressWarnings("unchecked")
-    MessageQueue<M> queue = MessageTransferQueueFactory
-        .getMessageTransferQueue(conf).getReceiverQueue(conf);
+    MessageQueue<M> queue = ReflectionUtils.newInstance(conf.getClass(
+        MessageManager.RECEIVE_QUEUE_TYPE_CLASS, MemoryQueue.class,
+        MessageQueue.class));
     queue.init(conf, attemptId);
     return queue;
-  }
-
-  protected SynchronizedQueue<M> getSynchronizedSenderQueue() {
-    return SingleLockQueue.synchronize(getSenderQueue());
   }
 
   protected SynchronizedQueue<M> getSynchronizedReceiverQueue() {

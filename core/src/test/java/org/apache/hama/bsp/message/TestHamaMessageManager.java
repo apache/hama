@@ -34,10 +34,8 @@ import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.Counters;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.DiskQueue;
-import org.apache.hama.bsp.message.queue.DiskQueueTransfer;
-import org.apache.hama.bsp.message.queue.MemoryQueueTransfer;
+import org.apache.hama.bsp.message.queue.MemoryQueue;
 import org.apache.hama.bsp.message.queue.MessageQueue;
-import org.apache.hama.bsp.message.queue.MessageTransferProtocol;
 import org.apache.hama.util.BSPNetUtils;
 
 public class TestHamaMessageManager extends TestCase {
@@ -49,8 +47,8 @@ public class TestHamaMessageManager extends TestCase {
 
   public void testMemoryMessaging() throws Exception {
     HamaConfiguration conf = new HamaConfiguration();
-    conf.setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        MemoryQueueTransfer.class, MessageTransferProtocol.class);
+    conf.setClass(MessageManager.RECEIVE_QUEUE_TYPE_CLASS, MemoryQueue.class,
+        MessageQueue.class);
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     messagingInternal(conf);
   }
@@ -58,12 +56,13 @@ public class TestHamaMessageManager extends TestCase {
   public void testDiskMessaging() throws Exception {
     HamaConfiguration conf = new HamaConfiguration();
     conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
-    conf.setClass(MessageManager.TRANSFER_QUEUE_TYPE_CLASS,
-        DiskQueueTransfer.class, MessageTransferProtocol.class);
+    conf.setClass(MessageManager.RECEIVE_QUEUE_TYPE_CLASS, DiskQueue.class,
+        MessageQueue.class);
     messagingInternal(conf);
   }
 
-  private static void messagingInternal(HamaConfiguration conf) throws Exception {
+  private static void messagingInternal(HamaConfiguration conf)
+      throws Exception {
     conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS,
         "org.apache.hama.bsp.message.HamaMessageManagerImpl");
     MessageManager<IntWritable> messageManager = MessageManagerFactory
@@ -86,24 +85,24 @@ public class TestHamaMessageManager extends TestCase {
     System.out.println("Peer is " + peerName);
     messageManager.send(peerName, new IntWritable(1337));
 
-    Iterator<Entry<InetSocketAddress, MessageQueue<IntWritable>>> messageIterator = messageManager
-        .getMessageIterator();
+    Iterator<Entry<InetSocketAddress, BSPMessageBundle<IntWritable>>> messageIterator = messageManager
+        .getOutgoingBundles();
 
-    Entry<InetSocketAddress, MessageQueue<IntWritable>> entry = messageIterator
+    Entry<InetSocketAddress, BSPMessageBundle<IntWritable>> entry = messageIterator
         .next();
 
     assertEquals(entry.getKey(), peer);
 
-    assertTrue(entry.getValue().size() == 1);
+    assertTrue(entry.getValue().getMessages().size() == 1);
 
     BSPMessageBundle<IntWritable> bundle = new BSPMessageBundle<IntWritable>();
-    for (IntWritable msg : entry.getValue()) {
+    for (IntWritable msg : entry.getValue().getMessages()) {
       bundle.addMessage(msg);
     }
 
     messageManager.transfer(peer, bundle);
 
-    messageManager.clearOutgoingQueues();
+    messageManager.clearOutgoingMessages();
 
     assertTrue(messageManager.getNumCurrentMessages() == 1);
     IntWritable currentMessage = messageManager.getCurrentMessage();

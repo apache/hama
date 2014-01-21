@@ -27,7 +27,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.bsp.message.queue.MessageQueue;
 
 /**
  * This manager takes care of the messaging. It is responsible to launch a
@@ -36,9 +35,8 @@ import org.apache.hama.bsp.message.queue.MessageQueue;
  */
 public interface MessageManager<M extends Writable> {
 
+  public static final String OUTGOING_MESSAGE_MANAGER_CLASS = "hama.messenger.outgoing.message.manager.class";
   public static final String RECEIVE_QUEUE_TYPE_CLASS = "hama.messenger.receive.queue.class";
-  public static final String SENDER_QUEUE_TYPE_CLASS = "hama.messenger.sender.queue.class";
-  public static final String TRANSFER_QUEUE_TYPE_CLASS = "hama.messenger.xfer.queue.class";
   public static final String MAX_CACHED_CONNECTIONS_KEY = "hama.messenger.max.cached.connections";
 
   /**
@@ -75,17 +73,10 @@ public interface MessageManager<M extends Writable> {
   public void send(String peerName, M msg) throws IOException;
 
   /**
-   * Should be called when all messages were send with send().
-   * 
-   * @throws IOException
-   */
-  public void finishSendPhase() throws IOException;
-
-  /**
-   * Returns an iterator of messages grouped by peer.
+   * Returns an bundle of messages grouped by peer.
    * 
    */
-  public Iterator<Entry<InetSocketAddress, MessageQueue<M>>> getMessageIterator();
+  public Iterator<Entry<InetSocketAddress, BSPMessageBundle<M>>> getOutgoingBundles();
 
   /**
    * This is the real transferring to a host with a bundle.
@@ -97,7 +88,7 @@ public interface MessageManager<M extends Writable> {
   /**
    * Clears the outgoing queue. Can be used to switch queues.
    */
-  public void clearOutgoingQueues();
+  public void clearOutgoingMessages();
 
   /**
    * Gets the number of messages in the current queue.
