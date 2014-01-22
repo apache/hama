@@ -30,11 +30,9 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
-import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.bsp.message.queue.MemoryQueue;
@@ -80,7 +78,6 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    * TaskAttemptID, org.apache.hama.bsp.BSPPeer,
    * org.apache.hadoop.conf.Configuration, java.net.InetSocketAddress)
    */
-  @SuppressWarnings("unchecked")
   @Override
   public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
       Configuration conf, InetSocketAddress peerAddress) {
@@ -92,18 +89,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     this.localQueueForNextIteration = getSynchronizedReceiverQueue();
     this.maxCachedConnections = conf.getInt(MAX_CACHED_CONNECTIONS_KEY, 100);
     this.outgoingMessageManager = getOutgoingMessageManager();
-
-    final String combinerName = conf.get(Constants.COMBINER_CLASS);
-    if (combinerName != null) {
-      try {
-        Combiner<M> combiner = (Combiner<M>) ReflectionUtils.newInstance(conf
-            .getClassByName(combinerName));
-        this.outgoingMessageManager.setCombiner(combiner);
-      } catch (ClassNotFoundException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-    }
+    this.outgoingMessageManager.init(conf);
   }
 
   /*

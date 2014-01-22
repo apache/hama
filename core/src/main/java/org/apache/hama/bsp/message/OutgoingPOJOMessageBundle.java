@@ -22,10 +22,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.util.BSPNetUtils;
+import org.apache.hama.util.ReflectionUtils;
 
 public class OutgoingPOJOMessageBundle<M extends Writable> implements
     OutgoingMessageManager<M> {
@@ -34,13 +37,38 @@ public class OutgoingPOJOMessageBundle<M extends Writable> implements
   private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
   private HashMap<InetSocketAddress, BSPMessageBundle<M>> outgoingBundles = new HashMap<InetSocketAddress, BSPMessageBundle<M>>();
 
+  @SuppressWarnings("unchecked")
   @Override
-  public void setCombiner(Combiner<M> combiner) {
-    this.combiner = combiner;
+  public void init(Configuration conf) {
+    final String combinerName = conf.get(Constants.COMBINER_CLASS);
+    if (combinerName != null) {
+      try {
+        Combiner<M> combiner = (Combiner<M>) ReflectionUtils.newInstance(conf
+            .getClassByName(combinerName));
+        this.combiner = combiner;
+      } catch (ClassNotFoundException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
   }
 
   @Override
   public void addMessage(String peerName, M msg) {
+    InetSocketAddress targetPeerAddress = getSocketAddress(peerName);
+
+    if (combiner != null) {
+      BSPMessageBundle<M> bundle = outgoingBundles.get(targetPeerAddress);
+      bundle.addMessage(msg);
+      BSPMessageBundle<M> combined = new BSPMessageBundle<M>();
+      combined.addMessage(combiner.combine(bundle.getMessages()));
+      outgoingBundles.put(targetPeerAddress, combined);
+    } else {
+      outgoingBundles.get(targetPeerAddress).addMessage(msg);
+    }
+  }
+
+  private InetSocketAddress getSocketAddress(String peerName) {
     InetSocketAddress targetPeerAddress = null;
     // Get socket for target peer.
     if (peerSocketCache.containsKey(peerName)) {
@@ -53,16 +81,7 @@ public class OutgoingPOJOMessageBundle<M extends Writable> implements
     if (!outgoingBundles.containsKey(targetPeerAddress)) {
       outgoingBundles.put(targetPeerAddress, new BSPMessageBundle<M>());
     }
-
-    if (combiner != null) {
-      BSPMessageBundle<M> bundle = outgoingBundles.get(targetPeerAddress);
-      bundle.addMessage(msg);
-      BSPMessageBundle<M> combined = new BSPMessageBundle<M>();
-      combined.addMessage(combiner.combine(bundle.getMessages()));
-      outgoingBundles.put(targetPeerAddress, combined);
-    } else {
-      outgoingBundles.get(targetPeerAddress).addMessage(msg);
-    }
+    return targetPeerAddress;
   }
 
   @Override
