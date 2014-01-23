@@ -156,7 +156,8 @@ public final class GraphJobMessage implements
     return map;
   }
 
-  public Writable getVertexId() {
+  @SuppressWarnings("rawtypes")
+  public WritableComparable getVertexId() {
     return vertexId;
   }
 

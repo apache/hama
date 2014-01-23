@@ -34,7 +34,6 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
-import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner.DefaultRecordConverter;
@@ -83,7 +82,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   public static final String VERTEX_CLASS_KEY = "hama.graph.vertex.class";
 
   private HamaConfiguration conf;
-  private Combiner<M> combiner;
   private Partitioner<V, M> partitioner;
 
   public static Class<?> VERTEX_CLASS;
@@ -234,7 +232,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     IDSkippingIterator<V, E, M> iterator = vertices.skippingIterator();
     VertexMessageIterable<V, M> iterable = null;
     Vertex<V, E, M> vertex = null;
-    
+
     // note that can't skip inactive vertices because we have to rewrite the
     // complete vertex file in each iteration
     while (iterator.hasNext(
@@ -255,12 +253,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         if (iterable == null) {
           vertex.compute(Collections.<M> emptyList());
         } else {
-          if (combiner != null) {
-            M combined = combiner.combine(iterable);
-            vertex.compute(Collections.singleton(combined));
-          } else {
-            vertex.compute(iterable);
-          }
+          vertex.compute(iterable);
           currentMessage = iterable.getOverflowMessage();
         }
         activeVertices++;
@@ -357,15 +350,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         .newInstance(
             conf.getClass("bsp.input.partitioner.class", HashPartitioner.class),
             conf);
-
-    if (!conf.getClass(MESSAGE_COMBINER_CLASS_KEY, Combiner.class).equals(
-        Combiner.class)) {
-      LOG.debug("Combiner class: " + conf.get(MESSAGE_COMBINER_CLASS_KEY));
-
-      combiner = (Combiner<M>) org.apache.hadoop.util.ReflectionUtils
-          .newInstance(conf.getClass("hama.vertex.message.combiner.class",
-              Combiner.class), conf);
-    }
 
     Class<?> outputWriter = conf.getClass(
         GraphJob.VERTEX_OUTPUT_WRITER_CLASS_ATTR, VertexOutputWriter.class);

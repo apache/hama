@@ -139,6 +139,8 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    */
   @Override
   public final void clearOutgoingMessages() {
+    outgoingMessageManager.clear();
+
     if (conf.getBoolean(MessageQueue.PERSISTENT_QUEUE, false)
         && localQueue.size() > 0) {
 
