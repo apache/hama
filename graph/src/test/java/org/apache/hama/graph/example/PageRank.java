@@ -74,7 +74,7 @@ public class PageRank {
       }
 
       // if we have not reached our global error yet, then proceed.
-      DoubleWritable globalError = (DoubleWritable) getAggregatedValue("avg");
+      DoubleWritable globalError = this.getLastAggregatedValue(0);
       if (globalError != null && this.getSuperstepCount() > 2
           && MAXIMUM_CONVERGENCE_ERROR > globalError.get()) {
         voteToHalt();
@@ -84,10 +84,7 @@ public class PageRank {
       // in each superstep we are going to send a new rank to our neighbours
       sendMessageToNeighbors(new DoubleWritable(this.getValue().get()
           / this.getEdges().size()));
-
-      this.aggregate("avg", this.getValue());
     }
-
   }
 
   public static class PagerankSeqReader
@@ -128,7 +125,7 @@ public class PageRank {
     }
 
     // error
-    pageJob.registerAggregator("avg", AverageAggregator.class);
+    pageJob.setAggregatorClass(AverageAggregator.class);
 
     // Vertex reader
     pageJob.setVertexInputReaderClass(PagerankSeqReader.class);

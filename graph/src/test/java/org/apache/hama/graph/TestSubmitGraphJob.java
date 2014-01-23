@@ -85,7 +85,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     // set the defaults
     bsp.setMaxIteration(30);
 
-    bsp.registerAggregator("avg", AverageAggregator.class);
+    bsp.setAggregatorClass(AverageAggregator.class);
 
     bsp.setInputFormat(SequenceFileInputFormat.class);
     bsp.setInputKeyClass(Text.class);
