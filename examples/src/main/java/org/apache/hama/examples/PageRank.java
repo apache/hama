@@ -40,7 +40,6 @@ import org.apache.hama.graph.VertexInputReader;
  * Real pagerank with dangling node contribution.
  */
 public class PageRank {
-  private static final String AVG_AGGREGATOR = "average.aggregator";
 
   public static class PageRankVertex extends
       Vertex<Text, NullWritable, DoubleWritable> {
@@ -72,11 +71,10 @@ public class PageRank {
         }
         double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
         setValue(new DoubleWritable(alpha + (sum * DAMPING_FACTOR)));
-        aggregate(AVG_AGGREGATOR, this.getValue());
       }
 
       // if we have not reached our global error yet, then proceed.
-      DoubleWritable globalError = (DoubleWritable) getAggregatedValue(AVG_AGGREGATOR);
+      DoubleWritable globalError = getLastAggregatedValue(0);
 
       if (globalError != null && this.getSuperstepCount() > 2
           && MAXIMUM_CONVERGENCE_ERROR > globalError.get()) {
@@ -127,8 +125,8 @@ public class PageRank {
     }
 
     // error
-    pageJob.registerAggregator(AVG_AGGREGATOR, AverageAggregator.class);
-
+    pageJob.setAggregatorClass(AverageAggregator.class);
+    
     // Vertex reader
     pageJob.setVertexInputReaderClass(PagerankSeqReader.class);
 
