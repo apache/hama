@@ -41,7 +41,7 @@ import com.google.common.base.Preconditions;
 public final class AggregationRunner<V extends WritableComparable, E extends Writable, M extends Writable> {
 
   // multiple aggregator arrays
-  private Aggregator<M, Vertex<V, E, M>>[] aggregators;
+  private Aggregator<M>[] aggregators;
   private Writable[] globalAggregatorResult;
   private IntWritable[] globalAggregatorIncrement;
   private boolean[] isAbstractAggregator;
@@ -49,7 +49,7 @@ public final class AggregationRunner<V extends WritableComparable, E extends Wri
   private Text[] aggregatorValueFlag;
   private Text[] aggregatorIncrementFlag;
   // aggregator on the master side
-  private Aggregator<M, Vertex<V, E, M>>[] masterAggregator;
+  private Aggregator<M>[] masterAggregator;
 
   private boolean enabled = false;
   private Configuration conf;
@@ -110,8 +110,7 @@ public final class AggregationRunner<V extends WritableComparable, E extends Wri
         updatedCnt.put(aggregatorValueFlag[i], aggregators[i].getValue());
         if (isAbstractAggregator[i]) {
           updatedCnt.put(aggregatorIncrementFlag[i],
-              ((AbstractAggregator<M, Vertex<V, E, M>>) aggregators[i])
-                  .getTimesAggregated());
+              ((AbstractAggregator<M>) aggregators[i]).getTimesAggregated());
         }
       }
       for (int i = 0; i < aggregators.length; i++) {
@@ -133,16 +132,14 @@ public final class AggregationRunner<V extends WritableComparable, E extends Wri
    * @param lastValue the value before compute().
    * @param v the vertex.
    */
-  public void aggregateVertex(M lastValue, Vertex<V, E, M> v) {
+  public void aggregateVertex(int index, M lastValue, M value) {
     if (isEnabled()) {
-      for (int i = 0; i < this.aggregators.length; i++) {
-        Aggregator<M, Vertex<V, E, M>> aggregator = this.aggregators[i];
-        aggregator.aggregate(v, v.getValue());
-        if (isAbstractAggregator[i]) {
-          AbstractAggregator<M, Vertex<V, E, M>> intern = (AbstractAggregator<M, Vertex<V, E, M>>) aggregator;
-          intern.aggregate(v, lastValue, v.getValue());
-          intern.aggregateInternal();
-        }
+      Aggregator<M> aggregator = this.aggregators[index];
+      aggregator.aggregate(value);
+      if (isAbstractAggregator[index]) {
+        AbstractAggregator<M> intern = (AbstractAggregator<M>) aggregator;
+        intern.aggregate(lastValue, value);
+        intern.aggregateInternal();
       }
     }
   }
@@ -157,7 +154,7 @@ public final class AggregationRunner<V extends WritableComparable, E extends Wri
       for (int i = 0; i < masterAggregator.length; i++) {
         Writable lastAggregatedValue = masterAggregator[i].getValue();
         if (isAbstractAggregator[i]) {
-          final AbstractAggregator<M, Vertex<V, E, M>> intern = ((AbstractAggregator<M, Vertex<V, E, M>>) masterAggregator[i]);
+          final AbstractAggregator<M> intern = ((AbstractAggregator<M>) masterAggregator[i]);
           final Writable finalizeAggregation = intern.finalizeAggregation();
           if (intern.finalizeAggregation() != null) {
             lastAggregatedValue = finalizeAggregation;
@@ -207,7 +204,7 @@ public final class AggregationRunner<V extends WritableComparable, E extends Wri
    */
   public void masterReadAggregatedValue(Text textIndex, M value) {
     int index = Integer.parseInt(textIndex.toString().split(";")[1]);
-    masterAggregator[index].aggregate(null, value);
+    masterAggregator[index].aggregate(value);
   }
 
   /**
@@ -217,15 +214,15 @@ public final class AggregationRunner<V extends WritableComparable, E extends Wri
   public void masterReadAggregatedIncrementalValue(Text textIndex, M value) {
     int index = Integer.parseInt(textIndex.toString().split(";")[1]);
     if (isAbstractAggregator[index]) {
-      ((AbstractAggregator<M, Vertex<V, E, M>>) masterAggregator[index])
+      ((AbstractAggregator<M>) masterAggregator[index])
           .addTimesAggregated(((IntWritable) value).get());
     }
   }
 
   @SuppressWarnings("unchecked")
-  private Aggregator<M, Vertex<V, E, M>> getNewAggregator(String clsName) {
+  private Aggregator<M> getNewAggregator(String clsName) {
     try {
-      return (Aggregator<M, Vertex<V, E, M>>) ReflectionUtils.newInstance(
+      return (Aggregator<M>) ReflectionUtils.newInstance(
           conf.getClassByName(clsName), conf);
     } catch (ClassNotFoundException e) {
       e.printStackTrace();

@@ -58,6 +58,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   private transient GraphJobRunner<V, E, M> runner;
 
   private V vertexID;
+  private M oldValue;
   private M value;
   private List<Edge<V, E>> edges;
 
@@ -183,6 +184,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   @Override
   public void setValue(M value) {
+    this.oldValue = this.value;
     this.value = value;
   }
 
@@ -192,31 +194,6 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   public int getMaxIteration() {
     return runner.getMaxIteration();
-  }
-
-  /**
-   * Get the last aggregated value of the defined aggregator, null if nothing
-   * was configured or not returned a result. You have to supply an index, the
-   * index is defined by the order you set the aggregator classes in
-   * {@link GraphJob#setAggregatorClass(Class...)}. Index is starting at zero,
-   * so if you have a single aggregator you can retrieve it via
-   * {@link #getLastAggregatedValue}(0).
-   */
-  @SuppressWarnings("unchecked")
-  public M getLastAggregatedValue(int index) {
-    return (M) runner.getLastAggregatedValue(index);
-  }
-
-  /**
-   * Get the number of aggregated vertices in the last superstep. Or null if no
-   * aggregator is available.You have to supply an index, the index is defined
-   * by the order you set the aggregator classes in
-   * {@link GraphJob#setAggregatorClass(Class...)}. Index is starting at zero,
-   * so if you have a single aggregator you can retrieve it via
-   * {@link #getNumLastAggregatedVertices}(0).
-   */
-  public IntWritable getNumLastAggregatedVertices(int index) {
-    return runner.getNumLastAggregatedVertices(index);
   }
 
   public int getNumPeers() {
@@ -405,5 +382,36 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
     Vertex<V, E, M> vertex = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
     vertex.readFields(dis);
     return vertex;
+  }
+  
+  @Override
+  public void aggregate(int index, M value) throws IOException {
+    this.runner.getAggregationRunner().aggregateVertex(index, oldValue, value);
+  }
+
+  /**
+   * Get the last aggregated value of the defined aggregator, null if nothing
+   * was configured or not returned a result. You have to supply an index, the
+   * index is defined by the order you set the aggregator classes in
+   * {@link GraphJob#setAggregatorClass(Class...)}. Index is starting at zero,
+   * so if you have a single aggregator you can retrieve it via
+   * {@link #getLastAggregatedValue}(0).
+   */
+  @SuppressWarnings("unchecked")
+  @Override
+  public M getAggregatedValue(int index) {
+    return (M) runner.getLastAggregatedValue(index);
+  }
+  
+  /**
+   * Get the number of aggregated vertices in the last superstep. Or null if no
+   * aggregator is available.You have to supply an index, the index is defined
+   * by the order you set the aggregator classes in
+   * {@link GraphJob#setAggregatorClass(Class...)}. Index is starting at zero,
+   * so if you have a single aggregator you can retrieve it via
+   * {@link #getNumLastAggregatedVertices}(0).
+   */
+  public IntWritable getNumLastAggregatedVertices(int index) {
+    return runner.getNumLastAggregatedVertices(index);
   }
 }

@@ -46,7 +46,6 @@ public class GraphJob extends BSPJob {
 
   public final static String VERTEX_OUTPUT_WRITER_CLASS_ATTR = "hama.graph.vertex.output.writer.class";
   public final static String AGGREGATOR_CLASS_ATTR = "hama.graph.aggregator.class";
-  public final static String VERTEX_MESSAGE_COMBINER_CLASS_ATTR = "hama.vertex.message.combiner.class";
 
   /**
    * Creates a new Graph Job with the given configuration and an exampleClass.
@@ -164,7 +163,7 @@ public class GraphJob extends BSPJob {
   @Override
   public void setCombinerClass(Class<? extends Combiner<? extends Writable>> cls) {
     ensureState(JobState.DEFINE);
-    conf.setClass(VERTEX_MESSAGE_COMBINER_CLASS_ATTR, cls, Combiner.class);
+    conf.setClass(Constants.COMBINER_CLASS, cls, Combiner.class);
   }
 
   /**

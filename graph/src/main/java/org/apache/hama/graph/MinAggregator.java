@@ -20,12 +20,12 @@ package org.apache.hama.graph;
 import org.apache.hadoop.io.IntWritable;
 
 public class MinAggregator extends
-    AbstractAggregator<IntWritable, Vertex<?, ?, IntWritable>> {
+    AbstractAggregator<IntWritable> {
 
   int min = Integer.MAX_VALUE;
 
   @Override
-  public void aggregate(Vertex<?, ?, IntWritable> vertex, IntWritable value) {
+  public void aggregate(IntWritable value) {
     if (value.get() < min) {
       min = value.get();
     }

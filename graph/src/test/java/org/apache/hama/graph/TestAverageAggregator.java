@@ -27,11 +27,11 @@ public class TestAverageAggregator extends TestCase {
   @Test
   public void testAggregator() {
     AverageAggregator diff = new AverageAggregator();
-    diff.aggregate(null, new DoubleWritable(5), new DoubleWritable(2));
+    diff.aggregate(new DoubleWritable(5), new DoubleWritable(2));
     diff.aggregateInternal();
-    diff.aggregate(null, new DoubleWritable(5), new DoubleWritable(2));
+    diff.aggregate(new DoubleWritable(5), new DoubleWritable(2));
     diff.aggregateInternal();
-    diff.aggregate(null, null, new DoubleWritable(5));
+    diff.aggregate(null, new DoubleWritable(5));
     diff.aggregateInternal();
 
     assertEquals(3, diff.getTimesAggregated().get());

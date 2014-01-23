@@ -78,7 +78,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   public static final Text FLAG_VERTEX_TOTAL_VERTICES = new Text(
       S_FLAG_VERTEX_TOTAL_VERTICES);
 
-  public static final String MESSAGE_COMBINER_CLASS_KEY = "hama.vertex.message.combiner.class";
   public static final String VERTEX_CLASS_KEY = "hama.graph.vertex.class";
 
   private HamaConfiguration conf;
@@ -269,14 +268,12 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       }
 
       if (!vertex.isHalted()) {
-        M lastValue = vertex.getValue();
         if (iterable == null) {
           vertex.compute(Collections.<M> emptyList());
         } else {
           vertex.compute(iterable);
           currentMessage = iterable.getOverflowMessage();
         }
-        getAggregationRunner().aggregateVertex(lastValue, vertex);
         activeVertices++;
       }
 
@@ -338,7 +335,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
    * Seed the vertices first with their own values in compute. This is the first
    * superstep after the vertices have been loaded.
    */
-  @SuppressWarnings("unused")
   private void doInitialSuperstep(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
@@ -347,7 +343,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     IDSkippingIterator<V, E, M> skippingIterator = vertices.skippingIterator();
     while (skippingIterator.hasNext()) {
       Vertex<V, E, M> vertex = skippingIterator.next();
-      M lastValue = vertex.getValue();
 
       // Calls setup method.
       vertex.setup(conf);

@@ -27,8 +27,8 @@ public class TestMinMaxAggregator extends TestCase {
   @Test
   public void testMinAggregator() {
     MinAggregator diff = new MinAggregator();
-    diff.aggregate(null, new IntWritable(5));
-    diff.aggregate(null, new IntWritable(25));
+    diff.aggregate(new IntWritable(5));
+    diff.aggregate(new IntWritable(25));
     assertEquals(5, diff.getValue().get());
 
   }
@@ -36,8 +36,8 @@ public class TestMinMaxAggregator extends TestCase {
   @Test
   public void testMaxAggregator() {
     MaxAggregator diff = new MaxAggregator();
-    diff.aggregate(null, new IntWritable(5));
-    diff.aggregate(null, new IntWritable(25));
+    diff.aggregate(new IntWritable(5));
+    diff.aggregate(new IntWritable(25));
     assertEquals(25, diff.getValue().get());
   }
 

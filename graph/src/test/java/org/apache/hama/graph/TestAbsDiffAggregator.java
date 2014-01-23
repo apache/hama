@@ -27,9 +27,9 @@ public class TestAbsDiffAggregator extends TestCase {
   @Test
   public void testAggregator() {
     AbsDiffAggregator diff = new AbsDiffAggregator();
-    diff.aggregate(null, new DoubleWritable(5), new DoubleWritable(2));
-    diff.aggregate(null, new DoubleWritable(5), new DoubleWritable(2));
-    diff.aggregate(null, null, new DoubleWritable(5));
+    diff.aggregate(new DoubleWritable(5), new DoubleWritable(2));
+    diff.aggregate(new DoubleWritable(5), new DoubleWritable(2));
+    diff.aggregate(null, new DoubleWritable(5));
 
     // 0, because this is totally worthless for diffs
     assertEquals(0, diff.getTimesAggregated().get());

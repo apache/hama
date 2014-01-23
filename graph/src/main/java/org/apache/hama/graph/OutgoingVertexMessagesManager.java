@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.message.OutgoingMessageManager;
@@ -51,14 +52,13 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
   @SuppressWarnings("unchecked")
   @Override
   public void init(Configuration conf) {
-    if (!conf.getClass(GraphJobRunner.MESSAGE_COMBINER_CLASS_KEY,
-        Combiner.class).equals(Combiner.class)) {
-      LOG.debug("Combiner class: "
-          + conf.get(GraphJobRunner.MESSAGE_COMBINER_CLASS_KEY));
+    if (!conf.getClass(Constants.COMBINER_CLASS, Combiner.class).equals(
+        Combiner.class)) {
+      LOG.debug("Combiner class: " + conf.get(Constants.COMBINER_CLASS));
 
       combiner = (Combiner<Writable>) org.apache.hadoop.util.ReflectionUtils
-          .newInstance(conf.getClass("hama.vertex.message.combiner.class",
-              Combiner.class), conf);
+          .newInstance(conf.getClass(Constants.COMBINER_CLASS, Combiner.class),
+              conf);
     }
   }
 

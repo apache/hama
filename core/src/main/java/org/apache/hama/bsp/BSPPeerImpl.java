@@ -459,11 +459,13 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   }
 
   public final void close() {
-    long combinedMessages = this.getCounter(PeerCounter.TOTAL_MESSAGES_SENT)
-        .getCounter()
-        - this.getCounter(PeerCounter.TOTAL_MESSAGES_RECEIVED).getCounter();
-    this.getCounter(PeerCounter.TOTAL_MESSAGES_COMBINED).increment(
-        combinedMessages);
+    if (conf.get(Constants.COMBINER_CLASS) != null) {
+      long combinedMessages = this.getCounter(PeerCounter.TOTAL_MESSAGES_SENT)
+          .getCounter()
+          - this.getCounter(PeerCounter.TOTAL_MESSAGES_RECEIVED).getCounter();
+      this.getCounter(PeerCounter.TOTAL_MESSAGES_COMBINED).increment(
+          combinedMessages);
+    }
 
     // there are many catches, because we want to close always every component
     // even if the one before failed.

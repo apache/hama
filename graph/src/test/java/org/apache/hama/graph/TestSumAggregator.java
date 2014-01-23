@@ -27,8 +27,8 @@ public class TestSumAggregator extends TestCase {
   @Test
   public void testAggregator() {
     SumAggregator diff = new SumAggregator();
-    diff.aggregate(null, new DoubleWritable(5));
-    diff.aggregate(null, new DoubleWritable(5));
+    diff.aggregate(new DoubleWritable(5));
+    diff.aggregate(new DoubleWritable(5));
     assertEquals(10, (int) diff.getValue().get());
 
   }
