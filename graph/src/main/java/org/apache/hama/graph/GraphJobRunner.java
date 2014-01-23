@@ -68,7 +68,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   public static final String S_FLAG_VERTEX_DECREASE = "hama.4";
   public static final String S_FLAG_VERTEX_ALTER_COUNTER = "hama.5";
   public static final String S_FLAG_VERTEX_TOTAL_VERTICES = "hama.6";
-  public static final String S_FLAG_AGGREGATOR_SKIP = "hama.7";
   public static final Text FLAG_MESSAGE_COUNTS = new Text(S_FLAG_MESSAGE_COUNTS);
   public static final Text FLAG_VERTEX_INCREASE = new Text(
       S_FLAG_VERTEX_INCREASE);
@@ -229,7 +228,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       // set the first vertex message back to the message it had before sync
       firstVertexMessage = peer.getCurrentMessage();
     }
-    this.aggregationRunner.resetSkipAggregators();
     return firstVertexMessage;
   }
 
@@ -742,7 +740,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   /**
    * @return the aggregationRunner
    */
-  AggregationRunner<V, E, M> getAggregationRunner() {
+  public AggregationRunner<V, E, M> getAggregationRunner() {
     return aggregationRunner;
   }
 
