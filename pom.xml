@@ -88,6 +88,7 @@
     <!-- Dependencies -->
     <commons-logging.version>1.1.1</commons-logging.version>
     <commons-cli.version>1.2</commons-cli.version>
+    <commons-cli2.version>2.0-mahout</commons-cli2.version>
     <commons-configuration>1.7</commons-configuration>
     <commons-lang>2.6</commons-lang>
     <commons-httpclient>3.0.1</commons-httpclient>
@@ -276,7 +277,12 @@
         <artifactId>jackson-mapper-asl</artifactId>
         <version>1.9.2</version>
       </dependency>
-         
+
+      <dependency>
+      	<groupId>org.apache.mahout.commons</groupId>
+      	<artifactId>commons-cli</artifactId>
+      	<version>${commons-cli2.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 

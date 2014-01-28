@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -33,32 +31,34 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.commons.io.VectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test the functionality of NeuralNetwork Example.
  * 
  */
-public class NeuralNetworkTest extends TestCase {
+public class NeuralNetworkTest {
   private Configuration conf = new HamaConfiguration();
   private FileSystem fs;
   private String MODEL_PATH = "/tmp/neuralnets.model";
   private String RESULT_PATH = "/tmp/neuralnets.txt";
   private String SEQTRAIN_DATA = "/tmp/test-neuralnets.data";
-  
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+
+  @Before
+  public void setup() throws Exception {
     fs = FileSystem.get(conf);
   }
 
+  @Test
   public void testNeuralnetsLabeling() throws IOException {
     this.neuralNetworkTraining();
 
     String dataPath = "src/test/resources/neuralnets_classification_test.txt";
-    String mode = "label";
+    String mode = "-label";
     try {
       NeuralNetwork
-          .main(new String[] { mode, dataPath, RESULT_PATH, MODEL_PATH });
+          .main(new String[] { mode, "-fp", dataPath, "-rp", RESULT_PATH, "-mp", MODEL_PATH });
 
       // compare results with ground-truth
       BufferedReader groundTruthReader = new BufferedReader(new FileReader(
@@ -98,7 +98,7 @@ public class NeuralNetworkTest extends TestCase {
   }
 
   private void neuralNetworkTraining() {
-    String mode = "train";
+    String mode = "-train";
     String strTrainingDataPath = "src/test/resources/neuralnets_classification_training.txt";
     int featureDimension = 8;
     int labelDimension = 1;
@@ -130,8 +130,9 @@ public class NeuralNetworkTest extends TestCase {
     }
 
     try {
-      NeuralNetwork.main(new String[] { mode, SEQTRAIN_DATA,
-          MODEL_PATH, "" + featureDimension, "" + labelDimension });
+      NeuralNetwork.main(new String[] { mode, "-tp", SEQTRAIN_DATA, "-mp",
+          MODEL_PATH, "-fd", "" + featureDimension, "-hd",
+          "" + featureDimension, "-ld", "" + labelDimension, "-itr", "3000", "-m", "0.2", "-l", "0.2" });
     } catch (Exception e) {
       e.printStackTrace();
     }
