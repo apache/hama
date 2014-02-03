@@ -51,18 +51,6 @@ public final class NamedDoubleVector implements DoubleVector {
   }
 
   @Override
-  @Deprecated
-  public DoubleVector apply(DoubleVectorFunction func) {
-    return vector.apply(func);
-  }
-
-  @Override
-  @Deprecated
-  public DoubleVector apply(DoubleVector other, DoubleDoubleVectorFunction func) {
-    return vector.apply(other, func);
-  }
-
-  @Override
   public DoubleVector applyToElements(DoubleFunction func) {
     return vector.applyToElements(func);
   }
@@ -238,8 +226,9 @@ public final class NamedDoubleVector implements DoubleVector {
     return name;
   }
   
+  @Override
   public String toString() {
-    return name + ": " + vector.toString();
+    return String.format("%s: %s", name, vector.toArray());
   }
 
 }

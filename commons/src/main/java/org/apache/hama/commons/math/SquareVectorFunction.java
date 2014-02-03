@@ -17,12 +17,22 @@
  */
 package org.apache.hama.commons.math;
 
-@SuppressWarnings("deprecation")
-public class SquareVectorFunction implements DoubleVectorFunction {
+public class SquareVectorFunction extends DoubleFunction {
 
+  /* (non-Javadoc)
+   * @see org.apache.hama.commons.math.DoubleFunction#apply(double)
+   */
   @Override
-  public double calculate(int index, double value) {
-    return Math.pow(value, 2);
+  public double apply(double value) {
+    return value * value;
+  }
+
+  /* (non-Javadoc)
+   * @see org.apache.hama.commons.math.DoubleFunction#applyDerivative(double)
+   */
+  @Override
+  public double applyDerivative(double value) {
+    throw new UnsupportedOperationException();
   }
 
 }

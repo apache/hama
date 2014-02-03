@@ -473,7 +473,7 @@ public class OnlineCF implements Recommender, RecommenderIO, UserSimilarity, Ite
     // Euclidean distance
     return Math.pow( usr1Vector
                     .subtract(usr2Vector)
-                    .apply(new SquareVectorFunction())
+                    .applyToElements(new SquareVectorFunction())
                     .sum() , 0.5);
   }
 
@@ -514,7 +514,7 @@ public class OnlineCF implements Recommender, RecommenderIO, UserSimilarity, Ite
     // Euclidean distance
     return Math.pow( itm1Vector
                       .subtract(itm2Vector)
-                      .apply(new SquareVectorFunction())
+                      .applyToElements(new SquareVectorFunction())
                       .sum() , 0.5);
   }
 

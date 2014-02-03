@@ -66,27 +66,6 @@ public interface DoubleVector {
    * @param func the function to apply.
    * @return a new vector with the applied function.
    */
-  @Deprecated
-  public DoubleVector apply(DoubleVectorFunction func);
-
-  /**
-   * Apply a given {@link DoubleDoubleVectorFunction} to this vector and the
-   * other given vector.
-   * 
-   * @param other the other vector.
-   * @param func the function to apply on this and the other vector.
-   * @return a new vector with the result of the function of the two vectors.
-   */
-  @Deprecated
-  public DoubleVector apply(DoubleVector other, DoubleDoubleVectorFunction func);
-
-  /**
-   * Apply a given {@link DoubleVectorFunction} to this vector and return a new
-   * one.
-   * 
-   * @param func the function to apply.
-   * @return a new vector with the applied function.
-   */
   public DoubleVector applyToElements(DoubleFunction func);
 
   /**
@@ -331,18 +310,22 @@ public interface DoubleVector {
   public Iterator<DoubleVectorElement> iterate();
 
   /**
+   * Return whether the vector is a sparse vector.
    * @return true if this instance is a sparse vector. Smarter and faster than
    *         instanceof.
    */
   public boolean isSparse();
 
   /**
+   * Return whether the vector is a named vector.
    * @return true if this instance is a named vector.Smarter and faster than
    *         instanceof.
    */
   public boolean isNamed();
 
   /**
+   * Get the name of the vector. 
+   * 
    * @return If this vector is a named instance, this will return its name. Or
    *         null if this is not a named instance.
    * 

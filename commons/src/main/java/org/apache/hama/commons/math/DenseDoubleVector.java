@@ -127,36 +127,6 @@ public final class DenseDoubleVector implements DoubleVector {
 
   /*
    * (non-Javadoc)
-   * @see de.jungblut.math.DoubleVector#apply(de.jungblut.math.function.
-   * DoubleVectorFunction)
-   */
-  @Deprecated
-  @Override
-  public DoubleVector apply(DoubleVectorFunction func) {
-    DenseDoubleVector newV = new DenseDoubleVector(this.vector);
-    for (int i = 0; i < vector.length; i++) {
-      newV.vector[i] = func.calculate(i, vector[i]);
-    }
-    return newV;
-  }
-
-  /*
-   * (non-Javadoc)
-   * @see de.jungblut.math.DoubleVector#apply(de.jungblut.math.DoubleVector,
-   * de.jungblut.math.function.DoubleDoubleVectorFunction)
-   */
-  @Deprecated
-  @Override
-  public DoubleVector apply(DoubleVector other, DoubleDoubleVectorFunction func) {
-    DenseDoubleVector newV = (DenseDoubleVector) deepCopy();
-    for (int i = 0; i < vector.length; i++) {
-      newV.vector[i] = func.calculate(i, vector[i], other.get(i));
-    }
-    return newV;
-  }
-
-  /*
-   * (non-Javadoc)
    * @see de.jungblut.math.DoubleVector#add(de.jungblut.math.DoubleVector)
    */
   @Override

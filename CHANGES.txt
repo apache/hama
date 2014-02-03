@@ -3,7 +3,8 @@ Hama Change Log
 Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
-  
+   
+   HAMA-864: Fix/improve DoubleVector and DenseDoubleVector (Yexi Jiang)
    HAMA-842: Add persistent queue option to JobConf (edwardyoon)
    HAMA-839: Support NullWritable in Hama Pipes (Martin Illecker)    
    HAMA-837: Add sort behaviour to runtime partitioner (edwardyoon)
@@ -26,7 +27,6 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
-   HAMA-859: Leverage commons cli2 to parse the input argument for NeuralNetwork Example (Yexi Jiang)
    HAMA-853: Refactor Outgoing message manager (edwardyoon)
    HAMA-852: Add MessageClass property in BSPJob (Martin Illecker)
    HAMA-843: Message communication overhead between master aggregation and vertex computation supersteps (edwardyoon)
