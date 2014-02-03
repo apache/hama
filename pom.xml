@@ -276,12 +276,6 @@
         <artifactId>jackson-mapper-asl</artifactId>
         <version>1.9.2</version>
       </dependency>
-
-      <dependency>
-      	<groupId>org.apache.mahout.commons</groupId>
-      	<artifactId>commons-cli</artifactId>
-      	<version>${commons-cli2.version}</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
