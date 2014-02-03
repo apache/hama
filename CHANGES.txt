@@ -14,7 +14,8 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
-	 HAMA-860: Make aggregators start from the first superstep (Anastasis Andronidis)
+   HAMA-862: Handling max tasks exception (edwardyoon)
+   HAMA-860: Make aggregators start from the first superstep (Anastasis Andronidis)
    HAMA-857: Graph Combiners is wrongly implemented (edwardyoon)
    HAMA-845: The size() of Spilling Queue returns always numMessagesWritten (edwardyoon)
    HAMA-834: Fix KMeans example (Martin Illecker)

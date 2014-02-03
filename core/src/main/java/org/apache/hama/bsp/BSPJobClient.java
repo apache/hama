@@ -302,9 +302,16 @@ public class BSPJobClient extends Configured implements Tool {
       throws IOException {
     BSPJob job = pJob;
     job.setJobID(jobId);
-    int limitTasks = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB,
-        0);
-    int maxTasks = checkTaskLimits(job, limitTasks);
+
+    ClusterStatus clusterStatus = getClusterStatus(true);
+    int maxTasks = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB,
+        clusterStatus.getMaxTasks() - clusterStatus.getTasks());
+
+    if (maxTasks < job.getNumBspTask()) {
+      LOG.warn("The configured number of tasks has exceeded the maximum allowed. Job will run with "
+          + maxTasks + " tasks.");
+      job.setNumBspTask(maxTasks);
+    }
 
     Path submitJobDir = new Path(getSystemDir(), "submit_"
         + Integer.toString(Math.abs(r.nextInt()), 36));
@@ -329,20 +336,21 @@ public class BSPJobClient extends Configured implements Tool {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
 
-      InputSplit[] splits = job.getInputFormat().getSplits(
-          job,
-          (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
-              : maxTasks);
+      InputSplit[] splits = job.getInputFormat().getSplits(job, maxTasks);
 
       job = partition(job, splits, maxTasks);
       maxTasks = job.getInt("hama.partition.count", maxTasks);
 
       if (job.getBoolean("input.has.partitioned", false)) {
-        splits = job.getInputFormat().getSplits(
-            job,
-            (isProperSize(job.getNumBspTask(), maxTasks)) ? job.getNumBspTask()
-                : maxTasks);
+        splits = job.getInputFormat().getSplits(job, maxTasks);
       }
+
+      if (maxTasks < splits.length) {
+        throw new IOException(
+            "Job failed! The number of splits has exceeded the number of max tasks. The number of splits: "
+                + splits.length + ", The number of max tasks: " + maxTasks);
+      }
+
       job.setNumBspTask(writeSplits(job, splits, submitSplitFile, maxTasks));
       job.set("bsp.job.split.file", submitSplitFile.toString());
     }
@@ -472,25 +480,6 @@ public class BSPJobClient extends Configured implements Tool {
     return job;
   }
 
-  protected int checkTaskLimits(BSPJob job, int limitTasks) throws IOException {
-    int maxTasks;
-    ClusterStatus clusterStatus = getClusterStatus(true);
-
-    if (limitTasks > 0) {
-      maxTasks = limitTasks;
-    } else {
-      maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
-    }
-
-    if (maxTasks < job.getNumBspTask()) {
-      throw new IOException(
-          "Job failed! The number of tasks has exceeded the maximum allowed. Maxtasks: "
-              + maxTasks + " < configured number of tasks: "
-              + job.getNumBspTask());
-    }
-    return maxTasks;
-  }
-
   protected RunningJob launchJob(BSPJobID jobId, BSPJob job,
       Path submitJobFile, FileSystem fs) throws IOException {
     //
@@ -503,10 +492,6 @@ public class BSPJobClient extends Configured implements Tool {
     } else {
       throw new IOException("Could not launch job");
     }
-  }
-
-  private static boolean isProperSize(int numBspTask, int maxTasks) {
-    return (numBspTask > 1 && numBspTask < maxTasks);
   }
 
   /**
