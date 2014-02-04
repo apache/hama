@@ -66,61 +66,61 @@ public final class BipartiteMatching {
     public void compute(Iterable<TextPair> msgs) throws IOException {
       Random random = new Random(Long.parseLong(getConf().get(
           SEED_CONFIGURATION_KEY)));
+
       if (isMatched()) {
         voteToHalt();
-        return;
-      }
-
-      switch ((int) getSuperstepCount() % 4) {
-        case 0:
-          if (Objects.equal(getComponent(), LEFT)) {
-            sendMessageToNeighbors(getNewMessage());
-          }
-          break;
-
-        case 1:
-          if (Objects.equal(getComponent(), RIGHT)) {
-            List<TextPair> buffer = new ArrayList<TextPair>();
-            for (TextPair next : msgs) {
-              buffer.add(new TextPair(next.getFirst(), next.getSecond()));
+      } else {
+        switch ((int) getSuperstepCount() % 4) {
+          case 0:
+            if (Objects.equal(getComponent(), LEFT)) {
+              sendMessageToNeighbors(getNewMessage());
             }
-            if (buffer.size() > 0) {
-              TextPair luckyMsg = buffer.get(RandomUtils.nextInt(random,
-                  buffer.size()));
+            break;
 
-              Text sourceVertex = getSourceVertex(luckyMsg);
-              sendMessage(sourceVertex, getNewMessage());
-            }
-          }
-          break;
+          case 1:
+            if (Objects.equal(getComponent(), RIGHT)) {
+              List<TextPair> buffer = new ArrayList<TextPair>();
+              for (TextPair next : msgs) {
+                buffer.add(new TextPair(next.getFirst(), next.getSecond()));
+              }
+              if (buffer.size() > 0) {
+                int rand = RandomUtils.nextInt(random, buffer.size());
+                TextPair luckyMsg = buffer.get(rand);
 
-        case 2:
-          if (Objects.equal(getComponent(), LEFT)) {
-            List<TextPair> buffer = new ArrayList<TextPair>();
-            for (TextPair next : msgs) {
-              buffer.add(new TextPair(next.getFirst(), next.getSecond()));
+                Text sourceVertex = getSourceVertex(luckyMsg);
+                sendMessage(sourceVertex, getNewMessage());
+              }
             }
-            if (buffer.size() > 0) {
-              TextPair luckyMsg = buffer.get(RandomUtils.nextInt(random,
-                  buffer.size()));
+            break;
 
-              Text sourceVertex = getSourceVertex(luckyMsg);
-              setMatchVertex(sourceVertex);
-              sendMessage(sourceVertex, getNewMessage());
-            }
-          }
-          break;
+          case 2:
+            if (Objects.equal(getComponent(), LEFT)) {
+              List<TextPair> buffer = new ArrayList<TextPair>();
+              for (TextPair next : msgs) {
+                buffer.add(new TextPair(next.getFirst(), next.getSecond()));
+              }
+              if (buffer.size() > 0) {
+                int rand = RandomUtils.nextInt(random, buffer.size());
+                TextPair luckyMsg = buffer.get(rand);
 
-        case 3:
-          if (Objects.equal(getComponent(), RIGHT)) {
-            Iterator<TextPair> messages = msgs.iterator();
-            if (messages.hasNext()) {
-              TextPair next = messages.next();
-              Text sourceVertex = getSourceVertex(next);
-              setMatchVertex(sourceVertex);
+                Text sourceVertex = getSourceVertex(luckyMsg);
+                setMatchVertex(sourceVertex);
+                sendMessage(sourceVertex, getNewMessage());
+              }
             }
-          }
-          break;
+            break;
+
+          case 3:
+            if (Objects.equal(getComponent(), RIGHT)) {
+              Iterator<TextPair> messages = msgs.iterator();
+              if (messages.hasNext()) {
+                TextPair next = messages.next();
+                Text sourceVertex = getSourceVertex(next);
+                setMatchVertex(sourceVertex);
+              }
+            }
+            break;
+        }
       }
     }
 
@@ -150,7 +150,7 @@ public final class BipartiteMatching {
     }
 
     private boolean isMatched() {
-      return !getValue().getFirst().equals(UNMATCHED);
+      return !this.getValue().getFirst().equals(UNMATCHED);
     }
 
   }
@@ -197,7 +197,7 @@ public final class BipartiteMatching {
     GraphJob job = new GraphJob(conf, BipartiteMatching.class);
 
     // set the defaults
-    job.setMaxIteration(30);
+    job.setMaxIteration(Integer.MAX_VALUE);
     job.setNumBspTask(2);
     conf.set(SEED_CONFIGURATION_KEY, System.currentTimeMillis() + "");
 
