@@ -274,8 +274,6 @@ public class PartitioningRunner extends
 
     comparisonMap.clear();
     writer.close();
-
-    deleteSlices(status);
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -301,16 +299,6 @@ public class PartitioningRunner extends
       reader.close();
     }
     writer.close();
-
-    deleteSlices(status);
-  }
-
-  private void deleteSlices(FileStatus[] status) throws IOException {
-    for (int i = 0; i < status.length; i++) {
-      fs.delete(status[i].getPath(), true);
-      if (fs.exists(status[i].getPath().suffix(".sorted")))
-        fs.delete(status[i].getPath().suffix(".sorted"), true);
-    }
   }
 
   @Override
