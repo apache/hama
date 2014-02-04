@@ -23,6 +23,7 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -139,28 +140,32 @@ public class SemiClusterMatchingTest extends TestCase {
   public static Map<String, List<String>> outputClusterLoader()
       throws IOException {
     FileStatus[] files = fs.globStatus(new Path(OUTPUT + "/part-*"));
-    assertTrue("Not enough files found: " + files.length, files.length == 1);
-    BufferedReader br = new BufferedReader(new FileReader(OUTPUT
-        + "/part-00000"));
     String line, vertexId, clusterId, clusterList;
     List<String> tm;
     Map<String, List<String>> mp = new HashMap<String, List<String>>();
-    while ((line = br.readLine()) != null) {
-      StringTokenizer st1 = new StringTokenizer(line, "\t");
-      vertexId = st1.nextToken();
-      clusterList = st1.nextToken().toString().replaceAll("[\\[\\] ]", "");
-      StringTokenizer st2 = new StringTokenizer(clusterList, ",");
-      while (st2.hasMoreTokens()) {
-        clusterId = st2.nextToken();
-        if (!mp.containsKey(clusterId)) {
-          tm = new ArrayList<String>();
+
+    for (FileStatus file : files) {
+      BufferedReader reader = new BufferedReader(new InputStreamReader(
+          fs.open(file.getPath())));
+      while ((line = reader.readLine()) != null) {
+        StringTokenizer st1 = new StringTokenizer(line, "\t");
+        vertexId = st1.nextToken();
+        clusterList = st1.nextToken().toString().replaceAll("[\\[\\] ]", "");
+        StringTokenizer st2 = new StringTokenizer(clusterList, ",");
+        while (st2.hasMoreTokens()) {
+          clusterId = st2.nextToken();
+          if (!mp.containsKey(clusterId)) {
+            tm = new ArrayList<String>();
+            mp.put(clusterId, tm);
+          } else
+            tm = mp.get(clusterId);
+          tm.add(vertexId);
           mp.put(clusterId, tm);
-        } else
-          tm = mp.get(clusterId);
-        tm.add(vertexId);
-        mp.put(clusterId, tm);
+        }
       }
+      reader.close();
     }
+
     Iterator it = mp.entrySet().iterator();
     while (it.hasNext()) {
       Map.Entry pairs = (Map.Entry) it.next();
@@ -169,7 +174,6 @@ public class SemiClusterMatchingTest extends TestCase {
         it.remove();
       }
     }
-    br.close();
     return mp;
   }
 
@@ -244,6 +248,7 @@ public class SemiClusterMatchingTest extends TestCase {
       semiClusterJob.setOutputFormat(TextOutputFormat.class);
       semiClusterJob.setOutputKeyClass(Text.class);
       semiClusterJob.setOutputValueClass(Text.class);
+      semiClusterJob.setNumBspTask(5);
       long startTime = System.currentTimeMillis();
       if (semiClusterJob.waitForCompletion(true)) {
         System.out.println("Job Finished in "
