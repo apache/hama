@@ -42,16 +42,16 @@ import org.junit.Test;
 
 public class BipartiteMatchingTest extends TestCase {
 
-  private String[] input = { "A L:B D", "B R:A C", "C L:B D", "D R:A C" };
+  private String[] input = { "A L:B", "B R:A", "C L:B D", "D R:A C" };
 
   private final static String DELIMETER = "\t";
 
   private Map<String, String> output1 = new HashMap<String, String>();
   {
-    output1.put("A", "D L");
-    output1.put("B", "C R");
-    output1.put("C", "B L");
-    output1.put("D", "A R");
+    output1.put("A", "B L");
+    output1.put("B", "A R");
+    output1.put("C", "D L");
+    output1.put("D", "C R");
   }
 
   public static class CustomTextPartitioner implements
@@ -122,7 +122,7 @@ public class BipartiteMatchingTest extends TestCase {
           assertNotNull(expValue);
           System.out.println(lineA[0] + " -> " + lineA[1] + " expvalue = "
               + expValue);
-          // assertEquals(expValue, lineA[1]);
+          assertEquals(expValue, lineA[1]);
         }
         in.close();
       }
@@ -148,10 +148,9 @@ public class BipartiteMatchingTest extends TestCase {
     deleteTempDirs();
     generateTestData();
     try {
-      String seed = "2";
       HamaConfiguration conf = new HamaConfiguration();
       GraphJob job = BipartiteMatching.createJob(new String[] { INPUT, OUTPUT,
-          "60", "2", seed }, conf);
+          "30", "2" }, conf);
       job.setPartitioner(CustomTextPartitioner.class);
 
       long startTime = System.currentTimeMillis();
