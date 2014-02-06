@@ -408,6 +408,12 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         throws IOException, InterruptedException {
       return true;
     }
+
+    @Override
+    public int getAssignedPortNum(TaskAttemptID taskid) {
+      // TODO Auto-generated method stub
+      return 0;
+    }
   }
 
   public static class LocalSyncClient extends BSPPeerSyncClient {

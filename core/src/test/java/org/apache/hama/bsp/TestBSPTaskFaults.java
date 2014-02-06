@@ -159,6 +159,12 @@ public class TestBSPTaskFaults extends TestCase {
         lastPingTime = 0L;
       }
     }
+
+    @Override
+    public int getAssignedPortNum(TaskAttemptID taskid) {
+      // TODO Auto-generated method stub
+      return 0;
+    }
   }
 
   @SuppressWarnings("unused")

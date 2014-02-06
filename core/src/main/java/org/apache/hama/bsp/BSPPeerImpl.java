@@ -164,6 +164,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         Constants.DEFAULT_PEER_HOST);
     int bindPort = conf
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
+    
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
 
     // This function call may change the current peer address

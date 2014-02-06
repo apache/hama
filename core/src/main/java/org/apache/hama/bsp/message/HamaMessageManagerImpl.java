@@ -18,6 +18,7 @@
 package org.apache.hama.bsp.message;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
@@ -25,7 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.Constants;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
@@ -75,20 +75,31 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
   private final void startRPCServer(Configuration conf,
       InetSocketAddress peerAddress) {
     try {
-      String bindAddress = conf.get(Constants.PEER_HOST,
-          Constants.DEFAULT_PEER_HOST);
-      InetSocketAddress selfAddress = new InetSocketAddress(bindAddress, 0);
-
-      // TODO Make number of RPC Server threads configurable
-      this.server = RPC.getServer(this, selfAddress.getHostName(),
-          selfAddress.getPort(), conf.getInt("hama.default.messenger.handler.threads.num", 5), false, conf);
-      server.start();
-      
-      LOG.info(" BSPPeer address:" + server.getListenerAddress().getHostName()
-          + " port:" + server.getListenerAddress().getPort());
-    } catch (IOException e) {
-      LOG.error("Fail to start RPC server!", e);
+      startServer(peerAddress.getHostName(), peerAddress.getPort());
+    } catch (IOException ioe) {
+      LOG.error("Fail to start RPC server!", ioe);
       throw new RuntimeException("RPC Server could not be launched!");
+    }
+  }
+
+  private void startServer(String hostName, int port) throws IOException {
+    int retry = 0;
+    try {
+      this.server = RPC.getServer(this, hostName, port,
+          conf.getInt("hama.default.messenger.handler.threads.num", 5), false,
+          conf);
+
+      server.start();
+      LOG.info("BSPPeer address:" + server.getListenerAddress().getHostName()
+          + " port:" + server.getListenerAddress().getPort());
+    } catch (BindException e) {
+      LOG.warn("Address already in use. Retrying " + hostName + ":" + port + 1);
+      startServer(hostName, port + 1);
+      retry++;
+
+      if (retry > 5) {
+        throw new RuntimeException("RPC Server could not be launched!");
+      }
     }
   }
 
@@ -111,7 +122,7 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
       if (compressor != null
           && (bundle.getApproximateSize() > conf.getLong(
               "hama.messenger.compression.threshold", 1048576))) {
-        
+
         BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);
         bspPeerConnection.put(compMsgBundle);
         peer.incrementCounter(BSPPeerImpl.PeerCounter.COMPRESSED_MESSAGES, 1L);

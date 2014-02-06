@@ -125,6 +125,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
   /** Map from taskId -> TaskInProgress. */
   Map<TaskAttemptID, TaskInProgress> runningTasks = null;
   Map<TaskAttemptID, TaskInProgress> finishedTasks = null;
+  Map<TaskAttemptID, Integer> assignedPeerNames = null;
   Map<BSPJobID, RunningJob> runningJobs = null;
 
   // new nexus between GroomServer and BSPMaster
@@ -157,9 +158,17 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       }
 
       if (actions != null) {
+        int prevPort = Constants.DEFAULT_PEER_PORT;
 
         for (GroomServerAction action : actions) {
           if (action instanceof LaunchTaskAction) {
+            Task t = ((LaunchTaskAction) action).getTask();
+
+            synchronized (assignedPeerNames) {
+              prevPort = BSPNetUtils.getNextAvailable(prevPort);
+              assignedPeerNames.put(t.getTaskID(), prevPort);
+            }
+
             LOG.info("Launch " + actions.length + " tasks.");
             startNewTask((LaunchTaskAction) action);
           } else if (action instanceof KillTaskAction) {
@@ -172,6 +181,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
                 tip.killAndCleanup(false);
                 tasks.remove(killAction.getTaskID());
                 runningTasks.remove(killAction.getTaskID());
+                assignedPeerNames.remove(killAction.getTaskID());
               } catch (IOException ioe) {
                 throw new DirectiveException("Error when killing a "
                     + "TaskInProgress.", ioe);
@@ -181,6 +191,12 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
             LOG.info("Recovery action task.");
             RecoverTaskAction recoverAction = (RecoverTaskAction) action;
             Task t = recoverAction.getTask();
+
+            synchronized (assignedPeerNames) {
+              prevPort = BSPNetUtils.getNextAvailable(prevPort);
+              assignedPeerNames.put(t.getTaskID(), prevPort);
+            }
+
             LOG.info("Recovery action task." + t.getTaskID());
             try {
               startRecoveryTask(recoverAction);
@@ -312,6 +328,8 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     this.conf.set(Constants.PEER_HOST, localHostname);
     this.conf.set(Constants.GROOM_RPC_HOST, localHostname);
     this.maxCurrentTasks = conf.getInt(Constants.MAX_TASKS_PER_GROOM, 3);
+    this.assignedPeerNames = new HashMap<TaskAttemptID, Integer>(
+        2 * this.maxCurrentTasks);
 
     int rpcPort = -1;
     String rpcAddr = null;
@@ -326,8 +344,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       this.workerServer = RPC.getServer(this, rpcAddr, rpcPort, conf);
       this.workerServer.start();
       this.rpcServer = rpcAddr + ":" + rpcPort;
-
-      LOG.info("Worker rpc server --> " + rpcServer);
     }
 
     server = new HttpServer("groomserver", rpcAddr, conf.getInt(
@@ -362,7 +378,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     this.taskReportAddress = taskReportServer.getListenerAddress();
     this.conf.set("bsp.groom.report.address", taskReportAddress.getHostName()
         + ":" + taskReportAddress.getPort());
-    LOG.info("GroomServer up at: " + this.taskReportAddress);
+    LOG.info("TaskReportServer up at: " + this.taskReportAddress);
 
     this.groomHostName = rpcAddr;
     this.groomServerName = "groomd_" + this.rpcServer.replace(':', '_');
@@ -1198,8 +1214,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
           defaultConf);
 
       final BSPTask task = (BSPTask) umbilical.getTask(taskid);
-      int peerPort = Constants.DEFAULT_PEER_PORT;
-      peerPort = BSPNetUtils.getNextAvailable(peerPort);
+      int peerPort = umbilical.getAssignedPortNum(taskid);
 
       defaultConf.addResource(new Path(task.getJobFile()));
       BSPJob job = new BSPJob(task.getJobID(), task.getJobFile());
@@ -1212,7 +1227,7 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
       long superstep = Long.parseLong(args[4]);
       TaskStatus.State state = TaskStatus.State.valueOf(args[5]);
-      LOG.debug("Starting peer for sstep " + superstep + " state = " + state);
+      LOG.debug("Starting peer for step " + superstep + " state = " + state);
 
       try {
         // use job-specified working directory
@@ -1331,6 +1346,11 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     } else {
       LOG.warn("Unknown child task done: " + taskid + ". Ignored.");
     }
+  }
+
+  @Override
+  public int getAssignedPortNum(TaskAttemptID taskid) {
+    return assignedPeerNames.get(taskid);
   }
 
   @Override
