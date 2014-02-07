@@ -15,7 +15,7 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
-   HAMA-867: HAHA 0.7 Snapshot cannot work with HDFS 2X due to lack of libs (Skater Xu via edwardyoon)
+   HAMA-867: HAMA 0.7 doesn't work with HDFS 2X due to lack of libs (Skater Xu via edwardyoon)
    HAMA-862: Handling max tasks exception (edwardyoon)
    HAMA-860: Make aggregators start from the first superstep (Anastasis Andronidis)
    HAMA-857: Graph Combiners is wrongly implemented (edwardyoon)
