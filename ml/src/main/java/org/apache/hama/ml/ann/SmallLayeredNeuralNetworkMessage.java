@@ -38,6 +38,9 @@ public class SmallLayeredNeuralNetworkMessage implements Writable {
   protected DoubleMatrix[] prevMatrices;
   protected boolean converge;
 
+  public SmallLayeredNeuralNetworkMessage() {
+  }
+  
   public SmallLayeredNeuralNetworkMessage(double trainingError,
       boolean converge, DoubleMatrix[] weightMatrices,
       DoubleMatrix[] prevMatrices) {

@@ -273,10 +273,10 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   @Override
   public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle)
       throws IOException {
-    for (Writable message : bundle.getMessages()) {
-      loopBackMessage(message);
+    Iterator<? extends Writable> it = bundle.iterator();
+    while (it.hasNext()) {
+      loopBackMessage(it.next());
     }
-
   }
 
   @SuppressWarnings("unchecked")

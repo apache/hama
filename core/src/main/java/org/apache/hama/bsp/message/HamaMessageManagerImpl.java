@@ -120,7 +120,7 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
           + " to transfer messages to!");
     } else {
       if (compressor != null
-          && (bundle.getApproximateSize() > conf.getLong(
+          && (bundle.getLength() > conf.getLong(
               "hama.messenger.compression.threshold", 1048576))) {
 
         BSPCompressedBundle compMsgBundle = compressor.compressBundle(bundle);

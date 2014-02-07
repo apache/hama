@@ -26,9 +26,13 @@ import org.apache.hadoop.io.Writable;
 public abstract class MLPMessage implements Writable {
   protected boolean terminated;
 
+  public MLPMessage() {
+  }
+  
   public MLPMessage(boolean terminated) {
     setTerminated(terminated);
   }
+
 
   public void setTerminated(boolean terminated) {
     this.terminated = terminated;

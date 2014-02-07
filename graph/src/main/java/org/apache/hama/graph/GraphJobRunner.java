@@ -367,7 +367,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     getAggregationRunner().setupAggregators(peer);
 
     Class<? extends VerticesInfo<V, E, M>> verticesInfoClass = (Class<? extends VerticesInfo<V, E, M>>) conf
-        .getClass("hama.graph.vertices.info", DiskVerticesInfo.class,
+        .getClass("hama.graph.vertices.info", ListVerticesInfo.class,
             VerticesInfo.class);
     vertices = ReflectionUtils.newInstance(verticesInfoClass);
     vertices.init(this, conf, peer.getTaskId());

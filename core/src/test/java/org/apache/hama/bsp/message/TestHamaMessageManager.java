@@ -93,11 +93,12 @@ public class TestHamaMessageManager extends TestCase {
 
     assertEquals(entry.getKey(), peer);
 
-    assertTrue(entry.getValue().getMessages().size() == 1);
+    assertTrue(entry.getValue().size() == 1);
 
     BSPMessageBundle<IntWritable> bundle = new BSPMessageBundle<IntWritable>();
-    for (IntWritable msg : entry.getValue().getMessages()) {
-      bundle.addMessage(msg);
+    Iterator<IntWritable> it = entry.getValue().iterator();
+    while (it.hasNext()) {
+      bundle.addMessage(it.next());
     }
 
     messageManager.transfer(peer, bundle);

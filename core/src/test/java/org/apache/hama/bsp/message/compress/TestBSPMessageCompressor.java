@@ -17,11 +17,12 @@
  */
 package org.apache.hama.bsp.message.compress;
 
+import java.util.Iterator;
+
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.message.type.BSPMessage;
 import org.apache.hama.bsp.message.type.IntegerMessage;
 
 public class TestBSPMessageCompressor extends TestCase {
@@ -53,11 +54,10 @@ public class TestBSPMessageCompressor extends TestCase {
         .decompressBundle(compBundle);
 
     int i = 1;
-    for (BSPMessage msg : uncompBundle.getMessages()) {
-      assertEquals(msg.getData(), i);
+    Iterator<IntegerMessage> it = uncompBundle.iterator();
+    while(it.hasNext()) {
+      assertEquals((int) it.next().getData(), i);
       i++;
     }
-
   }
-
 }

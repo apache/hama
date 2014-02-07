@@ -647,8 +647,9 @@ public class TestCheckpoint extends TestCase {
         TaskStatus.State.RECOVERING);
 
     BSPMessageBundle<Text> bundleRead = messenger.getLoopbackBundle();
-    assertEquals(5, bundleRead.getMessages().size());
-    String recoveredMsg = bundleRead.getMessages().get(0).toString();
+    assertEquals(5, bundleRead.size());
+    
+    String recoveredMsg = bundleRead.iterator().next().toString();
     assertEquals(recoveredMsg, "data");
     dfs.delete(new Path("checkpoint"), true);
   }

@@ -25,28 +25,13 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import junit.framework.TestCase;
 
 import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.IntWritable;
 
 public class TestBSPMessageBundle extends TestCase {
-
-  public void testApproximateSize() throws IOException {
-    BSPMessageBundle<IntWritable> bundle = new BSPMessageBundle<IntWritable>();
-    for (int i = 0; i < 100; i++) {
-      bundle.addMessage(new IntWritable(i));
-    }
-
-    assertTrue(bundle.getApproximateSize() > 400
-        && bundle.getApproximateSize() < 500);
-
-    bundle = new BSPMessageBundle<IntWritable>();
-    bundle.addMessage(new IntWritable(1));
-    assertTrue(bundle.getApproximateSize() > 40
-        && bundle.getApproximateSize() < 50);
-  }
 
   public void testEmpty() throws IOException {
     BSPMessageBundle<BytesWritable> bundle = new BSPMessageBundle<BytesWritable>();
@@ -58,7 +43,7 @@ public class TestBSPMessageBundle extends TestCase {
     BSPMessageBundle<BytesWritable> readBundle = new BSPMessageBundle<BytesWritable>();
     readBundle.readFields(new DataInputStream(new ByteArrayInputStream(baos
         .toByteArray())));
-    assertEquals(0, readBundle.getMessages().size());
+    assertEquals(0, readBundle.size());
   }
 
   public void testSerializationDeserialization() throws IOException {
@@ -89,13 +74,16 @@ public class TestBSPMessageBundle extends TestCase {
         .toByteArray())));
     // Check contents.
     int messageNumber = 0;
-    for (BytesWritable message : readBundle.getMessages()) {
-      BytesWritable byteMessage = message;
+
+    Iterator<BytesWritable> it = readBundle.iterator();
+    while(it.hasNext()) {
+      BytesWritable byteMessage = it.next();
 
       assertTrue(Arrays.equals(testMessages[messageNumber].getBytes(),
           byteMessage.getBytes()));
       ++messageNumber;
     }
+    
     assertEquals(testMessages.length, messageNumber);
   }
 }

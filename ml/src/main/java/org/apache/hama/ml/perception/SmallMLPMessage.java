@@ -29,7 +29,7 @@ import org.apache.hama.commons.math.DenseDoubleMatrix;
  * {@link SmallMultiLayerPerceptron}. It send the whole parameter matrix from
  * one task to another.
  */
-class SmallMLPMessage extends MLPMessage {
+public class SmallMLPMessage extends MLPMessage {
 
   private int owner; // the ID of the task who creates the message
   private int numOfUpdatedMatrices;
@@ -37,6 +37,10 @@ class SmallMLPMessage extends MLPMessage {
   private int numOfPrevUpdatedMatrices;
   private DenseDoubleMatrix[] prevWeightUpdatedMatrices;
 
+  public SmallMLPMessage() {
+    super();
+  }
+  
   /**
    * When slave send message to master, use this constructor.
    * 

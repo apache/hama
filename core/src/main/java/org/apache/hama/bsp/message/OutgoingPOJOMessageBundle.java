@@ -61,7 +61,7 @@ public class OutgoingPOJOMessageBundle<M extends Writable> implements
       BSPMessageBundle<M> bundle = outgoingBundles.get(targetPeerAddress);
       bundle.addMessage(msg);
       BSPMessageBundle<M> combined = new BSPMessageBundle<M>();
-      combined.addMessage(combiner.combine(bundle.getMessages()));
+      combined.addMessage(combiner.combine(bundle));
       outgoingBundles.put(targetPeerAddress, combined);
     } else {
       outgoingBundles.get(targetPeerAddress).addMessage(msg);
