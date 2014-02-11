@@ -439,6 +439,8 @@ public class BSPJobClient extends Configured implements Tool {
         conf.set(Constants.RUNTIME_PARTITIONING_CLASS,
             job.get(Constants.RUNTIME_PARTITIONING_CLASS));
         BSPJob partitioningJob = new BSPJob(conf);
+        partitioningJob.setJobName("Runtime partitioning job for "
+            + partitioningJob.getJobName());
         LOG.debug("partitioningJob input: "
             + partitioningJob.get(Constants.JOB_INPUT_DIR));
         partitioningJob.setInputFormat(job.getInputFormat().getClass());
