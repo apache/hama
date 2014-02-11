@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.util.Pair;
@@ -356,12 +357,12 @@ public class OnlineCF implements Recommender, RecommenderIO, UserSimilarity, Ite
               continue;
             }
           }
+          reader.close();
         }
         LOG.info("loaded: " + modelUserFactorizedValues.size() + " users, "
                         + modelUserFeatures.size() + " user features, "
                         + modelItemFactorizedValues.size() + " items, "
                         + modelItemFeatures.size() + " item feature values");
-
       } catch (Exception e) {
         e.printStackTrace();
         this.isLazyLoadModel = false;
@@ -458,7 +459,6 @@ public class OnlineCF implements Recommender, RecommenderIO, UserSimilarity, Ite
     return results;
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public double calculateUserSimilarity(long user1, long user2) {
     VectorWritable usr1 = this.modelUserFactorizedValues.get(Long.valueOf(user1));
@@ -499,7 +499,6 @@ public class OnlineCF implements Recommender, RecommenderIO, UserSimilarity, Ite
     return results;
   }
 
-  @SuppressWarnings("deprecation")
   @Override
   public double calculateItemSimilarity(long item1, long item2) {
     VectorWritable itm1 = this.modelUserFactorizedValues.get(Long.valueOf(item1));
