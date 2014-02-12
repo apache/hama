@@ -28,6 +28,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-869: Add Cloudera repository in maven pom file (Saisai Shao via edwardyoon)
    HAMA-856: Optimize BSPMessageBundle (edwardyoon)
    HAMA-853: Refactor Outgoing message manager (edwardyoon)
    HAMA-852: Add MessageClass property in BSPJob (Martin Illecker)
