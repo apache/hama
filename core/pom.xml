@@ -239,7 +239,9 @@
             <goals><goal>execute</goal></goals>
             <configuration>
               <source>
-                project.properties.setProperty('hama.pipes.examples.install', System.getProperty("hama.pipes.examples.install"));
+                if (System.getProperty("hama.pipes.examples.install") != null) {
+                  project.properties.setProperty('hama.pipes.examples.install', System.getProperty("hama.pipes.examples.install"));
+                }
               </source>
             </configuration>
           </execution>

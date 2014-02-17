@@ -15,6 +15,7 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-871: NPE when building core module due to gmaven-plugin (Martin Illecker) 
    HAMA-867: HAMA 0.7 doesn't work with HDFS 2X due to lack of libs (Skater Xu via edwardyoon)
    HAMA-862: Handling max tasks exception (edwardyoon)
    HAMA-860: Make aggregators start from the first superstep (Anastasis Andronidis)
