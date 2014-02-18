@@ -88,11 +88,6 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
           if (dis.available() > 0) {
             return true;
           } else {
-            dos = null;
-            bos = null;
-            bis = null;
-            dis = null;
-            
             return false;
           }
         } catch (IOException e) {
