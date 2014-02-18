@@ -52,6 +52,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
   public BSPMessageBundle() {
     bos = new ByteArrayOutputStream();
     dos = new DataOutputStream(bos);
+
     bundleSize = 0;
   }
 
@@ -75,9 +76,10 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
   }
 
   public Iterator<M> iterator() {
+    bis = new ByteArrayInputStream(bos.toByteArray());
+    dis = new DataInputStream(bis);
+    
     Iterator<M> it = new Iterator<M>() {
-      ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-      DataInputStream dis = new DataInputStream(bis);
       M msg;
 
       @Override
@@ -86,6 +88,11 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
           if (dis.available() > 0) {
             return true;
           } else {
+            dos = null;
+            bos = null;
+            bis = null;
+            dis = null;
+            
             return false;
           }
         } catch (IOException e) {

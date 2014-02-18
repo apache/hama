@@ -90,7 +90,7 @@ public class SemiClusterDetails implements
     } else if (!semiClusterId.equals(other.semiClusterId))
       return false;
     return Double.doubleToLongBits(semiClusterScore) == Double
-            .doubleToLongBits(other.semiClusterScore);
+        .doubleToLongBits(other.semiClusterScore);
   }
 
   @Override
@@ -100,10 +100,8 @@ public class SemiClusterDetails implements
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    String semiClusterId = in.readUTF();
-    setSemiClusterId(semiClusterId);
-    double score = in.readDouble();
-    setSemiClusterScore(score);
+    this.semiClusterId = in.readUTF();
+    this.semiClusterScore = in.readDouble();
   }
 
   @Override

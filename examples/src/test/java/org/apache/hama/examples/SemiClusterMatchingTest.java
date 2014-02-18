@@ -185,6 +185,7 @@ public class SemiClusterMatchingTest extends TestCase {
     Map<String, List<String>> mpOutPutCluser = outputClusterLoader();
     Iterator it = mpOutPutCluser.entrySet().iterator();
     while (it.hasNext()) {
+      System.out.println(it.next());
       flag = true;
       Map.Entry pairs = (Map.Entry) it.next();
       List<String> valFromMap = new ArrayList<String>();
@@ -220,8 +221,6 @@ public class SemiClusterMatchingTest extends TestCase {
   @Test
   public void testSemiClustering() throws IOException, InterruptedException,
       ClassNotFoundException {
-    /* FIXME HAMA-868
-
     generateTestData();
     try {
 
@@ -260,7 +259,6 @@ public class SemiClusterMatchingTest extends TestCase {
     } finally {
       deleteTempDirs();
     }
-    */
   }
 
 }

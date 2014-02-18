@@ -18,15 +18,21 @@
 
 package org.apache.hama.ml.semiclustering;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NavigableSet;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.graph.Vertex;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.*;
 
 /**
  * The SemiClusterMessage class defines the structure of the value stored by
@@ -37,35 +43,15 @@ import java.util.*;
 public class SemiClusterMessage implements
     WritableComparable<SemiClusterMessage> {
 
-  private String semiClusterId;
-  private double semiClusterScore;
-  private List<Vertex<Text, DoubleWritable, SemiClusterMessage>> semiClusterVertexList = new ArrayList<Vertex<Text, DoubleWritable, SemiClusterMessage>>();
-  private Set<SemiClusterDetails> semiClusterContainThis = new TreeSet<SemiClusterDetails>();
+  private String semiClusterId = null;
+  private double semiClusterScore = 0.0;
 
-  public SemiClusterMessage(String scId,
-      List<Vertex<Text, DoubleWritable, SemiClusterMessage>> verticesEdges,
-      double score) {
-    this.semiClusterId = scId;
-    this.semiClusterVertexList = verticesEdges;
-    this.semiClusterScore = score;
-  }
-
-  public SemiClusterMessage(SemiClusterMessage msg) {
-    this.semiClusterId = msg.getScId();
-    for (Vertex<Text, DoubleWritable, SemiClusterMessage> v : msg
-        .getVertexList())
-      this.semiClusterVertexList.add(v);
-    this.semiClusterScore = msg.getScore();
-  }
-
-  public SemiClusterMessage(Set<SemiClusterDetails> semiClusterContainThis) {
-    this.semiClusterId = "";
-    this.semiClusterScore = 0.0;
-    this.semiClusterVertexList = null;
-    this.semiClusterContainThis = semiClusterContainThis;
-  }
+  private List<Vertex<Text, DoubleWritable, SemiClusterMessage>> semiClusterVertexList;
+  private Set<SemiClusterDetails> semiClusterContainThis;
 
   public SemiClusterMessage() {
+    semiClusterVertexList = new ArrayList<Vertex<Text, DoubleWritable, SemiClusterMessage>>();
+    semiClusterContainThis = new TreeSet<SemiClusterDetails>();
   }
 
   public double getScore() {
@@ -84,20 +70,41 @@ public class SemiClusterMessage implements
     this.semiClusterVertexList.add(v);
   }
 
-  public String getScId() {
+  public void addVertexList(
+      List<Vertex<Text, DoubleWritable, SemiClusterMessage>> list) {
+    for (Vertex<Text, DoubleWritable, SemiClusterMessage> v : list) {
+      addVertex(v);
+    }
+  }
+
+  public void setSemiClusterContainThis(
+      Set<SemiClusterDetails> semiClusterContainThis) {
+    this.semiClusterContainThis = semiClusterContainThis;
+  }
+
+  public String getSemiClusterId() {
     return semiClusterId;
   }
 
-  public void setScId(String scId) {
+  public void setSemiClusterId(String scId) {
     this.semiClusterId = scId;
   }
 
+  public boolean contains(Text vertexID) {
+    for (Vertex<Text, DoubleWritable, SemiClusterMessage> v : this.semiClusterVertexList) {
+      if (v.getVertexID().equals(vertexID)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public void readFields(DataInput in) throws IOException {
-    clear();
-    String semiClusterId = in.readUTF();
-    setScId(semiClusterId);
-    double score = in.readDouble();
-    setScore(score);
+    if (in.readBoolean()) {
+      this.semiClusterId = in.readUTF();
+    }
+    this.semiClusterScore = in.readDouble();
+
     if (in.readBoolean()) {
       int len = in.readInt();
       if (len > 0) {
@@ -119,13 +126,13 @@ public class SemiClusterMessage implements
 
   }
 
-  private void clear() {
-    semiClusterVertexList = new ArrayList<Vertex<Text, DoubleWritable, SemiClusterMessage>>();
-    semiClusterContainThis = new TreeSet<SemiClusterDetails>();
-  }
-
   public void write(DataOutput out) throws IOException {
-    out.writeUTF(semiClusterId);
+    if (this.semiClusterId == null) {
+      out.writeBoolean(false);
+    } else {
+      out.writeBoolean(true);
+      out.writeUTF(semiClusterId);
+    }
     out.writeDouble(semiClusterScore);
 
     if (this.semiClusterVertexList == null) {
@@ -138,7 +145,8 @@ public class SemiClusterMessage implements
       }
     }
     out.writeInt(semiClusterContainThis.size());
-    for (SemiClusterDetails semiClusterContainThi : semiClusterContainThis) semiClusterContainThi.write(out);
+    for (SemiClusterDetails semiClusterContainThi : semiClusterContainThis)
+      semiClusterContainThi.write(out);
   }
 
   public Set<SemiClusterDetails> getSemiClusterContainThis() {
@@ -172,7 +180,7 @@ public class SemiClusterMessage implements
   }
 
   public int compareTo(SemiClusterMessage m) {
-    return (this.getScId().compareTo(m.getScId()));
+    return (this.getSemiClusterId().compareTo(m.getSemiClusterId()));
   }
 
   @Override
@@ -206,5 +214,9 @@ public class SemiClusterMessage implements
     return "SCMessage [semiClusterId=" + semiClusterId + ", semiClusterScore="
         + semiClusterScore + ", semiClusterVertexList=" + semiClusterVertexList
         + ", semiClusterContainThis=" + semiClusterContainThis + "]";
+  }
+
+  public int size() {
+    return this.semiClusterVertexList.size();
   }
 }

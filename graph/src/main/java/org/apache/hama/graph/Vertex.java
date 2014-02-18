@@ -17,12 +17,8 @@
  */
 package org.apache.hama.graph;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -369,19 +365,6 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   protected GraphJobRunner<V, E, M> getRunner() {
     return runner;
-  }
-  
-  public Vertex<V, E, M> deepCopy() throws IOException {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(bos);
-    this.write(dos);
-    
-    ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
-    DataInputStream dis = new DataInputStream(bis);
-    
-    Vertex<V, E, M> vertex = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
-    vertex.readFields(dis);
-    return vertex;
   }
   
   @Override

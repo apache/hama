@@ -374,7 +374,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       final InetSocketAddress addr = entry.getKey();
 
       final BSPMessageBundle<M> bundle = entry.getValue();
-
+      
       // remove this message during runtime to save a bit of memory
       it.remove();
       try {
