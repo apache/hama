@@ -16,8 +16,8 @@
 -->
 <%@ page contentType="text/html; charset=UTF-8" import="javax.servlet.*"
 	import="javax.servlet.http.*" import="java.io.*" import="java.util.*"
-	import="java.text.DecimalFormat" import="org.apache.hama.bsp.*"
-	import="org.apache.hama.util.*"%>
+    import="java.text.DecimalFormat" import="java.text.Format" import="org.apache.hama.bsp.*"
+    import="org.apache.hama.util.*" import="org.apache.hadoop.http.HtmlQuoting"%>
 <%!private static final long serialVersionUID = 1L;%>
 <%
   BSPMaster tracker = (BSPMaster) application
@@ -60,6 +60,48 @@
 
   </table>
   
+   <br/> <br/>
+  <table border="1" cellpadding="6" cellspacing="0">
+    <tr>
+      <th><br/></th>
+      <th>Counter</th>
+      <th>Total</th>
+    </tr>
+    <%
+    Counters counters = status.getCounter();
+    if (counters == null) {
+      counters = new Counters();
+    }
+
+    for (String groupName : counters.getGroupNames()) {
+      Counters.Group group = counters.getGroup(groupName);
+
+      Format decimal = new DecimalFormat();
+
+      boolean isFirst = true;
+      for (Counters.Counter counter : group) {
+        String name = counter.getDisplayName();
+        String value = decimal.format(counter.getCounter());
+        %>
+        <tr>
+          <%
+          if (isFirst) {
+            isFirst = false;
+            %>
+            <td rowspan="<%=group.size()%>">
+            <%=HtmlQuoting.quoteHtmlChars(group.getDisplayName())%></td>
+            <%
+          }
+          %>
+          <td><%=HtmlQuoting.quoteHtmlChars(name)%></td>
+          <td align="right"><%=value%></td>
+        </tr>
+        <%
+      }
+    }
+    %>
+  </table>
+
   <hr>
   <a href="bspmaster.jsp">Back to BSPMaster</a>
 
