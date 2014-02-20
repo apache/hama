@@ -45,6 +45,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
+import org.apache.hama.bsp.message.compress.SnappyCompressor;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.ml.semiclustering.SemiClusterMessage;
 import org.apache.hama.ml.semiclustering.SemiClusterTextReader;
@@ -56,7 +57,6 @@ import org.junit.Test;
 public class SemiClusterMatchingTest extends TestCase {
   private static String INPUT = "/tmp/graph.txt";
   private static String OUTPUT = "/tmp/graph-semiCluster";
-  private static final String requestedGraphJobMaxIterationString = "hama.graph.max.iteration";
   private static final String semiClusterMaximumVertexCount = "semicluster.max.vertex.count";
   private static final String graphJobMessageSentCount = "semicluster.max.message.sent.count";
   private static final String graphJobVertexMaxClusterCount = "vertex.max.cluster.count";
@@ -225,11 +225,15 @@ public class SemiClusterMatchingTest extends TestCase {
     try {
 
       HamaConfiguration conf = new HamaConfiguration();
-      conf.setInt(requestedGraphJobMaxIterationString, 15);
       conf.setInt(semiClusterMaximumVertexCount, 100);
       conf.setInt(graphJobMessageSentCount, 100);
       conf.setInt(graphJobVertexMaxClusterCount, 1);
       GraphJob semiClusterJob = new GraphJob(conf, SemiClusterJobDriver.class);
+      semiClusterJob.setMaxIteration(15);
+      
+      semiClusterJob.setCompressionCodec(SnappyCompressor.class);
+      semiClusterJob.setCompressionThreshold(10);
+      
       semiClusterJob
           .setVertexOutputWriterClass(SemiClusterVertexOutputWriter.class);
       semiClusterJob.setJobName("SemiClusterJob");

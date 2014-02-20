@@ -22,8 +22,8 @@ import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.TaskAttemptID;
@@ -50,7 +50,7 @@ public interface MessageManager<M extends Writable> {
    * 
    */
   public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
-      Configuration conf, InetSocketAddress peerAddress);
+      HamaConfiguration conf, InetSocketAddress peerAddress);
 
   /**
    * Close is called after a task ran. Should be used to cleanup things e.G.
@@ -99,7 +99,7 @@ public interface MessageManager<M extends Writable> {
   /**
    * Send the messages to self to receive in the next superstep.
    */
-  public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle)
+  public void loopBackMessages(BSPMessageBundle<M> bundle)
       throws IOException;
 
   /**

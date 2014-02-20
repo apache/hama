@@ -76,7 +76,7 @@ public class TestCheckpoint extends TestCase {
 
     @Override
     public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, Text> peer,
-        Configuration conf, InetSocketAddress peerAddress) {
+        HamaConfiguration conf, InetSocketAddress peerAddress) {
       // TODO Auto-generated method stub
 
     }
@@ -130,9 +130,8 @@ public class TestCheckpoint extends TestCase {
       listener.onMessageReceived(message);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle) {
+    public void loopBackMessages(BSPMessageBundle<Text> bundle) {
       this.loopbackBundle = (BSPMessageBundle<Text>) bundle;
     }
 
@@ -146,11 +145,11 @@ public class TestCheckpoint extends TestCase {
       this.listener = listener;
     }
 
-	@Override
-	public InetSocketAddress getListenerAddress() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public InetSocketAddress getListenerAddress() {
+      // TODO Auto-generated method stub
+      return null;
+    }
 
   }
 
@@ -444,8 +443,8 @@ public class TestCheckpoint extends TestCase {
   }
 
   private static void checkSuperstepMsgCount(PeerSyncClient syncClient,
-      @SuppressWarnings("rawtypes") BSPPeer bspTask, BSPJob job, long step,
-      long count) {
+      @SuppressWarnings("rawtypes")
+      BSPPeer bspTask, BSPJob job, long step, long count) {
 
     ArrayWritable writableVal = new ArrayWritable(LongWritable.class);
 
@@ -648,7 +647,7 @@ public class TestCheckpoint extends TestCase {
 
     BSPMessageBundle<Text> bundleRead = messenger.getLoopbackBundle();
     assertEquals(5, bundleRead.size());
-    
+
     String recoveredMsg = bundleRead.iterator().next().toString();
     assertEquals(recoveredMsg, "data");
     dfs.delete(new Path("checkpoint"), true);

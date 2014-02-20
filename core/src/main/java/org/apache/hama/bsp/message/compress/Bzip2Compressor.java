@@ -23,11 +23,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.compress.BZip2Codec;
 import org.apache.hadoop.io.compress.CompressionInputStream;
 import org.apache.hadoop.io.compress.CompressionOutputStream;
-import org.apache.hama.bsp.BSPMessageBundle;
 
 public class Bzip2Compressor<M extends Writable> extends
     BSPMessageCompressor<M> {
@@ -35,23 +35,19 @@ public class Bzip2Compressor<M extends Writable> extends
   private final BZip2Codec codec = new BZip2Codec();
 
   @Override
-  public BSPCompressedBundle compressBundle(BSPMessageBundle<M> bundle) {
-    BSPCompressedBundle compMsgBundle = null;
+  public byte[] compress(byte[] bytes) {
     ByteArrayOutputStream bos = null;
     CompressionOutputStream sos = null;
     DataOutputStream dos = null;
+    byte[] compressedBytes = null;
 
     try {
       bos = new ByteArrayOutputStream();
       sos = codec.createOutputStream(bos);
       dos = new DataOutputStream(sos);
-
-      bundle.write(dos);
       dos.close(); // Flush the stream as no more data will be sent.
 
-      byte[] data = bos.toByteArray();
-      compMsgBundle = new BSPCompressedBundle(data);
-
+      compressedBytes = bos.toByteArray();
     } catch (IOException ioe) {
       LOG.error("Unable to compress", ioe);
     } finally {
@@ -62,7 +58,7 @@ public class Bzip2Compressor<M extends Writable> extends
         LOG.warn("Failed to close compression streams.", e);
       }
     }
-    return compMsgBundle;
+    return compressedBytes;
   }
 
   /**
@@ -73,20 +69,17 @@ public class Bzip2Compressor<M extends Writable> extends
    * @return
    */
   @Override
-  public BSPMessageBundle<M> decompressBundle(BSPCompressedBundle compMsgBundle) {
+  public byte[] decompress(byte[] compressedBytes) {
     ByteArrayInputStream bis = null;
     CompressionInputStream sis = null;
     DataInputStream dis = null;
-    BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+    byte[] bytes = null;
 
     try {
-      byte[] data = compMsgBundle.getData();
-      bis = new ByteArrayInputStream(data);
+      bis = new ByteArrayInputStream(compressedBytes);
       sis = codec.createInputStream(bis);
       dis = new DataInputStream(sis);
-
-      bundle.readFields(dis);
-
+      bytes = IOUtils.toByteArray(dis);
     } catch (IOException ioe) {
       LOG.error("Unable to decompress.", ioe);
     } finally {
@@ -99,7 +92,7 @@ public class Bzip2Compressor<M extends Writable> extends
       }
     }
 
-    return bundle;
+    return bytes;
   }
 
 }

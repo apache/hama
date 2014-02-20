@@ -22,30 +22,34 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.Combiner;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.util.ReflectionUtils;
 
 public class OutgoingPOJOMessageBundle<M extends Writable> implements
     OutgoingMessageManager<M> {
 
+  private HamaConfiguration conf;
+  private BSPMessageCompressor<M> compressor;
   private Combiner<M> combiner;
   private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
   private HashMap<InetSocketAddress, BSPMessageBundle<M>> outgoingBundles = new HashMap<InetSocketAddress, BSPMessageBundle<M>>();
 
   @SuppressWarnings("unchecked")
   @Override
-  public void init(Configuration conf) {
+  public void init(HamaConfiguration conf, BSPMessageCompressor<M> compressor) {
+    this.conf = conf;
+    this.compressor = compressor;
     final String combinerName = conf.get(Constants.COMBINER_CLASS);
     if (combinerName != null) {
       try {
-        Combiner<M> combiner = (Combiner<M>) ReflectionUtils.newInstance(conf
+        this.combiner = (Combiner<M>) ReflectionUtils.newInstance(conf
             .getClassByName(combinerName));
-        this.combiner = combiner;
       } catch (ClassNotFoundException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
@@ -61,6 +65,8 @@ public class OutgoingPOJOMessageBundle<M extends Writable> implements
       BSPMessageBundle<M> bundle = outgoingBundles.get(targetPeerAddress);
       bundle.addMessage(msg);
       BSPMessageBundle<M> combined = new BSPMessageBundle<M>();
+      combined.setCompressor(compressor,
+          conf.getLong("hama.messenger.compression.threshold", 128));
       combined.addMessage(combiner.combine(bundle));
       outgoingBundles.put(targetPeerAddress, combined);
     } else {
@@ -79,7 +85,10 @@ public class OutgoingPOJOMessageBundle<M extends Writable> implements
     }
 
     if (!outgoingBundles.containsKey(targetPeerAddress)) {
-      outgoingBundles.put(targetPeerAddress, new BSPMessageBundle<M>());
+      BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+      bundle.setCompressor(compressor,
+          conf.getLong("hama.messenger.compression.threshold", 128));
+      outgoingBundles.put(targetPeerAddress, bundle);
     }
     return targetPeerAddress;
   }

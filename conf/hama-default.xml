@@ -253,13 +253,14 @@
   <!-- The message compression is not recommended for a large production environment -->
   <property>
     <name>hama.messenger.compression.class</name>
-    <value></value>
+    <value>org.apache.hama.bsp.message.compress.SnappyCompressor</value>
     <description>The message compression algorithm to choose. Default is null.</description>
   </property>
   <property>
     <name>hama.messenger.compression.threshold</name>
-    <value></value>
-    <description>The Compressor threshold sets the level at which compression begins.</description>
+    <value>128</value>
+    <description>The Compressor threshold sets the level at which compression begins. 
+    The default is 128 bytes.</description>
   </property>
   
   <property>

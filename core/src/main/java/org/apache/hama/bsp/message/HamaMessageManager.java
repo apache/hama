@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.message.compress.BSPCompressedBundle;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
 
 /**
@@ -46,13 +45,5 @@ public interface HamaMessageManager<M extends Writable> extends
    * @param messages
    */
   public void put(BSPMessageBundle<M> messages) throws IOException;
-
-  /**
-   * This method puts a compressed message bundle for the next iteration.
-   * Accessed concurrently from protocol, this must be sychronized internally.
-   * 
-   * @param compMsgBundle
-   */
-  public void put(BSPCompressedBundle compMsgBundle) throws IOException;
 
 }

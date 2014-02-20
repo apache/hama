@@ -341,7 +341,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     @Override
     public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
-        Configuration conf, InetSocketAddress peerAddress) {
+        HamaConfiguration conf, InetSocketAddress peerAddress) {
       super.init(attemptId, peer, conf, peerAddress);
       MANAGER_MAP.put(peerAddress, this);
       selfAddress = peerAddress;
@@ -351,8 +351,13 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
         throws IOException {
+      peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
+          bundle.getLength());
+      bundle.setCompressor(compressor,
+          conf.getLong("hama.messenger.compression.threshold", 512));
+
       Iterator<M> it = bundle.iterator();
-      while(it.hasNext()) {
+      while (it.hasNext()) {
         MANAGER_MAP.get(addr).localQueueForNextIteration.add(it.next());
         peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
             1L);

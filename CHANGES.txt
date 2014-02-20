@@ -30,6 +30,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-870: Runtime message compression in Bundle (edwardyoon)
    HAMA-869: Add Cloudera repository in maven pom file (Saisai Shao via edwardyoon)
    HAMA-856: Optimize BSPMessageBundle (edwardyoon)
    HAMA-853: Refactor Outgoing message manager (edwardyoon)

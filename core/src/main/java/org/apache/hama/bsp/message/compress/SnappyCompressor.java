@@ -23,8 +23,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.bsp.BSPMessageBundle;
 import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
@@ -32,22 +32,21 @@ public class SnappyCompressor<M extends Writable> extends
     BSPMessageCompressor<M> {
 
   @Override
-  public BSPCompressedBundle compressBundle(BSPMessageBundle<M> bundle) {
-    BSPCompressedBundle compMsgBundle = null;
+  public byte[] compress(byte[] bytes) {
     ByteArrayOutputStream bos = null;
     SnappyOutputStream sos = null;
     DataOutputStream dos = null;
+    byte[] compressedBytes = null;
 
     try {
       bos = new ByteArrayOutputStream();
       sos = new SnappyOutputStream(bos);
       dos = new DataOutputStream(sos);
 
-      bundle.write(dos);
+      dos.write(bytes);
       dos.close(); // Flush the stream as no more data will be sent.
 
-      byte[] data = bos.toByteArray();
-      compMsgBundle = new BSPCompressedBundle(data);
+      compressedBytes = bos.toByteArray();
 
     } catch (IOException ioe) {
       LOG.error("Unable to compress", ioe);
@@ -59,7 +58,7 @@ public class SnappyCompressor<M extends Writable> extends
         LOG.warn("Failed to close compression streams.", e);
       }
     }
-    return compMsgBundle;
+    return compressedBytes;
   }
 
   /**
@@ -70,20 +69,18 @@ public class SnappyCompressor<M extends Writable> extends
    * @return
    */
   @Override
-  public BSPMessageBundle<M> decompressBundle(BSPCompressedBundle compMsgBundle) {
+  public byte[] decompress(byte[] compressedBytes) {
     ByteArrayInputStream bis = null;
     SnappyInputStream sis = null;
     DataInputStream dis = null;
-    BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+    byte[] bytes = null;
 
     try {
-      byte[] data = compMsgBundle.getData();
-      bis = new ByteArrayInputStream(data);
+      bis = new ByteArrayInputStream(compressedBytes);
       sis = new SnappyInputStream(bis);
       dis = new DataInputStream(sis);
 
-      bundle.readFields(dis);
-
+      bytes = IOUtils.toByteArray(dis);
     } catch (IOException ioe) {
       LOG.error("Unable to decompress.", ioe);
     } finally {
@@ -96,7 +93,7 @@ public class SnappyCompressor<M extends Writable> extends
       }
     }
 
-    return bundle;
+    return bytes;
   }
 
 }

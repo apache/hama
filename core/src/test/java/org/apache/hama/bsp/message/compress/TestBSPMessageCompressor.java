@@ -17,17 +17,21 @@
  */
 package org.apache.hama.bsp.message.compress;
 
-import java.util.Iterator;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hama.bsp.BSPMessageBundle;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hama.bsp.message.type.IntegerMessage;
 
 public class TestBSPMessageCompressor extends TestCase {
 
-  public void testCompression() {
+  public void testCompression() throws IOException {
     Configuration configuration = new Configuration();
     BSPMessageCompressor<IntegerMessage> compressor = new BSPMessageCompressorFactory<IntegerMessage>()
         .getCompressor(configuration);
@@ -40,24 +44,27 @@ public class TestBSPMessageCompressor extends TestCase {
 
     assertNotNull(compressor);
 
-    int n = 20;
-    BSPMessageBundle<IntegerMessage> bundle = new BSPMessageBundle<IntegerMessage>();
-    IntegerMessage[] dmsg = new IntegerMessage[n];
+    IntWritable a = new IntWritable(123);
+    IntWritable b = new IntWritable(321);
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(bos);
+    a.write(dos);
+    b.write(dos);
 
-    for (int i = 1; i <= n; i++) {
-      dmsg[i - 1] = new IntegerMessage("" + i, i);
-      bundle.addMessage(dmsg[i - 1]);
-    }
+    byte[] x = bos.toByteArray();
 
-    BSPCompressedBundle compBundle = compressor.compressBundle(bundle);
-    BSPMessageBundle<IntegerMessage> uncompBundle = compressor
-        .decompressBundle(compBundle);
+    byte[] compressed = compressor.compress(x);
+    byte[] decompressed = compressor.decompress(compressed);
 
-    int i = 1;
-    Iterator<IntegerMessage> it = uncompBundle.iterator();
-    while(it.hasNext()) {
-      assertEquals((int) it.next().getData(), i);
-      i++;
-    }
+    ByteArrayInputStream bis = new ByteArrayInputStream(decompressed);
+    DataInputStream dis = new DataInputStream(bis);
+
+    IntWritable c = new IntWritable();
+    c.readFields(dis);
+    assertEquals(123, c.get());
+
+    IntWritable d = new IntWritable();
+    d.readFields(dis);
+    assertEquals(321, d.get());
   }
 }

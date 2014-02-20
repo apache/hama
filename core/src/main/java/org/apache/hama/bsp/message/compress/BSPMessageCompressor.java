@@ -20,32 +20,16 @@ package org.apache.hama.bsp.message.compress;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.bsp.BSPMessageBundle;
 
 /**
- * Provides utilities for compressing and decompressing BSPMessageBundle.
+ * Provides utilities for compressing and decompressing byte array.
  * 
  */
 public abstract class BSPMessageCompressor<M extends Writable> {
 
   public static final Log LOG = LogFactory.getLog(BSPMessageCompressor.class);
 
-  /**
-   * Compresses the BSPMessageBundle and returns it in form of a
-   * BSPCompressedBundle.
-   * 
-   * @param bundle
-   * @return
-   */
-  public abstract BSPCompressedBundle compressBundle(BSPMessageBundle<M> bundle);
+  public abstract byte[] compress(byte[] bytes);
 
-  /**
-   * Decompresses a BSPCompressedBundle and returns the corresponding
-   * BSPMessageBundle.
-   * 
-   * @param compMsgBundle
-   * @return
-   */
-  public abstract BSPMessageBundle<M> decompressBundle(
-      BSPCompressedBundle compMsgBundle);
+  public abstract byte[] decompress(byte[] compressedBytes);
 }

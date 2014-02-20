@@ -27,13 +27,14 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.Constants;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.message.OutgoingMessageManager;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 import org.apache.hama.util.BSPNetUtils;
 
 public class OutgoingVertexMessagesManager<M extends Writable> implements
@@ -41,6 +42,8 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
   protected static final Log LOG = LogFactory
       .getLog(OutgoingVertexMessagesManager.class);
 
+  private HamaConfiguration conf;
+  private BSPMessageCompressor<GraphJobMessage> compressor;
   private Combiner<Writable> combiner;
   private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
   private HashMap<InetSocketAddress, BSPMessageBundle<GraphJobMessage>> outgoingBundles = new HashMap<InetSocketAddress, BSPMessageBundle<GraphJobMessage>>();
@@ -51,7 +54,10 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
 
   @SuppressWarnings("unchecked")
   @Override
-  public void init(Configuration conf) {
+  public void init(HamaConfiguration conf,
+      BSPMessageCompressor<GraphJobMessage> compressor) {
+    this.conf = conf;
+    this.compressor = compressor;
     if (!conf.getClass(Constants.COMBINER_CLASS, Combiner.class).equals(
         Combiner.class)) {
       LOG.debug("Combiner class: " + conf.get(Constants.COMBINER_CLASS));
@@ -112,8 +118,9 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
     }
 
     if (!outgoingBundles.containsKey(targetPeerAddress)) {
-      outgoingBundles.put(targetPeerAddress,
-          new BSPMessageBundle<GraphJobMessage>());
+      BSPMessageBundle<GraphJobMessage> bundle = new BSPMessageBundle<GraphJobMessage>();
+      bundle.setCompressor(compressor, conf.getLong("hama.messenger.compression.threshold", 128));
+      outgoingBundles.put(targetPeerAddress, bundle);
     }
     return targetPeerAddress;
   }
@@ -141,4 +148,5 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
     vertexMessageMap.clear();
     return outgoingBundles.entrySet().iterator();
   }
+
 }

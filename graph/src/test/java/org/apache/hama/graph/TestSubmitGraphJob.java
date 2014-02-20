@@ -36,6 +36,7 @@ import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.TestBSPMasterGroomServer;
+import org.apache.hama.bsp.message.compress.SnappyCompressor;
 import org.apache.hama.commons.io.TextArrayWritable;
 import org.apache.hama.graph.example.PageRank;
 import org.apache.hama.graph.example.PageRank.PagerankSeqReader;
@@ -85,6 +86,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     // set the defaults
     bsp.setMaxIteration(30);
 
+    bsp.setCompressionCodec(SnappyCompressor.class);
     bsp.setAggregatorClass(AverageAggregator.class);
 
     bsp.setInputFormat(SequenceFileInputFormat.class);

@@ -30,10 +30,13 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
+import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
 import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.bsp.message.queue.MemoryQueue;
 import org.apache.hama.bsp.message.queue.MessageQueue;
@@ -72,6 +75,8 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   // List of listeners for all the sent messages
   protected Queue<MessageEventListener<M>> messageListenerQueue;
 
+  protected BSPMessageCompressor<M> compressor;
+
   /*
    * (non-Javadoc)
    * @see org.apache.hama.bsp.message.MessageManager#init(org.apache.hama.bsp.
@@ -80,7 +85,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
    */
   @Override
   public void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
-      Configuration conf, InetSocketAddress peerAddress) {
+      HamaConfiguration conf, InetSocketAddress peerAddress) {
     this.messageListenerQueue = new LinkedList<MessageEventListener<M>>();
     this.attemptId = attemptId;
     this.peer = peer;
@@ -88,8 +93,10 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     this.localQueue = getReceiverQueue();
     this.localQueueForNextIteration = getSynchronizedReceiverQueue();
     this.maxCachedConnections = conf.getInt(MAX_CACHED_CONNECTIONS_KEY, 100);
+
+    this.compressor = new BSPMessageCompressorFactory<M>().getCompressor(conf);
     this.outgoingMessageManager = getOutgoingMessageManager();
-    this.outgoingMessageManager.init(conf);
+    this.outgoingMessageManager.init(conf, compressor);
   }
 
   /*
@@ -271,8 +278,10 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   }
 
   @Override
-  public void loopBackMessages(BSPMessageBundle<? extends Writable> bundle)
-      throws IOException {
+  public void loopBackMessages(BSPMessageBundle<M> bundle) throws IOException {
+    bundle.setCompressor(compressor,
+        conf.getLong("hama.messenger.compression.threshold", 128));
+
     Iterator<? extends Writable> it = bundle.iterator();
     while (it.hasNext()) {
       loopBackMessage(it.next());
