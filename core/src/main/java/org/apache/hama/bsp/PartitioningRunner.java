@@ -92,9 +92,10 @@ public class PartitioningRunner extends
      * @param conf Configuration of the job.
      * @return the Key-Value pair instance of the expected sequential format.
      *         Should return null if the conversion was not successful.
+     * @throws IOException 
      */
     public KeyValuePair<Writable, Writable> convertRecord(
-        KeyValuePair<Writable, Writable> inputRecord, Configuration conf);
+        KeyValuePair<Writable, Writable> inputRecord, Configuration conf) throws IOException;
 
     public int getPartitionId(KeyValuePair<Writable, Writable> inputRecord,
         @SuppressWarnings("rawtypes")
@@ -157,8 +158,9 @@ public class PartitioningRunner extends
       convertedRecord = converter.convertRecord(rawRecord, conf);
 
       if (convertedRecord == null) {
-        continue;
+        throw new IOException("The converted record can't be null.");
       }
+      
       Writable convertedKey = convertedRecord.getKey();
       convertedKeyClass = convertedKey.getClass();
 

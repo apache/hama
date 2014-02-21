@@ -17,8 +17,8 @@
  */
 package org.apache.hama.graph;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -41,8 +41,6 @@ import org.apache.hama.commons.util.KeyValuePair;
 public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends Writable, V extends WritableComparable, E extends Writable, M extends Writable>
     implements RecordConverter {
 
-  private static final Log LOG = LogFactory.getLog(VertexInputReader.class);
-
   @SuppressWarnings("unchecked")
   @Override
   public void setup(Configuration conf) {
@@ -63,7 +61,8 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
   @SuppressWarnings("unchecked")
   @Override
   public KeyValuePair<Writable, Writable> convertRecord(
-      KeyValuePair<Writable, Writable> inputRecord, Configuration conf) {
+      KeyValuePair<Writable, Writable> inputRecord, Configuration conf)
+      throws IOException {
     Class<Vertex<V, E, M>> vertexClass = (Class<Vertex<V, E, M>>) conf
         .getClass(GraphJob.VERTEX_CLASS_ATTR, Vertex.class);
     boolean vertexCreation;
@@ -73,11 +72,11 @@ public abstract class VertexInputReader<KEYIN extends Writable, VALUEIN extends 
       vertexCreation = parseVertex((KEYIN) inputRecord.getKey(),
           (VALUEIN) inputRecord.getValue(), vertex);
     } catch (Exception e) {
-      LOG.error("Error parsing vertex.", e);
       vertexCreation = false;
     }
     if (!vertexCreation) {
-      return null;
+      throw new IOException(
+          "Error parsing vertex. Please check your vertex input reader.");
     }
 
     outputRecord.setKey(vertex.getVertexID());
