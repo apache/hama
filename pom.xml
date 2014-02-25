@@ -91,7 +91,6 @@
     <commons-configuration.version>1.7</commons-configuration.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-httpclient.version>3.0.1</commons-httpclient.version>
-    <commons-collections.version>3.2.1</commons-collections.version>
     <commons-io.version>2.4</commons-io.version>
     <hadoop.version>1.2.0</hadoop.version>
     <protobuf.version>2.5.0</protobuf.version>
@@ -227,11 +226,6 @@
         <groupId>commons-httpclient</groupId>
         <artifactId>commons-httpclient</artifactId>
         <version>${commons-httpclient.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-collections</groupId>
-        <artifactId>commons-collections</artifactId>
-        <version>${commons-collections.version}</version>
       </dependency>
       <dependency>
         <groupId>org.mortbay.jetty</groupId>
