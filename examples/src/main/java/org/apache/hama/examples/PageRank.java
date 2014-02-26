@@ -78,7 +78,6 @@ public class PageRank {
       
       if (globalError != null && this.getSuperstepCount() > 2
           && MAXIMUM_CONVERGENCE_ERROR > globalError.get()) {
-        System.out.println(globalError);
         voteToHalt();
       } else {
         // in each superstep we are going to send a new rank to our neighbours

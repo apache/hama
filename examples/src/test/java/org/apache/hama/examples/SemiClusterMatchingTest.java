@@ -241,7 +241,6 @@ public class SemiClusterMatchingTest extends TestCase {
       semiClusterJob.setInputPath(new Path(INPUT));
       semiClusterJob.setOutputPath(new Path(OUTPUT));
       semiClusterJob.set("hama.graph.self.ref", "true");
-      semiClusterJob.set("hama.graph.repair", "true");
       semiClusterJob.setVertexIDClass(Text.class);
       semiClusterJob.setVertexValueClass(SemiClusterMessage.class);
       semiClusterJob.setEdgeValueClass(DoubleWritable.class);
