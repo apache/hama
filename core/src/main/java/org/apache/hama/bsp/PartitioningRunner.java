@@ -212,10 +212,6 @@ public class PartitioningRunner extends
     }
   }
 
-  // public SortedMap<WritableComparable, KeyValuePair<Integer, KeyValuePair>>
-  // comparisonMap = new TreeMap<WritableComparable, KeyValuePair<Integer,
-  // KeyValuePair>>();
-
   @SuppressWarnings("rawtypes")
   public Map<Integer, KeyValuePair<WritableComparable, MapWritable>> candidates = new HashMap<Integer, KeyValuePair<WritableComparable, MapWritable>>();
 
@@ -249,8 +245,6 @@ public class PartitioningRunner extends
       value = new MapWritable();
 
       readers.get(i).next(convertedKey, value);
-      // comparisonMap.put(convertedKey, new KeyValuePair(i, value));
-      // Integer, KeyValuePair<WritableComparable, MapWritable>
       candidates.put(i, new KeyValuePair(convertedKey, value));
     }
 
