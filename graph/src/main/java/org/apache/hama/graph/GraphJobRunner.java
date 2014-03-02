@@ -428,6 +428,10 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
             vertex.addEdge(edge);
           }
         } else {
+          if (vertex.compareTo(currentVertex) > 0) {
+            throw new IOException("The records of split aren't in order by vertex ID.");  
+          }
+          
           if (selfReference) {
             vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
           }
