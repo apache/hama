@@ -296,8 +296,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     if (conf.getBoolean("hama.check.missing.vertex", true)) {
       if (comparision < 0) {
         throw new IllegalArgumentException(
-            "Messages must never be behind the vertex in ID! Current Message ID: "
-                + firstMessageId + " vs. " + vertex.getVertexID());
+          "A message has recieved with a destination ID: " + firstMessageId +
+          " that does not exist! (Vertex iterator is at" + vertex.getVertexID() 
+          + " ID)");
       }
     } else {
       while (comparision < 0) {

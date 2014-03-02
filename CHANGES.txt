@@ -30,6 +30,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-879: Errors for messages with wrong destination should be more clear (Anastasis Andronidis via edwardyoon)
    HAMA-873: Display counters of job on master's web page (Saisai Shao via edwardyoon)
    HAMA-870: Runtime message compression in Bundle (edwardyoon)
    HAMA-869: Add Cloudera repository in maven pom file (Saisai Shao via edwardyoon)
