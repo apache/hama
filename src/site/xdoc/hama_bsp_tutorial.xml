@@ -149,7 +149,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
     peer.sync();
   }</pre>
-    
+  
     <h4>Synchronization</h4>
 
     <p>When all the processes have entered the barrier via the sync() method, 
@@ -173,7 +173,44 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     }
   }</pre>
   
-  
+    <h4>Combiners</h4>
+    <p>Combiners are used for performing message aggregation to reduce communication overhead in cases when messages can be summarized arithmetically e.g., min, max, sum, and average at the sender side. Suppose that you want to send the integer messages to a specific processor from 0 to 1000 and sum all received the integer messages from all processors:</p>
+    <pre>
+    public void bsp(BSPPeer&lt;NullWritable, NullWritable, NullWritable, NullWritable&gt; peer) throws IOException,
+        SyncException, InterruptedException {
+
+      for (int i = 0; i &lt; 1000; i++) {
+        peer.send(masterTask, new IntegerMessage(peer.getPeerName(), i));
+      }
+      peer.sync();
+
+      if (peer.getPeerName().equals(masterTask)) {
+        IntegerMessage received;
+        while ((received = (IntegerMessage) peer.getCurrentMessage()) != null) {
+          sum += received.getData();
+        }
+      }
+    }</pre>
+    <p>If you follow the previous example, Each bsp processor will send a bundle of thousand Integer messages to a masterTask. Instead, you could use a Combiners in your BSP program to perform a sum Integer messages and to write more concise and maintainable as below, that is why you use Combiners. </p>
+    <pre>
+  public static class SumCombiner extends Combiner {
+
+    @Override
+    public BSPMessageBundle combine(Iterable&lt;BSPMessage&gt; messages) {
+      BSPMessageBundle bundle = new BSPMessageBundle();
+      int sum = 0;
+
+      Iterator&lt;BSPMessage&gt; it = messages.iterator();
+      while (it.hasNext()) {
+        sum += ((IntegerMessage) it.next()).getData();
+      }
+
+      bundle.addMessage(new IntegerMessage("Sum", sum));
+      return bundle;
+    }
+
+  }</pre>
+    
     <subsection name="Shell Command Line Interfaces"></subsection>
     <p>Hama provides several command for BSP job administration:</p>
     
