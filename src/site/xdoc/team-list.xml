@@ -53,6 +53,11 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         </th>
        </tr>
        <tr valign="top">
+          <td align="center">andronat</td>
+          <td align="center">Anastasis Andronidis</td>
+          <td align="center">CERN</td>
+          <td align="center">committer</td>
+       </tr>
           <td align="center">apurv</td>
           <td align="center">Apurv Verma</td>
           <td align="center">.</td>
