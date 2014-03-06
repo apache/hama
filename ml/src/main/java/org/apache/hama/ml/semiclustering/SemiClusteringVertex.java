@@ -104,7 +104,7 @@ public class SemiClusteringVertex extends
         }
       }
 
-      value.sortByScore(clusters, graphJobVertexMaxClusterCount);
+      value.setClusters(clusters, graphJobVertexMaxClusterCount);
       this.setValue(value);
     }
   }
