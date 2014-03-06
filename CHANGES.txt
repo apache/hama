@@ -6,6 +6,8 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-885: Semi-Clustering is not producing expected output (Renil J via edwardyoon)
+
   IMPROVEMENTS
 
 Release 0.6.4 - Mar 5, 2014
