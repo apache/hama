@@ -4,6 +4,14 @@ Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
 
+  BUG FIXES
+
+  IMPROVEMENTS
+
+Release 0.6.4 - Mar 5, 2014
+
+  NEW FEATURES
+
    HAMA-864: Fix/improve DoubleVector and DenseDoubleVector (Yexi Jiang)
    HAMA-842: Add persistent queue option to JobConf (edwardyoon)
    HAMA-839: Support NullWritable in Hama Pipes (Martin Illecker)    
