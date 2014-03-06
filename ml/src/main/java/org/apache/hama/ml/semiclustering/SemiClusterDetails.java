@@ -113,5 +113,7 @@ public class SemiClusterDetails implements
   @Override
   public int compareTo(SemiClusterDetails sc) {
     return (this.getSemiClusterId().compareTo(sc.getSemiClusterId()));
+    //return (this.getSemiClusterScore() == sc.getSemiClusterScore() ? 0
+    //    : this.getSemiClusterScore() < sc.getSemiClusterScore() ? -1 : 1);
   }
 }

@@ -47,8 +47,10 @@ public class SemiClusteringVertex extends
 
   @Override
   public void setup(HamaConfiguration conf) {
-    semiClusterMaximumVertexCount = conf.getInt("semicluster.max.vertex.count", 10);
-    graphJobMessageSentCount = conf.getInt("semicluster.max.message.sent.count", 10);
+    semiClusterMaximumVertexCount = conf.getInt("semicluster.max.vertex.count",
+        10);
+    graphJobMessageSentCount = conf.getInt(
+        "semicluster.max.message.sent.count", 10);
     graphJobVertexMaxClusterCount = conf.getInt("vertex.max.cluster.count", 10);
   }
 
@@ -80,7 +82,8 @@ public class SemiClusteringVertex extends
         }
       }
 
-      Iterator<SemiClusterMessage> bestCandidates = candidates.descendingIterator();
+      Iterator<SemiClusterMessage> bestCandidates = candidates
+          .descendingIterator();
       int count = 0;
 
       while (bestCandidates.hasNext() && count < graphJobMessageSentCount) {
@@ -96,10 +99,12 @@ public class SemiClusteringVertex extends
         if (clusters.size() > graphJobVertexMaxClusterCount) {
           break;
         } else {
-          clusters.add(new SemiClusterDetails(msg.getSemiClusterId(), msg.getScore()));
+          clusters.add(new SemiClusterDetails(msg.getSemiClusterId(), msg
+              .getScore()));
         }
       }
 
+      value.sortByScore(clusters, graphJobVertexMaxClusterCount);
       this.setValue(value);
     }
   }

@@ -55,7 +55,7 @@ import org.junit.Test;
 
 @SuppressWarnings("unused")
 public class SemiClusterMatchingTest extends TestCase {
-  private static String INPUT = "/tmp/graph.txt";
+  private static String INPUT = "src/test/resources/semiclustering.txt";
   private static String OUTPUT = "/tmp/graph-semiCluster";
   private static final String semiClusterMaximumVertexCount = "semicluster.max.vertex.count";
   private static final String graphJobMessageSentCount = "semicluster.max.message.sent.count";
@@ -67,40 +67,6 @@ public class SemiClusterMatchingTest extends TestCase {
   protected void setUp() throws Exception {
     super.setUp();
     fs = FileSystem.get(conf);
-  }
-
-  private void generateTestData() throws IOException {
-    int vertexNameStart = 0, vertexNameEnd = 300, vertexEdgeMin = 30, vertexEdgeMax = 40;
-    BufferedWriter bw = new BufferedWriter(new FileWriter(INPUT));
-    for (int i = vertexNameStart; i < vertexNameEnd; i++) {
-      StringBuilder sb = new StringBuilder();
-      int numberOfEdges = 10;
-      Map<Integer, Integer> mp = new HashMap<Integer, Integer>();
-      int mapSize = 0, min = i - (i % 10), max = i + (10 - (i % 10) - 1);
-      while (mapSize < numberOfEdges) {
-        int edgeVal = randomInRange(min, max);
-        if (mp.containsKey(edgeVal)) {
-          int val = mp.get(edgeVal);
-          mp.put(edgeVal, val++);
-        } else
-          mp.put(edgeVal, 1);
-        mapSize = mp.size();
-      }
-      Iterator<Integer> itr = mp.keySet().iterator();
-      sb.append(i + "\t");
-      for (int j = 0; j < numberOfEdges; j++) {
-        int key = itr.next();
-        if (j != numberOfEdges - 1)
-          sb.append(key + "-" + (float) mp.get(key) / (float) numberOfEdges
-              + ",");
-        else
-          sb.append(key + "-" + (float) mp.get(key) / (float) numberOfEdges);
-      }
-      bw.write(sb.toString());
-      if (i < vertexNameEnd)
-        bw.write("\n");
-    }
-    bw.close();
   }
 
   public static int random(int max) {
@@ -185,9 +151,11 @@ public class SemiClusterMatchingTest extends TestCase {
     Map<String, List<String>> mpOutPutCluser = outputClusterLoader();
     Iterator it = mpOutPutCluser.entrySet().iterator();
     while (it.hasNext()) {
-      System.out.println(it.next());
       flag = true;
-      Map.Entry pairs = (Map.Entry) it.next();
+      Map.Entry<String, List<String>> pairs = (Map.Entry<String, List<String>>) it
+          .next();
+      System.out.println(pairs.getKey() + " = " + pairs.getValue());
+      assertEquals(pairs.getValue().size(), 10);
       List<String> valFromMap = new ArrayList<String>();
       List<String> val2 = (List<String>) pairs.getValue();
       int size = val2.size();
@@ -202,13 +170,11 @@ public class SemiClusterMatchingTest extends TestCase {
         count++;
       }
     }
-    assertEquals("Semi Cluster Test Successful", 30, count);
+    assertEquals("Semi Cluster Test Successful", 10, count);
   }
 
   private void deleteTempDirs() {
     try {
-      if (fs.exists(new Path(INPUT)))
-        fs.delete(new Path(INPUT), true);
       if (fs.exists(new Path(OUTPUT)))
         fs.delete(new Path(OUTPUT), true);
       if (fs.exists(new Path("/tmp/partitions")))
@@ -221,7 +187,6 @@ public class SemiClusterMatchingTest extends TestCase {
   @Test
   public void testSemiClustering() throws IOException, InterruptedException,
       ClassNotFoundException {
-    generateTestData();
     try {
 
       HamaConfiguration conf = new HamaConfiguration();
@@ -230,10 +195,10 @@ public class SemiClusterMatchingTest extends TestCase {
       conf.setInt(graphJobVertexMaxClusterCount, 1);
       GraphJob semiClusterJob = new GraphJob(conf, SemiClusterJobDriver.class);
       semiClusterJob.setMaxIteration(15);
-      
+
       semiClusterJob.setCompressionCodec(SnappyCompressor.class);
       semiClusterJob.setCompressionThreshold(10);
-      
+
       semiClusterJob
           .setVertexOutputWriterClass(SemiClusterVertexOutputWriter.class);
       semiClusterJob.setJobName("SemiClusterJob");
