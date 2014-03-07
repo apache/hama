@@ -42,7 +42,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
    <p>The user overrides the Compute() method, which will be executed at each active vertex in every superstep. Predefined Vertex methods allow Compute() to query information about the current vertex and its edges, and to send messages to other vertices. Compute() can inspect the value associated with its vertex via GetValue().</p>
 
    <subsection name="Vertex Reader and Writer"></subsection>
-   <p>Hama Graph provides very flexible input and output options. You can create your own VertexReader for your data format by exending org.apache.hama.graph.<b>VertexInputReader</b> class.
+   <p>Hama Graph provides very flexible input and output options, allows allows to extract Vertex from your data without any pre-processing. You can create your own VertexReader for your data format by exending org.apache.hama.graph.<b>VertexInputReader</b> class.
 
    For example, an sequence file contains a linked list of Vertex, can be parse as following:
    </p>
