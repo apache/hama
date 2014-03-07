@@ -51,10 +51,10 @@ public class SemiClusterJobDriver {
   public static void startTask(HamaConfiguration conf) throws IOException,
       InterruptedException, ClassNotFoundException {
     GraphJob semiClusterJob = new GraphJob(conf, SemiClusterJobDriver.class);
-    // 80,887,377
+
     semiClusterJob.setCompressionCodec(SnappyCompressor.class);
     semiClusterJob.setCompressionThreshold(10);
-    
+
     semiClusterJob
         .setVertexOutputWriterClass(SemiClusterVertexOutputWriter.class);
     semiClusterJob.setJobName("SemiClusterJob");
