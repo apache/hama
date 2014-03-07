@@ -41,8 +41,8 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
    <p>The user overrides the Compute() method, which will be executed at each active vertex in every superstep. Predefined Vertex methods allow Compute() to query information about the current vertex and its edges, and to send messages to other vertices. Compute() can inspect the value associated with its vertex via GetValue().</p>
 
-   <subsection name="VertexReader"></subsection>
-   <p>You can create your own VertexReader for your data format by exending org.apache.hama.graph.<b>VertexInputReader</b> class.
+   <subsection name="Vertex Reader and Writer"></subsection>
+   <p>Hama Graph provides very flexible input and output options. You can create your own VertexReader for your data format by exending org.apache.hama.graph.<b>VertexInputReader</b> class.
 
    For example, an sequence file contains a linked list of Vertex, can be parse as following:
    </p>
@@ -63,6 +63,20 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     }
   }
 </pre>
+
+   And also, you can create your own Writer by implementing org.apache.hama.graph.<b>VertexOutputWriter</b> class.
+   See the SemiClusterVertexOutputWriter example:
+   <pre>
+  @Override
+  public void write(Vertex&lt;V, E, M&gt; vertex,
+      BSPPeer&lt;Writable, Writable, KEYOUT, VALUEOUT, GraphJobMessage&gt; peer)
+      throws IOException {
+    SemiClusterMessage vertexValue = (SemiClusterMessage) vertex.getValue();
+    peer.write((KEYOUT) vertex.getVertexID(), (VALUEOUT) new Text(vertexValue
+        .getSemiClusterContainThis().toString()));
+  }
+  </pre>
+
    <subsection name="Combiners"></subsection>
    <p>Sending a message to another vertex that exists on a different machine has some overhead. However if the algorithm doesn't require each message explicitly but a function of it (example sum) then combiners can be used.</p>
    <h4>Write your own Combiner</h4>
@@ -96,7 +110,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
   this.getAggregatedValue(index);</pre>
   
   <h4>Write your own aggregators</h4>
-  <p>To write your own aggregator, you have to extend AbstractAggregator class and implement the methods of #aggregate(M value) and #getValue(). For more, please see the default implementation of aggregators in org.apache.hama.graph package.</p>
+  <p>To write your own aggregator, you have to extend org.apache.hama.graph.<b>AbstractAggregator</b> class and implement the methods of #aggregate(M value) and #getValue(). For more, please see the default implementation of aggregators in org.apache.hama.graph package.</p>
    <subsection name="Example: PageRankVertex"></subsection>
    <p>To solve the Page Rank problem using Hama Graph, you can extends the Vertex class to create a PageRankVertex class.
 In this example, the algorithm described Google's Pregel paper was used. The value of a vertex represents the tentative page rank of the vertex. The graph is intialized with each vertex value equal to 1/numOfVertices. In each of the first 30 supersteps, each vertex sends its tentative page rank along all of its outgoing edges.
