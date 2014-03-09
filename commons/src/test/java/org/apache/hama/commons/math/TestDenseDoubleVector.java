@@ -20,6 +20,10 @@ package org.apache.hama.commons.math;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import java.util.Iterator;
+
+import org.apache.hama.commons.math.DoubleVector.DoubleVectorElement;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -204,5 +208,30 @@ public class TestDenseDoubleVector {
         {1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}
     });
     vec.multiply(mat);
+  }
+  
+  @Test(timeout=100)
+  public void testIterator() {
+    double[] expectedRes = new double[] {38, 44, 50, 56, 0, 0, 3, 0, 0, 0};
+    DoubleVector vec = new DenseDoubleVector(expectedRes);
+    Iterator<DoubleVectorElement> itr = vec.iterate();
+    
+    int curIdx = 0;
+    while (itr.hasNext()) {
+      DoubleVectorElement elem = itr.next();
+      assertEquals(curIdx, elem.getIndex());
+      assertEquals(expectedRes[curIdx++], elem.getValue(), 0.000001);
+    }
+    
+    Iterator<DoubleVectorElement> itrNonZero = vec.iterateNonDefault();
+    
+    curIdx = 0;
+    while (itrNonZero.hasNext()) {
+      while (expectedRes[curIdx] == 0.0) {
+        ++curIdx;
+      }
+      assertEquals(expectedRes[curIdx++], itrNonZero.next().getValue(), 0.000001);
+    }
+    
   }
 }

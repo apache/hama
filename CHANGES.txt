@@ -5,7 +5,8 @@ Release 0.7.0 (unreleased changes)
   NEW FEATURES
 
   BUG FIXES
-
+  
+   HAMA-889: NonDefaultIterator of DenseDoubleVector never reaches the end (Yexi Jiang)
    HAMA-885: Semi-Clustering is not producing expected output (Renil J via edwardyoon)
 
   IMPROVEMENTS

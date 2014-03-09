@@ -300,9 +300,9 @@ public interface DoubleVector {
   public DoubleVector deepCopy();
 
   /**
-   * @return an iterator that only iterates over non zero elements.
+   * @return an iterator that only iterates over non default elements.
    */
-  public Iterator<DoubleVectorElement> iterateNonZero();
+  public Iterator<DoubleVectorElement> iterateNonDefault();
 
   /**
    * @return an iterator that iterates over all elements.

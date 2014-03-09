@@ -501,8 +501,8 @@ public final class DenseDoubleVector implements DoubleVector {
    * @see de.jungblut.math.DoubleVector#iterateNonZero()
    */
   @Override
-  public Iterator<DoubleVectorElement> iterateNonZero() {
-    return new NonZeroIterator();
+  public Iterator<DoubleVectorElement> iterateNonDefault() {
+    return new NonDefaultIterator();
   }
 
   /*
@@ -544,21 +544,24 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
-   * Non-zero iterator for vector elements.
+   * Non-default iterator for vector elements.
    */
-  private final class NonZeroIterator extends
+  private final class NonDefaultIterator extends
       AbstractIterator<DoubleVectorElement> {
 
     private final DoubleVectorElement element = new DoubleVectorElement();
     private final double[] array;
     private int currentIndex = 0;
 
-    private NonZeroIterator() {
+    private NonDefaultIterator() {
       this.array = vector;
     }
 
     @Override
     protected final DoubleVectorElement computeNext() {
+      if (currentIndex >= array.length) {
+        return endOfData();
+      }
       while (array[currentIndex] == 0.0d) {
         currentIndex++;
         if (currentIndex >= array.length)
@@ -566,6 +569,7 @@ public final class DenseDoubleVector implements DoubleVector {
       }
       element.setIndex(currentIndex);
       element.setValue(array[currentIndex]);
+      ++currentIndex;
       return element;
     }
   }
