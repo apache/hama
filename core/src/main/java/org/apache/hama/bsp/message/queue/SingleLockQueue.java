@@ -181,8 +181,11 @@ public final class SingleLockQueue<T> implements SynchronizedQueue<T> {
   /*
    * static constructor methods to be type safe
    */
-
   public static <T> SynchronizedQueue<T> synchronize(MessageQueue<T> queue) {
+    if(queue.isMemoryBasedQueue()) {
+      return (SynchronizedQueue<T>) queue;
+    }
+    
     return new SingleLockQueue<T>(queue);
   }
 

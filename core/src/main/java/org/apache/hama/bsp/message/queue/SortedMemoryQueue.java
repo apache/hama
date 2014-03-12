@@ -18,7 +18,8 @@
 package org.apache.hama.bsp.message.queue;
 
 import java.util.Iterator;
-import java.util.PriorityQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.WritableComparable;
@@ -31,9 +32,9 @@ import org.apache.hama.bsp.message.bundle.POJOMessageBundle;
  * sorted receive and send.
  */
 public final class SortedMemoryQueue<M extends WritableComparable<M>>
-    implements MessageQueue<M>, BSPMessageInterface<M> {
+    implements SynchronizedQueue<M>, BSPMessageInterface<M> {
 
-  private final PriorityQueue<M> queue = new PriorityQueue<M>();
+  private final BlockingQueue<M> queue = new PriorityBlockingQueue<M>();
   private Configuration conf;
 
   @Override
@@ -94,7 +95,7 @@ public final class SortedMemoryQueue<M extends WritableComparable<M>>
 
   @Override
   public void close() {
-    this.clear();;
+    this.clear();
   }
 
   @Override
@@ -120,6 +121,11 @@ public final class SortedMemoryQueue<M extends WritableComparable<M>>
   @Override
   public boolean isMemoryBasedQueue() {
     return true;
+  }
+
+  @Override
+  public MessageQueue<M> getMessageQueue() {
+    return this;
   }
 
 }

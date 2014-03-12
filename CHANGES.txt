@@ -11,6 +11,8 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-568: Add faster synchronized collections for message queues (edwardyoon)
+
 Release 0.6.4 - Mar 5, 2014
 
   NEW FEATURES

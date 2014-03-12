@@ -17,9 +17,8 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
@@ -28,9 +27,10 @@ import org.apache.hama.bsp.TaskAttemptID;
 /**
  * LinkedList backed queue structure for bookkeeping messages.
  */
-public final class MemoryQueue<M extends Writable> extends POJOMessageQueue<M> {
+public final class MemoryQueue<M extends Writable> implements
+    SynchronizedQueue<M> {
 
-  private final Deque<M> deque = new ArrayDeque<M>();
+  private final ConcurrentLinkedQueue<M> deque = new ConcurrentLinkedQueue<M>();
   private Configuration conf;
 
   @Override
@@ -111,5 +111,10 @@ public final class MemoryQueue<M extends Writable> extends POJOMessageQueue<M> {
   @Override
   public boolean isMemoryBasedQueue() {
     return true;
+  }
+
+  @Override
+  public MessageQueue<M> getMessageQueue() {
+    return this;
   }
 }
