@@ -56,7 +56,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">andronat</td>
           <td align="center">Anastasis Andronidis</td>
           <td align="center">CERN</td>
-          <td align="center">committer</td>
+          <td align="center">PMC member, committer</td>
        </tr>
        <tr valign="top">
           <td align="center">apurv</td>
@@ -80,7 +80,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">kennethxian</td>
           <td align="center">MaoYuan Xian</td>
           <td align="center">Sogou</td>
-          <td align="center">committer</td>
+          <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
           <td align="center">millecker</td>
@@ -110,7 +110,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">yxjiang</td>
           <td align="center">Yexi Jiang</td>
           <td align="center">Florida International University</td>
-          <td align="center">committer</td>
+          <td align="center">PMC member, committer</td>
         </tr>
     </table>
 
