@@ -103,26 +103,30 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
-   * {@inheritDoc}
+   * Apply a function to the element of the vector and returns a result vector.
+   * Note that the function is applied on the copy of the original vector.
    */
   @Override
   public DoubleVector applyToElements(DoubleFunction func) {
+    DoubleVector newVec = new DenseDoubleVector(this.getDimension());
     for (int i = 0; i < vector.length; i++) {
-      this.vector[i] = func.apply(vector[i]);
+      newVec.set(i, func.apply(vector[i]));
     }
-    return this;
+    return newVec;
   }
 
   /**
-   * {@inheritDoc}
+   * Apply a function to the element of the vector and another vector, and then returns a result vector.
+   * Note that the function is applied on the copy of the original vectors.
    */
   @Override
   public DoubleVector applyToElements(DoubleVector other,
       DoubleDoubleFunction func) {
+    DoubleVector newVec = new DenseDoubleVector(this.getDimension());
     for (int i = 0; i < vector.length; i++) {
-      this.vector[i] = func.apply(vector[i], other.get(i));
+      newVec.set(i, func.apply(vector[i], other.get(i)));
     }
-    return this;
+    return newVec;
   }
 
   /*
@@ -354,7 +358,8 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
-   * {@inheritDoc}
+   * Get a subset of the original vector starting from 'start' and end to 'end', 
+   * with both ends inclusive.
    */
   @Override
   public DoubleVector sliceUnsafe(int start, int end) {
@@ -367,8 +372,7 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /*
-   * (non-Javadoc)
-   * @see de.jungblut.math.DoubleVector#max()
+   * Return the maximum.
    */
   @Override
   public double max() {
@@ -383,6 +387,7 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
+   * Return the index of the first maximum.
    * @return the index where the maximum resides.
    */
   public int maxIndex() {
@@ -399,8 +404,7 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /*
-   * (non-Javadoc)
-   * @see de.jungblut.math.DoubleVector#min()
+   * Return the minimum.
    */
   @Override
   public double min() {
@@ -415,6 +419,7 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
+   * Return the index of the first minimum.
    * @return the index where the minimum resides.
    */
   public int minIndex() {
@@ -431,6 +436,7 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
+   * Round each of the element in the vector to the integer.
    * @return a new vector which has rinted each element.
    */
   public DenseDoubleVector rint() {
@@ -603,6 +609,7 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
+   * Generate a vector with all element to be 1.
    * @return a new vector with dimension num and a default value of 1.
    */
   public static DenseDoubleVector ones(int num) {
@@ -610,6 +617,8 @@ public final class DenseDoubleVector implements DoubleVector {
   }
 
   /**
+   * Generate a vector whose elements are in increasing order,
+   * where the start value is 'from', end value is 'to', with increment 'stepsize'.
    * @return a new vector filled from index, to index, with a given stepsize.
    */
   public static DenseDoubleVector fromUpTo(double from, double to,
