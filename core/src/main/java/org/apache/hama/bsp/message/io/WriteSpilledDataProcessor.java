@@ -44,14 +44,12 @@ public class WriteSpilledDataProcessor implements SpilledDataProcessor {
   }
 
   private void initializeFileChannel() {
-    FileOutputStream stream;
     try {
-      stream = new FileOutputStream(new File(fileName), true);
+      fileChannel = new FileOutputStream(new File(fileName), true).getChannel();
     } catch (FileNotFoundException e) {
       LOG.error("Error opening file to write spilled data.", e);
       throw new RuntimeException(e);
     }
-    fileChannel = stream.getChannel();
   }
 
   @Override

@@ -44,11 +44,10 @@ public class SyncReadByteBufferInputStream extends ByteBufferInputStream {
   public SyncReadByteBufferInputStream(boolean isSpilled, String fileName) {
     spilled = isSpilled;
     if (isSpilled) {
-      RandomAccessFile f;
       try {
-        f = new RandomAccessFile(fileName, "r");
-        fileChannel = f.getChannel();
+        fileChannel = new RandomAccessFile(fileName, "r").getChannel();
         fileBytesToRead = fileChannel.size();
+        
       } catch (FileNotFoundException e) {
         LOG.error("File not found initializing Synchronous Input Byte Stream",
             e);
@@ -57,7 +56,6 @@ public class SyncReadByteBufferInputStream extends ByteBufferInputStream {
         LOG.error("Error initializing Synchronous Input Byte Stream", e);
         throw new RuntimeException(e);
       }
-
     }
   }
 

@@ -39,7 +39,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.ObjectWritable;
-import org.apache.hadoop.io.UTF8;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.security.SaslRpcServer;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -75,14 +75,15 @@ public class RPC {
   } // no public ctor
 
   /** A method invocation, including the method name and its parameters. */
+  @SuppressWarnings("rawtypes")
   private static class Invocation implements Writable, Configurable {
     private String methodName;
     private Class[] parameterClasses;
     private Object[] parameters;
     private Configuration conf;
 
-    public Invocation() {
-    }
+    @SuppressWarnings("unused")
+    public Invocation() { }
 
     public Invocation(Method method, Object[] parameters) {
       this.methodName = method.getName();
@@ -106,7 +107,7 @@ public class RPC {
     }
 
     public void readFields(DataInput in) throws IOException {
-      methodName = UTF8.readString(in);
+      methodName = Text.readString(in);
       parameters = new Object[in.readInt()];
       parameterClasses = new Class[parameters.length];
       ObjectWritable objectWritable = new ObjectWritable();
@@ -118,7 +119,7 @@ public class RPC {
     }
 
     public void write(DataOutput out) throws IOException {
-      UTF8.writeString(out, methodName);
+      Text.writeString(out, methodName);
       out.writeInt(parameterClasses.length);
       for (int i = 0; i < parameterClasses.length; i++) {
         ObjectWritable.writeObject(out, parameters[i], parameterClasses[i],
@@ -256,6 +257,7 @@ public class RPC {
   /**
    * A version mismatch for the RPC protocol.
    */
+  @SuppressWarnings("serial")
   public static class VersionMismatch extends IOException {
     private String interfaceName;
     private long clientVersion;

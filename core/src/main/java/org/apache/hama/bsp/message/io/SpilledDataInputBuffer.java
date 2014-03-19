@@ -59,6 +59,7 @@ public class SpilledDataInputBuffer extends DataInputStream implements
     private long bytesWrittenInFile_;
     private SpilledDataReadStatus status_;
     private boolean closed_;
+    private RandomAccessFile raf;
 
     /**
      * Creates the thread to read the contents of the file and loads into the
@@ -85,7 +86,7 @@ public class SpilledDataInputBuffer extends DataInputStream implements
      * @throws IOException
      */
     private void keepReadingFromFile() throws IOException {
-      RandomAccessFile raf = new RandomAccessFile(fileName, "r");
+      raf = new RandomAccessFile(fileName, "r");
       FileChannel fc = raf.getChannel();
       bytesToRead_ = fc.size();
       bytesWrittenInFile_ = bytesToRead_;
@@ -116,6 +117,7 @@ public class SpilledDataInputBuffer extends DataInputStream implements
       } while (!closed_ && bytesToRead_ > 0 && fileReadIndex >= 0
           && fileReadIndex < bufferList_.size());
       fc.close();
+      raf.close();
       closed_ = true;
       status_.closedBySpiller();
     }
