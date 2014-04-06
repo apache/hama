@@ -11,7 +11,8 @@ Release 0.7.0 (unreleased changes)
    HAMA-885: Semi-Clustering is not producing expected output (Renil J via edwardyoon)
 
   IMPROVEMENTS
-
+  
+   HAMA-847: Vertex should provide Counters (edwardyoon)
    HAMA-568: Add faster synchronized collections for message queues (edwardyoon)
 
 Release 0.6.4 - Mar 5, 2014

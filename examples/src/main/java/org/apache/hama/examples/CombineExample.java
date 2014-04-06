@@ -44,6 +44,10 @@ public class CombineExample {
   private static Path TMP_OUTPUT = new Path("/tmp/combine-"
       + System.currentTimeMillis());
 
+  private static enum CUSTOM_COUNTER {
+    CUSTOM_SEND_MESSAGE_COUNTER
+  }
+  
   public static class MyBSP extends
       BSP<NullWritable, NullWritable, Text, IntWritable, IntWritable> {
     public static final Log LOG = LogFactory.getLog(MyBSP.class);
@@ -56,6 +60,8 @@ public class CombineExample {
         peer.send(peerName, new IntWritable(1));
         peer.send(peerName, new IntWritable(2));
         peer.send(peerName, new IntWritable(3));
+        
+        peer.getCounter(CUSTOM_COUNTER.CUSTOM_SEND_MESSAGE_COUNTER).increment(1);
       }
       peer.sync();
 
@@ -120,6 +126,6 @@ public class CombineExample {
       System.out.println("Job Finished in "
           + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
-
+    
   }
 }

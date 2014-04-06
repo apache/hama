@@ -210,6 +210,18 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     }
 
   }</pre>
+    <h4>Counters</h4>
+    <p>Counters are used for measuring the progress or counting the number of events within job. For your own Counter, you need to define the enum type as follow:</p>
+<pre>
+  private static enum CUSTOM_COUNTER {
+    CUSTOM_SEND_MESSAGE_COUNTER,
+    ANOTHER_COUNTER
+  }
+</pre>
+    <p>Then you can increment your own counter by calling increment method as follow:</p>
+<pre>
+  peer.getCounter(CUSTOM_COUNTER.CUSTOM_SEND_MESSAGE_COUNTER).increment(1);
+</pre>
     
     <subsection name="Shell Command Line Interfaces"></subsection>
     <p>Hama provides several command for BSP job administration:</p>

@@ -83,6 +83,19 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
    <p>To write your own combiner, you have to extend Combiner class and implement the methods of #combine(Iterable&lt;M&gt; messages). 
    For more, please see the implementation of MinIntCombiner in org.apache.hama.example.SSSP example.</p> 
 
+   <subsection name="Counters"></subsection>
+   <p>Counters are used for measuring the progress or counting the number of events within job. For your own Counter, you need to define the enum type as follow:</p>
+<pre>
+  private static enum DYNAMIC_GRAPH_COUNTER {
+    ADDED_VERTEX_COUNT,
+    REMOVED_VERTEX_COUNT
+  }
+</pre>
+   <p>Then you can increment your own counter by calling increment method as follow:</p>
+<pre>
+  this.getCounter(DYNAMIC_GRAPH_COUNTER.ADDED_VERTEX_COUNT).increment(1);
+</pre>
+
    <subsection name="Aggregators"></subsection>
    <p>Aggregators are a mechanism for global communication, monitoring, and data. Each vertex can provide a value to an aggregator in superstep S, the system combines those values using a reduction operator, and the resulting value is made available to all vertices in superstep S + 1.
    </p>

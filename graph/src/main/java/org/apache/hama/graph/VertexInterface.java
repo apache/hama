@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.Counters.Counter;
 
 /**
  * The vertex interface.
@@ -127,4 +128,8 @@ public interface VertexInterface<V extends WritableComparable, E extends Writabl
     */
    public Writable getAggregatedValue(int index);
 
+   /** Counters */
+   public Counter getCounter(Enum<?> name);
+   
+   public Counter getCounter(String group, String name);
 }

@@ -51,7 +51,10 @@ import org.apache.hama.graph.VertexInputReader;
  * Output example: sum 10
  */
 public class DynamicGraph {
-
+  private static enum DYNAMIC_GRAPH_COUNTER {
+    ADDED_VERTEX
+  }
+  
   public static class GraphTextReader extends
       VertexInputReader<LongWritable, Text, Text, NullWritable, IntWritable> {
 
@@ -74,6 +77,8 @@ public class DynamicGraph {
         Text new_id = new Text("sum");
         this.addVertex(new_id, new ArrayList<Edge<Text, NullWritable>>(),
             new IntWritable(0));
+
+        this.getCounter(DYNAMIC_GRAPH_COUNTER.ADDED_VERTEX).increment(1);;
       }
     }
 

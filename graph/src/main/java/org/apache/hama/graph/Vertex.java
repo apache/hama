@@ -29,6 +29,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.Counters.Counter;
 import org.apache.hama.bsp.Partitioner;
 
 /**
@@ -396,5 +397,15 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
    */
   public IntWritable getNumLastAggregatedVertices(int index) {
     return runner.getNumLastAggregatedVertices(index);
+  }
+
+  @Override
+  public Counter getCounter(Enum<?> name) {
+    return runner.getPeer().getCounter(name);
+  }
+  
+  @Override
+  public Counter getCounter(String group, String name) {
+    return runner.getPeer().getCounter(group, name);
   }
 }
