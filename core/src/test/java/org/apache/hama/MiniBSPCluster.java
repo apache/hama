@@ -21,6 +21,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.Assert.fail;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,13 +59,26 @@ public class MiniBSPCluster {
     public void run() {
       try {
         LOG.info("Starting BSP Master.");
-        this.bspm = BSPMaster.startMaster(this.conf);
+        setMaster(40000);
         this.bspm.offerService();
       } catch (IOException ioe) {
         LOG.error("Fail to startup BSP Master.", ioe);
       } catch (InterruptedException ie) {
         LOG.error("BSP Master fails in offerService().", ie);
         Thread.currentThread().interrupt();
+      }
+    }
+
+    private void setMaster(int defaultPort) {
+      try {
+        this.conf.setInt("bsp.master.port", defaultPort);
+        this.bspm = BSPMaster.startMaster(this.conf);
+      } catch (BindException e) {
+        setMaster(++defaultPort);
+      } catch (IOException e) {
+        e.printStackTrace();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
       }
     }
 
