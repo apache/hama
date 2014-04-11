@@ -3,6 +3,7 @@ Hama Change Log
 Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
+   HAMA-863: Implement SparseVector (Yexi Jiang)
 
   BUG FIXES
   
