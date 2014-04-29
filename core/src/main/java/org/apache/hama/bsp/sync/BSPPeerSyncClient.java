@@ -73,11 +73,11 @@ public abstract class BSPPeerSyncClient implements PeerSyncClient {
    * Returns all registered tasks within the sync daemon. They have to be
    * ordered ascending by their task id.
    * 
-   * @param taskId the tasks ID
+   * @param jobID the job ID
    * @return an <b>ordered</b> string array of host:port pairs of all tasks
    *         connected to the daemon.
    */
-  public abstract String[] getAllPeerNames(TaskAttemptID taskId);
+  public abstract String[] getAllPeerNames(BSPJobID jobID);
 
   /**
    * TODO this has currently no use. Could later be used to deregister tasks

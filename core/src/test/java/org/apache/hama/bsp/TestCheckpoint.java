@@ -301,6 +301,12 @@ public class TestCheckpoint extends TestCase {
       return null;
     }
 
+    @Override
+    public String[] getAdjacentPeerNames() {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
   }
 
   public static class TempSyncClient extends BSPPeerSyncClient {
@@ -423,7 +429,7 @@ public class TestCheckpoint extends TestCase {
     }
 
     @Override
-    public String[] getAllPeerNames(TaskAttemptID taskId) {
+    public String[] getAllPeerNames(BSPJobID jobID) {
       return null;
     }
 

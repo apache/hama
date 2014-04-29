@@ -469,11 +469,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     }
 
     @Override
-    public String[] getAllPeerNames(TaskAttemptID taskId) {
-      return peerNames;
-    }
-
-    @Override
     public void deregisterFromBarrier(BSPJobID jobId, TaskAttemptID taskId,
         String hostAddress, long port) {
 
@@ -530,6 +525,11 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public boolean remove(String key, SyncEventListener listener) {
       return false;
+    }
+
+    @Override
+    public String[] getAllPeerNames(BSPJobID jobID) {
+      return peerNames;
     }
   }
 

@@ -273,18 +273,16 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
   }
 
   @Override
-  public String[] getAllPeerNames(TaskAttemptID taskId) {
+  public String[] getAllPeerNames(BSPJobID jobID) {
     if (allPeers == null) {
       TreeMap<Integer, String> sortedMap = new TreeMap<Integer, String>();
       try {
-        List<String> var = zk.getChildren(
-            constructKey(taskId.getJobID(), "peers"), this);
+        List<String> var = zk.getChildren(constructKey(jobID, "peers"), this);
         allPeers = var.toArray(new String[var.size()]);
 
         TreeMap<TaskAttemptID, String> taskAttemptSortedMap = new TreeMap<TaskAttemptID, String>();
         for (String s : allPeers) {
-          byte[] data = zk.getData(constructKey(taskId.getJobID(), "peers", s),
-              this, null);
+          byte[] data = zk.getData(constructKey(jobID, "peers", s), this, null);
           TaskAttemptID thatTask = new TaskAttemptID();
           boolean result = getValueFromBytes(data, thatTask);
 

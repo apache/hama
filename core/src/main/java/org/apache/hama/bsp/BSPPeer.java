@@ -78,20 +78,26 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
   public String getPeerName();
 
   /**
-   * @return the name of n-th peer from sorted array by name.
+   * @return the name of n-th peer from sorted array by taskId.
    */
   public String getPeerName(int index);
 
   /**
-   * @return the index of this peer from sorted array by name.
+   * @return the index of this peer from sorted array by taskId.
    */
   public int getPeerIndex();
 
   /**
-   * @return the names of all the peers executing tasks from the same job
-   *         (including this peer).
+   * @return the names of all the peers executing tasks from the same job in
+   *         ascending taskId order (including this peer).
    */
   public String[] getAllPeerNames();
+
+  /**
+   * @return the names of locally adjacent peers in ascending taskId order.
+   *         (including this peer).
+   */
+  public String[] getAdjacentPeerNames();
 
   /**
    * @return the number of peers

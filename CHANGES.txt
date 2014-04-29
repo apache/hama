@@ -3,6 +3,7 @@ Hama Change Log
 Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
+
    HAMA-863: Implement SparseVector (Yexi Jiang)
 
   BUG FIXES
@@ -13,6 +14,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
   
+   HAMA-899: Add getAdjacentPeerNames() that returns the names of locally adjacent peers (edwardyoon)
    HAMA-847: Vertex should provide Counters (edwardyoon)
    HAMA-568: Add faster synchronized collections for message queues (edwardyoon)
 

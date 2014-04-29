@@ -119,7 +119,7 @@ public class TestZooKeeper extends TestCase {
           peerClient.constructKey(jobID, "info", "level2"), new IntWritable(5),
           true, null);
 
-      String[] names = peerClient.getAllPeerNames(task1);
+      String[] names = peerClient.getAllPeerNames(task1.getJobID());
 
       Log.info("Found child count = " + names.length);
 

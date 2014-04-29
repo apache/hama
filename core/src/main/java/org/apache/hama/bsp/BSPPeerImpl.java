@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -164,7 +166,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
         Constants.DEFAULT_PEER_HOST);
     int bindPort = conf
         .getInt(Constants.PEER_PORT, Constants.DEFAULT_PEER_PORT);
-    
+
     peerAddress = new InetSocketAddress(bindAddress, bindPort);
 
     // This function call may change the current peer address
@@ -374,7 +376,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       final InetSocketAddress addr = entry.getKey();
 
       final BSPMessageBundle<M> bundle = entry.getValue();
-      
+
       // remove this message during runtime to save a bit of memory
       it.remove();
       try {
@@ -523,6 +525,19 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   }
 
   @Override
+  public final String[] getAdjacentPeerNames() {
+    initPeerNames();
+    List<String> localPeers = new ArrayList<String>();
+    for (String peerName : allPeers) {
+      if (peerName.startsWith(peerAddress.getHostName() + ":")) {
+        localPeers.add(peerName);
+      }
+    }
+
+    return localPeers.toArray(new String[localPeers.size()]);
+  }
+
+  @Override
   public final String getPeerName(int index) {
     initPeerNames();
     return allPeers[index];
@@ -541,7 +556,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   private final void initPeerNames() {
     if (allPeers == null) {
-      allPeers = syncClient.getAllPeerNames(taskId);
+      allPeers = syncClient.getAllPeerNames(taskId.getJobID());
     }
   }
 
