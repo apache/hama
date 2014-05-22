@@ -249,6 +249,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       if (currentMessage != null) {
         iterable = iterate(currentMessage, (V) currentMessage.getVertexId(),
             vertex, peer);
+      } else {
+        iterable = null;
       }
 
       if (iterable != null && vertex.isHalted()) {
