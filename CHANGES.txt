@@ -8,6 +8,7 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
   
+   HAMA-905: Fix Pi Estimator Example (Martin Illecker)
    HAMA-889: NonDefaultIterator of DenseDoubleVector never reaches the end (Yexi Jiang)
    HAMA-888: Add more test cases for DenseDoubleVector (Yexi Jiang)
    HAMA-885: Semi-Clustering is not producing expected output (Renil J via edwardyoon)

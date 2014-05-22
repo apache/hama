@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
@@ -46,33 +47,32 @@ public class PiEstimator {
       + System.currentTimeMillis());
 
   public static class MyEstimator extends
-      BSP<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> {
+      BSP<NullWritable, NullWritable, Text, DoubleWritable, LongWritable> {
     public static final Log LOG = LogFactory.getLog(MyEstimator.class);
     private String masterTask;
     private static final int iterations = 10000;
 
     @Override
     public void bsp(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, LongWritable> peer)
         throws IOException, SyncException, InterruptedException {
 
-      int in = 0;
+      long in = 0;
       for (int i = 0; i < iterations; i++) {
-        double x = 2.0 * Math.random() - 1.0, y = 2.0 * Math.random() - 1.0;
-        if ((Math.sqrt(x * x + y * y) < 1.0)) {
+        double x = 2.0 * Math.random() - 1.0; // [-1..1]
+        double y = 2.0 * Math.random() - 1.0; // [-1..1]
+        if ((x * x + y * y) <= 1.0) {
           in++;
         }
       }
 
-      double data = 4.0 * in / iterations;
-
-      peer.send(masterTask, new DoubleWritable(data));
+      peer.send(masterTask, new LongWritable(in));
       peer.sync();
     }
 
     @Override
     public void setup(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, LongWritable> peer)
         throws IOException {
       // Choose one as a master
       this.masterTask = peer.getPeerName(peer.getNumPeers() / 2);
@@ -80,17 +80,17 @@ public class PiEstimator {
 
     @Override
     public void cleanup(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, LongWritable> peer)
         throws IOException {
       if (peer.getPeerName().equals(masterTask)) {
-        double pi = 0.0;
+        long in = 0;
         int numPeers = peer.getNumCurrentMessages();
-        DoubleWritable received;
+        LongWritable received;
         while ((received = peer.getCurrentMessage()) != null) {
-          pi += received.get();
+          in += received.get();
         }
+        double pi = 4.0 * in / (iterations * numPeers);
 
-        pi = pi / numPeers;
         peer.write(new Text("Estimated value of PI is"), new DoubleWritable(pi));
       }
     }
@@ -119,7 +119,7 @@ public class PiEstimator {
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
     bsp.setCompressionCodec(SnappyCompressor.class);
     bsp.setCompressionThreshold(40);
-    
+
     // Set the job name
     bsp.setJobName("Pi Estimation Example");
     bsp.setBspClass(MyEstimator.class);
