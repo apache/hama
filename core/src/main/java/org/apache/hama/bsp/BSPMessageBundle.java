@@ -38,7 +38,7 @@ import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
  * 
  */
 public class BSPMessageBundle<M extends Writable> implements Writable,
-    Iterable<M> {
+    Iterable<M>, BSPMessageBundleInterface<M> {
 
   public static final Log LOG = LogFactory.getLog(BSPMessageBundle.class);
 
@@ -111,6 +111,10 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
     bundleSize++;
   }
 
+  public byte[] getBuffer() {
+    return byteBuffer.toByteArray();
+  }
+  
   public Iterator<M> iterator() {
     bis = new ByteArrayInputStream(byteBuffer.toByteArray());
     dis = new DataInputStream(bis);
@@ -193,7 +197,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
    * @return the byte length of messages
    * @throws IOException
    */
-  public long getLength() throws IOException {
+  public long getLength() {
     return bundleLength;
   }
 
@@ -219,4 +223,5 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
       bufferDos.write(temp);
     }
   }
+
 }

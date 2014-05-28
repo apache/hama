@@ -32,8 +32,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.bsp.message.bundle.BSPMessageBundle;
-import org.apache.hama.bsp.message.bundle.HeapByteArrayBSPMessageBundle;
+import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.message.io.CombineSpilledDataProcessor;
 import org.apache.hama.bsp.message.io.PreFetchCache;
 import org.apache.hama.bsp.message.io.SpilledDataInputBuffer;
@@ -346,8 +345,7 @@ public class SpillingQueue<M extends Writable> extends ByteArrayMessageQueue<M> 
   @Override
   public void add(BSPMessageBundle<M> bundle) {
     try {
-      this.spillOutputBuffer.write(((HeapByteArrayBSPMessageBundle<M>) bundle)
-          .getBuffer());
+      this.spillOutputBuffer.write(bundle.getBuffer());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

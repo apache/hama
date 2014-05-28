@@ -23,9 +23,8 @@ import java.util.concurrent.PriorityBlockingQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.bsp.message.bundle.BSPMessageBundle;
-import org.apache.hama.bsp.message.bundle.POJOMessageBundle;
 
 /**
  * Heap (Java's priority queue) based message queue implementation that supports
@@ -115,7 +114,7 @@ public final class SortedMemoryQueue<M extends WritableComparable<M>>
 
   @Override
   public void add(BSPMessageBundle<M> bundle) {
-    addAll((POJOMessageBundle<M>) bundle);
+    addAll(bundle);
   }
 
   @Override

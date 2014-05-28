@@ -15,29 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message.bundle;
+package org.apache.hama.bsp.message.queue;
 
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPMessageBundle;
 
 /**
- * BSPMessageBundle stores a group of BSPMessages so that they can be sent in
- * batch rather than individually.
- * 
+ * Java object message queue.
+ *
+ * @param <M> Message type.
  */
-public interface BSPMessageBundle<M extends Writable> {
+public abstract class DefaultMessageQueue<M extends Writable> implements
+    BSPMessageInterface<M>, Iterable<M>, MessageQueue<M> {
 
-  /**
-   * Returns the size of the message.
-   * 
-   * @return Size of serialized message bundle. -1 if the size is not known.
-   */
-  public long getSize();
-
-  /**
-   * Returns the number of elements.
-   * 
-   * @return Number of elements. -1 if the number of elements is not known.
-   */
-  public int getNumElements();
-
+  @Override
+  public void add(BSPMessageBundle<M> bundle){
+    addAll(bundle);
+  }
+  
 }

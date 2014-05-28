@@ -15,23 +15,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message.queue;
+package org.apache.hama.bsp;
+
+import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.bsp.message.bundle.BSPMessageBundle;
-import org.apache.hama.bsp.message.bundle.POJOMessageBundle;
 
-/**
- * Java object message queue.
- *
- * @param <M> Message type.
- */
-public abstract class POJOMessageQueue<M extends Writable> implements
-    BSPMessageInterface<M>, Iterable<M>, MessageQueue<M> {
+public interface BSPMessageBundleInterface<M extends Writable> {
 
-  @Override
-  public void add(BSPMessageBundle<M> bundle){
-    this.addAll((POJOMessageBundle<M>)bundle);
-  }
+  /**
+   * @return the number of the messages.
+   */
+  public int size();
+  
+  /**
+   * Add message to this bundle.
+   * 
+   * @param message BSPMessage to add.
+   */
+  public void addMessage(M message);
+  
+  /**
+   * @return the iterator.
+   */
+  public Iterator<M> iterator();
+  
+  /**
+   * @return the message buffer.
+   */
+  public byte[] getBuffer();
+  
+  /**
+   * @return the total byte length of messages
+   * @throws IOException
+   */
+  public long getLength();
   
 }

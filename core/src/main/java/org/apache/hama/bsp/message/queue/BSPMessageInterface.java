@@ -18,7 +18,7 @@
 package org.apache.hama.bsp.message.queue;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.bsp.message.bundle.BSPMessageBundle;
+import org.apache.hama.bsp.BSPMessageBundle;
 
 public interface BSPMessageInterface<M extends Writable> {
   
