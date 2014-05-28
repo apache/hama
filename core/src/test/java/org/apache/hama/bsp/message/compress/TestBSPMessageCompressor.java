@@ -27,19 +27,18 @@ import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hama.bsp.message.type.IntegerMessage;
 
 public class TestBSPMessageCompressor extends TestCase {
 
   public void testCompression() throws IOException {
     Configuration configuration = new Configuration();
-    BSPMessageCompressor<IntegerMessage> compressor = new BSPMessageCompressorFactory<IntegerMessage>()
+    BSPMessageCompressor<IntWritable> compressor = new BSPMessageCompressorFactory<IntWritable>()
         .getCompressor(configuration);
 
     assertNull(compressor);
     configuration.setClass(BSPMessageCompressorFactory.COMPRESSION_CODEC_CLASS,
         SnappyCompressor.class, BSPMessageCompressor.class);
-    compressor = new BSPMessageCompressorFactory<IntegerMessage>()
+    compressor = new BSPMessageCompressorFactory<IntWritable>()
         .getCompressor(configuration);
 
     assertNotNull(compressor);
