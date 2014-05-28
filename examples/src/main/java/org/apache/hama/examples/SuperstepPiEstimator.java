@@ -37,7 +37,6 @@ import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.Superstep;
 import org.apache.hama.bsp.SuperstepBSP;
 import org.apache.hama.bsp.TextOutputFormat;
-import org.apache.hama.bsp.message.type.DoubleMessage;
 
 /**
  * This PiEstimator uses the new chainable superstep API to be fault tolerant.
@@ -51,13 +50,13 @@ public class SuperstepPiEstimator {
 
   public static class PiEstimatorCalculator
       extends
-      Superstep<NullWritable, NullWritable, Text, DoubleWritable, DoubleMessage> {
+      Superstep<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> {
 
     private static final int iterations = 10000;
 
     @Override
     protected void setup(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleMessage> peer) {
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer) {
       super.setup(peer);
       // Choose first as a master
       masterTask = peer.getPeerName(0);
@@ -65,7 +64,7 @@ public class SuperstepPiEstimator {
 
     @Override
     protected void compute(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleMessage> peer)
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
         throws IOException {
       int in = 0;
       for (int i = 0; i < iterations; i++) {
@@ -76,7 +75,7 @@ public class SuperstepPiEstimator {
       }
 
       double data = 4.0 * in / iterations;
-      DoubleMessage estimate = new DoubleMessage(peer.getPeerName(), data);
+      DoubleWritable estimate = new DoubleWritable(data);
 
       peer.send(masterTask, estimate);
     }
@@ -84,18 +83,18 @@ public class SuperstepPiEstimator {
 
   protected static class PiEstimatorAggregator
       extends
-      Superstep<NullWritable, NullWritable, Text, DoubleWritable, DoubleMessage> {
+      Superstep<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> {
 
     @Override
     protected void compute(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleMessage> peer)
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer)
         throws IOException {
       if (peer.getPeerName().equals(masterTask)) {
         double pi = 0.0;
         int numPeers = peer.getNumCurrentMessages();
-        DoubleMessage received;
+        DoubleWritable received;
         while ((received = peer.getCurrentMessage()) != null) {
-          pi += received.getData();
+          pi += received.get();
         }
 
         pi = pi / numPeers;
@@ -105,7 +104,7 @@ public class SuperstepPiEstimator {
 
     @Override
     protected boolean haltComputation(
-        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleMessage> peer) {
+        BSPPeer<NullWritable, NullWritable, Text, DoubleWritable, DoubleWritable> peer) {
       return true;
     }
 
