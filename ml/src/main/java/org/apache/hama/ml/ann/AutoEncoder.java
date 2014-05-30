@@ -109,7 +109,7 @@ public class AutoEncoder {
   /**
    * Get the matrix M used to encode the input features.
    * 
-   * @return
+   * @return this matrix with encode the input.
    */
   public DoubleMatrix getEncodeWeightMatrix() {
     return model.getWeightsByLayer(0);
@@ -118,7 +118,7 @@ public class AutoEncoder {
   /**
    * Get the matrix M used to decode the compressed information.
    * 
-   * @return
+   * @return this matrix with decode the compressed information.
    */
   public DoubleMatrix getDecodeWeightMatrix() {
     return model.getWeightsByLayer(1);
@@ -152,7 +152,7 @@ public class AutoEncoder {
   /**
    * Encode the input instance.
    * @param inputInstance
-   * @return
+   * @return a new vector with the encode input instance.
    */
   public DoubleVector encode(DoubleVector inputInstance) {
     Preconditions
@@ -166,7 +166,7 @@ public class AutoEncoder {
   /**
    * Decode the input instance.
    * @param inputInstance
-   * @return
+   * @return a new vector with the decode input instance.
    */
   public DoubleVector decode(DoubleVector inputInstance) {
     Preconditions
@@ -180,7 +180,7 @@ public class AutoEncoder {
   /**
    * Get the label(s) according to the given features.
    * @param inputInstance
-   * @return
+   * @return a new vector with output of the model according to given feature instance.
    */
   public DoubleVector getOutput(DoubleVector inputInstance) {
     return model.getOutput(inputInstance);

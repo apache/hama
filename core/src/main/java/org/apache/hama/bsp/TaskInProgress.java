@@ -137,7 +137,7 @@ public class TaskInProgress {
    * @param grooms
    * @param tasksInGroomMap
    * @param possibleLocations
-   * @return
+   * @return a hostname of Groom Server.
    */
   private String getGroomToSchedule(TaskAttemptID taskid,
       Map<String, GroomServerStatus> grooms,
@@ -162,7 +162,7 @@ public class TaskInProgress {
    * 
    * @param grooms
    * @param tasksInGroomMap
-   * @return
+   * @return a hostname of Groom Server.
    */
   private String getAnyGroomToSchedule(Map<String, GroomServerStatus> grooms,
       Map<GroomServerStatus, Integer> tasksInGroomMap) {
@@ -183,8 +183,7 @@ public class TaskInProgress {
   /**
    * 
    * @param groomStatus
-   * @param grooms
-   * @return
+   * @return a new task with job.
    */
   public Task constructTask(GroomServerStatus groomStatus) {
     if (groomStatus == null) {
@@ -261,7 +260,7 @@ public class TaskInProgress {
 
   /**
    * 
-   * @return
+   * @return true if the task can start.
    */
   public boolean canStartTask() {
     return (nextTaskId < (MAX_TASK_EXECS + maxTaskAttempts));

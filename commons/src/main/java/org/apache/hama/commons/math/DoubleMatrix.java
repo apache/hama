@@ -82,7 +82,7 @@ public interface DoubleMatrix {
    * Multiplies this matrix with the given other matrix.
    * 
    * @param other the other matrix.
-   * @return
+   * @return The matrix itself, supply for chain operation.
    */
   public DoubleMatrix multiplyUnsafe(DoubleMatrix other);
 
@@ -90,7 +90,7 @@ public interface DoubleMatrix {
    * Validates the input and multiplies this matrix with the given other matrix.
    * 
    * @param other the other matrix.
-   * @return
+   * @return The matrix itself, supply for chain operation.
    */
   public DoubleMatrix multiply(DoubleMatrix other);
 
@@ -104,7 +104,7 @@ public interface DoubleMatrix {
    * matrix.
    * 
    * @param other the other matrix
-   * @return
+   * @return The matrix itself, supply for chain operation.
    */
   public DoubleMatrix multiplyElementWise(DoubleMatrix other);
 
@@ -119,7 +119,7 @@ public interface DoubleMatrix {
    * the sum of the rows.
    * 
    * @param v the vector
-   * @return
+   * @return a new vector with the result of the operation.
    */
   public DoubleVector multiplyVector(DoubleVector v);
 
@@ -149,7 +149,7 @@ public interface DoubleMatrix {
    * Validates the input and subtracts this matrix by the given other matrix.
    * 
    * @param other
-   * @return
+   * @return The matrix itself, supply for chain operation.
    */
   public DoubleMatrix subtract(DoubleMatrix other);
 
@@ -164,7 +164,7 @@ public interface DoubleMatrix {
    * the given vector.
    * 
    * @param vec
-   * @return
+   * @return The matrix itself, supply for chain operation.
    */
   public DoubleMatrix subtract(DoubleVector vec);
 
@@ -179,7 +179,7 @@ public interface DoubleMatrix {
    * the given vector.
    * 
    * @param vec
-   * @return
+   * @return The matrix itself, supply for chain operation.
    */
   public DoubleMatrix divide(DoubleVector vec);
 
@@ -193,7 +193,7 @@ public interface DoubleMatrix {
    * division).
    * 
    * @param other
-   * @return
+   * @return The matrix itself, supply for chain operation.
    */
   public DoubleMatrix divide(DoubleMatrix other);
 

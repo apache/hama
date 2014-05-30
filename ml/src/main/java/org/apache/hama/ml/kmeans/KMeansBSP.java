@@ -430,7 +430,7 @@ public final class KMeansBSP
    * @param out
    * @param fs
    * @param hasKey true if first column is required to be the key.
-   * @return
+   * @return the path of a sequencefile.
    * @throws IOException
    */
   public static Path prepareInputText(int k, Configuration conf, Path txtIn,

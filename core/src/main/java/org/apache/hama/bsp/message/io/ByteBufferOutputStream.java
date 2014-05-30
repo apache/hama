@@ -102,7 +102,7 @@ class ByteBufferOutputStream extends OutputStream {
    * Action to take when the data to be written exceeds the size of the byte
    * buffer inside.
    * 
-   * @return
+   * @return True
    * @throws IOException
    */
   protected boolean onBufferFull(byte[] b, int off, int len) throws IOException {

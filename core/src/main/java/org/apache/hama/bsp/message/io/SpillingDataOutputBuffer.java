@@ -480,7 +480,7 @@ public class SpillingDataOutputBuffer extends DataOutputStream {
    * @param bufferSize
    * @param threshold
    * @param direct
-   * @param fileName
+   * @param processor
    */
   public SpillingDataOutputBuffer(int bufferCount, int bufferSize,
       int threshold, boolean direct, SpilledDataProcessor processor) {

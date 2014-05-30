@@ -65,8 +65,8 @@ public class Bzip2Compressor<M extends Writable> extends
    * Decompresses a BSPCompressedBundle and returns the corresponding
    * BSPMessageBundle.
    * 
-   * @param compMsgBundle
-   * @return
+   * @param compressedBytes
+   * @return The result after decompressing BSPMessageBundle.
    */
   @Override
   public byte[] decompress(byte[] compressedBytes) {

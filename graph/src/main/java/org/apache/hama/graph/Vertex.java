@@ -379,7 +379,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
    * index is defined by the order you set the aggregator classes in
    * {@link GraphJob#setAggregatorClass(Class...)}. Index is starting at zero,
    * so if you have a single aggregator you can retrieve it via
-   * {@link #getLastAggregatedValue}(0).
+   * {@link GraphJobRunner#getLastAggregatedValue}(0).
    */
   @SuppressWarnings("unchecked")
   @Override

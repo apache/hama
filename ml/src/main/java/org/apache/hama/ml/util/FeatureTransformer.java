@@ -33,8 +33,8 @@ public abstract class FeatureTransformer {
   
   /**
    * Transform the original features to transformed space.
-   * @param originalFeatureVector
-   * @return
+   * @param originalFeatures
+   * @return a new vector with the result of the operation.
    */
   public abstract DoubleVector transform(DoubleVector originalFeatures);
   

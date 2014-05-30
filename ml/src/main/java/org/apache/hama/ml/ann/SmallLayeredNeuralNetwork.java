@@ -165,7 +165,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   /**
    * Get all the weight matrices.
    * 
-   * @return
+   * @return The matrices in form of matrix array.
    */
   DoubleMatrix[] getWeightMatrices() {
     DoubleMatrix[] matrices = new DoubleMatrix[this.weightMatrixList.size()];
@@ -186,7 +186,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
   /**
    * Get the previous matrices updates in form of array.
    * 
-   * @return
+   * @return The matrices in form of matrix array.
    */
   public DoubleMatrix[] getPrevMatricesUpdates() {
     DoubleMatrix[] prevMatricesUpdates = new DoubleMatrix[this.prevWeightUpdatesList
@@ -308,7 +308,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * 
    * @param fromLayer The index of the previous layer.
    * @param intermediateOutput The intermediateOutput of previous layer.
-   * @return
+   * @return a new vector with the result of the operation.
    */
   protected DoubleVector forward(int fromLayer, DoubleVector intermediateOutput) {
     DoubleMatrix weightMatrix = this.weightMatrixList.get(fromLayer);
@@ -457,7 +457,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * @param layer Index of current layer.
    * @param internalOutput Internal output of current layer.
    * @param deltaVec Delta of next layer.
-   * @return
+   * @return the squashing function of the specified position.
    */
   private DoubleVector backpropagate(int curLayerIdx,
       DoubleVector nextLayerDelta, List<DoubleVector> outputCache,
@@ -559,7 +559,7 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
    * Get the squashing function of a specified layer.
    * 
    * @param idx
-   * @return
+   * @return a new vector with the result of the operation.
    */
   public DoubleFunction getSquashingFunction(int idx) {
     return this.squashingFunctionList.get(idx);

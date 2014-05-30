@@ -64,7 +64,7 @@ public class SmallMLPMessage extends MLPMessage {
    * 
    * @param owner The owner that create the message
    * @param terminated Whether the training is terminated for the owner task
-   * @param weightUpdatedMatrics The weight updates
+   * @param weightUpdatedMatrices The weight updates
    * @param prevWeightUpdatedMatrices
    */
   public SmallMLPMessage(int owner, boolean terminated,
@@ -79,7 +79,7 @@ public class SmallMLPMessage extends MLPMessage {
   /**
    * Get the owner task Id of the message.
    * 
-   * @return
+   * @return the owner value.
    */
   public int getOwner() {
     return owner;
@@ -88,7 +88,7 @@ public class SmallMLPMessage extends MLPMessage {
   /**
    * Get the updated weight matrices.
    * 
-   * @return
+   * @return the array value of dense double matrix object.
    */
   public DenseDoubleMatrix[] getWeightUpdatedMatrices() {
     return this.weightUpdatedMatrices;

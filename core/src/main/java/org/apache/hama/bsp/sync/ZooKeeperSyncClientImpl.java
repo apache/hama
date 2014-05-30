@@ -255,9 +255,7 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
    * Registers the task from outside, most of the time used by the groom which
    * uses this at task spawn-time.
    * 
-   * @param zk
    * @param jobId
-   * @param taskId
    * @param hostAddress
    * @param port
    * @param taskId

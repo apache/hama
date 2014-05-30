@@ -480,7 +480,7 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
    * 
    * @param conf The Hama configuration
    * @param identifier Identifier for the job.
-   * @return
+   * @return an instance of BSPMaster
    * @throws IOException
    * @throws InterruptedException
    */

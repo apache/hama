@@ -42,8 +42,8 @@ public interface Recommender {
    * load model from given path
    * @param path - path of saved model
    * @param lazy - some models are bigger than available memory,
-   *               set this to {@value true} if memory is less than data model
-   *               for faster prediction, set to {@value false} if using
+   *               set this to <tt>true<tt> if memory is less than data model
+   *               for faster prediction, set to <tt>false<tt> if using
    *               file access and reading from file is fine in prediction phase
    * @return true if success
    */

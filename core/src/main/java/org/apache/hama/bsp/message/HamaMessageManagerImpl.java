@@ -124,7 +124,7 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
   }
 
   /**
-   * @param addr, socket address to which BSP Peer Connection will be
+   * @param addr socket address to which BSP Peer Connection will be
    *          established
    * @return BSP Peer Connection, tried to return cached connection, else
    *         returns a new connection and caches it

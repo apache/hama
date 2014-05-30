@@ -375,7 +375,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    * Add a {@link Path} to the list of inputs for the BSP job.
    * 
    * @param conf The configuration of the job
-   * @param path {@link Path} to be added to the list of inputs for the BSP job.
+   * @param p {@link Path} to be addaiaied to the list of inputs for the BSP job.
    */
   public static void addInputPath(BSPJob conf, Path p) {
     Path path = new Path(conf.getWorkingDirectory(), p);
@@ -465,7 +465,7 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    * 
    * @param blkLocations The list of block locations
    * @param offset
-   * @param splitSize
+   * @param pSplitSize
    * @return array of hosts that contribute most to this split
    * @throws IOException
    */

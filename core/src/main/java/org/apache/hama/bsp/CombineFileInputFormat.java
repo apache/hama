@@ -77,7 +77,7 @@ public abstract class CombineFileInputFormat<K, V> extends
    * 
    * @param split
    * @param context
-   * @return
+   * @return a {@link RecordReader} to read the input for processing.
    * @throws IOException
    */
   public abstract RecordReader<K, V> createRecordReader(InputSplit split,

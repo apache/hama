@@ -146,7 +146,7 @@ public class SemiClusteringVertex extends
    * Function to calcualte the Score of a semi-cluster
    * 
    * @param message
-   * @return
+   * @return the value to calcualte the Score of a semi-cluster.
    */
   public double semiClusterScoreCalcuation(SemiClusterMessage message) {
     double iC = 0.0, bC = 0.0, fB = 0.0, sC = 0.0;

@@ -37,7 +37,7 @@ public interface SyncServer {
    * hostname:port.
    * 
    * @param conf
-   * @return
+   * @return the configuration of sync server.
    */
   public Configuration init(Configuration conf) throws Exception;
 

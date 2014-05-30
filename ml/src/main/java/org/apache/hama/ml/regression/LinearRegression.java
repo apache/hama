@@ -84,7 +84,7 @@ public class LinearRegression {
   /**
    * Get the weight of momemtum.
    * 
-   * @return
+   * @return the monemtum weight value.
    */
   public double getMomemtumWeight() {
     return ann.getMomemtumWeight();
@@ -104,7 +104,7 @@ public class LinearRegression {
   /**
    * Get the weight of regularization.
    * 
-   * @return
+   * @return the regularizatioin weight value.
    */
   public double getRegularizationWeight() {
     return ann.getRegularizationWeight();
@@ -141,7 +141,7 @@ public class LinearRegression {
    * Get the output according to given input instance.
    * 
    * @param instance
-   * @return
+   * @return a new vector with the result of the operation.
    */
   public DoubleVector getOutput(DoubleVector instance) {
     return ann.getOutput(instance);
@@ -171,7 +171,7 @@ public class LinearRegression {
   /**
    * Get the weights of the model.
    * 
-   * @return
+   * @return a new vector with the weights of the model.
    */
   public DoubleVector getWeights() {
     return ann.getWeightsByLayer(0).getRowVector(0);
@@ -179,7 +179,7 @@ public class LinearRegression {
   
   /**
    * Set the feature transformer.
-   * @param transformer
+   * @param featureTransformer
    */
   public void setFeatureTransformer(FeatureTransformer featureTransformer) {
     this.ann.setFeatureTransformer(featureTransformer);

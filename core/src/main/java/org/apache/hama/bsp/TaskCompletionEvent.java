@@ -53,7 +53,7 @@ public class TaskCompletionEvent implements Writable {
    *          incrementally, starting from 0.
    * @param taskId task id
    * @param status task's status
-   * @param taskTrackerHttp task tracker's host:port for http.
+   * @param groomServerInfo task tracker's host:port for http.
    */
   public TaskCompletionEvent(int eventId, TaskAttemptID taskId,
       int idWithinJob, Status status, String groomServerInfo) {

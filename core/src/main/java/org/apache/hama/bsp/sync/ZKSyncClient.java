@@ -183,7 +183,7 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
    * Utility function to read Writable object value from byte array.
    * 
    * @param data The byte array
-   * @param classType The Class object of expected Writable object.
+   * @param valueHolder The Class object of expected Writable object.
    * @return The instance of Writable object.
    * @throws IOException
    */
@@ -206,7 +206,7 @@ public abstract class ZKSyncClient implements SyncClient, Watcher {
    * Read value stored in the Zookeeper node.
    * 
    * @param path The path of the Zookeeper node.
-   * @param classType The expected class type of the Writable object.
+   * @param valueHolder The expected class type of the Writable object.
    * @return The Writable object constructed from the value read from the
    *         Zookeeper node.
    */

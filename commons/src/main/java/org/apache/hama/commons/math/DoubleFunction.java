@@ -27,7 +27,7 @@ public abstract class DoubleFunction extends Function {
   /**
    * Apply the function to element.
    * 
-   * @param elem The element that the function apply to.
+   * @param value The element that the function apply to.
    * @return The result after applying the function.
    */
   public abstract double apply(double value);
@@ -35,8 +35,8 @@ public abstract class DoubleFunction extends Function {
   /**
    * Apply the gradient of the function.
    * 
-   * @param elem
-   * @return
+   * @param value
+   * @return The result after applying the function.
    */
   public abstract double applyDerivative(double value);
 

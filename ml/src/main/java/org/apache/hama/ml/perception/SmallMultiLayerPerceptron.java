@@ -75,7 +75,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
   private DenseDoubleMatrix[] prevWeightUpdateMatrices;
 
   /**
-   * {@inheritDoc}
+   * @see MultiLayerPerceptron#MultiLayerPerceptron(double, double, double, String, String, int[])
    */
   public SmallMultiLayerPerceptron(double learningRate, double regularization,
       double momentum, String squashingFunctionName, String costFunctionName,
@@ -87,7 +87,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
   }
 
   /**
-   * {@inheritDoc}
+   * @see MultiLayerPerceptron#MultiLayerPerceptron(String)
    */
   public SmallMultiLayerPerceptron(String modelPath) {
     super(modelPath);
@@ -202,7 +202,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
    * 
    * @param fromLayer The index of layer that forwards the intermediate results
    *          from.
-   * @return
+   * @return the value of intermediate results of layer.
    */
   private double[] forward(int fromLayer, double[] intermediateResult) {
     int toLayer = fromLayer + 1;
@@ -549,7 +549,7 @@ public final class SmallMultiLayerPerceptron extends MultiLayerPerceptron
    * Print out the weights.
    * 
    * @param mat
-   * @return
+   * @return the weights value.
    */
   static String weightsToString(DenseDoubleMatrix[] mat) {
     StringBuilder sb = new StringBuilder();

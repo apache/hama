@@ -27,7 +27,7 @@ public class FunctionFactory {
    * Create a double function with specified name.
    * 
    * @param functionName
-   * @return
+   * @return an appropriate double function.
    */
   public static DoubleFunction createDoubleFunction(String functionName) {
     if (functionName.equalsIgnoreCase(Sigmoid.class.getSimpleName())) {
@@ -47,7 +47,7 @@ public class FunctionFactory {
    * Create a double double function with specified name.
    * 
    * @param functionName
-   * @return
+   * @return an appropriate double double function.
    */
   public static DoubleDoubleFunction createDoubleDoubleFunction(
       String functionName) {

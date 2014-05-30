@@ -15,7 +15,8 @@ Release 0.7.0 (unreleased changes)
    HAMA-885: Semi-Clustering is not producing expected output (Renil J via edwardyoon)
 
   IMPROVEMENTS
-  
+
+   HAMA-823: Remove javadoc warnings (Victor Lee via edwardyoon)  
    HAMA-886: Refactoring core.bundle package (edwardyoon)
    HAMA-899: Add getAdjacentPeerNames() that returns the names of locally adjacent peers (edwardyoon)
    HAMA-847: Vertex should provide Counters (edwardyoon)

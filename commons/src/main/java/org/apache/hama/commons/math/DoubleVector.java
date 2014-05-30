@@ -166,7 +166,7 @@ public interface DoubleVector {
    * vector.
    * 
    * @param matrix
-   * @return
+   * @return a new vector with the result of the operation.
    */
   public DoubleVector multiply(DoubleMatrix matrix);
 
@@ -174,7 +174,7 @@ public interface DoubleVector {
    * Multiplies the given {@link DoubleMatrix} with this vector.
    * 
    * @param matrix
-   * @return
+   * @return a new vector with the result of the operation.
    */
   public DoubleVector multiplyUnsafe(DoubleMatrix matrix);
 

@@ -89,7 +89,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
    * Set the regularization weight. Recommend in the range [0, 0.1), More
    * complex the model is, less weight the regularization is.
    * 
-   * @param regularization
+   * @param regularizationWeight
    */
   public void setRegularizationWeight(double regularizationWeight) {
     Preconditions.checkArgument(regularizationWeight >= 0
@@ -136,7 +136,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
   /**
    * Set the cost function for the model.
    * 
-   * @param costFunctionName
+   * @param costFunction
    */
   public void setCostFunction(DoubleDoubleFunction costFunction) {
     this.costFunction = costFunction;
@@ -160,7 +160,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
    * Get the size of a particular layer.
    * 
    * @param layer
-   * @return
+   * @return The layer size.
    */
   public int getLayerSize(int layer) {
     Preconditions.checkArgument(
@@ -173,7 +173,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
   /**
    * Get the layer size list.
    * 
-   * @return
+   * @return The layer size list.
    */
   protected List<Integer> getLayerSizeList() {
     return this.layerSizeList;
@@ -201,7 +201,7 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
    * Get the output calculated by the model.
    * 
    * @param instance The feature instance.
-   * @return
+   * @return a new vector with the result of the operation.
    */
   public abstract DoubleVector getOutput(DoubleVector instance);
 
@@ -210,7 +210,6 @@ abstract class AbstractLayeredNeuralNetwork extends NeuralNetwork {
    * 
    * @param labels
    * @param output
-   * @return
    */
   protected abstract void calculateTrainingError(DoubleVector labels,
       DoubleVector output);

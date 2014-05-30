@@ -29,7 +29,7 @@ public class BSPMessageCompressorFactory<M extends Writable> {
    * Returns a compressor via reflection based on what was configured.
    * 
    * @param conf
-   * @return
+   * @return a compressor that was configured.
    */
   @SuppressWarnings("unchecked")
   public BSPMessageCompressor<M> getCompressor(Configuration conf) {

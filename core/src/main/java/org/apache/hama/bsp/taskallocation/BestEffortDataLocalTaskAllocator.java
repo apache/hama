@@ -47,7 +47,7 @@ public class BestEffortDataLocalTaskAllocator implements TaskAllocationStrategy 
    * 
    * @param grooms
    * @param tasksInGroomMap
-   * @return
+   * @return a hostname of Groom Server.
    */
   private static String getAnyGroomToSchedule(
       Map<String, GroomServerStatus> grooms,
@@ -73,7 +73,7 @@ public class BestEffortDataLocalTaskAllocator implements TaskAllocationStrategy 
    * @param grooms
    * @param tasksInGroomMap
    * @param possibleLocations
-   * @return
+   * @return a hostname of Groom Server.
    */
   private String getGroomToSchedule(Map<String, GroomServerStatus> grooms,
       Map<GroomServerStatus, Integer> tasksInGroomMap,

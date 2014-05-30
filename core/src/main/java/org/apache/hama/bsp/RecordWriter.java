@@ -32,7 +32,6 @@ public interface RecordWriter<K, V> {
   /**
    * Close this <code>RecordWriter</code> to future operations.
    * 
-   * @param reporter facility to report progress.
    * @throws IOException
    */
   void close() throws IOException;

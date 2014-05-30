@@ -159,7 +159,6 @@ abstract class NeuralNetwork implements Writable {
   /**
    * Write the model data to specified location.
    * 
-   * @param modelPath The location in file system to store the model.
    * @throws IOException
    */
   public void writeModelToFile() throws IOException {
@@ -191,7 +190,7 @@ abstract class NeuralNetwork implements Writable {
   /**
    * Get the model path.
    * 
-   * @return
+   * @return the path to store the model.
    */
   public String getModelPath() {
     return this.modelPath;

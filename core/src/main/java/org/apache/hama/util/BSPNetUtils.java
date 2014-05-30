@@ -181,7 +181,7 @@ public class BSPNetUtils {
   /**
    * Create a socket address with the given host and port. The hostname might be
    * replaced with another host that was set via
-   * {@link #addStaticResolution(String, String)}. The value of
+   * {@link NetUtils#addStaticResolution(String, String)}. The value of
    * hadoop.security.token.service.use_ip will determine whether the standard
    * java host resolver is used, or if the fully qualified resolver is used.
    * 

@@ -118,7 +118,7 @@ public interface VertexInterface<V extends WritableComparable, E extends Writabl
     *
     * @throws IOException
     *
-    * @param name identifies a aggregator
+    * @param index identifies a aggregator
     * @param value value to be aggregated
     */
    public void aggregate(int index, M value) throws IOException;

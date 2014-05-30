@@ -146,7 +146,7 @@ public abstract class FileOutputFormat<K, V> implements OutputFormat<K, V> {
    * Get the {@link Path} to the output directory for the map-reduce job.
    * 
    * @return the {@link Path} to the output directory for the map-reduce job.
-   * @see FileOutputFormat#getWorkOutputPath(JobConf)
+   * @see FileOutputFormat#getWorkOutputPath(BSPJob)
    */
   public static Path getOutputPath(BSPJob conf) {
     String name = conf.get("bsp.output.dir");

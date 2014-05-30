@@ -28,7 +28,7 @@ public class MessageManagerFactory {
    * Returns a messenger via reflection based on what was configured.
    * 
    * @param conf
-   * @return
+   * @return a messenger that was configured.
    */
   @SuppressWarnings("unchecked")
   public static <M extends Writable> MessageManager<M> getMessageManager(

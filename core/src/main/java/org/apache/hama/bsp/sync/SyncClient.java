@@ -47,7 +47,7 @@ public interface SyncClient {
    * @param value The value to be stored.
    * @param permanent true if the value should be persisted after end of
    *          session.
-   * @param Listener object that provides asynchronous updates on the state of
+   * @param listener object that provides asynchronous updates on the state of
    *          information stored under the key.
    * @return true if the operation was successful.
    */
@@ -58,7 +58,7 @@ public interface SyncClient {
    * Retrieve value previously store for the key.
    * 
    * @param key The key for which value was stored.
-   * @param classType The expected class instance of value to be extracted
+   * @param valueHolder The expected class instance of value to be extracted
    * @return the value if found. Returns null if there was any error of if there
    *         was no value stored for the key.
    */
@@ -112,7 +112,7 @@ public interface SyncClient {
    * 
    * @param key
    * @param listener
-   * @return
+   * @return true if the operation is successful.
    */
   public boolean remove(String key, SyncEventListener listener);
 

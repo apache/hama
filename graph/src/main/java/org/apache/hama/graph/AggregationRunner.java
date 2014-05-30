@@ -130,7 +130,7 @@ public final class AggregationRunner<V extends WritableComparable, E extends Wri
    * computation.
    * 
    * @param lastValue the value before compute().
-   * @param v the vertex.
+   * @param value the vertex.
    */
   public void aggregateVertex(int index, M lastValue, M value) {
     if (isEnabled()) {
