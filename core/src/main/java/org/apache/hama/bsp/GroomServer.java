@@ -388,19 +388,6 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
     this.masterClient = (MasterProtocol) RPC.waitForProxy(MasterProtocol.class,
         HamaRPCProtocolVersion.versionID, bspMasterAddr, conf);
 
-    // enroll in bsp master
-    if (-1 == rpcPort || null == rpcAddr)
-      throw new IllegalArgumentException("Error rpc address " + rpcAddr
-          + " port" + rpcPort);
-    if (!this.masterClient.register(new GroomServerStatus(groomServerName,
-        cloneAndResetRunningTaskStatuses(), failures, maxCurrentTasks,
-        this.rpcServer, groomHostName))) {
-      LOG.error("There is a problem in establishing communication"
-          + " link with BSPMaster");
-      throw new IOException("There is a problem in establishing"
-          + " communication link with BSPMaster.");
-    }
-
     this.instructor = new Instructor();
     this.instructor.bind(DispatchTasksDirective.class,
         new DispatchTasksHandler());
@@ -427,6 +414,19 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
       this.sensor.get().start();
     }
 
+    // enroll in bsp master once the GroomServer is ready to accept tasks
+    if (-1 == rpcPort || null == rpcAddr)
+      throw new IllegalArgumentException("Error rpc address " + rpcAddr
+          + " port" + rpcPort);
+    if (!this.masterClient.register(new GroomServerStatus(groomServerName,
+        cloneAndResetRunningTaskStatuses(), failures, maxCurrentTasks,
+        this.rpcServer, groomHostName))) {
+      LOG.error("There is a problem in establishing communication"
+          + " link with BSPMaster");
+      throw new IOException("There is a problem in establishing"
+          + " communication link with BSPMaster.");
+    }
+    
     this.running = true;
     this.initialized = true;
   }
@@ -692,7 +692,19 @@ public class GroomServer implements Runnable, GroomProtocol, BSPPeerProtocol,
 
         Path localJarFile = defaultJobConf.getLocalPath(SUBDIR + "/"
             + task.getTaskID() + "/" + "job.jar");
-        dfs.copyToLocalFile(new Path(task.getJobFile()), localJobFile);
+        
+        Path jobFilePath = new Path(task.getJobFile());
+        
+        //wait a while for file to finish being written
+        for (int i = 0; i < 300 & !dfs.exists(jobFilePath); i++ ) {
+        	try {
+    			Thread.sleep(100);
+    		} catch (InterruptedException e) {
+    			LOG.warn("Sleep failed", e);
+    		}
+        }
+        
+        dfs.copyToLocalFile(jobFilePath, localJobFile);
 
         HamaConfiguration conf = new HamaConfiguration();
         conf.addResource(localJobFile);

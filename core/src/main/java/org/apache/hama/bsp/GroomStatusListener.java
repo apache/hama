@@ -20,16 +20,17 @@ package org.apache.hama.bsp;
 import java.io.IOException;
 
 /**
- * This is the class that schedules commands to GroomServer(s)
+ * A listener for updates to {@link GroomServerStatus} by groom servers. 
  */
-public interface Schedulable {
+public interface GroomStatusListener {
 
-	  /**
-	   * Schedule job immediately.
-	   * 
-	   * @param job to be scheduled.
-	   * @throws IOException
-	   */
-	  void schedule(JobInProgress job)
-	      throws IOException;
+  /**
+   * Invoked when a new groom server has been registered with the {@link BSPMaster}.
+   * 
+   * @param status The status of the new groom server
+   */
+  public abstract void groomServerRegistered(GroomServerStatus status);
+
+  
+  public abstract void taskComplete(GroomServerStatus status, TaskInProgress task);
 }

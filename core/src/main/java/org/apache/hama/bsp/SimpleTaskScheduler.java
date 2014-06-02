@@ -21,15 +21,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.hama.monitor.fd.NodeStatus.Dead;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -42,9 +34,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.sync.ZKSyncBSPMasterClient;
-import org.apache.hama.ipc.GroomProtocol;
 import org.apache.hama.monitor.Federator;
 import org.apache.hama.monitor.Federator.Act;
 import org.apache.hama.monitor.Federator.CollectorHandler;
@@ -55,6 +48,7 @@ import org.apache.hama.monitor.ZKCollector;
 import org.apache.hama.monitor.fd.NodeEventListener;
 import org.apache.hama.monitor.fd.NodeStatus;
 import org.apache.zookeeper.ZooKeeper;
+
 
 /**
  * A simple task scheduler with FCFS processing queue.
@@ -71,6 +65,7 @@ class SimpleTaskScheduler extends TaskScheduler {
   private AtomicBoolean initialized = new AtomicBoolean(false);
   private final JobListener jobListener;
   private final JobProcessor jobProcessor;
+  private TaskWorkerManager taskWorkerManager;
   private final AtomicReference<Federator> federator = new AtomicReference<Federator>();
   /** <String, MetricsRecord> maps to <groom server, metrics record> */
   private final ConcurrentMap<String, MetricsRecord> repository = new ConcurrentHashMap<String, MetricsRecord>();
@@ -159,9 +154,8 @@ class SimpleTaskScheduler extends TaskScheduler {
         JobInProgress job = queue.removeJob();
         queueManager.get().addJob(PROCESSING_QUEUE, job);
         // schedule
-        Collection<GroomServerStatus> glist = groomServerManager.get()
-            .groomServerStatusKeySet();
-        schedule(job, glist.toArray(new GroomServerStatus[glist.size()]));
+
+        schedule(job);
       }
     }
 
@@ -172,13 +166,8 @@ class SimpleTaskScheduler extends TaskScheduler {
      * @param Job to be scheduled.
      */
     @Override
-    public void schedule(JobInProgress job, GroomServerStatus... statuses) {
-      ClusterStatus clusterStatus = groomServerManager.get().getClusterStatus(
-          false);
-      final int numGroomServers = clusterStatus.getGroomServers();
-
-      Future<Boolean> jobScheduleResult = sched.submit(new TaskWorker(statuses,
-          numGroomServers, job));
+    public void schedule(JobInProgress job) {
+      Future<Boolean> jobScheduleResult = sched.submit(taskWorkerManager.spawnWorker(job));
 
       Boolean jobResult = Boolean.FALSE;
 
@@ -206,134 +195,8 @@ class SimpleTaskScheduler extends TaskScheduler {
     }
   }
 
-  private class TaskWorker implements Callable<Boolean> {
-    private final Map<String, GroomServerStatus> groomStatuses;
-    private final int groomNum;
-    private final JobInProgress jip;
+  
 
-    TaskWorker(final GroomServerStatus[] stus, final int num,
-        final JobInProgress jip) {
-      this.groomStatuses = new HashMap<String, GroomServerStatus>(2 * num);
-      for (GroomServerStatus status : stus) {
-        this.groomStatuses.put(status.hostName, status);
-      }
-      this.groomNum = num;
-      this.jip = jip;
-      if (null == this.groomStatuses)
-        throw new NullPointerException("Target groom server is not "
-            + "specified.");
-      if (-1 == this.groomNum)
-        throw new IllegalArgumentException("Groom number is not specified.");
-      if (null == this.jip)
-        throw new NullPointerException("No job is specified.");
-    }
-
-    private Boolean scheduleNewTasks() {
-
-      // Action to be sent for each task to the respective groom server.
-      Map<GroomServerStatus, List<GroomServerAction>> actionMap = new HashMap<GroomServerStatus, List<GroomServerAction>>(
-          2 * this.groomStatuses.size());
-      Set<Task> taskSet = new HashSet<Task>(2 * jip.tasks.length);
-      Task t = null;
-      int cnt = 0;
-      while ((t = jip.obtainNewTask(this.groomStatuses)) != null) {
-        taskSet.add(t);
-        // Scheduled all tasks
-        if (++cnt == this.jip.tasks.length) {
-          break;
-        }
-      }
-
-      // if all tasks could not be scheduled
-      if (cnt != this.jip.tasks.length) {
-        LOG.error("Could not schedule all tasks!");
-        return Boolean.FALSE;
-      }
-
-      // assembly into actions
-      for (Task task : taskSet) {
-        GroomServerStatus groomStatus = jip.getGroomStatusForTask(task);
-        List<GroomServerAction> taskActions = actionMap.get(groomStatus);
-        if (taskActions == null) {
-          taskActions = new ArrayList<GroomServerAction>(
-              groomStatus.getMaxTasks());
-        }
-        taskActions.add(new LaunchTaskAction(task));
-        actionMap.put(groomStatus, taskActions);
-      }
-
-      sendDirectivesToGrooms(actionMap);
-
-      return Boolean.TRUE;
-    }
-
-    /**
-     * Schedule recovery tasks.
-     * 
-     * @return TRUE object if scheduling is successful else returns FALSE
-     */
-    private Boolean scheduleRecoveryTasks() {
-
-      // Action to be sent for each task to the respective groom server.
-      Map<GroomServerStatus, List<GroomServerAction>> actionMap = new HashMap<GroomServerStatus, List<GroomServerAction>>(
-          2 * this.groomStatuses.size());
-
-      try {
-        jip.recoverTasks(groomStatuses, actionMap);
-      } catch (IOException e) {
-        return Boolean.FALSE;
-      }
-      return sendDirectivesToGrooms(actionMap);
-
-    }
-
-    private Boolean sendDirectivesToGrooms(
-        Map<GroomServerStatus, List<GroomServerAction>> actionMap) {
-      Iterator<GroomServerStatus> groomIter = actionMap.keySet().iterator();
-      while ((jip.getStatus().getRunState() == JobStatus.RUNNING || jip
-          .getStatus().getRunState() == JobStatus.RECOVERING)
-          && groomIter.hasNext()) {
-
-        GroomServerStatus groomStatus = groomIter.next();
-        List<GroomServerAction> actionList = actionMap.get(groomStatus);
-
-        GroomProtocol worker = groomServerManager.get().findGroomServer(
-            groomStatus);
-        try {
-          // dispatch() to the groom server
-          GroomServerAction[] actions = new GroomServerAction[actionList.size()];
-          actionList.toArray(actions);
-          Directive d1 = new DispatchTasksDirective(actions);
-          worker.dispatch(d1);
-        } catch (IOException ioe) {
-          LOG.error(
-              "Fail to dispatch tasks to GroomServer "
-                  + groomStatus.getGroomName(), ioe);
-          return Boolean.FALSE;
-        }
-
-      }
-
-      if (groomIter.hasNext()
-          && (jip.getStatus().getRunState() != JobStatus.RUNNING || jip
-              .getStatus().getRunState() != JobStatus.RECOVERING)) {
-        LOG.warn("Currently master only shcedules job in running state. "
-            + "This may be refined in the future. JobId:" + jip.getJobID());
-        return Boolean.FALSE;
-      }
-
-      return Boolean.TRUE;
-    }
-
-    @Override
-    public Boolean call() {
-      if (jip.isRecoveryPending()) {
-        return scheduleRecoveryTasks();
-      } else {
-        return scheduleNewTasks();
-      }
-    }
-  }
 
   /**
    * Periodically collect metrics info.
@@ -402,6 +265,14 @@ class SimpleTaskScheduler extends TaskScheduler {
     this.queueManager.get().createFCFSQueue(FINISHED_QUEUE);
     groomServerManager.get().addJobInProgressListener(this.jobListener);
 
+    // Create and initialize the task worker manager
+    Class<? extends TaskWorkerManager> taskWorkerClass = conf.getClass(
+    		Constants.TASK_EXECUTOR_CLASS, SimpleTaskWorkerManager.class,
+        TaskWorkerManager.class);
+    this.taskWorkerManager = ReflectionUtils.newInstance(taskWorkerClass, conf);
+    this.taskWorkerManager.init(groomServerManager, conf);
+
+    
     if (null != getConf()
         && getConf().getBoolean("bsp.federator.enabled", false)) {
       this.federator.get().start();

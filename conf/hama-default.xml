@@ -110,6 +110,39 @@
     </description>
   </property>
   <property>
+    <name>bsp.master.TaskWorkerManager.class</name>
+    <value>org.apache.hama.bsp.SimpleTaskWorkerManager</value>
+    <description>The class responsible for assigning tasks to groom servers</description>
+  </property>
+  <property>
+    <name>hama.mesos.executor.uri</name>
+    <value>hdfs://hdfs.name.node:port/hama.tar.gz</value>
+    <description>
+      Ignore this if you are not using the Mesos TaskWorkerManger. 
+      This is the URI of the Hama distribution. Upload this yourself. 
+    </description>
+  </property>
+  <property>
+    <name>bsp.tasks.maximum.total</name>
+    <value></value>
+    <description>
+      This is an override for the total maximum tasks that may be run.
+      The default behavior is to determine a value based on the available groom
+      servers. However, if using mesos, the groom servers are not yet allocated.  
+      So, a value indicating the number of slots available in the cluster is needed. 
+    </description>
+  </property>
+  <property>
+    <name>hama.mesos.master</name>
+    <value>local</value>
+    <description>
+      Ignore this if you are not using the Mesos TaskWorkerManger.
+      This is the address of the Mesos master instance. If you're using
+      Zookeeper for master election, use the Zookeeper address here (i.e.,
+      zk://zk.apache.org:2181/hadoop/mesos).
+    </description>
+  </property>
+  <property>
     <name>bsp.local.tasks.maximum</name>
     <value>10</value>
     <description>Number of tasks that run in parallel when in local mode.</description>

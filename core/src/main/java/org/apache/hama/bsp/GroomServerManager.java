@@ -74,6 +74,21 @@ interface GroomServerManager {
   void removeJobInProgressListener(JobInProgressListener listener);
 
   /**
+   * Registers a GroomStatusListener to the GroomServerManager.
+   * 
+   * @param the JobInProgressListener listener to be added.
+   */
+  void addGroomStatusListener(GroomStatusListener listener);
+  
+  /**
+   * Unregisters a GroomStatusListener with the GroomServerManager
+   *
+   * @param the JobInProgressListener to be removed.
+   */
+  void removeGroomStatusListener(GroomStatusListener listener);
+  
+  
+  /**
    * Move a specific groom server to black list, marking that groom as dead.
    * 
    * @param host to be blocked.

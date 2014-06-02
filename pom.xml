@@ -312,6 +312,7 @@
     <module>graph</module>
     <module>examples</module>
     <module>ml</module>
+    <module>mesos</module>
     <module>dist</module>
   </modules>
 

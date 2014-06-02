@@ -61,6 +61,8 @@ public interface Constants {
 
   public static final String MAX_TASKS_PER_GROOM = "bsp.tasks.maximum";
 
+  public static final String MAX_TASKS = "bsp.tasks.maximum.total";
+
   public static final String MAX_TASK_ATTEMPTS = "bsp.tasks.max.attempts";
 
   public static final String MAX_TASKS_PER_JOB = "bsp.max.tasks.per.job";
@@ -94,6 +96,11 @@ public interface Constants {
   // By default checkpointing when enabled would checkpoint on every superstep
   public static final short DEFAULT_CHECKPOINT_INTERVAL = 1;
 
+  // /////////////////////////////////////////////
+  // Executor related parameters.
+  // /////////////////////////////////////////////
+  public static final String TASK_EXECUTOR_CLASS = "bsp.master.TaskWorkerManager.class";
+  
   // /////////////////////////////////////////////
   // Job configuration related parameters.
   // /////////////////////////////////////////////
