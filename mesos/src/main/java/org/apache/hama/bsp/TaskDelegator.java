@@ -18,8 +18,9 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,13 +36,14 @@ import org.apache.mesos.SchedulerDriver;
 public class TaskDelegator implements GroomStatusListener {
   public static final Log LOG = LogFactory.getLog(MesosScheduler.class);
 
-  private Set<TaskInProgress> executingTasks;
+  private Set<TaskInProgress> recoveryTasks;
 
-  
   /**
    * Map to hold assignments from groomServerNames to TasksInProgress
    */
   private MultiValueMap assignments = new MultiValueMap();
+
+  private MultiValueMap jobAssignments = new MultiValueMap();
 
   private AtomicReference<GroomServerManager> groomServerManager;
 
@@ -56,10 +58,12 @@ public class TaskDelegator implements GroomStatusListener {
   private SchedulerDriver driver;
 
   public TaskDelegator(AtomicReference<GroomServerManager> groomServerManager,
-      SchedulerDriver driver, Set<TaskInProgress> executingTasks) {
+      SchedulerDriver driver, Set<TaskInProgress> recoveryTasks) {
     this.groomServerManager = groomServerManager;
+    groomServerManager.get().addJobInProgressListener(
+        new TaskDelegatorJobListener());
     this.driver = driver;
-    this.executingTasks = executingTasks;
+    this.recoveryTasks = recoveryTasks;
   }
 
   @Override
@@ -82,10 +86,8 @@ public class TaskDelegator implements GroomStatusListener {
   /**
    * Add a task for execution when the groom server becomes available
    * 
-   * @param tip
-   *          The TaskInProgress to execute
-   * @param hostName
-   *          The hostname where the resource reservation was made
+   * @param tip The TaskInProgress to execute
+   * @param hostName The hostname where the resource reservation was made
    */
   public void addTask(TaskInProgress tip, Protos.TaskID taskId,
       String hostName, Integer port) {
@@ -99,16 +101,37 @@ public class TaskDelegator implements GroomStatusListener {
       execute(tip, groomServers.get(key));
     } else {
       assignments.put(key, tip);
+      jobAssignments.put(tip.getJob(), new Pair<Object, Object>(key, tip));
     }
   }
 
   private void execute(TaskInProgress tip, GroomServerStatus status) {
     Task task = tip.constructTask(status);
 
+    GroomServerAction[] actions;
     GroomProtocol worker = groomServerManager.get().findGroomServer(status);
 
-    GroomServerAction[] actions = new GroomServerAction[1];
-    actions[0] = new LaunchTaskAction(task);
+    if (!recoveryTasks.contains(tip)) {
+      actions = new GroomServerAction[1];
+      actions[0] = new LaunchTaskAction(task);
+    } else {
+      LOG.trace("Executing a recovery task");
+      recoveryTasks.remove(tip);
+      HashMap<String, GroomServerStatus> groomStatuses = new HashMap<String, GroomServerStatus>(
+          1);
+      groomStatuses.put(status.hostName, status);
+      Map<GroomServerStatus, List<GroomServerAction>> actionMap = new HashMap<GroomServerStatus, List<GroomServerAction>>(
+          2 * groomStatuses.size());
+      try {
+        tip.getJob().recoverTasks(groomStatuses, actionMap);
+      } catch (IOException e) {
+        LOG.warn("Task recovery failed", e);
+      }
+
+      List<GroomServerAction> actionList = actionMap.get(status);
+      actions = new GroomServerAction[actionList.size()];
+      actionList.toArray(actions);
+    }
     Directive d1 = new DispatchTasksDirective(actions);
     try {
       worker.dispatch(d1);
@@ -125,10 +148,41 @@ public class TaskDelegator implements GroomStatusListener {
             status.rpcServer).getPort());
     groomServers.put(key, status);
     assignments.remove(key, task);
-    
+    jobAssignments.remove(task.getJob(), new Pair<Object, Object>(key, task));
+
     if (assignments.getCollection(key) == null) {
       groomServers.remove(key);
       driver.killTask(groomTaskIDs.get(key));
+    }
+  }
+
+  private class TaskDelegatorJobListener extends JobInProgressListener {
+
+    @Override
+    public void jobAdded(JobInProgress job) throws IOException {
+
+    }
+
+    @Override
+    public void jobRemoved(JobInProgress job) throws IOException {
+      @SuppressWarnings("unchecked")
+      Collection<Pair<Object, Object>> remainingTasks = jobAssignments
+          .getCollection(job);
+      if (remainingTasks != null) {
+        for (Pair<Object, Object> taskToRemove : remainingTasks) {
+          assignments.remove(taskToRemove.getKey(), taskToRemove.getValue());
+          if (assignments.getCollection(taskToRemove.getKey()) == null) {
+            groomServers.remove(taskToRemove.getKey());
+            driver.killTask(groomTaskIDs.get(taskToRemove.getKey()));
+          }
+        }
+        jobAssignments.remove(job);
+      }
+    }
+
+    @Override
+    public void recoverTaskInJob(JobInProgress job) throws IOException {
+
     }
   }
 }

@@ -200,6 +200,13 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               } else {
                 jip.status.setRunState(JobStatus.FAILED);
                 jip.failedTask(tip, ts);
+                for (JobInProgressListener listener : jobInProgressListeners) {
+                  try {
+                    listener.jobRemoved(jip);
+                  } catch (IOException ioe) {
+                    LOG.error("Fail to alter scheduler a job is moved.", ioe);
+                  }
+                }
               }
             }
             if (jip.getStatus().getRunState() == JobStatus.SUCCEEDED) {
@@ -223,6 +230,14 @@ public class BSPMaster implements JobSubmissionProtocol, MasterProtocol,
               } catch (IOException ioe) {
                 throw new DirectiveException("Error when dispatching kill task"
                     + " action.", ioe);
+              }
+              
+              for (JobInProgressListener listener : jobInProgressListeners) {
+                try {
+                  listener.jobRemoved(jip);
+                } catch (IOException ioe) {
+                  LOG.error("Fail to alter scheduler a job is moved.", ioe);
+                }
               }
             }
           }

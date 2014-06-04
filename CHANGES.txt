@@ -17,6 +17,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-909: Improve Mesos Scheduler's Fault Tolerance (Jeff Fenchel via edwardyoon)
    HAMA-823: Remove javadoc warnings (Victor Lee via edwardyoon)  
    HAMA-886: Refactoring core.bundle package (edwardyoon)
    HAMA-899: Add getAdjacentPeerNames() that returns the names of locally adjacent peers (edwardyoon)

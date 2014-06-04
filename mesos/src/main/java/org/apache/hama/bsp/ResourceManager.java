@@ -23,12 +23,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,7 +38,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hama.bsp.TaskWorkerManager.TaskWorker;
-import org.apache.hama.bsp.message.io.SyncReadByteBufferInputStream;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.Protos.CommandInfo;
@@ -59,10 +60,12 @@ public class ResourceManager {
   private Configuration conf;
   private static long launchedTasks = 0;
 
-  private Set<JobInProgress> executing = new HashSet<JobInProgress>();
-  private Set<TaskInProgress> executingTasks = new HashSet<TaskInProgress>();
+  private Set<JobInProgress> executingJobs =  Collections.synchronizedSet(new HashSet<JobInProgress>());
+  private Set<TaskInProgress> executingTasks = Collections.synchronizedSet(new HashSet<TaskInProgress>());
   private Map<String, java.util.Queue<TaskInProgress>> tasksToRunByGroom;
   private Set<TaskInProgress> tasksToRun;
+
+  private Set<TaskInProgress> recoveryTasks = Collections.synchronizedSet(new HashSet<TaskInProgress>());
 
   private long slotMemory;
   // Overhead requirements for the container groom server
@@ -75,44 +78,40 @@ public class ResourceManager {
   /**
    * Constructor for the mesos resource manager
    * 
-   * @param conf
-   *          The configuration options for hama
-   * @param serverManager
-   *          A reference to the groom server manager
-   * @param driver
-   *          The mesos driver. This is required to terminate tasks
+   * @param conf The configuration options for hama
+   * @param serverManager A reference to the groom server manager
+   * @param driver The mesos driver. This is required to terminate tasks
    */
   public ResourceManager(Configuration conf,
       AtomicReference<GroomServerManager> serverManager, SchedulerDriver driver) {
-    tasksToRunByGroom = new HashMap<String, java.util.Queue<TaskInProgress>>();
-    tasksToRunByGroom.put(anyGroomServer, new LinkedList<TaskInProgress>());
+    tasksToRunByGroom = new ConcurrentHashMap<String, java.util.Queue<TaskInProgress>>();
+    tasksToRunByGroom.put(anyGroomServer, new ConcurrentLinkedQueue<TaskInProgress>());
     tasksToRun = new HashSet<TaskInProgress>();
 
     slotMemory = parseMemory(conf);
 
-    taskDelegator = new TaskDelegator(serverManager, driver, executingTasks);
+    taskDelegator = new TaskDelegator(serverManager, driver, recoveryTasks);
     serverManager.get().addGroomStatusListener(taskDelegator);
     this.conf = conf;
-    
+
     groomCpus = conf.getInt("hama.mesos.groom.cpu", 0);
-    groomMem = conf.getInt("hama.mesos.groom.mem", 200);;
-    groomDisk = conf.getInt("hama.mesos.groom.disk", 0);;
+    groomMem = conf.getInt("hama.mesos.groom.mem", 200);
+    groomDisk = conf.getInt("hama.mesos.groom.disk", 0);
   }
 
   /**
    * Handle a resource offer by the mesos framework
    * 
-   * @param schedulerDriver
-   *          The mesos scheduler driver
-   * @param offers
-   *          A list of offers from mesos
+   * @param schedulerDriver The mesos scheduler driver
+   * @param offers A list of offers from mesos
    */
   public void resourceOffers(SchedulerDriver schedulerDriver, List<Offer> offers) {
 
     if (tasksToRun.isEmpty()) {
-      //there is no need to track executing tasks if everything is started
+      // there is no need to track executing tasks if everything is
+      // started
       clearQueues();
-      
+
       for (Offer offer : offers) {
         schedulerDriver.declineOffer(offer.getId());
       }
@@ -124,14 +123,14 @@ public class ResourceManager {
   }
 
   private void clearQueues() {
-	synchronized (tasksToRunByGroom) {
-	  for ( java.util.Queue<TaskInProgress> queue : tasksToRunByGroom.values()) {
-		  queue.clear();
-	  }
-	  executingTasks.clear();
-	}
+    synchronized (tasksToRunByGroom) {
+      for (java.util.Queue<TaskInProgress> queue : tasksToRunByGroom.values()) {
+        queue.clear();
+      }
+      executingTasks.clear();
+    }
   }
-  
+
   private void useOffer(SchedulerDriver schedulerDriver, Offer offer) {
     log.debug("Received offer From: " + offer.getHostname());
 
@@ -189,31 +188,31 @@ public class ResourceManager {
     @Override
     public Boolean call() throws Exception {
       log.debug("Task Worker called: " + jip.tasks.length);
-      if (!jip.isRecoveryPending()) {
-        for (TaskInProgress tip : jip.tasks) {
-          String[] grooms = jip.getPreferredGrooms(tip, null, null);
 
-          if (grooms == null) {
-            grooms = new String[] { anyGroomServer };
-          }
-          log.info("Prefered Groom for tip " + tip.idWithinJob() + ": "
-              + grooms[0]);
-      	  synchronized (tasksToRunByGroom) {
-            for (String groom : grooms) {
-              if (!tasksToRunByGroom.containsKey(groom)) {
-                tasksToRunByGroom.put(groom, new LinkedList<TaskInProgress>());
-                log.info("Received request for groom: " + groom);
-              }
-              tasksToRunByGroom.get(groom).add(tip);
-            }
-            tasksToRun.add(tip);
-      	  }
+      for (TaskInProgress tip : jip.tasks) {
+        if (jip.isRecoveryPending()) {
+          recoveryTasks.add(tip);
         }
-      } else {
-    	  throw new UnsupportedOperationException("This feature is not yet implemented");
-        //TODO: Handle task recovery
+        String[] grooms = jip.getPreferredGrooms(tip, null, null);
+
+        if (grooms == null) {
+          grooms = new String[] { anyGroomServer };
+        }
+        log.info("Prefered Groom for tip " + tip.idWithinJob() + ": "
+            + grooms[0]);
+        synchronized (tasksToRunByGroom) {
+          for (String groom : grooms) {
+            if (!tasksToRunByGroom.containsKey(groom)) {
+              tasksToRunByGroom.put(groom, new ConcurrentLinkedQueue<TaskInProgress>());
+              log.info("Received request for groom: " + groom);
+            }
+            tasksToRunByGroom.get(groom).add(tip);
+          }
+          tasksToRun.add(tip);
+        }
       }
-      executing.add(jip);
+
+      executingJobs.add(jip);
       return true;
     }
   }
@@ -421,8 +420,7 @@ public class ResourceManager {
   /**
    * Get the amount of memory requested in MiB
    * 
-   * @param javaOpts
-   *          java options
+   * @param javaOpts java options
    * @return mesos formated memory argument
    */
   private static long parseMemory(Configuration conf) {
@@ -439,7 +437,8 @@ public class ResourceManager {
         value = value * 1024;
       }
 
-      // remove memory request from the child java opts so it may be added later
+      // remove memory request from the child java opts so it may be added
+      // later
       conf.set("bsp.child.java.opts", memMatcher.replaceAll(""));
 
       return value;
