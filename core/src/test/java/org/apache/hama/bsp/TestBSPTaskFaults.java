@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -414,7 +415,6 @@ public class TestBSPTaskFaults extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
-
     super.setUp();
     conf = new HamaConfiguration();
 
@@ -423,22 +423,25 @@ public class TestBSPTaskFaults extends TestCase {
     conf.setClass(SyncServiceFactory.SYNC_PEER_CLASS,
         LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 
-    int testNumber = incrementTestNumber();
-    InetSocketAddress inetAddress = new InetSocketAddress(
-        BSPNetUtils.getFreePort(34321) + testNumber);
-    groom = new MinimalGroomServer(conf);
-    workerServer = RPC.getServer(groom, inetAddress.getHostName(),
-        inetAddress.getPort(), conf);
-    workerServer.start();
+    int port = BSPNetUtils.getFreePort(34321 + incrementTestNumber());
+    try {
+      InetSocketAddress inetAddress = new InetSocketAddress(port);
+      groom = new MinimalGroomServer(conf);
+      workerServer = RPC.getServer(groom, inetAddress.getHostName(),
+          inetAddress.getPort(), conf);
+      workerServer.start();
 
-    LOG.info("Started RPC server");
-    conf.setInt("bsp.groom.rpc.port", inetAddress.getPort());
+      LOG.info("Started RPC server");
+      conf.setInt("bsp.groom.rpc.port", inetAddress.getPort());
 
-    umbilical = (BSPPeerProtocol) RPC.getProxy(BSPPeerProtocol.class,
-        HamaRPCProtocolVersion.versionID, inetAddress, conf);
-    LOG.info("Started the proxy connections");
+      umbilical = (BSPPeerProtocol) RPC.getProxy(BSPPeerProtocol.class,
+          HamaRPCProtocolVersion.versionID, inetAddress, conf);
+      LOG.info("Started the proxy connections");
 
-    this.testBSPTaskService = Executors.newScheduledThreadPool(1);
+      this.testBSPTaskService = Executors.newScheduledThreadPool(1);
+    } catch (BindException be) {
+      LOG.info(be);
+    }
   }
 
   private int getExpectedPingCounts() {
