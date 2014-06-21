@@ -17,8 +17,6 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.IOException;
-
 /**
  * A listener for updates to {@link GroomServerStatus} by groom servers. 
  */
@@ -30,7 +28,6 @@ public interface GroomStatusListener {
    * @param status The status of the new groom server
    */
   public abstract void groomServerRegistered(GroomServerStatus status);
-
   
   public abstract void taskComplete(GroomServerStatus status, TaskInProgress task);
 }
