@@ -399,7 +399,7 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
               message.readFields(in);
               bundle.addMessage(message);
             }
-            messenger.loopBackMessages(bundle);
+            messenger.loopBackBundle(bundle);
           } catch (EOFException e) {
             LOG.error("Error recovering from checkpointing", e);
             throw new IOException(e);

@@ -131,7 +131,7 @@ public class TestCheckpoint extends TestCase {
     }
 
     @Override
-    public void loopBackMessages(BSPMessageBundle<Text> bundle) {
+    public void loopBackBundle(BSPMessageBundle<Text> bundle) {
       this.loopbackBundle = (BSPMessageBundle<Text>) bundle;
     }
 

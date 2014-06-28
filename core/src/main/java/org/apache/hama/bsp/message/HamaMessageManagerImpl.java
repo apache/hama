@@ -151,8 +151,8 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
   }
 
   @Override
-  public final void put(BSPMessageBundle<M> messages) throws IOException {
-    loopBackMessages(messages);
+  public final void put(BSPMessageBundle<M> bundle) throws IOException {
+    loopBackBundle(bundle);
   }
 
   @Override
