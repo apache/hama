@@ -77,6 +77,12 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
+          <td align="center">jfenc91</td>
+          <td align="center">Jeffrey Ryan Fenchel</td>
+          <td align="center">NMT/ICASA</td>
+          <td align="center">committer</td>
+        </tr>
+       <tr valign="top">
           <td align="center">kennethxian</td>
           <td align="center">MaoYuan Xian</td>
           <td align="center">Sogou</td>
