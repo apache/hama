@@ -210,15 +210,16 @@ if $cygwin; then
   JAVA_LIBRARY_PATH=`cygpath -p "$JAVA_LIBRARY_PATH"`
 fi
 
-HAMA_OPTS=""$HAMA_OPTS"-Dhama.log.dir=\"${HAMA_LOG_DIR}\""
-HAMA_OPTS=""$HAMA_OPTS" -Dhama.log.file=$HAMA_LOGFILE"
-HAMA_OPTS=""$HAMA_OPTS" -Dhama.home.dir=\"$HAMA_HOME\""
-HAMA_OPTS=""$HAMA_OPTS" -Dhama.id.str=$HAMA_IDENT_STRING"
-HAMA_OPTS=""$HAMA_OPTS" -Dhama.root.logger=${HAMA_ROOT_LOGGER:-INFO,console}"
+HAMA_OPTS="$HAMA_OPTS -Dhama.log.dir=$HAMA_LOG_DIR"
+HAMA_OPTS="$HAMA_OPTS -Dhama.log.file=$HAMA_LOGFILE"
+HAMA_OPTS="$HAMA_OPTS -Dhama.home.dir=$HAMA_HOME"
+HAMA_OPTS="$HAMA_OPTS -Dhama.id.str=$HAMA_IDENT_STRING"
+HAMA_OPTS="$HAMA_OPTS -Dhama.root.logger=${HAMA_ROOT_LOGGER:-INFO,console}"
+
 if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
-  HAMA_OPTS=""$HAMA_OPTS" -Djava.library.path=$JAVA_LIBRARY_PATH"
+  HAMA_OPTS="$HAMA_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi
-HAMA_OPTS=""$HAMA_OPTS" -Dhama.policy.file=$HAMA_POLICYFILE"
+HAMA_OPTS="$HAMA_OPTS -Dhama.policy.file=$HAMA_POLICYFILE"
 
 # run it
-exec "$JAVA" "$JAVA_HEAP_MAX" "$HAMA_OPTS" -classpath "$CLASSPATH" $CLASS "$@"
+exec "$JAVA" $JAVA_HEAP_MAX $HAMA_OPTS -classpath "$CLASSPATH" $CLASS "$@"
