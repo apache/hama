@@ -219,7 +219,7 @@ public class ResourceManager {
 
   private void launchTasks(SchedulerDriver schedulerDriver,
       java.util.Queue<TaskInProgress> tips, ResourceOffer offer) {
-    TaskID taskId = TaskID.newBuilder().setValue("Task " + launchedTasks++)
+    TaskID taskId = TaskID.newBuilder().setValue("Task_" + launchedTasks++)
         .build();
 
     List<Long> ports = claimPorts(offer.ports, 2);
