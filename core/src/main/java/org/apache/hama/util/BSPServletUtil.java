@@ -61,7 +61,7 @@ public class BSPServletUtil extends ServletUtil {
     if (jobs.length > 0) {
       sb.append("<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\">\n");
       sb.append("<tr><th>Jobid</th>" + "<th>User</th>" + "<th>Name</th>"
-          + "<th>SuperSteps</th>" + "<th>Tasks</th>" + "<th>Starttime</th>"
+          + "<th>SuperSteps</th>" + "<th>Tasks</th>" + "<th>Starttime</th>" + "<th>Job Logs</th>"
           + "</tr>\n");
       for (JobStatus status : jobs) {
         sb.append("<tr><td><a href=\"bspjob.jsp?jobid=")
@@ -77,6 +77,10 @@ public class BSPServletUtil extends ServletUtil {
         sb.append(status.getNumOfTasks());
         sb.append("</td><td>");
         sb.append(new Date(status.getStartTime()));
+        sb.append("</td><td>");
+        sb.append("<a href=\"/logView?dir=tasklogs/");
+        sb.append(status.getJobID());
+        sb.append("\">view</a>");
         sb.append("</td></tr>\n");
       }
       sb.append("</table>");
@@ -90,13 +94,12 @@ public class BSPServletUtil extends ServletUtil {
   public static String generateGroomsTable(String type, ClusterStatus status,
       BSPMaster master) throws IOException {
     StringBuilder sb = new StringBuilder();
-    sb.append("<center>\n");
-    sb.append("<table border=\"2\" cellpadding=\"5\" cellspacing=\"2\">\n");
-    sb.append("<tr><td align=\"center\" colspan=\"6\"><b>Groom Servers</b></td></tr>\n");
-    sb.append("<tr><td><b>Name</b></td>"
-        + "<td><b>Host</b></td>"
-        + "<td><b># maximum tasks</b></td><td><b># current running tasks</b></td>"
-        + "<td><b># current failures</b></td>" + "<td><b>Last seen</b></td>"
+    sb.append("<table border=\"1\" cellpadding=\"5\" cellspacing=\"2\">\n");
+    sb.append("<tr><th align=\"center\" colspan=\"6\"><b>Groom Servers</b></th></tr>\n");
+    sb.append("<tr><th><b>Name</b></th>"
+        + "<th><b>Host</b></th>"
+        + "<th><b># maximum tasks</b></th><th><b># current running tasks</b></th>"
+        + "<th><b># current failures</b></th>" + "<th><b>Last seen</b></th>"
         + "</tr>\n");
     for (Entry<String, GroomServerStatus> entry : status
         .getActiveGroomServerStatus().entrySet()) {
@@ -112,7 +115,6 @@ public class BSPServletUtil extends ServletUtil {
       sb.append("</tr>\n");
     }
     sb.append("</table>\n");
-    sb.append("</center>\n");
     return sb.toString();
   }
 

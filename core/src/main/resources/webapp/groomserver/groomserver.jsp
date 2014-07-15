@@ -33,14 +33,17 @@
 %>
 
 <html>
-
+<head>
 <title><%= groomName %> - Server Status</title>
+<link rel="stylesheet" href="/static/hama.css" />
+</head>
 <body>
-<h2><%= groomName %></h2>
+<h1><%= groomName %></h1>
 <hr>
 <h2>Running tasks</h2>
-<table border=2 cellpadding="5" cellspacing="2">
-<tr><td align="center">Task Attempts</td><td>Status</td>
+<div class="block-list">
+<table border=1 cellpadding="5" cellspacing="2">
+<tr><th align="center">Task Attempts</th><th>Status</th>
     </tr>
   <%
      Iterator itr = groom.getRunningTaskStatuses().iterator();
@@ -52,9 +55,10 @@
      }
   %>
 </table>
+</div>
 <hr>
 <h2>Local Logs</h2>
-<a href="/logs/">Log</a> directory
+<a href="/logView">Log</a> directory
 
 <%
   out.println(BSPServletUtil.htmlFooter());

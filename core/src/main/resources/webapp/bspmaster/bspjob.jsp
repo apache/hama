@@ -28,15 +28,18 @@
 %>
 
 <html>
-
+<head>
 <title>Hama BSP Job Summary</title>
-
+<link rel="stylesheet" href="/static/hama.css" />
+</head>
 <body>
   <h1><%=status.getName()%></h1>
-
-  <b>State: </b>  <%=state.toString() %> 
-  
-  <br/> <br/>
+  <div class="block-detail">
+    <ul>
+      <li><span>State : </span><%=state.toString() %></li>
+  </div>
+  <br/>
+  <div class="block-list">
   <table border="1" cellpadding="6" cellspacing="0">
     <tr>
       <th>Name</th>
@@ -45,6 +48,7 @@
       <th>Tasks</th>
       <th>StartTime</th>
       <th>FinishTime</th>
+      <th>Job Logs</th>      
     </tr>
 
     <tr>
@@ -56,11 +60,13 @@
       <td>
         <% if(status.getFinishTime() != 0L) {out.write(new Date(status.getFinishTime()).toString());} %>
       </td>
+      <td><a href="/logView?dir=tasklogs/<%=idString%>">view</a></td>      
     </tr>
 
   </table>
-  
-   <br/> <br/>
+  </div>
+  <br/>
+  <div class="block-list">  
   <table border="1" cellpadding="6" cellspacing="0">
     <tr>
       <th><br/></th>
@@ -101,9 +107,13 @@
     }
     %>
   </table>
-
+  </div>
+  <p/>
   <hr>
-  <a href="bspmaster.jsp">Back to BSPMaster</a>
+    <h2>Job Logs</h2>
+    <a href="/logView?dir=tasklogs/<%=idString%>">Log</a> directory
+  <hr>
+  <a href="bspmaster.jsp"><i>Back to BSPMaster</i></a>
 
   <%
     out.println(BSPServletUtil.htmlFooter());

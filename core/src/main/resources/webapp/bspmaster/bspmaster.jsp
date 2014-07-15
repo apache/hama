@@ -35,9 +35,9 @@
         .format(((double) (status.getMaxTasks()) / status
             .getGroomServers())) : "-";
     out.print("<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\">\n"
-        + "<tr>" + "<th>Groom Servers</th><th>BSP Task Capacity</th>"
+        + "<tr>" + "<th><a href=\"machines.jsp?type=active\">Groom Servers</a></th><th>BSP Task Capacity</th>"
         + "<th>Avg. Tasks/Node</th>"
-        + "<th>Blacklisted Nodes</th></tr>\n");
+        + "<th><a href=\"machines.jsp?type=blacklisted\">Blacklisted Nodes</a></th></tr>\n");
     out.print("<tr><td><a href=\"machines.jsp?type=active\">"
         + status.getActiveGroomNames().size() + "</a></td><td>"
         + status.getMaxTasks() + "</td><td>" + tasksPerNode
@@ -51,38 +51,47 @@
 <html>
 <head>
 <title><%=trackerName%> Hama BSP Administration</title>
-<!--  <link rel="stylesheet" type="text/css" href="/static/hadoop.css">-->
+<link rel="stylesheet" href="static/hama.css" />
 </head>
 <body>
 
 <h1><%=trackerName%> Hama BSP Administration</h1>
-
-<b>State:</b>
-<%=status.getBSPMasterState()%><br>
-<b>Started:</b>
-<%=new Date(tracker.getStartTime())%><br>
-<b>Version:</b>
-<%=VersionInfo.getVersion()%><br>
-<b>Compiled By:</b>
-<%=VersionInfo.getUser()%><br>
-<b>Compiled At Time:</b>
-<%=VersionInfo.getDate()%><br>
-<b>Identifier:</b>
-<%=tracker.getBSPMasterIdentifier()%><br>
+<hr>
+<div class="block-detail">
+<ul>
+    <li><span>State : </span><%=status.getBSPMasterState()%></li>
+    <li><span>Started : </span> <%=new Date(tracker.getStartTime())%></li>
+    <li><span>Version : </span> <%=VersionInfo.getVersion()%></li>
+    <li><span>Compiled By : </span> <%=VersionInfo.getUser()%></li>     
+    <li><span>Compiled At Time : </span> <%=VersionInfo.getDate()%></li>         
+    <li><span>Identifier : </span> <%=tracker.getBSPMasterIdentifier()%></li>  
+</ul>
+</div>
 
 <hr>
+<h2 id="cluster_summary">Cluster Summary</h2>
+<div class="block-list">
 <%
   generateSummaryTable(out, status, tracker);
 %>
+</div>
 <hr />
 
 <h2 id="running_jobs">Running Jobs</h2>
+<div class="block-list">
 <%=BSPServletUtil.generateJobTable("Running", runningJobs,
           30, 0)%>
+</div>
 <hr> 
 <h2 id="running_jobs">All Jobs History</h2>
+<div class="block-list">
 <%=BSPServletUtil.generateJobTable("All", allJobs,
           30, 0)%>
+</div>
+<p/>
+<hr>
+<h2>Local Logs</h2>
+<a href="/logView">Log</a> directory
 <%
   out.println(BSPServletUtil.htmlFooter());
 %>

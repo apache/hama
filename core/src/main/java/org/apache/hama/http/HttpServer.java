@@ -38,6 +38,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.log.LogLevel;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.bsp.BSPMaster;
+import org.apache.hama.manager.LogView;
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
@@ -65,7 +66,8 @@ public class HttpServer {
   public static final Log LOG = LogFactory.getLog(HttpServer.class);
 
   static final String FILTER_INITIALIZER_PROPERTY = "hama.http.filter.initializers";
-
+  public static final String CONF_CONTEXT_ATTRIBUTE = "hama.conf";
+  
   protected final Server webServer;
   protected final Connector listener;
   protected final WebAppContext webAppContext;
@@ -117,6 +119,7 @@ public class HttpServer {
       warPath = warPath + "/";
     }
     webAppContext.setWar(warPath);
+    webAppContext.getServletContext().setAttribute(CONF_CONTEXT_ATTRIBUTE, conf);    
     webServer.addHandler(webAppContext);
 
     addDefaultApps(contexts, appDir);
@@ -158,6 +161,11 @@ public class HttpServer {
     staticContext.setResourceBase(appDir + "/static");
     staticContext.addServlet(DefaultServlet.class, "/*");
     defaultContexts.put(staticContext, true);
+    // set up the context for "/commons/*"
+    Context commonsContext = new Context(parent, "/commons");
+    commonsContext.setResourceBase(appDir + "/commons");
+    commonsContext.addServlet(DefaultServlet.class, "/*");
+    defaultContexts.put(commonsContext, true);    
   }
 
   /**
@@ -166,7 +174,8 @@ public class HttpServer {
   protected void addDefaultServlets() {
     // set up default servlets
     addServlet("stacks", "/stacks", StackServlet.class);
-    addServlet("logLevel", "/logLevel", LogLevel.Servlet.class);
+    addServlet("logLevel", "/logLevel", LogLevel.Servlet.class);   
+    addServlet("logView", "/logView", LogView.Servlet.class);    
   }
 
   public void addContext(Context ctxt, boolean isFiltered) throws IOException {

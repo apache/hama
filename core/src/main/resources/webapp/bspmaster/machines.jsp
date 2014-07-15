@@ -28,14 +28,17 @@
 %>
 
 <html>
-
+<head>
 <title><%=trackerName%> Hama Machine List</title>
-
+<link rel="stylesheet" href="/static/hama.css" />
+</head>
 <body>
 <h1><a href="bspmaster.jsp"><%=trackerName%></a> Hama Machine List</h1>
-
+<hr/>
 <h2>Grooms</h2>
+<div class="block-list">
 <%
   out.println(BSPServletUtil.generateGroomsTable(type, status, tracker));
   out.println(BSPServletUtil.htmlFooter());
 %>
+</div>
