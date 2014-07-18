@@ -214,8 +214,9 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    int numMessages = in.readInt();
-    if (numMessages > 0) {
+    this.bundleSize = in.readInt();
+    
+    if (this.bundleSize > 0) {
       className = in.readUTF();
       int bytesLength = in.readInt();
       byte[] temp = new byte[bytesLength];
