@@ -66,7 +66,7 @@ public class LogView {
       Arrays.sort(files, new Comparator<File>() {
         @Override
         public int compare(File file1, File file2) {
-          return Long.compare(file2.lastModified(), file1.lastModified());
+          return (int)(file2.lastModified() - file1.lastModified());
         }
       });
 
