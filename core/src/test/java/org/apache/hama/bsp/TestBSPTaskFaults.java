@@ -70,7 +70,7 @@ public class TestBSPTaskFaults extends TestCase {
   private volatile BSPPeerProtocol umbilical;
   private Server workerServer;
   private TaskAttemptID taskid = new TaskAttemptID(new TaskID(new BSPJobID(
-      "job_201110302255", 1), 1), 1);
+      "job_201410302255", 1), 1), 1);
 
   public volatile HamaConfiguration conf;
 
@@ -423,7 +423,7 @@ public class TestBSPTaskFaults extends TestCase {
     conf.setClass(SyncServiceFactory.SYNC_PEER_CLASS,
         LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 
-    int port = BSPNetUtils.getFreePort(34321 + incrementTestNumber());
+    int port = BSPNetUtils.getFreePort(4321 + incrementTestNumber());
     try {
       InetSocketAddress inetAddress = new InetSocketAddress(port);
       groom = new MinimalGroomServer(conf);
