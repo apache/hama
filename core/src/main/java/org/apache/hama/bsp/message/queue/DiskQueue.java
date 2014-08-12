@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
@@ -45,7 +46,7 @@ import org.apache.hama.bsp.TaskAttemptID;
  * configuration. <br/>
  * <b>It is experimental to use.</b>
  */
-public final class DiskQueue<M extends Writable> extends DefaultMessageQueue<M> {
+public final class DiskQueue<M extends Writable> implements MessageQueue<M> {
 
   public static final String DISK_QUEUE_PATH_KEY = "bsp.disk.queue.dir";
 
@@ -170,7 +171,14 @@ public final class DiskQueue<M extends Writable> extends DefaultMessageQueue<M> 
   }
 
   @Override
+  public void add(BSPMessageBundle<M> bundle){
+    addAll(bundle);
+  }
+
+  @Override
   public final void addAll(Iterable<M> col) {
+    // TODO Write bundle object directly
+
     for (M item : col) {
       add(item);
     }
@@ -313,4 +321,5 @@ public final class DiskQueue<M extends Writable> extends DefaultMessageQueue<M> 
   public boolean isMemoryBasedQueue() {
     return false;
   }
+
 }

@@ -19,17 +19,23 @@ package org.apache.hama.bsp.message.queue;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
  * Simple queue interface.
  */
-public interface MessageQueue<M> extends Iterable<M>, Configurable {
+public interface MessageQueue<M extends Writable> extends Iterable<M>,
+    Configurable {
 
   public static final String PERSISTENT_QUEUE = "hama.queue.behaviour.persistent";
 
   /**
    * Used to initialize the queue.
+   * 
+   * @param conf
+   * @param id
    */
   public void init(Configuration conf, TaskAttemptID id);
 
@@ -50,18 +56,31 @@ public interface MessageQueue<M> extends Iterable<M>, Configurable {
 
   /**
    * Adds a whole Java Collection to the implementing queue.
+   * 
+   * @param col
    */
   public void addAll(Iterable<M> col);
 
   /**
    * Adds the other queue to this queue.
+   * 
+   * @param otherqueue
    */
   public void addAll(MessageQueue<M> otherqueue);
 
   /**
    * Adds a single item to the implementing queue.
+   * 
+   * @param item
    */
   public void add(M item);
+
+  /**
+   * Adds a bundle to the queue.
+   * 
+   * @param bundle
+   */
+  public void add(BSPMessageBundle<M> bundle);
 
   /**
    * Clears all entries in the given queue.
@@ -85,7 +104,10 @@ public interface MessageQueue<M> extends Iterable<M>, Configurable {
    * @return true if the messages in the queue are serialized to byte buffers.
    */
   public boolean isMessageSerialized();
-  
+
+  /**
+   * @return true if the queue is memory resident.
+   */
   public boolean isMemoryBasedQueue();
 
 }

@@ -49,7 +49,6 @@ public class TestHamaMessageManager extends TestCase {
     HamaConfiguration conf = new HamaConfiguration();
     conf.setClass(MessageManager.RECEIVE_QUEUE_TYPE_CLASS, MemoryQueue.class,
         MessageQueue.class);
-    conf.set(DiskQueue.DISK_QUEUE_PATH_KEY, TMP_OUTPUT_PATH);
     messagingInternal(conf);
   }
 
@@ -60,7 +59,7 @@ public class TestHamaMessageManager extends TestCase {
         MessageQueue.class);
     messagingInternal(conf);
   }
-
+  
   private static void messagingInternal(HamaConfiguration conf)
       throws Exception {
     conf.set(MessageManagerFactory.MESSAGE_MANAGER_CLASS,
@@ -102,10 +101,10 @@ public class TestHamaMessageManager extends TestCase {
     }
 
     messageManager.transfer(peer, bundle);
-
+    
     messageManager.clearOutgoingMessages();
 
-    assertTrue(messageManager.getNumCurrentMessages() == 1);
+    assertEquals(messageManager.getNumCurrentMessages(), 1);
     IntWritable currentMessage = messageManager.getCurrentMessage();
 
     assertEquals(currentMessage.get(), 1337);

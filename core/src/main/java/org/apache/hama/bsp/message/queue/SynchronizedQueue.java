@@ -17,11 +17,13 @@
  */
 package org.apache.hama.bsp.message.queue;
 
+import org.apache.hadoop.io.Writable;
+
 /**
  * Synchronized Queue interface. Can be used to implement better synchronized
  * datastructures.
  */
-public interface SynchronizedQueue<T> extends MessageQueue<T> {
+public interface SynchronizedQueue<T extends Writable> extends MessageQueue<T> {
 
   public abstract MessageQueue<T> getMessageQueue();
 

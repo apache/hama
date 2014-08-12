@@ -20,22 +20,24 @@ package org.apache.hama.bsp.message.queue;
 import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
  * A global mutex based synchronized queue.
  */
-public final class SingleLockQueue<T> implements SynchronizedQueue<T> {
+public final class SingleLockQueue<T extends Writable> implements SynchronizedQueue<T> {
 
   private final MessageQueue<T> queue;
   private final Object mutex;
 
-  private SingleLockQueue(MessageQueue<T> queue) {
+  public SingleLockQueue(MessageQueue<T> queue) {
     this.queue = queue;
     this.mutex = new Object();
   }
 
-  private SingleLockQueue(MessageQueue<T> queue, Object mutex) {
+  public SingleLockQueue(MessageQueue<T> queue, Object mutex) {
     this.queue = queue;
     this.mutex = mutex;
   }
@@ -178,22 +180,6 @@ public final class SingleLockQueue<T> implements SynchronizedQueue<T> {
     }
   }
 
-  /*
-   * static constructor methods to be type safe
-   */
-  public static <T> SynchronizedQueue<T> synchronize(MessageQueue<T> queue) {
-    if(queue.isMemoryBasedQueue()) {
-      return (SynchronizedQueue<T>) queue;
-    }
-    
-    return new SingleLockQueue<T>(queue);
-  }
-
-  public static <T> SynchronizedQueue<T> synchronize(MessageQueue<T> queue,
-      Object mutex) {
-    return new SingleLockQueue<T>(queue, mutex);
-  }
-
   @Override
   public void prepareWrite() {
     synchronized (mutex) {
@@ -218,5 +204,10 @@ public final class SingleLockQueue<T> implements SynchronizedQueue<T> {
   @Override
   public boolean isMemoryBasedQueue() {
     return true;
+  }
+
+  @Override
+  public void add(BSPMessageBundle<T> bundle) {
+    queue.add(bundle);
   }
 }
