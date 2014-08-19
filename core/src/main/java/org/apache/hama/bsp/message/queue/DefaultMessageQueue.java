@@ -17,12 +17,20 @@
  */
 package org.apache.hama.bsp.message.queue;
 
+import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPMessageBundle;
+
 /**
- * Synchronized Queue interface. Can be used to implement better synchronized
- * datastructures.
+ * Java object message queue.
+ *
+ * @param <M> Message type.
  */
-public interface SynchronizedQueue<T> extends MessageQueue<T> {
+public abstract class DefaultMessageQueue<M extends Writable> implements
+    BSPMessageInterface<M>, Iterable<M>, MessageQueue<M> {
 
-  public abstract MessageQueue<T> getMessageQueue();
-
+  @Override
+  public void add(BSPMessageBundle<M> bundle){
+    addAll(bundle);
+  }
+  
 }

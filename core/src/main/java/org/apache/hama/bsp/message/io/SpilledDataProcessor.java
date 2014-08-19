@@ -15,14 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message.queue;
+package org.apache.hama.bsp.message.io;
+
+import org.apache.hadoop.conf.Configuration;
 
 /**
- * Synchronized Queue interface. Can be used to implement better synchronized
- * datastructures.
+ * Base interface defining the behaviour to process the spilled data provided in
+ * a byte buffer.
  */
-public interface SynchronizedQueue<T> extends MessageQueue<T> {
+public interface SpilledDataProcessor {
 
-  public abstract MessageQueue<T> getMessageQueue();
+  /**
+   * Initialize the data processor.
+   * 
+   * @param conf
+   * @return true if no errors.
+   */
+  boolean init(Configuration conf);
+
+  /**
+   * Override the method to define the action to be taken on the spilled data
+   * provided in the byte buffer.
+   * 
+   * @param buffer
+   * @return true if no errors.
+   */
+  boolean handleSpilledBuffer(SpilledByteBuffer buffer);
+
+  /**
+   * Close the data processor.
+   * 
+   * @return true if no errors.
+   */
+  boolean close();
 
 }

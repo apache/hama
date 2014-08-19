@@ -37,6 +37,14 @@ public class TestPersistQueue extends TestCase {
 
   public static final Log LOG = LogFactory.getLog(TestPartitioning.class);
 
+  public void testDiskQueue() throws Exception {
+    BSPJob bsp = getNewJobConf();
+    bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
+        "org.apache.hama.bsp.message.queue.DiskQueue");
+
+    assertTrue(bsp.waitForCompletion(true));
+  }
+
   public void testMemoryQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
     bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
@@ -53,10 +61,10 @@ public class TestPersistQueue extends TestCase {
     assertTrue(bsp.waitForCompletion(true));
   }
 
-  public void testDiskQueue() throws Exception {
+  public void testSpillingQueue() throws Exception {
     BSPJob bsp = getNewJobConf();
     bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
-        "org.apache.hama.bsp.message.queue.DiskQueue");
+        "org.apache.hama.bsp.message.queue.SpillingQueue");
 
     assertTrue(bsp.waitForCompletion(true));
   }

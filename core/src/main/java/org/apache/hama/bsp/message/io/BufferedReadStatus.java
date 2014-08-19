@@ -15,14 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hama.bsp.message.queue;
+package org.apache.hama.bsp.message.io;
 
 /**
- * Synchronized Queue interface. Can be used to implement better synchronized
- * datastructures.
+ * The implementation of shared object when there is no spilling in the first
+ * place.
+ * 
  */
-public interface SynchronizedQueue<T> extends MessageQueue<T> {
+class BufferReadStatus extends ReadIndexStatus {
 
-  public abstract MessageQueue<T> getMessageQueue();
+  private int index;
+  private int count;
+
+  public BufferReadStatus(int bufferCount) {
+    index = -1;
+    count = bufferCount;
+  }
+
+  @Override
+  public int getReadBufferIndex() {
+    if (count == index - 1) {
+      return -1;
+    }
+    return ++index;
+  }
+
+  @Override
+  public int getFileBufferIndex() {
+    return -1;
+  }
+
+  @Override
+  public void completeReading() {
+  }
+
+  @Override
+  public boolean startReading() {
+    return true;
+  }
 
 }

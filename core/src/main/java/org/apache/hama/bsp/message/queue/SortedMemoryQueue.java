@@ -31,7 +31,7 @@ import org.apache.hama.bsp.TaskAttemptID;
  * sorted receive and send.
  */
 public final class SortedMemoryQueue<M extends WritableComparable<M>>
-    implements SynchronizedQueue<M>, MessageQueue<M> {
+    implements SynchronizedQueue<M>, BSPMessageInterface<M> {
 
   private final BlockingQueue<M> queue = new PriorityBlockingQueue<M>();
   private Configuration conf;
