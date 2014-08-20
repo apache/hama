@@ -279,8 +279,10 @@ public abstract class AbstractMessageManager<M extends Writable> implements
 
   @Override
   public void loopBackBundle(BSPMessageBundle<M> bundle) throws IOException {
-    bundle.setCompressor(compressor,
-        conf.getLong("hama.messenger.compression.threshold", 128));
+    if (conf.getBoolean("hama.messenger.runtime.compression", false)) {
+      bundle.setCompressor(compressor,
+          conf.getLong("hama.messenger.compression.threshold", 128));
+    }
 
     Iterator<? extends Writable> it = bundle.iterator();
     while (it.hasNext()) {

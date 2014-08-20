@@ -17,6 +17,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-914: Boolean flag (isCompressed) is required only when runtime compression is enabled (edwardyoon)
    HAMA-910: Web UI Improvement (Victor Lee via edwardyoon)
    HAMA-909: Improve Mesos Scheduler's Fault Tolerance (Jeff Fenchel via edwardyoon)
    HAMA-823: Remove javadoc warnings (Victor Lee via edwardyoon)  

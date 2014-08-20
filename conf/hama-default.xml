@@ -284,6 +284,11 @@
   </property>
 
   <property>
+    <name>hama.messenger.runtime.compression</name>
+    <value>false</value>
+    <description>True if you want to enable runtime compression</description>
+  </property>
+  <property>
     <name>hama.messenger.compression.class</name>
     <value>org.apache.hama.bsp.message.compress.SnappyCompressor</value>
     <description>The message compression algorithm to choose. Default is null.</description>

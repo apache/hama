@@ -119,7 +119,10 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
 
     if (!outgoingBundles.containsKey(targetPeerAddress)) {
       BSPMessageBundle<GraphJobMessage> bundle = new BSPMessageBundle<GraphJobMessage>();
-      bundle.setCompressor(compressor, conf.getLong("hama.messenger.compression.threshold", 128));
+      if (conf.getBoolean("hama.messenger.runtime.compression", false)) {
+        bundle.setCompressor(compressor,
+            conf.getLong("hama.messenger.compression.threshold", 128));
+      }
       outgoingBundles.put(targetPeerAddress, bundle);
     }
     return targetPeerAddress;

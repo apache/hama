@@ -50,7 +50,8 @@ public class TestBSPMasterGroomServer extends HamaCluster {
   public TestBSPMasterGroomServer() {
     configuration = new HamaConfiguration();
     configuration.set("bsp.master.address", "localhost");
-    configuration.set("hama.child.redirect.log.console", "true");
+    configuration.setBoolean("hama.child.redirect.log.console", true);
+    configuration.setBoolean("hama.messenger.runtime.compression", true);
     assertEquals("Make sure master addr is set to localhost:", "localhost",
         configuration.get("bsp.master.address"));
     configuration.set("bsp.local.dir", "/tmp/hama-test");

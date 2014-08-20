@@ -87,17 +87,20 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
     try {
       serialized = serialize(message);
 
-      if (compressor != null && serialized.length > threshold) {
-        bufferDos.writeBoolean(true);
-        compressed = compressor.compress(serialized);
-        bufferDos.writeInt(compressed.length);
-        bufferDos.write(compressed);
-
-        bundleLength += compressed.length;
+      if (compressor != null) {
+        if (serialized.length > threshold) {
+          bufferDos.writeBoolean(true);
+          compressed = compressor.compress(serialized);
+          bufferDos.writeInt(compressed.length);
+          bufferDos.write(compressed);
+          bundleLength += compressed.length;
+        } else {
+          bufferDos.writeBoolean(false);
+          bufferDos.write(serialized);
+          bundleLength += serialized.length;
+        }
       } else {
-        bufferDos.writeBoolean(false);
         bufferDos.write(serialized);
-
         bundleLength += serialized.length;
       }
     } catch (IOException e) {
@@ -114,7 +117,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
   public byte[] getBuffer() {
     return byteBuffer.toByteArray();
   }
-  
+
   public Iterator<M> iterator() {
     bis = new ByteArrayInputStream(byteBuffer.toByteArray());
     dis = new DataInputStream(bis);
@@ -140,10 +143,13 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
       @Override
       public M next() {
         boolean isCompressed = false;
-        try {
-          isCompressed = dis.readBoolean();
-        } catch (IOException e1) {
-          e1.printStackTrace();
+
+        if (compressor != null) {
+          try {
+            isCompressed = dis.readBoolean();
+          } catch (IOException e1) {
+            e1.printStackTrace();
+          }
         }
 
         Class<M> clazz = null;
@@ -152,10 +158,12 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
         } catch (ClassNotFoundException e) {
           LOG.error("Class was not found.", e);
         }
+
         msg = ReflectionUtils.newInstance(clazz, null);
 
         try {
           if (isCompressed) {
+            // LOG.debug(">>>>> decompressing .........");
             int length = dis.readInt();
             compressed = new byte[length];
             dis.readFully(compressed);
@@ -215,7 +223,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
   @Override
   public void readFields(DataInput in) throws IOException {
     this.bundleSize = in.readInt();
-    
+
     if (this.bundleSize > 0) {
       className = in.readUTF();
       int bytesLength = in.readInt();

@@ -86,8 +86,10 @@ public class OutgoingPOJOMessageBundle<M extends Writable> implements
 
     if (!outgoingBundles.containsKey(targetPeerAddress)) {
       BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
-      bundle.setCompressor(compressor,
-          conf.getLong("hama.messenger.compression.threshold", 128));
+      if (conf.getBoolean("hama.messenger.runtime.compression", false)) {
+        bundle.setCompressor(compressor,
+            conf.getLong("hama.messenger.compression.threshold", 128));
+      }
       outgoingBundles.put(targetPeerAddress, bundle);
     }
     return targetPeerAddress;
