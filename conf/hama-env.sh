@@ -22,10 +22,10 @@
 # Set environment variables here.
 
 # The java implementation to use.  Required.
-export JAVA_HOME=/usr/lib/jvm/java-7-oracle
+# export JAVA_HOME=/usr/lib/jvm/java-7-oracle
 
 # Where log files are stored.  $HAMA_HOME/logs by default.
-export HAMA_LOG_DIR=${HAMA_HOME}/logs
+# export HAMA_LOG_DIR=${HAMA_HOME}/logs
 
 # The maximum amount of heap to use, in MB. Default is 1000.
 # export HAMA_HEAPSIZE=1000
