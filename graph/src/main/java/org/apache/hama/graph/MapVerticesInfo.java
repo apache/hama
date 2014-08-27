@@ -17,10 +17,6 @@
  */
 package org.apache.hama.graph;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.SortedMap;
@@ -30,6 +26,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.util.KryoSerializer;
 
 /**
  * Stores the vertices into a memory-based tree map. This implementation allows
@@ -47,11 +44,6 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   Vertex<V, E, M> v;
 
   private final SortedMap<V, byte[]> verticesMap = new TreeMap<V, byte[]>();
-
-  private ByteArrayOutputStream bos = null;
-  private DataOutputStream dos = null;
-  private ByteArrayInputStream bis = null;
-  private DataInputStream dis = null;
 
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
@@ -133,20 +125,16 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
     };
   }
 
+  private final KryoSerializer kryo = new KryoSerializer(GraphJobRunner.VERTEX_CLASS);
+  
   public byte[] serialize(Vertex<V, E, M> vertex) throws IOException {
-    bos = new ByteArrayOutputStream();
-    dos = new DataOutputStream(bos);
-    vertex.write(dos);
-    return bos.toByteArray();
+    return kryo.serialize(vertex);
   }
 
+  @SuppressWarnings("unchecked")
   public Vertex<V, E, M> deserialize(V vertexID, byte[] serialized)
       throws IOException {
-    bis = new ByteArrayInputStream(serialized);
-    dis = new DataInputStream(bis);
-    v = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
-
-    v.readFields(dis);
+    v = (Vertex<V, E, M>) kryo.deserialize(serialized);
     v.setRunner(runner);
     v.setVertexID(vertexID);
     return v;
