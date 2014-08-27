@@ -79,7 +79,7 @@ public class PageRankTest extends TestCase {
 
   private void generateTestData() {
     try {
-      FastGraphGen.main(new String[] { "400", "10", INPUT, "2" });
+      FastGraphGen.main(new String[] { "4000", "100", INPUT, "3" });
     } catch (Exception e) {
       e.printStackTrace();
     }

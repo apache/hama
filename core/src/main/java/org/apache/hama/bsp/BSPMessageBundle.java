@@ -47,36 +47,26 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
 
   private String className = null;
   private int bundleSize = 0;
-  private int bundleLength = 0;
 
-  ByteArrayOutputStream byteBuffer = null;
-  DataOutputStream bufferDos = null;
-
-  ByteArrayInputStream bis = null;
-  DataInputStream dis = null;
+  private final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+  private final DataOutputStream bufferDos = new DataOutputStream(byteBuffer);
 
   public BSPMessageBundle() {
-    byteBuffer = new ByteArrayOutputStream();
-    bufferDos = new DataOutputStream(byteBuffer);
-
     bundleSize = 0;
-    bundleLength = 0;
   }
 
-  ByteArrayOutputStream mbos = null;
-  DataOutputStream mdos = null;
+  ByteArrayOutputStream mbos = new ByteArrayOutputStream();
+  DataOutputStream mdos = new DataOutputStream(mbos);
   ByteArrayInputStream mbis = null;
   DataInputStream mdis = null;
 
   public byte[] serialize(M message) throws IOException {
-    mbos = new ByteArrayOutputStream();
-    mdos = new DataOutputStream(mbos);
+    mbos.reset();
     message.write(mdos);
     return mbos.toByteArray();
   }
 
-  private byte[] compressed;
-  private byte[] serialized;
+  private byte[] msgBytes;
 
   /**
    * Add message to this bundle.
@@ -85,46 +75,42 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
    */
   public void addMessage(M message) {
     try {
-      serialized = serialize(message);
+      if (className == null) {
+        className = message.getClass().getName();
+      }
+
+      msgBytes = serialize(message);
 
       if (compressor != null) {
-        if (serialized.length > threshold) {
+        if (msgBytes.length > threshold) {
           bufferDos.writeBoolean(true);
-          compressed = compressor.compress(serialized);
-          bufferDos.writeInt(compressed.length);
-          bufferDos.write(compressed);
-          bundleLength += compressed.length;
+          msgBytes = compressor.compress(msgBytes);
+          bufferDos.writeInt(msgBytes.length);
         } else {
           bufferDos.writeBoolean(false);
-          bufferDos.write(serialized);
-          bundleLength += serialized.length;
         }
-      } else {
-        bufferDos.write(serialized);
-        bundleLength += serialized.length;
       }
+      bufferDos.write(msgBytes);
+      bundleSize++;
     } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      LOG.error(e);
     }
-
-    if (className == null) {
-      className = message.getClass().getName();
-    }
-    bundleSize++;
   }
 
   public byte[] getBuffer() {
     return byteBuffer.toByteArray();
   }
 
+  private ByteArrayInputStream bis = null;
+  private DataInputStream dis = null;
+
   public Iterator<M> iterator() {
     bis = new ByteArrayInputStream(byteBuffer.toByteArray());
     dis = new DataInputStream(bis);
 
     Iterator<M> it = new Iterator<M>() {
+      Class<M> clazz = null;
       M msg;
-      byte[] decompressed;
 
       @Override
       public boolean hasNext() {
@@ -142,43 +128,34 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
       @SuppressWarnings("unchecked")
       @Override
       public M next() {
-        boolean isCompressed = false;
-
-        if (compressor != null) {
-          try {
-            isCompressed = dis.readBoolean();
-          } catch (IOException e1) {
-            e1.printStackTrace();
+        try {
+          if (clazz == null) {
+            clazz = (Class<M>) Class.forName(className);
           }
-        }
 
-        Class<M> clazz = null;
-        try {
-          clazz = (Class<M>) Class.forName(className);
-        } catch (ClassNotFoundException e) {
-          LOG.error("Class was not found.", e);
-        }
+          msg = ReflectionUtils.newInstance(clazz, null);
+          boolean isCompressed = false;
 
-        msg = ReflectionUtils.newInstance(clazz, null);
+          if (compressor != null) {
+            isCompressed = dis.readBoolean();
+          }
 
-        try {
           if (isCompressed) {
-            // LOG.debug(">>>>> decompressing .........");
             int length = dis.readInt();
-            compressed = new byte[length];
-            dis.readFully(compressed);
-            decompressed = compressor.decompress(compressed);
+            msgBytes = new byte[length];
+            dis.readFully(msgBytes);
 
-            mbis = new ByteArrayInputStream(decompressed);
+            mbis = new ByteArrayInputStream(compressor.decompress(msgBytes));
             mdis = new DataInputStream(mbis);
             msg.readFields(mdis);
           } else {
             msg.readFields(dis);
           }
 
-        } catch (IOException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
+        } catch (IOException ie) {
+          LOG.error(ie);
+        } catch (ClassNotFoundException ce) {
+          LOG.error("Class was not found.", ce);
         }
 
         return msg;
@@ -206,7 +183,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
    * @throws IOException
    */
   public long getLength() {
-    return bundleLength;
+    return byteBuffer.size();
   }
 
   @Override
@@ -214,9 +191,8 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
     out.writeInt(bundleSize);
     if (bundleSize > 0) {
       out.writeUTF(className);
-      byte[] messages = byteBuffer.toByteArray();
-      out.writeInt(messages.length);
-      out.write(messages);
+      out.writeInt(byteBuffer.size());
+      out.write(byteBuffer.toByteArray());
     }
   }
 

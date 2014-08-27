@@ -19,10 +19,6 @@ package org.apache.hama.graph;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -32,6 +28,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.util.KryoSerializer;
 
 /**
  * Stores the serialized vertices into a memory-based list. It doesn't allow
@@ -49,11 +46,6 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
   private final List<byte[]> verticesList = new ArrayList<byte[]>();
   private boolean lockedAdditions = false;
   private int index = 0;
-
-  private ByteArrayOutputStream bos = null;
-  private DataOutputStream dos = null;
-  private ByteArrayInputStream bis = null;
-  private DataInputStream dis = null;
 
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
@@ -130,19 +122,15 @@ public final class ListVerticesInfo<V extends WritableComparable<V>, E extends W
     };
   }
 
+  private final KryoSerializer kryo = new KryoSerializer(GraphJobRunner.VERTEX_CLASS);
+
   public byte[] serialize(Vertex<V, E, M> vertex) throws IOException {
-    bos = new ByteArrayOutputStream();
-    dos = new DataOutputStream(bos);
-    vertex.write(dos);
-    return bos.toByteArray();
+    return kryo.serialize(vertex);
   }
 
+  @SuppressWarnings("unchecked")
   public Vertex<V, E, M> deserialize(byte[] serialized) throws IOException {
-    bis = new ByteArrayInputStream(serialized);
-    dis = new DataInputStream(bis);
-    v = GraphJobRunner.<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
-
-    v.readFields(dis);
+    v = (Vertex<V, E, M>) kryo.deserialize(serialized);
     v.setRunner(runner);
     return v;
   }
