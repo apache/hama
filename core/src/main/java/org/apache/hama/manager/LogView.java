@@ -37,7 +37,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -45,8 +47,16 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hama.bsp.BSPJobID;
+import org.apache.hama.bsp.BSPMaster;
+import org.apache.hama.bsp.ClusterStatus;
+import org.apache.hama.bsp.GroomServerStatus;
+import org.apache.hama.bsp.JobStatus;
 import org.apache.hama.manager.util.UITemplate;
 
+/**
+ * Log viewer class for for BSP Server.
+ */
 public class LogView {
 
   /**
@@ -196,11 +206,11 @@ public class LogView {
 
       String logfilePath = logDirPath + "/" + fileName;
 
-      if (pageType.equals("download")) {
+      if (pageType.equals("download")) { // download log file
 
         LogView.downloadFile(response, logfilePath);
 
-      } else {
+      } else { // log viewer 
 
         response.setContentType("text/html");
         PrintWriter out = response.getWriter();
@@ -221,7 +231,7 @@ public class LogView {
         out.println(uit.convert(tplHead, vars));
         vars.clear();
 
-        if (pageType.equals("list")) { // list page
+        if (pageType.equals("list")) { // list 
 
           String[] listArea = new String[4];
           listArea[0] = uit.getArea(tplfile, "list0");
@@ -259,7 +269,7 @@ public class LogView {
           vars.clear();
           out.println(uit.convert(listArea[3], vars));
 
-        } else if (pageType.equals("detail")) { // detail page
+        } else if (pageType.equals("detail")) { // detail 
 
           String[] detailArea = new String[4];
           detailArea[0] = uit.getArea(tplfile, "detail0");
@@ -295,7 +305,7 @@ public class LogView {
 
           out.println(uit.convert(detailArea[2], vars));
 
-        } else if (pageType.equals("tail")) { // tail page
+        } else if (pageType.equals("tail")) { // tail 
           String tailLine = request.getParameter("tailLine");
           tailLine = (tailLine == null) ? "100" : tailLine;
 
@@ -353,14 +363,53 @@ public class LogView {
           vars.clear();
           out.println(uit.convert(tailArea[2], vars));
 
+        } else if (pageType.equals("tasklist")) { // job list
+          String jobId = request.getParameter("jobId");
+          String[] listArea = new String[3];
+          listArea[0] = uit.getArea(tplfile, "tasklist0");
+          listArea[1] = uit.getArea(tplfile, "tasklist1");
+          listArea[2] = uit.getArea(tplfile, "tasklist2");
+
+          ServletContext ctx = getServletContext();
+          BSPMaster tracker = (BSPMaster) ctx.getAttribute("bsp.master");
+          ClusterStatus status = tracker.getClusterStatus(true);
+          JobStatus jobStatus = tracker.getJobStatus(BSPJobID.forName(jobId));
+
+          vars.put("hamaLogDir", hamaLogDir);
+          vars.put("dirName", dirName);
+          vars.put("targetUri", targetUri);
+          vars.put("jobId", jobId);
+          vars.put("jobStatus", jobStatus.getState().toString());
+          vars.put("jobName", jobStatus.getName());
+
+          out.println(uit.convert(listArea[0], vars));
+          vars.clear();
+
+          for (Entry<String, GroomServerStatus> entry : status
+              .getActiveGroomServerStatus().entrySet()) {
+            vars.put("jobId", jobId);
+            vars.put("dirName", dirName);
+            vars.put("serverName", entry.getKey());
+            vars.put("hostName", entry.getValue().getGroomHostName());
+            vars.put("targetUri", targetUri);
+            vars.put("type", "dir");
+            out.println(uit.convert(listArea[1], vars));
+
+          }
+
+          vars.clear();
+          out.println(uit.convert(listArea[2], vars));
         }
 
-        vars.clear();
         out.println(tplTail);
       }
 
     }
 
+    /**
+     * Get Hama log Directory
+     * @return hama log directory
+     */
     private static String getLogHomeDir() {
       Map<String, String> env = System.getenv();
       String hamaHome = env.get("HAMA_HOME");

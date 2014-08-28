@@ -60,7 +60,7 @@
       <td>
         <% if(status.getFinishTime() != 0L) {out.write(new Date(status.getFinishTime()).toString());} %>
       </td>
-      <td><a href="/logView?dir=tasklogs/<%=idString%>">view</a></td>      
+      <td><a href="/logView?dir=tasklogs/<%=idString%>&jobId=<%=idString%>&type=tasklist">view</a></td>      
     </tr>
 
   </table>
@@ -109,9 +109,6 @@
   </table>
   </div>
   <p/>
-  <hr>
-    <h2>Job Logs</h2>
-    <a href="/logView?dir=tasklogs/<%=idString%>">Log</a> directory
   <hr>
   <a href="bspmaster.jsp"><i>Back to BSPMaster</i></a>
 

@@ -162,13 +162,55 @@ ${logLine}
 </div>  
 <!--{area,end,logtail2}-->
 
+<!--{area,begin,tasklist0}-->
+<h2>${jobName}</h2>
+<div class="block-detail">
+<ul>
+    <li><span>Job ID : </span>${jobId}</li>
+    <li><span>Status : </span>${jobStatus}</li>
+</ul>
+</div>
+
+<hr>
+<div class="block-list-log">
+<table class="full-width">
+<thead>
+  <tr>
+    <th>Job ID</th>
+    <th>Server Name</th>
+    <th>Hostname</th>
+    <th>Directory</th>
+    <th>Type</th>    
+    <th>Etc</th>
+  </tr>
+</thead>  
+<tbody>
+<!--{area,end,tasklist0}-->
+
+<!--{area,begin,tasklist1}-->
+  <tr>
+    <td><a href="/bspjob.jsp?jobid=${jobId}">${jobId}</a></td>    
+    <td><a href="http://${serverName}/">${serverName}</a></td>
+    <td>${hostName}</td>    
+    <td><a href="http://${serverName}/logView?dir=${dirName}/${fileName}">/${dirName}</a></td>
+    <td>${type}</td>    
+    <td>
+      <a href="http://${serverName}/logView?dir=${dirName}/${fileName}" class="link-container"><span class="link-title">view</span></a>
+    </td>
+  </tr>
+<!--{area,end,tasklist1}-->
+
+<!--{area,begin,tasklist2}-->
+</tbody>
+</table>
+</div>
+<!--{area,end,tasklist2}-->
 
 <!--{area,begin,tail}-->
 <hr />
 <div id="footer" class="contents">
-<a href='http://hama.apache.org/'>Apache Hama</a>
+  <a href='http://hama.apache.org/'>Apache Hama</a>
 </div>
-</body></html>
 </body>
 </html>
 <!--{area,end,tail}-->

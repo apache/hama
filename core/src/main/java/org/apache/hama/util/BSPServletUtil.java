@@ -78,7 +78,9 @@ public class BSPServletUtil extends ServletUtil {
         sb.append("</td><td>");
         sb.append(new Date(status.getStartTime()));
         sb.append("</td><td>");
-        sb.append("<a href=\"/logView?dir=tasklogs/");
+        sb.append("<a href=\"/logView?type=tasklist&jobId=");
+        sb.append(status.getJobID());            
+        sb.append("&dir=tasklogs/");
         sb.append(status.getJobID());
         sb.append("\">view</a>");
         sb.append("</td></tr>\n");
