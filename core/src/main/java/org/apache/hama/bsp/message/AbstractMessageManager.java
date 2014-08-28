@@ -284,6 +284,8 @@ public abstract class AbstractMessageManager<M extends Writable> implements
           conf.getLong("hama.messenger.compression.threshold", 128));
     }
 
+    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, bundle.size());
+    
     Iterator<? extends Writable> it = bundle.iterator();
     while (it.hasNext()) {
       loopBackMessage(it.next());
@@ -294,9 +296,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   @Override
   public void loopBackMessage(Writable message) throws IOException {
     this.localQueueForNextIteration.add((M) message);
-    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, 1L);
     notifyReceivedMessage((M) message);
-
   }
 
 }
