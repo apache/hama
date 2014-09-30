@@ -180,7 +180,7 @@ public class AsyncRPC {
       // connection pooling and leak sockets, or (b) use the same timeout for
       // all
       // configurations. Since the IPC is usually intended globally, not
-      // per-job, we choose (a).
+      // per-job, we choose (a)
       AsyncClient client = clients.get(factory);
       if (client == null) {
         client = new AsyncClient(ObjectWritable.class, conf, factory);

@@ -42,7 +42,7 @@ public class TestHamaAsyncMessageManager extends TestCase {
 
   public static final String TMP_OUTPUT_PATH = "/tmp/messageQueue";
   // increment is here to solve race conditions in parallel execution to choose
-  // other ports.
+  // other ports
   public static volatile int increment = 1;
 
   public void testMemoryMessaging() throws Exception {

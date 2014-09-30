@@ -37,7 +37,7 @@ import org.apache.hama.ipc.AsyncServer;
 import org.apache.hama.util.LRUCache;
 
 /**
- * Implementation of the {@link HamaMessageManager}.
+ * Implementation of the {@link HamaMessageManager}
  * 
  */
 public final class HamaAsyncMessageManagerImpl<M extends Writable> extends

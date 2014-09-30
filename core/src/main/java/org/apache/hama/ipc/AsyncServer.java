@@ -77,7 +77,7 @@ public abstract class AsyncServer {
   // 4 : Introduced SASL security layer
   static final byte CURRENT_VERSION = 4;
   static final int HEADER_LENGTH = 10;
-  // follows version is read.
+  // follows version is read
   private Configuration conf;
   private final boolean tcpNoDelay; // if T then disable Nagle's Algorithm
   private int backlogLength;;

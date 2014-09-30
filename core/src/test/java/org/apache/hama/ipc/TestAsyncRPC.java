@@ -34,7 +34,7 @@ public class TestAsyncRPC extends TestCase {
   private static final String ADDRESS = "0.0.0.0";
 
   public static final Log LOG = LogFactory
-      .getLog("org.apache.hama.ipc.TestRPCWithNetty");
+      .getLog("org.apache.hama.ipc.TestAsyncRPC");
 
   private static Configuration conf = new Configuration();
 

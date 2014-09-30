@@ -98,7 +98,7 @@ public class TestAsyncIPC extends TestCase {
           }
 
         } catch (Exception e) {
-          LOG.fatal("Caught: " + StringUtils.stringifyException(e));
+          LOG.fatal("Caught : " + StringUtils.stringifyException(e));
           failed = true;
         }
       }

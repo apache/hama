@@ -981,7 +981,7 @@ public class AsyncClient {
     /*
      * we could avoid this allocation for each RPC by having a connectionsId
      * object and with set() method. We need to manage the refs for keys in
-     * HashMap properly. For now its ok.
+     * HashMap properly. For now its ok
      */
     do {
       connection = connections.get(remoteId);
