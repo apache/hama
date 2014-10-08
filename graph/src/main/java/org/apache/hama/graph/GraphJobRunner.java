@@ -20,7 +20,6 @@ package org.apache.hama.graph;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map.Entry;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -154,6 +153,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   /**
    * Just write <ID as Writable, Value as Writable> pair as a result. Note that
    * this will also be executed when failure happened.
+   * @param peer
+   * @throws java.io.IOException
    */
   @Override
   public final void cleanup(
@@ -203,7 +204,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       if (firstVertexMessage != null) {
         peer.send(peer.getPeerName(), firstVertexMessage);
       }
-      GraphJobMessage msg = null;
+      GraphJobMessage msg;
       while ((msg = peer.getCurrentMessage()) != null) {
         peer.send(peer.getPeerName(), msg);
       }
@@ -221,104 +222,68 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   /**
    * Do the main logic of a superstep, namely checking if vertices are active,
    * feeding compute with messages and controlling combiners/aggregators.
+   * We iterate over our messages and vertices in sorted order. That means
+   * that we need to seek the first vertex that has the same ID as the
+   * iterated message.
    */
-  @SuppressWarnings("unchecked")
   private void doSuperstep(GraphJobMessage currentMessage,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     int activeVertices = 0;
     this.changedVertexCnt = 0;
-    vertices.startSuperstep();
+    this.vertices.startSuperstep();
 
-    /*
-     * We iterate over our messages and vertices in sorted order. That means
-     * that we need to seek the first vertex that has the same ID as the
-     * currentMessage or the first vertex that is active.
-     */
-    IDSkippingIterator<V, E, M> iterator = vertices.skippingIterator();
-    VertexMessageIterable<V, M> iterable = null;
-    Vertex<V, E, M> vertex = null;
+    IDSkippingIterator<V, E, M> iterator = this.vertices.skippingIterator();
+    VertexMessages<V, M> queueMessages = new VertexMessages<V, M>(peer);
+    queueMessages.prependMessage(currentMessage);
 
     // note that can't skip inactive vertices because we have to rewrite the
     // complete vertex file in each iteration
-    while (iterator.hasNext(
-        currentMessage == null ? null : (V) currentMessage.getVertexId(),
-        Strategy.ALL)) {
+    V firstVID = currentMessage == null ? null : (V) currentMessage.getVertexId();
+    while (iterator.hasNext(firstVID, Strategy.ALL)) {
+      Vertex<V, E, M> vertex = iterator.next();
+      boolean msgsExist = queueMessages.continueWith(vertex.getVertexID());
 
-      vertex = iterator.next();
-      if (currentMessage != null) {
-        iterable = iterate(currentMessage, (V) currentMessage.getVertexId(),
-            vertex, peer);
-      } else {
-        iterable = null;
-      }
+      if (!msgsExist) checkMsgOrder(vertex.getVertexID(), queueMessages);
 
-      if (iterable != null && vertex.isHalted()) {
+      if (msgsExist && vertex.isHalted()) {
         vertex.setActive();
       }
 
       if (!vertex.isHalted()) {
-        if (iterable == null) {
-          vertex.compute(Collections.<M> emptyList());
-        } else {
-          vertex.compute(iterable);
-          currentMessage = iterable.getOverflowMessage();
-        }
+        vertex.compute(queueMessages);
         activeVertices++;
       }
 
+      // Dump remaining messages
+      queueMessages.dumpRest();
+
       // note that we even need to rewrite the vertex if it is halted for
       // consistency reasons
-      vertices.finishVertexComputation(vertex);
+      this.vertices.finishVertexComputation(vertex);
     }
-    vertices.finishSuperstep();
+    this.vertices.finishSuperstep();
 
     getAggregationRunner().sendAggregatorValues(peer, activeVertices,
         this.changedVertexCnt);
-    iteration++;
+    this.iteration++;
   }
 
   /**
-   * Iterating utility that ensures following things: <br/>
-   * - if vertex is active, but the given message does not match the vertexID,
-   * return null. <br/>
-   * - if vertex is inactive, but received a message that matches the ID, build
-   * an iterator that can be iterated until the next vertex has been reached
-   * (not buffer in memory) and set the vertex active <br/>
-   * - if vertex is active, and the given message does match the vertexID,
-   * return an iterator that can be iterated until the next vertex has been
-   * reached. <br/>
-   * - if vertex is inactive, and received no message, return null.
+   * Utility that ensures that the incoming messages have a target vertex.
    */
-  @SuppressWarnings("unchecked")
-  private VertexMessageIterable<V, M> iterate(GraphJobMessage currentMessage,
-      V firstMessageId, Vertex<V, E, M> vertex,
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer) {
-    int comparision = firstMessageId.compareTo(vertex.getVertexID());
-    if (conf.getBoolean("hama.check.missing.vertex", true)) {
-      if (comparision < 0) {
+  private void checkMsgOrder(V vid, VertexMessages<V, M> vm) {
+    // When the vid is greater than the current message, it means that a vertex
+    // has sent a message to an other vertex that doesn't exist
+    if (vm.getMessageVID() != null && vm.getMessageVID().compareTo(vid) < 0) {
+      if (conf.getBoolean("hama.check.missing.vertex", true)) {
         throw new IllegalArgumentException(
-          "A message has recieved with a destination ID: " + firstMessageId +
-          " that does not exist! (Vertex iterator is at" + vertex.getVertexID() 
-          + " ID)");
+                "A message has recieved with a destination ID: " + vm.getMessageVID()
+                + " that does not exist! (Vertex iterator is at" + vid + " ID)");
+      } else {
+        // Skip all unrecognized messages until we find a match
+        vm.continueUntil(vid);
       }
-    } else {
-      while (comparision < 0) {
-        VertexMessageIterable<V, M> messageIterable = new VertexMessageIterable<V, M>(
-            currentMessage, firstMessageId, peer);
-        currentMessage = messageIterable.getOverflowMessage();
-        firstMessageId = (V) currentMessage.getVertexId();
-        comparision = firstMessageId.compareTo(vertex.getVertexID());
-      }
-    }
-    if (comparision == 0) {
-      // vertex id matches with the vertex, return an iterator with newest
-      // message
-      return new VertexMessageIterable<V, M>(currentMessage,
-          vertex.getVertexID(), peer);
-    } else {
-      // return null
-      return null;
     }
   }
 
@@ -431,9 +396,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
           }
         } else {
           if (vertex.compareTo(currentVertex) > 0) {
-            throw new IOException("The records of split aren't in order by vertex ID.");  
+            throw new IOException("The records of split aren't in order by vertex ID.");
           }
-          
+
           if (selfReference) {
             vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
           }

@@ -17,6 +17,7 @@ Release 0.7.0 (unreleased changes)
    HAMA-885: Semi-Clustering is not producing expected output (Renil J via edwardyoon)
 
   IMPROVEMENTS
+   HAMA-921: Polish doSuperstep() function and VertexMessageIterable class (Anastasis Andronidis)
    HAMA-913: Add RPC implementation using netty(bsmin)  
    HAMA-914: Boolean flag (isCompressed) is required only when runtime compression is enabled (edwardyoon)
    HAMA-910: Web UI Improvement (Victor Lee via edwardyoon)
