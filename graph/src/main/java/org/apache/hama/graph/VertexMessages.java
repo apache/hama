@@ -170,4 +170,9 @@ public class VertexMessages<V, T> implements Iterator<T>, Iterable<T> {
   public V getMessageVID() {
     return this.currentMessage == null ? null : (V) this.currentMessage.getVertexId();
   }
+
+  @Override
+  public void remove() {
+    throw new UnsupportedOperationException("remove");
+  }
 }
