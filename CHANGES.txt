@@ -4,6 +4,7 @@ Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-907: Add MaxFlow example (Zhengjun via edwardyoon)
    HAMA-915: Add Kryo serializer (edwardyoon)
    HAMA-726: Hama on Mesos (Jeff Fenchel via edwardyoon)
    HAMA-863: Implement SparseVector (Yexi Jiang)
