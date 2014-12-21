@@ -19,6 +19,7 @@ package org.apache.hama.commons.io;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 
 public class TextArrayWritable extends ArrayWritable {
 
@@ -26,4 +27,13 @@ public class TextArrayWritable extends ArrayWritable {
     super(Text.class);
   }
 
+  public String toString() {
+    Writable[] array = this.get();
+    StringBuilder s = new StringBuilder();
+    for (int i = 0; i < array.length; i++) {
+      s.append(array[i] + " ");
+    }
+    
+    return s.toString();
+  }
 }

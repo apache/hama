@@ -17,21 +17,22 @@
  */
 package org.apache.hama.commons.io;
 
-import java.io.DataOutput;
-import java.io.IOException;
-
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.Writable;
 
 public class FloatArrayWritable extends ArrayWritable {
   public FloatArrayWritable() {
     super(FloatWritable.class);
   }
 
-  public void write(DataOutput out) throws IOException {
-    out.writeInt(this.get().length); // write values
-    for (int i = 0; i < this.get().length; i++) {
-      this.get()[i].write(out);
+  public String toString() {
+    Writable[] array = this.get();
+    StringBuilder s = new StringBuilder();
+    for (int i = 0; i < array.length; i++) {
+      s.append(array[i] + " ");
     }
+    
+    return s.toString();
   }
 }
