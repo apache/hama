@@ -135,9 +135,9 @@ public final class BipartiteMatching {
    * 
    * Input graph is given as<br/>
    * <Vertex> <component value>:<edge 1> <edge 2> ..<br/>
-   * A L:B D<br/>
+   * A L:B<br/>
    * B R:A<br/>
-   * C L:B<br/>
+   * C L:D<br/>
    * D R:A C<br/>
    */
   public static class BipartiteMatchingVertexReader extends

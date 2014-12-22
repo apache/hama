@@ -42,7 +42,7 @@ import org.junit.Test;
 
 public class BipartiteMatchingTest extends TestCase {
 
-  private String[] input = { "A L:B", "B R:A", "C L:B D", "D R:A C" };
+  private String[] input = { "A L:B", "B R:A", "C L:D", "D R:A C" };
 
   private final static String DELIMETER = "\t";
 
