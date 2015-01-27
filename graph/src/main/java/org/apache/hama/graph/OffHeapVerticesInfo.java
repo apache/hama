@@ -155,12 +155,12 @@ public class OffHeapVerticesInfo<V extends WritableComparable<?>, E extends Writ
 
   @Override
   public void removeVertex(V vertexID) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    vertices.free(vertexID);
   }
 
   @Override
   public void finishRemovals() {
-    throw new UnsupportedOperationException("Not yet implemented");
+    vertices.collectExpired();
   }
 
 }
