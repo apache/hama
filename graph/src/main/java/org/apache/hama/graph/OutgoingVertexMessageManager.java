@@ -149,7 +149,6 @@ public class OutgoingVertexMessageManager<M extends Writable> implements
 
       @Override
       public void remove() {
-        // TODO Auto-generated method stub
       }
 
     };
