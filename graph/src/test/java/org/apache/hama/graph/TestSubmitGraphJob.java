@@ -61,8 +61,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    vi.add(ListVerticesInfo.class);
-    vi.add(DiskVerticesInfo.class);
+    vi.add(MapVerticesInfo.class);
     vi.add(OffHeapVerticesInfo.class);
   }
 
@@ -120,7 +119,7 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
   @SuppressWarnings("rawtypes")
   protected void injectVerticesInfo() {
     Class<? extends VerticesInfo> verticesInfoClass = vi.get(Math
-        .abs(new Random().nextInt() % 3));
+        .abs(new Random().nextInt() % 2));
     LOG.info("using vertices info of type : " + verticesInfoClass.getName());
   }
 

@@ -19,7 +19,12 @@ package org.apache.hama.graph;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -39,12 +44,11 @@ import org.apache.hama.bsp.PartitioningRunner.DefaultRecordConverter;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
-import org.apache.hama.graph.IDSkippingIterator.Strategy;
 import org.apache.hama.util.ReflectionUtils;
 
 /**
  * Fully generic graph job runner.
- *
+ * 
  * @param <V> the id type of a vertex.
  * @param <E> the value type of an edge.
  * @param <M> the value type of a vertex.
@@ -89,6 +93,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   public static Class<Vertex<?, ?, ?>> vertexClass;
 
   private VerticesInfo<V, E, M> vertices;
+
   private boolean updated = true;
   private int globalUpdateCounts = 0;
   private int changedVertexCnt = 0;
@@ -134,7 +139,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       // note that the messages must be parsed here
       GraphJobMessage firstVertexMessage = parseMessages(peer);
       // master/slaves needs to update
-      firstVertexMessage = doAggregationUpdates(firstVertexMessage, peer);
+      doAggregationUpdates(peer);
       // check if updated changed by our aggregators
       if (!updated) {
         break;
@@ -153,6 +158,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   /**
    * Just write <ID as Writable, Value as Writable> pair as a result. Note that
    * this will also be executed when failure happened.
+   * 
    * @param peer
    * @throws java.io.IOException
    */
@@ -161,11 +167,11 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     vertexOutputWriter.setup(conf);
-    IDSkippingIterator<V, E, M> skippingIterator = vertices.skippingIterator();
-    while (skippingIterator.hasNext()) {
-      vertexOutputWriter.write(skippingIterator.next(), peer);
+    Iterator<Vertex<V, E, M>> iterator = vertices.iterator();
+    while (iterator.hasNext()) {
+      vertexOutputWriter.write(iterator.next(), peer);
     }
-    vertices.cleanup(conf, peer.getTaskId());
+    vertices.clear();
   }
 
   /**
@@ -173,8 +179,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
    * master aggregation. In case of no aggregators defined, we save a sync by
    * reading multiple typed messages.
    */
-  private GraphJobMessage doAggregationUpdates(
-      GraphJobMessage firstVertexMessage,
+  private void doAggregationUpdates(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
 
@@ -197,94 +202,68 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         peer.send(peerName, new GraphJobMessage(updatedCnt));
       }
     }
+
     if (getAggregationRunner().isEnabled()) {
-      // in case we need to sync, we need to replay the messages that already
-      // are added to the queue. This prevents loosing messages when using
-      // aggregators.
-      if (firstVertexMessage != null) {
-        peer.send(peer.getPeerName(), firstVertexMessage);
-      }
-      GraphJobMessage msg;
-      while ((msg = peer.getCurrentMessage()) != null) {
-        peer.send(peer.getPeerName(), msg);
-      }
-      // now sync
       peer.sync();
       // now the map message must be read that might be send from the master
       updated = getAggregationRunner().receiveAggregatedValues(
           peer.getCurrentMessage().getMap(), iteration);
-      // set the first vertex message back to the message it had before sync
-      firstVertexMessage = peer.getCurrentMessage();
     }
-    return firstVertexMessage;
   }
+
+  private Set<V> notComputedVertices;
 
   /**
    * Do the main logic of a superstep, namely checking if vertices are active,
-   * feeding compute with messages and controlling combiners/aggregators.
-   * We iterate over our messages and vertices in sorted order. That means
-   * that we need to seek the first vertex that has the same ID as the
-   * iterated message.
+   * feeding compute with messages and controlling combiners/aggregators. We
+   * iterate over our messages and vertices in sorted order. That means that we
+   * need to seek the first vertex that has the same ID as the iterated message.
    */
+  @SuppressWarnings("unchecked")
   private void doSuperstep(GraphJobMessage currentMessage,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     int activeVertices = 0;
     this.changedVertexCnt = 0;
-    this.vertices.startSuperstep();
+    vertices.startSuperstep();
+    
+    notComputedVertices = new HashSet();
+    notComputedVertices.addAll(vertices.keySet());
 
-    IDSkippingIterator<V, E, M> iterator = this.vertices.skippingIterator();
-    VertexMessages<V, M> queueMessages = new VertexMessages<V, M>(peer);
-    queueMessages.prependMessage(currentMessage);
+    List<M> msgs = null;
+    Vertex<V, E, M> vertex = null;
 
-    // note that can't skip inactive vertices because we have to rewrite the
-    // complete vertex file in each iteration
-    V firstVID = currentMessage == null ? null : (V) currentMessage.getVertexId();
-    while (iterator.hasNext(firstVID, Strategy.ALL)) {
-      Vertex<V, E, M> vertex = iterator.next();
-      boolean msgsExist = queueMessages.continueWith(vertex.getVertexID());
-
-      if (!msgsExist) checkMsgOrder(vertex.getVertexID(), queueMessages);
-
-      if (msgsExist && vertex.isHalted()) {
+    while (currentMessage != null) {
+      vertex = vertices.get((V) currentMessage.getVertexId());
+      
+      msgs = (List<M>) currentMessage.getVertexValue();
+      if (vertex.isHalted()) {
         vertex.setActive();
       }
 
       if (!vertex.isHalted()) {
-        vertex.compute(queueMessages);
+        vertex.compute(msgs);
+        notComputedVertices.remove(vertex.getVertexID());
         activeVertices++;
       }
 
-      // Dump remaining messages
-      queueMessages.dumpRest();
-
-      // note that we even need to rewrite the vertex if it is halted for
-      // consistency reasons
-      this.vertices.finishVertexComputation(vertex);
+      currentMessage = peer.getCurrentMessage();
+      vertices.finishVertexComputation(vertex);
     }
-    this.vertices.finishSuperstep();
 
+    for (V v : notComputedVertices) {
+      vertex = vertices.get(v);
+      if (!vertex.isHalted()) {
+        vertex.compute(Collections.<M> emptyList());
+        vertices.finishVertexComputation(vertex);
+        activeVertices++;
+      }
+    }
+
+    vertices.finishSuperstep();
     getAggregationRunner().sendAggregatorValues(peer, activeVertices,
         this.changedVertexCnt);
     this.iteration++;
-  }
-
-  /**
-   * Utility that ensures that the incoming messages have a target vertex.
-   */
-  private void checkMsgOrder(V vid, VertexMessages<V, M> vm) {
-    // When the vid is greater than the current message, it means that a vertex
-    // has sent a message to an other vertex that doesn't exist
-    if (vm.getMessageVID() != null && vm.getMessageVID().compareTo(vid) < 0) {
-      if (conf.getBoolean("hama.check.missing.vertex", true)) {
-        throw new IllegalArgumentException(
-                "A message has recieved with a destination ID: " + vm.getMessageVID()
-                + " that does not exist! (Vertex iterator is at" + vid + " ID)");
-      } else {
-        // Skip all unrecognized messages until we find a match
-        vm.continueUntil(vid);
-      }
-    }
   }
 
   /**
@@ -294,17 +273,21 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void doInitialSuperstep(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
-    vertices.startSuperstep();
     this.changedVertexCnt = 0;
-    IDSkippingIterator<V, E, M> skippingIterator = vertices.skippingIterator();
-    while (skippingIterator.hasNext()) {
-      Vertex<V, E, M> vertex = skippingIterator.next();
+    vertices.startSuperstep();
+    
+    Iterator<Vertex<V, E, M>> iterator = vertices.iterator();
+
+    while (iterator.hasNext()) {
+      Vertex<V, E, M> vertex = iterator.next();
 
       // Calls setup method.
       vertex.setup(conf);
+      
       vertex.compute(Collections.singleton(vertex.getValue()));
       vertices.finishVertexComputation(vertex);
     }
+    
     vertices.finishSuperstep();
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
@@ -335,7 +318,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     getAggregationRunner().setupAggregators(peer);
 
     Class<? extends VerticesInfo<V, E, M>> verticesInfoClass = (Class<? extends VerticesInfo<V, E, M>>) conf
-        .getClass("hama.graph.vertices.info", ListVerticesInfo.class,
+        .getClass("hama.graph.vertices.info", MapVerticesInfo.class,
             VerticesInfo.class);
     vertices = ReflectionUtils.newInstance(verticesInfoClass);
     vertices.init(this, conf, peer.getTaskId());
@@ -396,14 +379,15 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
           }
         } else {
           if (vertex.compareTo(currentVertex) > 0) {
-            throw new IOException("The records of split aren't in order by vertex ID.");
+            throw new IOException(
+                "The records of split aren't in order by vertex ID.");
           }
 
           if (selfReference) {
             vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
           }
 
-          vertices.addVertex(vertex);
+          addVertex(vertex);
           vertex = currentVertex;
         }
       }
@@ -412,11 +396,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     if (selfReference) {
       vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
     }
-    vertices.addVertex(vertex);
-
-    vertices.finishAdditions();
-    // finish the "superstep" because we have written a new file here
-    vertices.finishSuperstep();
+    addVertex(vertex);
 
     LOG.info(vertices.size() + " vertices are loaded into "
         + peer.getPeerName());
@@ -425,53 +405,29 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   /**
    * Add new vertex into memory of each peer.
-   *
+   * 
    * @throws IOException
    */
   private void addVertex(Vertex<V, E, M> vertex) throws IOException {
-    vertex.setRunner(this);
-    vertex.setup(conf);
-
     if (conf.getBoolean("hama.graph.self.ref", false)) {
       vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
     }
-
+    vertices.put(vertex);
+    
     LOG.debug("Added VertexID: " + vertex.getVertexID() + " in peer "
         + peer.getPeerName());
-    vertices.addVertex(vertex);
   }
 
   /**
    * Remove vertex from this peer.
-   *
+   * 
    * @throws IOException
    */
   private void removeVertex(V vertexID) {
-    vertices.removeVertex(vertexID);
+    vertices.remove(vertexID);
+
     LOG.debug("Removed VertexID: " + vertexID + " in peer "
         + peer.getPeerName());
-  }
-
-  /**
-   * After all inserts are done, we must finalize the VertexInfo data structure.
-   *
-   * @throws IOException
-   */
-  private void finishAdditions() throws IOException {
-    vertices.finishAdditions();
-    // finish the "superstep" because we have written a new file here
-    vertices.finishSuperstep();
-  }
-
-  /**
-   * After all inserts are done, we must finalize the VertexInfo data structure.
-   *
-   * @throws IOException
-   */
-  private void finishRemovals() throws IOException {
-    vertices.finishRemovals();
-    // finish the "superstep" because we have written a new file here
-    vertices.finishSuperstep();
   }
 
   /**
@@ -502,7 +458,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   /**
    * Parses the messages in every superstep and does actions according to flags
    * in the messages.
-   *
+   * 
    * @return the first vertex message, null if none received.
    */
   @SuppressWarnings("unchecked")
@@ -512,7 +468,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     GraphJobMessage msg = null;
     boolean dynamicAdditions = false;
     boolean dynamicRemovals = false;
-
+    
     while ((msg = peer.getCurrentMessage()) != null) {
       // either this is a vertex message or a directive that must be read
       // as map
@@ -563,7 +519,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       }
 
     }
-
+    
     // If we applied any changes to vertices, we need to call finishAdditions
     // and finishRemovals in the end.
     if (dynamicAdditions) {
@@ -574,6 +530,18 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     }
 
     return msg;
+  }
+
+  private void finishRemovals() throws IOException {
+    vertices.finishRemovals();
+    // finish the "superstep" because we have written a new file here
+    vertices.finishSuperstep();
+  }
+
+  private void finishAdditions() throws IOException {
+    vertices.finishAdditions();
+    // finish the "superstep" because we have written a new file here
+    vertices.finishSuperstep();
   }
 
   /**
@@ -607,7 +575,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   /**
    * Gets the last aggregated value at the given index. The index is dependend
    * on how the aggregators were configured during job setup phase.
-   *
+   * 
    * @return the value of the aggregator, or null if none was defined.
    */
   public final Writable getLastAggregatedValue(int index) {
@@ -617,7 +585,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   /**
    * Gets the last aggregated number of vertices at the given index. The index
    * is dependend on how the aggregators were configured during job setup phase.
-   *
+   * 
    * @return the value of the aggregator, or null if none was defined.
    */
   public final IntWritable getNumLastAggregatedVertices(int index) {

@@ -31,6 +31,7 @@ import org.apache.hama.util.ReflectionUtils;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
@@ -65,7 +66,7 @@ public class OffHeapVerticesInfo<V extends WritableComparable<?>, E extends Writ
             ReflectionUtils.newInstance(conf.getClass(DM_SERIALIZER,
                 KryoSerializer.class, Serializer.class)))
         .setDisposalTime(conf.getInt(DM_DISPOSAL_TIME, 3600000));
-    if (conf.getBoolean(DM_SORTED, true)) {
+    if (conf.getBoolean(DM_SORTED, false)) {
       dm.setMap(new ConcurrentSkipListMap<V, Pointer<Vertex<V, E, M>>>());
     } else {
       dm.setInitialCapacity(conf.getInt(DM_CAPACITY, 1000))
@@ -77,31 +78,7 @@ public class OffHeapVerticesInfo<V extends WritableComparable<?>, E extends Writ
   }
 
   @Override
-  public void cleanup(HamaConfiguration conf, TaskAttemptID attempt)
-      throws IOException {
-    vertices.dump();
-  }
-
-  @Override
-  public void addVertex(Vertex<V, E, M> vertex) {
-    vertices.put(vertex.getVertexID(), vertex);
-  }
-
-  @Override
-  public void finishAdditions() {
-  }
-
-  @Override
-  public void startSuperstep() throws IOException {
-  }
-
-  @Override
-  public void finishSuperstep() throws IOException {
-  }
-
-  @Override
-  public void finishVertexComputation(Vertex<V, E, M> vertex)
-      throws IOException {
+  public void put(Vertex<V, E, M> vertex) {
     vertices.put(vertex.getVertexID(), vertex);
   }
 
@@ -115,52 +92,72 @@ public class OffHeapVerticesInfo<V extends WritableComparable<?>, E extends Writ
   }
 
   @Override
-  public IDSkippingIterator<V, E, M> skippingIterator() {
+  public void remove(V vertexID) {
+    vertices.free(vertexID);
+  }
+
+  @Override
+  public Vertex<V, E, M> get(V vertexID) {
+    Vertex<V, E, M> vertex = vertices.retrieve(vertexID);
+    vertex.setRunner(runner);
+
+    return vertex;
+  }
+
+  @Override
+  public Iterator<Vertex<V, E, M>> iterator() {
     final Iterator<Vertex<V, E, M>> vertexIterator = new CacheValuesIterable<V, Vertex<V, E, M>>(
         vertices, strict).iterator();
 
-    return new IDSkippingIterator<V, E, M>() {
-      int currentIndex = 0;
-
-      Vertex<V, E, M> currentVertex = null;
+    return new Iterator<Vertex<V, E, M>>() {
 
       @Override
-      public boolean hasNext(V e,
-          org.apache.hama.graph.IDSkippingIterator.Strategy strat) {
-        if (currentIndex < vertices.entries()) {
-
-          Vertex<V, E, M> next = vertexIterator.next();
-          while (!strat.accept(next, e)) {
-            currentIndex++;
-          }
-          currentVertex = next;
-          return true;
-        } else {
-          return false;
-        }
+      public boolean hasNext() {
+        return vertexIterator.hasNext();
       }
 
       @Override
       public Vertex<V, E, M> next() {
-        currentIndex++;
-        if (currentVertex != null && currentVertex.getRunner() == null) {
-          currentVertex.setRunner(runner);
-        }
-        return currentVertex;
+        Vertex<V, E, M> vertex = vertexIterator.next();
+        vertex.setRunner(runner);
+
+        return vertex;
+      }
+
+      @Override
+      public void remove() {
+        // TODO Auto-generated method stub
       }
 
     };
-
   }
 
   @Override
-  public void removeVertex(V vertexID) {
-    vertices.free(vertexID);
+  public Set<V> keySet() {
+    return vertices.getMap().keySet();
+  }
+
+  @Override
+  public void finishVertexComputation(Vertex<V, E, M> vertex)
+      throws IOException {
+    vertices.put(vertex.getVertexID(), vertex);
+  }
+
+  @Override
+  public void finishAdditions() {
   }
 
   @Override
   public void finishRemovals() {
     vertices.collectExpired();
+  }
+
+  @Override
+  public void startSuperstep() throws IOException {
+  }
+
+  @Override
+  public void finishSuperstep() throws IOException {
   }
 
 }

@@ -100,7 +100,9 @@ public class TestPersistQueue extends TestCase {
       }
 
       int cnt = 0;
-      while ((peer.getCurrentMessage()) != null) {
+      IntWritable result = null;
+      while ((result = peer.getCurrentMessage()) != null) {
+        System.out.println(result);
         cnt++;
       }
 

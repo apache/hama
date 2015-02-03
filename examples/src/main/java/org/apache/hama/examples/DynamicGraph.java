@@ -33,7 +33,6 @@ import org.apache.hama.bsp.TextOutputFormat;
 import org.apache.hama.graph.Edge;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.graph.GraphJobRunner.GraphJobCounter;
-import org.apache.hama.graph.MapVerticesInfo;
 import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
 
@@ -141,10 +140,6 @@ public class DynamicGraph {
 
   private static GraphJob createJob(String[] args, HamaConfiguration conf)
       throws IOException {
-
-    // NOTE: Graph modification APIs can be used only with MapVerticesInfo.
-    conf.set("hama.graph.vertices.info",
-        "org.apache.hama.graph.MapVerticesInfo");
 
     GraphJob graphJob = new GraphJob(conf, DynamicGraph.class);
     graphJob.setJobName("Dynamic Graph");

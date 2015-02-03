@@ -18,11 +18,8 @@
 package org.apache.hama.graph;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
@@ -37,10 +34,10 @@ import org.apache.hama.bsp.message.OutgoingMessageManager;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 import org.apache.hama.util.BSPNetUtils;
 
-public class OutgoingVertexMessagesManager<M extends Writable> implements
+public class OutgoingVertexMessageManager<M extends Writable> implements
     OutgoingMessageManager<GraphJobMessage> {
   protected static final Log LOG = LogFactory
-      .getLog(OutgoingVertexMessagesManager.class);
+      .getLog(OutgoingVertexMessageManager.class);
 
   private HamaConfiguration conf;
   private BSPMessageCompressor<GraphJobMessage> compressor;
@@ -48,9 +45,7 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
   private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
   private HashMap<InetSocketAddress, BSPMessageBundle<GraphJobMessage>> outgoingBundles = new HashMap<InetSocketAddress, BSPMessageBundle<GraphJobMessage>>();
 
-  @SuppressWarnings("rawtypes")
-  private HashMap<InetSocketAddress, Map<WritableComparable, Writable>> vertexMessageMap = new HashMap<InetSocketAddress, Map<WritableComparable, Writable>>();
-  private List<Writable> tmp;
+  private HashMap<InetSocketAddress, MessagePerVertex> storage = new HashMap<InetSocketAddress, MessagePerVertex>();
 
   @SuppressWarnings("unchecked")
   @Override
@@ -73,33 +68,23 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
   public void addMessage(String peerName, GraphJobMessage msg) {
     InetSocketAddress targetPeerAddress = getSocketAddress(peerName);
 
-    if (msg.isVertexMessage() && combiner != null) {
+    if (msg.isVertexMessage()) {
       WritableComparable vertexID = msg.getVertexId();
-      Writable vertexValue = msg.getVertexValue();
 
-      if (!vertexMessageMap.containsKey(targetPeerAddress)) {
-        vertexMessageMap.put(targetPeerAddress,
-            new HashMap<WritableComparable, Writable>());
+      if (!storage.containsKey(targetPeerAddress)) {
+        storage.put(targetPeerAddress, new MessagePerVertex());
       }
 
-      Map<WritableComparable, Writable> combinedMessage = vertexMessageMap
-          .get(targetPeerAddress);
+      MessagePerVertex msgPerVertex = storage.get(targetPeerAddress);
+      msgPerVertex.add(vertexID, msg.getVertexValue());
 
-      if (combinedMessage.containsKey(vertexID)) {
-        tmp = new ArrayList<Writable>();
-        tmp.add(combinedMessage.get(vertexID));
-        tmp.add(vertexValue);
-
-        Iterable<Writable> iterable = new Iterable<Writable>() {
-          @Override
-          public Iterator<Writable> iterator() {
-            return tmp.iterator();
-          }
-        };
-
-        combinedMessage.put(vertexID, combiner.combine(iterable));
-      } else {
-        combinedMessage.put(vertexID, vertexValue);
+      // Combining messages
+      if (combiner != null
+          && msgPerVertex.get(vertexID).getVertexValue().size() > 1) {
+        storage.get(targetPeerAddress).put(
+            vertexID,
+            new GraphJobMessage(vertexID, combiner.combine(msgPerVertex.get(
+                vertexID).getVertexValue())));
       }
 
     } else {
@@ -131,25 +116,43 @@ public class OutgoingVertexMessagesManager<M extends Writable> implements
   @Override
   public void clear() {
     outgoingBundles.clear();
-    vertexMessageMap.clear();
+    storage.clear();
   }
 
-  @SuppressWarnings("rawtypes")
   @Override
   public Iterator<Entry<InetSocketAddress, BSPMessageBundle<GraphJobMessage>>> getBundleIterator() {
-    if (combiner != null) {
-      for (Map.Entry<InetSocketAddress, Map<WritableComparable, Writable>> e : vertexMessageMap
-          .entrySet()) {
-        for (Map.Entry<WritableComparable, Writable> v : e.getValue()
-            .entrySet()) {
-          outgoingBundles.get(e.getKey()).addMessage(
-              new GraphJobMessage(v.getKey(), v.getValue()));
-        }
-      }
-    }
+    return new Iterator<Entry<InetSocketAddress, BSPMessageBundle<GraphJobMessage>>>() {
+      final Iterator<Entry<InetSocketAddress, BSPMessageBundle<GraphJobMessage>>> bundles = outgoingBundles
+          .entrySet().iterator();
 
-    vertexMessageMap.clear();
-    return outgoingBundles.entrySet().iterator();
+      @Override
+      public boolean hasNext() {
+        return bundles.hasNext();
+      }
+
+      @Override
+      public Entry<InetSocketAddress, BSPMessageBundle<GraphJobMessage>> next() {
+        Entry<InetSocketAddress, BSPMessageBundle<GraphJobMessage>> bundle = bundles
+            .next();
+
+        MessagePerVertex msgStorage = storage.get(bundle.getKey());
+        if (msgStorage != null) {
+          Iterator<GraphJobMessage> it = msgStorage.iterator();
+          while (it.hasNext()) {
+            bundle.getValue().addMessage(it.next());
+          }
+        }
+
+        storage.remove(bundle.getKey());
+        return bundle;
+      }
+
+      @Override
+      public void remove() {
+        // TODO Auto-generated method stub
+      }
+
+    };
   }
 
 }

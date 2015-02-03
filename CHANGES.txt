@@ -19,6 +19,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
 
+   HAMA-919: Manage messages per Vertex (edwardyoon)
    HAMA-923: add a toString() method for FloatArrayWritable and TextArrayWritable classes (edwardyoon)
    HAMA-921: Polish doSuperstep() function and VertexMessageIterable class (Anastasis Andronidis)
    HAMA-913: Add RPC implementation using netty(bsmin)  

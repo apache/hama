@@ -18,15 +18,15 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.util.KryoSerializer;
 
 /**
  * Stores the vertices into a memory-based tree map. This implementation allows
@@ -41,9 +41,8 @@ import org.apache.hama.util.KryoSerializer;
 public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
   private GraphJobRunner<V, E, M> runner;
-  Vertex<V, E, M> v;
 
-  private final SortedMap<V, byte[]> verticesMap = new TreeMap<V, byte[]>();
+  private final Map<V, Vertex<V, E, M>> vertices = new HashMap<V, Vertex<V, E, M>>();
 
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
@@ -52,98 +51,67 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   }
 
   @Override
-  public void addVertex(Vertex<V, E, M> vertex) throws IOException {
-    if (verticesMap.containsKey(vertex.getVertexID())) {
-      throw new UnsupportedOperationException("Vertex with ID: "
-          + vertex.getVertexID() + " already exists!");
-    } else {
-      verticesMap.put(vertex.getVertexID(), serialize(vertex));
-    }
+  public void put(Vertex<V, E, M> vertex) throws IOException {
+    vertices.put(vertex.getVertexID(), vertex);
   }
 
   @Override
-  public void removeVertex(V vertexID) throws UnsupportedOperationException {
-    if (verticesMap.containsKey(vertexID)) {
-      verticesMap.remove(vertexID);
-    } else {
-      throw new UnsupportedOperationException("Vertex with ID: " + vertexID
-          + " not found on this peer.");
-    }
+  public void remove(V vertexID) throws UnsupportedOperationException {
+    vertices.remove(vertexID);
   }
 
   public void clear() {
-    verticesMap.clear();
+    vertices.clear();
   }
 
   @Override
   public int size() {
-    return this.verticesMap.size();
+    return vertices.size();
   }
 
   @Override
-  public IDSkippingIterator<V, E, M> skippingIterator() {
-    return new IDSkippingIterator<V, E, M>() {
-      Iterator<V> it = verticesMap.keySet().iterator();
+  public Vertex<V, E, M> get(V vertexID) {
+    Vertex<V, E, M> vertex = vertices.get(vertexID);
+    vertex.setRunner(runner);
+    return vertex;
+  }
+
+  @Override
+  public Iterator<Vertex<V, E, M>> iterator() {
+
+    final Iterator<Vertex<V, E, M>> vertexIterator = vertices.values().iterator();
+    
+    return new Iterator<Vertex<V, E, M>>() {
 
       @Override
-      public boolean hasNext(V msgId,
-          org.apache.hama.graph.IDSkippingIterator.Strategy strat)
-          throws IOException {
-
-        if (it.hasNext()) {
-          V vertexID = it.next();
-          v = deserialize(vertexID, verticesMap.get(vertexID));
-
-          while (!strat.accept(v, msgId)) {
-            if (it.hasNext()) {
-              vertexID = it.next();
-              v = deserialize(vertexID, verticesMap.get(vertexID));
-            } else {
-              return false;
-            }
-          }
-
-          return true;
-        } else {
-          v = null;
-          return false;
-        }
+      public boolean hasNext() {
+        return vertexIterator.hasNext();
       }
 
       @Override
       public Vertex<V, E, M> next() {
-        if (v == null) {
-          throw new UnsupportedOperationException(
-              "You must invoke hasNext before ask for the next vertex.");
-        }
+        Vertex<V, E, M> vertex = vertexIterator.next();
+        vertex.setRunner(runner);
+        return vertex;
+      }
 
-        Vertex<V, E, M> tmp = v;
-        v = null;
-        return tmp;
+      @Override
+      public void remove() {
+        // TODO Auto-generated method stub
       }
 
     };
   }
 
-  private final KryoSerializer kryo = new KryoSerializer(GraphJobRunner.VERTEX_CLASS);
-  
-  public byte[] serialize(Vertex<V, E, M> vertex) throws IOException {
-    return kryo.serialize(vertex);
-  }
-
-  @SuppressWarnings("unchecked")
-  public Vertex<V, E, M> deserialize(V vertexID, byte[] serialized)
-      throws IOException {
-    v = (Vertex<V, E, M>) kryo.deserialize(serialized);
-    v.setRunner(runner);
-    v.setVertexID(vertexID);
-    return v;
+  @Override
+  public Set<V> keySet() {
+    return vertices.keySet();
   }
 
   @Override
   public void finishVertexComputation(Vertex<V, E, M> vertex)
       throws IOException {
-    verticesMap.put(vertex.getVertexID(), serialize(vertex));
+    vertices.put(vertex.getVertexID(), vertex);
   }
 
   @Override
@@ -155,17 +123,11 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   }
 
   @Override
-  public void finishSuperstep() {
-  }
-
-  @Override
-  public void cleanup(HamaConfiguration conf, TaskAttemptID attempt)
-      throws IOException {
-
-  }
-
-  @Override
   public void startSuperstep() throws IOException {
-
   }
+
+  @Override
+  public void finishSuperstep() throws IOException {
+  }
+
 }

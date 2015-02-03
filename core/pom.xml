@@ -136,8 +136,14 @@
       <artifactId>zookeeper</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.esotericsoftware.kryo</groupId>
-      <artifactId>kryo</artifactId>
+      <groupId>org.apache.directmemory</groupId>
+      <artifactId>directmemory-cache</artifactId>
+      <version>0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.directmemory</groupId>
+      <artifactId>directmemory-kryo</artifactId>
+      <version>0.2</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>

@@ -17,9 +17,15 @@
  */
 package org.apache.hama.graph;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.IntWritable;
@@ -46,9 +52,13 @@ public final class GraphJobMessage implements
   private MapWritable map;
   @SuppressWarnings("rawtypes")
   private WritableComparable vertexId;
-  private Writable vertexValue;
-  private IntWritable verticesSize;
+  private IntWritable integerMessage;
   private static GraphJobMessageComparator comparator;
+
+  private int numOfValues = 0;
+
+  private final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+  private final DataOutputStream bufferDos = new DataOutputStream(byteBuffer);
 
   static {
     if (comparator == null) {
@@ -61,6 +71,13 @@ public final class GraphJobMessage implements
   public GraphJobMessage() {
   }
 
+  public byte[] serialize(Writable message) throws IOException {
+    ByteArrayOutputStream mbos = new ByteArrayOutputStream();
+    DataOutputStream mdos = new DataOutputStream(mbos);
+    message.write(mdos);
+    return mbos.toByteArray();
+  }
+
   public GraphJobMessage(MapWritable map) {
     this.flag = MAP_FLAG;
     this.map = map;
@@ -69,12 +86,20 @@ public final class GraphJobMessage implements
   public GraphJobMessage(WritableComparable<?> vertexId, Writable vertexValue) {
     this.flag = VERTEX_FLAG;
     this.vertexId = vertexId;
-    this.vertexValue = vertexValue;
+
+    add(vertexValue);
+  }
+
+  public GraphJobMessage(WritableComparable<?> vertexId, List<Writable> values) {
+    this.flag = VERTEX_FLAG;
+    this.vertexId = vertexId;
+
+    addAll(values);
   }
 
   public GraphJobMessage(IntWritable size) {
     this.flag = VERTICES_SIZE_FLAG;
-    this.verticesSize = size;
+    this.integerMessage = size;
   }
 
   @Override
@@ -84,11 +109,14 @@ public final class GraphJobMessage implements
       // we don't need to write the classes because the other side has the same
       // classes for the two entities.
       vertexId.write(out);
-      vertexValue.write(out);
+
+      out.writeInt(numOfValues);
+      out.writeInt(byteBuffer.size());
+      out.write(byteBuffer.toByteArray());
     } else if (isMapMessage()) {
       map.write(out);
     } else if (isVerticesSizeMessage()) {
-      verticesSize.write(out);
+      integerMessage.write(out);
     } else {
       vertexId.write(out);
     }
@@ -107,8 +135,8 @@ public final class GraphJobMessage implements
       map = new MapWritable();
       map.readFields(in);
     } else if (isVerticesSizeMessage()) {
-      verticesSize = new IntWritable();
-      verticesSize.readFields(in);
+      integerMessage = new IntWritable();
+      integerMessage.readFields(in);
     } else {
       vertexId = ReflectionUtils.newInstance(GraphJobRunner.VERTEX_ID_CLASS,
           null);
@@ -122,14 +150,19 @@ public final class GraphJobMessage implements
     if (isVertexMessage()) {
       vertexId = GraphJobRunner.createVertexIDObject();
       vertexId.readFields(in);
-      vertexValue = GraphJobRunner.createVertexValue();
-      vertexValue.readFields(in);
+
+      this.numOfValues = in.readInt();
+      int bytesLength = in.readInt();
+      byte[] temp = new byte[bytesLength];
+      in.readFully(temp);
+      bufferDos.write(temp);
+      bufferDos.flush();
     } else if (isMapMessage()) {
       map = new MapWritable();
       map.readFields(in);
     } else if (isVerticesSizeMessage()) {
-      verticesSize = new IntWritable();
-      verticesSize.readFields(in);
+      integerMessage = new IntWritable();
+      integerMessage.readFields(in);
     } else {
       vertexId = ReflectionUtils.newInstance(GraphJobRunner.VERTEX_ID_CLASS,
           null);
@@ -161,12 +194,53 @@ public final class GraphJobMessage implements
     return vertexId;
   }
 
-  public Writable getVertexValue() {
-    return vertexValue;
+  private ByteArrayInputStream bis = null;
+  private DataInputStream dis = null;
+
+  public List<Writable> getVertexValue() {
+    bis = new ByteArrayInputStream(byteBuffer.toByteArray());
+    dis = new DataInputStream(bis);
+
+    List<Writable> valuesCache = new ArrayList<Writable>();
+
+    for (int i = 0; i < numOfValues; i++) {
+      try {
+        Writable v = GraphJobRunner.createVertexValue();
+        v.readFields(dis);
+        valuesCache.add(v);
+      } catch (IOException e) {
+        System.out.println(i + ", " + numOfValues);
+        e.printStackTrace();
+      }
+    }
+
+    return valuesCache;
+  }
+
+  public void add(Writable value) {
+    try {
+      bufferDos.write(serialize(value));
+      numOfValues++;
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  public void addAll(List<Writable> values) {
+    for (Writable v : values)
+      add(v);
+  }
+
+  /**
+   * @return the number of values
+   */
+  public int size() {
+    return this.numOfValues;
   }
 
   public IntWritable getVerticesSize() {
-    return verticesSize;
+    return integerMessage;
   }
 
   public boolean isMapMessage() {
@@ -184,14 +258,14 @@ public final class GraphJobMessage implements
   @Override
   public String toString() {
     if (isVertexMessage()) {
-      return "ID: " + vertexId + " Val: " + vertexValue;
+      return "ID: " + vertexId + " Val: " + numOfValues;
     } else if (isMapMessage()) {
       return "Map: " + map;
     } else if (isVerticesSizeMessage()) {
-      return "#Vertices: " + verticesSize;
+      return "#Vertices: " + integerMessage;
     } else {
       return "GraphJobMessage [flag=" + flag + ", map=" + map + ", vertexId="
-          + vertexId + ", vertexValue=" + vertexValue + "]";
+          + vertexId + ", vertexValue=" + numOfValues + "]";
     }
   }
 
@@ -233,4 +307,5 @@ public final class GraphJobMessage implements
       return compare(key1, key2); // compare them
     }
   }
+
 }

@@ -18,6 +18,8 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Set;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -41,21 +43,42 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
       TaskAttemptID attempt) throws IOException;
 
   /**
-   * Cleanup of internal structures.
-   */
-  public void cleanup(HamaConfiguration conf, TaskAttemptID attempt)
-      throws IOException;
-
-  /**
    * Add a vertex to the underlying structure.
    */
-  public void addVertex(Vertex<V, E, M> vertex) throws IOException;
+  public void put(Vertex<V, E, M> vertex) throws IOException;
 
+  public Vertex<V, E, M> get(V vertexID);
+  
   /**
    * Remove a vertex to the underlying structure.
    */
-  public void removeVertex(V vertexID) throws UnsupportedOperationException;
+  public void remove(V vertexID) throws UnsupportedOperationException;
 
+  /**
+   * @return the number of vertices added to the underlying structure.
+   *         Implementations should take care this is a constant time operation.
+   */
+  public int size();
+
+  /**
+   * Must be called once a vertex is guaranteed not to change any more and can
+   * safely be persisted to a secondary storage.
+   */
+  public void finishVertexComputation(Vertex<V, E, M> vertex)
+      throws IOException;
+  
+  /**
+   * @return the iterator.
+   */
+  public Iterator<Vertex<V, E, M>> iterator();
+
+  public void clear();
+
+  /**
+   * @return the set of vertex IDs
+   */
+  public Set<V> keySet();
+  
   /**
    * Finish the additions, from this point on the implementations should close
    * the adds and throw exceptions in case something is added after this call.
@@ -78,18 +101,4 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
    */
   public void finishSuperstep() throws IOException;
 
-  /**
-   * Must be called once a vertex is guaranteed not to change any more and can
-   * safely be persisted to a secondary storage.
-   */
-  public void finishVertexComputation(Vertex<V, E, M> vertex)
-      throws IOException;
-
-  /**
-   * @return the number of vertices added to the underlying structure.
-   *         Implementations should take care this is a constant time operation.
-   */
-  public int size();
-
-  public IDSkippingIterator<V, E, M> skippingIterator();
 }
