@@ -30,20 +30,15 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.Combiner;
-import org.apache.hama.bsp.message.OutgoingMessageManager;
+import org.apache.hama.bsp.message.AbstractOutgoingMessageManager;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
-import org.apache.hama.util.BSPNetUtils;
 
-public class OutgoingVertexMessageManager<M extends Writable> implements
-    OutgoingMessageManager<GraphJobMessage> {
+public class OutgoingVertexMessageManager<M extends Writable> extends
+    AbstractOutgoingMessageManager<GraphJobMessage> {
   protected static final Log LOG = LogFactory
       .getLog(OutgoingVertexMessageManager.class);
 
-  private HamaConfiguration conf;
-  private BSPMessageCompressor<GraphJobMessage> compressor;
   private Combiner<Writable> combiner;
-  private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
-  private HashMap<InetSocketAddress, BSPMessageBundle<GraphJobMessage>> outgoingBundles = new HashMap<InetSocketAddress, BSPMessageBundle<GraphJobMessage>>();
 
   private HashMap<InetSocketAddress, MessagePerVertex> storage = new HashMap<InetSocketAddress, MessagePerVertex>();
 
@@ -53,9 +48,9 @@ public class OutgoingVertexMessageManager<M extends Writable> implements
       BSPMessageCompressor<GraphJobMessage> compressor) {
     this.conf = conf;
     this.compressor = compressor;
+
     if (!conf.getClass(Constants.COMBINER_CLASS, Combiner.class).equals(
         Combiner.class)) {
-      LOG.debug("Combiner class: " + conf.get(Constants.COMBINER_CLASS));
 
       combiner = (Combiner<Writable>) org.apache.hadoop.util.ReflectionUtils
           .newInstance(conf.getClass(Constants.COMBINER_CLASS, Combiner.class),
@@ -67,7 +62,6 @@ public class OutgoingVertexMessageManager<M extends Writable> implements
   @Override
   public void addMessage(String peerName, GraphJobMessage msg) {
     InetSocketAddress targetPeerAddress = getSocketAddress(peerName);
-
     if (msg.isVertexMessage()) {
       WritableComparable vertexID = msg.getVertexId();
 
@@ -86,31 +80,9 @@ public class OutgoingVertexMessageManager<M extends Writable> implements
             new GraphJobMessage(vertexID, combiner.combine(msgPerVertex.get(
                 vertexID).getVertexValue())));
       }
-
     } else {
       outgoingBundles.get(targetPeerAddress).addMessage(msg);
     }
-  }
-
-  private InetSocketAddress getSocketAddress(String peerName) {
-    InetSocketAddress targetPeerAddress = null;
-    // Get socket for target peer.
-    if (peerSocketCache.containsKey(peerName)) {
-      targetPeerAddress = peerSocketCache.get(peerName);
-    } else {
-      targetPeerAddress = BSPNetUtils.getAddress(peerName);
-      peerSocketCache.put(peerName, targetPeerAddress);
-    }
-
-    if (!outgoingBundles.containsKey(targetPeerAddress)) {
-      BSPMessageBundle<GraphJobMessage> bundle = new BSPMessageBundle<GraphJobMessage>();
-      if (conf.getBoolean("hama.messenger.runtime.compression", false)) {
-        bundle.setCompressor(compressor,
-            conf.getLong("hama.messenger.compression.threshold", 128));
-      }
-      outgoingBundles.put(targetPeerAddress, bundle);
-    }
-    return targetPeerAddress;
   }
 
   @Override
@@ -153,5 +125,4 @@ public class OutgoingVertexMessageManager<M extends Writable> implements
 
     };
   }
-
 }
