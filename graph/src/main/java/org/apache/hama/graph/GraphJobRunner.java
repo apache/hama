@@ -226,7 +226,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     int activeVertices = 0;
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
-    
+
     notComputedVertices = new HashSet();
     notComputedVertices.addAll(vertices.keySet());
 
@@ -235,7 +235,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     while (currentMessage != null) {
       vertex = vertices.get((V) currentMessage.getVertexId());
-      
+
       msgs = (List<M>) currentMessage.getValues();
       if (vertex.isHalted()) {
         vertex.setActive();
@@ -275,7 +275,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       throws IOException {
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
-    
+
     Iterator<Vertex<V, E, M>> iterator = vertices.iterator();
 
     while (iterator.hasNext()) {
@@ -283,11 +283,11 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
       // Calls setup method.
       vertex.setup(conf);
-      
+
       vertex.compute(Collections.singleton(vertex.getValue()));
       vertices.finishVertexComputation(vertex);
     }
-    
+
     vertices.finishSuperstep();
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
@@ -351,8 +351,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
-    final boolean selfReference = conf.getBoolean("hama.graph.self.ref", false);
-
     RecordConverter converter = org.apache.hadoop.util.ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             DefaultRecordConverter.class, RecordConverter.class), conf);
@@ -383,19 +381,12 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
                 "The records of split aren't in order by vertex ID.");
           }
 
-          if (selfReference) {
-            vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
-          }
-
           addVertex(vertex);
           vertex = currentVertex;
         }
       }
     }
     // add last vertex.
-    if (selfReference) {
-      vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
-    }
     addVertex(vertex);
 
     LOG.info(vertices.size() + " vertices are loaded into "
@@ -412,8 +403,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     if (conf.getBoolean("hama.graph.self.ref", false)) {
       vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
     }
+
     vertices.put(vertex);
-    
+
     LOG.debug("Added VertexID: " + vertex.getVertexID() + " in peer "
         + peer.getPeerName());
   }
@@ -468,7 +460,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     GraphJobMessage msg = null;
     boolean dynamicAdditions = false;
     boolean dynamicRemovals = false;
-    
+
     while ((msg = peer.getCurrentMessage()) != null) {
       // either this is a vertex message or a directive that must be read
       // as map
@@ -519,7 +511,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       }
 
     }
-    
+
     // If we applied any changes to vertices, we need to call finishAdditions
     // and finishRemovals in the end.
     if (dynamicAdditions) {

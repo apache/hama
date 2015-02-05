@@ -113,13 +113,11 @@ public final class GraphJobMessage implements
 
   private ByteArrayInputStream bis = null;
   private DataInputStream dis = null;
-  List<Writable> valuesCache;
+  List<Writable> valuesCache = new ArrayList<Writable>();
 
   public List<Writable> getValues() {
     bis = new ByteArrayInputStream(byteBuffer.toByteArray());
     dis = new DataInputStream(bis);
-
-    valuesCache = new ArrayList<Writable>();
 
     if (valuesCache.isEmpty()) {
       for (int i = 0; i < numOfValues; i++) {
