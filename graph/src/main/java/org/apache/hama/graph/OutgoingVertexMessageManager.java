@@ -58,27 +58,26 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
     }
   }
 
-  @SuppressWarnings("rawtypes")
   @Override
   public void addMessage(String peerName, GraphJobMessage msg) {
     InetSocketAddress targetPeerAddress = getSocketAddress(peerName);
     if (msg.isVertexMessage()) {
-      WritableComparable vertexID = msg.getVertexId();
+      WritableComparable<?> vertexID = msg.getVertexId();
 
       if (!storage.containsKey(targetPeerAddress)) {
         storage.put(targetPeerAddress, new MessagePerVertex());
       }
 
       MessagePerVertex msgPerVertex = storage.get(targetPeerAddress);
-      msgPerVertex.add(vertexID, msg.getVertexValue());
+      msgPerVertex.add(vertexID, msg);
 
       // Combining messages
       if (combiner != null
-          && msgPerVertex.get(vertexID).getVertexValue().size() > 1) {
+          && msgPerVertex.get(vertexID).getValues().size() > 1) {
         storage.get(targetPeerAddress).put(
             vertexID,
             new GraphJobMessage(vertexID, combiner.combine(msgPerVertex.get(
-                vertexID).getVertexValue())));
+                vertexID).getValues())));
       }
     } else {
       outgoingBundles.get(targetPeerAddress).addMessage(msg);

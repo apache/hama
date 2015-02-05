@@ -236,7 +236,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     while (currentMessage != null) {
       vertex = vertices.get((V) currentMessage.getVertexId());
       
-      msgs = (List<M>) currentMessage.getVertexValue();
+      msgs = (List<M>) currentMessage.getValues();
       if (vertex.isHalted()) {
         vertex.setActive();
       }

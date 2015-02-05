@@ -18,11 +18,9 @@
 package org.apache.hama.graph;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
 public class MessagePerVertex {
@@ -43,12 +41,11 @@ public class MessagePerVertex {
     storage.put(vertexId, graphJobMessage);
   }
 
-  @SuppressWarnings("rawtypes")
-  public void add(WritableComparable vertexID, List<Writable> values) {
+  public void add(WritableComparable<?> vertexID, GraphJobMessage msg) {
     if (storage.containsKey(vertexID)) {
-      storage.get(vertexID).addAll(values);
+      storage.get(vertexID).addValuesBytes(msg.getValuesBytes(), msg.size());
     } else {
-      put(vertexID, new GraphJobMessage(vertexID, values));
+      put(vertexID, msg);
     }
   }
 

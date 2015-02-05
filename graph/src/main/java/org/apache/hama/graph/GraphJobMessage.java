@@ -71,13 +71,6 @@ public final class GraphJobMessage implements
   public GraphJobMessage() {
   }
 
-  public byte[] serialize(Writable message) throws IOException {
-    ByteArrayOutputStream mbos = new ByteArrayOutputStream();
-    DataOutputStream mdos = new DataOutputStream(mbos);
-    message.write(mdos);
-    return mbos.toByteArray();
-  }
-
   public GraphJobMessage(MapWritable map) {
     this.flag = MAP_FLAG;
     this.map = map;
@@ -95,6 +88,81 @@ public final class GraphJobMessage implements
     this.vertexId = vertexId;
 
     addAll(values);
+  }
+
+  public GraphJobMessage(WritableComparable<?> vertexID, byte[] valuesBytes,
+      int numOfValues) {
+    this.flag = VERTEX_FLAG;
+    this.vertexId = vertexID;
+    try {
+      this.bufferDos.write(valuesBytes);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    this.numOfValues = numOfValues;
+  }
+
+  public MapWritable getMap() {
+    return map;
+  }
+
+  public WritableComparable<?> getVertexId() {
+    return vertexId;
+  }
+
+  private ByteArrayInputStream bis = null;
+  private DataInputStream dis = null;
+  List<Writable> valuesCache;
+
+  public List<Writable> getValues() {
+    bis = new ByteArrayInputStream(byteBuffer.toByteArray());
+    dis = new DataInputStream(bis);
+
+    valuesCache = new ArrayList<Writable>();
+
+    if (valuesCache.isEmpty()) {
+      for (int i = 0; i < numOfValues; i++) {
+        try {
+          Writable v = GraphJobRunner.createVertexValue();
+          v.readFields(dis);
+          valuesCache.add(v);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+
+    return valuesCache;
+  }
+
+  public byte[] getValuesBytes() {
+    return byteBuffer.toByteArray();
+  }
+
+  public void addValuesBytes(byte[] values, int numOfValues) {
+    try {
+      bufferDos.write(values);
+      this.numOfValues += numOfValues;
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  public void add(Writable value) {
+    try {
+      value.write(bufferDos);
+      numOfValues++;
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  public void addAll(List<Writable> values) {
+    for (Writable v : values)
+      add(v);
   }
 
   public GraphJobMessage(IntWritable size) {
@@ -183,53 +251,6 @@ public final class GraphJobMessage implements
       }
     }
     return 0;
-  }
-
-  public MapWritable getMap() {
-    return map;
-  }
-
-  @SuppressWarnings("rawtypes")
-  public WritableComparable getVertexId() {
-    return vertexId;
-  }
-
-  private ByteArrayInputStream bis = null;
-  private DataInputStream dis = null;
-
-  public List<Writable> getVertexValue() {
-    bis = new ByteArrayInputStream(byteBuffer.toByteArray());
-    dis = new DataInputStream(bis);
-
-    List<Writable> valuesCache = new ArrayList<Writable>();
-
-    for (int i = 0; i < numOfValues; i++) {
-      try {
-        Writable v = GraphJobRunner.createVertexValue();
-        v.readFields(dis);
-        valuesCache.add(v);
-      } catch (IOException e) {
-        System.out.println(i + ", " + numOfValues);
-        e.printStackTrace();
-      }
-    }
-
-    return valuesCache;
-  }
-
-  public void add(Writable value) {
-    try {
-      bufferDos.write(serialize(value));
-      numOfValues++;
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-
-  public void addAll(List<Writable> values) {
-    for (Writable v : values)
-      add(v);
   }
 
   /**
