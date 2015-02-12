@@ -17,14 +17,11 @@
  */
 package org.apache.hama.graph;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.io.DataInputBuffer;
@@ -111,29 +108,6 @@ public final class GraphJobMessage implements
     return vertexId;
   }
 
-  private ByteArrayInputStream bis = null;
-  private DataInputStream dis = null;
-  List<Writable> valuesCache = new ArrayList<Writable>();
-
-  public List<Writable> getValues() {
-    bis = new ByteArrayInputStream(byteBuffer.toByteArray());
-    dis = new DataInputStream(bis);
-
-    if (valuesCache.isEmpty()) {
-      for (int i = 0; i < numOfValues; i++) {
-        try {
-          Writable v = GraphJobRunner.createVertexValue();
-          v.readFields(dis);
-          valuesCache.add(v);
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    }
-
-    return valuesCache;
-  }
-
   public byte[] getValuesBytes() {
     return byteBuffer.toByteArray();
   }
@@ -161,6 +135,10 @@ public final class GraphJobMessage implements
   public void addAll(List<Writable> values) {
     for (Writable v : values)
       add(v);
+  }
+
+  public int getNumOfValues() {
+    return this.numOfValues;
   }
 
   public GraphJobMessage(IntWritable size) {
@@ -222,7 +200,6 @@ public final class GraphJobMessage implements
       byte[] temp = new byte[bytesLength];
       in.readFully(temp);
       bufferDos.write(temp);
-      bufferDos.flush();
     } else if (isMapMessage()) {
       map = new MapWritable();
       map.readFields(in);

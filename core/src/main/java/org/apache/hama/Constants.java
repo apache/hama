@@ -105,6 +105,7 @@ public interface Constants {
   // Job configuration related parameters.
   // /////////////////////////////////////////////
   public static final String JOB_INPUT_DIR = "bsp.input.dir";
+  public static final String JOB_OUTPUT_DIR = "bsp.output.dir";
   public static final String JOB_PEERS_COUNT = "bsp.peers.num";
   public static final String INPUT_FORMAT_CLASS = "bsp.input.format.class";
   public static final String OUTPUT_FORMAT_CLASS = "bsp.output.format.class";

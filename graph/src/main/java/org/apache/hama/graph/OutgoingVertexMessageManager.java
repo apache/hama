@@ -39,7 +39,7 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
       .getLog(OutgoingVertexMessageManager.class);
 
   private Combiner<Writable> combiner;
-
+  private Iterable<Writable> msgs;
   private HashMap<InetSocketAddress, MessagePerVertex> storage = new HashMap<InetSocketAddress, MessagePerVertex>();
 
   @SuppressWarnings("unchecked")
@@ -72,12 +72,15 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
       msgPerVertex.add(vertexID, msg);
 
       // Combining messages
-      if (combiner != null
-          && msgPerVertex.get(vertexID).getValues().size() > 1) {
-        storage.get(targetPeerAddress).put(
-            vertexID,
-            new GraphJobMessage(vertexID, combiner.combine(msgPerVertex.get(
-                vertexID).getValues())));
+      if (combiner != null && msgPerVertex.get(vertexID).getNumOfValues() > 1) {
+
+        final int numOfValues = msgPerVertex.get(vertexID).getNumOfValues();
+        final byte[] msgBytes = msgPerVertex.get(vertexID).getValuesBytes();
+        msgs = GraphJobRunner.getIterableMessages(numOfValues, msgBytes);
+
+        // Overwrite
+        storage.get(targetPeerAddress).put(vertexID,
+            new GraphJobMessage(vertexID, combiner.combine(msgs)));
       }
     } else {
       outgoingBundles.get(targetPeerAddress).addMessage(msg);

@@ -17,11 +17,12 @@
  */
 package org.apache.hama.graph;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -230,19 +231,22 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     notComputedVertices = new HashSet();
     notComputedVertices.addAll(vertices.keySet());
 
-    List<M> msgs = null;
+    Iterable<Writable> msgs = null;
     Vertex<V, E, M> vertex = null;
 
     while (currentMessage != null) {
       vertex = vertices.get((V) currentMessage.getVertexId());
 
-      msgs = (List<M>) currentMessage.getValues();
+      final int numOfValues = currentMessage.getNumOfValues();
+      final byte[] serializedMsgs = currentMessage.getValuesBytes();
+      msgs = getIterableMessages(numOfValues, serializedMsgs);
+
       if (vertex.isHalted()) {
         vertex.setActive();
       }
 
       if (!vertex.isHalted()) {
-        vertex.compute(msgs);
+        vertex.compute((Iterable<M>) msgs);
         notComputedVertices.remove(vertex.getVertexID());
         activeVertices++;
       }
@@ -642,6 +646,42 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   @SuppressWarnings("unchecked")
   public static <X extends Writable> X createEdgeCostObject() {
     return (X) ReflectionUtils.newInstance(EDGE_VALUE_CLASS);
+  }
+
+  public static Iterable<Writable> getIterableMessages(final int numOfValues,
+      final byte[] msgBytes) {
+
+    return new Iterable<Writable>() {
+      @Override
+      public Iterator<Writable> iterator() {
+        return new Iterator<Writable>() {
+          ByteArrayInputStream bis = new ByteArrayInputStream(msgBytes);
+          DataInputStream dis = new DataInputStream(bis);
+          int index = 0;
+
+          @Override
+          public boolean hasNext() {
+            return (index < numOfValues) ? true : false;
+          }
+
+          @Override
+          public Writable next() {
+            Writable v = GraphJobRunner.createVertexValue();
+            try {
+              v.readFields(dis);
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+            index++;
+            return v;
+          }
+
+          @Override
+          public void remove() {
+          }
+        };
+      }
+    };
   }
 
   public int getChangedVertexCnt() {

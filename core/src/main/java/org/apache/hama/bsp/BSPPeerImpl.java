@@ -257,7 +257,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       wrap.initCause(exp);
       throw wrap;
     }
-
+    
     if (inputSplit != null) {
       DataInputBuffer splitBuffer = new DataInputBuffer();
       splitBuffer.reset(split.getBytes(), 0, split.getLength());
@@ -314,12 +314,14 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   @SuppressWarnings("unchecked")
   public final void initializeIO() throws Exception {
 
-    initInput();
+    if (conf.get(Constants.JOB_INPUT_DIR) != null) {
+      initInput();
+    }
 
     String outdir = null;
-    if (conf.get("bsp.output.dir") != null) {
-      Path outputDir = new Path(conf.get("bsp.output.dir",
-          "tmp-" + System.currentTimeMillis()), Task.getOutputName(partition));
+    if (conf.get(Constants.JOB_OUTPUT_DIR) != null) {
+      Path outputDir = new Path(conf.get(Constants.JOB_OUTPUT_DIR, "tmp-"
+          + System.currentTimeMillis()), Task.getOutputName(partition));
       outdir = outputDir.makeQualified(fs).toString();
     }
     outWriter = bspJob.getOutputFormat().getRecordWriter(fs, bspJob, outdir);
