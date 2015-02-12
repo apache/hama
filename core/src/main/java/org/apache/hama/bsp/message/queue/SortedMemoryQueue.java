@@ -31,7 +31,7 @@ import org.apache.hama.bsp.TaskAttemptID;
  * sorted receive and send.
  */
 public final class SortedMemoryQueue<M extends WritableComparable<M>>
-    implements SynchronizedQueue<M>, BSPMessageInterface<M> {
+    implements SynchronizedQueue<M> {
 
   private final BlockingQueue<M> queue = new PriorityBlockingQueue<M>();
   private Configuration conf;
@@ -49,6 +49,11 @@ public final class SortedMemoryQueue<M extends WritableComparable<M>>
   @Override
   public Configuration getConf() {
     return conf;
+  }
+
+  @Override
+  public void addBundle(BSPMessageBundle<M> bundle) {
+    addAll(bundle);
   }
 
   @Override
@@ -86,40 +91,14 @@ public final class SortedMemoryQueue<M extends WritableComparable<M>>
   }
 
   // empty, not needed to implement
-
   @Override
   public void init(Configuration conf, TaskAttemptID id) {
-
+    this.conf = conf;
   }
 
   @Override
   public void close() {
     this.clear();
-  }
-
-  @Override
-  public void prepareRead() {
-
-  }
-
-  @Override
-  public void prepareWrite() {
-
-  }
-
-  @Override
-  public boolean isMessageSerialized() {
-    return false;
-  }
-
-  @Override
-  public void add(BSPMessageBundle<M> bundle) {
-    addAll(bundle);
-  }
-
-  @Override
-  public boolean isMemoryBasedQueue() {
-    return true;
   }
 
   @Override

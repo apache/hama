@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.message.queue.SynchronizedQueue;
@@ -49,6 +50,11 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
     return conf;
   }
 
+  @Override
+  public void addBundle(BSPMessageBundle<GraphJobMessage> bundle) {
+    addAll(bundle);
+  }
+  
   @Override
   public void addAll(Iterable<GraphJobMessage> col) {
     for (GraphJobMessage m : col)
@@ -92,10 +98,8 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   }
 
   // empty, not needed to implement
-
   @Override
   public void init(Configuration conf, TaskAttemptID id) {
-
   }
 
   @Override
@@ -104,28 +108,9 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   }
 
   @Override
-  public void prepareRead() {
-
-  }
-
-  @Override
-  public void prepareWrite() {
-
-  }
-
-  @Override
-  public boolean isMessageSerialized() {
-    return false;
-  }
-
-  @Override
-  public boolean isMemoryBasedQueue() {
-    return true;
-  }
-
-  @Override
   public MessageQueue<GraphJobMessage> getMessageQueue() {
     return this;
   }
+
 
 }

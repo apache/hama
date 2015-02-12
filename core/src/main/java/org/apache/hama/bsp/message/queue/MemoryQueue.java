@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
 
 /**
@@ -31,7 +32,17 @@ public final class MemoryQueue<M extends Writable> implements
     SynchronizedQueue<M> {
 
   private final ConcurrentLinkedQueue<M> deque = new ConcurrentLinkedQueue<M>();
+  private final ConcurrentLinkedQueue<BSPMessageBundle<M>> bundles = new ConcurrentLinkedQueue<BSPMessageBundle<M>>();
+  private int numOfMsg = 0;
+  private Iterator<M> currIterator;
+
   private Configuration conf;
+
+  @Override
+  public void addBundle(BSPMessageBundle<M> bundle) {
+    numOfMsg += bundle.size();
+    bundles.add(bundle);
+  }
 
   @Override
   public final void addAll(Iterable<M> col) {
@@ -59,12 +70,20 @@ public final class MemoryQueue<M extends Writable> implements
 
   @Override
   public final M poll() {
-    return deque.poll();
+    if (currIterator == null || !currIterator.hasNext()) {
+      if (bundles.size() > 0)
+        currIterator = bundles.poll().iterator();
+      else
+        return deque.poll();
+    }
+
+    numOfMsg--;
+    return currIterator.next();
   }
 
   @Override
   public final int size() {
-    return deque.size();
+    return numOfMsg + deque.size();
   }
 
   @Override
@@ -82,10 +101,10 @@ public final class MemoryQueue<M extends Writable> implements
     return conf;
   }
 
-  // not doing much here
   @Override
   public void init(Configuration conf, TaskAttemptID id) {
-
+    this.numOfMsg = 0;
+    this.conf = conf;
   }
 
   @Override
@@ -94,27 +113,8 @@ public final class MemoryQueue<M extends Writable> implements
   }
 
   @Override
-  public void prepareRead() {
-
-  }
-
-  @Override
-  public void prepareWrite() {
-
-  }
-
-  @Override
-  public boolean isMessageSerialized() {
-    return false;
-  }
-
-  @Override
-  public boolean isMemoryBasedQueue() {
-    return true;
-  }
-
-  @Override
   public MessageQueue<M> getMessageQueue() {
     return this;
   }
+
 }

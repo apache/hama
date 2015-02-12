@@ -354,9 +354,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
           bundle.getLength());
 
-      if (conf.getBoolean("hama.messenger.runtime.compression", false)) {
+      if (conf.getBoolean(Constants.MESSENGER_RUNTIME_COMPRESSION, false)) {
         bundle.setCompressor(compressor,
-            conf.getLong("hama.messenger.compression.threshold", 512));
+            conf.getLong(Constants.MESSENGER_COMPRESSION_THRESHOLD, 512));
       }
 
       Iterator<M> it = bundle.iterator();

@@ -79,9 +79,8 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
         className = message.getClass().getName();
       }
 
-      msgBytes = serialize(message);
-
       if (compressor != null) {
+        msgBytes = serialize(message);
         if (msgBytes.length > threshold) {
           bufferDos.writeBoolean(true);
           msgBytes = compressor.compress(msgBytes);
@@ -90,7 +89,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
           bufferDos.writeBoolean(false);
         }
       }
-      bufferDos.write(msgBytes);
+      message.write(bufferDos);
       bundleSize++;
     } catch (IOException e) {
       LOG.error(e);
@@ -134,13 +133,8 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
           }
 
           msg = ReflectionUtils.newInstance(clazz, null);
-          boolean isCompressed = false;
 
-          if (compressor != null) {
-            isCompressed = dis.readBoolean();
-          }
-
-          if (isCompressed) {
+          if (compressor != null && dis.readBoolean()) {
             int length = dis.readInt();
             msgBytes = new byte[length];
             dis.readFully(msgBytes);

@@ -49,7 +49,6 @@ import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.SequenceFileInputFormat;
 import org.apache.hama.bsp.SequenceFileOutputFormat;
 import org.apache.hama.bsp.message.MessageManager;
-import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.commons.io.PipesKeyValueWritable;
 import org.apache.hama.commons.io.PipesVectorWritable;
 import org.apache.hama.commons.math.DenseDoubleVector;
@@ -94,8 +93,6 @@ public class TestPipes extends HamaCluster {
     assertEquals("Make sure master addr is set to localhost:", "localhost",
         configuration.get("bsp.master.address"));
     configuration.set("bsp.local.dir", HAMA_TMP_OUTPUT);
-    configuration
-        .set(DiskQueue.DISK_QUEUE_PATH_KEY, HAMA_TMP_DISK_QUEUE_OUTPUT);
     configuration.set(Constants.ZOOKEEPER_QUORUM, "localhost");
     configuration.setInt(Constants.ZOOKEEPER_CLIENT_PORT, 21810);
     configuration.set("hama.sync.client.class",

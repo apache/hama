@@ -368,8 +368,8 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       InterruptedException {
 
     // normally all messages should been send now, finalizing the send phase
-    Iterator<Entry<InetSocketAddress, BSPMessageBundle<M>>> it = messenger
-        .getOutgoingBundles();
+    Iterator<Entry<InetSocketAddress, BSPMessageBundle<M>>> it;
+    it = messenger.getOutgoingBundles();
 
     while (it.hasNext()) {
       Entry<InetSocketAddress, BSPMessageBundle<M>> entry = it.next();

@@ -28,8 +28,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
@@ -37,7 +37,6 @@ import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 import org.apache.hama.bsp.message.compress.BSPMessageCompressorFactory;
-import org.apache.hama.bsp.message.queue.DiskQueue;
 import org.apache.hama.bsp.message.queue.MemoryQueue;
 import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.message.queue.SingleLockQueue;
@@ -108,14 +107,6 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     try {
       outgoingMessageManager.clear();
       localQueue.close();
-      // remove possible disk queues from the path
-      try {
-        FileSystem.get(conf).delete(
-            DiskQueue.getQueueDir(conf, attemptId,
-                conf.get(DiskQueue.DISK_QUEUE_PATH_KEY)), true);
-      } catch (IOException e) {
-        LOG.warn("Queue dir couldn't be deleted");
-      }
     } finally {
       notifyClose();
     }
@@ -151,9 +142,6 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     if (conf.getBoolean(MessageQueue.PERSISTENT_QUEUE, false)
         && localQueue.size() > 0) {
 
-      if (localQueue.isMemoryBasedQueue()
-          && localQueueForNextIteration.isMemoryBasedQueue()) {
-
         // To reduce the number of element additions
         if (localQueue.size() > localQueueForNextIteration.size()) {
           localQueue.addAll(localQueueForNextIteration);
@@ -162,16 +150,6 @@ public abstract class AbstractMessageManager<M extends Writable> implements
           localQueue = localQueueForNextIteration.getMessageQueue();
         }
 
-      } else {
-
-        // TODO find the way to switch disk-based queue efficiently.
-        localQueueForNextIteration.addAll(localQueue);
-        if (localQueue != null) {
-          localQueue.close();
-        }
-        localQueue = localQueueForNextIteration.getMessageQueue();
-
-      }
     } else {
       if (localQueue != null) {
         localQueue.close();
@@ -180,7 +158,6 @@ public abstract class AbstractMessageManager<M extends Writable> implements
       localQueue = localQueueForNextIteration.getMessageQueue();
     }
 
-    localQueue.prepareRead();
     localQueueForNextIteration = getSynchronizedReceiverQueue();
     notifyInit();
   }
@@ -279,17 +256,13 @@ public abstract class AbstractMessageManager<M extends Writable> implements
 
   @Override
   public void loopBackBundle(BSPMessageBundle<M> bundle) throws IOException {
-    if (conf.getBoolean("hama.messenger.runtime.compression", false)) {
+    if (conf.getBoolean(Constants.MESSENGER_RUNTIME_COMPRESSION, false)) {
       bundle.setCompressor(compressor,
-          conf.getLong("hama.messenger.compression.threshold", 128));
+          conf.getLong(Constants.MESSENGER_COMPRESSION_THRESHOLD, 128));
     }
 
     peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, bundle.size());
-    
-    Iterator<? extends Writable> it = bundle.iterator();
-    while (it.hasNext()) {
-      loopBackMessage(it.next());
-    }
+    this.localQueueForNextIteration.addBundle(bundle);
   }
 
   @SuppressWarnings("unchecked")
