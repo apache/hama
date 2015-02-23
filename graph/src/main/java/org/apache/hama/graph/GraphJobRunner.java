@@ -241,18 +241,20 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       final byte[] serializedMsgs = currentMessage.getValuesBytes();
       msgs = getIterableMessages(numOfValues, serializedMsgs);
 
+      // reactivation
       if (vertex.isHalted()) {
         vertex.setActive();
       }
 
       if (!vertex.isHalted()) {
         vertex.compute((Iterable<M>) msgs);
-        notComputedVertices.remove(vertex.getVertexID());
+        vertices.finishVertexComputation(vertex);
         activeVertices++;
+
+        notComputedVertices.remove(vertex.getVertexID());
       }
 
       currentMessage = peer.getCurrentMessage();
-      vertices.finishVertexComputation(vertex);
     }
 
     for (V v : notComputedVertices) {
