@@ -31,7 +31,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaCluster;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.message.compress.SnappyCompressor;
+import org.apache.hama.bsp.message.compress.Bzip2Compressor;
 import org.apache.hama.examples.ClassSerializePrinting;
 
 public class TestBSPMasterGroomServer extends HamaCluster {
@@ -85,8 +85,7 @@ public class TestBSPMasterGroomServer extends HamaCluster {
     bsp.setOutputValueClass(Text.class);
     bsp.setOutputPath(OUTPUT_PATH);
 
-    bsp.setCompressionCodec(SnappyCompressor.class);
-    bsp.setCompressionThreshold(40);
+    bsp.setCompressionCodec(Bzip2Compressor.class);
 
     BSPJobClient jobClient = new BSPJobClient(configuration);
     configuration.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 6000);

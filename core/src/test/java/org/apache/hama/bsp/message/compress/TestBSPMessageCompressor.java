@@ -22,11 +22,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 
 import junit.framework.TestCase;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hama.bsp.BSPMessageBundle;
 
 public class TestBSPMessageCompressor extends TestCase {
 
@@ -37,33 +39,35 @@ public class TestBSPMessageCompressor extends TestCase {
 
     assertNull(compressor);
     configuration.setClass(BSPMessageCompressorFactory.COMPRESSION_CODEC_CLASS,
-        SnappyCompressor.class, BSPMessageCompressor.class);
+        Bzip2Compressor.class, BSPMessageCompressor.class);
     compressor = new BSPMessageCompressorFactory<IntWritable>()
         .getCompressor(configuration);
 
     assertNotNull(compressor);
 
-    IntWritable a = new IntWritable(123);
-    IntWritable b = new IntWritable(321);
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(bos);
-    a.write(dos);
-    b.write(dos);
+    BSPMessageBundle<IntWritable> a = new BSPMessageBundle<IntWritable>();
+    for (int i = 0; i < 10000; i++) {
+      a.addMessage(new IntWritable(i));
+    }
 
-    byte[] x = bos.toByteArray();
+    ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+    DataOutputStream bufferDos = new DataOutputStream(byteBuffer);
+    a.write(bufferDos);
 
-    byte[] compressed = compressor.compress(x);
+    byte[] compressed = compressor.compress(byteBuffer.toByteArray());
+    assertTrue(byteBuffer.size() > compressed.length);
     byte[] decompressed = compressor.decompress(compressed);
 
     ByteArrayInputStream bis = new ByteArrayInputStream(decompressed);
-    DataInputStream dis = new DataInputStream(bis);
+    DataInputStream in = new DataInputStream(bis);
 
-    IntWritable c = new IntWritable();
-    c.readFields(dis);
-    assertEquals(123, c.get());
-
-    IntWritable d = new IntWritable();
-    d.readFields(dis);
-    assertEquals(321, d.get());
+    BSPMessageBundle<IntWritable> b = new BSPMessageBundle<IntWritable>();
+    b.readFields(in);
+    Iterator<IntWritable> it = b.iterator();
+    int counter = 0;
+    while (it.hasNext()) {
+      assertTrue(it.next().get() == counter);
+      counter++;
+    }
   }
 }

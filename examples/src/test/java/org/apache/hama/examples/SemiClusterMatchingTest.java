@@ -19,9 +19,7 @@
 package org.apache.hama.examples;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -45,7 +43,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
-import org.apache.hama.bsp.message.compress.SnappyCompressor;
+import org.apache.hama.bsp.message.compress.Bzip2Compressor;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.ml.semiclustering.SemiClusterMessage;
 import org.apache.hama.ml.semiclustering.SemiClusterTextReader;
@@ -53,7 +51,6 @@ import org.apache.hama.ml.semiclustering.SemiClusterVertexOutputWriter;
 import org.apache.hama.ml.semiclustering.SemiClusteringVertex;
 import org.junit.Test;
 
-@SuppressWarnings("unused")
 public class SemiClusterMatchingTest extends TestCase {
   private static String INPUT = "src/test/resources/semiclustering.txt";
   private static String OUTPUT = "/tmp/graph-semiCluster";
@@ -196,8 +193,7 @@ public class SemiClusterMatchingTest extends TestCase {
       GraphJob semiClusterJob = new GraphJob(conf, SemiClusterJobDriver.class);
       semiClusterJob.setMaxIteration(15);
 
-      semiClusterJob.setCompressionCodec(SnappyCompressor.class);
-      semiClusterJob.setCompressionThreshold(10);
+      semiClusterJob.setCompressionCodec(Bzip2Compressor.class);
 
       semiClusterJob
           .setVertexOutputWriterClass(SemiClusterVertexOutputWriter.class);

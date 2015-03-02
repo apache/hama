@@ -39,7 +39,6 @@ import org.apache.hama.bsp.ClusterStatus;
 import org.apache.hama.bsp.FileOutputFormat;
 import org.apache.hama.bsp.NullInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
-import org.apache.hama.bsp.message.compress.SnappyCompressor;
 import org.apache.hama.bsp.sync.SyncException;
 
 public class PiEstimator {
@@ -117,8 +116,6 @@ public class PiEstimator {
     HamaConfiguration conf = new HamaConfiguration();
 
     BSPJob bsp = new BSPJob(conf, PiEstimator.class);
-    bsp.setCompressionCodec(SnappyCompressor.class);
-    bsp.setCompressionThreshold(40);
 
     // Set the job name
     bsp.setJobName("Pi Estimation Example");

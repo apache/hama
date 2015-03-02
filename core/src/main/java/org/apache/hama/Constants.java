@@ -164,7 +164,6 @@ public interface Constants {
 
   // Other constants
   static final String MESSENGER_RUNTIME_COMPRESSION = "hama.messenger.runtime.compression";
-  static final String MESSENGER_COMPRESSION_THRESHOLD = "hama.messenger.compression.threshold";
   
   /**
    * An empty instance.

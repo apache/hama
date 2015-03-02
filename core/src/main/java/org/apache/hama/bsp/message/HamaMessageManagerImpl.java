@@ -123,20 +123,17 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
       throw new IllegalArgumentException("Can not find " + addr.toString()
           + " to transfer messages to!");
     } else {
-      System.out.println(conf.getBoolean(Constants.MESSENGER_RUNTIME_COMPRESSION, false));
-      
       if (conf.getBoolean(Constants.MESSENGER_RUNTIME_COMPRESSION, false)) {
         ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
         DataOutputStream bufferDos = new DataOutputStream(byteBuffer);
         bundle.write(bufferDos);
 
         byte[] compressed = compressor.compress(byteBuffer.toByteArray());
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
-            compressed.length);
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_COMPRESSED_BYTES_TRANSFERED, compressed.length);
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_DECOMPRESSED_BYTES, byteBuffer.size());
         bspPeerConnection.put(compressed);
       } else {
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
-            bundle.getLength());
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED, bundle.getLength());
         bspPeerConnection.put(bundle);
       }
     }

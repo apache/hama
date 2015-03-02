@@ -23,42 +23,37 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorInputStream;
+import org.apache.commons.compress.compressors.CompressorOutputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.compress.BZip2Codec;
-import org.apache.hadoop.io.compress.CompressionInputStream;
-import org.apache.hadoop.io.compress.CompressionOutputStream;
 
 public class Bzip2Compressor<M extends Writable> extends
     BSPMessageCompressor<M> {
 
-  private final BZip2Codec codec = new BZip2Codec();
-
   @Override
   public byte[] compress(byte[] bytes) {
-    ByteArrayOutputStream bos = null;
-    CompressionOutputStream sos = null;
-    DataOutputStream dos = null;
-    byte[] compressedBytes = null;
+    ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+    DataInputStream in = new DataInputStream(bis);
 
+    ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
+    DataOutputStream out = new DataOutputStream(outBuffer);
+
+    CompressorOutputStream cos = null;
     try {
-      bos = new ByteArrayOutputStream();
-      sos = codec.createOutputStream(bos);
-      dos = new DataOutputStream(sos);
-      dos.close(); // Flush the stream as no more data will be sent.
-
-      compressedBytes = bos.toByteArray();
-    } catch (IOException ioe) {
-      LOG.error("Unable to compress", ioe);
-    } finally {
-      try {
-        sos.close();
-        bos.close();
-      } catch (IOException e) {
-        LOG.warn("Failed to close compression streams.", e);
-      }
+      cos = new CompressorStreamFactory().createCompressorOutputStream("bzip2",
+          out);
+      IOUtils.copy(in, cos);
+      cos.close();
+    } catch (CompressorException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
-    return compressedBytes;
+
+    return outBuffer.toByteArray();
   }
 
   /**
@@ -70,29 +65,23 @@ public class Bzip2Compressor<M extends Writable> extends
    */
   @Override
   public byte[] decompress(byte[] compressedBytes) {
-    ByteArrayInputStream bis = null;
-    CompressionInputStream sis = null;
-    DataInputStream dis = null;
-    byte[] bytes = null;
+    ByteArrayInputStream bis = new ByteArrayInputStream(compressedBytes);
+    DataInputStream in = new DataInputStream(bis);
 
+    ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
+    DataOutputStream out = new DataOutputStream(outBuffer);
     try {
-      bis = new ByteArrayInputStream(compressedBytes);
-      sis = codec.createInputStream(bis);
-      dis = new DataInputStream(sis);
-      bytes = IOUtils.toByteArray(dis);
-    } catch (IOException ioe) {
-      LOG.error("Unable to decompress.", ioe);
-    } finally {
-      try {
-        dis.close();
-        sis.close();
-        bis.close();
-      } catch (IOException e) {
-        LOG.warn("Failed to close decompression streams.", e);
-      }
-    }
 
-    return bytes;
+      final CompressorInputStream cin = new CompressorStreamFactory()
+          .createCompressorInputStream("bzip2", in);
+      IOUtils.copy(cin, out);
+      in.close();
+    } catch (CompressorException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return outBuffer.toByteArray();
   }
 
 }

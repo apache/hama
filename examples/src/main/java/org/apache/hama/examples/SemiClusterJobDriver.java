@@ -30,7 +30,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
-import org.apache.hama.bsp.message.compress.SnappyCompressor;
+import org.apache.hama.bsp.message.compress.Bzip2Compressor;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.ml.semiclustering.SemiClusterMessage;
 import org.apache.hama.ml.semiclustering.SemiClusterTextReader;
@@ -52,8 +52,7 @@ public class SemiClusterJobDriver {
       InterruptedException, ClassNotFoundException {
     GraphJob semiClusterJob = new GraphJob(conf, SemiClusterJobDriver.class);
 
-    semiClusterJob.setCompressionCodec(SnappyCompressor.class);
-    semiClusterJob.setCompressionThreshold(10);
+    semiClusterJob.setCompressionCodec(Bzip2Compressor.class);
 
     semiClusterJob
         .setVertexOutputWriterClass(SemiClusterVertexOutputWriter.class);

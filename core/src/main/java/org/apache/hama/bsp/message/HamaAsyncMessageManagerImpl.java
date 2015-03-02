@@ -129,11 +129,11 @@ public final class HamaAsyncMessageManagerImpl<M extends Writable> extends
         bundle.write(bufferDos);
 
         byte[] compressed = compressor.compress(byteBuffer.toByteArray());
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
             compressed.length);
         bspPeerConnection.put(compressed);
       } else {
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
             bundle.getLength());
         bspPeerConnection.put(bundle);
       }

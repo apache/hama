@@ -350,7 +350,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
         throws IOException {
-      peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
+      peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
           bundle.getLength());
 
       MANAGER_MAP.get(addr).localQueueForNextIteration.addBundle(bundle);

@@ -37,7 +37,7 @@ public class BSPMessageCompressorFactory<M extends Writable> {
       try {
         return (BSPMessageCompressor<M>) ReflectionUtils.newInstance(conf
             .getClassByName(conf.get(COMPRESSION_CODEC_CLASS,
-                SnappyCompressor.class.getCanonicalName())), conf);
+                Bzip2Compressor.class.getCanonicalName())), conf);
       } catch (ClassNotFoundException e) {
         e.printStackTrace();
       }
