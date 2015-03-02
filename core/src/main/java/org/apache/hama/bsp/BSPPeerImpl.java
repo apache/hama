@@ -249,7 +249,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     try {
       if (splitClass != null) {
         inputSplit = (InputSplit) ReflectionUtils.newInstance(
-            getConfiguration().getClassByName(splitClass), getConfiguration());
+            conf.getClassByName(splitClass), conf);
       }
     } catch (ClassNotFoundException exp) {
       IOException wrap = new IOException("Split class " + splitClass
@@ -257,7 +257,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
       wrap.initCause(exp);
       throw wrap;
     }
-    
+
     if (inputSplit != null) {
       DataInputBuffer splitBuffer = new DataInputBuffer();
       splitBuffer.reset(split.getBytes(), 0, split.getLength());

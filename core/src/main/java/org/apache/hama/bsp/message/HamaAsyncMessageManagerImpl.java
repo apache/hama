@@ -17,6 +17,10 @@
  */
 package org.apache.hama.bsp.message;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
@@ -26,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
@@ -118,9 +123,20 @@ public final class HamaAsyncMessageManagerImpl<M extends Writable> extends
       throw new IllegalArgumentException("Can not find " + addr.toString()
           + " to transfer messages to!");
     } else {
-      peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
-          bundle.getLength());
-      bspPeerConnection.put(bundle);
+      if (conf.getBoolean(Constants.MESSENGER_RUNTIME_COMPRESSION, false)) {
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+        DataOutputStream bufferDos = new DataOutputStream(byteBuffer);
+        bundle.write(bufferDos);
+
+        byte[] compressed = compressor.compress(byteBuffer.toByteArray());
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
+            compressed.length);
+        bspPeerConnection.put(compressed);
+      } else {
+        peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
+            bundle.getLength());
+        bspPeerConnection.put(bundle);
+      }
     }
   }
 
@@ -152,6 +168,18 @@ public final class HamaAsyncMessageManagerImpl<M extends Writable> extends
 
   @Override
   public final void put(BSPMessageBundle<M> bundle) throws IOException {
+    loopBackBundle(bundle);
+  }
+
+  @Override
+  public void put(byte[] compressedBundle) throws IOException {
+    byte[] decompressed = compressor.decompress(compressedBundle);
+
+    BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+    ByteArrayInputStream bis = new ByteArrayInputStream(decompressed);
+    DataInputStream dis = new DataInputStream(bis);
+    bundle.readFields(dis);
+
     loopBackBundle(bundle);
   }
 

@@ -24,11 +24,10 @@ import java.util.Map.Entry;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 
 public interface OutgoingMessageManager<M extends Writable> {
 
-  public void init(HamaConfiguration conf, BSPMessageCompressor<M> compressor);
+  public void init(HamaConfiguration conf);
 
   public void addMessage(String peerName, M msg);
 

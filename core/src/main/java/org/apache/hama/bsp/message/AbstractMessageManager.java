@@ -29,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
@@ -95,7 +94,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
 
     this.compressor = new BSPMessageCompressorFactory<M>().getCompressor(conf);
     this.outgoingMessageManager = getOutgoingMessageManager();
-    this.outgoingMessageManager.init(conf, compressor);
+    this.outgoingMessageManager.init(conf);
   }
 
   /*
@@ -256,13 +255,11 @@ public abstract class AbstractMessageManager<M extends Writable> implements
 
   @Override
   public void loopBackBundle(BSPMessageBundle<M> bundle) throws IOException {
-    if (conf.getBoolean(Constants.MESSENGER_RUNTIME_COMPRESSION, false)) {
-      bundle.setCompressor(compressor,
-          conf.getLong(Constants.MESSENGER_COMPRESSION_THRESHOLD, 128));
-    }
-
     peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, bundle.size());
     this.localQueueForNextIteration.addBundle(bundle);
+    
+    // TODO checkpoint bundle itself instead of unpacked messages. -- edwardyoon
+    // notifyReceivedMessage(bundle);
   }
 
   @SuppressWarnings("unchecked")

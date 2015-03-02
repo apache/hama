@@ -31,7 +31,7 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.message.AbstractOutgoingMessageManager;
-import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
+import org.apache.hama.util.ReflectionUtils;
 
 public class OutgoingVertexMessageManager<M extends Writable> extends
     AbstractOutgoingMessageManager<GraphJobMessage> {
@@ -44,17 +44,16 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
 
   @SuppressWarnings("unchecked")
   @Override
-  public void init(HamaConfiguration conf,
-      BSPMessageCompressor<GraphJobMessage> compressor) {
+  public void init(HamaConfiguration conf) {
     this.conf = conf;
-    this.compressor = compressor;
 
-    if (!conf.getClass(Constants.COMBINER_CLASS, Combiner.class).equals(
-        Combiner.class)) {
-
-      combiner = (Combiner<Writable>) org.apache.hadoop.util.ReflectionUtils
-          .newInstance(conf.getClass(Constants.COMBINER_CLASS, Combiner.class),
-              conf);
+    final String combinerName = conf.get(Constants.COMBINER_CLASS);
+    if (combinerName != null) {
+      try {
+        combiner = (Combiner<Writable>) ReflectionUtils.newInstance(combinerName);
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
     }
   }
 

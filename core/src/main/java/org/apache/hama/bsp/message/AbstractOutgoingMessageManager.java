@@ -21,17 +21,14 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPMessageBundle;
-import org.apache.hama.bsp.message.compress.BSPMessageCompressor;
 import org.apache.hama.util.BSPNetUtils;
 
 public abstract class AbstractOutgoingMessageManager<M extends Writable>
     implements OutgoingMessageManager<M> {
 
   protected HamaConfiguration conf;
-  protected BSPMessageCompressor<M> compressor;
   
   protected final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
   protected HashMap<InetSocketAddress, BSPMessageBundle<M>> outgoingBundles =  new HashMap<InetSocketAddress, BSPMessageBundle<M>>();
@@ -48,10 +45,6 @@ public abstract class AbstractOutgoingMessageManager<M extends Writable>
 
     if (!outgoingBundles.containsKey(targetPeerAddress)) {
       BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
-      if (conf.getBoolean(Constants.MESSENGER_RUNTIME_COMPRESSION, false)) {
-        bundle.setCompressor(compressor,
-            conf.getLong(Constants.MESSENGER_COMPRESSION_THRESHOLD, 128));
-      }
       outgoingBundles.put(targetPeerAddress, bundle);
     }
     return targetPeerAddress;

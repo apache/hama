@@ -20,7 +20,6 @@ package org.apache.hama.bsp;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Iterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
@@ -354,17 +353,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       peer.incrementCounter(BSPPeerImpl.PeerCounter.MESSAGE_BYTES_TRANSFERED,
           bundle.getLength());
 
-      if (conf.getBoolean(Constants.MESSENGER_RUNTIME_COMPRESSION, false)) {
-        bundle.setCompressor(compressor,
-            conf.getLong(Constants.MESSENGER_COMPRESSION_THRESHOLD, 512));
-      }
-
-      Iterator<M> it = bundle.iterator();
-      while (it.hasNext()) {
-        MANAGER_MAP.get(addr).localQueueForNextIteration.add(it.next());
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
-            1L);
-      }
+      MANAGER_MAP.get(addr).localQueueForNextIteration.addBundle(bundle);
+      peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
+          bundle.size());
     }
 
     @Override

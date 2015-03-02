@@ -45,5 +45,7 @@ public interface HamaMessageManager<M extends Writable> extends
    * @param messages
    */
   public void put(BSPMessageBundle<M> messages) throws IOException;
+  
+  public void put(byte[] compressedBundle) throws IOException;
 
 }
