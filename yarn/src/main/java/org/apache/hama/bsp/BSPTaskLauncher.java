@@ -17,31 +17,22 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
-import org.apache.hadoop.yarn.api.ContainerManager;
-import org.apache.hadoop.yarn.api.protocolrecords.GetContainerStatusRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.StartContainerRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.StopContainerRequest;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
-import org.apache.hadoop.yarn.api.records.ContainerState;
-import org.apache.hadoop.yarn.api.records.ContainerStatus;
-import org.apache.hadoop.yarn.api.records.LocalResource;
-import org.apache.hadoop.yarn.api.records.LocalResourceType;
-import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
-import org.apache.hadoop.yarn.api.records.URL;
-import org.apache.hadoop.yarn.exceptions.YarnRemoteException;
+import org.apache.hadoop.yarn.api.ContainerManagementProtocol;
+import org.apache.hadoop.yarn.api.protocolrecords.*;
+import org.apache.hadoop.yarn.api.records.*;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 
@@ -51,17 +42,22 @@ public class BSPTaskLauncher {
 
   private final Container allocatedContainer;
   private final int id;
-  private final ContainerManager cm;
+  private final ContainerManagementProtocol cm;
   private final Configuration conf;
   private String user;
   private final Path jobFile;
   private final BSPJobID jobId;
 
-  private GetContainerStatusRequest statusRequest;
+  private GetContainerStatusesRequest statusRequest;
+  
+  @Override
+  protected void finalize() throws Throwable {
+    stopAndCleanup();
+  }
 
-  public BSPTaskLauncher(int id, Container container, ContainerManager cm,
-      Configuration conf, Path jobFile, BSPJobID jobId)
-      throws YarnRemoteException {
+  public BSPTaskLauncher(int id, Container container, ContainerManagementProtocol cm,
+                         Configuration conf, Path jobFile, BSPJobID jobId)
+      throws YarnException {
     this.id = id;
     this.cm = cm;
     this.conf = conf;
@@ -75,19 +71,18 @@ public class BSPTaskLauncher {
     }
   }
 
-  @Override
-  protected void finalize() throws Throwable {
-    stopAndCleanup();
+  public void stopAndCleanup() throws YarnException, IOException {
+    StopContainersRequest stopRequest = Records.newRecord(StopContainersRequest.class);
+    List<ContainerId> containerIds = new ArrayList<ContainerId>();
+    containerIds.add(allocatedContainer.getId());
+    LOG.info("getId : " + allocatedContainer.getId());
+    stopRequest.setContainerIds(containerIds);
+    LOG.info("StopContainer : " + stopRequest.getContainerIds());
+    cm.stopContainers(stopRequest);
+
   }
 
-  public void stopAndCleanup() throws YarnRemoteException {
-    StopContainerRequest stopRequest = Records
-        .newRecord(StopContainerRequest.class);
-    stopRequest.setContainerId(allocatedContainer.getId());
-    cm.stopContainer(stopRequest);
-  }
-
-  public void start() throws IOException {
+  public void start() throws IOException, YarnException {
     LOG.info("Spawned task with id: " + this.id
         + " for allocated container id: "
         + this.allocatedContainer.getId().toString());
@@ -103,38 +98,44 @@ public class BSPTaskLauncher {
    */
   public BSPTaskStatus poll() throws Exception {
 
-    ContainerStatus lastStatus;
-    if ((lastStatus = cm.getContainerStatus(statusRequest).getStatus())
-        .getState() != ContainerState.COMPLETE) {
+    ContainerStatus lastStatus = null;
+    GetContainerStatusesResponse getContainerStatusesResponse = cm.getContainerStatuses(statusRequest);
+    List<ContainerStatus> containerStatuses = getContainerStatusesResponse.getContainerStatuses();
+    for (ContainerStatus containerStatus : containerStatuses) {
+      LOG.info("Got container status for containerID="
+          + containerStatus.getContainerId() + ", state="
+          + containerStatus.getState() + ", exitStatus="
+          + containerStatus.getExitStatus() + ", diagnostics="
+          + containerStatus.getDiagnostics());
+
+      if (containerStatus.getContainerId().equals(allocatedContainer.getId())) {
+        lastStatus = containerStatus;
+        break;
+      }
+    }
+    if (lastStatus.getState() != ContainerState.COMPLETE) {
       return null;
     }
-    LOG.info(this.id + "\tLast report comes with existatus of "
+    LOG.info(this.id + " Last report comes with exitstatus of "
         + lastStatus.getExitStatus() + " and diagnose string of "
         + lastStatus.getDiagnostics());
+
     return new BSPTaskStatus(id, lastStatus.getExitStatus());
   }
 
-  private GetContainerStatusRequest setupContainer(
-      Container allocatedContainer, ContainerManager cm, String user, int id)
-      throws IOException {
+  private GetContainerStatusesRequest setupContainer(
+      Container allocatedContainer, ContainerManagementProtocol cm, String user, int id) throws IOException, YarnException {
     LOG.info("Setting up a container for user " + user + " with id of " + id
         + " and containerID of " + allocatedContainer.getId() + " as " + user);
     // Now we setup a ContainerLaunchContext
     ContainerLaunchContext ctx = Records
         .newRecord(ContainerLaunchContext.class);
 
-    ctx.setContainerId(allocatedContainer.getId());
-    ctx.setResource(allocatedContainer.getResource());
-    ctx.setUser(user);
-
-    /*
-     * jar
-     */
+    // Set the local resources
+    Map<String, LocalResource> localResources = new HashMap<String, LocalResource>();
     LocalResource packageResource = Records.newRecord(LocalResource.class);
     FileSystem fs = FileSystem.get(conf);
-    Path packageFile = new Path(conf.get("bsp.jar"));
-    // FIXME there seems to be a problem with the converter utils and URL
-    // transformation
+    Path packageFile = new Path(System.getenv(YARNBSPConstants.HAMA_YARN_LOCATION));
     URL packageUrl = ConverterUtils.getYarnUrlFromPath(packageFile
         .makeQualified(fs.getUri(), fs.getWorkingDirectory()));
     LOG.info("PackageURL has been composed to " + packageUrl.toString());
@@ -145,15 +146,29 @@ public class BSPTaskLauncher {
       LOG.fatal("If you see this error the workarround does not work", e);
     }
 
-    FileStatus fileStatus = fs.getFileStatus(packageFile);
     packageResource.setResource(packageUrl);
-    packageResource.setSize(fileStatus.getLen());
-    packageResource.setTimestamp(fileStatus.getModificationTime());
-    packageResource.setType(LocalResourceType.ARCHIVE);
+    packageResource.setSize(Long.parseLong(System.getenv(YARNBSPConstants.HAMA_YARN_SIZE)));
+    packageResource.setTimestamp(Long.parseLong(System.getenv(YARNBSPConstants.HAMA_YARN_TIMESTAMP)));
+    packageResource.setType(LocalResourceType.FILE);
     packageResource.setVisibility(LocalResourceVisibility.APPLICATION);
-    LOG.info("Package resource: " + packageResource.getResource());
 
-    ctx.setLocalResources(Collections.singletonMap("package", packageResource));
+    localResources.put(YARNBSPConstants.APP_MASTER_JAR_PATH, packageResource);
+
+    Path hamaReleaseFile = new Path(System.getenv(YARNBSPConstants.HAMA_RELEASE_LOCATION));
+    URL hamaReleaseUrl = ConverterUtils.getYarnUrlFromPath(hamaReleaseFile
+        .makeQualified(fs.getUri(), fs.getWorkingDirectory()));
+    LOG.info("Hama release URL has been composed to " + hamaReleaseUrl.toString());
+
+    LocalResource hamaReleaseRsrc = Records.newRecord(LocalResource.class);
+    hamaReleaseRsrc.setResource(hamaReleaseUrl);
+    hamaReleaseRsrc.setSize(Long.parseLong(System.getenv(YARNBSPConstants.HAMA_RELEASE_SIZE)));
+    hamaReleaseRsrc.setTimestamp(Long.parseLong(System.getenv(YARNBSPConstants.HAMA_RELEASE_TIMESTAMP)));
+    hamaReleaseRsrc.setType(LocalResourceType.ARCHIVE);
+    hamaReleaseRsrc.setVisibility(LocalResourceVisibility.APPLICATION);
+
+    localResources.put(YARNBSPConstants.HAMA_SYMLINK, hamaReleaseRsrc);
+
+    ctx.setLocalResources(localResources);
 
     /*
      * TODO Package classpath seems not to work if you're in pseudo distributed
@@ -161,32 +176,64 @@ public class BSPTaskLauncher {
      * So we will check if our jar file has the file:// prefix and put it into
      * the CP directly
      */
-    String cp = "$CLASSPATH:./*:./package/*:./*:";
-    if (packageUrl.getScheme() != null && packageUrl.getScheme().equals("file")) {
-      cp += packageFile.makeQualified(fs.getUri(), fs.getWorkingDirectory())
-          .toString() + ":";
-      LOG.info("Localized file scheme detected, adjusting CP to: " + cp);
+
+    StringBuilder classPathEnv = new StringBuilder(
+        ApplicationConstants.Environment.CLASSPATH.$()).append(File.pathSeparatorChar)
+        .append("./*");
+    for (String c : conf.getStrings(
+        YarnConfiguration.YARN_APPLICATION_CLASSPATH,
+        YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
+      classPathEnv.append(File.pathSeparatorChar);
+      classPathEnv.append(c.trim());
     }
-    String[] cmds = {
-        "${JAVA_HOME}" + "/bin/java -cp \"" + cp + "\" "
-            + BSPRunner.class.getCanonicalName(),
-        jobId.getJtIdentifier(),
-        id + "",
-        this.jobFile.makeQualified(fs.getUri(), fs.getWorkingDirectory())
-            .toString(),
-        " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout",
-        " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr" };
-    ctx.setCommands(Arrays.asList(cmds));
-    LOG.info("Starting command: " + Arrays.toString(cmds));
+
+    classPathEnv.append(File.pathSeparator);
+    classPathEnv.append("./" + YARNBSPConstants.HAMA_SYMLINK +
+        "/" + YARNBSPConstants.HAMA_RELEASE_VERSION +  "/*");
+    classPathEnv.append(File.pathSeparator);
+    classPathEnv.append("./" + YARNBSPConstants.HAMA_SYMLINK +
+        "/" + YARNBSPConstants.HAMA_RELEASE_VERSION + "/lib/*");
+
+    Vector<CharSequence> vargs = new Vector<CharSequence>();
+    vargs.add("${JAVA_HOME}/bin/java");
+    vargs.add("-cp " + classPathEnv + "");
+    vargs.add(BSPRunner.class.getCanonicalName());
+    
+    vargs.add(jobId.getJtIdentifier());
+    vargs.add(Integer.toString(id));
+    vargs.add(this.jobFile.makeQualified(fs.getUri(), fs.getWorkingDirectory())
+        .toString());
+
+    vargs.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/bsp.stdout");
+    vargs.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/bsp.stderr");
+
+    // Get final commmand
+    StringBuilder command = new StringBuilder();
+    for (CharSequence str : vargs) {
+      command.append(str).append(" ");
+    }
+
+    List<String> commands = new ArrayList<String>();
+    commands.add(command.toString());
+
+    ctx.setCommands(commands);
+    LOG.info("Starting command: " + commands);
 
     StartContainerRequest startReq = Records
         .newRecord(StartContainerRequest.class);
     startReq.setContainerLaunchContext(ctx);
-    cm.startContainer(startReq);
+    startReq.setContainerToken(allocatedContainer.getContainerToken());
 
-    GetContainerStatusRequest statusReq = Records
-        .newRecord(GetContainerStatusRequest.class);
-    statusReq.setContainerId(allocatedContainer.getId());
+    List<StartContainerRequest> list = new ArrayList<StartContainerRequest>();
+    list.add(startReq);
+    StartContainersRequest requestList = StartContainersRequest.newInstance(list);
+    cm.startContainers(requestList);
+
+    GetContainerStatusesRequest statusReq = Records
+        .newRecord(GetContainerStatusesRequest.class);
+    List<ContainerId> containerIds = new ArrayList<ContainerId>();
+    containerIds.add(allocatedContainer.getId());
+    statusReq.setContainerIds(containerIds);
     return statusReq;
   }
 

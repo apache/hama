@@ -130,6 +130,18 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+      
+      <modules>
+        <module>c++</module>
+        <module>commons</module>
+        <module>core</module>
+        <module>graph</module>
+        <module>examples</module>
+        <module>ml</module>
+        <module>mesos</module>
+        <module>dist</module>
+      </modules>
+      
       <dependencies>
         <!-- build for Hadoop 1.x -->
         <dependency>
@@ -150,6 +162,18 @@
         <hadoop.version>2.5.0</hadoop.version>
       </properties>
 
+      <modules>
+        <module>c++</module>
+        <module>commons</module>
+        <module>core</module>
+        <module>graph</module>
+        <module>examples</module>
+        <module>ml</module>
+        <module>mesos</module>
+        <module>yarn</module>
+        <module>dist</module>
+      </modules>
+  
       <dependencies>
         <!-- build for Hadoop 2.x -->
         <dependency>
@@ -316,17 +340,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
-  <modules>
-    <module>c++</module>
-    <module>commons</module>
-    <module>core</module>
-    <module>graph</module>
-    <module>examples</module>
-    <module>ml</module>
-    <module>mesos</module>
-    <module>dist</module>
-  </modules>
 
   <build>
     <extensions>

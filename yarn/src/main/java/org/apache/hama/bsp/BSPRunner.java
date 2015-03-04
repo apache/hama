@@ -17,15 +17,16 @@
  */
 package org.apache.hama.bsp;
 
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.ipc.RPC;
+import org.apache.hama.ipc.RPC;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
@@ -37,7 +38,7 @@ public class BSPRunner {
 
   private static final Log LOG = LogFactory.getLog(BSPRunner.class);
 
-  private Configuration conf;
+  private HamaConfiguration conf;
   private TaskAttemptID id;
   private BSPPeerImpl<?, ?, ?, ?, ? extends Writable> peer;
   private Counters counters = new Counters();
@@ -49,7 +50,10 @@ public class BSPRunner {
   public BSPRunner(String jobId, int taskAttemptId, Path confPath)
       throws Exception {
     conf = new HamaConfiguration();
-    conf.addResource(confPath);
+    FileSystem fs = FileSystem.get(confPath.toUri(), conf);
+    InputStream in = fs.open(confPath);
+    conf.addResource(in);
+
     this.id = new TaskAttemptID(jobId, 0, taskAttemptId, 0);
     this.id.id = taskAttemptId;
 
@@ -59,6 +63,7 @@ public class BSPRunner {
     conf.set(Constants.PEER_HOST, BSPNetUtils.getCanonicalHostname());
 
     String umbilicalAddress = conf.get("hama.umbilical.address");
+
     if (umbilicalAddress == null || umbilicalAddress.isEmpty()
         || !umbilicalAddress.contains(":")) {
       throw new IllegalArgumentException(
@@ -69,9 +74,10 @@ public class BSPRunner {
     InetSocketAddress address = new InetSocketAddress(hostPort[0],
         Integer.valueOf(hostPort[1]));
 
-    BSPPeerProtocol umbilical = RPC.getProxy(BSPPeerProtocol.class,
-        HamaRPCProtocolVersion.versionID, address, conf);
-
+    BSPPeerProtocol umbilical = (BSPPeerProtocol) RPC.getProxy(
+        BSPPeerProtocol.class, HamaRPCProtocolVersion.versionID, address,
+        conf);
+    
     BSPJob job = new BSPJob(new HamaConfiguration(conf));
 
     BSPTask task = (BSPTask) umbilical.getTask(id);

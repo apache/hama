@@ -19,7 +19,11 @@ package org.apache.hama.bsp;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.security.PrivilegedAction;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,31 +36,36 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.ipc.ProtocolSignature;
-import org.apache.hadoop.ipc.RPC;
-import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hadoop.net.NetUtils;
-import org.apache.hadoop.yarn.Clock;
-import org.apache.hadoop.yarn.SystemClock;
-import org.apache.hadoop.yarn.api.AMRMProtocol;
-import org.apache.hadoop.yarn.api.ApplicationConstants;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
+import org.apache.hadoop.yarn.api.ApplicationMasterProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.FinishApplicationMasterRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.exceptions.YarnRemoteException;
+import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
+import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
+import org.apache.hadoop.yarn.util.Clock;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
+import org.apache.hadoop.yarn.util.SystemClock;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Job.JobState;
 import org.apache.hama.bsp.sync.SyncServerRunner;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
-import org.apache.hama.ipc.HamaRPCProtocolVersion;
+import org.apache.hama.ipc.RPC;
+import org.apache.hama.ipc.Server;
 import org.apache.hama.util.BSPNetUtils;
+
 
 /**
  * BSPApplicationMaster is an application master for Apache Hamas BSP Engine.
@@ -73,7 +82,8 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
 
   private Clock clock;
   private YarnRPC yarnRPC;
-  private AMRMProtocol amrmRPC;
+
+  private ApplicationMasterProtocol amrmRPC;
 
   private ApplicationAttemptId appAttemptId;
   private String applicationName;
@@ -106,6 +116,7 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
     this.jobFile = args[0];
     this.localConf = new YarnConfiguration();
     this.jobConf = getSubmitConfiguration(jobFile);
+    fs = FileSystem.get(jobConf);
 
     this.applicationName = jobConf.get("bsp.job.name",
         "<no bsp job name defined>");
@@ -128,10 +139,12 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
     startSyncServer();
 
     startRPCServers();
+
     /*
      * Make sure that this executes after the start the RPC servers, because we
      * are readjusting the configuration.
      */
+
     rewriteSubmitConfiguration(jobFile, jobConf);
 
     String jobSplit = jobConf.get("bsp.job.split.file");
@@ -146,7 +159,7 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
     }
 
     this.amrmRPC = getYarnRPCConnection(localConf);
-    registerApplicationMaster(amrmRPC, appAttemptId, hostname, clientPort,
+    registerApplicationMaster(amrmRPC, hostname, clientPort,
         "http://localhost:8080");
   }
 
@@ -159,15 +172,14 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
    */
   private void startRPCServers() throws IOException {
     // start the RPC server which talks to the client
-    this.clientServer = RPC.getServer(BSPClient.class, this, hostname,
-        clientPort, jobConf);
+    this.clientServer = RPC.getServer(BSPClient.class, hostname, clientPort, jobConf);
     this.clientServer.start();
 
     // start the RPC server which talks to the tasks
     this.taskServerPort = BSPNetUtils.getFreePort(10000);
-    this.taskServer = RPC.getServer(BSPPeerProtocol.class, this, hostname,
-        taskServerPort, jobConf);
+    this.taskServer = RPC.getServer(this, hostname, taskServerPort, jobConf);
     this.taskServer.start();
+
     // readjusting the configuration to let the tasks know where we are.
     this.jobConf.set("hama.umbilical.address", hostname + ":" + taskServerPort);
   }
@@ -191,35 +203,61 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
    * @param yarnConf
    * @return a new RPC connection to the Resource Manager.
    */
-  private AMRMProtocol getYarnRPCConnection(Configuration yarnConf) {
+  private ApplicationMasterProtocol getYarnRPCConnection(Configuration yarnConf) throws IOException {
     // Connect to the Scheduler of the ResourceManager.
-    InetSocketAddress rmAddress = NetUtils.createSocketAddr(yarnConf.get(
+    UserGroupInformation currentUser = UserGroupInformation.createRemoteUser(appAttemptId.toString());
+    Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
+
+    final InetSocketAddress rmAddress = NetUtils.createSocketAddr(yarnConf.get(
         YarnConfiguration.RM_SCHEDULER_ADDRESS,
         YarnConfiguration.DEFAULT_RM_SCHEDULER_ADDRESS));
+
+    Token<? extends TokenIdentifier> amRMToken = setupAndReturnAMRMToken(rmAddress, credentials.getAllTokens());
+    currentUser.addToken(amRMToken);
+
+    final Configuration conf = yarnConf;
+
+    ApplicationMasterProtocol client = currentUser
+        .doAs(new PrivilegedAction<ApplicationMasterProtocol>() {
+          @Override
+          public ApplicationMasterProtocol run() {
+            return (ApplicationMasterProtocol) yarnRPC.getProxy(ApplicationMasterProtocol.class, rmAddress, conf);
+          }
+        });
     LOG.info("Connecting to ResourceManager at " + rmAddress);
-    return (AMRMProtocol) yarnRPC.getProxy(AMRMProtocol.class, rmAddress,
-        yarnConf);
+    return client;
   }
+
+  private Token<? extends TokenIdentifier> setupAndReturnAMRMToken(
+      InetSocketAddress rmBindAddress,
+      Collection<Token<? extends TokenIdentifier>> allTokens) {
+    for (Token<? extends TokenIdentifier> token : allTokens) {
+      if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
+        SecurityUtil.setTokenService(token, rmBindAddress);
+        return token;
+      }
+    }
+    return null;
+  }
+
 
   /**
    * Registers this application master with the Resource Manager and retrieves a
    * response which is used to launch additional containers.
    */
   private static RegisterApplicationMasterResponse registerApplicationMaster(
-      AMRMProtocol resourceManager, ApplicationAttemptId appAttemptID,
-      String appMasterHostName, int appMasterRpcPort,
-      String appMasterTrackingUrl) throws YarnRemoteException {
+      ApplicationMasterProtocol resourceManager, String appMasterHostName, int appMasterRpcPort,
+      String appMasterTrackingUrl) throws YarnException, IOException {
 
     RegisterApplicationMasterRequest appMasterRequest = Records
         .newRecord(RegisterApplicationMasterRequest.class);
-    appMasterRequest.setApplicationAttemptId(appAttemptID);
     appMasterRequest.setHost(appMasterHostName);
     appMasterRequest.setRpcPort(appMasterRpcPort);
     // TODO tracking URL
     appMasterRequest.setTrackingUrl(appMasterTrackingUrl);
     RegisterApplicationMasterResponse response = resourceManager
         .registerApplicationMaster(appMasterRequest);
-    LOG.debug("ApplicationMaster has maximum resource capability of: "
+    LOG.info("ApplicationMaster has maximum resource capability of: "
         + response.getMaximumResourceCapability().getMemory());
     return response;
   }
@@ -234,12 +272,13 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   private static ApplicationAttemptId getApplicationAttemptId()
       throws IOException {
     Map<String, String> envs = System.getenv();
-    if (!envs.containsKey(ApplicationConstants.AM_CONTAINER_ID_ENV)) {
+    if (!envs.containsKey(Environment.CONTAINER_ID.name())) {
       throw new IllegalArgumentException(
           "ApplicationAttemptId not set in the environment");
     }
+
     return ConverterUtils.toContainerId(
-        envs.get(ApplicationConstants.AM_CONTAINER_ID_ENV))
+        envs.get(Environment.CONTAINER_ID.name()))
         .getApplicationAttemptId();
   }
 
@@ -259,33 +298,34 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
     }
   }
 
-  private void cleanup() throws YarnRemoteException {
+  private void cleanup() throws YarnException, IOException {
     syncServer.stop();
+
     if (threadPool != null && !threadPool.isShutdown()) {
       threadPool.shutdownNow();
     }
+
     clientServer.stop();
     taskServer.stop();
     FinishApplicationMasterRequest finishReq = Records
         .newRecord(FinishApplicationMasterRequest.class);
-    finishReq.setAppAttemptId(appAttemptId);
     switch (job.getState()) {
       case SUCCESS:
-        finishReq.setFinishApplicationStatus(FinalApplicationStatus.SUCCEEDED);
+        finishReq.setFinalApplicationStatus(FinalApplicationStatus.SUCCEEDED);
         break;
       case KILLED:
-        finishReq.setFinishApplicationStatus(FinalApplicationStatus.KILLED);
+        finishReq.setFinalApplicationStatus(FinalApplicationStatus.KILLED);
         break;
       case FAILED:
-        finishReq.setFinishApplicationStatus(FinalApplicationStatus.FAILED);
+        finishReq.setFinalApplicationStatus(FinalApplicationStatus.FAILED);
         break;
       default:
-        finishReq.setFinishApplicationStatus(FinalApplicationStatus.FAILED);
+        finishReq.setFinalApplicationStatus(FinalApplicationStatus.FAILED);
     }
     this.amrmRPC.finishApplicationMaster(finishReq);
   }
 
-  public static void main(String[] args) throws YarnRemoteException {
+  public static void main(String[] args) throws YarnException, IOException {
     // we expect getting the qualified path of the job.xml as the first
     // element in the arguments
     BSPApplicationMaster master = null;
@@ -301,17 +341,19 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
     }
   }
 
-  /*
-   * Some utility methods
-   */
-
   /**
    * Reads the configuration from the given path.
    */
-  private static Configuration getSubmitConfiguration(String path) {
+  private static Configuration getSubmitConfiguration(String path)
+      throws IOException {
     Path jobSubmitPath = new Path(path);
     Configuration jobConf = new HamaConfiguration();
-    jobConf.addResource(jobSubmitPath);
+
+    FileSystem fs = FileSystem.get(URI.create(path), jobConf);
+
+    InputStream in =fs.open(jobSubmitPath);
+    jobConf.addResource(in);
+
     return jobConf;
   }
 
@@ -326,6 +368,7 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
     FSDataOutputStream out = fs.create(jobSubmitPath);
     conf.writeXml(out);
     out.close();
+
     LOG.info("Written new configuration back to " + path);
   }
 
@@ -337,12 +380,6 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   @Override
   public LongWritable getCurrentSuperStep() {
     return new LongWritable(superstep);
-  }
-
-  @Override
-  public ProtocolSignature getProtocolSignature(String protocol,
-      long clientVersion, int clientMethodsHash) throws IOException {
-    return new ProtocolSignature(HamaRPCProtocolVersion.versionID, null);
   }
 
   @Override
@@ -372,7 +409,8 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   @Override
   public Task getTask(TaskAttemptID taskid) throws IOException {
     BSPJobClient.RawSplit assignedSplit = null;
-    String splitName = NullInputFormat.NullInputSplit.class.getCanonicalName();
+    String splitName = NullInputFormat.NullInputSplit.class.getName();
+    //String splitName = NullInputSplit.class.getCanonicalName();
     if (splits != null) {
       assignedSplit = splits[taskid.id];
       splitName = assignedSplit.getClassName();

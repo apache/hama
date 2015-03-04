@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.sync.SyncException;
 
@@ -37,7 +38,7 @@ public class YarnSerializePrinting {
     public void bsp(
         BSPPeer<NullWritable, NullWritable, NullWritable, NullWritable, NullWritable> bspPeer)
         throws IOException, SyncException, InterruptedException {
-      num = bspPeer.getConfiguration().getInt("bsp.peers.num", 0);
+      num = bspPeer.getConfiguration().getInt("bsp.peers.num", 1);
       LOG.info(bspPeer.getAllPeerNames());
       int i = 0;
       for (String otherPeer : bspPeer.getAllPeerNames()) {
@@ -57,15 +58,19 @@ public class YarnSerializePrinting {
       InterruptedException, ClassNotFoundException {
     HamaConfiguration conf = new HamaConfiguration();
     // TODO some keys that should be within a conf
-    conf.set("yarn.resourcemanager.address", "0.0.0.0:8040");
-    conf.set("bsp.local.dir", "/tmp/bsp-yarn/");
+    conf.set("bsp.user.name", "hama");
+    conf.setInt(Constants.MAX_TASKS, 10);
 
     YARNBSPJob job = new YARNBSPJob(conf);
+    job.setBoolean("hama.yarn.application", true);
     job.setBspClass(HelloBSP.class);
     job.setJarByClass(HelloBSP.class);
     job.setJobName("Serialize Printing");
-    job.setMemoryUsedPerTaskInMb(50);
-    job.setNumBspTask(2);
+    job.setInputFormat(NullInputFormat.class);
+    job.setOutputFormat(NullOutputFormat.class);
+
+    job.setMemoryUsedPerTaskInMb(100);
+    job.setNumBspTask(4);
     job.waitForCompletion(true);
   }
 }

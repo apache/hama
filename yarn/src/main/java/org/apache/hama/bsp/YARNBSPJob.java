@@ -22,16 +22,12 @@ import java.net.InetSocketAddress;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.net.NetUtils;
-import org.apache.hadoop.yarn.api.ClientRMProtocol;
-import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationReportRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationReportResponse;
+import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.KillApplicationRequest;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.exceptions.YarnRemoteException;
+import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.hama.HamaConfiguration;
@@ -43,14 +39,12 @@ public class YARNBSPJob extends BSPJob {
   private static volatile int id = 0;
 
   private YARNBSPJobClient submitClient;
-  private BSPClient client;
   private boolean submitted;
   private ApplicationReport report;
-  private ClientRMProtocol applicationsManager;
+  private ApplicationClientProtocol applicationsManager;
   private YarnRPC rpc;
 
   public YARNBSPJob(HamaConfiguration conf) throws IOException {
-    super(conf);
     submitClient = new YARNBSPJobClient(conf);
     YarnConfiguration yarnConf = new YarnConfiguration(conf);
     this.rpc = YarnRPC.create(conf);
@@ -58,15 +52,15 @@ public class YARNBSPJob extends BSPJob {
         YarnConfiguration.RM_ADDRESS, YarnConfiguration.DEFAULT_RM_ADDRESS));
     LOG.info("Connecting to ResourceManager at " + rmAddress);
 
-    this.applicationsManager = ((ClientRMProtocol) rpc.getProxy(
-        ClientRMProtocol.class, rmAddress, conf));
+    this.applicationsManager = ((ApplicationClientProtocol) rpc.getProxy(
+        ApplicationClientProtocol.class, rmAddress, conf));
   }
 
   public void setMemoryUsedPerTaskInMb(int mem) {
     conf.setInt("bsp.child.mem.in.mb", mem);
   }
 
-  public void kill() throws YarnRemoteException {
+  public void kill() throws YarnException, IOException {
     if (submitClient != null) {
       KillApplicationRequest killRequest = Records
           .newRecord(KillApplicationRequest.class);
@@ -79,6 +73,7 @@ public class YARNBSPJob extends BSPJob {
   public void submit() throws IOException, InterruptedException {
     RunningJob submitJobInternal = submitClient.submitJobInternal(this,
         new BSPJobID("hama_yarn", id++));
+
     if (submitJobInternal != null) {
       submitted = true;
       report = submitClient.getReport();
@@ -95,45 +90,14 @@ public class YARNBSPJob extends BSPJob {
       this.submit();
     }
 
-    client = RPC.waitForProxy(BSPClient.class, BSPClient.versionID,
-        NetUtils.createSocketAddr(report.getHost(), report.getRpcPort()), conf);
-    GetApplicationReportRequest reportRequest = Records
-        .newRecord(GetApplicationReportRequest.class);
-    reportRequest.setApplicationId(submitClient.getId());
-
-    GetApplicationReportResponse reportResponse = applicationsManager
-        .getApplicationReport(reportRequest);
-    ApplicationReport localReport = reportResponse.getApplicationReport();
-    long clientSuperStep = -1L;
-    while (localReport.getFinalApplicationStatus() != null
-        && localReport.getFinalApplicationStatus().ordinal() == 0) {
-      LOG.debug("currently in state: "
-          + localReport.getFinalApplicationStatus());
-      if (verbose) {
-        long remoteSuperStep = client.getCurrentSuperStep().get();
-        if (clientSuperStep < remoteSuperStep) {
-          clientSuperStep = remoteSuperStep;
-          LOG.info("Current supersteps number: " + clientSuperStep);
-        }
-      }
-      reportResponse = applicationsManager.getApplicationReport(reportRequest);
-      localReport = reportResponse.getApplicationReport();
-
-      Thread.sleep(3000L);
-    }
-
-    if (localReport.getFinalApplicationStatus() == FinalApplicationStatus.SUCCEEDED) {
-      LOG.info("Job succeeded!");
+    if (report != null && report.getApplicationId() == submitClient.getId()) {
       return true;
     } else {
-      LOG.info("Job failed with status: "
-          + localReport.getFinalApplicationStatus().toString() + "!");
       return false;
     }
-
   }
 
-  ClientRMProtocol getApplicationsManager() {
+  ApplicationClientProtocol getApplicationsManager() {
     return applicationsManager;
   }
 

@@ -18,7 +18,7 @@
 package org.apache.hama.bsp;
 
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.ipc.VersionedProtocol;
+import org.apache.hama.ipc.VersionedProtocol;
 
 public interface BSPClient extends VersionedProtocol {
 
