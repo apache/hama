@@ -29,12 +29,10 @@ import com.google.common.base.Preconditions;
  */
 public final class DenseDoubleMatrix implements DoubleMatrix {
 
-  protected double[][] matrix;
-  protected int numRows;
-  protected int numColumns;
+  protected final double[][] matrix;
+  protected final int numRows;
+  protected final int numColumns;
 
-  public DenseDoubleMatrix() {}
-  
   /**
    * Creates a new empty matrix from the rows and columns.
    * 

@@ -33,10 +33,8 @@ import com.google.common.collect.AbstractIterator;
  */
 public final class DenseDoubleVector implements DoubleVector {
 
-  private double[] vector;
+  private final double[] vector;
 
-  public DenseDoubleVector() {}
-  
   /**
    * Creates a new vector with the given length.
    */

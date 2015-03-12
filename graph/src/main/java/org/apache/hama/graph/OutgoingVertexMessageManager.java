@@ -39,6 +39,7 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
       .getLog(OutgoingVertexMessageManager.class);
 
   private Combiner<Writable> combiner;
+  private Iterable<Writable> msgs;
   private HashMap<InetSocketAddress, MessagePerVertex> storage = new HashMap<InetSocketAddress, MessagePerVertex>();
 
   @SuppressWarnings("unchecked")
@@ -49,8 +50,7 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
     final String combinerName = conf.get(Constants.COMBINER_CLASS);
     if (combinerName != null) {
       try {
-        combiner = (Combiner<Writable>) ReflectionUtils
-            .newInstance(combinerName);
+        combiner = (Combiner<Writable>) ReflectionUtils.newInstance(combinerName);
       } catch (ClassNotFoundException e) {
         e.printStackTrace();
       }
@@ -73,11 +73,13 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
       // Combining messages
       if (combiner != null && msgPerVertex.get(vertexID).getNumOfValues() > 1) {
 
+        final int numOfValues = msgPerVertex.get(vertexID).getNumOfValues();
+        final byte[] msgBytes = msgPerVertex.get(vertexID).getValuesBytes();
+        msgs = GraphJobRunner.getIterableMessages(numOfValues, msgBytes);
+
         // Overwrite
-        storage.get(targetPeerAddress).put(
-            vertexID,
-            new GraphJobMessage(vertexID, combiner.combine(msgPerVertex.get(
-                vertexID).getIterableMessages())));
+        storage.get(targetPeerAddress).put(vertexID,
+            new GraphJobMessage(vertexID, combiner.combine(msgs)));
       }
     } else {
       outgoingBundles.get(targetPeerAddress).addMessage(msg);

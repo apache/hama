@@ -17,14 +17,11 @@
  */
 package org.apache.hama.graph;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.io.DataInputBuffer;
@@ -57,7 +54,8 @@ public final class GraphJobMessage implements
 
   private int numOfValues = 0;
 
-  private final ByteArrayOutputStream bytesStream = new ByteArrayOutputStream();
+  private final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+  private final DataOutputStream bufferDos = new DataOutputStream(byteBuffer);
 
   static {
     if (comparator == null) {
@@ -94,7 +92,7 @@ public final class GraphJobMessage implements
     this.flag = VERTEX_FLAG;
     this.vertexId = vertexID;
     try {
-      this.bytesStream.write(valuesBytes);
+      this.bufferDos.write(valuesBytes);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -111,23 +109,25 @@ public final class GraphJobMessage implements
   }
 
   public byte[] getValuesBytes() {
-    return bytesStream.toByteArray();
+    return byteBuffer.toByteArray();
   }
 
   public void addValuesBytes(byte[] values, int numOfValues) {
     try {
-      bytesStream.write(values);
+      bufferDos.write(values);
       this.numOfValues += numOfValues;
     } catch (IOException e) {
+      // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }
 
   public void add(Writable value) {
     try {
-      value.write(new DataOutputStream(bytesStream));
+      value.write(bufferDos);
       numOfValues++;
     } catch (IOException e) {
+      // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }
@@ -155,8 +155,8 @@ public final class GraphJobMessage implements
       vertexId.write(out);
 
       out.writeInt(numOfValues);
-      out.writeInt(bytesStream.size());
-      out.write(bytesStream.toByteArray());
+      out.writeInt(byteBuffer.size());
+      out.write(byteBuffer.toByteArray());
     } else if (isMapMessage()) {
       map.write(out);
     } else if (isVerticesSizeMessage()) {
@@ -199,7 +199,7 @@ public final class GraphJobMessage implements
       int bytesLength = in.readInt();
       byte[] temp = new byte[bytesLength];
       in.readFully(temp);
-      bytesStream.write(temp);
+      bufferDos.write(temp);
     } else if (isMapMessage()) {
       map = new MapWritable();
       map.readFields(in);
@@ -303,42 +303,5 @@ public final class GraphJobMessage implements
       return compare(key1, key2); // compare them
     }
   }
-
-
-  public Iterable<Writable> getIterableMessages() {
-
-    return new Iterable<Writable>() {
-      @Override
-      public Iterator<Writable> iterator() {
-        return new Iterator<Writable>() {
-          ByteArrayInputStream bis = new ByteArrayInputStream(bytesStream.toByteArray());
-          DataInputStream dis = new DataInputStream(bis);
-          int index = 0;
-
-          @Override
-          public boolean hasNext() {
-            return (index < numOfValues) ? true : false;
-          }
-
-          @Override
-          public Writable next() {
-            Writable v = GraphJobRunner.createVertexValue();
-            try {
-              v.readFields(dis);
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-            index++;
-            return v;
-          }
-
-          @Override
-          public void remove() {
-          }
-        };
-      }
-    };
-  }
-
 
 }

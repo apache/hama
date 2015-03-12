@@ -102,7 +102,7 @@
     <log4j.version>1.2.16</log4j.version>
     <zookeeper.version>3.4.5</zookeeper.version>
     <ant.version>1.7.1</ant.version>
-    <kryo.version>3.0.0</kryo.version>
+    <kryo.version>2.20</kryo.version>
   </properties>
 
   <repositories>
@@ -224,7 +224,7 @@
         <version>1.0.5</version>
       </dependency>
        <dependency>
-         <groupId>com.esotericsoftware</groupId>
+         <groupId>com.esotericsoftware.kryo</groupId>
          <artifactId>kryo</artifactId>
          <version>${kryo.version}</version>
       </dependency>
