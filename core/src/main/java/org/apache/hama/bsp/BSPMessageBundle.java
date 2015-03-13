@@ -20,16 +20,17 @@ package org.apache.hama.bsp;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.util.ReflectionUtils;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 /**
  * BSPMessageBundle stores a group of messages so that they can be sent in batch
@@ -44,8 +45,9 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
   private String className = null;
   private int bundleSize = 0;
 
-  private final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-  private final DataOutputStream bufferDos = new DataOutputStream(byteBuffer);
+  private Kryo kryo = new Kryo();
+  private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+  private Output output = new Output(outputStream, 4096);
 
   public BSPMessageBundle() {
     bundleSize = 0;
@@ -57,42 +59,37 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
    * @param message BSPMessage to add.
    */
   public void addMessage(M message) {
-    try {
-      if (className == null) {
-        className = message.getClass().getName();
-      }
-
-      message.write(bufferDos);
-      bundleSize++;
-    } catch (IOException e) {
-      LOG.error(e);
+    if (className == null) {
+      className = message.getClass().getName();
+      kryo.register(message.getClass());
     }
+
+    kryo.writeObject(output, message);
+    output.flush();
+
+    bundleSize++;
   }
 
   public byte[] getBuffer() {
-    return byteBuffer.toByteArray();
+    return outputStream.toByteArray();
   }
 
   private ByteArrayInputStream bis = null;
-  private DataInputStream dis = null;
+  private Input in = null;
 
   public Iterator<M> iterator() {
-    bis = new ByteArrayInputStream(byteBuffer.toByteArray());
-    dis = new DataInputStream(bis);
+    bis = new ByteArrayInputStream(outputStream.toByteArray());
+    in = new Input(bis, 4096);
 
     Iterator<M> it = new Iterator<M>() {
       Class<M> clazz = null;
-      M msg;
+      int counter = 0;
 
       @Override
       public boolean hasNext() {
-        try {
-          if (dis.available() > 0) {
-            return true;
-          } else {
-            return false;
-          }
-        } catch (IOException e) {
+        if ((bundleSize - counter) > 0) {
+          return true;
+        } else {
           return false;
         }
       }
@@ -104,17 +101,13 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
           if (clazz == null) {
             clazz = (Class<M>) Class.forName(className);
           }
-
-          msg = ReflectionUtils.newInstance(clazz, null);
-          msg.readFields(dis);
-
-        } catch (IOException ie) {
-          LOG.error(ie);
         } catch (ClassNotFoundException ce) {
           LOG.error("Class was not found.", ce);
         }
 
-        return msg;
+        counter++;
+
+        return kryo.readObject(in, clazz);
       }
 
       @Override
@@ -134,7 +127,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
    * @throws IOException
    */
   public long getLength() {
-    return byteBuffer.size();
+    return outputStream.size();
   }
 
   @Override
@@ -142,8 +135,8 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
     out.writeInt(bundleSize);
     if (bundleSize > 0) {
       out.writeUTF(className);
-      out.writeInt(byteBuffer.size());
-      out.write(byteBuffer.toByteArray());
+      out.writeInt(outputStream.size());
+      out.write(outputStream.toByteArray());
     }
   }
 
@@ -156,7 +149,7 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
       int bytesLength = in.readInt();
       byte[] temp = new byte[bytesLength];
       in.readFully(temp);
-      bufferDos.write(temp);
+      outputStream.write(temp);
     }
   }
 

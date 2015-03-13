@@ -19,32 +19,39 @@ package org.apache.hama.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 
 import junit.framework.TestCase;
 
 import org.apache.hadoop.io.DoubleWritable;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 public class TestKryoSerializer extends TestCase {
 
-  ByteArrayOutputStream mbos = null;
-  DataOutputStream mdos = null;
-  ByteArrayInputStream mbis = null;
-  DataInputStream mdis = null;
-
   public void testSerialization() throws Exception {
-    KryoSerializer k = new KryoSerializer(DoubleWritable.class);
-    
-    long startTime = System.currentTimeMillis();
-    for (int i = 0; i < 10000000; i++) {
-      DoubleWritable x = new DoubleWritable(i + 0.2);
-      byte[] bytes = k.serialize(x);
-      DoubleWritable y = (DoubleWritable) k.deserialize(bytes);
-      assertEquals(x, y);
+    Kryo kryo = new Kryo();
+    kryo.register(DoubleWritable.class);
+
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    Output out = new Output(outputStream, 4096);
+
+    for (int i = 0; i < 10; i++) {
+      DoubleWritable a = new DoubleWritable(i + 0.123);
+      kryo.writeClassAndObject(out, a);
+      out.flush();
     }
-    System.out.println("Finished in "
-        + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+
+    System.out.println(outputStream.size());
+    
+    ByteArrayInputStream bin = new ByteArrayInputStream(outputStream.toByteArray());
+    Input in = new Input(bin, 4096);
+
+    for (int i = 0; i < 10; i++) {
+      DoubleWritable b = (DoubleWritable) kryo.readClassAndObject(in);
+      System.out.println(bin.available() + ", " + b);
+    }
   }
 
 }
