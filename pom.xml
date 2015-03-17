@@ -127,9 +127,6 @@
   <profiles>
     <profile>
       <id>hadoop1</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       
       <modules>
         <module>c++</module>
@@ -159,8 +156,11 @@
     <profile>
       <id>hadoop2</id>
       <properties>
-        <hadoop.version>2.5.0</hadoop.version>
+        <hadoop.version>2.6.0</hadoop.version>
       </properties>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
 
       <modules>
         <module>c++</module>
