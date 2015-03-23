@@ -42,7 +42,7 @@ public class YARNBSPConstants {
   /**
    * Environment key name pointing to the hama release's location
    */
-  public static final String HAMA_RELEASE_LOCATION = "HAMARELEASELOCATION";
+  public static final String HAMA_LOCATION = "HAMALOCATION";
 
   /**
    * Environment key name denoting the file content length for the hama release.
@@ -61,23 +61,4 @@ public class YARNBSPConstants {
    */
   public static final String APP_MASTER_JAR_PATH = "AppMaster.jar";
 
-  /**
-   * Symbolic link name for hama release archive in container local resource
-   */
-  public static final String HAMA_SYMLINK = "hama";
-
-  /**
-   * Hama release file name
-   */
-  public static final String HAMA_RELEASE_FILE = "hama-0.6.4.tar.gz";
-
-  /**
-   * Hama release version
-   */
-  public static final String HAMA_RELEASE_VERSION = "hama-0.6.4";
-
-  /**
-   * Hama release file source location
-   */
-  public static final String HAMA_SRC_PATH = "/home/hadoop";
 }

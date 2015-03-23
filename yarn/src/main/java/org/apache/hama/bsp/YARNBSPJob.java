@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.yarn.util.Records;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 
 public class YARNBSPJob extends BSPJob {
@@ -71,6 +72,10 @@ public class YARNBSPJob extends BSPJob {
 
   @Override
   public void submit() throws IOException, InterruptedException {
+    // If Constants.MAX_TASKS_PER_JOB is null, calculates the max tasks based on resource status.
+    this.getConfiguration().setInt(Constants.MAX_TASKS_PER_JOB, getMaxTasks());
+    LOG.debug("MaxTasks: " + this.getConfiguration().get(Constants.MAX_TASKS_PER_JOB));
+    
     RunningJob submitJobInternal = submitClient.submitJobInternal(this,
         new BSPJobID("hama_yarn", id++));
 
@@ -78,6 +83,14 @@ public class YARNBSPJob extends BSPJob {
       submitted = true;
       report = submitClient.getReport();
     }
+  }
+
+  private int getMaxTasks() {
+    int maxMem = this.getConfiguration().getInt(
+        "yarn.nodemanager.resource.memory-mb", 0);
+    int minAllocationMem = this.getConfiguration().getInt(
+        "yarn.scheduler.minimum-allocation-mb", 1024);
+    return maxMem / minAllocationMem;
   }
 
   @Override

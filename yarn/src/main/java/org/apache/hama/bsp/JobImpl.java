@@ -196,32 +196,25 @@ public class JobImpl implements Job {
     state = JobState.RUNNING;
     int completed = 0;
 
-    List<Integer> cleanupTasks = new ArrayList<Integer>();
     while (completed != numBSPTasks) {
       for (BSPTaskLauncher task : completionQueue) {
         BSPTaskStatus returnedTask = task.poll();
-        // if our task returned with a finished state
-        if (returnedTask != null) {
-          if (returnedTask.getExitStatus() != 0) {
-            LOG.error("Task with id \"" + returnedTask.getId() + "\" failed!");
-            cleanupTask(returnedTask.getId());
-            state = JobState.FAILED;
-            return state;
-          } else {
-            LOG.info("Task \"" + returnedTask.getId()
-                + "\" sucessfully finished!");
-            completed++;
-            LOG.info("Waiting for " + (numBSPTasks - completed)
-                + " tasks to finish!");
-          }
-          cleanupTasks.add(returnedTask.getId());
+        if(returnedTask != null && returnedTask.getExitStatus() == 0) {
+          LOG.info("Task \"" + returnedTask.getId()
+              + "\" sucessfully finished!");
+          completed++;
+          LOG.info("Waiting for " + (numBSPTasks - completed)
+              + " tasks to finish!");
+        }
+
+        if(returnedTask != null && returnedTask.getExitStatus() != 0) {
+          LOG.error("Task with id \"" + returnedTask.getId() + "\" failed!");
+          completionQueue.add(task);
+          state = JobState.FAILED;
+          return state;
         }
       }
       Thread.sleep(1000L);
-    }
-
-    for (Integer stopId : cleanupTasks) {
-      cleanupTask(stopId);
     }
 
     state = JobState.SUCCESS;
@@ -308,6 +301,7 @@ public class JobImpl implements Job {
   @Override
   public void cleanup() throws YarnException, IOException {
     for (BSPTaskLauncher launcher : completionQueue) {
+      LOG.info("cleanup tasks !!!");
       launcher.stopAndCleanup();
     }
   }

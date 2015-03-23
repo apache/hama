@@ -26,7 +26,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ContainerManagementProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.*;
@@ -101,11 +103,15 @@ public class BSPTaskLauncher {
     ContainerStatus lastStatus = null;
     GetContainerStatusesResponse getContainerStatusesResponse = cm.getContainerStatuses(statusRequest);
     List<ContainerStatus> containerStatuses = getContainerStatusesResponse.getContainerStatuses();
+    if (containerStatuses.size() <= 0) {
+      LOG.info("container Statuses size is zero");
+      return null;
+    }
+
     for (ContainerStatus containerStatus : containerStatuses) {
-      LOG.info("Got container status for containerID="
-          + containerStatus.getContainerId() + ", state="
-          + containerStatus.getState() + ", exitStatus="
-          + containerStatus.getExitStatus() + ", diagnostics="
+      LOG.info("Got container status for containerID=" + containerStatus
+          .getContainerId() + ", state=" + containerStatus.getState()
+          + ", exitStatus=" + containerStatus.getExitStatus() + ", diagnostics="
           + containerStatus.getDiagnostics());
 
       if (containerStatus.getContainerId().equals(allocatedContainer.getId())) {
@@ -113,12 +119,14 @@ public class BSPTaskLauncher {
         break;
       }
     }
+
     if (lastStatus.getState() != ContainerState.COMPLETE) {
+      LOG.info("Not completed...");
       return null;
     }
-    LOG.info(this.id + " Last report comes with exitstatus of "
-        + lastStatus.getExitStatus() + " and diagnose string of "
-        + lastStatus.getDiagnostics());
+    LOG.info(this.id + " Last report comes with exitstatus of " + lastStatus
+        .getExitStatus() + " and diagnose string of " + lastStatus
+        .getDiagnostics());
 
     return new BSPTaskStatus(id, lastStatus.getExitStatus());
   }
@@ -154,19 +162,22 @@ public class BSPTaskLauncher {
 
     localResources.put(YARNBSPConstants.APP_MASTER_JAR_PATH, packageResource);
 
-    Path hamaReleaseFile = new Path(System.getenv(YARNBSPConstants.HAMA_RELEASE_LOCATION));
+    Path hamaReleaseFile = new Path(System.getenv(YARNBSPConstants.HAMA_LOCATION));
     URL hamaReleaseUrl = ConverterUtils.getYarnUrlFromPath(hamaReleaseFile
         .makeQualified(fs.getUri(), fs.getWorkingDirectory()));
     LOG.info("Hama release URL has been composed to " + hamaReleaseUrl.toString());
 
-    LocalResource hamaReleaseRsrc = Records.newRecord(LocalResource.class);
-    hamaReleaseRsrc.setResource(hamaReleaseUrl);
-    hamaReleaseRsrc.setSize(Long.parseLong(System.getenv(YARNBSPConstants.HAMA_RELEASE_SIZE)));
-    hamaReleaseRsrc.setTimestamp(Long.parseLong(System.getenv(YARNBSPConstants.HAMA_RELEASE_TIMESTAMP)));
-    hamaReleaseRsrc.setType(LocalResourceType.ARCHIVE);
-    hamaReleaseRsrc.setVisibility(LocalResourceVisibility.APPLICATION);
+    RemoteIterator<LocatedFileStatus> fileStatusListIterator = fs.listFiles(
+        hamaReleaseFile, true);
 
-    localResources.put(YARNBSPConstants.HAMA_SYMLINK, hamaReleaseRsrc);
+    while(fileStatusListIterator.hasNext()) {
+      LocatedFileStatus lfs = fileStatusListIterator.next();
+      LocalResource localRsrc = LocalResource.newInstance(
+          ConverterUtils.getYarnUrlFromPath(lfs.getPath()),
+          LocalResourceType.FILE, LocalResourceVisibility.APPLICATION,
+          lfs.getLen(), lfs.getModificationTime());
+      localResources.put(lfs.getPath().getName(), localRsrc);
+    }
 
     ctx.setLocalResources(localResources);
 
@@ -186,13 +197,6 @@ public class BSPTaskLauncher {
       classPathEnv.append(File.pathSeparatorChar);
       classPathEnv.append(c.trim());
     }
-
-    classPathEnv.append(File.pathSeparator);
-    classPathEnv.append("./" + YARNBSPConstants.HAMA_SYMLINK +
-        "/" + YARNBSPConstants.HAMA_RELEASE_VERSION +  "/*");
-    classPathEnv.append(File.pathSeparator);
-    classPathEnv.append("./" + YARNBSPConstants.HAMA_SYMLINK +
-        "/" + YARNBSPConstants.HAMA_RELEASE_VERSION + "/lib/*");
 
     Vector<CharSequence> vargs = new Vector<CharSequence>();
     vargs.add("${JAVA_HOME}/bin/java");

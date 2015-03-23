@@ -17,23 +17,18 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-import org.apache.commons.beanutils.Converter;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
@@ -44,10 +39,8 @@ import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.hadoop.yarn.server.nodemanager.containermanager.localizer.ContainerLocalizer;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
-import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 
 public class YARNBSPJobClient extends BSPJobClient {
@@ -233,23 +226,13 @@ public class YARNBSPJobClient extends BSPJobClient {
       // this creates a symlink in the working directory
       localResources.put(YARNBSPConstants.APP_MASTER_JAR_PATH, amJarRsrc);
 
-      // Copy from hama-${version}.tar.gz to HDFS
-      Path hamaDstPath = new Path(getSystemDir(), YARNBSPConstants.HAMA_RELEASE_FILE);
-      hamaDstPath = fs.makeQualified(hamaDstPath);
-      fs.copyFromLocalFile(false, true,
-          new Path(YARNBSPConstants.HAMA_SRC_PATH, YARNBSPConstants.HAMA_RELEASE_FILE),
-          hamaDstPath);
-      FileStatus hamaStatus = fs.getFileStatus(hamaDstPath);
-      URL hamaReleaseUrl = ConverterUtils.getYarnUrlFromPath(hamaDstPath
-          .makeQualified(fs.getUri(), fs.getWorkingDirectory()));
-      LocalResource hamaReleaseRsrc = Records.newRecord(LocalResource.class);
-      hamaReleaseRsrc.setResource(hamaReleaseUrl);
-      hamaReleaseRsrc.setSize(hamaStatus.getLen());
-      hamaReleaseRsrc.setTimestamp(hamaStatus.getModificationTime());
-      hamaReleaseRsrc.setType(LocalResourceType.ARCHIVE);
-      hamaReleaseRsrc.setVisibility(LocalResourceVisibility.APPLICATION);
-
-      localResources.put(YARNBSPConstants.HAMA_SYMLINK, hamaReleaseRsrc);
+      // add hama related jar files to localresources for container
+      List<File> hamaJars = localJarfromPath(System.getProperty("hama.home.dir"));
+      String hamaPath = getSystemDir() + "/hama";
+      for (File fileEntry : hamaJars) {
+        addToLocalResources(fs, fileEntry.getCanonicalPath(),
+            hamaPath, fileEntry.getName(), localResources);
+      }
 
       // Set the local resources into the launch context
       amContainer.setLocalResources(localResources);
@@ -270,16 +253,12 @@ public class YARNBSPJobClient extends BSPJobClient {
         classPathEnv.append(File.pathSeparatorChar);
         classPathEnv.append(c.trim());
       }
-      classPathEnv.append(File.pathSeparator);
-      classPathEnv.append("./" + YARNBSPConstants.HAMA_SYMLINK + "/hama-0.6.4/*");
 
       env.put(YARNBSPConstants.HAMA_YARN_LOCATION, jarPath.toUri().toString());
       env.put(YARNBSPConstants.HAMA_YARN_SIZE, Long.toString(jarStatus.getLen()));
       env.put(YARNBSPConstants.HAMA_YARN_TIMESTAMP, Long.toString(jarStatus.getModificationTime()));
 
-      env.put(YARNBSPConstants.HAMA_RELEASE_LOCATION, hamaDstPath.toUri().toString());
-      env.put(YARNBSPConstants.HAMA_RELEASE_SIZE, Long.toString(hamaStatus.getLen()));
-      env.put(YARNBSPConstants.HAMA_RELEASE_TIMESTAMP, Long.toString(hamaStatus.getModificationTime()));
+      env.put(YARNBSPConstants.HAMA_LOCATION, hamaPath);
       env.put("CLASSPATH", classPathEnv.toString());
       amContainer.setEnvironment(env);
 
@@ -435,5 +414,29 @@ public class YARNBSPJobClient extends BSPJobClient {
     // Response can be ignored as it is non-null on success or
     // throws an exception in case of failures
     yarnClient.killApplication(appId);
+  }
+
+  private List<File> localJarfromPath(String path) throws IOException {
+    File hamaHome = new File(path);
+    String[] extensions = new String[]{"jar"};
+    List<File> files = (List<File>)FileUtils.listFiles(hamaHome, extensions, true);
+
+    return files;
+  }
+
+
+  private void addToLocalResources(FileSystem fs, String fileSrcPath,
+      String fileDstPath, String fileName, Map<String, LocalResource> localResources)
+      throws IOException {
+    Path dstPath = new Path(fileDstPath, fileName);
+    dstPath = fs.makeQualified(dstPath);
+    fs.copyFromLocalFile(false, true, new Path(fileSrcPath), dstPath);
+    FileStatus fileStatus = fs.getFileStatus(dstPath);
+    LocalResource localRsrc =
+        LocalResource.newInstance(
+            ConverterUtils.getYarnUrlFromURI(dstPath.toUri()),
+            LocalResourceType.FILE, LocalResourceVisibility.APPLICATION,
+            fileStatus.getLen(), fileStatus.getModificationTime());
+    localResources.put(fileName, localRsrc);
   }
 }

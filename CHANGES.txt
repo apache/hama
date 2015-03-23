@@ -11,6 +11,7 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-931: Make the HAMA base path configurable (Minho Kim via edwardyoon)
    HAMA-930: Add hama-yarn to binary distribution (Minho Kim via edwardyoon)  
    HAMA-848: Refactor YARN module for hadoop 2.x stable version (Minho Kim via edwardyoon)
    HAMA-906: Automatic activation of halted vertices without received messages (edwardyoon)

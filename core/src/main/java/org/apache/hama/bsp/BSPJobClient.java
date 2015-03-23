@@ -303,21 +303,16 @@ public class BSPJobClient extends Configured implements Tool {
     BSPJob job = pJob;
     job.setJobID(jobId);
 
-    int maxTasks;
-    if (job.getConfiguration().getBoolean("hama.yarn.application", false)) {
-      int maxMem = job.getConfiguration().getInt("yarn.nodemanager.resource.memory-mb", 0);
-      int minAllocationMem = job.getConfiguration().getInt("yarn.scheduler.minimum-allocation-mb", 1024);
-      maxTasks = maxMem / minAllocationMem;
-    } else {
-      ClusterStatus clusterStatus = getClusterStatus(true);
-      maxTasks = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB,
-          clusterStatus.getMaxTasks() - clusterStatus.getTasks());
+    int maxTasks = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB,
+        job.getNumBspTask());
 
-      if (maxTasks < job.getNumBspTask()) {
-        LOG.warn("The configured number of tasks has exceeded the maximum allowed. Job will run with "
-            + maxTasks + " tasks.");
-        job.setNumBspTask(maxTasks);
-      }
+    ClusterStatus clusterStatus = getClusterStatus(true);
+    // Re-adjust the maxTasks based on cluster status.
+    if (clusterStatus != null
+        && maxTasks > (clusterStatus.getMaxTasks() - clusterStatus.getTasks())) {
+      LOG.warn("The configured number of tasks has exceeded the maximum allowed. Job will run with "
+          + (clusterStatus.getMaxTasks() - clusterStatus.getTasks()) + " tasks.");
+      job.setNumBspTask(clusterStatus.getMaxTasks() - clusterStatus.getTasks());
     }
 
     Path submitJobDir = new Path(getSystemDir(), "submit_"
@@ -794,7 +789,8 @@ public class BSPJobClient extends Configured implements Tool {
    * @throws IOException
    */
   public ClusterStatus getClusterStatus(boolean detailed) throws IOException {
-    return jobSubmitClient.getClusterStatus(detailed);
+    return (jobSubmitClient != null) ? jobSubmitClient
+        .getClusterStatus(detailed) : null;
   }
 
   // for the testcase

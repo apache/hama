@@ -59,7 +59,7 @@ import org.apache.hadoop.yarn.util.Records;
 import org.apache.hadoop.yarn.util.SystemClock;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Job.JobState;
-import org.apache.hama.bsp.sync.SyncServerRunner;
+import org.apache.hama.bsp.sync.SyncServer;
 import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.ipc.RPC;
@@ -101,7 +101,8 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
   private Server taskServer;
 
   private volatile long superstep;
-  private SyncServerRunner syncServer;
+  //private SyncServerRunner syncServer;
+  private SyncServer syncServer;
 
   private Counters globalCounter = new Counters();
 
@@ -114,8 +115,11 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
     }
 
     this.jobFile = args[0];
-    this.localConf = new YarnConfiguration();
+
     this.jobConf = getSubmitConfiguration(jobFile);
+
+    this.localConf = new YarnConfiguration();
+    localConf.addResource(localConf);
     fs = FileSystem.get(jobConf);
 
     this.applicationName = jobConf.get("bsp.job.name",
@@ -192,9 +196,28 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
    * @throws IOException
    */
   private void startSyncServer() throws Exception {
-    syncServer = SyncServiceFactory.getSyncServerRunner(jobConf);
-    jobConf = syncServer.init(jobConf);
-    threadPool.submit(syncServer);
+    syncServer = SyncServiceFactory.getSyncServer(jobConf);
+    syncServer.init(jobConf);
+
+    ZKServerThread serverThread = new ZKServerThread(syncServer);
+    threadPool.submit(serverThread);
+  }
+
+  private static class ZKServerThread implements Runnable {
+    SyncServer server;
+
+    ZKServerThread(SyncServer s) {
+      server = s;
+    }
+
+    @Override
+    public void run() {
+      try {
+        server.start();
+      } catch (Exception e) {
+        LOG.error("Error running SyncServer.", e);
+      }
+    }
   }
 
   /**
@@ -282,11 +305,14 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
         .getApplicationAttemptId();
   }
 
-  private void start() throws Exception {
+  private void start() throws IOException, YarnException /*throws Exception*/ {
     JobState finalState = null;
     try {
       job = new JobImpl(appAttemptId, jobConf, yarnRPC, amrmRPC, jobFile, jobId);
       finalState = job.startJob();
+    } catch (Exception e) {
+      LOG.error("error was occured. cleaning up");
+      e.printStackTrace();
     } finally {
       if (finalState != null) {
         LOG.info("Job \"" + applicationName + "\"'s state after completion: "
@@ -294,12 +320,14 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
         LOG.info("Job took " + ((clock.getTime() - startTime) / 1000L)
             + "s to finish!");
       }
+      LOG.info("job is cleaning up");
       job.cleanup();
     }
   }
 
   private void cleanup() throws YarnException, IOException {
-    syncServer.stop();
+    //syncServer.stop();
+    syncServer.stopServer();
 
     if (threadPool != null && !threadPool.isShutdown()) {
       threadPool.shutdownNow();
