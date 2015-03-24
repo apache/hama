@@ -303,16 +303,22 @@ public class BSPJobClient extends Configured implements Tool {
     BSPJob job = pJob;
     job.setJobID(jobId);
 
-    int maxTasks = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB,
+    int maxTasks;
+    int configured = job.getConfiguration().getInt(Constants.MAX_TASKS_PER_JOB,
         job.getNumBspTask());
 
     ClusterStatus clusterStatus = getClusterStatus(true);
     // Re-adjust the maxTasks based on cluster status.
-    if (clusterStatus != null
-        && maxTasks > (clusterStatus.getMaxTasks() - clusterStatus.getTasks())) {
-      LOG.warn("The configured number of tasks has exceeded the maximum allowed. Job will run with "
-          + (clusterStatus.getMaxTasks() - clusterStatus.getTasks()) + " tasks.");
-      job.setNumBspTask(clusterStatus.getMaxTasks() - clusterStatus.getTasks());
+    if (clusterStatus != null) {
+      maxTasks = clusterStatus.getMaxTasks() - clusterStatus.getTasks();
+
+      if (configured > maxTasks) {
+        LOG.warn("The configured number of tasks has exceeded the maximum allowed. Job will run with "
+            + (maxTasks) + " tasks.");
+        job.setNumBspTask(maxTasks);
+      }
+    } else {
+      maxTasks = configured;
     }
 
     Path submitJobDir = new Path(getSystemDir(), "submit_"
