@@ -20,6 +20,7 @@ package org.apache.hama.bsp;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hama.HamaConfiguration;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
@@ -72,10 +73,8 @@ public class MesosExecutor implements Executor {
     // Get configuration from task data (prepared by the JobTracker).
     HamaConfiguration conf = configure(task);
 
-    // NOTE: We need to manually set the context class loader here because,
-    // the TaskTracker is unable to find LoginModule class otherwise.
-   // Thread.currentThread().setContextClassLoader(
-    //    GroomServer.class.getClassLoader());
+    Thread.currentThread().setContextClassLoader(
+        FileSystem.class.getClassLoader());
 
     try {
       groomServer = new GroomServer(conf);
