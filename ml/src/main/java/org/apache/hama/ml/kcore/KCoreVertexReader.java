@@ -27,9 +27,9 @@ import org.apache.hama.graph.Vertex;
 import org.apache.hama.graph.VertexInputReader;
 
 /**
-* VertexInputFormat for the KCore algorithm
-* specified in tab-delimited text file format.
-*/
+ * VertexInputFormat for the KCore algorithm specified in tab-delimited text
+ * file format.
+ */
 public class KCoreVertexReader
     extends
     VertexInputReader<LongWritable, Text, LongWritable, LongWritable, KCoreMessage> {
@@ -39,12 +39,13 @@ public class KCoreVertexReader
       Vertex<LongWritable, LongWritable, KCoreMessage> vertex) throws Exception {
     String[] vertices = value.toString().split("\t");
     List<Edge<LongWritable, LongWritable>> edges = new ArrayList<Edge<LongWritable, LongWritable>>();
-    
-    for(int i=1; i<vertices.length; i++){
+
+    for (int i = 1; i < vertices.length; i++) {
       LongWritable destID = new LongWritable(Long.parseLong(vertices[i]));
-      edges.add(new Edge<LongWritable, LongWritable>(destID, new LongWritable(0)));
+      edges.add(new Edge<LongWritable, LongWritable>(destID,
+          new LongWritable(0)));
     }
-    
+
     vertex.setEdges(edges);
     vertex.setValue(new KCoreMessage());
     vertex.setVertexID(new LongWritable(Long.parseLong(vertices[0])));

@@ -48,12 +48,12 @@ public class KCoreMessage implements Writable {
     output.writeLong(vertexID);
     output.writeInt(core);
   }
-  
-  public long getVertexID(){
+
+  public long getVertexID() {
     return vertexID;
   }
-  
-  public int getCore(){
+
+  public int getCore() {
     return core;
   }
 }

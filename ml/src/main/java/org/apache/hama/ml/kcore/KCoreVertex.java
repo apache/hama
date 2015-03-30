@@ -34,7 +34,7 @@ import com.google.common.collect.Lists;
 public class KCoreVertex extends
     Vertex<LongWritable, LongWritable, KCoreMessage> {
 
-  private static final Logger logger = Logger.getLogger(KCoreVertex.class);
+  private static final Logger LOG = Logger.getLogger(KCoreVertex.class);
   private int core;
   private boolean changed;
   private HashMap<Long, Integer> estimates;
@@ -90,9 +90,9 @@ public class KCoreVertex extends
   }
 
   public void logNeighborEstimates(long vertexId) {
-    logger.info(vertexId + " neighbor estimates: ");
+    LOG.info(vertexId + " neighbor estimates: ");
     for (Map.Entry<Long, Integer> entry : estimates.entrySet()) {
-      logger.info("\t" + entry.getKey() + "-" + entry.getValue());
+      LOG.info("\t" + entry.getKey() + "-" + entry.getValue());
     }
   }
 
@@ -141,36 +141,36 @@ public class KCoreVertex extends
     double[] count = new double[this.core + 1];
 
     for (Map.Entry<Long, Integer> entry : this.estimates.entrySet()) {
-      logger.info("Processing " + entry.getKey() + ": " + entry.getValue());
+      LOG.info("Processing " + entry.getKey() + ": " + entry.getValue());
       double j = Math.min(this.core, entry.getValue().doubleValue());
-      logger.info("Min: " + j);
+      LOG.info("Min: " + j);
       count[(int) j] = count[(int) j] + 1;
     }
 
-    logger.info("Count before");
+    LOG.info("Count before");
     int i;
     for (i = 0; i < count.length; i++) {
-      logger.info(i + " " + count[i]);
+      LOG.info(i + " " + count[i]);
     }
 
     for (i = this.core; i > 1; i--)
       count[i - 1] = count[i - 1] + count[i];
 
-    logger.info("Count after");
+    LOG.info("Count after");
     for (i = 0; i < count.length; i++) {
-      logger.info(i + " " + count[i]);
+      LOG.info(i + " " + count[i]);
     }
 
     i = this.core;
     while ((i > 1) && (count[i] < i)) {
-      logger.info("Decrementing" + i + " down one because " + count[i]
+      LOG.info("Decrementing" + i + " down one because " + count[i]
           + " is less than that");
       i = i - 1;
     }
-    logger.info("Loop terminated: i: " + i + " and count[i] = " + count[i]);
+    LOG.info("Loop terminated: i: " + i + " and count[i] = " + count[i]);
 
     if (i != old) {
-      logger.info("New Core Estimate: " + i + "\n");
+      LOG.info("New Core Estimate: " + i + "\n");
     }
     return i;
   }
@@ -178,59 +178,53 @@ public class KCoreVertex extends
   @Override
   public void compute(Iterable<KCoreMessage> msgs) throws IOException {
     if (this.getSuperstepCount() == 0) {
-        this.core = getEdges().size();
+      this.core = getEdges().size();
 
-        for (Edge<LongWritable, LongWritable> edge : getEdges()) {
-            sendMessage(edge, new KCoreMessage(getVertexID().get(),
-                    getCore()));
-        }
+      for (Edge<LongWritable, LongWritable> edge : getEdges()) {
+        sendMessage(edge, new KCoreMessage(getVertexID().get(), getCore()));
+      }
 
     } else {
-        logger.info("getSuperstepCount = " + getSuperstepCount()
-                + " vertex = " + getVertexID() + " Core = " + getCore());
+      LOG.info("getSuperstepCount = " + getSuperstepCount() + " vertex = "
+          + getVertexID() + " Core = " + getCore());
 
-        List<KCoreMessage> messages = Lists.newArrayList(msgs);
-        if (this.getSuperstepCount() == 1) {
-            for (KCoreMessage message : messages) {
-                estimates.put(message.getVertexID(),
-                        (Integer.MAX_VALUE));
-            }
-        }
-
-        logger.info(getVertexID() + " got estimates of: ");
+      List<KCoreMessage> messages = Lists.newArrayList(msgs);
+      if (this.getSuperstepCount() == 1) {
         for (KCoreMessage message : messages) {
-
-            logger.info("Processing message from "
-                    + message.getVertexID());
-
-            double temp = getNeighborEstimate(message.getVertexID());
-
-            if (message.getCore() < temp) {
-                setNeighborNewEstimate(message.getVertexID(),
-                        message.getCore());
-
-                int t = computeEstimate();
-
-                if (t < getCore()) {
-                    logger.info("Setting new core value! \n\n");
-                    setCore(t);
-                    setChanged(true);
-                }
-            }
+          estimates.put(message.getVertexID(), (Integer.MAX_VALUE));
         }
-        logger.info("Done recomputing estimate for node " + getVertexID());
+      }
 
-        if (!isChanged()) {
-            this.voteToHalt();
-        } else {
-            for (Edge<LongWritable, LongWritable> edge : getEdges()) {
-                sendMessage(edge, new KCoreMessage(getVertexID().get(),
-                        getCore()));
-            }
-            setChanged(false);
+      LOG.info(getVertexID() + " got estimates of: ");
+      for (KCoreMessage message : messages) {
+
+        LOG.info("Processing message from " + message.getVertexID());
+
+        double temp = getNeighborEstimate(message.getVertexID());
+
+        if (message.getCore() < temp) {
+          setNeighborNewEstimate(message.getVertexID(), message.getCore());
+
+          int t = computeEstimate();
+
+          if (t < getCore()) {
+            LOG.info("Setting new core value! \n\n");
+            setCore(t);
+            setChanged(true);
+          }
         }
+      }
+      LOG.info("Done recomputing estimate for node " + getVertexID());
+
+      if (!isChanged()) {
+        this.voteToHalt();
+      } else {
+        for (Edge<LongWritable, LongWritable> edge : getEdges()) {
+          sendMessage(edge, new KCoreMessage(getVertexID().get(), getCore()));
+        }
+        setChanged(false);
+      }
     }
-}
-
+  }
 
 }
