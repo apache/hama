@@ -84,9 +84,9 @@ public class SemiClusterMatchingTest extends TestCase {
   public static Map<String, List<String>> inputGraphLoader() throws IOException {
     BufferedReader br = new BufferedReader(new FileReader(INPUT));
     String line, firstVal;
-    List<String> tm = new ArrayList<String>();
     Map<String, List<String>> mp = new HashMap<String, List<String>>();
     while ((line = br.readLine()) != null) {
+      List<String> tm = new ArrayList<String>();
       StringTokenizer st1 = new StringTokenizer(line, "\t");
       firstVal = st1.nextToken();
       StringTokenizer st2 = new StringTokenizer(st1.nextToken(), ",");
