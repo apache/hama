@@ -57,6 +57,7 @@ import org.apache.hadoop.yarn.util.Clock;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.hadoop.yarn.util.SystemClock;
+import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.Job.JobState;
 import org.apache.hama.bsp.sync.SyncServer;
@@ -138,6 +139,9 @@ public class BSPApplicationMaster implements BSPClient, BSPPeerProtocol {
 
     this.hostname = BSPNetUtils.getCanonicalHostname();
     this.clientPort = BSPNetUtils.getFreePort(12000);
+
+    // Set configuration for starting SyncServer which run Zookeeper
+    this.jobConf.set(Constants.ZOOKEEPER_QUORUM, hostname);
 
     // start our synchronization service
     startSyncServer();
