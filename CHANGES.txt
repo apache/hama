@@ -12,6 +12,7 @@ Release 0.7.0 (unreleased changes)
 
   BUG FIXES
 
+   HAMA-943: java.lang.IllegalAccessError occur at run time when set default "bsp.user.name" (Minho Kim via edwardyoon)
    HAMA-935: Doesn't operate if hostname doesn't match between AppMaster and Zookeeper quorum (Minho Kim via edwardyoon)
    HAMA-931: Make the HAMA base path configurable (Minho Kim via edwardyoon)
    HAMA-930: Add hama-yarn to binary distribution (Minho Kim via edwardyoon)  

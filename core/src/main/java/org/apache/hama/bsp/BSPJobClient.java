@@ -1006,7 +1006,7 @@ public class BSPJobClient extends Configured implements Tool {
    * Helper methods for unix operations
    */
 
-  static String getUnixUserName() throws IOException {
+  protected static String getUnixUserName() throws IOException {
     String[] result = executeShellCommand(new String[] { Shell.USER_NAME_COMMAND });
     if (result.length != 1) {
       throw new IOException("Expect one token as the result of "

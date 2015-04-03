@@ -59,13 +59,11 @@ public class YarnSerializePrinting {
     HamaConfiguration conf = new HamaConfiguration();
 
     YARNBSPJob job = new YARNBSPJob(conf);
-    System.out.println(conf.get("bsp.user.name"));
     job.setBspClass(HelloBSP.class);
     job.setJarByClass(HelloBSP.class);
     job.setJobName("Serialize Printing");
     job.setInputFormat(NullInputFormat.class);
     job.setOutputFormat(NullOutputFormat.class);
-
     job.setMemoryUsedPerTaskInMb(100);
     job.setNumBspTask(4);
     job.waitForCompletion(true);
