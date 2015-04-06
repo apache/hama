@@ -83,10 +83,10 @@ public class FastGraphGen {
         Text[] arr = new Text[set.size()];
         int index = 0;
         for (int x : set) {
-          arr[index++] = new Text(x + "");
+          arr[index++] = new Text(String.valueOf(x));
         }
         textArrayWritable.set(arr);
-        peer.write(new Text(i + ""), textArrayWritable);
+        peer.write(new Text(String.valueOf(i)), textArrayWritable);
       }
 
     }
