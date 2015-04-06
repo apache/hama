@@ -4,6 +4,7 @@ Release 0.7.0 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-942: DockFile for Hama (Hoseog Lee via edwardyoon)
    HAMA-894: Implement K-core algorithm (Jaegwon Seo via edwardyoon)
    HAMA-907: Add MaxFlow example (Zhengjun via edwardyoon)
    HAMA-915: Add Kryo serializer (edwardyoon)

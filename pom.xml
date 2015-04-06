@@ -429,6 +429,7 @@
             <exclude>**dependency-reduced-pom.xml</exclude>
             <exclude>**/src/test/resources/*.txt</exclude>
             <exclude>**/target/**</exclude>
+            <exclude>/docker/README.md</exclude>
           </excludes>
         </configuration>
       </plugin>
