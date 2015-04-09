@@ -126,6 +126,24 @@
 
   <profiles>
     <profile>
+      <id>doclint-java8-disable</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <additionalparam>-Xdoclint:none</additionalparam>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
       <id>hadoop1</id>
       
       <modules>
@@ -476,7 +494,6 @@
         <configuration>
           <aggregate>true</aggregate>
           <outputDirectory>docs/apidocs</outputDirectory>
-          <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
         <executions>
           <execution>

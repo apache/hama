@@ -424,7 +424,6 @@ public class YARNBSPJobClient extends BSPJobClient {
     return files;
   }
 
-
   private void addToLocalResources(FileSystem fs, String fileSrcPath,
       String fileDstPath, String fileName, Map<String, LocalResource> localResources)
       throws IOException {
