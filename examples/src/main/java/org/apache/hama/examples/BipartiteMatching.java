@@ -191,8 +191,12 @@ public final class BipartiteMatching {
     job.setEdgeValueClass(NullWritable.class);
 
     job.setInputFormat(TextInputFormat.class);
+    job.setInputKeyClass(LongWritable.class);
+    job.setInputValueClass(Text.class);
+    
     job.setVertexInputReaderClass(BipartiteMatchingVertexReader.class);
     job.setPartitioner(HashPartitioner.class);
+    
     job.setOutputFormat(TextOutputFormat.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(TextPair.class);

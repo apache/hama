@@ -91,6 +91,8 @@ public class TestHamaAsyncMessageManager extends TestCase {
       bundle.addMessage(it.next());
     }
 
+    bundle.finishAddition();
+    
     messageManager.transfer(peer, bundle);
 
     messageManager.clearOutgoingMessages();

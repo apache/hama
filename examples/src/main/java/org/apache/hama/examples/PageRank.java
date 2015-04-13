@@ -135,6 +135,8 @@ public class PageRank {
     pageJob.setEdgeValueClass(NullWritable.class);
 
     pageJob.setInputFormat(SequenceFileInputFormat.class);
+    pageJob.setInputKeyClass(Text.class);
+    pageJob.setInputValueClass(TextArrayWritable.class);
 
     pageJob.setPartitioner(HashPartitioner.class);
     pageJob.setOutputFormat(TextOutputFormat.class);

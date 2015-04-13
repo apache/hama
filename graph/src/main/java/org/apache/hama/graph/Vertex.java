@@ -76,43 +76,20 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   @Override
   public void sendMessage(Edge<V, E> e, M msg) throws IOException {
-    runner.getPeer().send(getDestinationPeerName(e),
-        new GraphJobMessage(e.getDestinationVertexID(), msg));
+    runner.sendMessage(e.getDestinationVertexID(), msg);
   }
 
-  /**
-   * @return the destination peer name of the destination of the given directed
-   *         edge.
-   */
-  public String getDestinationPeerName(Edge<V, E> edge) {
-    return getDestinationPeerName(edge.getDestinationVertexID());
+  @Override
+  public void sendMessage(V destinationVertexID, M msg) throws IOException {
+    runner.sendMessage(destinationVertexID, msg);
   }
-
-  /**
-   * @return the destination peer name of the given vertex id, determined by the
-   *         partitioner.
-   */
-  public String getDestinationPeerName(V vertexId) {
-    return runner.getPeer().getPeerName(
-        getPartitioner().getPartition(vertexId, value,
-            runner.getPeer().getNumPeers()));
-  }
-
+  
   @Override
   public void sendMessageToNeighbors(M msg) throws IOException {
     final List<Edge<V, E>> outEdges = this.getEdges();
     for (Edge<V, E> e : outEdges) {
       sendMessage(e, msg);
     }
-  }
-
-  @Override
-  public void sendMessage(V destinationVertexID, M msg) throws IOException {
-    int partition = getPartitioner().getPartition(destinationVertexID, msg,
-        runner.getPeer().getNumPeers());
-    String destPeer = runner.getPeer().getAllPeerNames()[partition];
-    runner.getPeer().send(destPeer,
-        new GraphJobMessage(destinationVertexID, msg));
   }
 
   private void alterVertexCounter(int i) throws IOException {

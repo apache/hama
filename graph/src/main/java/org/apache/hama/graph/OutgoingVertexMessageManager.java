@@ -108,12 +108,9 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
 
         MessagePerVertex msgStorage = storage.get(bundle.getKey());
         if (msgStorage != null) {
-          Iterator<GraphJobMessage> it = msgStorage.iterator();
-          while (it.hasNext()) {
-            bundle.getValue().addMessage(it.next());
-          }
+          bundle.getValue().addMessages(msgStorage.iterator());
         }
-
+        bundle.getValue().finishAddition();
         storage.remove(bundle.getKey());
         return bundle;
       }

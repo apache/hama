@@ -23,7 +23,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.graph.GraphJob;
 import org.apache.hama.ml.kcore.KCoreMessage;
 import org.apache.hama.ml.kcore.KCoreVertex;
@@ -50,6 +52,10 @@ public class KCore {
     graphJob.setOutputKeyClass(LongWritable.class);
     graphJob.setOutputValueClass(IntWritable.class);
 
+    graphJob.setInputFormat(TextInputFormat.class);
+    graphJob.setInputKeyClass(LongWritable.class);
+    graphJob.setInputValueClass(Text.class);
+    
     return graphJob;
   }
 

@@ -153,7 +153,9 @@ public class DynamicGraph {
     graphJob.setEdgeValueClass(NullWritable.class);
 
     graphJob.setInputFormat(TextInputFormat.class);
-
+    graphJob.setInputKeyClass(LongWritable.class);
+    graphJob.setInputValueClass(Text.class);
+    
     graphJob.setVertexInputReaderClass(GraphTextReader.class);
     graphJob.setPartitioner(HashPartitioner.class);
 

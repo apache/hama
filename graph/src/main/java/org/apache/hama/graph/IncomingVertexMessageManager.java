@@ -73,7 +73,7 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   public void add(GraphJobMessage item) {
     if (item.isVertexMessage()) {
       msgPerVertex.add(item.getVertexId(), item);
-    } else if (item.isMapMessage() || item.isVerticesSizeMessage()) {
+    } else {
       mapMessages.add(item);
     }
   }

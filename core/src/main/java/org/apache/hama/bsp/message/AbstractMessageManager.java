@@ -170,6 +170,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   public void send(String peerName, M msg) throws IOException {
     outgoingMessageManager.addMessage(peerName, msg);
     peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_SENT, 1L);
+
     notifySentMessage(peerName, msg);
   }
 

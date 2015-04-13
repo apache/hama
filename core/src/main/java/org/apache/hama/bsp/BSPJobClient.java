@@ -45,7 +45,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
@@ -58,6 +58,11 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.message.MessageManager;
+import org.apache.hama.bsp.message.OutgoingMessageManager;
+import org.apache.hama.bsp.message.OutgoingPOJOMessageBundle;
+import org.apache.hama.bsp.message.queue.MessageQueue;
+import org.apache.hama.bsp.message.queue.SortedMemoryQueue;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 import org.apache.hama.ipc.RPC;
@@ -346,6 +351,7 @@ public class BSPJobClient extends Configured implements Tool {
 
       InputSplit[] splits = job.getInputFormat().getSplits(job, maxTasks);
 
+      /*
       job = partition(job, splits, maxTasks);
       maxTasks = job.getInt("hama.partition.count", maxTasks);
 
@@ -358,6 +364,7 @@ public class BSPJobClient extends Configured implements Tool {
             "Job failed! The number of splits has exceeded the number of max tasks. The number of splits: "
                 + splits.length + ", The number of max tasks: " + maxTasks);
       }
+      */
 
       job.setNumBspTask(writeSplits(job, splits, submitSplitFile, maxTasks));
       job.set("bsp.job.split.file", submitSplitFile.toString());
@@ -451,13 +458,22 @@ public class BSPJobClient extends Configured implements Tool {
             + partitioningJob.getJobName());
         LOG.debug("partitioningJob input: "
             + partitioningJob.get(Constants.JOB_INPUT_DIR));
+        
+        partitioningJob.getConfiguration().setClass(MessageManager.OUTGOING_MESSAGE_MANAGER_CLASS,
+            OutgoingPOJOMessageBundle.class, OutgoingMessageManager.class);
+        partitioningJob.getConfiguration().setClass(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
+            SortedMemoryQueue.class, MessageQueue.class);
+        
         partitioningJob.setInputFormat(job.getInputFormat().getClass());
         partitioningJob.setInputKeyClass(job.getInputKeyClass());
         partitioningJob.setInputValueClass(job.getInputValueClass());
-        partitioningJob.setOutputFormat(NullOutputFormat.class);
-        partitioningJob.setOutputKeyClass(NullWritable.class);
-        partitioningJob.setOutputValueClass(NullWritable.class);
+        
+        partitioningJob.setOutputFormat(SequenceFileOutputFormat.class);
+        partitioningJob.setOutputKeyClass(job.getInputKeyClass());
+        partitioningJob.setOutputValueClass(job.getInputValueClass());
+        
         partitioningJob.setBspClass(PartitioningRunner.class);
+        partitioningJob.setMessageClass(MapWritable.class);
         partitioningJob.set("bsp.partitioning.runner.job", "true");
         partitioningJob.getConfiguration().setBoolean(
             Constants.ENABLE_RUNTIME_PARTITIONING, false);
@@ -554,15 +570,15 @@ public class BSPJobClient extends Configured implements Tool {
       RawSplit rawSplit = new RawSplit();
       for (InputSplit split : splits) {
 
+        /*
         // set partitionID to rawSplit
-        if (split.getClass().getName().equals(FileSplit.class.getName())
-            && job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null
-            && job.get("bsp.partitioning.runner.job") == null) {
+        if (split.getClass().getName().equals(FileSplit.class.getName())) {
           LOG.debug(((FileSplit) split).getPath().getName());
           String[] extractPartitionID = ((FileSplit) split).getPath().getName()
               .split("[-]");
           rawSplit.setPartitionID(Integer.parseInt(extractPartitionID[1]));
         }
+        */
 
         rawSplit.setClassName(split.getClass().getName());
         buffer.reset();

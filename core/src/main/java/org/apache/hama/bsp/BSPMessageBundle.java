@@ -65,11 +65,29 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
     }
 
     kryo.writeObject(output, message);
-    output.flush();
-
     bundleSize++;
   }
-
+  
+  public void addMessages(Iterator<M> iterator) {
+    M message = iterator.next();
+    if (className == null) {
+      className = message.getClass().getName();
+      kryo.register(message.getClass());
+    }
+    
+    kryo.writeObject(output, message);
+    bundleSize++;
+    
+    while(iterator.hasNext()) {
+      kryo.writeObject(output, iterator.next());
+      bundleSize++;
+    }
+  }
+  
+  public void finishAddition() {
+    output.flush();
+  }
+  
   public byte[] getBuffer() {
     return outputStream.toByteArray();
   }

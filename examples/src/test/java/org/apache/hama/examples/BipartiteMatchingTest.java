@@ -108,7 +108,7 @@ public class BipartiteMatchingTest extends TestCase {
 
   private void verifyResult() throws IOException {
     FileStatus[] files = fs.globStatus(new Path(OUTPUT + "/part-*"));
-    assertTrue("Not enough files found: " + files.length, files.length == 2);
+    assertTrue("Not enough files found: " + files.length, files.length == 1);
 
     for (FileStatus file : files) {
       if (file.getLen() > 0) {

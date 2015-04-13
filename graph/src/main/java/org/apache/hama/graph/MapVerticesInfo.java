@@ -18,6 +18,7 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,19 +41,21 @@ import org.apache.hama.bsp.TaskAttemptID;
  */
 public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
-  private GraphJobRunner<V, E, M> runner;
-
   private final Map<V, Vertex<V, E, M>> vertices = new HashMap<V, Vertex<V, E, M>>();
 
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
       TaskAttemptID attempt) throws IOException {
-    this.runner = runner;
   }
 
   @Override
   public void put(Vertex<V, E, M> vertex) throws IOException {
-    vertices.put(vertex.getVertexID(), vertex);
+    if(vertices.containsKey(vertex.getVertexID())) {
+      for(Edge<V, E> e : vertex.getEdges()) 
+      vertices.get(vertex.getVertexID()).addEdge(e);
+    } else {
+      vertices.put(vertex.getVertexID(), vertex);
+    }
   }
 
   @Override
@@ -65,15 +68,18 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   }
 
   @Override
+  public Collection<Vertex<V, E, M>> getValues() {
+    return vertices.values();  
+  }
+  
+  @Override
   public int size() {
     return vertices.size();
   }
 
   @Override
   public Vertex<V, E, M> get(V vertexID) {
-    Vertex<V, E, M> vertex = vertices.get(vertexID);
-    vertex.setRunner(runner);
-    return vertex;
+    return vertices.get(vertexID);
   }
 
   @Override
@@ -90,9 +96,7 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
 
       @Override
       public Vertex<V, E, M> next() {
-        Vertex<V, E, M> vertex = vertexIterator.next();
-        vertex.setRunner(runner);
-        return vertex;
+        return vertexIterator.next();
       }
 
       @Override
@@ -111,7 +115,7 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   @Override
   public void finishVertexComputation(Vertex<V, E, M> vertex)
       throws IOException {
-    vertices.put(vertex.getVertexID(), vertex);
+    // do nothing
   }
 
   @Override

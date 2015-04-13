@@ -18,9 +18,11 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -39,11 +41,11 @@ import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
-import org.apache.hama.bsp.PartitioningRunner.DefaultRecordConverter;
-import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
+
+import com.google.common.collect.Lists;
 
 /**
  * Fully generic graph job runner.
@@ -100,7 +102,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private long numberVertices = 0;
   // -1 is deactivated
   private int maxIteration = -1;
-  private long iteration;
+  private long iteration = 0;
 
   private AggregationRunner<V, E, M> aggregationRunner;
   private VertexOutputWriter<Writable, Writable, V, E, M> vertexOutputWriter;
@@ -114,12 +116,20 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     setupFields(peer);
 
+    long startTime = System.currentTimeMillis();
     loadVertices(peer);
+    LOG.info("Total time spent for loading vertices: "
+        + (System.currentTimeMillis() - startTime) + " ms");
 
+    startTime = System.currentTimeMillis();
     countGlobalVertexCount(peer);
+    LOG.info("Total time spent for broadcasting global vertex count: "
+        + (System.currentTimeMillis() - startTime) + " ms");
 
+    startTime = System.currentTimeMillis();
     doInitialSuperstep(peer);
-
+    LOG.info("Total time spent for initial superstep: "
+        + (System.currentTimeMillis() - startTime) + " ms");
   }
 
   @Override
@@ -137,15 +147,23 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
       // note that the messages must be parsed here
       GraphJobMessage firstVertexMessage = parseMessages(peer);
+
+      long startTime = System.currentTimeMillis();
       // master/slaves needs to update
       doAggregationUpdates(peer);
+      LOG.info("Total time spent for broadcasting aggregation values: "
+          + (System.currentTimeMillis() - startTime) + " ms");
+
       // check if updated changed by our aggregators
       if (!updated) {
         break;
       }
 
       // loop over vertices and do their computation
+      startTime = System.currentTimeMillis();
       doSuperstep(firstVertexMessage, peer);
+      LOG.info("Total time spent for " + peer.getSuperstepCount()
+          + " superstep: " + (System.currentTimeMillis() - startTime) + " ms");
 
       if (isMasterTask(peer)) {
         peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
@@ -249,7 +267,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
       currentMessage = peer.getCurrentMessage();
     }
-
+    
     for (V v : notComputedVertices) {
       vertex = vertices.get(v);
       if (!vertex.isHalted()) {
@@ -275,21 +293,49 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    Iterator<Vertex<V, E, M>> iterator = vertices.iterator();
+    List<Thread> runners = new ArrayList<Thread>();
+    List<Vertex<V, E, M>> v = new ArrayList<Vertex<V, E, M>>(
+        vertices.getValues());
+    for (List<Vertex<V, E, M>> partition : Lists.partition(v, conf.getInt("hama.graph.thread.num", 30))) {
+      runners.add(new Computer(partition));
+    }
 
-    while (iterator.hasNext()) {
-      Vertex<V, E, M> vertex = iterator.next();
+    for (Thread computer : runners) {
+      computer.start();
+    }
 
-      // Calls setup method.
-      vertex.setup(conf);
-
-      vertex.compute(Collections.singleton(vertex.getValue()));
-      vertices.finishVertexComputation(vertex);
+    for (Thread computer : runners) {
+      try {
+        computer.join();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
 
     vertices.finishSuperstep();
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
+  }
+
+  class Computer extends Thread {
+    List<Vertex<V, E, M>> partition;
+
+    public Computer(List<Vertex<V, E, M>> partition) {
+      this.partition = partition;
+    }
+
+    @Override
+    public void run() {
+      try {
+        for (Vertex<V, E, M> v : partition) {
+          v.setup(conf);
+          v.compute(Collections.singleton(v.getValue()));
+          vertices.finishVertexComputation(v);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -350,44 +396,33 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
-    RecordConverter converter = org.apache.hadoop.util.ReflectionUtils
+    final VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
-            DefaultRecordConverter.class, RecordConverter.class), conf);
+            VertexInputReader.class));
 
-    // our VertexInputReader ensures incoming vertices are sorted by their ID
-    Vertex<V, E, M> vertex = GraphJobRunner
-        .<V, E, M> newVertexInstance(VERTEX_CLASS);
-    Vertex<V, E, M> currentVertex = GraphJobRunner
-        .<V, E, M> newVertexInstance(VERTEX_CLASS);
+    try {
+      KeyValuePair<Writable, Writable> next = null;
+      while ((next = peer.readNext()) != null) {
+        Vertex<V, E, M> vertex = GraphJobRunner
+            .<V, E, M> newVertexInstance(VERTEX_CLASS);
 
-    KeyValuePair<Writable, Writable> record = null;
-    KeyValuePair<Writable, Writable> converted = null;
-
-    while ((record = peer.readNext()) != null) {
-      converted = converter.convertRecord(record, conf);
-      currentVertex = (Vertex<V, E, M>) converted.getValue();
-
-      if (vertex.getVertexID() == null) {
-        vertex = currentVertex;
-      } else {
-        if (vertex.getVertexID().equals(currentVertex.getVertexID())) {
-          for (Edge<V, E> edge : currentVertex.getEdges()) {
-            vertex.addEdge(edge);
-          }
-        } else {
-          if (vertex.compareTo(currentVertex) > 0) {
-            throw new IOException(
-                "The records of split aren't in order by vertex ID.");
-          }
-
-          addVertex(vertex);
-          vertex = currentVertex;
+        boolean vertexFinished = reader.parseVertex(next.getKey(),
+            next.getValue(), vertex);
+        if (!vertexFinished) {
+          continue;
         }
+        peer.send(getHostName(vertex.getVertexID()),
+            new GraphJobMessage(vertex));
       }
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-    // add last vertex.
-    addVertex(vertex);
+    peer.sync();
 
+    GraphJobMessage received;
+    while ((received = peer.getCurrentMessage()) != null) {
+      addVertex((Vertex<V, E, M>) received.getVertex());
+    }
     LOG.info(vertices.size() + " vertices are loaded into "
         + peer.getPeerName());
     LOG.debug("Starting Vertex processing!");
@@ -403,6 +438,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
     }
 
+    vertex.setRunner(this);
     vertices.put(vertex);
 
     LOG.debug("Added VertexID: " + vertex.getVertexID() + " in peer "
@@ -533,6 +569,20 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     vertices.finishAdditions();
     // finish the "superstep" because we have written a new file here
     vertices.finishSuperstep();
+  }
+
+  public void sendMessage(V dstinationVertexID, M msg) throws IOException {
+    peer.send(getHostName(dstinationVertexID), new GraphJobMessage(
+        dstinationVertexID, msg));
+  }
+
+  /**
+   * @return the destination peer name of the destination of the given directed
+   *         edge.
+   */
+  public String getHostName(V vertexID) {
+    return peer.getPeerName(getPartitioner().getPartition(vertexID, null,
+        peer.getNumPeers()));
   }
 
   /**

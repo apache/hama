@@ -352,7 +352,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
         throws IOException {
       peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
           bundle.getLength());
-
+      
       MANAGER_MAP.get(addr).localQueueForNextIteration.addBundle(bundle);
       peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
           bundle.size());

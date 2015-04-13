@@ -18,6 +18,7 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -79,6 +80,8 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
    */
   public Set<V> keySet();
   
+  public Collection<Vertex<V, E, M>> getValues();
+
   /**
    * Finish the additions, from this point on the implementations should close
    * the adds and throw exceptions in case something is added after this call.
@@ -100,5 +103,6 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
    * Called once completed a superstep.
    */
   public void finishSuperstep() throws IOException;
+
 
 }
