@@ -19,11 +19,11 @@ package org.apache.hama.graph;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -44,7 +44,7 @@ import com.google.common.collect.Sets;
  */
 public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
-  private final Map<V, Vertex<V, E, M>> vertices = new HashMap<V, Vertex<V, E, M>>();
+  private final Map<V, Vertex<V, E, M>> vertices = new ConcurrentHashMap<V, Vertex<V, E, M>>();
 
   private Set<V> computedVertices; 
   

@@ -437,6 +437,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     try {
       KeyValuePair<Writable, Writable> next = null;
       while ((next = peer.readNext()) != null) {
+        // TODO read sequentially, and convert records using thread.
+        
         Vertex<V, E, M> vertex = GraphJobRunner
             .<V, E, M> newVertexInstance(VERTEX_CLASS);
 
@@ -445,21 +447,62 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         if (!vertexFinished) {
           continue;
         }
-        peer.send(getHostName(vertex.getVertexID()),
-            new GraphJobMessage(vertex));
+
+        String dstHost = getHostName(vertex.getVertexID());
+        if (peer.getPeerName().equals(dstHost)) {
+          addVertex(vertex);
+        } else {
+          peer.send(dstHost, new GraphJobMessage(vertex));
+        }
       }
     } catch (Exception e) {
       e.printStackTrace();
     }
     peer.sync();
 
-    GraphJobMessage received;
-    while ((received = peer.getCurrentMessage()) != null) {
-      addVertex((Vertex<V, E, M>) received.getVertex());
+    List<List<GraphJobMessage>> subLists = peer.getSubLists(conf.getInt(
+        "hama.graph.thread.num", 100));
+    List<Thread> runners = new ArrayList<Thread>(subLists.size());
+
+    for (List<GraphJobMessage> subList : subLists) {
+      runners.add(new LoadReceivedMessage(subList));
+    }
+
+    for (Thread computer : runners) {
+      computer.start();
+    }
+
+    for (Thread computer : runners) {
+      try {
+        computer.join();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
 
     LOG.info(vertices.size() + " vertices are loaded into "
         + peer.getPeerName());
+  }
+
+  class LoadReceivedMessage extends Thread {
+    List<GraphJobMessage> subList;
+
+    public LoadReceivedMessage(List<GraphJobMessage> subList) {
+      this.subList = subList;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void run() {
+      try {
+        for (GraphJobMessage msg : subList) {
+          System.out.println("adding vertex ");
+          addVertex((Vertex<V, E, M>) msg.getVertex());
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   /**
