@@ -189,7 +189,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   }
 
   @Override
-  public long getNumVertices() {
+  public long getTotalNumVertices() {
     return runner.getNumberVertices();
   }
 

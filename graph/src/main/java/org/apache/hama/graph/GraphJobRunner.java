@@ -496,7 +496,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     public void run() {
       try {
         for (GraphJobMessage msg : subList) {
-          System.out.println("adding vertex ");
           addVertex((Vertex<V, E, M>) msg.getVertex());
         }
       } catch (IOException e) {
@@ -517,9 +516,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     vertex.setRunner(this);
     vertices.put(vertex);
-
-    LOG.debug("Added VertexID: " + vertex.getVertexID() + " in peer "
-        + peer.getPeerName());
   }
 
   /**

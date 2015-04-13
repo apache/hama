@@ -62,13 +62,13 @@ public class PageRank {
     public void compute(Iterable<DoubleWritable> messages) throws IOException {
       // initialize this vertex to 1 / count of global vertices in this graph
       if (this.getSuperstepCount() == 0) {
-        setValue(new DoubleWritable(1.0 / this.getNumVertices()));
+        setValue(new DoubleWritable(1.0 / getTotalNumVertices()));
       } else if (this.getSuperstepCount() >= 1) {
         double sum = 0;
         for (DoubleWritable msg : messages) {
           sum += msg.get();
         }
-        double alpha = (1.0d - DAMPING_FACTOR) / this.getNumVertices();
+        double alpha = (1.0d - DAMPING_FACTOR) / getTotalNumVertices();
         setValue(new DoubleWritable(alpha + (sum * DAMPING_FACTOR)));
         aggregate(0, this.getValue());
       }

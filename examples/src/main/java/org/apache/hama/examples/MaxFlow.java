@@ -459,7 +459,7 @@ public class MaxFlow {
     }
 
     private Text getSinkID() {
-      return new Text(String.valueOf(getNumVertices() - 1));
+      return new Text(String.valueOf(getTotalNumVertices() - 1));
     }
 
     private Text getSourceID() {
