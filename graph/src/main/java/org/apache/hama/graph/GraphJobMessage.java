@@ -135,10 +135,10 @@ public final class GraphJobMessage implements
       ByteArrayOutputStream a = new ByteArrayOutputStream();
       DataOutputStream b = new DataOutputStream(a);
       value.write(b);
+      
       byteBuffer.write(a.toByteArray());
       numOfValues++;
     } catch (IOException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }

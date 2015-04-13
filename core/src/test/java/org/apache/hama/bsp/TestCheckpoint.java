@@ -151,6 +151,18 @@ public class TestCheckpoint extends TestCase {
       return null;
     }
 
+    @Override
+    public List<List<Text>> getSubLists(int num) {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    @Override
+    public void clearIncomingMessages() {
+      // TODO Auto-generated method stub
+      
+    }
+
   }
 
   public static class TestBSPPeer implements
@@ -305,6 +317,18 @@ public class TestCheckpoint extends TestCase {
     public String[] getAdjacentPeerNames() {
       // TODO Auto-generated method stub
       return null;
+    }
+
+    @Override
+    public List<List<Text>> getSubLists(int num) {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    @Override
+    public void clearIncomingMessages() {
+      // TODO Auto-generated method stub
+      
     }
 
   }

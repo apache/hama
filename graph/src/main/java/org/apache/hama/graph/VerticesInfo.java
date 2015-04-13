@@ -82,6 +82,12 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
   
   public Collection<Vertex<V, E, M>> getValues();
 
+  public Set<V> getComputedVertices();
+  
+  public Set<V> getNotComputedVertices();
+  
+  public int getActiveVerticesNum();
+  
   /**
    * Finish the additions, from this point on the implementations should close
    * the adds and throw exceptions in case something is added after this call.

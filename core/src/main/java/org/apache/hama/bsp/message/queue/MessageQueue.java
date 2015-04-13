@@ -17,6 +17,8 @@
  */
 package org.apache.hama.bsp.message.queue;
 
+import java.util.List;
+
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
@@ -26,8 +28,7 @@ import org.apache.hama.bsp.TaskAttemptID;
 /**
  * Simple queue interface.
  */
-public interface MessageQueue<M extends Writable> extends Iterable<M>,
-    Configurable {
+public interface MessageQueue<M extends Writable> extends Configurable {
 
   public static final String PERSISTENT_QUEUE = "hama.queue.behaviour.persistent";
 
@@ -63,6 +64,8 @@ public interface MessageQueue<M extends Writable> extends Iterable<M>,
    */
   public void add(M item);
 
+  public List<List<M>> getSubLists(int num);
+  
   /**
    * Clears all entries in the given queue.
    */

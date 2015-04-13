@@ -17,7 +17,7 @@
  */
 package org.apache.hama.graph;
 
-import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.hadoop.conf.Configuration;
@@ -34,11 +34,6 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
 
   private final MessagePerVertex msgPerVertex = new MessagePerVertex();
   private final ConcurrentLinkedQueue<GraphJobMessage> mapMessages = new ConcurrentLinkedQueue<GraphJobMessage>();
-
-  @Override
-  public Iterator<GraphJobMessage> iterator() {
-    return msgPerVertex.iterator();
-  }
 
   @Override
   public void setConf(Configuration conf) {
@@ -80,6 +75,7 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
 
   @Override
   public void clear() {
+    mapMessages.clear();
     msgPerVertex.clear();
   }
 
@@ -94,7 +90,7 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
 
   @Override
   public int size() {
-    return msgPerVertex.size();
+    return msgPerVertex.size() + mapMessages.size();
   }
 
   // empty, not needed to implement
@@ -112,5 +108,9 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
     return this;
   }
 
+  @Override
+  public List<List<GraphJobMessage>> getSubLists(int num) {
+    return msgPerVertex.getSubLists(num);
+  }
 
 }

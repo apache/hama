@@ -17,7 +17,7 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.Iterator;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
@@ -41,17 +41,6 @@ public final class SingleLockQueue<T extends Writable> implements
   private SingleLockQueue(MessageQueue<T> queue, Object mutex) {
     this.queue = queue;
     this.mutex = mutex;
-  }
-
-  /*
-   * (non-Javadoc)
-   * @see org.apache.hama.bsp.message.SynchronizedQueue#iterator()
-   */
-  @Override
-  public Iterator<T> iterator() {
-    synchronized (mutex) {
-      return queue.iterator();
-    }
   }
 
   /*
@@ -195,5 +184,10 @@ public final class SingleLockQueue<T extends Writable> implements
     synchronized (mutex) {
       queue.addAll(otherqueue);
     }
+  }
+
+  @Override
+  public List<List<T>> getSubLists(int num) {
+    return queue.getSubLists(num);
   }
 }

@@ -173,6 +173,7 @@ public class MaxFlow {
       stepStatusDetecting(haveActivingNormalVertex);
       boolean pushStepCompleted = pushStepCompleted(haveActivingNormalVertex);
       boolean senseStepCompleted = senseStepCompleted(haveActivingNormalVertex);
+      
       if (senseStepCompleted) {
         aggregate();
         for (FloatArrayWritable msg : overFlowMsgList) {

@@ -18,6 +18,7 @@
 package org.apache.hama.bsp;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
@@ -202,4 +203,9 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    * @return the task id of this task.
    */
   public TaskAttemptID getTaskId();
+
+  public List<List<M>> getSubLists(int num);
+
+  public void clearIncomingMessages();
+
 }

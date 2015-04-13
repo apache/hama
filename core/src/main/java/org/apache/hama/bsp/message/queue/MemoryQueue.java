@@ -17,13 +17,17 @@
  */
 package org.apache.hama.bsp.message.queue;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
+
+import com.google.common.collect.Lists;
 
 /**
  * LinkedList backed queue structure for bookkeeping messages.
@@ -87,11 +91,6 @@ public final class MemoryQueue<M extends Writable> implements
   }
 
   @Override
-  public final Iterator<M> iterator() {
-    return deque.iterator();
-  }
-
-  @Override
   public void setConf(Configuration conf) {
     this.conf = conf;
   }
@@ -115,6 +114,17 @@ public final class MemoryQueue<M extends Writable> implements
   @Override
   public MessageQueue<M> getMessageQueue() {
     return this;
+  }
+
+  @Override
+  public List<List<M>> getSubLists(int num) {
+    List<List<M>> subLists = new ArrayList<List<M>>();
+    subLists.add(Lists.newArrayList(deque.iterator()));
+    Iterator<BSPMessageBundle<M>> it = bundles.iterator();
+    while (it.hasNext()) {
+      subLists.add(Lists.newArrayList(it.next().iterator()));
+    }
+    return subLists;
   }
 
 }

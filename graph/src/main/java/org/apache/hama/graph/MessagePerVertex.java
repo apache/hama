@@ -18,10 +18,13 @@
 package org.apache.hama.graph;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import org.apache.hadoop.io.WritableComparable;
+
+import com.google.common.collect.Lists;
 
 public class MessagePerVertex {
 
@@ -65,6 +68,10 @@ public class MessagePerVertex {
 
   public GraphJobMessage pollFirstEntry() {
     return (storage.size() > 0) ? storage.pollFirstEntry().getValue() : null;
+  }
+
+  public List<List<GraphJobMessage>> getSubLists(int num) {
+    return Lists.partition(Lists.newArrayList(iterator()), num);
   }
 
 }
