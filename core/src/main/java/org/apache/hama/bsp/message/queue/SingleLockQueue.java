@@ -17,8 +17,6 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.List;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
@@ -186,8 +184,4 @@ public final class SingleLockQueue<T extends Writable> implements
     }
   }
 
-  @Override
-  public List<List<T>> getSubLists(int num) {
-    return queue.getSubLists(num);
-  }
 }

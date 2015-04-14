@@ -512,11 +512,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
     messenger.clearOutgoingMessages();
   }
   
-  @Override
-  public final void clearIncomingMessages() {
-    messenger.clearIncomingMessages();
-  }
-
   /**
    * @return the string as host:port of this Peer
    */
@@ -671,11 +666,6 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   @Override
   public TaskAttemptID getTaskId() {
     return taskId;
-  }
-
-  @Override
-  public List<List<M>> getSubLists(int num) {
-    return messenger.getSubLists(num);
   }
 
 }

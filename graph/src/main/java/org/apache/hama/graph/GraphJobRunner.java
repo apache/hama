@@ -18,11 +18,11 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,8 +42,6 @@ import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
-
-import com.google.common.collect.Lists;
 
 /**
  * Fully generic graph job runner.
@@ -232,46 +230,28 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
    * iterate over our messages and vertices in sorted order. That means that we
    * need to seek the first vertex that has the same ID as the iterated message.
    */
+  @SuppressWarnings("unchecked")
   private void doSuperstep(GraphJobMessage currentMessage,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    List<Thread> runners = new ArrayList<Thread>();
+    ExecutorService executor = Executors.newFixedThreadPool(conf.getInt(
+        "hama.graph.thread.num", 1000));
 
-    List<List<GraphJobMessage>> subLists = peer.getSubLists(conf.getInt(
-        "hama.graph.thread.num", 100));
-
-    if (subLists.size() == 0) {
-      if (currentMessage != null) {
-        List<GraphJobMessage> first = new ArrayList<GraphJobMessage>();
-        first.add(currentMessage);
-        runners.add(new ComputeReceivedMessage(first));
-      }
-    } else {
-      for (List<GraphJobMessage> subList : subLists) {
-        if (runners.size() == 0)
-          subList.add(currentMessage);
-
-        runners.add(new ComputeReceivedMessage(subList));
-      }
+    while (currentMessage != null) {
+      Runnable worker = new ComputeRunnable(
+          vertices.get((V) currentMessage.getVertexId()),
+          (Iterable<M>) currentMessage.getIterableMessages());
+      executor.execute(worker);
+      
+      currentMessage = peer.getCurrentMessage();
     }
-
-    for (Thread computer : runners) {
-      computer.start();
+    
+    executor.shutdown();
+    while (!executor.isTerminated()) {
     }
-
-    for (Thread computer : runners) {
-      try {
-        computer.join();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-
-    // After using getSubLists(), we need to clean up local vertex messages.
-    peer.clearIncomingMessages();
 
     for (V v : vertices.getNotComputedVertices()) {
       if (!vertices.get(v).isHalted()) {
@@ -298,74 +278,36 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    List<Thread> runners = new ArrayList<Thread>();
-
-    for (List<V> vLists : Lists.partition(new ArrayList<V>(vertices.keySet()),
-        conf.getInt("hama.graph.thread.num", 100))) {
-      runners.add(new Computer(vLists));
+    ExecutorService executor = Executors.newFixedThreadPool(conf.getInt(
+        "hama.graph.thread.num", 1000));
+    
+    for(Vertex<V, E, M> v : vertices.getValues()) {
+      Runnable worker = new ComputeRunnable(v, Collections.singleton(v.getValue()));
+      executor.execute(worker);
     }
-
-    for (Thread computer : runners) {
-      computer.start();
+    executor.shutdown();
+    while (!executor.isTerminated()) {
     }
-
-    for (Thread computer : runners) {
-      try {
-        computer.join();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
-
+    
     vertices.finishSuperstep();
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
   }
 
-  class ComputeReceivedMessage extends Thread {
-    List<GraphJobMessage> subList;
+  class ComputeRunnable implements Runnable {
+    Vertex<V, E, M> vertex;
+    Iterable<M> msgs;
 
-    public ComputeReceivedMessage(List<GraphJobMessage> subList) {
-      this.subList = subList;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void run() {
-      try {
-        for (GraphJobMessage msg : subList) {
-          Vertex<V, E, M> vertex = vertices.get((V) msg.getVertexId());
-
-          // reactivation
-          if (vertex.isHalted()) {
-            vertex.setActive();
-          }
-
-          vertex.compute((Iterable<M>) msg.getIterableMessages());
-          vertices.finishVertexComputation(vertex);
-        }
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
-  class Computer extends Thread {
-    List<V> vList;
-
-    public Computer(List<V> vList) {
-      this.vList = vList;
+    public ComputeRunnable(Vertex<V, E, M> vertex, Iterable<M> msgs) {
+      this.vertex = vertex;
+      this.msgs = msgs;
     }
 
     @Override
     public void run() {
       try {
-        for (V v : vList) {
-          Vertex<V, E, M> vertex = vertices.get(v);
-          vertex.setup(conf);
-          vertex.compute(Collections.singleton(vertex.getValue()));
+          vertex.compute(msgs);
           vertices.finishVertexComputation(vertex);
-        }
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -430,15 +372,17 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
-    final VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
+    VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             VertexInputReader.class));
 
+    ExecutorService executor = Executors.newFixedThreadPool(conf.getInt(
+        "hama.graph.thread.num", 1000));
+    
     try {
       KeyValuePair<Writable, Writable> next = null;
       while ((next = peer.readNext()) != null) {
-        // TODO read sequentially, and convert records using thread.
-        
+
         Vertex<V, E, M> vertex = GraphJobRunner
             .<V, E, M> newVertexInstance(VERTEX_CLASS);
 
@@ -450,7 +394,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
         String dstHost = getHostName(vertex.getVertexID());
         if (peer.getPeerName().equals(dstHost)) {
-          addVertex(vertex);
+          Runnable worker = new LoadWorker(vertex);
+          executor.execute(worker);
         } else {
           peer.send(dstHost, new GraphJobMessage(vertex));
         }
@@ -458,46 +403,33 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     } catch (Exception e) {
       e.printStackTrace();
     }
+    
     peer.sync();
 
-    List<List<GraphJobMessage>> subLists = peer.getSubLists(conf.getInt(
-        "hama.graph.thread.num", 100));
-    List<Thread> runners = new ArrayList<Thread>(subLists.size());
-
-    for (List<GraphJobMessage> subList : subLists) {
-      runners.add(new LoadReceivedMessage(subList));
+    GraphJobMessage msg;
+    while ((msg = peer.getCurrentMessage()) != null) {
+      Runnable worker = new LoadWorker((Vertex<V, E, M>) msg.getVertex());
+      executor.execute(worker);
     }
-
-    for (Thread computer : runners) {
-      computer.start();
-    }
-
-    for (Thread computer : runners) {
-      try {
-        computer.join();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
+    executor.shutdown();
+    while (!executor.isTerminated()) {
     }
 
     LOG.info(vertices.size() + " vertices are loaded into "
         + peer.getPeerName());
   }
+  
+  class LoadWorker implements Runnable {
+    Vertex<V, E, M> vertex;
 
-  class LoadReceivedMessage extends Thread {
-    List<GraphJobMessage> subList;
-
-    public LoadReceivedMessage(List<GraphJobMessage> subList) {
-      this.subList = subList;
+    public LoadWorker(Vertex<V, E, M> vertex) {
+      this.vertex = vertex;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void run() {
       try {
-        for (GraphJobMessage msg : subList) {
-          addVertex((Vertex<V, E, M>) msg.getVertex());
-        }
+        addVertex(vertex);
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -516,6 +448,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     vertex.setRunner(this);
     vertices.put(vertex);
+    
+    // call once
+    vertex.setup(conf);
   }
 
   /**

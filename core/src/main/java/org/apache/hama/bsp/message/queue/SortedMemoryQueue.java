@@ -17,7 +17,6 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
@@ -25,8 +24,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
-
-import com.google.common.collect.Lists;
 
 /**
  * Heap (Java's priority queue) based message queue implementation that supports
@@ -101,11 +98,6 @@ public final class SortedMemoryQueue<M extends WritableComparable<M>>
   @Override
   public MessageQueue<M> getMessageQueue() {
     return this;
-  }
-
-  @Override
-  public List<List<M>> getSubLists(int num) {
-    return Lists.partition(Lists.newArrayList(queue.iterator()), num);
   }
 
 }

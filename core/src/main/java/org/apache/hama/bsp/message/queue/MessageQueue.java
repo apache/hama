@@ -17,8 +17,6 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.List;
-
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
@@ -64,8 +62,6 @@ public interface MessageQueue<M extends Writable> extends Configurable {
    */
   public void add(M item);
 
-  public List<List<M>> getSubLists(int num);
-  
   /**
    * Clears all entries in the given queue.
    */

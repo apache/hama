@@ -36,9 +36,9 @@ import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.BSPPeerImpl;
 import org.apache.hama.bsp.TaskAttemptID;
-import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.AsyncRPC;
 import org.apache.hama.ipc.AsyncServer;
+import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.util.LRUCache;
 
 /**

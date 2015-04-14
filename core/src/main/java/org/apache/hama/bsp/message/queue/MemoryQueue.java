@@ -116,15 +116,4 @@ public final class MemoryQueue<M extends Writable> implements
     return this;
   }
 
-  @Override
-  public List<List<M>> getSubLists(int num) {
-    List<List<M>> subLists = new ArrayList<List<M>>();
-    subLists.add(Lists.newArrayList(deque.iterator()));
-    Iterator<BSPMessageBundle<M>> it = bundles.iterator();
-    while (it.hasNext()) {
-      subLists.add(Lists.newArrayList(it.next().iterator()));
-    }
-    return subLists;
-  }
-
 }

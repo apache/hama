@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
 
@@ -122,11 +121,6 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     return localQueue.poll();
   }
 
-  @Override
-  public List<List<M>> getSubLists(int num) {
-    return localQueue.getSubLists(num);
-  }
-  
   /*
    * (non-Javadoc)
    * @see org.apache.hama.bsp.message.MessageManager#getNumCurrentMessages()

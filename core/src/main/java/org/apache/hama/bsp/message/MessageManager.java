@@ -20,7 +20,6 @@ package org.apache.hama.bsp.message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.io.Writable;
@@ -92,11 +91,6 @@ public interface MessageManager<M extends Writable> {
   public void clearOutgoingMessages();
 
   /**
-   * Clears the incoming queue. Can be used to switch queues.
-   */
-  public void clearIncomingMessages();
-  
-  /**
    * Gets the number of messages in the current queue.
    * 
    */
@@ -129,5 +123,4 @@ public interface MessageManager<M extends Writable> {
    */
   public InetSocketAddress getListenerAddress();
 
-  public List<List<M>> getSubLists(int num);
 }

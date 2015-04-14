@@ -204,8 +204,4 @@ public interface BSPPeer<K1, V1, K2, V2, M extends Writable> extends Constants {
    */
   public TaskAttemptID getTaskId();
 
-  public List<List<M>> getSubLists(int num);
-
-  public void clearIncomingMessages();
-
 }

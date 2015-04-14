@@ -17,8 +17,6 @@
  */
 package org.apache.hama.graph;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.hadoop.conf.Configuration;
@@ -27,8 +25,6 @@ import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
 import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.bsp.message.queue.SynchronizedQueue;
-
-import com.google.common.collect.Lists;
 
 public class IncomingVertexMessageManager<M extends WritableComparable<M>>
     implements SynchronizedQueue<GraphJobMessage> {
@@ -109,14 +105,6 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   @Override
   public MessageQueue<GraphJobMessage> getMessageQueue() {
     return this;
-  }
-
-  @Override
-  public List<List<GraphJobMessage>> getSubLists(int num) {
-    if (mapMessages.size() > 0)
-      return Lists.partition(new ArrayList<GraphJobMessage>(mapMessages), num);
-    else
-      return msgPerVertex.getSubLists(num);
   }
 
 }
