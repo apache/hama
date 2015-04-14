@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -54,8 +55,11 @@ public class PageRankTest extends TestCase {
 
     generateTestData();
     try {
-      PageRank.main(new String[] { INPUT, OUTPUT, "3" });
+      PageRank.main(new String[] { "-input_path", INPUT, "-output_path",
+          OUTPUT, "-task_num", "3", "-f", "json" });
       verifyResult();
+    } catch (ParseException e) {
+      e.printStackTrace();
     } finally {
       deleteTempDirs();
     }
@@ -67,7 +71,7 @@ public class PageRankTest extends TestCase {
     for (FileStatus fts : globStatus) {
       BufferedReader reader = new BufferedReader(new InputStreamReader(
           fs.open(fts.getPath())));
-      String line = null;
+      String line;
       while ((line = reader.readLine()) != null) {
         String[] split = line.split("\t");
         sum += Double.parseDouble(split[1]);
@@ -79,7 +83,8 @@ public class PageRankTest extends TestCase {
 
   private void generateTestData() {
     try {
-      FastGraphGen.main(new String[] { "60", "3", INPUT, "3" });
+      FastGraphGen.main(new String[] { "-v", "60", "-e", "3", "-output_path",
+          INPUT, "-task_num", "3", "-of", "json"});
     } catch (Exception e) {
       e.printStackTrace();
     }

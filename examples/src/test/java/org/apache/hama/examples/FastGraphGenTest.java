@@ -25,12 +25,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-import org.apache.hama.commons.io.TextArrayWritable;
 import org.apache.hama.examples.util.FastGraphGen;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
 import org.junit.Test;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 public class FastGraphGenTest extends TestCase {
   protected static Log LOG = LogFactory.getLog(FastGraphGenTest.class);
@@ -40,26 +41,80 @@ public class FastGraphGenTest extends TestCase {
   public void testGraphGenerator() throws Exception {
     Configuration conf = new Configuration();
 
-    FastGraphGen.main(new String[] { "20", "10", TEST_OUTPUT, "3" });
+    // vertex size : 20
+    // maximum edges : 10
+    // output path : /tmp/test
+    // tasks num : 3
+    FastGraphGen.main(new String[] { "-v", "20", "-e", "10",
+        "-o", TEST_OUTPUT, "-t", "3" });
     FileSystem fs = FileSystem.get(conf);
 
     FileStatus[] globStatus = fs.globStatus(new Path(TEST_OUTPUT + "/part-*"));
     for (FileStatus fts : globStatus) {
-      SequenceFile.Reader reader = new SequenceFile.Reader(fs, fts.getPath(),
-          conf);
-      Text key = new Text();
-      TextArrayWritable value = new TextArrayWritable();
-
-      while (reader.next(key, value)) {
-        Writable[] writables = value.get();
-        assertTrue(writables.length <= 10);
-        for (Writable t : writables) {
-          int outlinkId = Integer.parseInt(t.toString());
-          assertTrue(outlinkId <= 20);
-          assertTrue(outlinkId >= 0);
+      BufferedReader br = new BufferedReader(
+          new InputStreamReader(fs.open(fts.getPath())));
+      try {
+        String line;
+        line = br.readLine();
+        while (line != null) {
+          String[] keyValue = line.split("\t");
+          String[] outlinkId = keyValue[1].split(" ");
+          assertTrue(outlinkId.length <= 10);
+          for (String edge : outlinkId) {
+            assertTrue(Integer.parseInt(edge) < 20);
+            assertTrue(Integer.parseInt(edge) >= 0);
+          }
+          line = br.readLine();
         }
+      } finally {
+        br.close();
       }
-      reader.close();
+    }
+
+    fs.delete(new Path(TEST_OUTPUT), true);
+  }
+
+  @Test
+  public void testJsonGraphGenerator() throws Exception {
+    Configuration conf = new Configuration();
+
+    // vertex size : 20
+    // maximum edges : 10
+    // output path : /tmp/test
+    // tasks num : 3
+    // output type : json
+    // weight : 0
+    FastGraphGen.main(new String[] { "-v", "20", "-e", "10",
+        "-o", TEST_OUTPUT, "-t", "1", "-of", "json", "-w", "0" });
+    FileSystem fs = FileSystem.get(conf);
+
+    FileStatus[] globStatus = fs.globStatus(new Path(TEST_OUTPUT + "/part-*"));
+    JSONParser parser = new JSONParser();
+    for (FileStatus fts : globStatus) {
+      BufferedReader br = new BufferedReader(
+          new InputStreamReader(fs.open(fts.getPath())));
+      try {
+        String line;
+        line = br.readLine();
+
+        while (line != null) {
+          JSONArray jsonArray = (JSONArray)parser.parse(line);
+
+          // the edge data begins at the third element.
+          JSONArray edgeArray = (JSONArray)jsonArray.get(2);
+          assertTrue(edgeArray.size() <= 10);
+
+          for (Object obj : edgeArray) {
+            JSONArray edge = (JSONArray)obj;
+            assertTrue(Integer.parseInt(edge.get(0).toString()) < 20);
+            assertTrue(Integer.parseInt(edge.get(0).toString()) >= 0);
+            assertTrue(Integer.parseInt(edge.get(1).toString()) == 0);
+          }
+          line = br.readLine();
+        }
+      } finally {
+        br.close();
+      }
     }
 
     fs.delete(new Path(TEST_OUTPUT), true);

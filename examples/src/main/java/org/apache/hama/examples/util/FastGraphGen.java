@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -28,22 +29,21 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.BSP;
-import org.apache.hama.bsp.BSPJob;
-import org.apache.hama.bsp.BSPPeer;
-import org.apache.hama.bsp.FileOutputFormat;
-import org.apache.hama.bsp.NullInputFormat;
-import org.apache.hama.bsp.SequenceFileOutputFormat;
+import org.apache.hama.bsp.*;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.io.TextArrayWritable;
 
 import com.google.common.collect.Sets;
+
+import org.json.simple.JSONArray;
 
 public class FastGraphGen {
   protected static Log LOG = LogFactory.getLog(FastGraphGen.class);
 
   private static String SIZE_OF_MATRIX = "size.of.matrix";
   private static String MAX_EDGES = "max.outlinks";
+  private static String OUTPUT_FORMAT = "graph.outputformat";
+  private static String WEIGHT = "graph.weight";
 
   public static class FastGraphGenBSP extends
       BSP<NullWritable, NullWritable, Text, TextArrayWritable, Text> {
@@ -51,15 +51,20 @@ public class FastGraphGen {
     private Configuration conf;
     private int sizeN;
     private int maxOutEdges;
+    private boolean isJson;
+    private int weight;
 
     @Override
     public void setup(
         BSPPeer<NullWritable, NullWritable, Text, TextArrayWritable, Text> peer) {
       this.conf = peer.getConfiguration();
       sizeN = conf.getInt(SIZE_OF_MATRIX, 10);
-      maxOutEdges = conf.getInt(MAX_EDGES, 1);
+      maxOutEdges = conf.getInt(MAX_EDGES, 3);
+      isJson = conf.getBoolean(OUTPUT_FORMAT, false);
+      weight = conf.getInt(WEIGHT, 0);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void bsp(
         BSPPeer<NullWritable, NullWritable, Text, TextArrayWritable, Text> peer)
@@ -74,37 +79,99 @@ public class FastGraphGen {
       }
 
       Random r = new Random();
-      for (int i = startID; i < endID; i++) {
-        HashSet<Integer> set = Sets.newHashSet();
-        for (int j = 0; j < maxOutEdges; j++) {
-          set.add(r.nextInt(sizeN));
-        }
-        TextArrayWritable textArrayWritable = new TextArrayWritable();
-        Text[] arr = new Text[set.size()];
-        int index = 0;
-        for (int x : set) {
-          arr[index++] = new Text(String.valueOf(x));
-        }
-        textArrayWritable.set(arr);
-        peer.write(new Text(String.valueOf(i)), textArrayWritable);
-      }
+      if (isJson) {
+        for (int i = startID; i < endID; i++) {
 
+          JSONArray vtxArray = new JSONArray();
+          vtxArray.add(i);
+          vtxArray.add(0);
+          JSONArray edgeArray = new JSONArray();
+          HashSet<Integer> set = Sets.newHashSet();
+          for (int j = 0; j < maxOutEdges; j++) {
+            set.add(r.nextInt(sizeN));
+          }
+          for (int x : set) {
+            JSONArray edge = new JSONArray();
+            edge.add(x);
+            if (weight == 0)
+              edge.add(0);
+            else if (weight > 0)
+              edge.add(r.nextInt(weight));
+            edgeArray.add(edge);
+          }
+          vtxArray.add(edgeArray);
+          peer.write(new Text(vtxArray.toString()), null);
+        }
+
+      } else {
+        for (int i = startID; i < endID; i++) {
+          HashSet<Integer> set = Sets.newHashSet();
+          for (int j = 0; j < maxOutEdges; j++) {
+            set.add(r.nextInt(sizeN));
+          }
+
+          TextArrayWritable textArrayWritable = new TextArrayWritable();
+          Text[] arr = new Text[set.size()];
+          int index = 0;
+          for (int x : set) {
+            arr[index++] = new Text(String.valueOf(x));
+          }
+          textArrayWritable.set(arr);
+
+          peer.write(new Text(String.valueOf(i)), textArrayWritable);
+        }
+      }
     }
   }
 
-  public static void main(String[] args) throws InterruptedException,
-      IOException, ClassNotFoundException {
-    if (args.length < 4) {
-      System.out
-          .println("Usage: <size n> <max out-edges> <output path> <number of tasks>");
-      System.exit(1);
+  public static void main(String[] args)
+      throws InterruptedException, IOException, ClassNotFoundException,
+      ParseException {
+    Options opts = new Options();
+    opts.addOption("v", "vertices", true, "The total number of vertices. Default value is 10.");
+    opts.addOption("e", "edges", true, "The maximum number of edges per vertex. Default value is 3.");
+    opts.addOption("o", "output_path", true, "The Location of output path.");
+    opts.addOption("t", "task_num", true, "The number of tasks. Default value is one.");
+    opts.addOption("h", "help", false, "Print usage");
+    opts.addOption("of", "output_format", true, "OutputFormat Type which is \"text\", "
+        + "tab delimiter separated or \"json\". Default value - text");
+    opts.addOption("w", "weight", true, "Enable to set weight of graph edges."
+        + "Default value - 0.");
+
+    CommandLine cliParser = new GnuParser().parse(opts, args);
+
+    // outputType, that has a value of "Text" unless true,
+    // when it has a value of "Json".
+    boolean outputType = false;
+
+    if (args.length == 0) {
+      System.out.println("No args specified for FastGraphGen to initialize");
+      System.exit(-1);
+    }
+
+    if (cliParser.hasOption("h")) {
+      new HelpFormatter().printHelp("FastGraphGen -p OUTPUT_PATH [options]", opts);
+      return;
+    }
+
+    if (!cliParser.hasOption("o")) {
+      System.out.println("No output path specified for FastGraphGen, exiting.");
+      System.exit(-1);
+    }
+
+    if (cliParser.hasOption("of")) {
+      if (cliParser.getOptionValue("of").equals("json"))
+        outputType = true;
     }
 
     // BSP job configuration
     HamaConfiguration conf = new HamaConfiguration();
 
-    conf.setInt(SIZE_OF_MATRIX, Integer.parseInt(args[0]));
-    conf.setInt(MAX_EDGES, Integer.parseInt(args[1]));
+    conf.setInt(SIZE_OF_MATRIX, Integer.parseInt(cliParser.getOptionValue("vertices", "5")));
+    conf.setInt(MAX_EDGES,
+        Integer.parseInt(cliParser.getOptionValue("edges", "3")));
+    conf.setBoolean(OUTPUT_FORMAT, outputType);
+    conf.setInt(WEIGHT, Integer.parseInt(cliParser.getOptionValue("weight", "1")));
 
     BSPJob bsp = new BSPJob(conf, FastGraphGenBSP.class);
     // Set the job name
@@ -113,9 +180,9 @@ public class FastGraphGen {
     bsp.setInputFormat(NullInputFormat.class);
     bsp.setOutputKeyClass(Text.class);
     bsp.setOutputValueClass(TextArrayWritable.class);
-    bsp.setOutputFormat(SequenceFileOutputFormat.class);
-    FileOutputFormat.setOutputPath(bsp, new Path(args[2]));
-    bsp.setNumBspTask(Integer.parseInt(args[3]));
+    bsp.setOutputFormat(TextOutputFormat.class);
+    FileOutputFormat.setOutputPath(bsp, new Path(cliParser.getOptionValue("output_path")));
+    bsp.setNumBspTask(Integer.parseInt(cliParser.getOptionValue("task_num", "1")));
 
     long startTime = System.currentTimeMillis();
     if (bsp.waitForCompletion(true)) {
