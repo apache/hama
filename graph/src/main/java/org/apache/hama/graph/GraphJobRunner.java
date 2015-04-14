@@ -306,6 +306,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     @Override
     public void run() {
       try {
+          // call once at initial superstep
+          vertex.setup(conf);
+        
           vertex.compute(msgs);
           vertices.finishVertexComputation(vertex);
       } catch (IOException e) {
@@ -448,9 +451,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     vertex.setRunner(this);
     vertices.put(vertex);
-    
-    // call once
-    vertex.setup(conf);
   }
 
   /**
