@@ -242,7 +242,6 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
       String splitname = null;
       BytesWritable realBytes = null;
       if (splits != null) {
-        LOG.debug(id + ", " + splits[id].getPartitionID());
         splitname = splits[id].getClassName();
         realBytes = splits[id].getBytes();
       }

@@ -178,6 +178,18 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
     // generate splits
     List<InputSplit> splits = new ArrayList<InputSplit>();
     FileStatus[] files = listStatus(job);
+    
+    // take the short circuit path if we have already partitioned
+    if (numSplits == files.length) {
+      for (FileStatus file : files) {
+        if (file != null) {
+          splits.add(new FileSplit(file.getPath(), 0, file.getLen(),
+              new String[0]));
+        }
+      }
+      return splits.toArray(new FileSplit[splits.size()]);
+    }
+    
     for (FileStatus file : files) {
       Path path = file.getPath();
       FileSystem fs = path.getFileSystem(job.getConfiguration());
