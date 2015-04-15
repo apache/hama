@@ -349,8 +349,8 @@ public class BSPJobClient extends Configured implements Tool {
       // Create the splits for the job
       LOG.debug("Creating splits at " + fs.makeQualified(submitSplitFile));
 
-      InputSplit[] splits = job.getInputFormat().getSplits(job, configured);
-
+      InputSplit[] splits = job.getInputFormat().getSplits(job, (maxTasks > configured) ? configured : maxTasks);
+      
       if (maxTasks < splits.length) {
         throw new IOException(
             "Job failed! The number of splits has exceeded the number of max tasks. The number of splits: "
