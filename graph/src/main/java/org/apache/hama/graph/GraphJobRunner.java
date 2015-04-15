@@ -278,8 +278,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    ExecutorService executor = Executors.newFixedThreadPool(vertices.size()
-        / conf.getInt("hama.graph.threadpool.percentage", 10));
+    ExecutorService executor = Executors.newFixedThreadPool((vertices.size()
+        / conf.getInt("hama.graph.threadpool.percentage", 10)) + 1);
 
     for (Vertex<V, E, M> v : vertices.getValues()) {
       Runnable worker = new ComputeRunnable(v, Collections.singleton(v
