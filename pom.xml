@@ -208,11 +208,6 @@
           <version>${protobuf.version}</version>
         </dependency>
         <dependency>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-          <version>${commons-io.version}</version>
-        </dependency>
-        <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-yarn-client</artifactId>
           <version>${hadoop.version}</version>
@@ -232,6 +227,11 @@
          <groupId>com.esotericsoftware.kryo</groupId>
          <artifactId>kryo</artifactId>
          <version>${kryo.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>

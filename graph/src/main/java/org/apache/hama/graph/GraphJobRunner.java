@@ -308,8 +308,11 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     public void run() {
       try {
         // call once at initial superstep
-        vertex.setup(conf);
+        if(iteration == 0)
+          vertex.setup(conf);
 
+        System.out.println(msgs + ", " + vertex);
+        
         vertex.compute(msgs);
         vertices.finishVertexComputation(vertex);
       } catch (IOException e) {
