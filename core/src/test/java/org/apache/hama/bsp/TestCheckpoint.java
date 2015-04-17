@@ -653,7 +653,6 @@ public class TestCheckpoint extends TestCase {
 
     BSPMessageBundle<Text> bundleRead = messenger.getLoopbackBundle();
     assertEquals(5, bundleRead.size());
-    bundleRead.finishAddition();
     
     String recoveredMsg = bundleRead.iterator().next().toString();
     assertEquals(recoveredMsg, "data");

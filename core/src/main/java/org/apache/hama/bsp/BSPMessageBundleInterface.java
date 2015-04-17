@@ -17,7 +17,6 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.hadoop.io.Writable;
@@ -40,16 +39,5 @@ public interface BSPMessageBundleInterface<M extends Writable> {
    * @return the iterator.
    */
   public Iterator<M> iterator();
-  
-  /**
-   * @return the message buffer.
-   */
-  public byte[] getBuffer();
-  
-  /**
-   * @return the total byte length of messages
-   * @throws IOException
-   */
-  public long getLength();
   
 }

@@ -70,9 +70,6 @@ public class OutgoingPOJOMessageBundle<M extends Writable> extends
 
   @Override
   public Iterator<Entry<InetSocketAddress, BSPMessageBundle<M>>> getBundleIterator() {
-    for(BSPMessageBundle<M> b : outgoingBundles.values()) {
-      b.finishAddition();
-    }
     return outgoingBundles.entrySet().iterator();
   }
 

@@ -133,7 +133,7 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
         peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_DECOMPRESSED_BYTES, byteBuffer.size());
         bspPeerConnection.put(compressed);
       } else {
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED, bundle.getLength());
+        //peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED, bundle.getLength());
         bspPeerConnection.put(bundle);
       }
     }

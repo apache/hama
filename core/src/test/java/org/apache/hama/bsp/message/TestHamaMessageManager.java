@@ -90,7 +90,6 @@ public class TestHamaMessageManager extends TestCase {
     while (it.hasNext()) {
       bundle.addMessage(it.next());
     }
-    bundle.finishAddition();
     
     messageManager.transfer(peer, bundle);
 

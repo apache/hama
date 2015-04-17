@@ -17,20 +17,18 @@
  */
 package org.apache.hama.bsp;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
+import org.apache.hama.util.ReflectionUtils;
 
 /**
  * BSPMessageBundle stores a group of messages so that they can be sent in batch
@@ -42,15 +40,9 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
 
   public static final Log LOG = LogFactory.getLog(BSPMessageBundle.class);
 
-  private String className = null;
-  private int bundleSize = 0;
-
-  private Kryo kryo = new Kryo();
-  private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-  private Output output = new Output(outputStream, 4096);
+  private List<M> messages = new ArrayList<M>();
 
   public BSPMessageBundle() {
-    bundleSize = 0;
   }
 
   /**
@@ -59,115 +51,54 @@ public class BSPMessageBundle<M extends Writable> implements Writable,
    * @param message BSPMessage to add.
    */
   public void addMessage(M message) {
-    if (className == null) {
-      className = message.getClass().getName();
-      kryo.register(message.getClass());
-    }
-
-    kryo.writeObject(output, message);
-    bundleSize++;
-  }
-  
-  public void addMessages(Iterator<M> iterator) {
-    M message = iterator.next();
-    if (className == null) {
-      className = message.getClass().getName();
-      kryo.register(message.getClass());
-    }
-    
-    kryo.writeObject(output, message);
-    bundleSize++;
-    
-    while(iterator.hasNext()) {
-      kryo.writeObject(output, iterator.next());
-      bundleSize++;
-    }
-  }
-  
-  public void finishAddition() {
-    output.flush();
-  }
-  
-  public byte[] getBuffer() {
-    return outputStream.toByteArray();
+    messages.add(message);
   }
 
-  private ByteArrayInputStream bis = null;
-  private Input in = null;
+  public void addMessages(Collection<M> msgs) {
+    messages.addAll(msgs);
+  }
 
   public Iterator<M> iterator() {
-    bis = new ByteArrayInputStream(outputStream.toByteArray());
-    in = new Input(bis, 4096);
-
-    Iterator<M> it = new Iterator<M>() {
-      Class<M> clazz = null;
-      int counter = 0;
-
-      @Override
-      public boolean hasNext() {
-        if ((bundleSize - counter) > 0) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
-      @SuppressWarnings("unchecked")
-      @Override
-      public M next() {
-        try {
-          if (clazz == null) {
-            clazz = (Class<M>) Class.forName(className);
-          }
-        } catch (ClassNotFoundException ce) {
-          LOG.error("Class was not found.", ce);
-        }
-
-        counter++;
-
-        return kryo.readObject(in, clazz);
-      }
-
-      @Override
-      public void remove() {
-        // TODO Auto-generated method stub
-      }
-    };
-    return it;
+    return messages.iterator();
   }
 
   public int size() {
-    return bundleSize;
+    return messages.size();
   }
 
-  /**
-   * @return the byte length of messages
-   * @throws IOException
-   */
-  public long getLength() {
-    return outputStream.size();
-  }
-
+  @SuppressWarnings("unchecked")
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(bundleSize);
-    if (bundleSize > 0) {
-      out.writeUTF(className);
-      out.writeInt(outputStream.size());
-      out.write(outputStream.toByteArray());
+    out.writeInt(messages.size());
+
+    if (messages.size() > 0) {
+      Class<M> clazz = (Class<M>) messages.get(0).getClass();
+      out.writeUTF(clazz.getName());
+
+      for (M m : messages) {
+        m.write(out);
+      }
     }
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.bundleSize = in.readInt();
+    int num = in.readInt();
 
-    if (this.bundleSize > 0) {
-      className = in.readUTF();
-      int bytesLength = in.readInt();
-      byte[] temp = new byte[bytesLength];
-      in.readFully(temp);
-      outputStream.write(temp);
+    if (num > 0) {
+      Class<M> clazz = null;
+      try {
+        clazz = (Class<M>) Class.forName(in.readUTF());
+      } catch (ClassNotFoundException e) {
+        LOG.error("Class was not found.", e);
+      }
+
+      for (int i = 0; i < num; i++) {
+        M msg = ReflectionUtils.newInstance(clazz);
+        msg.readFields(in);
+        messages.add(msg);
+      }
     }
   }
 

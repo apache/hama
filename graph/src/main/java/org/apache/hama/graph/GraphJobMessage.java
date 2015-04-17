@@ -55,7 +55,6 @@ public final class GraphJobMessage implements
   private WritableComparable vertexId;
   private IntWritable integerMessage;
   private static GraphJobMessageComparator comparator;
-  private Vertex<?, ?, ?> vertex;
   
   private int numOfValues = 0;
 
@@ -91,27 +90,10 @@ public final class GraphJobMessage implements
     addAll(values);
   }
 
-  public GraphJobMessage(WritableComparable<?> vertexID, byte[] valuesBytes,
-      int numOfValues) {
-    this.flag = VERTEX_FLAG;
-    this.vertexId = vertexID;
-    try {
-      this.byteBuffer.write(valuesBytes);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-    this.numOfValues = numOfValues;
-  }
-
   public MapWritable getMap() {
     return map;
   }
 
-  public Vertex<?, ?, ?> getVertex() {
-    return vertex;
-  }
-  
   public WritableComparable<?> getVertexId() {
     return vertexId;
   }
@@ -169,7 +151,8 @@ public final class GraphJobMessage implements
 
   public GraphJobMessage(Vertex<?, ?, ?> vertex) {
     this.flag = PARTITION_FLAG;
-    this.vertex = vertex;
+    
+    add(vertex);
   }
 
   @Override
@@ -188,7 +171,9 @@ public final class GraphJobMessage implements
     } else if (isVerticesSizeMessage()) {
       integerMessage.write(out);
     } else if (isPartitioningMessage()) {
-      vertex.write(out);
+      out.writeInt(numOfValues);
+      out.writeInt(byteBuffer.size());
+      out.write(byteBuffer.toByteArray());
     } else {
       vertexId.write(out);
     }
@@ -235,8 +220,11 @@ public final class GraphJobMessage implements
       integerMessage = new IntWritable();
       integerMessage.readFields(in);
     } else if (isPartitioningMessage()) {
-      vertex = (Vertex<?, ?, ?>) ReflectionUtils.newInstance(GraphJobRunner.VERTEX_CLASS, null);
-      vertex.readFields(in);
+      this.numOfValues = in.readInt();
+      int bytesLength = in.readInt();
+      byte[] temp = new byte[bytesLength];
+      in.readFully(temp);
+      byteBuffer.write(temp);
     } else {
       vertexId = ReflectionUtils.newInstance(GraphJobRunner.VERTEX_ID_CLASS,
           null);
@@ -296,7 +284,7 @@ public final class GraphJobMessage implements
       return "#Vertices: " + integerMessage;
     } else {
       return "GraphJobMessage [flag=" + flag + ", map=" + map + ", vertexId="
-          + vertexId + ", vertexValue=" + numOfValues + ", " + vertex.toString() + "]";
+          + vertexId + ", vertexValue=" + numOfValues + "]";
     }
   }
 

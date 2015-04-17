@@ -133,8 +133,8 @@ public final class HamaAsyncMessageManagerImpl<M extends Writable> extends
             compressed.length);
         bspPeerConnection.put(compressed);
       } else {
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
-            bundle.getLength());
+        //peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
+        //    bundle.getLength());
         bspPeerConnection.put(bundle);
       }
     }

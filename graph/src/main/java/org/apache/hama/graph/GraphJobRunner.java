@@ -17,9 +17,13 @@
  */
 package org.apache.hama.graph;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -278,12 +282,12 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    ExecutorService executor = Executors.newFixedThreadPool((vertices.size()
-        / conf.getInt("hama.graph.threadpool.percentage", 10)) + 1);
+    ExecutorService executor = Executors
+        .newFixedThreadPool((vertices.size() / conf.getInt(
+            "hama.graph.threadpool.percentage", 10)) + 1);
 
     for (Vertex<V, E, M> v : vertices.getValues()) {
-      Runnable worker = new ComputeRunnable(v, Collections.singleton(v
-          .getValue()));
+      Runnable worker = new ComputeRunnable(v, null);
       executor.execute(worker);
     }
     executor.shutdown();
@@ -308,8 +312,10 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     public void run() {
       try {
         // call once at initial superstep
-        if(iteration == 0)
+        if (iteration == 0) {
           vertex.setup(conf);
+          msgs = Collections.singleton(vertex.getValue());
+        }
 
         vertex.compute(msgs);
         vertices.finishVertexComputation(vertex);
@@ -370,6 +376,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     EDGE_VALUE_CLASS = edgeValueClass;
   }
 
+  Map<String, GraphJobMessage> messages = new HashMap<String, GraphJobMessage>();
+
   /**
    * Loads vertices into memory of each peer.
    */
@@ -377,6 +385,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
+    // kryo.register(GraphJobRunner
+    // .<V, E, M> newVertexInstance(VERTEX_CLASS).getClass());
+
     VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             VertexInputReader.class));
@@ -401,19 +412,38 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
           Runnable worker = new LoadWorker(vertex);
           executor.execute(worker);
         } else {
-          peer.send(dstHost, new GraphJobMessage(vertex));
+          if (!messages.containsKey(dstHost)) {
+            messages.put(dstHost, new GraphJobMessage(vertex));
+          } else {
+            messages.get(dstHost).add(vertex);
+          }
         }
       }
     } catch (Exception e) {
       e.printStackTrace();
     }
 
+    for (Entry<String, GraphJobMessage> e : messages.entrySet()) {
+      peer.send(e.getKey(), e.getValue());
+    }
+    messages.clear();
+    messages = null;
+    
     peer.sync();
 
     GraphJobMessage msg;
     while ((msg = peer.getCurrentMessage()) != null) {
-      Runnable worker = new LoadWorker((Vertex<V, E, M>) msg.getVertex());
-      executor.execute(worker);
+      ByteArrayInputStream bis = new ByteArrayInputStream(msg.getValuesBytes());
+      DataInputStream dis = new DataInputStream(bis);
+
+      for (int i = 0; i < msg.getNumOfValues(); i++) {
+        Vertex<V, E, M> vertex = GraphJobRunner
+            .<V, E, M> newVertexInstance(VERTEX_CLASS);
+        vertex.readFields(dis);
+
+        Runnable worker = new LoadWorker(vertex);
+        executor.execute(worker);
+      }
     }
     executor.shutdown();
     while (!executor.isTerminated()) {

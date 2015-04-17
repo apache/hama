@@ -83,7 +83,7 @@ public class PageRankTest extends TestCase {
 
   private void generateTestData() {
     try {
-      FastGraphGen.main(new String[] { "-v", "60", "-e", "3", "-output_path",
+      FastGraphGen.main(new String[] { "-v", "30", "-e", "3", "-output_path",
           INPUT, "-task_num", "3", "-of", "json"});
     } catch (Exception e) {
       e.printStackTrace();

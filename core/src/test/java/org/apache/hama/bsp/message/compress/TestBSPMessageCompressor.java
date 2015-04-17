@@ -50,8 +50,6 @@ public class TestBSPMessageCompressor extends TestCase {
       a.addMessage(new IntWritable(i));
     }
 
-    a.finishAddition();
-    
     ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
     DataOutputStream bufferDos = new DataOutputStream(byteBuffer);
     a.write(bufferDos);

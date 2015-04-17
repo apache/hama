@@ -108,9 +108,8 @@ public class OutgoingVertexMessageManager<M extends Writable> extends
 
         MessagePerVertex msgStorage = storage.get(bundle.getKey());
         if (msgStorage != null) {
-          bundle.getValue().addMessages(msgStorage.iterator());
+          bundle.getValue().addMessages(msgStorage.getMessages());
         }
-        bundle.getValue().finishAddition();
         storage.remove(bundle.getKey());
         return bundle;
       }

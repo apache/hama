@@ -17,7 +17,7 @@
  */
 package org.apache.hama.graph;
 
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -62,8 +62,8 @@ public class MessagePerVertex {
     return storage.get(vertexID);
   }
 
-  public Iterator<GraphJobMessage> iterator() {
-    return storage.values().iterator();
+  public Collection<GraphJobMessage> getMessages() {
+    return storage.values();
   }
 
   public GraphJobMessage pollFirstEntry() {
@@ -71,7 +71,7 @@ public class MessagePerVertex {
   }
 
   public List<List<GraphJobMessage>> getSubLists(int num) {
-    return Lists.partition(Lists.newArrayList(iterator()), num);
+    return Lists.partition(Lists.newArrayList(storage.values()), num);
   }
 
 }
