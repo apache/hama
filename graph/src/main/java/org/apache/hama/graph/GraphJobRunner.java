@@ -241,9 +241,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    ExecutorService executor = Executors.newFixedThreadPool((peer
-        .getNumCurrentMessages() / conf.getInt(
-        "hama.graph.threadpool.percentage", 10)) + 1);
+    ExecutorService executor = Executors.newCachedThreadPool();
 
     while (currentMessage != null) {
       Runnable worker = new ComputeRunnable(vertices.get((V) currentMessage
@@ -282,9 +280,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    ExecutorService executor = Executors
-        .newFixedThreadPool((vertices.size() / conf.getInt(
-            "hama.graph.threadpool.percentage", 10)) + 1);
+    ExecutorService executor = Executors.newCachedThreadPool();
 
     for (Vertex<V, E, M> v : vertices.getValues()) {
       Runnable worker = new ComputeRunnable(v, null);
@@ -392,7 +388,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             VertexInputReader.class));
 
-    ExecutorService executor = Executors.newFixedThreadPool(1000);
+    ExecutorService executor = Executors.newCachedThreadPool();
 
     try {
       KeyValuePair<Writable, Writable> next = null;
