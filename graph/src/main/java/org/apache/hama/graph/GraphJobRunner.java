@@ -18,13 +18,17 @@
 package org.apache.hama.graph;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,6 +45,7 @@ import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.sync.SyncException;
@@ -106,6 +111,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   private AggregationRunner<V, E, M> aggregationRunner;
   private VertexOutputWriter<Writable, Writable, V, E, M> vertexOutputWriter;
+  private Combiner<Writable> combiner;
 
   private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
 
@@ -160,10 +166,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       }
 
       // loop over vertices and do their computation
-      startTime = System.currentTimeMillis();
       doSuperstep(firstVertexMessage, peer);
-      LOG.info("Total time spent for " + peer.getSuperstepCount()
-          + " superstep: " + (System.currentTimeMillis() - startTime) + " ms");
 
       if (isMasterTask(peer)) {
         peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
@@ -234,22 +237,28 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
    * iterate over our messages and vertices in sorted order. That means that we
    * need to seek the first vertex that has the same ID as the iterated message.
    */
-  @SuppressWarnings("unchecked")
   private void doSuperstep(GraphJobMessage currentMessage,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
+    long startTime = System.currentTimeMillis();
+
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    ExecutorService executor = Executors.newCachedThreadPool();
+    ExecutorService executor = Executors.newFixedThreadPool((peer
+        .getNumCurrentMessages() / conf.getInt(
+        "hama.graph.threadpool.percentage", 20)) + 1);
 
+    long loopStartTime = System.currentTimeMillis();
     while (currentMessage != null) {
-      Runnable worker = new ComputeRunnable(vertices.get((V) currentMessage
-          .getVertexId()), (Iterable<M>) currentMessage.getIterableMessages());
+      Runnable worker = new ComputeRunnable(currentMessage);
       executor.execute(worker);
 
       currentMessage = peer.getCurrentMessage();
     }
+        LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
+                        + " looping: " + (System.currentTimeMillis() - loopStartTime)
+                                + " ms");
 
     executor.shutdown();
     while (!executor.isTerminated()) {
@@ -263,11 +272,18 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       }
     }
 
-    vertices.finishSuperstep();
-
     getAggregationRunner().sendAggregatorValues(peer,
         vertices.getComputedVertices().size(), this.changedVertexCnt);
     this.iteration++;
+
+    LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
+        + " computing vertices: " + (System.currentTimeMillis() - startTime)
+        + " ms");
+
+    startTime = System.currentTimeMillis();
+    finishSuperstep();
+    LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
+        + " synchronizing: " + (System.currentTimeMillis() - startTime) + " ms");
   }
 
   /**
@@ -280,28 +296,36 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     this.changedVertexCnt = 0;
     vertices.startSuperstep();
 
-    ExecutorService executor = Executors.newCachedThreadPool();
+    ExecutorService executor = Executors
+        .newFixedThreadPool((vertices.size() / conf.getInt(
+            "hama.graph.threadpool.percentage", 20)) + 1);
 
     for (Vertex<V, E, M> v : vertices.getValues()) {
-      Runnable worker = new ComputeRunnable(v, null);
+      Runnable worker = new ComputeRunnable(v);
       executor.execute(worker);
     }
+    
     executor.shutdown();
     while (!executor.isTerminated()) {
     }
 
-    vertices.finishSuperstep();
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
+    finishSuperstep();
   }
 
   class ComputeRunnable implements Runnable {
     Vertex<V, E, M> vertex;
     Iterable<M> msgs;
 
-    public ComputeRunnable(Vertex<V, E, M> vertex, Iterable<M> msgs) {
-      this.vertex = vertex;
-      this.msgs = msgs;
+    @SuppressWarnings("unchecked")
+    public ComputeRunnable(GraphJobMessage msg) {
+      this.vertex = vertices.get((V) msg.getVertexId());
+      this.msgs = (Iterable<M>) getIterableMessages(msg.getValuesBytes(), msg.getNumOfValues());
+    }
+
+    public ComputeRunnable(Vertex<V, E, M> v) {
+      this.vertex = v;
     }
 
     @Override
@@ -350,6 +374,16 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
             VerticesInfo.class);
     vertices = ReflectionUtils.newInstance(verticesInfoClass);
     vertices.init(this, conf, peer.getTaskId());
+
+    final String combinerName = conf.get(Constants.COMBINER_CLASS);
+    if (combinerName != null) {
+      try {
+        combiner = (Combiner<Writable>) ReflectionUtils
+            .newInstance(combinerName);
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -381,9 +415,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
-    // kryo.register(GraphJobRunner
-    // .<V, E, M> newVertexInstance(VERTEX_CLASS).getClass());
-
     VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             VertexInputReader.class));
@@ -409,9 +440,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
           executor.execute(worker);
         } else {
           if (!messages.containsKey(dstHost)) {
-            messages.put(dstHost, new GraphJobMessage(vertex));
+            messages.put(dstHost, new GraphJobMessage(serialize(vertex)));
           } else {
-            messages.get(dstHost).add(vertex);
+            messages.get(dstHost).add(serialize(vertex));
           }
         }
       }
@@ -424,7 +455,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     }
     messages.clear();
     messages = null;
-    
+
     peer.sync();
 
     GraphJobMessage msg;
@@ -596,18 +627,87 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   private void finishRemovals() throws IOException {
     vertices.finishRemovals();
-    // finish the "superstep" because we have written a new file here
-    vertices.finishSuperstep();
   }
 
   private void finishAdditions() throws IOException {
     vertices.finishAdditions();
-    // finish the "superstep" because we have written a new file here
-    vertices.finishSuperstep();
   }
 
-  public void sendMessage(V vertexID, M msg) throws IOException {
-    peer.send(getHostName(vertexID), new GraphJobMessage(vertexID, msg));
+  private final ConcurrentNavigableMap<V, GraphJobMessage> storage = new ConcurrentSkipListMap<V, GraphJobMessage>();
+
+  public void sendMessage(V vertexID, byte[] msg) throws IOException {
+    if (storage.containsKey(vertexID)) {
+      storage.get(vertexID).add(msg);
+    } else {
+      storage.put(vertexID, new GraphJobMessage(vertexID, msg));
+    }
+  }
+
+  public void finishSuperstep() throws IOException {
+    vertices.finishSuperstep();
+
+    for (Map.Entry<V, GraphJobMessage> m : storage.entrySet()) {
+      // Combining messages
+      if (combiner != null) {
+        if (m.getValue().getNumOfValues() > 1) {
+          peer.send(
+              getHostName(m.getKey()),
+              new GraphJobMessage(m.getKey(), serialize(combiner
+                  .combine(getIterableMessages(m.getValue().getValuesBytes(), m
+                      .getValue().getNumOfValues())))));
+        } else {
+          peer.send(getHostName(m.getKey()), m.getValue());
+        }
+      } else {
+        peer.send(getHostName(m.getKey()), m.getValue());
+      }
+    }
+
+    storage.clear();
+  }
+
+  public static byte[] serialize(Writable writable) throws IOException {
+    ByteArrayOutputStream a = new ByteArrayOutputStream();
+    DataOutputStream b = new DataOutputStream(a);
+    writable.write(b);
+
+    return a.toByteArray();
+  }
+
+  public Iterable<Writable> getIterableMessages(final byte[] valuesBytes,
+      final int numOfValues) {
+
+    return new Iterable<Writable>() {
+      @Override
+      public Iterator<Writable> iterator() {
+        return new Iterator<Writable>() {
+          ByteArrayInputStream bis = new ByteArrayInputStream(valuesBytes);
+          DataInputStream dis = new DataInputStream(bis);
+          int index = 0;
+
+          @Override
+          public boolean hasNext() {
+            return (index < numOfValues) ? true : false;
+          }
+
+          @Override
+          public Writable next() {
+            Writable v = createVertexValue();
+            try {
+              v.readFields(dis);
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+            index++;
+            return v;
+          }
+
+          @Override
+          public void remove() {
+          }
+        };
+      }
+    };
   }
 
   /**

@@ -17,6 +17,8 @@
  */
 package org.apache.hama.graph;
 
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.hadoop.conf.Configuration;
@@ -31,7 +33,8 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
 
   private Configuration conf;
 
-  private final MessagePerVertex msgPerVertex = new MessagePerVertex();
+  @SuppressWarnings("rawtypes")
+  private final ConcurrentHashMap<WritableComparable, GraphJobMessage> storage = new ConcurrentHashMap<WritableComparable, GraphJobMessage>();
   private final ConcurrentLinkedQueue<GraphJobMessage> mapMessages = new ConcurrentLinkedQueue<GraphJobMessage>();
 
   @Override
@@ -66,7 +69,11 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   @Override
   public void add(GraphJobMessage item) {
     if (item.isVertexMessage()) {
-      msgPerVertex.add(item.getVertexId(), item);
+      if (storage.containsKey(item.getVertexId())) {
+        storage.get(item.getVertexId()).addValuesBytes(item.getValuesBytes(), item.size());
+      } else {
+        storage.put(item.getVertexId(), item);
+      }
     } else {
       mapMessages.add(item);
     }
@@ -75,21 +82,32 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   @Override
   public void clear() {
     mapMessages.clear();
-    msgPerVertex.clear();
+    storage.clear();
   }
 
+  Iterator<GraphJobMessage> it;
+  
   @Override
   public GraphJobMessage poll() {
     if (mapMessages.size() > 0) {
       return mapMessages.poll();
     } else {
-      return msgPerVertex.pollFirstEntry();
+      if(it == null) {
+        it = storage.values().iterator();
+      }
+      
+      if(it.hasNext()) {
+        return it.next();
+      } else {
+        storage.clear();
+        return null;
+      }
     }
   }
 
   @Override
   public int size() {
-    return msgPerVertex.size() + mapMessages.size();
+    return storage.size() + mapMessages.size();
   }
 
   // empty, not needed to implement

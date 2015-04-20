@@ -46,8 +46,8 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
     implements VerticesInfo<V, E, M> {
   private final Map<V, Vertex<V, E, M>> vertices = new ConcurrentHashMap<V, Vertex<V, E, M>>();
 
-  private Set<V> computedVertices; 
-  
+  private Set<V> computedVertices = new HashSet<V>();
+
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
       TaskAttemptID attempt) throws IOException {
@@ -55,9 +55,9 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
 
   @Override
   public void put(Vertex<V, E, M> vertex) throws IOException {
-    if(vertices.containsKey(vertex.getVertexID())) {
-      for(Edge<V, E> e : vertex.getEdges()) 
-      vertices.get(vertex.getVertexID()).addEdge(e);
+    if (vertices.containsKey(vertex.getVertexID())) {
+      for (Edge<V, E> e : vertex.getEdges())
+        vertices.get(vertex.getVertexID()).addEdge(e);
     } else {
       vertices.put(vertex.getVertexID(), vertex);
     }
@@ -74,9 +74,9 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
 
   @Override
   public Collection<Vertex<V, E, M>> getValues() {
-    return vertices.values();  
+    return vertices.values();
   }
-  
+
   @Override
   public int size() {
     return vertices.size();
@@ -90,8 +90,9 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   @Override
   public Iterator<Vertex<V, E, M>> iterator() {
 
-    final Iterator<Vertex<V, E, M>> vertexIterator = vertices.values().iterator();
-    
+    final Iterator<Vertex<V, E, M>> vertexIterator = vertices.values()
+        .iterator();
+
     return new Iterator<Vertex<V, E, M>>() {
 
       @Override
@@ -133,18 +134,18 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
 
   @Override
   public void startSuperstep() throws IOException {
-    computedVertices = new HashSet<V>();
   }
 
   @Override
   public void finishSuperstep() throws IOException {
+    computedVertices.clear();
   }
 
   @Override
   public Set<V> getComputedVertices() {
     return this.computedVertices;
   }
-  
+
   public Set<V> getNotComputedVertices() {
     return Sets.difference(vertices.keySet(), computedVertices);
   }

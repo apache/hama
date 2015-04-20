@@ -17,17 +17,13 @@
  */
 package org.apache.hama.bsp.message.queue;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPMessageBundle;
 import org.apache.hama.bsp.TaskAttemptID;
-
-import com.google.common.collect.Lists;
 
 /**
  * LinkedList backed queue structure for bookkeeping messages.

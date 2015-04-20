@@ -96,7 +96,7 @@
                   <outputDirectory>${project.parent.basedir}/lib</outputDirectory>
                 </artifactItem>
               </artifactItems>
-              <excludeTransitive>true</excludeTransitive>
+              <excludeTransitive>false</excludeTransitive>
               <fileMode>755</fileMode>
             </configuration>
           </execution>

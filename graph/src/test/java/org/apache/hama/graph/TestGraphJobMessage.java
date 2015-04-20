@@ -17,6 +17,7 @@
  */
 package org.apache.hama.graph;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -32,7 +33,7 @@ import com.google.common.collect.Lists;
 public class TestGraphJobMessage extends TestCase {
 
   @Test
-  public void testPriorityQueue() {
+  public void testPriorityQueue() throws IOException {
     PriorityQueue<GraphJobMessage> prio = new PriorityQueue<GraphJobMessage>();
     prio.addAll(getMessages());
 
@@ -53,14 +54,14 @@ public class TestGraphJobMessage extends TestCase {
     assertTrue(prio.isEmpty());
   }
 
-  public List<GraphJobMessage> getMessages() {
+  public List<GraphJobMessage> getMessages() throws IOException {
     GraphJobMessage mapMsg = new GraphJobMessage(new MapWritable());
     GraphJobMessage vertexMsg1 = new GraphJobMessage(new Text("1"),
-        new IntWritable());
+        GraphJobRunner.serialize(new IntWritable()));
     GraphJobMessage vertexMsg2 = new GraphJobMessage(new Text("2"),
-        new IntWritable());
+        GraphJobRunner.serialize(new IntWritable()));
     GraphJobMessage vertexMsg3 = new GraphJobMessage(new Text("3"),
-        new IntWritable());
+        GraphJobRunner.serialize(new IntWritable()));
     return Lists.newArrayList(mapMsg, vertexMsg1, vertexMsg2, vertexMsg3);
   }
 

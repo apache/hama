@@ -76,19 +76,20 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   @Override
   public void sendMessage(Edge<V, E> e, M msg) throws IOException {
-    runner.sendMessage(e.getDestinationVertexID(), msg);
+    runner.sendMessage(e.getDestinationVertexID(), GraphJobRunner.serialize(msg));
   }
 
   @Override
   public void sendMessage(V destinationVertexID, M msg) throws IOException {
-    runner.sendMessage(destinationVertexID, msg);
+    runner.sendMessage(destinationVertexID, GraphJobRunner.serialize(msg));
   }
   
   @Override
   public void sendMessageToNeighbors(M msg) throws IOException {
     final List<Edge<V, E>> outEdges = this.getEdges();
+    byte[] serialized = GraphJobRunner.serialize(msg);
     for (Edge<V, E> e : outEdges) {
-      sendMessage(e, msg);
+      runner.sendMessage(e.getDestinationVertexID(), serialized);
     }
   }
 
