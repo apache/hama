@@ -42,7 +42,7 @@ public class BSPMasterRunner extends Configured implements Tool {
     }
 
     try {
-      HamaConfiguration conf = new HamaConfiguration(getConf());
+      HamaConfiguration conf = new HamaConfiguration();
       BSPMaster master = BSPMaster.startMaster(conf);
       master.offerService();
     } catch (Throwable e) {

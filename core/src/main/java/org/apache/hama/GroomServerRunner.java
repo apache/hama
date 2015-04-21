@@ -19,7 +19,6 @@ package org.apache.hama;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
@@ -38,7 +37,7 @@ public class GroomServerRunner extends Configured implements Tool {
     StringUtils.startupShutdownMessage(GroomServer.class, args, LOG);
 
     try {
-      Configuration conf = new HamaConfiguration(getConf());
+      HamaConfiguration conf = new HamaConfiguration();
 
       if (args.length == 1) {
         conf.set("bsp.peer.hostname", args[0]);

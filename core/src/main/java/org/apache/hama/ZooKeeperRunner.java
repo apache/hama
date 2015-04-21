@@ -33,7 +33,7 @@ public class ZooKeeperRunner extends Configured implements Tool {
 
   @Override
   public int run(String[] args) throws Exception {
-    QuorumPeer.run(getConf());
+    QuorumPeer.run(new HamaConfiguration());
     return 0;
   }
 
