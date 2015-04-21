@@ -79,4 +79,9 @@ public interface MessageQueue<M extends Writable> extends Configurable {
    */
   public int size();
 
+  /**
+   * Called to prepare a queue for reading.
+   */
+  public void prepareRead();
+
 }

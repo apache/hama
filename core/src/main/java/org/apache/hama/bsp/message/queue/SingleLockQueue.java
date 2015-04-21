@@ -184,4 +184,10 @@ public final class SingleLockQueue<T extends Writable> implements
     }
   }
 
+  @Override
+  public void prepareRead() {
+    // TODO Auto-generated method stub
+    
+  }
+
 }

@@ -100,4 +100,10 @@ public final class SortedMemoryQueue<M extends WritableComparable<M>>
     return this;
   }
 
+  @Override
+  public void prepareRead() {
+    // TODO Auto-generated method stub
+    
+  }
+
 }

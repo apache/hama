@@ -59,7 +59,6 @@ public class GraphJob extends BSPJob {
     conf.setClass(MessageManager.OUTGOING_MESSAGE_MANAGER_CLASS,
         OutgoingVertexMessageManager.class, OutgoingMessageManager.class);
 
-    this.setBoolean(Constants.PARTITION_SORT_BY_KEY, true);
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
     this.setVertexIDClass(Text.class);

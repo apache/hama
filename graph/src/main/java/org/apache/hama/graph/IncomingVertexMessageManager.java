@@ -70,7 +70,8 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   public void add(GraphJobMessage item) {
     if (item.isVertexMessage()) {
       if (storage.containsKey(item.getVertexId())) {
-        storage.get(item.getVertexId()).addValuesBytes(item.getValuesBytes(), item.size());
+        storage.get(item.getVertexId()).addValuesBytes(item.getValuesBytes(),
+            item.size());
       } else {
         storage.put(item.getVertexId(), item);
       }
@@ -86,20 +87,17 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   }
 
   Iterator<GraphJobMessage> it;
-  
+
   @Override
   public GraphJobMessage poll() {
     if (mapMessages.size() > 0) {
       return mapMessages.poll();
     } else {
-      if(it == null) {
-        it = storage.values().iterator();
-      }
-      
-      if(it.hasNext()) {
-        return it.next();
+      if (storage.size() > 0 && it.hasNext()) {
+        GraphJobMessage m = it.next();
+        it.remove();
+        return m;
       } else {
-        storage.clear();
         return null;
       }
     }
@@ -123,6 +121,11 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   @Override
   public MessageQueue<GraphJobMessage> getMessageQueue() {
     return this;
+  }
+
+  @Override
+  public void prepareRead() {
+    it = storage.values().iterator();
   }
 
 }

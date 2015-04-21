@@ -161,6 +161,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
       localQueue = localQueueForNextIteration.getMessageQueue();
     }
 
+    localQueue.prepareRead();
     localQueueForNextIteration = getSynchronizedReceiverQueue();
     notifyInit();
   }

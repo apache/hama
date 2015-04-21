@@ -27,10 +27,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -88,6 +87,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       S_FLAG_VERTEX_TOTAL_VERTICES);
 
   public static final String VERTEX_CLASS_KEY = "hama.graph.vertex.class";
+  public static final String DEFAULT_THREAD_POOL_SIZE = "hama.graph.thread.pool.size";
 
   private HamaConfiguration conf;
   private Partitioner<V, M> partitioner;
@@ -194,157 +194,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     vertices.clear();
   }
 
-  /**
-   * The master task is going to check the number of updated vertices and do
-   * master aggregation. In case of no aggregators defined, we save a sync by
-   * reading multiple typed messages.
-   */
-  private void doAggregationUpdates(
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
-      throws IOException, SyncException, InterruptedException {
-
-    // this is only done in every second iteration
-    if (isMasterTask(peer)) {
-      MapWritable updatedCnt = new MapWritable();
-      // send total number of vertices.
-      updatedCnt.put(
-          FLAG_VERTEX_TOTAL_VERTICES,
-          new LongWritable((peer.getCounter(GraphJobCounter.INPUT_VERTICES)
-              .getCounter())));
-      // exit if there's no update made
-      if (globalUpdateCounts == 0) {
-        updatedCnt.put(FLAG_MESSAGE_COUNTS, new IntWritable(Integer.MIN_VALUE));
-      } else {
-        getAggregationRunner().doMasterAggregation(updatedCnt);
-      }
-      // send the updates from the master tasks back to the slaves
-      for (String peerName : peer.getAllPeerNames()) {
-        peer.send(peerName, new GraphJobMessage(updatedCnt));
-      }
-    }
-
-    if (getAggregationRunner().isEnabled()) {
-      peer.sync();
-      // now the map message must be read that might be send from the master
-      updated = getAggregationRunner().receiveAggregatedValues(
-          peer.getCurrentMessage().getMap(), iteration);
-    }
-  }
-
-  /**
-   * Do the main logic of a superstep, namely checking if vertices are active,
-   * feeding compute with messages and controlling combiners/aggregators. We
-   * iterate over our messages and vertices in sorted order. That means that we
-   * need to seek the first vertex that has the same ID as the iterated message.
-   */
-  private void doSuperstep(GraphJobMessage currentMessage,
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
-      throws IOException {
-    long startTime = System.currentTimeMillis();
-
-    this.changedVertexCnt = 0;
-    vertices.startSuperstep();
-
-    ExecutorService executor = Executors.newFixedThreadPool((peer
-        .getNumCurrentMessages() / conf.getInt(
-        "hama.graph.threadpool.percentage", 20)) + 1);
-
-    long loopStartTime = System.currentTimeMillis();
-    while (currentMessage != null) {
-      Runnable worker = new ComputeRunnable(currentMessage);
-      executor.execute(worker);
-
-      currentMessage = peer.getCurrentMessage();
-    }
-        LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
-                        + " looping: " + (System.currentTimeMillis() - loopStartTime)
-                                + " ms");
-
-    executor.shutdown();
-    while (!executor.isTerminated()) {
-    }
-
-    for (V v : vertices.getNotComputedVertices()) {
-      if (!vertices.get(v).isHalted()) {
-        Vertex<V, E, M> vertex = vertices.get(v);
-        vertex.compute(Collections.<M> emptyList());
-        vertices.finishVertexComputation(vertex);
-      }
-    }
-
-    getAggregationRunner().sendAggregatorValues(peer,
-        vertices.getComputedVertices().size(), this.changedVertexCnt);
-    this.iteration++;
-
-    LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
-        + " computing vertices: " + (System.currentTimeMillis() - startTime)
-        + " ms");
-
-    startTime = System.currentTimeMillis();
-    finishSuperstep();
-    LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
-        + " synchronizing: " + (System.currentTimeMillis() - startTime) + " ms");
-  }
-
-  /**
-   * Seed the vertices first with their own values in compute. This is the first
-   * superstep after the vertices have been loaded.
-   */
-  private void doInitialSuperstep(
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
-      throws IOException {
-    this.changedVertexCnt = 0;
-    vertices.startSuperstep();
-
-    ExecutorService executor = Executors
-        .newFixedThreadPool((vertices.size() / conf.getInt(
-            "hama.graph.threadpool.percentage", 20)) + 1);
-
-    for (Vertex<V, E, M> v : vertices.getValues()) {
-      Runnable worker = new ComputeRunnable(v);
-      executor.execute(worker);
-    }
-    
-    executor.shutdown();
-    while (!executor.isTerminated()) {
-    }
-
-    getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
-    iteration++;
-    finishSuperstep();
-  }
-
-  class ComputeRunnable implements Runnable {
-    Vertex<V, E, M> vertex;
-    Iterable<M> msgs;
-
-    @SuppressWarnings("unchecked")
-    public ComputeRunnable(GraphJobMessage msg) {
-      this.vertex = vertices.get((V) msg.getVertexId());
-      this.msgs = (Iterable<M>) getIterableMessages(msg.getValuesBytes(), msg.getNumOfValues());
-    }
-
-    public ComputeRunnable(Vertex<V, E, M> v) {
-      this.vertex = v;
-    }
-
-    @Override
-    public void run() {
-      try {
-        // call once at initial superstep
-        if (iteration == 0) {
-          vertex.setup(conf);
-          msgs = Collections.singleton(vertex.getValue());
-        }
-
-        vertex.compute(msgs);
-        vertices.finishVertexComputation(vertex);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-  }
-
   @SuppressWarnings("unchecked")
   private void setupFields(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
@@ -386,6 +235,157 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     }
   }
 
+  /**
+   * Do the main logic of a superstep, namely checking if vertices are active,
+   * feeding compute with messages and controlling combiners/aggregators. We
+   * iterate over our messages and vertices in sorted order. That means that we
+   * need to seek the first vertex that has the same ID as the iterated message.
+   */
+  private void doSuperstep(GraphJobMessage currentMessage,
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
+      throws IOException {
+    long startTime = System.currentTimeMillis();
+
+    this.changedVertexCnt = 0;
+    vertices.startSuperstep();
+
+    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
+        .newCachedThreadPool();
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
+
+    long loopStartTime = System.currentTimeMillis();
+    while (currentMessage != null) {
+      Runnable worker = new ComputeRunnable(currentMessage);
+      executor.execute(worker);
+
+      currentMessage = peer.getCurrentMessage();
+    }
+    LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
+        + " looping: " + (System.currentTimeMillis() - loopStartTime) + " ms");
+
+    executor.shutdown();
+    while (!executor.isTerminated()) {
+    }
+
+    for (V v : vertices.getNotComputedVertices()) {
+      if (!vertices.get(v).isHalted()) {
+        Vertex<V, E, M> vertex = vertices.get(v);
+        vertex.compute(Collections.<M> emptyList());
+        vertices.finishVertexComputation(vertex);
+      }
+    }
+
+    getAggregationRunner().sendAggregatorValues(peer,
+        vertices.getComputedVertices().size(), this.changedVertexCnt);
+    this.iteration++;
+
+    LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
+        + " computing vertices: " + (System.currentTimeMillis() - startTime)
+        + " ms");
+
+    startTime = System.currentTimeMillis();
+    finishSuperstep();
+    LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()
+        + " synchronizing: " + (System.currentTimeMillis() - startTime) + " ms");
+  }
+
+  /**
+   * Seed the vertices first with their own values in compute. This is the first
+   * superstep after the vertices have been loaded.
+   */
+  private void doInitialSuperstep(
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
+      throws IOException {
+    this.changedVertexCnt = 0;
+    vertices.startSuperstep();
+
+    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
+        .newCachedThreadPool();
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
+
+    for (Vertex<V, E, M> v : vertices.getValues()) {
+      Runnable worker = new ComputeRunnable(v);
+      executor.execute(worker);
+    }
+
+    executor.shutdown();
+    while (!executor.isTerminated()) {
+    }
+
+    getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
+    iteration++;
+    finishSuperstep();
+  }
+
+  class ComputeRunnable implements Runnable {
+    Vertex<V, E, M> vertex;
+    Iterable<M> msgs;
+
+    @SuppressWarnings("unchecked")
+    public ComputeRunnable(GraphJobMessage msg) {
+      this.vertex = vertices.get((V) msg.getVertexId());
+      this.msgs = (Iterable<M>) getIterableMessages(msg.getValuesBytes(),
+          msg.getNumOfValues());
+    }
+
+    public ComputeRunnable(Vertex<V, E, M> v) {
+      this.vertex = v;
+    }
+
+    @Override
+    public void run() {
+      try {
+        // call once at initial superstep
+        if (iteration == 0) {
+          vertex.setup(conf);
+          msgs = Collections.singleton(vertex.getValue());
+        }
+
+        vertex.compute(msgs);
+        vertices.finishVertexComputation(vertex);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  /**
+   * The master task is going to check the number of updated vertices and do
+   * master aggregation. In case of no aggregators defined, we save a sync by
+   * reading multiple typed messages.
+   */
+  private void doAggregationUpdates(
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
+      throws IOException, SyncException, InterruptedException {
+
+    // this is only done in every second iteration
+    if (isMasterTask(peer)) {
+      MapWritable updatedCnt = new MapWritable();
+      // send total number of vertices.
+      updatedCnt.put(
+          FLAG_VERTEX_TOTAL_VERTICES,
+          new LongWritable((peer.getCounter(GraphJobCounter.INPUT_VERTICES)
+              .getCounter())));
+      // exit if there's no update made
+      if (globalUpdateCounts == 0) {
+        updatedCnt.put(FLAG_MESSAGE_COUNTS, new IntWritable(Integer.MIN_VALUE));
+      } else {
+        getAggregationRunner().doMasterAggregation(updatedCnt);
+      }
+      // send the updates from the master tasks back to the slaves
+      for (String peerName : peer.getAllPeerNames()) {
+        peer.send(peerName, new GraphJobMessage(updatedCnt));
+      }
+    }
+
+    if (getAggregationRunner().isEnabled()) {
+      peer.sync();
+      // now the map message must be read that might be send from the master
+      updated = getAggregationRunner().receiveAggregatedValues(
+          peer.getCurrentMessage().getMap(), iteration);
+    }
+  }
+
   @SuppressWarnings("unchecked")
   public static <V extends WritableComparable<? super V>, E extends Writable, M extends Writable> void initClasses(
       Configuration conf) {
@@ -406,7 +406,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     EDGE_VALUE_CLASS = edgeValueClass;
   }
 
-  Map<String, GraphJobMessage> messages = new HashMap<String, GraphJobMessage>();
+  private Map<String, GraphJobMessage> messages = new HashMap<String, GraphJobMessage>();
 
   /**
    * Loads vertices into memory of each peer.
@@ -419,7 +419,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             VertexInputReader.class));
 
-    ExecutorService executor = Executors.newCachedThreadPool();
+    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
+        .newCachedThreadPool();
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
 
     try {
       KeyValuePair<Writable, Writable> next = null;
@@ -464,8 +466,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       DataInputStream dis = new DataInputStream(bis);
 
       for (int i = 0; i < msg.getNumOfValues(); i++) {
-        Vertex<V, E, M> vertex = GraphJobRunner
-            .<V, E, M> newVertexInstance(VERTEX_CLASS);
+        Vertex<V, E, M> vertex = newVertexInstance(VERTEX_CLASS);
         vertex.readFields(dis);
 
         Runnable worker = new LoadWorker(vertex);
@@ -633,7 +634,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     vertices.finishAdditions();
   }
 
-  private final ConcurrentNavigableMap<V, GraphJobMessage> storage = new ConcurrentSkipListMap<V, GraphJobMessage>();
+  private final ConcurrentHashMap<V, GraphJobMessage> storage = new ConcurrentHashMap<V, GraphJobMessage>();
 
   public void sendMessage(V vertexID, byte[] msg) throws IOException {
     if (storage.containsKey(vertexID)) {
@@ -646,24 +647,20 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   public void finishSuperstep() throws IOException {
     vertices.finishSuperstep();
 
-    for (Map.Entry<V, GraphJobMessage> m : storage.entrySet()) {
-      // Combining messages
-      if (combiner != null) {
-        if (m.getValue().getNumOfValues() > 1) {
-          peer.send(
-              getHostName(m.getKey()),
-              new GraphJobMessage(m.getKey(), serialize(combiner
-                  .combine(getIterableMessages(m.getValue().getValuesBytes(), m
-                      .getValue().getNumOfValues())))));
-        } else {
-          peer.send(getHostName(m.getKey()), m.getValue());
-        }
+    Iterator<Entry<V, GraphJobMessage>> it = storage.entrySet().iterator();
+    while (it.hasNext()) {
+      Entry<V, GraphJobMessage> e = it.next();
+      if (combiner != null && e.getValue().getNumOfValues() > 1) {
+        peer.send(
+            getHostName(e.getKey()),
+            new GraphJobMessage(e.getKey(), serialize(combiner
+                .combine(getIterableMessages(e.getValue().getValuesBytes(), e
+                    .getValue().getNumOfValues())))));
       } else {
-        peer.send(getHostName(m.getKey()), m.getValue());
+        peer.send(getHostName(e.getKey()), e.getValue());
       }
+      it.remove();
     }
-
-    storage.clear();
   }
 
   public static byte[] serialize(Writable writable) throws IOException {

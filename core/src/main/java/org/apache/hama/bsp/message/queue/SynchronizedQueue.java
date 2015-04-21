@@ -27,4 +27,6 @@ public interface SynchronizedQueue<T extends Writable> extends MessageQueue<T> {
 
   public abstract MessageQueue<T> getMessageQueue();
 
+  public abstract void prepareRead();
+
 }

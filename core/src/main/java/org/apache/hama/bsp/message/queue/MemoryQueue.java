@@ -112,4 +112,10 @@ public final class MemoryQueue<M extends Writable> implements
     return this;
   }
 
+  @Override
+  public void prepareRead() {
+    // TODO Auto-generated method stub
+    
+  }
+
 }
