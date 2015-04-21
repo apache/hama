@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.commons.logging.Log;
@@ -115,6 +116,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
 
+  private RejectedExecutionHandler retryHandler = new RetryRejectedExecutionHandler();
+  
   @Override
   public final void setup(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
@@ -252,6 +255,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
     executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
+    executor.setRejectedExecutionHandler(retryHandler);
 
     long loopStartTime = System.currentTimeMillis();
     while (currentMessage != null) {
@@ -302,7 +306,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
     executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
-
+    executor.setRejectedExecutionHandler(retryHandler);
+    
     for (Vertex<V, E, M> v : vertices.getValues()) {
       Runnable worker = new ComputeRunnable(v);
       executor.execute(worker);
@@ -422,7 +427,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
     executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
-
+    executor.setRejectedExecutionHandler(retryHandler);
+    
     try {
       KeyValuePair<Writable, Writable> next = null;
       while ((next = peer.readNext()) != null) {
@@ -705,6 +711,20 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         };
       }
     };
+  }
+
+  class RetryRejectedExecutionHandler implements RejectedExecutionHandler {
+
+    @Override
+    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+      try {
+        Thread.sleep(10);
+      } catch (InterruptedException e) {
+        LOG.error(e);
+      }
+      executor.execute(r);
+    }
+
   }
 
   /**
