@@ -254,7 +254,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
-    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
     executor.setRejectedExecutionHandler(retryHandler);
 
     long loopStartTime = System.currentTimeMillis();
@@ -305,7 +305,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
-    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
     executor.setRejectedExecutionHandler(retryHandler);
     
     for (Vertex<V, E, M> v : vertices.getValues()) {
@@ -426,7 +426,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
-    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 1024));
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
     executor.setRejectedExecutionHandler(retryHandler);
     
     try {
