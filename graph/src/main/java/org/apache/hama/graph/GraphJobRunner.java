@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -117,7 +118,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer;
 
   private RejectedExecutionHandler retryHandler = new RetryRejectedExecutionHandler();
-  
+
   @Override
   public final void setup(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
@@ -170,10 +171,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
       // loop over vertices and do their computation
       doSuperstep(firstVertexMessage, peer);
-
-      if (isMasterTask(peer)) {
-        peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
-      }
     }
 
   }
@@ -268,7 +265,10 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         + " looping: " + (System.currentTimeMillis() - loopStartTime) + " ms");
 
     executor.shutdown();
-    while (!executor.isTerminated()) {
+    try {
+      executor.awaitTermination(10000L, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      LOG.error(e);
     }
 
     for (V v : vertices.getNotComputedVertices()) {
@@ -307,16 +307,19 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         .newCachedThreadPool();
     executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
     executor.setRejectedExecutionHandler(retryHandler);
-    
+
     for (Vertex<V, E, M> v : vertices.getValues()) {
       Runnable worker = new ComputeRunnable(v);
       executor.execute(worker);
     }
 
     executor.shutdown();
-    while (!executor.isTerminated()) {
+    try {
+      executor.awaitTermination(10000L, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      LOG.error(e);
     }
-
+    
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
     finishSuperstep();
@@ -411,8 +414,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     EDGE_VALUE_CLASS = edgeValueClass;
   }
 
-  private Map<String, GraphJobMessage> messages = new HashMap<String, GraphJobMessage>();
-
   /**
    * Loads vertices into memory of each peer.
    */
@@ -420,6 +421,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
+    final Map<String, GraphJobMessage> messages = new HashMap<String, GraphJobMessage>();
+    
     VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             VertexInputReader.class));
@@ -428,7 +431,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         .newCachedThreadPool();
     executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
     executor.setRejectedExecutionHandler(retryHandler);
-    
+
     try {
       KeyValuePair<Writable, Writable> next = null;
       while ((next = peer.readNext()) != null) {
@@ -462,8 +465,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       peer.send(e.getKey(), e.getValue());
     }
     messages.clear();
-    messages = null;
-
+    
     peer.sync();
 
     GraphJobMessage msg;
@@ -480,8 +482,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       }
     }
     executor.shutdown();
-    while (!executor.isTerminated()) {
-    }
+    executor.awaitTermination(10000L, TimeUnit.MILLISECONDS);
 
     LOG.info(vertices.size() + " vertices are loaded into "
         + peer.getPeerName());
@@ -646,7 +647,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     if (storage.containsKey(vertexID)) {
       storage.get(vertexID).add(msg);
     } else {
-      storage.put(vertexID, new GraphJobMessage(vertexID, msg));
+      // To save bit memory we don't set vertexID twice
+      storage.put(vertexID, new GraphJobMessage(null, msg));
     }
   }
 
@@ -656,6 +658,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     Iterator<Entry<V, GraphJobMessage>> it = storage.entrySet().iterator();
     while (it.hasNext()) {
       Entry<V, GraphJobMessage> e = it.next();
+      it.remove();
+      
       if (combiner != null && e.getValue().getNumOfValues() > 1) {
         peer.send(
             getHostName(e.getKey()),
@@ -663,9 +667,15 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
                 .combine(getIterableMessages(e.getValue().getValuesBytes(), e
                     .getValue().getNumOfValues())))));
       } else {
+        // set vertexID
+        e.getValue().setVertexId(e.getKey());
         peer.send(getHostName(e.getKey()), e.getValue());
       }
-      it.remove();
+    }
+    storage.clear();
+    
+    if (isMasterTask(peer)) {
+      peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
     }
   }
 
@@ -673,7 +683,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     ByteArrayOutputStream a = new ByteArrayOutputStream();
     DataOutputStream b = new DataOutputStream(a);
     writable.write(b);
-
+    a.close();
     return a.toByteArray();
   }
 
@@ -732,7 +742,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
    *         edge.
    */
   public String getHostName(V vertexID) {
-    return peer.getPeerName(getPartitioner().getPartition(vertexID, null,
+    return peer.getPeerName(partitioner.getPartition(vertexID, null,
         peer.getNumPeers()));
   }
 
@@ -755,13 +765,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
    */
   public final int getMaxIteration() {
     return maxIteration;
-  }
-
-  /**
-   * @return the defined partitioner instance.
-   */
-  public final Partitioner<V, M> getPartitioner() {
-    return partitioner;
   }
 
   /**

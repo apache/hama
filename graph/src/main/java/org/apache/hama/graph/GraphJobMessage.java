@@ -91,6 +91,10 @@ public final class GraphJobMessage implements
   public MapWritable getMap() {
     return map;
   }
+  
+  public void setVertexId(WritableComparable<?> vertexId) {
+    this.vertexId = vertexId;
+  }
 
   public WritableComparable<?> getVertexId() {
     return vertexId;
