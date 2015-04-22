@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,7 +43,7 @@ import com.google.common.collect.Sets;
  */
 public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
-  private final Map<V, Vertex<V, E, M>> vertices = new ConcurrentHashMap<V, Vertex<V, E, M>>();
+  private final ConcurrentHashMap<V, Vertex<V, E, M>> vertices = new ConcurrentHashMap<V, Vertex<V, E, M>>();
 
   private Set<V> computedVertices = new HashSet<V>();
 
@@ -55,11 +54,12 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
 
   @Override
   public void put(Vertex<V, E, M> vertex) throws IOException {
-    if (vertices.containsKey(vertex.getVertexID())) {
-      for (Edge<V, E> e : vertex.getEdges())
-        vertices.get(vertex.getVertexID()).addEdge(e);
+    if (!vertices.containsKey(vertex.getVertexID())) {
+      vertices.putIfAbsent(vertex.getVertexID(), vertex);
     } else {
-      vertices.put(vertex.getVertexID(), vertex);
+      for (Edge<V, E> e : vertex.getEdges()) {
+        vertices.get(vertex.getVertexID()).addEdge(e);
+      }
     }
   }
 

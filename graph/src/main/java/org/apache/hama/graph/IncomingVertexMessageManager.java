@@ -69,11 +69,11 @@ public class IncomingVertexMessageManager<M extends WritableComparable<M>>
   @Override
   public void add(GraphJobMessage item) {
     if (item.isVertexMessage()) {
-      if (storage.containsKey(item.getVertexId())) {
+      if (!storage.containsKey(item.getVertexId())) {
+        storage.putIfAbsent(item.getVertexId(), item);
+      } else {
         storage.get(item.getVertexId()).addValuesBytes(item.getValuesBytes(),
             item.size());
-      } else {
-        storage.put(item.getVertexId(), item);
       }
     } else {
       mapMessages.add(item);

@@ -23,9 +23,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -319,7 +317,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     } catch (InterruptedException e) {
       LOG.error(e);
     }
-    
+
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
     finishSuperstep();
@@ -414,6 +412,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     EDGE_VALUE_CLASS = edgeValueClass;
   }
 
+  private final ConcurrentHashMap<String, GraphJobMessage> messages = new ConcurrentHashMap<String, GraphJobMessage>();
+  private VertexInputReader<Writable, Writable, V, E, M> reader;
+
   /**
    * Loads vertices into memory of each peer.
    */
@@ -421,9 +422,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void loadVertices(
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
-    final Map<String, GraphJobMessage> messages = new HashMap<String, GraphJobMessage>();
-    
-    VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
+
+    reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             VertexInputReader.class));
 
@@ -435,37 +435,37 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     try {
       KeyValuePair<Writable, Writable> next = null;
       while ((next = peer.readNext()) != null) {
-
         Vertex<V, E, M> vertex = GraphJobRunner
             .<V, E, M> newVertexInstance(VERTEX_CLASS);
 
         boolean vertexFinished = reader.parseVertex(next.getKey(),
             next.getValue(), vertex);
+
         if (!vertexFinished) {
           continue;
         }
 
-        String dstHost = getHostName(vertex.getVertexID());
-        if (peer.getPeerName().equals(dstHost)) {
-          Runnable worker = new LoadWorker(vertex);
-          executor.execute(worker);
-        } else {
-          if (!messages.containsKey(dstHost)) {
-            messages.put(dstHost, new GraphJobMessage(serialize(vertex)));
-          } else {
-            messages.get(dstHost).add(serialize(vertex));
-          }
-        }
+        Runnable worker = new LoadWorker(vertex);
+        executor.execute(worker);
+
       }
     } catch (Exception e) {
       e.printStackTrace();
     }
 
-    for (Entry<String, GraphJobMessage> e : messages.entrySet()) {
-      peer.send(e.getKey(), e.getValue());
+    executor.shutdown();
+    executor.awaitTermination(10000L, TimeUnit.MILLISECONDS);
+
+    Iterator<Entry<String, GraphJobMessage>> it;
+    it = messages.entrySet().iterator();
+    while (it.hasNext()) {
+      Entry<String, GraphJobMessage> e = it.next();
+      it.remove();
+      GraphJobMessage msg = e.getValue();
+      msg.setFlag(GraphJobMessage.PARTITION_FLAG);
+      peer.send(e.getKey(), msg);
     }
-    messages.clear();
-    
+
     peer.sync();
 
     GraphJobMessage msg;
@@ -477,12 +477,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         Vertex<V, E, M> vertex = newVertexInstance(VERTEX_CLASS);
         vertex.readFields(dis);
 
-        Runnable worker = new LoadWorker(vertex);
-        executor.execute(worker);
+        addVertex(vertex);
       }
     }
-    executor.shutdown();
-    executor.awaitTermination(10000L, TimeUnit.MILLISECONDS);
 
     LOG.info(vertices.size() + " vertices are loaded into "
         + peer.getPeerName());
@@ -498,7 +495,16 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     @Override
     public void run() {
       try {
-        addVertex(vertex);
+        String dstHost = getHostName(vertex.getVertexID());
+        if (peer.getPeerName().equals(dstHost)) {
+          addVertex(vertex);
+        } else {
+          if (!messages.containsKey(dstHost)) {
+            messages.putIfAbsent(dstHost, new GraphJobMessage());
+          }
+          messages.get(dstHost).add(serialize(vertex));
+        }
+
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -644,12 +650,11 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private final ConcurrentHashMap<V, GraphJobMessage> storage = new ConcurrentHashMap<V, GraphJobMessage>();
 
   public void sendMessage(V vertexID, byte[] msg) throws IOException {
-    if (storage.containsKey(vertexID)) {
-      storage.get(vertexID).add(msg);
-    } else {
+    if (!storage.containsKey(vertexID)) {
       // To save bit memory we don't set vertexID twice
-      storage.put(vertexID, new GraphJobMessage(null, msg));
+      storage.putIfAbsent(vertexID, new GraphJobMessage());
     }
+    storage.get(vertexID).add(msg);
   }
 
   public void finishSuperstep() throws IOException {
@@ -659,21 +664,21 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     while (it.hasNext()) {
       Entry<V, GraphJobMessage> e = it.next();
       it.remove();
-      
+
       if (combiner != null && e.getValue().getNumOfValues() > 1) {
-        peer.send(
-            getHostName(e.getKey()),
-            new GraphJobMessage(e.getKey(), serialize(combiner
-                .combine(getIterableMessages(e.getValue().getValuesBytes(), e
-                    .getValue().getNumOfValues())))));
+        GraphJobMessage combined = new GraphJobMessage(e.getKey(),
+            serialize(combiner.combine(getIterableMessages(e.getValue()
+                .getValuesBytes(), e.getValue().getNumOfValues()))));
+        combined.setFlag(GraphJobMessage.VERTEX_FLAG);
+        peer.send(getHostName(e.getKey()), combined);
       } else {
         // set vertexID
         e.getValue().setVertexId(e.getKey());
+        e.getValue().setFlag(GraphJobMessage.VERTEX_FLAG);
         peer.send(getHostName(e.getKey()), e.getValue());
       }
     }
-    storage.clear();
-    
+
     if (isMasterTask(peer)) {
       peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
     }

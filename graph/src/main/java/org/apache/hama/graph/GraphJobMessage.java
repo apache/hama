@@ -74,7 +74,8 @@ public final class GraphJobMessage implements
     this.flag = VERTEX_FLAG;
     this.vertexId = vertexId;
 
-    add(vertexValue);
+    if (vertexValue != null)
+      add(vertexValue);
   }
 
   public GraphJobMessage(IntWritable size) {
@@ -297,6 +298,10 @@ public final class GraphJobMessage implements
 
       return compare(key1, key2); // compare them
     }
+  }
+
+  public void setFlag(int partitionFlag) {
+    this.flag = partitionFlag;
   }
 
 }

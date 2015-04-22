@@ -56,14 +56,14 @@ public class PageRank {
       if (val != null) {
         MAXIMUM_CONVERGENCE_ERROR = Double.parseDouble(val);
       }
+      
+      // initialize this vertex to 1 / count of global vertices in this graph
+      setValue(new DoubleWritable(1.0 / getTotalNumVertices()));
     }
 
     @Override
     public void compute(Iterable<DoubleWritable> messages) throws IOException {
-      // initialize this vertex to 1 / count of global vertices in this graph
-      if (this.getSuperstepCount() == 0) {
-        setValue(new DoubleWritable(1.0 / getTotalNumVertices()));
-      } else if (this.getSuperstepCount() >= 1) {
+      if (this.getSuperstepCount() >= 1) {
         double sum = 0;
         for (DoubleWritable msg : messages) {
           sum += msg.get();
@@ -110,14 +110,13 @@ public class PageRank {
 
   public static class PagerankJsonReader extends
       VertexInputReader<LongWritable, Text, Text, NullWritable, DoubleWritable> {
-    JSONParser parser = new JSONParser();
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean parseVertex(LongWritable key, Text value,
         Vertex<Text, NullWritable, DoubleWritable> vertex) throws Exception {
-
-      String strValue = value.toString();
-      JSONArray jsonArray = (JSONArray) parser.parse(strValue);
+      JSONArray jsonArray = (JSONArray) new JSONParser()
+          .parse(value.toString());
 
       vertex.setVertexID(new Text(jsonArray.get(0).toString()));
 
