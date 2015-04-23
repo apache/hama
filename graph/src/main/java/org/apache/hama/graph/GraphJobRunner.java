@@ -422,6 +422,10 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException, SyncException, InterruptedException {
 
+    for (int i = 0; i < peer.getNumPeers(); i++) {
+      messages.put(i, new GraphJobMessage());
+    }
+
     VertexInputReader<Writable, Writable, V, E, M> reader = (VertexInputReader<Writable, Writable, V, E, M>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,
             VertexInputReader.class));
@@ -434,8 +438,16 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     try {
       KeyValuePair<Writable, Writable> next = null;
       while ((next = peer.readNext()) != null) {
+        Vertex<V, E, M> vertex = GraphJobRunner
+            .<V, E, M> newVertexInstance(VERTEX_CLASS);
 
-        Runnable worker = new Parser(next.getKey(), next.getValue(), reader);
+        boolean vertexFinished = reader.parseVertex(next.getKey(),
+            next.getValue(), vertex);
+
+        if (!vertexFinished) {
+          continue;
+        }
+        Runnable worker = new Parser(vertex);
         executor.execute(worker);
 
       }
@@ -501,36 +513,21 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   }
 
   class Parser implements Runnable {
-    Writable key;
-    Writable value;
-    VertexInputReader<Writable, Writable, V, E, M> reader;
+    Vertex<V, E, M> vertex;
 
-    public Parser(Writable key, Writable value,
-        VertexInputReader<Writable, Writable, V, E, M> reader) {
-      this.key = key;
-      this.value = value;
-      this.reader = reader;
+    public Parser(Vertex<V, E, M> vertex) {
+      this.vertex = vertex;
     }
 
     @Override
     public void run() {
       try {
-        Vertex<V, E, M> vertex = GraphJobRunner
-            .<V, E, M> newVertexInstance(VERTEX_CLASS);
+        int partition = getPartitionID(vertex.getVertexID());
 
-        boolean vertexFinished = reader.parseVertex(key, value, vertex);
-
-        if (vertexFinished) {
-          int partition = getPartitionID(vertex.getVertexID());
-
-          if (peer.getPeerIndex() == partition) {
-            addVertex(vertex);
-          } else {
-            if (!messages.containsKey(partition)) {
-              messages.putIfAbsent(partition, new GraphJobMessage());
-            }
-            messages.get(partition).add(serialize(vertex));
-          }
+        if (peer.getPeerIndex() == partition) {
+          addVertex(vertex);
+        } else {
+          messages.get(partition).add(serialize(vertex));
         }
       } catch (Exception e) {
         e.printStackTrace();
