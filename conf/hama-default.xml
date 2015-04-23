@@ -98,7 +98,7 @@
   </property>
   <property>
     <name>bsp.child.java.opts</name>
-    <value>-Xmx1024m</value>
+    <value>-Xmx2048m</value>
     <description>Java opts for the groom server child processes.  
     The following symbol, if present, will be interpolated: @taskid@ is replaced 
     by current TaskID. Any other occurrences of '@' will go unchanged.
