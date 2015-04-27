@@ -19,7 +19,6 @@ package org.apache.hama.graph;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,8 +27,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
-
-import com.google.common.collect.Sets;
 
 /**
  * Stores the vertices into a memory-based tree map. This implementation allows
@@ -45,7 +42,7 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
     implements VerticesInfo<V, E, M> {
   private final ConcurrentHashMap<V, Vertex<V, E, M>> vertices = new ConcurrentHashMap<V, Vertex<V, E, M>>();
 
-  private Set<V> computedVertices = new HashSet<V>();
+  private int activeVertices = 0;
 
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
@@ -119,9 +116,14 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   }
 
   @Override
-  public synchronized void finishVertexComputation(Vertex<V, E, M> vertex)
+  public void finishVertexComputation(Vertex<V, E, M> vertex)
       throws IOException {
-    computedVertices.add(vertex.getVertexID());
+    incrementCount();
+    vertex.setComputed();
+  }
+
+  public synchronized void incrementCount() {
+    activeVertices++;
   }
 
   @Override
@@ -138,19 +140,13 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
 
   @Override
   public void finishSuperstep() throws IOException {
-    computedVertices.clear();
-  }
-
-  @Override
-  public Set<V> getComputedVertices() {
-    return this.computedVertices;
-  }
-
-  public Set<V> getNotComputedVertices() {
-    return Sets.difference(vertices.keySet(), computedVertices);
+    activeVertices = 0;
+    for (Vertex<V, E, M> v : vertices.values()) {
+      v.resetComputedFlag();
+    }
   }
 
   public int getActiveVerticesNum() {
-    return computedVertices.size();
+    return activeVertices;
   }
 }

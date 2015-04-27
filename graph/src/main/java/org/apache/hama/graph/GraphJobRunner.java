@@ -269,16 +269,15 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       LOG.error(e);
     }
 
-    for (V v : vertices.getNotComputedVertices()) {
-      if (!vertices.get(v).isHalted()) {
-        Vertex<V, E, M> vertex = vertices.get(v);
+    for (Vertex<V, E, M> vertex : vertices.getValues()) {
+      if (!vertex.isHalted() && !vertex.isComputed()) {
         vertex.compute(Collections.<M> emptyList());
         vertices.finishVertexComputation(vertex);
       }
     }
 
     getAggregationRunner().sendAggregatorValues(peer,
-        vertices.getComputedVertices().size(), this.changedVertexCnt);
+        vertices.getActiveVerticesNum(), this.changedVertexCnt);
     this.iteration++;
 
     LOG.info("Total time spent for superstep-" + peer.getSuperstepCount()

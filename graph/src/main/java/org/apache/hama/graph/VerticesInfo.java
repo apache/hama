@@ -82,10 +82,6 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
   
   public Collection<Vertex<V, E, M>> getValues();
 
-  public Set<V> getComputedVertices();
-  
-  public Set<V> getNotComputedVertices();
-  
   public int getActiveVerticesNum();
   
   /**

@@ -59,7 +59,8 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   private List<Edge<V, E>> edges;
 
   private boolean votedToHalt = false;
-
+  private boolean computed = false;
+  
   public HamaConfiguration getConf() {
     return runner.getPeer().getConfiguration();
   }
@@ -196,6 +197,18 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
     return votedToHalt;
   }
 
+  void setComputed() {
+    this.computed = true;
+  }
+  
+  void resetComputedFlag() {
+    this.computed = false;
+  }
+  
+  public boolean isComputed() {
+    return computed;
+  }
+  
   void setVotedToHalt(boolean votedToHalt) {
     this.votedToHalt = votedToHalt;
   }
