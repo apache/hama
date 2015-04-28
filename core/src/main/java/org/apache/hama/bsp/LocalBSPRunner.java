@@ -361,6 +361,13 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     public InetSocketAddress getListenerAddress() {
       return selfAddress;
     }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void transfer(InetSocketAddress addr, M msg) throws IOException {
+      MANAGER_MAP.get(addr).localQueueForNextIteration.add(msg);
+      peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, 1);
+    }
   }
 
   public static class LocalUmbilical implements BSPPeerProtocol {

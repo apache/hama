@@ -196,4 +196,15 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
     return null;
   }
 
+  @Override
+  public void transfer(InetSocketAddress addr, M msg) throws IOException {
+    HamaMessageManager<M> bspPeerConnection = this.getBSPPeerConnection(addr);
+    if (bspPeerConnection == null) {
+      throw new IllegalArgumentException("Can not find " + addr.toString()
+          + " to transfer messages to!");
+    } else {
+      bspPeerConnection.put(msg);
+    }
+  }
+
 }

@@ -85,6 +85,8 @@ public interface MessageManager<M extends Writable> {
   public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
       throws IOException;
 
+  public void transfer(InetSocketAddress addr, M msg) throws IOException;
+  
   /**
    * Clears the outgoing queue. Can be used to switch queues.
    */

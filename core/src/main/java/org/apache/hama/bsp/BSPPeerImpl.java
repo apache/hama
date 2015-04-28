@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -50,6 +51,7 @@ import org.apache.hama.bsp.sync.SyncServiceFactory;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.ipc.BSPPeerProtocol;
 import org.apache.hama.pipes.util.DistributedCacheUtil;
+import org.apache.hama.util.BSPNetUtils;
 import org.apache.hama.util.DistCacheUtils;
 
 /**
@@ -358,7 +360,26 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   @Override
   public final void send(String peerName, M msg) throws IOException {
-    messenger.send(peerName, msg);
+    if (!conf.getBoolean("hama.bsp.messenger.bundle", true)) {
+      sendDirectly(peerName, msg);
+    } else {
+      messenger.send(peerName, msg);
+    }
+  }
+
+  private final HashMap<String, InetSocketAddress> peerSocketCache = new HashMap<String, InetSocketAddress>();
+
+  public final void sendDirectly(String peerName, M msg) throws IOException {
+    InetSocketAddress targetPeerAddress = null;
+    // Get socket for target peer.
+    if (peerSocketCache.containsKey(peerName)) {
+      targetPeerAddress = peerSocketCache.get(peerName);
+    } else {
+      targetPeerAddress = BSPNetUtils.getAddress(peerName);
+      peerSocketCache.put(peerName, targetPeerAddress);
+    }
+
+    messenger.transfer(targetPeerAddress, msg);
   }
 
   /*
@@ -511,7 +532,7 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
   public final void clear() {
     messenger.clearOutgoingMessages();
   }
-  
+
   /**
    * @return the string as host:port of this Peer
    */

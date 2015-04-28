@@ -178,7 +178,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
 
     notifySentMessage(peerName, msg);
   }
-
+  
   /*
    * (non-Javadoc)
    * @see org.apache.hama.bsp.message.MessageManager#getMessageIterator()

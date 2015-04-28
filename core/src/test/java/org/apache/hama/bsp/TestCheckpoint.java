@@ -151,6 +151,12 @@ public class TestCheckpoint extends TestCase {
       return null;
     }
 
+    @Override
+    public void transfer(InetSocketAddress addr, Text msg) throws IOException {
+      // TODO Auto-generated method stub
+      
+    }
+
   }
 
   public static class TestBSPPeer implements

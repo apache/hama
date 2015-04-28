@@ -129,12 +129,13 @@ public final class HamaAsyncMessageManagerImpl<M extends Writable> extends
         bundle.write(bufferDos);
 
         byte[] compressed = compressor.compress(byteBuffer.toByteArray());
-        peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
+        peer.incrementCounter(
+            BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
             compressed.length);
         bspPeerConnection.put(compressed);
       } else {
-        //peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
-        //    bundle.getLength());
+        // peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
+        // bundle.getLength());
         bspPeerConnection.put(bundle);
       }
     }
@@ -195,6 +196,17 @@ public final class HamaAsyncMessageManagerImpl<M extends Writable> extends
       return this.server.getAddress();
     }
     return null;
+  }
+
+  @Override
+  public void transfer(InetSocketAddress addr, M msg) throws IOException {
+    HamaMessageManager<M> bspPeerConnection = this.getBSPPeerConnection(addr);
+    if (bspPeerConnection == null) {
+      throw new IllegalArgumentException("Can not find " + addr.toString()
+          + " to transfer messages to!");
+    } else {
+      bspPeerConnection.put(msg);
+    }
   }
 
 }

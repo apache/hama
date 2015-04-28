@@ -195,6 +195,11 @@
     <value>5</value>
     <description>The number of method handler threads to run.</description>
   </property>
+  <property>
+    <name>hama.bsp.messenger.bundle</name>
+    <value>true</value>
+    <description>Message bundling is used to reduce RPC overheads.</description>
+  </property>
   
   <property>
     <name>bsp.input.runtime.partitioning</name>
