@@ -59,7 +59,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   private List<Edge<V, E>> edges;
 
   private boolean votedToHalt = false;
-  private boolean computed = false;
+  private long lastComputedSuperstep = 0;
   
   public HamaConfiguration getConf() {
     return runner.getPeer().getConfiguration();
@@ -198,15 +198,11 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   }
 
   void setComputed() {
-    this.computed = true;
-  }
-  
-  void resetComputedFlag() {
-    this.computed = false;
+    this.lastComputedSuperstep = this.getSuperstepCount();
   }
   
   public boolean isComputed() {
-    return computed;
+    return (lastComputedSuperstep == this.getSuperstepCount()) ? true : false;
   }
   
   void setVotedToHalt(boolean votedToHalt) {
@@ -256,6 +252,8 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
       this.value.readFields(in);
     }
 
+    this.lastComputedSuperstep = in.readLong();
+    
     this.edges = new ArrayList<Edge<V, E>>();
     if (in.readBoolean()) {
       int num = in.readInt();
@@ -286,13 +284,16 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
       out.writeBoolean(true);
       vertexID.write(out);
     }
-
+    
     if (value == null) {
       out.writeBoolean(false);
     } else {
       out.writeBoolean(true);
       value.write(out);
     }
+    
+    out.writeLong(lastComputedSuperstep);
+    
     if (this.edges == null) {
       out.writeBoolean(false);
     } else {

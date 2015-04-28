@@ -141,9 +141,6 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   @Override
   public void finishSuperstep() throws IOException {
     activeVertices = 0;
-    for (Vertex<V, E, M> v : vertices.values()) {
-      v.resetComputedFlag();
-    }
   }
 
   public int getActiveVerticesNum() {
