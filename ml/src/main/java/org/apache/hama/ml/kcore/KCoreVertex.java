@@ -101,8 +101,7 @@ public class KCoreVertex extends
   }
 
   @Override
-  public void readFields(DataInput in) throws IOException {
-    super.readFields(in);
+  public void readState(DataInput in) throws IOException {
     core = in.readInt();
     changed = in.readBoolean();
 
@@ -118,9 +117,8 @@ public class KCoreVertex extends
   }
 
   @Override
-  public void write(DataOutput out) throws IOException {
-    super.write(out);
-    out.writeDouble(core);
+  public void writeState(DataOutput out) throws IOException {
+    out.writeInt(core);
     out.writeBoolean(changed);
 
     if (this.estimates == null) {
