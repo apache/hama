@@ -30,6 +30,7 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Counters.Counter;
+import org.apache.hama.util.WritableUtils;
 
 /**
  * Vertex is a abstract definition of Google Pregel Vertex. For implementing a
@@ -65,6 +66,9 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
     return runner.getPeer().getConfiguration();
   }
 
+  public Vertex() {
+  }
+
   @Override
   public V getVertexID() {
     return this.vertexID;
@@ -77,18 +81,18 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   @Override
   public void sendMessage(Edge<V, E> e, M msg) throws IOException {
     runner.sendMessage(e.getDestinationVertexID(),
-        GraphJobRunner.serialize(msg));
+        WritableUtils.serialize(msg));
   }
 
   @Override
   public void sendMessage(V destinationVertexID, M msg) throws IOException {
-    runner.sendMessage(destinationVertexID, GraphJobRunner.serialize(msg));
+    runner.sendMessage(destinationVertexID, WritableUtils.serialize(msg));
   }
 
   @Override
   public void sendMessageToNeighbors(M msg) throws IOException {
     final List<Edge<V, E>> outEdges = this.getEdges();
-    byte[] serialized = GraphJobRunner.serialize(msg);
+    byte[] serialized = WritableUtils.serialize(msg);
     for (Edge<V, E> e : outEdges) {
       runner.sendMessage(e.getDestinationVertexID(), serialized);
     }

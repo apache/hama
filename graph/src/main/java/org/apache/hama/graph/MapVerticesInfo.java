@@ -18,7 +18,6 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +26,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TaskAttemptID;
+import org.apache.hama.util.WritableUtils;
 
 /**
  * Stores the vertices into a memory-based tree map. This implementation allows
@@ -40,23 +40,29 @@ import org.apache.hama.bsp.TaskAttemptID;
  */
 public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Writable, M extends Writable>
     implements VerticesInfo<V, E, M> {
-  private final ConcurrentHashMap<V, Vertex<V, E, M>> vertices = new ConcurrentHashMap<V, Vertex<V, E, M>>();
+  private final ConcurrentHashMap<V, byte[]> vertices = new ConcurrentHashMap<V, byte[]>();
+
+  private GraphJobRunner<V, E, M> runner;
 
   private int activeVertices = 0;
 
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
       TaskAttemptID attempt) throws IOException {
+    this.runner = runner;
   }
 
   @Override
   public void put(Vertex<V, E, M> vertex) throws IOException {
     if (!vertices.containsKey(vertex.getVertexID())) {
-      vertices.putIfAbsent(vertex.getVertexID(), vertex);
+      vertices.putIfAbsent(vertex.getVertexID(),
+          WritableUtils.serialize(vertex));
     } else {
+      Vertex<V, E, M> v = this.get(vertex.getVertexID());
       for (Edge<V, E> e : vertex.getEdges()) {
-        vertices.get(vertex.getVertexID()).addEdge(e);
+        v.addEdge(e);
       }
+      vertices.put(vertex.getVertexID(), WritableUtils.serialize(v));
     }
   }
 
@@ -70,41 +76,44 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   }
 
   @Override
-  public Collection<Vertex<V, E, M>> getValues() {
-    return vertices.values();
-  }
-
-  @Override
   public int size() {
     return vertices.size();
   }
 
   @Override
-  public Vertex<V, E, M> get(V vertexID) {
-    return vertices.get(vertexID);
+  public Vertex<V, E, M> get(V vertexID) throws IOException {
+    Vertex<V, E, M> v = GraphJobRunner
+        .<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
+    WritableUtils.deserialize(vertices.get(vertexID), v);
+    v.setRunner(runner);
+
+    return v;
   }
 
   @Override
   public Iterator<Vertex<V, E, M>> iterator() {
 
-    final Iterator<Vertex<V, E, M>> vertexIterator = vertices.values()
-        .iterator();
+    final Iterator<byte[]> it = vertices.values().iterator();
 
     return new Iterator<Vertex<V, E, M>>() {
 
       @Override
       public boolean hasNext() {
-        return vertexIterator.hasNext();
+        return it.hasNext();
       }
 
       @Override
       public Vertex<V, E, M> next() {
-        return vertexIterator.next();
+        Vertex<V, E, M> v = GraphJobRunner
+            .<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
+        WritableUtils.deserialize(it.next(), v);
+        v.setRunner(runner);
+        return v;
       }
 
       @Override
       public void remove() {
-        // TODO Auto-generated method stub
+        it.remove();
       }
 
     };
@@ -120,6 +129,7 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
       throws IOException {
     incrementCount();
     vertex.setComputed();
+    vertices.put(vertex.getVertexID(), WritableUtils.serialize(vertex));
   }
 
   public synchronized void incrementCount() {

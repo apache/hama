@@ -18,7 +18,6 @@
 package org.apache.hama.graph;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -48,7 +47,7 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
    */
   public void put(Vertex<V, E, M> vertex) throws IOException;
 
-  public Vertex<V, E, M> get(V vertexID);
+  public Vertex<V, E, M> get(V vertexID) throws IOException;
   
   /**
    * Remove a vertex to the underlying structure.
@@ -80,8 +79,6 @@ public interface VerticesInfo<V extends WritableComparable, E extends Writable, 
    */
   public Set<V> keySet();
   
-  public Collection<Vertex<V, E, M>> getValues();
-
   public int getActiveVerticesNum();
   
   /**

@@ -18,9 +18,7 @@
 package org.apache.hama.graph;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
@@ -50,6 +48,7 @@ import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
+import org.apache.hama.util.WritableUtils;
 
 /**
  * Fully generic graph job runner.
@@ -239,6 +238,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
    * iterate over our messages and vertices in sorted order. That means that we
    * need to seek the first vertex that has the same ID as the iterated message.
    */
+  @SuppressWarnings("unchecked")
   private void doSuperstep(GraphJobMessage currentMessage,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
@@ -269,7 +269,9 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       LOG.error(e);
     }
 
-    for (Vertex<V, E, M> vertex : vertices.getValues()) {
+    Iterator it = vertices.iterator();
+    while (it.hasNext()) {
+      Vertex<V, E, M> vertex = (Vertex<V, E, M>) it.next();
       if (!vertex.isHalted() && !vertex.isComputed()) {
         vertex.compute(Collections.<M> emptyList());
         vertices.finishVertexComputation(vertex);
@@ -305,7 +307,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
     executor.setRejectedExecutionHandler(retryHandler);
 
-    for (Vertex<V, E, M> v : vertices.getValues()) {
+    for (V v : vertices.keySet()) {
       Runnable worker = new ComputeRunnable(v);
       executor.execute(worker);
     }
@@ -328,13 +330,23 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     @SuppressWarnings("unchecked")
     public ComputeRunnable(GraphJobMessage msg) {
-      this.vertex = vertices.get((V) msg.getVertexId());
+      try {
+        this.vertex = vertices.get((V) msg.getVertexId());
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
       this.msgs = (Iterable<M>) getIterableMessages(msg.getValuesBytes(),
           msg.getNumOfValues());
     }
 
-    public ComputeRunnable(Vertex<V, E, M> v) {
-      this.vertex = v;
+    public ComputeRunnable(V v) {
+      try {
+        this.vertex = vertices.get(v);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
     }
 
     @Override
@@ -434,24 +446,26 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
     executor.setRejectedExecutionHandler(retryHandler);
 
-    try {
-      KeyValuePair<Writable, Writable> next = null;
-      while ((next = peer.readNext()) != null) {
-        Vertex<V, E, M> vertex = GraphJobRunner
-            .<V, E, M> newVertexInstance(VERTEX_CLASS);
+    KeyValuePair<Writable, Writable> next = null;
+    while ((next = peer.readNext()) != null) {
+      Vertex<V, E, M> vertex = GraphJobRunner
+          .<V, E, M> newVertexInstance(VERTEX_CLASS);
 
-        boolean vertexFinished = reader.parseVertex(next.getKey(),
-            next.getValue(), vertex);
-
-        if (!vertexFinished) {
-          continue;
-        }
-        Runnable worker = new Parser(vertex);
-        executor.execute(worker);
-
+      boolean vertexFinished = false;
+      try {
+        vertexFinished = reader.parseVertex(next.getKey(), next.getValue(),
+            vertex);
+      } catch (Exception e) {
+        e.printStackTrace();
       }
-    } catch (Exception e) {
-      e.printStackTrace();
+
+      if (!vertexFinished) {
+        continue;
+      }
+
+      Runnable worker = new Parser(vertex);
+      executor.execute(worker);
+
     }
 
     executor.shutdown();
@@ -526,7 +540,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         if (peer.getPeerIndex() == partition) {
           addVertex(vertex);
         } else {
-          messages.get(partition).add(serialize(vertex));
+          messages.get(partition).add(WritableUtils.serialize(vertex));
         }
       } catch (Exception e) {
         e.printStackTrace();
@@ -544,7 +558,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       vertex.addEdge(new Edge<V, E>(vertex.getVertexID(), null));
     }
 
-    vertex.setRunner(this);
     vertices.put(vertex);
   }
 
@@ -690,8 +703,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
       if (combiner != null && e.getValue().getNumOfValues() > 1) {
         GraphJobMessage combined = new GraphJobMessage(e.getKey(),
-            serialize(combiner.combine(getIterableMessages(e.getValue()
-                .getValuesBytes(), e.getValue().getNumOfValues()))));
+            WritableUtils.serialize(combiner.combine(getIterableMessages(e
+                .getValue().getValuesBytes(), e.getValue().getNumOfValues()))));
         combined.setFlag(GraphJobMessage.VERTEX_FLAG);
         peer.send(getHostName(e.getKey()), combined);
       } else {
@@ -705,14 +718,6 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     if (isMasterTask(peer)) {
       peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
     }
-  }
-
-  public static byte[] serialize(Writable writable) throws IOException {
-    ByteArrayOutputStream a = new ByteArrayOutputStream();
-    DataOutputStream b = new DataOutputStream(a);
-    writable.write(b);
-    a.close();
-    return a.toByteArray();
   }
 
   public Iterable<Writable> getIterableMessages(final byte[] valuesBytes,

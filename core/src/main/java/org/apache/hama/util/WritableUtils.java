@@ -17,37 +17,34 @@
  */
 package org.apache.hama.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
+import org.apache.hadoop.io.Writable;
 
-public class KryoSerializer {
-  public static final int BUFFER_SIZE = 1024;
+public class WritableUtils {
 
-  private final Kryo kryo;
-  private final Class<?> clazz;
-  private final byte[] buffer = new byte[BUFFER_SIZE];
-  private final Output output = new Output(buffer, -1);
-  private final Input input = new Input(buffer);
-
-  public KryoSerializer(Class<?> clazz) {
-    kryo = new Kryo();
-    kryo.setReferences(false);
-    kryo.register(clazz);
-    this.clazz = clazz;
+  public static byte[] serialize(Writable w) {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    DataOutput output = new DataOutputStream(out);
+    try {
+      w.write(output);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return out.toByteArray();
   }
 
-  public byte[] serialize(Object obj) throws IOException {
-    output.setBuffer(buffer, -1);
-    kryo.writeObject(output, obj);
-    return output.toBytes();
+  public static void deserialize(byte[] bytes, Writable obj) {
+    DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes));
+    try {
+      obj.readFields(in);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
-
-  public Object deserialize(byte[] bytes) throws IOException {
-    input.setBuffer(bytes);
-    return kryo.readObject(input, clazz);
-  }
-
 }

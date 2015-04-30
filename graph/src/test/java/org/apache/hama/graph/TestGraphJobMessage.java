@@ -26,6 +26,7 @@ import junit.framework.TestCase;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.util.WritableUtils;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -57,11 +58,11 @@ public class TestGraphJobMessage extends TestCase {
   public List<GraphJobMessage> getMessages() throws IOException {
     GraphJobMessage mapMsg = new GraphJobMessage(new MapWritable());
     GraphJobMessage vertexMsg1 = new GraphJobMessage(new Text("1"),
-        GraphJobRunner.serialize(new IntWritable()));
+        WritableUtils.serialize(new IntWritable()));
     GraphJobMessage vertexMsg2 = new GraphJobMessage(new Text("2"),
-        GraphJobRunner.serialize(new IntWritable()));
+        WritableUtils.serialize(new IntWritable()));
     GraphJobMessage vertexMsg3 = new GraphJobMessage(new Text("3"),
-        GraphJobRunner.serialize(new IntWritable()));
+        WritableUtils.serialize(new IntWritable()));
     return Lists.newArrayList(mapMsg, vertexMsg1, vertexMsg2, vertexMsg3);
   }
 
