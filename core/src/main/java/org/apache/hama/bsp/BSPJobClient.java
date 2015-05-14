@@ -584,7 +584,8 @@ public class BSPJobClient extends Configured implements Tool {
             && job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null
             && job.get("bsp.partitioning.runner.job") == null) {
           String[] extractPartitionID = ((FileSplit) split).getPath().getName().split("[-]");
-          rawSplit.setPartitionID(Integer.parseInt(extractPartitionID[1]));
+          if(extractPartitionID.length > 1)
+            rawSplit.setPartitionID(Integer.parseInt(extractPartitionID[1]));
         }
 
         rawSplit.setClassName(split.getClass().getName());

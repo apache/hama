@@ -78,6 +78,7 @@ public class TestKeyValueTextInputFormat extends TestCase {
 
         int expectedPeerId = Math.abs(key.hashCode() % numTasks);
 
+        System.out.println(peer.getPeerName() + ", " + key + ", " + value + ", " + expectedPeerId);
         if (expectedPeerId == peer.getPeerIndex()) {
           expectedKeys.put(new Text(key), new Text(value));
         } else {
