@@ -78,8 +78,6 @@ public class TestKeyValueTextInputFormat extends TestCase {
 
         int expectedPeerId = Math.abs(key.hashCode() % numTasks);
 
-        System.out.println(peer.getPeerName() + ": " + key + ", " + value + ", " + expectedPeerId);
-        /*
         if (expectedPeerId == peer.getPeerIndex()) {
           expectedKeys.put(new Text(key), new Text(value));
         } else {
@@ -88,7 +86,6 @@ public class TestKeyValueTextInputFormat extends TestCase {
               new BooleanWritable(true));
           break;
         }
-        */
       }
       message.put(new Text(KeyValueHashPartitionedBSP.TEST_INPUT_VALUES),
           expectedKeys);
@@ -106,7 +103,6 @@ public class TestKeyValueTextInputFormat extends TestCase {
         while ((msg = peer.getCurrentMessage()) != null) {
           blValue = (BooleanWritable) msg.get(new Text(
               KeyValueHashPartitionedBSP.TEST_UNEXPECTED_KEYS));
-          System.out.println(">>>>> " + peer.getPeerName() + ", " + blValue.get());
           assertEquals(false, blValue.get());
           values = (MapWritable) msg.get(new Text(
               KeyValueHashPartitionedBSP.TEST_INPUT_VALUES));

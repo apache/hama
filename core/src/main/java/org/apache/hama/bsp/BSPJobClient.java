@@ -471,7 +471,7 @@ public class BSPJobClient extends Configured implements Tool {
         partitioningJob.getConfiguration().setClass(
             MessageManager.RECEIVE_QUEUE_TYPE_CLASS, MemoryQueue.class,
             MessageQueue.class);
-        
+
         partitioningJob.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
         partitioningJob.setInputFormat(job.getInputFormat().getClass());
         partitioningJob.setInputKeyClass(job.getInputKeyClass());
@@ -578,6 +578,15 @@ public class BSPJobClient extends Configured implements Tool {
       DataOutputBuffer buffer = new DataOutputBuffer();
       RawSplit rawSplit = new RawSplit();
       for (InputSplit split : splits) {
+
+        // set partitionID to rawSplit
+        if (split.getClass().getName().equals(FileSplit.class.getName())
+            && job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null
+            && job.get("bsp.partitioning.runner.job") == null) {
+          String[] extractPartitionID = ((FileSplit) split).getPath().getName().split("[-]");
+          rawSplit.setPartitionID(Integer.parseInt(extractPartitionID[1]));
+        }
+
         rawSplit.setClassName(split.getClass().getName());
         buffer.reset();
         split.write(buffer);
@@ -629,7 +638,10 @@ public class BSPJobClient extends Configured implements Tool {
     for (int i = 0; i < len; ++i) {
       RawSplit split = new RawSplit();
       split.readFields(in);
-      result[i] = split;
+      if (split.getPartitionID() != Integer.MIN_VALUE)
+        result[split.getPartitionID()] = split;
+      else
+        result[i] = split;
     }
     return result;
   }
@@ -1075,10 +1087,19 @@ public class BSPJobClient extends Configured implements Tool {
     private String splitClass;
     private BytesWritable bytes = new BytesWritable();
     private String[] locations;
+    private int partitionID = Integer.MIN_VALUE;
     long dataLength;
 
     public void setBytes(byte[] data, int offset, int length) {
       bytes.set(data, offset, length);
+    }
+
+    public void setPartitionID(int id) {
+      this.partitionID = id;
+    }
+
+    public int getPartitionID() {
+      return partitionID;
     }
 
     public void setClassName(String className) {

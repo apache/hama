@@ -144,7 +144,6 @@ public class PartitioningRunner extends
       raw = new MapWritable();
       raw.put(rawRecord.getKey(), rawRecord.getValue());
       
-      System.out.println(peer.getPeerName(index) + ", " + rawRecord.getKey() + ", " + rawRecord.getValue());
       peer.send(peer.getPeerName(index), raw);
     }
 
