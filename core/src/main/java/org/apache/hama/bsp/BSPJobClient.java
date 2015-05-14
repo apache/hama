@@ -58,6 +58,11 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.message.MessageManager;
+import org.apache.hama.bsp.message.OutgoingMessageManager;
+import org.apache.hama.bsp.message.OutgoingPOJOMessageBundle;
+import org.apache.hama.bsp.message.queue.MemoryQueue;
+import org.apache.hama.bsp.message.queue.MessageQueue;
 import org.apache.hama.ipc.HamaRPCProtocolVersion;
 import org.apache.hama.ipc.JobSubmissionProtocol;
 import org.apache.hama.ipc.RPC;
@@ -459,6 +464,13 @@ public class BSPJobClient extends Configured implements Tool {
             + partitioningJob.getJobName());
         LOG.debug("partitioningJob input: "
             + partitioningJob.get(Constants.JOB_INPUT_DIR));
+
+        partitioningJob.getConfiguration().setClass(
+            MessageManager.OUTGOING_MESSAGE_MANAGER_CLASS,
+            OutgoingPOJOMessageBundle.class, OutgoingMessageManager.class);
+        partitioningJob.getConfiguration().setClass(
+            MessageManager.RECEIVE_QUEUE_TYPE_CLASS, MemoryQueue.class,
+            MessageQueue.class);
 
         partitioningJob.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
         partitioningJob.setInputFormat(job.getInputFormat().getClass());

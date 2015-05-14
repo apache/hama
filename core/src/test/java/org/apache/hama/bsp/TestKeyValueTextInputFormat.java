@@ -93,7 +93,7 @@ public class TestKeyValueTextInputFormat extends TestCase {
       } //while (peer.readNext(key, value) != false)
       message.put(new Text(KeyValueHashPartitionedBSP.TEST_INPUT_VALUES), expectedKeys);
       
-      int master = peer.getNumPeers()/2;
+      int master = peer.getNumPeers() / 2;
       String masterName = peer.getPeerName(master);
       peer.send(masterName, message);
       peer.sync();
@@ -106,6 +106,7 @@ public class TestKeyValueTextInputFormat extends TestCase {
 
         while ( (msg = peer.getCurrentMessage()) != null ) {
           blValue = (BooleanWritable) msg.get(new Text(KeyValueHashPartitionedBSP.TEST_UNEXPECTED_KEYS));
+          System.out.println(">>>>> " + peer.getPeerName() + ", "+ blValue.get());
           assertEquals(false, blValue.get());
           values = (MapWritable) msg.get(new Text(KeyValueHashPartitionedBSP.TEST_INPUT_VALUES));
           for (Map.Entry<Writable,Writable> w : values.entrySet()) {
