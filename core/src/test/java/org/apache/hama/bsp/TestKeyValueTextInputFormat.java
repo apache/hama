@@ -163,6 +163,8 @@ public class TestKeyValueTextInputFormat extends TestCase {
       job.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
       job.setPartitioner(HashPartitioner.class);
 
+      // FIXME see 362 line at BSPJobClient.java
+      job.setNumBspTask(1);
       job.setInputPath(dataPath);
       job.setInputFormat(KeyValueTextInputFormat.class);
       job.setInputKeyClass(Text.class);
@@ -173,10 +175,6 @@ public class TestKeyValueTextInputFormat extends TestCase {
       job.setOutputKeyClass(NullWritable.class);
       job.setOutputValueClass(NullWritable.class);
 
-      BSPJobClient jobClient = new BSPJobClient(conf);
-      ClusterStatus cluster = jobClient.getClusterStatus(true);
-      job.setNumBspTask(cluster.getMaxTasks());
-      
       assertEquals(true, job.waitForCompletion(true));
 
     } catch (Exception e) {

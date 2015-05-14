@@ -630,11 +630,17 @@ public final class BSPPeerImpl<K1, V1, K2, V2, M extends Writable> implements
 
   @Override
   public final boolean readNext(K1 key, V1 value) throws IOException {
-    return in.next(key, value);
+    if(in != null)
+      return in.next(key, value);
+    else
+      return false;
   }
 
   @Override
   public final KeyValuePair<K1, V1> readNext() throws IOException {
+    if (split == null)
+      return null;
+
     K1 k = in.createKey();
     V1 v = in.createValue();
     if (in.next(k, v)) {

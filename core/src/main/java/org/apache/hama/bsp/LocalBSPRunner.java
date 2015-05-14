@@ -241,7 +241,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
       String splitname = null;
       BytesWritable realBytes = null;
-      if (splits != null) {
+      if (splits != null && splits.length > id) {
         splitname = splits[id].getClassName();
         realBytes = splits[id].getBytes();
       }
@@ -349,9 +349,9 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
     @Override
     public void transfer(InetSocketAddress addr, BSPMessageBundle<M> bundle)
         throws IOException {
-      //peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
-      //    bundle.getLength());
-      
+      // peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGE_BYTES_TRANSFERED,
+      // bundle.getLength());
+
       MANAGER_MAP.get(addr).localQueueForNextIteration.addBundle(bundle);
       peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
           bundle.size());

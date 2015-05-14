@@ -84,6 +84,8 @@ public class TestSubmitGraphJob extends TestBSPMasterGroomServer {
     // set the defaults
     bsp.setMaxIteration(30);
 
+    bsp.setNumBspTask(2);
+    
     bsp.setCompressionCodec(Bzip2Compressor.class);
     bsp.setAggregatorClass(AverageAggregator.class);
 

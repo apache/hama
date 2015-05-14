@@ -56,7 +56,7 @@ public class PageRankTest extends TestCase {
     generateTestData();
     try {
       PageRank.main(new String[] { "-input_path", INPUT, "-output_path",
-          OUTPUT, "-task_num", "3", "-f", "json" });
+          OUTPUT, "-task_num", "5", "-f", "json" });
       verifyResult();
     } catch (ParseException e) {
       e.printStackTrace();
