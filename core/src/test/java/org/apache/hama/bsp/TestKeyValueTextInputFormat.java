@@ -123,7 +123,7 @@ public class TestKeyValueTextInputFormat extends TestCase {
   }
   
   @Test
-  public void testInput() {
+  public void testInput() throws IOException {
     
     Configuration fsConf = new Configuration();
     String strDataPath = "/tmp/test_keyvalueinputformat";
@@ -131,11 +131,15 @@ public class TestKeyValueTextInputFormat extends TestCase {
     Path outPath = new Path("/tmp/test_keyvalueinputformat_out");
     
     int maxValue = 1000;
+    FileSystem fs = null;
     
     try {
       URI uri = new URI(strDataPath);
-      FileSystem fs = FileSystem.get(uri, fsConf);
+      fs = FileSystem.get(uri, fsConf);
       fs.delete(dataPath, true);
+      if (fs.exists(outPath)) {
+        fs.delete(outPath, true);
+      }
       FSDataOutputStream fileOut = fs.create(dataPath, true);
 
       StringBuilder str = new StringBuilder();
@@ -178,6 +182,9 @@ public class TestKeyValueTextInputFormat extends TestCase {
 
     } catch (Exception e) {
       e.printStackTrace();
+    } finally {
+      // clean-up output
+      fs.delete(outPath, true);
     }
   }
 }
