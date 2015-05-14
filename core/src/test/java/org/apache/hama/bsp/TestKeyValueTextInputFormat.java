@@ -162,9 +162,8 @@ public class TestKeyValueTextInputFormat extends TestCase {
       
       job.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
       job.setPartitioner(HashPartitioner.class);
-
-      // FIXME see 362 line at BSPJobClient.java
-      job.setNumBspTask(1);
+      
+      job.setNumBspTask(2);
       job.setInputPath(dataPath);
       job.setInputFormat(KeyValueTextInputFormat.class);
       job.setInputKeyClass(Text.class);

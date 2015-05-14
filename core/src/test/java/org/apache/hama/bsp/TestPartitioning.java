@@ -88,15 +88,6 @@ public class TestPartitioning extends HamaCluster {
 
     FileSystem fs = FileSystem.get(conf);
     fs.delete(OUTPUT_PATH, true);
-    
-    getMergeProcessorID();
-  }
-
-  public void getMergeProcessorID() {
-    int peerNum = 6;
-    for (int partitionID = 0; partitionID < 8; partitionID++) {
-      assertTrue(PartitioningRunner.getMergeProcessorID(partitionID, peerNum) < peerNum);
-    }
   }
 
   public static class PartionedBSP extends

@@ -204,21 +204,9 @@
   <property>
     <name>bsp.input.runtime.partitioning</name>
     <value>true</value>
-    <description>Basically, we provides a data partitioning program based on BSP job, 
+    <description>Basically, we provides a input data partitioning program based on BSP job, 
     which you can use without any extra program. Set this property to false if you 
     want to use the custom partition program.
-    </description>
-  </property>
-  <property>
-    <name>bsp.input.runtime.partitioning.sort.mb</name>
-    <value>50</value>
-    <description>The total amount of buffer memory in MB.
-    </description>
-  </property>
-  <property>
-    <name>bsp.input.runtime.partitioning.sort.factor</name>
-    <value>10</value>
-    <description>The maximum number of streams to merge at once; the default is 10.
     </description>
   </property>
   

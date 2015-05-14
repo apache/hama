@@ -132,7 +132,6 @@ public class GraphJob extends BSPJob {
     ensureState(JobState.DEFINE);
     conf.setClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, cls,
         RecordConverter.class);
-    conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
   }
 
   /**
@@ -156,7 +155,6 @@ public class GraphJob extends BSPJob {
   public void setPartitioner(
       @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
-    conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
   }
 
   @Override

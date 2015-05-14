@@ -45,6 +45,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.Text;
@@ -346,25 +347,26 @@ public class BSPJobClient extends Configured implements Tool {
       InputSplit[] splits = job.getInputFormat().getSplits(job,
           (maxTasks > configured) ? configured : maxTasks);
 
+      if (job.getConfiguration().getBoolean(
+          Constants.ENABLE_RUNTIME_PARTITIONING, false)) {
+        job = partition(job, splits, maxTasks);
+        maxTasks = job.getInt("hama.partition.count", maxTasks);
+      }
+
+      if (job.getBoolean("input.has.partitioned", false)) {
+        splits = job.getInputFormat().getSplits(job, maxTasks);
+      }
+
       if (maxTasks < splits.length) {
         throw new IOException(
             "Job failed! The number of splits has exceeded the number of max tasks. The number of splits: "
                 + splits.length + ", The number of max tasks: " + maxTasks);
       }
 
-      /*
-      FIXME now graph job doesn't use this runtime input partitioning
-      Should we support this feature at BSP framework level?
-      
-      if(job.getConfiguration().getBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, false)) {
-        job = partition(job, splits, maxTasks);
-        maxTasks = job.getInt("hama.partition.count", maxTasks);
-      }
-      */
-      
       int numOfSplits = writeSplits(job, splits, submitSplitFile, maxTasks);
       if (numOfSplits > configured
-          || !job.getConfiguration().getBoolean(Constants.FORCE_SET_BSP_TASKS, false)) {
+          || !job.getConfiguration().getBoolean(Constants.FORCE_SET_BSP_TASKS,
+              false)) {
         job.setNumBspTask(numOfSplits);
       }
 
@@ -406,6 +408,99 @@ public class BSPJobClient extends Configured implements Tool {
     }
 
     return launchJob(jobId, job, submitJobFile, fs);
+  }
+
+  protected BSPJob partition(BSPJob job, InputSplit[] splits, int maxTasks)
+      throws IOException {
+    String inputPath = job.getConfiguration().get(Constants.JOB_INPUT_DIR);
+    Path partitionDir = new Path("/tmp/hama-parts/" + job.getJobID() + "/");
+    if (fs.exists(partitionDir)) {
+      fs.delete(partitionDir, true);
+    }
+
+    if (job.get("bsp.partitioning.runner.job") != null) {
+      return job;
+    }// Early exit for the partitioner job.
+
+    if (inputPath != null) {
+      int numSplits = splits.length;
+      int numTasks = job.getConfiguration().getInt("bsp.peers.num", 0);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug(" numTasks = "
+            + numTasks
+            + " numSplits = "
+            + numSplits
+            + " enable = "
+            + (job.getConfiguration().getBoolean(
+                Constants.ENABLE_RUNTIME_PARTITIONING, false)
+                + " class = " + job.getConfiguration().get(
+                Constants.RUNTIME_PARTITIONING_CLASS)));
+      }
+
+      if (numTasks == 0) {
+        numTasks = numSplits;
+      }
+
+      if (job.getConfiguration().getBoolean(
+          Constants.ENABLE_RUNTIME_PARTITIONING, false)
+          && job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null) {
+
+        HamaConfiguration conf = new HamaConfiguration(job.getConfiguration());
+
+        if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_DIR) != null) {
+          conf.set(Constants.RUNTIME_PARTITIONING_DIR, job.getConfiguration()
+              .get(Constants.RUNTIME_PARTITIONING_DIR));
+        }
+
+        conf.set(Constants.RUNTIME_PARTITIONING_CLASS,
+            job.get(Constants.RUNTIME_PARTITIONING_CLASS));
+        BSPJob partitioningJob = new BSPJob(conf);
+        partitioningJob.setJobName("Runtime partitioning job for "
+            + partitioningJob.getJobName());
+        LOG.debug("partitioningJob input: "
+            + partitioningJob.get(Constants.JOB_INPUT_DIR));
+
+        partitioningJob.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
+        partitioningJob.setInputFormat(job.getInputFormat().getClass());
+        partitioningJob.setInputKeyClass(job.getInputKeyClass());
+        partitioningJob.setInputValueClass(job.getInputValueClass());
+
+        partitioningJob.setOutputFormat(SequenceFileOutputFormat.class);
+        partitioningJob.setOutputKeyClass(job.getInputKeyClass());
+        partitioningJob.setOutputValueClass(job.getInputValueClass());
+
+        partitioningJob.setBspClass(PartitioningRunner.class);
+        partitioningJob.setMessageClass(MapWritable.class);
+        partitioningJob.set("bsp.partitioning.runner.job", "true");
+        partitioningJob.getConfiguration().setBoolean(
+            Constants.ENABLE_RUNTIME_PARTITIONING, false);
+        partitioningJob.setOutputPath(partitionDir);
+
+        boolean isPartitioned = false;
+        try {
+          isPartitioned = partitioningJob.waitForCompletion(true);
+        } catch (InterruptedException e) {
+          LOG.error("Interrupted partitioning run-time.", e);
+        } catch (ClassNotFoundException e) {
+          LOG.error("Class not found error partitioning run-time.", e);
+        }
+
+        if (isPartitioned) {
+          if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_DIR) != null) {
+            job.setInputPath(new Path(conf
+                .get(Constants.RUNTIME_PARTITIONING_DIR)));
+          } else {
+            job.setInputPath(partitionDir);
+          }
+          job.setBoolean("input.has.partitioned", true);
+          job.setInputFormat(NonSplitSequenceFileInputFormat.class);
+        } else {
+          LOG.error("Error partitioning the input path.");
+          throw new IOException("Runtime partition failed for the job.");
+        }
+      }
+    }
+    return job;
   }
 
   protected RunningJob launchJob(BSPJobID jobId, BSPJob job,
