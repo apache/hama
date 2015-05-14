@@ -58,7 +58,7 @@ public class GraphJob extends BSPJob {
     super(conf);
     conf.setClass(MessageManager.OUTGOING_MESSAGE_MANAGER_CLASS,
         OutgoingVertexMessageManager.class, OutgoingMessageManager.class);
-    conf.setBoolean("hama.bsp.force.set.tasks", true);
+    conf.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
     
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);

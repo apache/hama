@@ -128,9 +128,11 @@ public interface Constants {
   public static final String RUNTIME_PARTITIONING_CLASS = "bsp.input.partitioner.class";
   public static final String RUNTIME_DESIRED_PEERS_COUNT = "desired.num.of.tasks";
   public static final String RUNTIME_PARTITION_RECORDCONVERTER = "bsp.runtime.partition.recordconverter";
-
   public static final String PARTITION_SORT_BY_KEY = "bsp.partition.sort.by.converted.record";
 
+  // If true, framework launches the number of tasks by user settings.
+  public static final String FORCE_SET_BSP_TASKS = "hama.force.set.bsp.tasks";
+  
   // /////////////////////////////////////
   // Constants for ZooKeeper
   // /////////////////////////////////////

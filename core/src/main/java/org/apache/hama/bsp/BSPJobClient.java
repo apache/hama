@@ -364,8 +364,7 @@ public class BSPJobClient extends Configured implements Tool {
       
       int numOfSplits = writeSplits(job, splits, submitSplitFile, maxTasks);
       if (numOfSplits > configured
-          || !job.getConfiguration().getBoolean("hama.force.set.bsp.tasks",
-              false)) {
+          || !job.getConfiguration().getBoolean(Constants.FORCE_SET_BSP_TASKS, false)) {
         job.setNumBspTask(numOfSplits);
       }
 
