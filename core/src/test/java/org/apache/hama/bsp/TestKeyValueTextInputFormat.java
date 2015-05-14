@@ -79,23 +79,14 @@ public class TestKeyValueTextInputFormat extends TestCase {
         int expectedPeerId = Math.abs(key.hashCode() % numTasks);
 
         if (expectedPeerId == peer.getPeerIndex()) {
-          System.out.println(key + ", " + expectedPeerId + ", " + peer.getPeerIndex());
-          if (expectedKeys.containsKey(key)) {
-            // same key twice, incorrect
-            message.put(new Text(
-                KeyValueHashPartitionedBSP.TEST_UNEXPECTED_KEYS),
-                new BooleanWritable(true));
-            break;
-          } else {
-            expectedKeys.put(new Text(key), new Text(value));
-          }
+          expectedKeys.put(new Text(key), new Text(value));
         } else {
           message.put(
               new Text(KeyValueHashPartitionedBSP.TEST_UNEXPECTED_KEYS),
               new BooleanWritable(true));
           break;
-        } // if (expectedPeerId == peer.getPeerIndex())
-      } // while (peer.readNext(key, value) != false)
+        }
+      }
       message.put(new Text(KeyValueHashPartitionedBSP.TEST_INPUT_VALUES),
           expectedKeys);
 
