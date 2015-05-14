@@ -164,6 +164,7 @@ public class TestKeyValueTextInputFormat extends TestCase {
       job.setBspClass(KeyValueHashPartitionedBSP.class);
 
       job.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, true);
+      job.set(Constants.RUNTIME_PARTITIONING_DIR, "/tmp/hamatest/parts");
       job.setPartitioner(HashPartitioner.class);
 
       job.setNumBspTask(2);
@@ -184,6 +185,7 @@ public class TestKeyValueTextInputFormat extends TestCase {
     } finally {
       // clean-up output
       fs.delete(outPath, true);
+      fs.delete(new Path("/tmp/hamatest/parts"), true);
     }
   }
 }
