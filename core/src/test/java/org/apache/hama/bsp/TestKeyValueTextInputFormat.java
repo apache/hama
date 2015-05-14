@@ -49,9 +49,6 @@ public class TestKeyValueTextInputFormat extends TestCase {
 
     private int numTasks = 0;
     private int maxValue = 0;
-    private MapWritable expectedKeys = new MapWritable();
-
-    // private Set<Text> expectedKeys = new HashSet<Text>();
 
     @Override
     public void setup(
@@ -66,6 +63,8 @@ public class TestKeyValueTextInputFormat extends TestCase {
     public void bsp(
         BSPPeer<Text, Text, NullWritable, NullWritable, MapWritable> peer)
         throws IOException, SyncException, InterruptedException {
+      MapWritable expectedKeys = new MapWritable();
+      
       Text key = null;
       Text value = null;
       MapWritable message = new MapWritable();
@@ -80,8 +79,8 @@ public class TestKeyValueTextInputFormat extends TestCase {
         int expectedPeerId = Math.abs(key.hashCode() % numTasks);
 
         if (expectedPeerId == peer.getPeerIndex()) {
+          System.out.println(key + ", " + expectedPeerId + ", " + peer.getPeerIndex());
           if (expectedKeys.containsKey(key)) {
-            System.out.println("duplicate: " + value + ", " + expectedKeys.get(key));
             // same key twice, incorrect
             message.put(new Text(
                 KeyValueHashPartitionedBSP.TEST_UNEXPECTED_KEYS),
@@ -91,7 +90,6 @@ public class TestKeyValueTextInputFormat extends TestCase {
             expectedKeys.put(new Text(key), new Text(value));
           }
         } else {
-          System.out.println("duplicate: " + value + ", " + expectedKeys.get(key));
           message.put(
               new Text(KeyValueHashPartitionedBSP.TEST_UNEXPECTED_KEYS),
               new BooleanWritable(true));
