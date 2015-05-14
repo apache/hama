@@ -453,8 +453,8 @@ public class BSPJobClient extends Configured implements Tool {
         HamaConfiguration conf = new HamaConfiguration(job.getConfiguration());
 
         if (job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_DIR) != null) {
-          conf.set(Constants.RUNTIME_PARTITIONING_DIR, job.getConfiguration()
-              .get(Constants.RUNTIME_PARTITIONING_DIR));
+          partitionDir = new Path(job.getConfiguration().get(
+              Constants.RUNTIME_PARTITIONING_DIR));
         }
 
         conf.set(Constants.RUNTIME_PARTITIONING_CLASS,
@@ -464,13 +464,6 @@ public class BSPJobClient extends Configured implements Tool {
             + partitioningJob.getJobName());
         LOG.debug("partitioningJob input: "
             + partitioningJob.get(Constants.JOB_INPUT_DIR));
-
-        partitioningJob.getConfiguration().setClass(
-            MessageManager.OUTGOING_MESSAGE_MANAGER_CLASS,
-            OutgoingPOJOMessageBundle.class, OutgoingMessageManager.class);
-        partitioningJob.getConfiguration().setClass(
-            MessageManager.RECEIVE_QUEUE_TYPE_CLASS, MemoryQueue.class,
-            MessageQueue.class);
 
         partitioningJob.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
         partitioningJob.setInputFormat(job.getInputFormat().getClass());
