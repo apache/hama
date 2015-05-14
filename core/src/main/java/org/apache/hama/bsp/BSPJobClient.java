@@ -465,6 +465,13 @@ public class BSPJobClient extends Configured implements Tool {
         LOG.debug("partitioningJob input: "
             + partitioningJob.get(Constants.JOB_INPUT_DIR));
 
+        partitioningJob.getConfiguration().setClass(
+            MessageManager.OUTGOING_MESSAGE_MANAGER_CLASS,
+            OutgoingPOJOMessageBundle.class, OutgoingMessageManager.class);
+        partitioningJob.getConfiguration().setClass(
+            MessageManager.RECEIVE_QUEUE_TYPE_CLASS, MemoryQueue.class,
+            MessageQueue.class);
+        
         partitioningJob.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
         partitioningJob.setInputFormat(job.getInputFormat().getClass());
         partitioningJob.setInputKeyClass(job.getInputKeyClass());
