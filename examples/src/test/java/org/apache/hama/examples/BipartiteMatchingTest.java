@@ -152,6 +152,7 @@ public class BipartiteMatchingTest extends TestCase {
       GraphJob job = BipartiteMatching.createJob(new String[] { INPUT, OUTPUT,
           "30", "2" }, conf);
       job.setPartitioner(CustomTextPartitioner.class);
+      job.setNumBspTask(1);
 
       long startTime = System.currentTimeMillis();
       if (job.waitForCompletion(true)) {
