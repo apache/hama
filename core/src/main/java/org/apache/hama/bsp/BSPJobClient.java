@@ -581,8 +581,7 @@ public class BSPJobClient extends Configured implements Tool {
 
         // set partitionID to rawSplit
         if (split.getClass().getName().equals(FileSplit.class.getName())
-            && job.getConfiguration().get(Constants.RUNTIME_PARTITIONING_CLASS) != null
-            && job.get("bsp.partitioning.runner.job") == null) {
+            && job.getBoolean("input.has.partitioned", false)) {
           String[] extractPartitionID = ((FileSplit) split).getPath().getName().split("[-]");
           if(extractPartitionID.length > 1)
             rawSplit.setPartitionID(Integer.parseInt(extractPartitionID[1]));
@@ -1132,6 +1131,7 @@ public class BSPJobClient extends Configured implements Tool {
       splitClass = Text.readString(in);
       dataLength = in.readLong();
       bytes.readFields(in);
+      partitionID = in.readInt();
       int len = WritableUtils.readVInt(in);
       locations = new String[len];
       for (int i = 0; i < len; ++i) {
@@ -1144,6 +1144,7 @@ public class BSPJobClient extends Configured implements Tool {
       Text.writeString(out, splitClass);
       out.writeLong(dataLength);
       bytes.write(out);
+      out.writeInt(partitionID);
       WritableUtils.writeVInt(out, locations.length);
       for (String location : locations) {
         Text.writeString(out, location);
