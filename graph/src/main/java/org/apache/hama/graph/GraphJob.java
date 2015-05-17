@@ -59,6 +59,7 @@ public class GraphJob extends BSPJob {
     conf.setClass(MessageManager.OUTGOING_MESSAGE_MANAGER_CLASS,
         OutgoingVertexMessageManager.class, OutgoingMessageManager.class);
     conf.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
+    conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, false);
     
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);

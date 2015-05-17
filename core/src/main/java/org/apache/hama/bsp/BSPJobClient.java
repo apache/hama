@@ -354,6 +354,7 @@ public class BSPJobClient extends Configured implements Tool {
 
       if (job.getConfiguration().getBoolean(
           Constants.ENABLE_RUNTIME_PARTITIONING, false)) {
+        LOG.info("Run pre-partitioning job");
         job = partition(job, splits, maxTasks);
         maxTasks = job.getInt("hama.partition.count", maxTasks);
       }
