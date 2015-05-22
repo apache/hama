@@ -174,22 +174,28 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
   public InputSplit[] getSplits(BSPJob job, int numSplits) throws IOException {
     long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
     long maxSize = getMaxSplitSize(job);
-    
+
     // generate splits
     List<InputSplit> splits = new ArrayList<InputSplit>();
     FileStatus[] files = listStatus(job);
-    
+
+    /*
+     * TODO: This does not consider data locality. When the numSplits
+     * (user-defined) is equal to or smaller than the number of DFS splits, we
+     * should assign multiple splits to a task.
+     */
+
     // take the short circuit path if we have already partitioned
-    if (numSplits == files.length) {
-      for (FileStatus file : files) {
-        if (file != null) {
-          splits.add(new FileSplit(file.getPath(), 0, file.getLen(),
-              new String[0]));
-        }
-      }
-      return splits.toArray(new FileSplit[splits.size()]);
-    }
-    
+    // if (numSplits == files.length) {
+    // for (FileStatus file : files) {
+    // if (file != null) {
+    // splits.add(new FileSplit(file.getPath(), 0, file.getLen(),
+    // new String[0]));
+    // }
+    // }
+    // return splits.toArray(new FileSplit[splits.size()]);
+    // }
+
     for (FileStatus file : files) {
       Path path = file.getPath();
       FileSystem fs = path.getFileSystem(job.getConfiguration());
@@ -387,7 +393,8 @@ public abstract class FileInputFormat<K, V> implements InputFormat<K, V> {
    * Add a {@link Path} to the list of inputs for the BSP job.
    * 
    * @param conf The configuration of the job
-   * @param p {@link Path} to be addaiaied to the list of inputs for the BSP job.
+   * @param p {@link Path} to be addaiaied to the list of inputs for the BSP
+   *          job.
    */
   public static void addInputPath(BSPJob conf, Path p) {
     Path path = new Path(conf.getWorkingDirectory(), p);
