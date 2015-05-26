@@ -227,7 +227,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         combiner = (Combiner<Writable>) ReflectionUtils
             .newInstance(combinerName);
       } catch (ClassNotFoundException e) {
-        e.printStackTrace();
+        throw new IOException(e);
       }
     }
   }
@@ -242,6 +242,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   private void doSuperstep(GraphJobMessage currentMessage,
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
+    this.errorCount = 0;
     long startTime = System.currentTimeMillis();
 
     this.changedVertexCnt = 0;
@@ -254,8 +255,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     long loopStartTime = System.currentTimeMillis();
     while (currentMessage != null) {
-      Runnable worker = new ComputeRunnable(currentMessage);
-      executor.execute(worker);
+      executor.execute(new ComputeRunnable(currentMessage));
 
       currentMessage = peer.getCurrentMessage();
     }
@@ -266,7 +266,12 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     try {
       executor.awaitTermination(60, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
-      LOG.error(e);
+      throw new IOException(e);
+    }
+
+    if (errorCount > 0) {
+      throw new IOException("there were " + errorCount
+          + " exceptions during compute vertices.");
     }
 
     Iterator it = vertices.iterator();
@@ -300,6 +305,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage> peer)
       throws IOException {
     this.changedVertexCnt = 0;
+    this.errorCount = 0;
     vertices.startSuperstep();
 
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
@@ -308,20 +314,30 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     executor.setRejectedExecutionHandler(retryHandler);
 
     for (V v : vertices.keySet()) {
-      Runnable worker = new ComputeRunnable(v);
-      executor.execute(worker);
+      executor.execute(new ComputeRunnable(v));
     }
 
     executor.shutdown();
     try {
       executor.awaitTermination(60, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
-      LOG.error(e);
+      throw new IOException(e);
     }
 
+    if (errorCount > 0) {
+      throw new IOException("there were " + errorCount
+          + " exceptions during compute vertices.");
+    }
+    
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
     finishSuperstep();
+  }
+
+  private int errorCount = 0;
+
+  public synchronized void incrementErrorCount() {
+    errorCount++;
   }
 
   class ComputeRunnable implements Runnable {
@@ -329,24 +345,14 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     Iterable<M> msgs;
 
     @SuppressWarnings("unchecked")
-    public ComputeRunnable(GraphJobMessage msg) {
-      try {
-        this.vertex = vertices.get((V) msg.getVertexId());
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
+    public ComputeRunnable(GraphJobMessage msg) throws IOException {
+      this.vertex = vertices.get((V) msg.getVertexId());
       this.msgs = (Iterable<M>) getIterableMessages(msg.getValuesBytes(),
           msg.getNumOfValues());
     }
 
-    public ComputeRunnable(V v) {
-      try {
-        this.vertex = vertices.get(v);
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
+    public ComputeRunnable(V v) throws IOException {
+      this.vertex = vertices.get(v);
     }
 
     @Override
@@ -361,7 +367,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         vertex.compute(msgs);
         vertices.finishVertexComputation(vertex);
       } catch (IOException e) {
-        e.printStackTrace();
+        incrementErrorCount();
+        throw new RuntimeException(e);
       }
     }
   }
@@ -456,7 +463,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         vertexFinished = reader.parseVertex(next.getKey(), next.getValue(),
             vertex);
       } catch (Exception e) {
-        e.printStackTrace();
+        throw new IOException("Parse exception occured: " + e);
       }
 
       if (!vertexFinished) {
@@ -518,7 +525,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
           addVertex(vertex);
         } catch (IOException e) {
-          e.printStackTrace();
+          throw new RuntimeException(e);
         }
       }
     }
@@ -543,7 +550,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
           messages.get(partition).add(WritableUtils.serialize(vertex));
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        throw new RuntimeException(e);
       }
     }
   }
@@ -742,7 +749,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
             try {
               v.readFields(dis);
             } catch (IOException e) {
-              e.printStackTrace();
+              throw new RuntimeException(e);
             }
             index++;
             return v;
