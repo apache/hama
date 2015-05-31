@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -49,6 +50,7 @@ import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
+import org.apache.hama.util.UnsafeByteArrayInputStream;
 import org.apache.hama.util.WritableUtils;
 
 /**
@@ -112,7 +114,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
   // global counter for thread exceptions
   // TODO find more graceful way to handle thread exceptions.
   private AtomicInteger errorCount = new AtomicInteger(0);
-  
+
   private AggregationRunner<V, E, M> aggregationRunner;
   private VertexOutputWriter<Writable, Writable, V, E, M> vertexOutputWriter;
   private Combiner<Writable> combiner;
@@ -121,7 +123,8 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   private RejectedExecutionHandler retryHandler = new RetryRejectedExecutionHandler();
 
-  // Below maps are used for grouping messages into single GraphJobMessage, based on vertex ID.
+  // Below maps are used for grouping messages into single GraphJobMessage,
+  // based on vertex ID.
   private final ConcurrentHashMap<Integer, GraphJobMessage> partitionMessages = new ConcurrentHashMap<Integer, GraphJobMessage>();
   private final ConcurrentHashMap<V, GraphJobMessage> vertexMessages = new ConcurrentHashMap<V, GraphJobMessage>();
 
@@ -259,7 +262,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
-    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 64));
     executor.setRejectedExecutionHandler(retryHandler);
 
     long loopStartTime = System.currentTimeMillis();
@@ -319,7 +322,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
-    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 64));
     executor.setRejectedExecutionHandler(retryHandler);
 
     for (V v : vertices.keySet()) {
@@ -337,7 +340,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
       throw new IOException("there were " + errorCount
           + " exceptions during compute vertices.");
     }
-    
+
     getAggregationRunner().sendAggregatorValues(peer, 1, this.changedVertexCnt);
     iteration++;
     finishSuperstep();
@@ -455,10 +458,11 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
-    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 64));
     executor.setRejectedExecutionHandler(retryHandler);
 
     KeyValuePair<Writable, Writable> next = null;
+
     while ((next = peer.readNext()) != null) {
       Vertex<V, E, M> vertex = GraphJobRunner
           .<V, E, M> newVertexInstance(VERTEX_CLASS);
@@ -496,7 +500,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     peer.sync();
 
     executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 256));
+    executor.setMaximumPoolSize(conf.getInt(DEFAULT_THREAD_POOL_SIZE, 64));
     executor.setRejectedExecutionHandler(retryHandler);
 
     GraphJobMessage msg;
@@ -695,26 +699,50 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     vertices.finishAdditions();
   }
 
-  public void sendMessage(V vertexID, byte[] msg) throws IOException {
+  public void sendMessage(V vertexID, M msg) throws IOException {
     if (!vertexMessages.containsKey(vertexID)) {
-      // To save bit memory we don't set vertexID twice
       vertexMessages.putIfAbsent(vertexID, new GraphJobMessage());
     }
-    vertexMessages.get(vertexID).add(msg);
+    if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
+      vertexMessages.get(vertexID).add(WritableUtils.serialize(msg));
+    } else {
+      vertexMessages.get(vertexID).add(WritableUtils.unsafeSerialize(msg));
+    }
+  }
+
+  public void sendMessage(List<Edge<V, E>> outEdges, M msg) throws IOException {
+    byte[] serialized;
+    if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
+      serialized = WritableUtils.serialize(msg);
+    } else {
+      serialized = WritableUtils.unsafeSerialize(msg);
+    }
+
+    for (Edge<V, E> e : outEdges) {
+      if (!vertexMessages.containsKey(e.getDestinationVertexID())) {
+        vertexMessages.putIfAbsent(e.getDestinationVertexID(),
+            new GraphJobMessage());
+      }
+
+      vertexMessages.get(e.getDestinationVertexID()).add(serialized);
+    }
   }
 
   public void finishSuperstep() throws IOException {
     vertices.finishSuperstep();
 
-    Iterator<Entry<V, GraphJobMessage>> it = vertexMessages.entrySet().iterator();
+    Iterator<Entry<V, GraphJobMessage>> it = vertexMessages.entrySet()
+        .iterator();
     while (it.hasNext()) {
       Entry<V, GraphJobMessage> e = it.next();
       it.remove();
 
       if (combiner != null && e.getValue().getNumOfValues() > 1) {
-        GraphJobMessage combined = new GraphJobMessage(e.getKey(),
+        GraphJobMessage combined;
+        combined = new GraphJobMessage(e.getKey(),
             WritableUtils.serialize(combiner.combine(getIterableMessages(e
                 .getValue().getValuesBytes(), e.getValue().getNumOfValues()))));
+
         combined.setFlag(GraphJobMessage.VERTEX_FLAG);
         peer.send(getHostName(e.getKey()), combined);
       } else {
@@ -732,13 +760,19 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   public Iterable<Writable> getIterableMessages(final byte[] valuesBytes,
       final int numOfValues) {
-
+    
     return new Iterable<Writable>() {
+      DataInputStream dis;
+      
       @Override
       public Iterator<Writable> iterator() {
+        if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
+          dis = new DataInputStream(new ByteArrayInputStream(valuesBytes));
+        } else {
+          dis = new DataInputStream(new UnsafeByteArrayInputStream(valuesBytes));
+        }
+        
         return new Iterator<Writable>() {
-          ByteArrayInputStream bis = new ByteArrayInputStream(valuesBytes);
-          DataInputStream dis = new DataInputStream(bis);
           int index = 0;
 
           @Override

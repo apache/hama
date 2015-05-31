@@ -60,6 +60,7 @@ public class GraphJob extends BSPJob {
         OutgoingVertexMessageManager.class, OutgoingMessageManager.class);
     conf.setBoolean(Constants.FORCE_SET_BSP_TASKS, true);
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, false);
+    conf.setBoolean("hama.use.unsafeserialization", true);
     
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);

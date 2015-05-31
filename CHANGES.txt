@@ -25,7 +25,8 @@ Release 0.7.0 (unreleased changes)
    HAMA-885: Semi-Clustering is not producing expected output (Renil J via edwardyoon)
 
   IMPROVEMENTS
-
+  
+   HAMA-955: Support UnsafeByteArrayInputStream and UnSafeByteArrayOutputStream (Minho Kim via edwardyoon)
    HAMA-944: Add JSON format option to fastgen command (Minho Kim via edwardyoon)
    HAMA-919: Manage messages per Vertex (edwardyoon)
    HAMA-923: add a toString() method for FloatArrayWritable and TextArrayWritable classes (edwardyoon)

@@ -30,7 +30,6 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Counters.Counter;
-import org.apache.hama.util.WritableUtils;
 
 /**
  * Vertex is a abstract definition of Google Pregel Vertex. For implementing a
@@ -61,7 +60,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   private boolean votedToHalt = false;
   private long lastComputedSuperstep = 0;
-  
+
   public HamaConfiguration getConf() {
     return runner.getPeer().getConfiguration();
   }
@@ -80,22 +79,17 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
 
   @Override
   public void sendMessage(Edge<V, E> e, M msg) throws IOException {
-    runner.sendMessage(e.getDestinationVertexID(),
-        WritableUtils.serialize(msg));
+    runner.sendMessage(e.getDestinationVertexID(), msg);
   }
 
   @Override
   public void sendMessage(V destinationVertexID, M msg) throws IOException {
-    runner.sendMessage(destinationVertexID, WritableUtils.serialize(msg));
+    runner.sendMessage(destinationVertexID, msg);
   }
 
   @Override
   public void sendMessageToNeighbors(M msg) throws IOException {
-    final List<Edge<V, E>> outEdges = this.getEdges();
-    byte[] serialized = WritableUtils.serialize(msg);
-    for (Edge<V, E> e : outEdges) {
-      runner.sendMessage(e.getDestinationVertexID(), serialized);
-    }
+    runner.sendMessage(this.getEdges(), msg);
   }
 
   private void alterVertexCounter(int i) throws IOException {
@@ -204,11 +198,11 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
   void setComputed() {
     this.lastComputedSuperstep = this.getSuperstepCount();
   }
-  
+
   public boolean isComputed() {
     return (lastComputedSuperstep == this.getSuperstepCount()) ? true : false;
   }
-  
+
   void setVotedToHalt(boolean votedToHalt) {
     this.votedToHalt = votedToHalt;
   }
@@ -257,7 +251,7 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
     }
 
     this.lastComputedSuperstep = in.readLong();
-    
+
     this.edges = new ArrayList<Edge<V, E>>();
     if (in.readBoolean()) {
       int num = in.readInt();
@@ -288,16 +282,16 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
       out.writeBoolean(true);
       vertexID.write(out);
     }
-    
+
     if (value == null) {
       out.writeBoolean(false);
     } else {
       out.writeBoolean(true);
       value.write(out);
     }
-    
+
     out.writeLong(lastComputedSuperstep);
-    
+
     if (this.edges == null) {
       out.writeBoolean(false);
     } else {

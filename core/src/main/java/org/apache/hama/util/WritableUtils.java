@@ -47,4 +47,24 @@ public class WritableUtils {
       e.printStackTrace();
     }
   }
+
+  public static byte[] unsafeSerialize(Writable w) {
+    UnsafeByteArrayOutputStream out = new UnsafeByteArrayOutputStream();
+    DataOutput output = new DataOutputStream(out);
+    try {
+      w.write(output);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return out.toByteArray();
+  }
+
+  public static void unsafeDeserialize(byte[] bytes, Writable obj) {
+    DataInputStream in = new DataInputStream(new UnsafeByteArrayInputStream(bytes));
+    try {
+      obj.readFields(in);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
 }

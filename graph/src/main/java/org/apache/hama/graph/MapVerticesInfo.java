@@ -44,26 +44,36 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   private final ConcurrentHashMap<V, byte[]> vertices = new ConcurrentHashMap<V, byte[]>();
 
   private GraphJobRunner<V, E, M> runner;
-
+  private HamaConfiguration conf;
   private AtomicInteger activeVertices = new AtomicInteger(0);
 
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
       TaskAttemptID attempt) throws IOException {
     this.runner = runner;
+    this.conf = conf;
   }
 
   @Override
   public void put(Vertex<V, E, M> vertex) throws IOException {
     if (!vertices.containsKey(vertex.getVertexID())) {
-      vertices.putIfAbsent(vertex.getVertexID(),
-          WritableUtils.serialize(vertex));
+      if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
+        vertices.putIfAbsent(vertex.getVertexID(),
+            WritableUtils.serialize(vertex));
+      } else {
+        vertices.putIfAbsent(vertex.getVertexID(),
+            WritableUtils.unsafeSerialize(vertex));
+      }
     } else {
       Vertex<V, E, M> v = this.get(vertex.getVertexID());
       for (Edge<V, E> e : vertex.getEdges()) {
         v.addEdge(e);
       }
-      vertices.put(vertex.getVertexID(), WritableUtils.serialize(v));
+      if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
+        vertices.put(vertex.getVertexID(), WritableUtils.serialize(v));
+      } else {
+        vertices.put(vertex.getVertexID(), WritableUtils.unsafeSerialize(v));
+      }
     }
   }
 
@@ -85,7 +95,11 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
   public Vertex<V, E, M> get(V vertexID) throws IOException {
     Vertex<V, E, M> v = GraphJobRunner
         .<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
-    WritableUtils.deserialize(vertices.get(vertexID), v);
+    if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
+      WritableUtils.deserialize(vertices.get(vertexID), v);
+    } else {
+      WritableUtils.unsafeDeserialize(vertices.get(vertexID), v);
+    }
     v.setRunner(runner);
 
     return v;
@@ -107,7 +121,13 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
       public Vertex<V, E, M> next() {
         Vertex<V, E, M> v = GraphJobRunner
             .<V, E, M> newVertexInstance(GraphJobRunner.VERTEX_CLASS);
-        WritableUtils.deserialize(it.next(), v);
+
+        if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
+          WritableUtils.deserialize(it.next(), v);
+        } else {
+          WritableUtils.unsafeDeserialize(it.next(), v);
+        }
+
         v.setRunner(runner);
         return v;
       }
@@ -130,7 +150,11 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
       throws IOException {
     incrementCount();
     vertex.setComputed();
-    vertices.put(vertex.getVertexID(), WritableUtils.serialize(vertex));
+    if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
+      vertices.put(vertex.getVertexID(), WritableUtils.serialize(vertex));
+    } else {
+      vertices.put(vertex.getVertexID(), WritableUtils.unsafeSerialize(vertex));
+    }
   }
 
   public void incrementCount() {
