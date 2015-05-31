@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
@@ -44,7 +45,7 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
 
   private GraphJobRunner<V, E, M> runner;
 
-  private int activeVertices = 0;
+  private AtomicInteger activeVertices = new AtomicInteger(0);
 
   @Override
   public void init(GraphJobRunner<V, E, M> runner, HamaConfiguration conf,
@@ -132,8 +133,8 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
     vertices.put(vertex.getVertexID(), WritableUtils.serialize(vertex));
   }
 
-  public synchronized void incrementCount() {
-    activeVertices++;
+  public void incrementCount() {
+    activeVertices.incrementAndGet();
   }
 
   @Override
@@ -150,10 +151,10 @@ public final class MapVerticesInfo<V extends WritableComparable<V>, E extends Wr
 
   @Override
   public void finishSuperstep() throws IOException {
-    activeVertices = 0;
+    activeVertices.set(0);
   }
 
   public int getActiveVerticesNum() {
-    return activeVertices;
+    return activeVertices.get();
   }
 }
