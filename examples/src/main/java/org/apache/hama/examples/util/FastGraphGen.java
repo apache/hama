@@ -145,7 +145,7 @@ public class FastGraphGen {
     boolean outputType = false;
 
     if (args.length == 0) {
-      System.out.println("No args specified for FastGraphGen to initialize");
+      new HelpFormatter().printHelp("gen -p OUTPUT_PATH [options]", opts);
       System.exit(-1);
     }
 

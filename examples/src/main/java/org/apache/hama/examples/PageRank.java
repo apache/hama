@@ -206,7 +206,7 @@ public class PageRank {
         + "Default value - Text");
 
     if (args.length < 2) {
-      new HelpFormatter().printHelp("PageRank -i INPUT_PATH -o OUTPUT_PATH "
+      new HelpFormatter().printHelp("pagerank -i INPUT_PATH -o OUTPUT_PATH "
           + "[-t NUM_TASKS] [-f FILE_TYPE]", opts);
       System.exit(-1);
     }
