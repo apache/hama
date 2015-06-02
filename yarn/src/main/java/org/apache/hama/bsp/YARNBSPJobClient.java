@@ -33,10 +33,9 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
-import org.apache.hadoop.yarn.api.protocolrecords.GetNewApplicationRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.GetNewApplicationResponse;
 import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.client.api.YarnClient;
+import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -131,7 +130,6 @@ public class YARNBSPJobClient extends BSPJobClient {
     yarnConf = new YarnConfiguration(conf);
     yarnClient = YarnClient.createYarnClient();
     yarnClient.init(yarnConf);
-    yarnClient.start();
   }
 
   @Override
@@ -155,6 +153,7 @@ public class YARNBSPJobClient extends BSPJobClient {
       LOG.debug("Retrieved username: " + s);
     }
 
+    yarnClient.start();
     try {
       YarnClusterMetrics clusterMetrics = yarnClient.getYarnClusterMetrics();
       LOG.info("Got Cluster metric info from ASM"
@@ -188,14 +187,16 @@ public class YARNBSPJobClient extends BSPJobClient {
         }
       }
 
-      GetNewApplicationRequest request = Records.newRecord(GetNewApplicationRequest.class);
-      GetNewApplicationResponse response = job.getApplicationsManager().getNewApplication(request);
-      id = response.getApplicationId();
+      // Get a new application id
+      YarnClientApplication app = yarnClient.createApplication();
+
 
       // Create a new ApplicationSubmissionContext
-      ApplicationSubmissionContext appContext = Records.newRecord(ApplicationSubmissionContext.class);
-      // set the ApplicationId
-      appContext.setApplicationId(this.id);
+      //ApplicationSubmissionContext appContext = Records.newRecord(ApplicationSubmissionContext.class);
+      ApplicationSubmissionContext appContext = app.getApplicationSubmissionContext();
+
+      id = appContext.getApplicationId();
+
       // set the application name
       appContext.setApplicationName(job.getJobName());
 
@@ -227,7 +228,11 @@ public class YARNBSPJobClient extends BSPJobClient {
       localResources.put(YARNBSPConstants.APP_MASTER_JAR_PATH, amJarRsrc);
 
       // add hama related jar files to localresources for container
-      List<File> hamaJars = localJarfromPath(System.getProperty("hama.home.dir"));
+      List<File> hamaJars;
+      if (System.getProperty("hama.home.dir") != null)
+        hamaJars = localJarfromPath(System.getProperty("hama.home.dir"));
+      else
+        hamaJars = localJarfromPath(getConf().get("hama.home.dir"));
       String hamaPath = getSystemDir() + "/hama";
       for (File fileEntry : hamaJars) {
         addToLocalResources(fs, fileEntry.getCanonicalPath(),
@@ -266,7 +271,7 @@ public class YARNBSPJobClient extends BSPJobClient {
       Vector<CharSequence> vargs = new Vector<CharSequence>(5);
       vargs.add("${JAVA_HOME}/bin/java");
       vargs.add("-cp " + classPathEnv + "");
-      vargs.add(BSPApplicationMaster.class.getCanonicalName());
+      vargs.add(ApplicationMaster.class.getCanonicalName());
       vargs.add(submitJobFile.makeQualified(fs.getUri(), fs.getWorkingDirectory()).toString());
 
       vargs.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/hama-appmaster.stdout");

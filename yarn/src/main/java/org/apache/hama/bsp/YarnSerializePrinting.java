@@ -74,12 +74,13 @@ public class YarnSerializePrinting {
       }
     }
 
-    //fs.delete(OUTPUT_PATH, true);
+    fs.delete(OUTPUT_PATH, true);
   }
 
   public static void main(String[] args) throws IOException,
       InterruptedException, ClassNotFoundException {
     HamaConfiguration conf = new HamaConfiguration();
+    conf.set("hama.home.dir", System.getenv().get("HAMA_HOME"));
 
     YARNBSPJob job = new YARNBSPJob(conf);
     job.setBspClass(HelloBSP.class);

@@ -26,6 +26,7 @@ Release 0.7.0 (unreleased changes)
 
   IMPROVEMENTS
   
+   HAMA-939: Refactoring which was implement using out-of-date status response (Minho Kim via edwardyoon)
    HAMA-955: Support UnsafeByteArrayInputStream and UnSafeByteArrayOutputStream (Minho Kim via edwardyoon)
    HAMA-944: Add JSON format option to fastgen command (Minho Kim via edwardyoon)
    HAMA-919: Manage messages per Vertex (edwardyoon)
