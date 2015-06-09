@@ -237,16 +237,26 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
   @Override
   public void register(BSPJobID jobId, TaskAttemptID taskId,
       String hostAddress, long port) {
-    try {
-      String jobRegisterKey = constructKey(jobId, "peers");
-      if (zk.exists(jobRegisterKey, false) == null) {
+    int count = 0;
+    String jobRegisterKey = constructKey(jobId, "peers");
+    Stat stat = null;
+
+    LOG.info("TaskAttemptID : " + taskId);
+    while (stat != null) {
+      try {
+        stat = zk.exists(jobRegisterKey, false);
         zk.create(jobRegisterKey, new byte[0], Ids.OPEN_ACL_UNSAFE,
             CreateMode.PERSISTENT);
+        Thread.sleep(1000);
+      } catch (Exception e) {
+        LOG.debug(e); // ignore it.
       }
-    } catch (KeeperException e) {
-      LOG.error(e);
-    } catch (InterruptedException e) {
-      LOG.error(e);
+      count++;
+
+      // retry 10 times.
+      if (count > 9) {
+        throw new RuntimeException("can't create root node.");
+      }
     }
     registerTask(jobId, hostAddress, port, taskId);
   }
