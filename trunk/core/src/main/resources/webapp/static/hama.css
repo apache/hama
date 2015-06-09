@@ -1,0 +1,174 @@
+@charset "utf-8";
+/*
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+body {
+    margin: 10px 20px;
+    font: 90% Arial, sans-serif; 
+    color : #333;
+    background: #fff;
+}
+
+a:link, a:visited { color: #74240f; text-decoration: none; }
+
+a:hover, a:active { color: #888800; text-decoration: underline; }
+
+h1,h2,h3,h4,h5 {    color: #74240f; }
+
+div { display: block; }
+
+table { border-collapse : collapse; border-spacing:0; font-size: 11pt; } 
+
+table th, table td { white-space: nowrap; height: 24px; padding: 5px; }
+
+table th { font-weight: bold; text-align: center; }
+
+ul { padding-left : 20px; }
+
+li { }
+
+hr {
+    height: 1px;
+    border: none;
+    background: #e0e0e0;
+}
+
+pre {
+    border: 1px solid #7F9DB9;
+    background-color: #f5f5f5;
+    padding: 5px;
+    width: 100%;
+    height: 80%;
+    white-space: pre-wrap; /* css-3 */
+    white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
+    white-space: -pre-wrap; /* Opera 4-6 */
+    white-space: -o-pre-wrap; /* Opera 7 */
+    word-wrap: break-work; /* IE 5.5+ */
+    overflow-y: scroll;
+}
+
+.block-list { margin 0 0 10px 0; }
+.block-list table { border-top: solid 2px #74240f; border-bottom: solid 1px #c9c9c9; }
+.block-list table th,
+.block-list table td { border: 1px solid #e8e8e8; }
+.block-list table th { background-color: #f6f6f6; }
+
+.block-list-prop { margin 0 0 10px 0 }
+.block-list-prop table {
+    border-top: solid 2px #74240f;
+    border-bottom: solid 1px #c9c9c9;
+    width : 100%;
+}
+.block-list-prop table th,
+.block-list-prop table td { white-space: normal;    border: 1px solid #e8e8e8; }
+.block-list-prop table th { background-color: #f6f6f6; }
+
+.block-list-log { margin 0 0 10px 0; }
+.block-list-log table {
+    border-top: solid 2px #74240f;
+    border-bottom: solid 1px #c9c9c9;
+    width : 100%;
+}
+.block-list-log table th,
+.block-list-log table td { border: 1px solid #e8e8e8; }
+.block-list-log table th { background-color: #f6f6f6; }
+
+
+.block-detail { margin 0 0 10px 0; }
+.block-detail table { border-top: solid 2px #74240f; }
+.block-detail table th,
+.block-detail table td {
+    border: 1px solid #e8e8e8;
+    height: 26px;
+    padding: 0 5px;
+    border-left: none;
+    border-right: none;
+    white-space: nowarp;    
+}
+.block-detail table th {
+    background-color: #f6f6f6;
+    text-align: left;
+}
+.block-detail ul { list-style : none; padding-left : 0px; }
+.block-detail li { line-height : 20px; } 
+.block-detail li span { font-weight : bold; color : #404040; }
+
+.block-search {
+    margin : -2px 0 10px 0;
+    border : 1px solid #e0e0e0;
+    background : #f4f2f3;
+}
+.block-search div { position : relative; }
+.block-search table { background-color : #ffffff; }
+.block-search table th {
+    background-color : #f4f2f3;
+    white-space : nowrap;
+    padding-left : 15px;
+    font-weight : normal;
+    color : #494949;
+    border : none;
+}
+.block-search table td {
+    background-color : #f4f2f3;
+    padding : 7px 10px 7px 5px;
+    border : none;
+}
+
+.block-code { margin 0 0 10px 0; }
+.block-code table {
+    font-size: 9pt;
+    border-top : solid 2px #74240f;
+    border-bottom : solid 1px #c9c9c9;
+    width : 100%;
+}
+.block-code table th,
+.block-code table td {
+    height : 20px;
+    padding : 5px;
+    white-space : pre-wrap;
+    border-left : 1px solid #e8e8e8;
+    border-right : 1px solid #e8e8e8;  
+}
+.block-code table th { background-color : #f6f6f6; border-bottom : 1px solid #e8e8e8; }
+.block-code table td.line { background-color : #f9f9f9; text-align : right; padding-right : 5px; }
+.block-code table td.code { background-color : #f9f9f9; }
+
+
+.link-container {
+    text-decoration : none;
+    border : 1px solid #f5f5f5;
+    display : inline-block;
+    margin : 0;
+    text-align : center;
+    padding : 0 5px;
+    outline : 0;
+}
+.link-container:hover {
+    text-decoration : none;
+    border-color : #6db33f;
+    box-shadow : 0 0 2px #888800;
+}
+.link-title {
+    font-size : 14px;
+    line-height : 14px;
+    margin : 0;
+}
+
+#footer {
+    padding: 1em;
+    text-align: center;
+}

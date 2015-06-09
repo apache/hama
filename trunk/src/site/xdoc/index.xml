@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<document xmlns="http://maven.apache.org/XDOC/2.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties></properties>
+  <title>a general BSP framework on top of Hadoop</title>
+  <body>
+
+    <section name="Apache Hama"></section>
+
+    <table class="maintable"><tr><td valign="top">
+    <strong>Apache Hama</strong> is an Apache Top-Level open source project, allowing you to do advanced analytics beyond MapReduce.
+    <br/><br/>
+    Many data analysis techniques such as machine learning and graph algorithms require iterative computations, 
+    this is where Bulk Synchronous Parallel model can be more effective than "plain" MapReduce. 
+    Therefore To run such iterative data analysis applications more efficiently, Hama offers pure Bulk Synchronous Parallel computing engine. 
+    <br/><br/>
+    Hama can make jobs that take hours in Hadoop run in minutes. For details, see the <a href="http://wiki.apache.org/hama/Benchmarks">Performance Benchmarks</a>.
+    </td><td width="505" valign="top">
+    <div align="center"><img src="images/mahout_vs_hama.png" width="500"/>
+    </div>
+    </td></tr></table>
+
+    <subsection name="Getting Started"></subsection>
+      <p>
+      Start by installing Hama on a Hadoop cluster.
+      <br/>
+      </p>
+      <ul>
+        <li><a href="downloads.html">Download</a> Hama from the release page.</li>
+        <li><a href="getting_started_with_hama.html">Getting Started</a> with Hama.</li>
+        <li><a href="hama_on_clouds.html">Launch a Hama cluster</a> on Clouds.</li>
+        <li>Hama <a href="hama_bsp_tutorial.html">BSP Tutorial.</a></li>
+        <li>Hama <a href="hama_graph_tutorial.html">Graph Tutorial.</a></li>
+        <li><a href="http://wiki.apache.org/hama">Learn about</a> Hama and BSP by reading the documentation.</li>
+      </ul>
+    <subsection name="Getting Involved"></subsection>
+      <p>
+      Hama is an open source volunteer project under the Apache Software Foundation. We encourage you to learn about the project and contribute your expertise. 
+      Here are some starter links: <br/>
+      </p>
+      <ul>
+        <li>See our <a href="http://wiki.apache.org/hama/HowToContribute">How to Contribute to Hama</a> page</li>
+        <li><a href="http://wiki.apache.org/hama/Jira">Jira usage guidelines</a></li>
+      </ul>
+  </body>
+</document>
