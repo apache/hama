@@ -15,7 +15,8 @@
 * limitations under the License.
 */
 
-#bannerRight { margin-right: 65%; }
+#breadcrumbs { display:none; }
+#bannerRight { margin-right: 350px; }
 
 body {
   font: large/1.35 "Linux Libertine", Palatino, "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; word-spacing: 0.13em; 
