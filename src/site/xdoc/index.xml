@@ -19,24 +19,18 @@
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
   <properties></properties>
-  <title>a general BSP framework on top of Hadoop</title>
+  <title>Big Data and High-Performance Computing</title>
   <body>
 
-    <section name="Apache Hama"></section>
-
-    <table class="maintable"><tr><td valign="top">
-    <strong>Apache Hama</strong> is an Apache Top-Level open source project, allowing you to do advanced analytics beyond MapReduce.
-    <br/><br/>
-    Many data analysis techniques such as machine learning and graph algorithms require iterative computations, 
-    this is where Bulk Synchronous Parallel model can be more effective than "plain" MapReduce. 
-    Therefore To run such iterative data analysis applications more efficiently, Hama offers pure Bulk Synchronous Parallel computing engine. 
-    <br/><br/>
-    Hama can make jobs that take hours in Hadoop run in minutes. For details, see the <a href="http://wiki.apache.org/hama/Benchmarks">Performance Benchmarks</a>.
-    </td><td width="505" valign="top">
-    <div align="center"><img src="images/mahout_vs_hama.png" width="500"/>
+    <section name=""></section>
+    <p>
+    Apache Hama<sup>TM</sup> is a general BSP computing engine on top of Hadoop, which was established in 2012 as a Top-Level Project of The Apache Software Foundation. 
+    It provides High-Performance computing engine for performing massive scientific and iterative algorithms on existing open source or enterprise Hadoop cluster, 
+    such as Matrix, Graph, and Machine Learning.
+    </p>
+    <div align="center"><img src="./images/hama_art_arthur_300x220.png"/>
     </div>
-    </td></tr></table>
-
+    
     <subsection name="Getting Started"></subsection>
       <p>
       Start by installing Hama on a Hadoop cluster.

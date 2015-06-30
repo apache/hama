@@ -29,12 +29,12 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <p>1. First, you need to generate a symmetric adjacency matrix using the 'gen' command:</p>
     
     <pre>
-    % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar gen fastgen 100 10 randomgraph 2</pre>
+    % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar gen fastgen -v 100 -e 10 -o randomgraph -t 2</pre>
 
     <p>This will create a graph with 100 nodes and 1K edges and store 2 partitions on HDFS as the sequence file. 
     You can adjust partition and tasks numbers to fit your cluster. Then, run PageRank using:</p>
   <pre>
-  % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar pagerank randomgraph pagerankresult 4</pre>
+  % $HAMA_HOME/bin/hama jar hama-examples-x.x.x.jar pagerank -i randomgraph -o pagerankresult -t 4</pre>
   
   <subsection name="Run K-Means example"></subsection>
   Download a <a href="http://people.apache.org/~edwardyoon/kmeans.txt">Iris dataset</a> [<a href="http://archive.ics.uci.edu/ml/datasets/Iris">Dataset Information</a>].

@@ -15,27 +15,31 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project name="Hama">
+<project name="Apache Hama">
   <bannerLeft>
     <name>Apache Hama</name>
-    <src>/images/headerlogo.png</src>
+    <src>http://www.apache.org/images/feather-small.gif</src>
     <href>/index.html</href>
-    <width>340</width>
   </bannerLeft>
-
-  <publishDate position="right"/>
-  <version position="right"/>
+  <bannerRight>
+    <name>Apache Hama</name>
+  </bannerRight>
+  
+  <publishDate position="none"/>
+  <version position="none"/>
 
   <skin>
     <groupId>org.apache.maven.skins</groupId>
     <artifactId>maven-fluido-skin</artifactId>
-    <version>1.3.0</version>
+    <version>1.4</version>
   </skin>
 
   <custom>
     <fluidoSkin>
       <topBarEnabled>true</topBarEnabled>
       <sideBarEnabled>false</sideBarEnabled>
+      <googlePlusOne />
+      <facebookLike />
     </fluidoSkin>
   </custom>
 
@@ -51,16 +55,8 @@
   ga('send', 'pageview');
   </script>
   </head>
-    <links position="left">
-      <item name="Wiki" href="http://wiki.apache.org/hama" />
-      <item name="JIRA" href="http://issues.apache.org/jira/browse/HAMA" />
-      <item name="Hama Twitter" href="http://twitter.com/apachehama" />
-    </links>
-
-    <breadcrumbs position="left">
-      <item name="Apache" href="http://www.apache.org/" />
-      <item name="Hama" href="http://hama.apache.org/"/>
-    </breadcrumbs>
+  
+    <breadcrumbs position="none"/>
 
     <menu name="Information">
       <item name="Overview" href="index.html"/>
@@ -87,28 +83,17 @@
       <item name="Books" href="http://wiki.apache.org/hama/Books" />
     </menu>
 
-    <menu name="Related Projects">
-      <item name="Hadoop" href="http://hadoop.apache.org/" />
-      <item name="Whirr" href="http://whirr.apache.org/" />
-      <item name="Bigtop" href="http://incubator.apache.org/bigtop/" />
-      <item name="Mahout" href="http://mahout.apache.org/" />
-    </menu>
-    
     <menu name="Art works">
       <item name="Artwork and Clothing" href="artwork.html" />
     </menu>
-
-    <menu name="ASF">
-      <item name="How Apache Works" href="http://www.apache.org/foundation/how-it-works.html"/>
-      <item name="Foundation" href="http://www.apache.org/foundation/"/>
-      <item name="Sponsoring Apache" href="http://www.apache.org/foundation/sponsorship.html"/>
-      <item name="Thanks" href="http://www.apache.org/foundation/thanks.html"/>
-    </menu>
+    
+    
     <footer>
-      <div class="row span16">Apache Hama, Apache, the Apache feather logo, and
+      <div style="font-size:80%;">Apache Hama, Apache, the Apache feather logo, and
           the Apache Hama project logos are trademarks of The Apache Software
           Foundation. All other marks mentioned may be trademarks or registered
           trademarks of their respective owners.</div>
     </footer>
   </body>
+  
 </project>

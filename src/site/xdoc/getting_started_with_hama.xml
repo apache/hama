@@ -28,7 +28,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <p>1. Make sure all required software is installed on all nodes in your cluster:</p>
     <ul>
       <li>hadoop-1.0.x or higher version (non-secure version)</li>
-      <li>Sun Java JDK 1.6.x or higher version</li>
+      <li>Sun Java JDK 1.7.x or higher version</li>
       <li>SSH access to manage BSP deamons</li>
     </ul>
     <p>2. <a href="downloads.html">Download</a> Hama from the release page.
@@ -43,6 +43,12 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
       <li>Pseudo Distributed Mode - <font style="font-size: 11px;">This mode is when you just have a single server and want to launch all the deamon processes (BSPMaster, Groom and Zookeeper). It can be configured when you set the bsp.master.address to a host address e.g., <b>localhost</b> and put the same address into the groomservers file in the configuration directory. As stated it will run a BSPMaster, a Groom and a Zookeeper on your machine.</font></li>
       <li>Distributed Mode - <font style="font-size: 11px;">This mode is just like the "Pseudo Distributed Mode", but you have multiple machines, which are mapped in the groomservers file.</font></li>
     </ul>
+    <br/>
+    <p>
+    NOTE: We also support the <a href="http://wiki.apache.org/hama/GettingStartedMesos">Mesos</a> and <a href="http://wiki.apache.org/hama/GettingStartedYARN">Yet Another Resource Negotiator (YARN)</a>,
+    so you're able to submit your BSP applications to the existing open source and enterprise clusters e.g., CDH, HDP, and Mesosphere without any installation.
+    </p>
+    <br/>
     
     <subsection name="Configuration Files"></subsection>
     <p>The $HAMA_HOME/conf directory contains some configuration files for Hama. These are:</p>

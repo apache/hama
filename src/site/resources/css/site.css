@@ -15,108 +15,38 @@
 * limitations under the License.
 */
 
-p {
-  padding: 0px 0px 0px 0px;
-}
+#bannerRight { margin-right: 65%; }
 
+body {
+  font: large/1.35 "Linux Libertine", Palatino, "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; word-spacing: 0.13em; 
+}
 body a:link {
-  color: #74240f;
+  color: #74240f; text-decoration: underline;
 }
 body a:visited {
-  color: #74240f;
+  color: #74240f; text-decoration: underline;
 }
 body a:hover {
   text-decoration: underline;
   color: #888800;
 }
-
-h2, h3, h4, h5 {
-  color: #74240f;
-}
-
-h5 {
-  font-size: 15px;
-  margin-top: -0.1em;
-}
-
-table {
-  width: 100%;
-  margin-left: 0em;
-}
-
 ul {
-  margin-left:10px; 
+  margin-left: 3em; list-style-type: decimal;
 }
-
-.maintable {
-  width: 100%;
-  margin-left: 0em;
-  padding: 0px 0px 0px 0px;
-  border: 0px;
+.main {
+  text-align: left; width: 850px;
 }
-
-#bodyColumn {
-  margin-left: 10px;
-  margin-right: 10px;
+h1 {
+  font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; font-size: 35; text-shadow: 0 0 1px #665; margin-bottom: 0em;
 }
-
-.green {
- color: #0f7355;
- width: 95%;
- margin: 20px 20px 20px 20px;
- border: 1px solid #0f7355;
- background: #edf7f4;
- background-color: #edf7f4;
+h2 {
+  font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; font-size: 22; text-shadow: 0 0 1px #665; margin-bottom: 0em;
+}
+h3 {
+  font-family: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; font-size: 17; text-shadow: 0 0 1px #665; margin-bottom: 0em;
 }
 
 pre {
  width: 95%;
  margin: 20px 20px 20px 20px;
 }
-
-.green a:link, .green a:active, .green a:visited { color: #0a4d39; }
-.green a:hover { color: #888800; }
-.green h3 {
-  margin-bottom:-5px;
-  margin-top:5px;
-  padding: 0px 0px 0px 0px;
-  border: 0px;
-  color: #74240f;
-  background-color: #edf7f4;
-  font-weight: bold;
-  font-size: 17px;
-}
-
-#banner {
-  padding: 12px 5px 12px 5px;
-}
-
-#leftColumn {
- max-width: 180px;
- float:left;
- overflow: auto;
-}
-
-#navcolumn h5 {
-  margin: 0;
-  padding: 0;
-  font-size: small;
-}
-
-ul {
-  margin-left: 20px;
-  padding-left: 1em;
-  list-style-position: inside;
-}
-
-#leftColumn li.none{
-  text-indent:-1em;
-  margin-left:-1em;
-}
-
-#leftColumn h3 {
-  font-size: 16px;
-  margin-left:-0.7em;
-}
-
-body.topBarDisabled{padding-top:0px;}
