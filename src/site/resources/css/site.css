@@ -17,6 +17,7 @@
 
 #breadcrumbs { display:none; }
 #bannerRight { margin-right: 350px; }
+#bodyColumn { margin-top: 40px; }
 
 body {
   font: large/1.35 "Linux Libertine", Palatino, "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; word-spacing: 0.13em; 

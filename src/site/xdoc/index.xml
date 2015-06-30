@@ -23,7 +23,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
   <body>
 
     <section name=""></section>
-    <p style="margin-top: 25px;">
+    <p>
     Apache Hama<sup>TM</sup> is a general BSP computing engine on top of Hadoop, which was established in 2012 as a Top-Level Project of The Apache Software Foundation. 
     It provides High-Performance computing engine for performing massive scientific and iterative algorithms on existing open source or enterprise Hadoop cluster, 
     such as Matrix, Graph, and Machine Learning.
