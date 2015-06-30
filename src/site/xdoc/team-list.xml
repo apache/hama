@@ -101,6 +101,12 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">PMC member, committer</td>
         </tr>
        <tr valign="top">
+          <td align="center">minho</td>
+          <td align="center">Minho Kim</td>
+          <td align="center">Samsung Electronics</td>
+          <td align="center">committer</td>
+        </tr>
+       <tr valign="top">
           <td align="center">stevel</td>
           <td align="center">Steve Loughran</td>
           <td align="center">Hortonworks</td>
@@ -129,12 +135,6 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">Yexi Jiang</td>
           <td align="center">Facebook</td>
           <td align="center">PMC member, committer</td>
-        </tr>
-        <tr valign="top">
-            <td align="center">minho</td>
-            <td align="center">Minho Kim</td>
-            <td align="center">Samsung Electronics</td>
-            <td align="center">committer</td>
         </tr>
     </table>
 
