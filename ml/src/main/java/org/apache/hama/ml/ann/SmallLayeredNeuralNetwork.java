@@ -430,10 +430,9 @@ public class SmallLayeredNeuralNetwork extends AbstractLayeredNeuralNetwork {
       // add regularization
       costFuncDerivative += this.regularizationWeight
           * lastWeightMatrix.getRowVector(i).sum();
-      deltaVec.set(i, costFuncDerivative);
       deltaVec.set(
           i,
-          deltaVec.get(i)
+          costFuncDerivative
               * squashingFunction.applyDerivative(output.get(i + 1)));
     }
 
