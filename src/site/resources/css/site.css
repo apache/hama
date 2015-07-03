@@ -52,3 +52,24 @@ pre {
  width: 95%;
  margin: 20px 20px 20px 20px;
 }
+
+.green {
+ color: #0f7355;
+ width: 95%;
+ margin: 30px 20px 20px 20px;
+ border: 1px solid #0f7355;
+ background: #edf7f4;
+ background-color: #edf7f4;
+}
+
+.green a:link, .green a:active, .green a:visited { color: #0a4d39; }
+.green a:hover { color: #888800; }
+.green h3 {
+  margin-top:5px;
+  padding: 0px 0px 0px 0px;
+  border: 0px;
+  color: #74240f;
+  background-color: #edf7f4;
+  font-weight: bold;
+  font-size: 17px;
+}
