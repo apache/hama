@@ -60,14 +60,14 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
       <br/>
       </p>
       <ul>
-        <li><a href="downloads.html">Download</a> Hama from the release page.</li>
-        <li><a href="getting_started_with_hama.html">Getting Started</a> with Hama.</li>
+        <li><a href="downloads.html">Download</a> Hama from the release page</li>
+        <li><a href="getting_started_with_hama.html">Getting Started</a> with Hama</li>
         <li>Programming Tutorials<ul>
-            <li><a href="hama_bsp_tutorial.html">BSP Programming.</a></li>
-            <li><a href="hama_graph_tutorial.html">Vertex-centric Programming.</a></li>
-            <li><a href="#">Neuron-centric Programming.</a></li>
+            <li><a href="hama_bsp_tutorial.html">BSP Programming</a></li>
+            <li><a href="hama_graph_tutorial.html">Vertex-centric Programming</a></li>
+            <li><a href="#">Neuron-centric Programming</a></li>
         </ul></li>
-        <li><a href="http://wiki.apache.org/hama">Learn about</a> Hama and BSP by reading the documentation.</li>
+        <li>Run <a href="run_examples.html">Examples</a></li>
       </ul>
     <subsection name="Getting Involved"></subsection>
       <p>
