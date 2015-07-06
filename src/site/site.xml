@@ -74,13 +74,10 @@
 
     <menu name="Documentation">
       <item name="Getting Started" href="getting_started_with_hama.html" />
-      <item name="Hama on Clouds" href="hama_on_clouds.html" />
       <item name="Run Examples" href="run_examples.html" />
       <item name="BSP tutorial" href="hama_bsp_tutorial.html" />
       <item name="Graph tutorial" href="hama_graph_tutorial.html" />
-      <item name="Presentations" href="http://wiki.apache.org/hama/Presentations" />
-      <item name="Research Papers" href="http://wiki.apache.org/hama/Articles" />
-      <item name="Books" href="http://wiki.apache.org/hama/Books" />
+      <item name="Wiki for more details" href="http://wiki.apache.org/hama" />
     </menu>
 
     <menu name="Art works">
