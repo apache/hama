@@ -24,11 +24,28 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
     <section name=""></section>
     <p>
-    <div style="float:left;margin-right:15px;margin-bottom:5px;"><img src="./images/hama_art_arthur_300x220.png" style="width:250px" /></div> Apache Hama<sup>TM</sup> is a general BSP computing engine on top of Hadoop, which was established in 2012 as a Top-Level Project of The Apache Software Foundation. 
-    <br/><br/>It provides High-Performance computing engine for performing massive scientific and iterative algorithms on existing open source or enterprise Hadoop cluster, 
-    such as Matrix, Graph, and Machine Learning.<br/>
+    <div style="float:left;margin-right:15px;margin-top:25px;"><img src="./images/hama_art_arthur_300x220.png" style="width:260px" /></div>
+     Apache Hama<sup>TM</sup> is a framework for Big Data analytics which uses the Bulk Synchronous Parallel (BSP) computing model, 
+    which was established in 2012 as a Top-Level Project of The Apache Software Foundation. 
+    <br/><br/>It provides not only pure BSP programming model 
+    but also vertex and neuron centric programming models, inspired by Google's Pregel and DistBelief. 
+    <br/>
     </p>
     
+<div align="right">
+<pre style="width: 625px;">
++---------------------+-------------------------+----------------------------+
+|         BSP         |           Graph         |        Deep learning       |
+|      (pure BSP)     |     (Google's Pregel)   |    (Google's DistBelief)   |
++---------------------+-------------------------+----------------------------+
+|                              Apache Hama                                   |
+|                                     +--------------------------------------+
+|                                     |                 YARN                 |
++-------------------------------------+--------------------------------------+
+|                              Hadoop HDFS                                   |
++----------------------------------------------------------------------------+</pre>
+</div>
+
     <div class="green">
     <h3 align="center">Recent News</h3>
       <ul>
@@ -46,8 +63,11 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
         <li><a href="downloads.html">Download</a> Hama from the release page.</li>
         <li><a href="getting_started_with_hama.html">Getting Started</a> with Hama.</li>
         <li><a href="hama_on_clouds.html">Launch a Hama cluster</a> on Clouds.</li>
-        <li>Hama <a href="hama_bsp_tutorial.html">BSP Tutorial.</a></li>
-        <li>Hama <a href="hama_graph_tutorial.html">Graph Tutorial.</a></li>
+        <li>Programming Tutorials<ul>
+            <li><a href="hama_bsp_tutorial.html">BSP Programming.</a></li>
+            <li><a href="hama_graph_tutorial.html">Vertex-centric Programming.</a></li>
+            <li><a href="#">Neuron-centric Programming.</a></li>
+        </ul></li>
         <li><a href="http://wiki.apache.org/hama">Learn about</a> Hama and BSP by reading the documentation.</li>
       </ul>
     <subsection name="Getting Involved"></subsection>

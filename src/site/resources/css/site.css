@@ -16,11 +16,11 @@
 */
 
 #breadcrumbs { display:none; }
-#bannerRight { margin-right: 350px; }
+#bannerRight { margin-right: 365px; }
 #bodyColumn { margin-top: 40px; }
 
 body {
-  font: large/1.35 "Linux Libertine", Palatino, "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; word-spacing: 0.13em; 
+  font: large/1 "Linux Libertine", Palatino, "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif; word-spacing: 0.12em; 
 }
 body a:link {
   color: #74240f; text-decoration: underline;
@@ -51,6 +51,8 @@ h3 {
 pre {
  width: 95%;
  margin: 20px 20px 20px 20px;
+ font-family: Consolas, monospace;
+ word-spacing: 0em; 
 }
 
 .green {
