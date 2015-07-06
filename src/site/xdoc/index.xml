@@ -33,7 +33,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     </p>
     
 <div align="right">
-<pre style="width: 625px;">
+<pre style="width: 625px; text-align:center;">
 +---------------------+-------------------------+----------------------------+
 |         BSP         |           Graph         |        Deep learning       |
 |      (pure BSP)     |     (Google's Pregel)   |    (Google's DistBelief)   |
