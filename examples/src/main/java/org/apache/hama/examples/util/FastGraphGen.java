@@ -145,12 +145,12 @@ public class FastGraphGen {
     boolean outputType = false;
 
     if (args.length == 0) {
-      new HelpFormatter().printHelp("gen -p OUTPUT_PATH [options]", opts);
+      new HelpFormatter().printHelp("gen -o OUTPUT_PATH [options]", opts);
       System.exit(-1);
     }
 
     if (cliParser.hasOption("h")) {
-      new HelpFormatter().printHelp("FastGraphGen -p OUTPUT_PATH [options]", opts);
+      new HelpFormatter().printHelp("FastGraphGen -o OUTPUT_PATH [options]", opts);
       return;
     }
 
