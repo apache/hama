@@ -1,6 +1,17 @@
 Hama Change Log
 
-Release 0.7.0 (unreleased changes)
+Release 0.7.1 (unreleased changes)
+
+  NEW FEATURES
+
+  BUG FIXES
+
+    HAMA-965: Infinite loop because of recursive function call (JongYoon Lim via edwardyoon)
+
+  IMPROVEMENTS
+
+
+Release 0.7.0 - Jun 14, 2015
 
   NEW FEATURES
 
