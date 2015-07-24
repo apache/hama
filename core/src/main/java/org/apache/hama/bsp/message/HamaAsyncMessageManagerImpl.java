@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -100,12 +101,20 @@ public final class HamaAsyncMessageManagerImpl<M extends Writable> extends
       server.start();
       LOG.info("BSPPeer address:" + server.getAddress().getHostName()
           + " port:" + server.getAddress().getPort());
-    } catch (BindException e) {
-      LOG.warn("Address already in use. Retrying " + hostName + ":" + port + 1);
-      if (retry++ >= MAX_RETRY) {
-        throw new RuntimeException("RPC Server could not be launched!");
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+      if (e.getCause() instanceof BindException) {
+        final int nextPort = port + 1;
+        LOG.warn("Address already in use. Retrying " + hostName + ":"
+            + nextPort);
+        if (retry++ >= MAX_RETRY) {
+          throw new RuntimeException("RPC Server could not be launched!");
+        }
+        startServer(hostName, nextPort);
       }
-      startServer(hostName, port + 1);
     }
   }
 
