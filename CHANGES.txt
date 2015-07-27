@@ -11,6 +11,7 @@ Release 0.7.1 (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-967: Remove a meaningless checking condition (JongYoon Lim via edwardyoon)
 
 Release 0.7.0 - Jun 14, 2015
 
