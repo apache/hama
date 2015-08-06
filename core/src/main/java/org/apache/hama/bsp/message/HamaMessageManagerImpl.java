@@ -51,7 +51,11 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
   private static final Log LOG = LogFactory
       .getLog(HamaMessageManagerImpl.class);
 
+  private static final int MAX_RETRY = 5;
+
   private Server server;
+
+  private static int retry = 0;
 
   private LRUCache<InetSocketAddress, HamaMessageManager<M>> peersLRUCache = null;
 
@@ -60,6 +64,7 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
   public final void init(TaskAttemptID attemptId, BSPPeer<?, ?, ?, ?, M> peer,
       HamaConfiguration conf, InetSocketAddress peerAddress) {
     super.init(attemptId, peer, conf, peerAddress);
+    retry = 0;
     startRPCServer(conf, peerAddress);
     peersLRUCache = new LRUCache<InetSocketAddress, HamaMessageManager<M>>(
         maxCachedConnections) {
@@ -87,7 +92,6 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
   }
 
   private void startServer(String hostName, int port) throws IOException {
-    int retry = 0;
     try {
       this.server = RPC.getServer(this, hostName, port,
           conf.getInt("hama.default.messenger.handler.threads.num", 5), false,
@@ -97,13 +101,13 @@ public final class HamaMessageManagerImpl<M extends Writable> extends
       LOG.info("BSPPeer address:" + server.getListenerAddress().getHostName()
           + " port:" + server.getListenerAddress().getPort());
     } catch (BindException e) {
-      LOG.warn("Address already in use. Retrying " + hostName + ":" + port + 1);
-      startServer(hostName, port + 1);
-      retry++;
-
-      if (retry > 5) {
+      final int nextPort = port + 1;
+      LOG.warn("Address already in use. Retrying " + hostName + ":"
+              + nextPort);
+      if (retry++ >= MAX_RETRY) {
         throw new RuntimeException("RPC Server could not be launched!");
       }
+      startServer(hostName, nextPort);
     }
   }
 
