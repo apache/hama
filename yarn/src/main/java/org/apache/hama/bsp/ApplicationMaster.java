@@ -85,7 +85,10 @@ public class ApplicationMaster implements BSPClient, BSPPeerProtocol {
   private Counters globalCounter = new Counters();
   private BSPJobClient.RawSplit[] splits;
 
+  // Hama job id
   private BSPJobID jobId;
+  // Partiion id
+  private static AtomicInteger ai = new AtomicInteger(-1);
 
   // SyncServer for Zookeeper
   private SyncServer syncServer;
@@ -723,7 +726,7 @@ public class ApplicationMaster implements BSPClient, BSPPeerProtocol {
       vargs.add(BSPRunner.class.getCanonicalName());
 
       vargs.add(jobId.getJtIdentifier());
-      vargs.add(Long.toString(container.getId().getContainerId()));
+      vargs.add(Integer.toString(ai.incrementAndGet()));
       vargs.add(new Path(jobFile).makeQualified(fs.getUri(),
           fs.getWorkingDirectory()).toString());
 
@@ -945,7 +948,6 @@ public class ApplicationMaster implements BSPClient, BSPPeerProtocol {
   public Task getTask(TaskAttemptID taskid) throws IOException {
     BSPJobClient.RawSplit assignedSplit = null;
     String splitName = NullInputFormat.NullInputSplit.class.getName();
-    // String splitName = NullInputSplit.class.getCanonicalName();
     if (splits != null) {
       assignedSplit = splits[taskid.id];
       splitName = assignedSplit.getClassName();

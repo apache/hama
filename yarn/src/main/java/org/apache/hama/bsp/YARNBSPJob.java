@@ -74,6 +74,7 @@ public class YARNBSPJob extends BSPJob {
   public void submit() throws IOException, InterruptedException {
     // If Constants.MAX_TASKS_PER_JOB is null, calculates the max tasks based on resource status.
     this.getConfiguration().setInt(Constants.MAX_TASKS_PER_JOB, getMaxTasks());
+
     LOG.debug("MaxTasks: " + this.getConfiguration().get(Constants.MAX_TASKS_PER_JOB));
     
     RunningJob submitJobInternal = submitClient.submitJobInternal(this,

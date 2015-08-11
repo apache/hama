@@ -241,7 +241,6 @@ public class ZooKeeperSyncClientImpl extends ZKSyncClient implements
     String jobRegisterKey = constructKey(jobId, "peers");
     Stat stat = null;
 
-    LOG.info("TaskAttemptID : " + taskId);
     while (stat != null) {
       try {
         stat = zk.exists(jobRegisterKey, false);
