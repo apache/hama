@@ -145,10 +145,12 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
     LOG.info("Total time spent for broadcasting global vertex count: "
         + (System.currentTimeMillis() - startTime) + " ms");
 
-    startTime = System.currentTimeMillis();
-    doInitialSuperstep(peer);
-    LOG.info("Total time spent for initial superstep: "
-        + (System.currentTimeMillis() - startTime) + " ms");
+    if (peer.getSuperstepCount() == 2) {
+      startTime = System.currentTimeMillis();
+      doInitialSuperstep(peer);
+      LOG.info("Total time spent for initial superstep: "
+          + (System.currentTimeMillis() - startTime) + " ms");
+    }
   }
 
   @Override
@@ -760,10 +762,10 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
 
   public Iterable<Writable> getIterableMessages(final byte[] valuesBytes,
       final int numOfValues) {
-    
+
     return new Iterable<Writable>() {
       DataInputStream dis;
-      
+
       @Override
       public Iterator<Writable> iterator() {
         if (!conf.getBoolean("hama.use.unsafeserialization", false)) {
@@ -771,7 +773,7 @@ public final class GraphJobRunner<V extends WritableComparable, E extends Writab
         } else {
           dis = new DataInputStream(new UnsafeByteArrayInputStream(valuesBytes));
         }
-        
+
         return new Iterator<Writable>() {
           int index = 0;
 

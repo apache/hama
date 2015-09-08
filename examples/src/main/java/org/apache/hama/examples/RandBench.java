@@ -55,7 +55,7 @@ public class RandBench {
       byte[] dummyData = new byte[sizeOfMsg];
       String[] peers = peer.getAllPeerNames();
 
-      for (int i = 0; i < nSupersteps; i++) {
+      for (int i = (int) peer.getSuperstepCount(); i < nSupersteps; i++) {
 
         for (int j = 0; j < nCommunications; j++) {
           String tPeer = peers[r.nextInt(peers.length)];

@@ -390,16 +390,26 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
           Path path = new Path(checkpointPath(superstepProgress));
           FSDataInputStream in = this.fs.open(path);
           BSPMessageBundle<M> bundle = new BSPMessageBundle<M>();
+
           try {
             for (int i = 0; i < numMessages; ++i) {
               String className = in.readUTF();
-              @SuppressWarnings("unchecked")
-              M message = (M) ReflectionUtils.newInstance(
-                  Class.forName(className), conf);
-              message.readFields(in);
-              bundle.addMessage(message);
+              if (className.equals(BSPMessageBundle.class.getCanonicalName())) {
+                BSPMessageBundle<M> tmp = new BSPMessageBundle<M>();
+                tmp.readFields(in);
+                messenger.loopBackBundle(tmp);
+              } else {
+                @SuppressWarnings("unchecked")
+                M message = (M) ReflectionUtils.newInstance(
+                    Class.forName(className), conf);
+                message.readFields(in);
+                bundle.addMessage(message);
+              }
             }
-            messenger.loopBackBundle(bundle);
+
+            if (bundle.size() > 0) {
+              messenger.loopBackBundle(bundle);
+            }
           } catch (EOFException e) {
             LOG.error("Error recovering from checkpointing", e);
             throw new IOException(e);
@@ -514,6 +524,7 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
                   + checkpointedPath, ioe);
             }
           }
+          
           try {
             ++checkpointMessageCount;
             checkpointStream.writeUTF(message.getClass().getCanonicalName());
@@ -535,6 +546,49 @@ public class AsyncRcvdMsgCheckpointImpl<M extends Writable> implements
     @Override
     public void onClose() {
 
+    }
+
+    @Override
+    public void onBundleReceived(BSPMessageBundle<M> bundle) {
+      String checkpointedPath = null;
+
+      if (bundle == null) {
+        LOG.error("bundle is found to be null");
+      }
+
+      synchronized (this) {
+        if (checkpointState) {
+          if (this.checkpointStream == null) {
+            checkpointedPath = checkpointPath(peer.getSuperstepCount() + 1);
+            try {
+              LOG.info("Creating path " + checkpointedPath);
+              if (LOG.isDebugEnabled()) {
+                LOG.debug("Creating path " + checkpointedPath);
+              }
+              checkpointStream = this.fs.create(new Path(checkpointedPath));
+            } catch (IOException ioe) {
+              LOG.error("Fail checkpointing messages to " + checkpointedPath,
+                  ioe);
+              throw new RuntimeException("Failed opening HDFS file "
+                  + checkpointedPath, ioe);
+            }
+          }
+
+          try {
+            ++checkpointMessageCount;
+            checkpointStream.writeUTF(bundle.getClass().getCanonicalName());
+            bundle.write(checkpointStream);
+          } catch (IOException ioe) {
+            LOG.error("Fail checkpointing messages to " + checkpointedPath, ioe);
+            throw new RuntimeException("Failed writing to HDFS file "
+                + checkpointedPath, ioe);
+          }
+
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("message count = " + checkpointMessageCount);
+          }
+        }
+      }
     }
 
   }

@@ -129,7 +129,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
   public final int getNumCurrentMessages() {
     return localQueue.size();
   }
-  
+
   public void clearIncomingMessages() {
     localQueue.clear();
   }
@@ -145,13 +145,13 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     if (conf.getBoolean(MessageQueue.PERSISTENT_QUEUE, false)
         && localQueue.size() > 0) {
 
-        // To reduce the number of element additions
-        if (localQueue.size() > localQueueForNextIteration.size()) {
-          localQueue.addAll(localQueueForNextIteration);
-        } else {
-          localQueueForNextIteration.addAll(localQueue);
-          localQueue = localQueueForNextIteration.getMessageQueue();
-        }
+      // To reduce the number of element additions
+      if (localQueue.size() > localQueueForNextIteration.size()) {
+        localQueue.addAll(localQueueForNextIteration);
+      } else {
+        localQueueForNextIteration.addAll(localQueue);
+        localQueue = localQueueForNextIteration.getMessageQueue();
+      }
 
     } else {
       if (localQueue != null) {
@@ -178,7 +178,7 @@ public abstract class AbstractMessageManager<M extends Writable> implements
 
     notifySentMessage(peerName, msg);
   }
-  
+
   /*
    * (non-Javadoc)
    * @see org.apache.hama.bsp.message.MessageManager#getMessageIterator()
@@ -239,6 +239,13 @@ public abstract class AbstractMessageManager<M extends Writable> implements
     }
   }
 
+  private void notifyReceivedMessage(BSPMessageBundle<M> bundle)
+      throws IOException {
+    for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
+      aMessageListenerQueue.onBundleReceived(bundle);
+    }
+  }
+
   private void notifyInit() {
     for (MessageEventListener<M> aMessageListenerQueue : this.messageListenerQueue) {
       aMessageListenerQueue.onInitialized();
@@ -261,11 +268,10 @@ public abstract class AbstractMessageManager<M extends Writable> implements
 
   @Override
   public void loopBackBundle(BSPMessageBundle<M> bundle) throws IOException {
-    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED, bundle.size());
+    peer.incrementCounter(BSPPeerImpl.PeerCounter.TOTAL_MESSAGES_RECEIVED,
+        bundle.size());
     this.localQueueForNextIteration.addBundle(bundle);
-    
-    // TODO checkpoint bundle itself instead of unpacked messages. -- edwardyoon
-    // notifyReceivedMessage(bundle);
+    notifyReceivedMessage(bundle);
   }
 
   @SuppressWarnings("unchecked")

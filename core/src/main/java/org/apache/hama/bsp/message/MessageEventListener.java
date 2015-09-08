@@ -17,7 +17,10 @@
  */
 package org.apache.hama.bsp.message;
 
-public interface MessageEventListener<M> {
+import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPMessageBundle;
+
+public interface MessageEventListener<M extends Writable> {
 
   /**
    * 
@@ -48,6 +51,8 @@ public interface MessageEventListener<M> {
    * @param message The message received.
    */
   void onMessageReceived(final M message);
+  
+  void onBundleReceived(final BSPMessageBundle<M> bundle);
 
   /**
    * The function to handle the event when the queue is closed.

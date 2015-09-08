@@ -38,6 +38,8 @@ public class TestPersistQueue extends TestCase {
   public static final Log LOG = LogFactory.getLog(TestPartitioning.class);
 
   public void testMemoryQueue() throws Exception {
+    BSPMessageBundle<IntWritable> x = new BSPMessageBundle<IntWritable>();
+    System.out.println(x.getClass().getCanonicalName() + ", " + BSPMessageBundle.class.getCanonicalName());
     BSPJob bsp = getNewJobConf();
     bsp.set(MessageManager.RECEIVE_QUEUE_TYPE_CLASS,
         "org.apache.hama.bsp.message.queue.MemoryQueue");
