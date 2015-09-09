@@ -42,6 +42,11 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.apache.hama</groupId>
+      <artifactId>hama-graph</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
     </dependency>
