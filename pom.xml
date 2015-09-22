@@ -413,6 +413,7 @@
           <excludes>
             <exclude>.idea/**</exclude>
             <exclude>.git/**</exclude>
+            <exclude>.repository/**</exclude>
             <exclude>.gitignore</exclude>
             <exclude>**/.classpath/**</exclude>
             <exclude>**/.project</exclude>
