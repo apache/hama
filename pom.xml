@@ -411,6 +411,7 @@
         </executions>
         <configuration>
           <excludes>
+            <exclude>**/*.md</exclude>
             <exclude>.idea/**</exclude>
             <exclude>.git/**</exclude>
             <exclude>.repository/**</exclude>

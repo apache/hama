@@ -82,7 +82,7 @@ public class TestPartitioning extends HamaCluster {
     conf.setInt(Constants.ZOOKEEPER_SESSION_TIMEOUT, 600);
     bsp.setInputFormat(TextInputFormat.class);
     bsp.setOutputFormat(NullOutputFormat.class);
-    FileInputFormat.setInputPaths(bsp, "../CHANGES.txt,../README.txt");
+    FileInputFormat.setInputPaths(bsp, "../CHANGES.txt,../README.md");
     bsp.setPartitioner(HashPartitioner.class);
     assertTrue(bsp.waitForCompletion(true));
 
