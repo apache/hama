@@ -24,7 +24,7 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
 
     <section name=""></section>
     <p>
-    <div style="float:left;margin-right:15px;margin-top:25px;"><img src="./images/hama_art_arthur_300x220.png" style="width:260px" /></div>
+    <div style="float:left;margin-right:15px;"><img src="./images/hama_paint_logo.png" style="width:130px" alt="" /></div>
      Apache Hama<sup>TM</sup> is a framework for Big Data analytics which uses the Bulk Synchronous Parallel (BSP) computing model, 
     which was established in 2012 as a Top-Level Project of The Apache Software Foundation. 
     <br/><br/>It provides not only pure BSP programming model 
@@ -32,21 +32,21 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     <br/>
     </p>
     
-<div align="right">
-<pre style="width: 625px; text-align:center;">
-+---------------------+-------------------------+----------------------------+
-|         BSP         |           Graph         |        Deep learning       |
-|      (pure BSP)     |     (Google's Pregel)   |    (Google's DistBelief)   |
-+---------------------+-------------------------+----------------------------+
-|                              Apache Hama                                   |
-|                                     +--------------------------------------+
-|                                     |                 YARN                 |
-+-------------------------------------+--------------------------------------+
-|                              Hadoop HDFS                                   |
-+----------------------------------------------------------------------------+</pre>
+<div align="center">
+<pre style="width: 670px; text-align:center;">
++--------------+----------------------+---------------------+-------------------+
+|   Core BSP   |      Apache MRQL     |    Graph Package    |    Apache Horn    |
+|  (pure BSP)  |  (Query Processing)  |  (Graph Computing)  |  (Deep Learning)  |
++--------------+----------------------+---------------------+-------------------+
+|                                Apache Hama                                    |
++-------------------------------------------------------------------------------+
+|                                Hadoop HDFS                                    |
++-------------------------------------------------------------------------------+</pre>
 </div>
 
     <div class="green">
+
+
     <h3 align="center">Recent News</h3>
       <ul>
         <li>Jun 14, 2015: release 0.7.0 available [<a href="downloads.html">downloads</a>]</li>

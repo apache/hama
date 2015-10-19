@@ -31,8 +31,8 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
     </p>
     <subsection name="Source Code"></subsection>
     <p>
-    The source files are now stored on Subversion : 
-    <a href="https://svn.apache.org/repos/asf/hama/trunk">https://svn.apache.org/repos/asf/hama/trunk</a>
+    The source files are now stored on GIT : 
+    <a href="https://git-wip-us.apache.org/repos/asf/hama.git">https://git-wip-us.apache.org/repos/asf/hama.git</a>
     <br/>
     And, git mirros : <a href="git://git.apache.org/hama.git">git://git.apache.org/hama.git</a>
     [ <a href="http://git.apache.org/hama.git">http</a>, <a href="http://github.com/apache/hama">github</a> ] 
