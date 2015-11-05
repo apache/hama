@@ -489,14 +489,6 @@
         </executions>
       </plugin>
     </plugins>
-    <resources>
-      <resource>
-        <directory>conf</directory>
-        <includes>
-          <include>log4j.properties</include>
-        </includes>
-      </resource>
-    </resources>
   </build>
 
   <distributionManagement>
