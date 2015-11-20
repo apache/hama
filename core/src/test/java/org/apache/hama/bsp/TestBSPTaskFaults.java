@@ -316,7 +316,7 @@ public class TestBSPTaskFaults extends TestCase {
       HamaConfiguration hamaConf = new HamaConfiguration();
       hamaConf.setInt(Constants.GROOM_PING_PERIOD, 200);
       hamaConf.setClass("bsp.work.class", FaulTestBSP.class, BSP.class);
-      hamaConf.setClass(SyncServiceFactory.SYNC_PEER_CLASS,
+      hamaConf.setClass(SyncServiceFactory.SYNC_CLIENT_CLASS,
           LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 
       hamaConf.setInt("bsp.master.port", 610002);
@@ -420,7 +420,7 @@ public class TestBSPTaskFaults extends TestCase {
 
     conf.setInt(Constants.GROOM_PING_PERIOD, 200);
     conf.setClass("bsp.work.class", FaulTestBSP.class, BSP.class);
-    conf.setClass(SyncServiceFactory.SYNC_PEER_CLASS,
+    conf.setClass(SyncServiceFactory.SYNC_CLIENT_CLASS,
         LocalBSPRunner.LocalSyncClient.class, SyncClient.class);
 
     int port = BSPNetUtils.getFreePort(4321 + incrementTestNumber());
