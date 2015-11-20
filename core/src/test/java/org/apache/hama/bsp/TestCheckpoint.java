@@ -476,7 +476,7 @@ public class TestCheckpoint extends TestCase {
   public void testCheckpointInterval() throws Exception {
     Configuration config = new Configuration();
     System.setProperty("user.dir", "/tmp");
-    config.set(SyncServiceFactory.SYNC_PEER_CLASS,
+    config.set(SyncServiceFactory.SYNC_CLIENT_CLASS,
         TempSyncClient.class.getName());
     config.set(Constants.FAULT_TOLERANCE_CLASS,
         AsyncRcvdMsgCheckpointImpl.class.getName());
@@ -552,7 +552,7 @@ public class TestCheckpoint extends TestCase {
   @SuppressWarnings("rawtypes")
   public void testCheckpoint() throws Exception {
     Configuration config = new Configuration();
-    config.set(SyncServiceFactory.SYNC_PEER_CLASS,
+    config.set(SyncServiceFactory.SYNC_CLIENT_CLASS,
         TempSyncClient.class.getName());
     config.setBoolean(Constants.FAULT_TOLERANCE_FLAG, true);
     config.set(Constants.FAULT_TOLERANCE_CLASS,
@@ -613,7 +613,7 @@ public class TestCheckpoint extends TestCase {
 
   public void testPeerRecovery() throws Exception {
     Configuration config = new Configuration();
-    config.set(SyncServiceFactory.SYNC_PEER_CLASS,
+    config.set(SyncServiceFactory.SYNC_CLIENT_CLASS,
         TempSyncClient.class.getName());
     config.set(Constants.FAULT_TOLERANCE_CLASS,
         AsyncRcvdMsgCheckpointImpl.class.getName());

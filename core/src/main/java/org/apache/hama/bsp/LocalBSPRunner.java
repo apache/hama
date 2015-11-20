@@ -119,7 +119,7 @@ public class LocalBSPRunner implements JobSubmissionProtocol {
 
     conf.setClass(MessageManagerFactory.MESSAGE_MANAGER_CLASS,
         LocalMessageManager.class, MessageManager.class);
-    conf.setClass(SyncServiceFactory.SYNC_PEER_CLASS, LocalSyncClient.class,
+    conf.setClass(SyncServiceFactory.SYNC_CLIENT_CLASS, LocalSyncClient.class,
         SyncClient.class);
 
     BSPJob job = new BSPJob(new HamaConfiguration(conf), jobID);
