@@ -39,8 +39,6 @@ public class ExampleDriver {
       pgd.addClass("semi", SemiClusterJobDriver.class, "Semi Clustering");
       pgd.addClass("kmeans", Kmeans.class, "K-Means Clustering");
       pgd.addClass("gd", GradientDescentExample.class, "Gradient Descent");
-      pgd.addClass("neuralnets", NeuralNetwork.class,
-          "Neural Network classification");
       pgd.addClass("kcore", KCore.class, "kcore");
       pgd.addClass("gen", Generator.class, "Random Data Generator Util");
       pgd.driver(args);
