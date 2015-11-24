@@ -108,7 +108,9 @@ public class UplinkReader<KEYIN, VALUEIN, KEYOUT, VALUEOUT, M extends Writable>
         // MessageType.values()[cmd] may cause NullPointerException (bad
         // command)
 
-        if (cmd == MessageType.WRITE_KEYVALUE.code && isPeerAvailable()) { // INCOMING
+        if (cmd == -1) {
+          continue;
+        } else if (cmd == MessageType.WRITE_KEYVALUE.code && isPeerAvailable()) { // INCOMING
           writeKeyValue();
         } else if (cmd == MessageType.READ_KEYVALUE.code && isPeerAvailable()) { // OUTGOING
           readKeyValue();
