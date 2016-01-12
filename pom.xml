@@ -74,14 +74,12 @@
       <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
+
   <scm>
-    <url>scm:svn:https://svn.apache.org/repos/asf/hama/</url>
-    <connection>
-      scm:svn:http://svn.apache.org/repos/asf/hama/trunk/
-    </connection>
-    <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/hama/trunk/
-    </developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf/hama.git</url>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/hama.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/hama.git</developerConnection>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
