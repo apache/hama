@@ -40,7 +40,6 @@ import org.apache.hama.bsp.ft.FaultTolerantMasterService;
 import org.apache.hama.bsp.sync.MasterSyncClient;
 import org.apache.hama.bsp.taskallocation.BSPResource;
 import org.apache.hama.bsp.taskallocation.BestEffortDataLocalTaskAllocator;
-import org.apache.hama.bsp.taskallocation.RoundRobinTaskAllocator;
 import org.apache.hama.bsp.taskallocation.TaskAllocationStrategy;
 import org.apache.hama.util.ReflectionUtils;
 
@@ -299,14 +298,10 @@ public class JobInProgress {
     MasterSyncClient syncClient = master.getSyncClient();
     syncClient.registerJob(this.getJobID().toString());
 
-    tasksInited = true;
+    tasksInited = true;    
 
-    //CHANGED by Behroz - Uncomment this
-//    Class<?> taskAllocatorClass = conf.getClass(Constants.TASK_ALLOCATOR_CLASS,
-//        BestEffortDataLocalTaskAllocator.class, TaskAllocationStrategy.class);
-    
     Class<?> taskAllocatorClass = conf.getClass(Constants.TASK_ALLOCATOR_CLASS,
-        RoundRobinTaskAllocator.class, TaskAllocationStrategy.class);
+        BestEffortDataLocalTaskAllocator.class, TaskAllocationStrategy.class);
     
     this.taskAllocationStrategy = (TaskAllocationStrategy) ReflectionUtils
         .newInstance(taskAllocatorClass, new Object[0]);
