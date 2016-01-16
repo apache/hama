@@ -298,11 +298,10 @@ public class JobInProgress {
     MasterSyncClient syncClient = master.getSyncClient();
     syncClient.registerJob(this.getJobID().toString());
 
-    tasksInited = true;    
+    tasksInited = true;
 
     Class<?> taskAllocatorClass = conf.getClass(Constants.TASK_ALLOCATOR_CLASS,
         BestEffortDataLocalTaskAllocator.class, TaskAllocationStrategy.class);
-    
     this.taskAllocationStrategy = (TaskAllocationStrategy) ReflectionUtils
         .newInstance(taskAllocatorClass, new Object[0]);
 
