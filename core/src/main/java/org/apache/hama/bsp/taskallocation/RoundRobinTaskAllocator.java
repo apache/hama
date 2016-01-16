@@ -43,6 +43,51 @@ public class RoundRobinTaskAllocator implements TaskAllocationStrategy {
   }
 
   /**
+   * This function loops through the whole list of Grooms with their task count
+   * and returns the first Groom which contains the minimum number of tasks.
+   * @param groomStatuses The map of groom-name to
+   *          <code>GroomServerStatus</code> object for all known grooms.
+   * @param taskCountInGroomMap Map of count of tasks in groom (To be deprecated
+   *          soon)
+   * @return returns the groom name which should be allocated the next task or 
+   *          null no suitable groom was found.
+   */
+  private String findGroomWithMinimumTasks(
+      Map<String, GroomServerStatus> groomStatuses,
+      Map<GroomServerStatus, Integer> taskCountInGroomMap) {
+    
+    Entry<GroomServerStatus, Integer> firstGroomWithMinimumTasks = null;
+    
+    // At the start taskCountInGroomMap is empty so we have to put 0 tasks on grooms
+    if (taskCountInGroomMap.size() < groomStatuses.size()) {
+      for (String s : groomStatuses.keySet()) {
+        GroomServerStatus groom = groomStatuses.get(s);
+        if (groom == null)
+          continue;
+        Integer taskInGroom = taskCountInGroomMap.get(groom);
+        
+        // Find the groom that is yet to get its first tasks and assign 0 value to it.
+        // Having zero will make sure that it gets selected.
+        if (taskInGroom == null) {
+          taskCountInGroomMap.put(groom, 0);
+          break;
+        }
+      }
+    }
+    
+    for (Entry<GroomServerStatus, Integer> currentGroom : taskCountInGroomMap.entrySet()) {
+      if (firstGroomWithMinimumTasks == null || firstGroomWithMinimumTasks.getValue() > currentGroom.getValue()) {
+        if(currentGroom.getValue() < currentGroom.getKey().getMaxTasks()) { // Assign the task to groom which still has space for more tasks 
+          firstGroomWithMinimumTasks = currentGroom;
+        } // If there is no space then continue and find the next best groom
+      }
+    }
+    
+    return (firstGroomWithMinimumTasks == null) ? null
+        : firstGroomWithMinimumTasks.getKey().getGroomHostName();
+  }
+  
+  /**
    * Select grooms that has the block of data locally stored on the groom
    * server.
    */
@@ -98,89 +143,4 @@ public class RoundRobinTaskAllocator implements TaskAllocationStrategy {
     throw new UnsupportedOperationException(
         "This API is not supported for the called API function call.");
   }
-  
-  /**
-   * This function loops through the whole list of Grooms with their task count
-   * and returns the first Groom which contains the minimum number of tasks.
-   * @param groomStatuses The map of groom-name to
-   *          <code>GroomServerStatus</code> object for all known grooms.
-   * @param taskCountInGroomMap Map of count of tasks in groom (To be deprecated
-   *          soon)
-   * @return returns the groom name which should be allocated the next task or 
-   *          null no suitable groom was found.
-   */
-  private String findGroomWithMinimumTasks(
-      Map<String, GroomServerStatus> groomStatuses,
-      Map<GroomServerStatus, Integer> taskCountInGroomMap) {
-    
-    Entry<GroomServerStatus, Integer> firstGroomWithMinimumTasks = null;
-    
-    // At the start taskCountInGroomMap is empty so we have to put 0 tasks on grooms
-    if (taskCountInGroomMap.size() < groomStatuses.size()) {
-      for (String s : groomStatuses.keySet()) {
-        GroomServerStatus groom = groomStatuses.get(s);
-        if (groom == null)
-          continue;
-        Integer taskInGroom = taskCountInGroomMap.get(groom);
-        
-        // Find the groom that is yet to get its first tasks and assign 0 value to it.
-        // Having zero will make sure that it gets selected.
-        if (taskInGroom == null) {
-          taskCountInGroomMap.put(groom, 0);
-          break;
-        }
-      }
-    }
-    
-    for (Entry<GroomServerStatus, Integer> currentGroom : taskCountInGroomMap.entrySet()) {
-      if (firstGroomWithMinimumTasks == null || firstGroomWithMinimumTasks.getValue() > currentGroom.getValue()) {
-        if(currentGroom.getValue() < currentGroom.getKey().getMaxTasks()) { // Assign the task to groom which still has space for more tasks 
-          firstGroomWithMinimumTasks = currentGroom;
-        } // If there is no space then continue and find the next best groom
-      }
-    }
-    
-    return (firstGroomWithMinimumTasks == null) ? null
-        : firstGroomWithMinimumTasks.getKey().getGroomHostName();
-  }
-
-  /**
-   * From the set of grooms given, returns the groom on which a task could be
-   * scheduled on.
-   * 
-   * @param grooms
-   * @param tasksInGroomMap
-   * @param possibleLocations
-   * @return a hostname of Groom Server.
-   */
-  private String getGroomToSchedule(Map<String, GroomServerStatus> grooms,
-      Map<GroomServerStatus, Integer> tasksInGroomMap,
-      String[] possibleLocations) {
-
-    for (String location : possibleLocations) {
-      GroomServerStatus groom = grooms.get(location);
-      if (groom == null) {
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Could not find groom for location " + location);
-        }
-        continue;
-      }
-      Integer taskInGroom = tasksInGroomMap.get(groom);
-      taskInGroom = (taskInGroom == null) ? 0 : taskInGroom;
-      if (LOG.isDebugEnabled()) {
-        LOG.debug("taskInGroom = " + taskInGroom + " max tasks = "
-            + groom.getMaxTasks() + " location = " + location
-            + " groomhostname = " + groom.getGroomHostName());
-      }
-      if (taskInGroom < groom.getMaxTasks()
-          && location.equals(groom.getGroomHostName())) {
-        return groom.getGroomHostName();
-      }
-    }
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Returning null");
-    }
-    return null;
-  }
-
 }
