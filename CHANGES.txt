@@ -8,6 +8,7 @@ Release 0.7.1 (unreleased changes)
 
   BUG FIXES
 
+    HAMA-982: Vertex.read/writeState() method throws NullPointerException (edwardyoon)
     HAMA-965: Infinite loop because of recursive function call (JongYoon Lim via edwardyoon)
     HAMA-966: NioServerListener doesn't throw any exceptions (JongYoon Lim via edwardyoon)
 

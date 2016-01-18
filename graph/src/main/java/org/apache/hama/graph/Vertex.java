@@ -17,8 +17,10 @@
  */
 package org.apache.hama.graph;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -271,7 +273,11 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
       }
     }
     votedToHalt = in.readBoolean();
-    readState(in);
+
+    boolean hasMoreContents = in.readBoolean();
+    if (hasMoreContents) {
+      readState(in);
+    }
   }
 
   @Override
@@ -308,8 +314,24 @@ public abstract class Vertex<V extends WritableComparable, E extends Writable, M
       }
     }
     out.writeBoolean(votedToHalt);
-    writeState(out);
 
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    DataOutput customOut = new DataOutputStream(baos);
+    boolean hasMoreContents = true;
+    try {
+      writeState(customOut);
+    } catch (NullPointerException e) {
+      // do nothing
+    }
+
+    // if all states are null, set hasContents to false.
+    if (baos.size() == 0) {
+      hasMoreContents = false;
+    }
+
+    out.writeBoolean(hasMoreContents);
+    if (hasMoreContents)
+      out.write(baos.toByteArray());
   }
 
   // compare across the vertex ID
