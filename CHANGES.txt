@@ -4,6 +4,8 @@ Release 0.7.1 (unreleased changes)
 
   NEW FEATURES
 
+    HAMA-900: Added a new strategy to schedule tasks based on round robin scheme (Behroz Sikander via edwardyoon)
+
   BUG FIXES
 
     HAMA-965: Infinite loop because of recursive function call (JongYoon Lim via edwardyoon)
