@@ -1,6 +1,16 @@
 Hama Change Log
 
-Release 0.7.1 (unreleased changes)
+Release 0.7.2 (unreleased changes)
+
+  NEW FEATURES
+
+  BUG FIXES
+
+    HAMA-986: There is a missing value when calculating hashcode of AsyncClient (JongYoon Lim via edwardyoon)
+
+  IMPROVEMENTS
+
+Release 0.7.1 - March 14, 2016
 
   NEW FEATURES
 

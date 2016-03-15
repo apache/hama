@@ -1127,7 +1127,7 @@ public class AsyncClient {
       result = PRIME * result + maxIdleTime;
       result = PRIME * result + pingInterval;
       result = PRIME * result + ((protocol == null) ? 0 : protocol.hashCode());
-      result = PRIME * rpcTimeout;
+      result = PRIME * result + rpcTimeout;
       result = PRIME * result
           + ((serverPrincipal == null) ? 0 : serverPrincipal.hashCode());
       result = PRIME * result + (tcpNoDelay ? 1231 : 1237);
