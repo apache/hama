@@ -10,6 +10,8 @@ Release 0.7.2 (unreleased changes)
 
   IMPROVEMENTS
 
+    HAMA-978: Netty native transport (JongYoon Lim via edwardyoon)
+
 Release 0.7.1 - March 14, 2016
 
   NEW FEATURES
