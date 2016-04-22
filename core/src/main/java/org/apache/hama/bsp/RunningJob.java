@@ -53,6 +53,8 @@ public interface RunningJob {
    */
   public String getJobFile();
 
+  public Counters getCounters();
+  
   /**
    * Get the <i>progress</i> of the job's tasks, as a float between 0.0 and 1.0.
    * When all bsp tasks have completed, the function returns 1.0.

@@ -3,6 +3,8 @@ Hama Change Log
 Release 0.7.2 (unreleased changes)
 
   NEW FEATURES
+ 
+    HAMA-988: Allow to add additional no-input tasks (edwardyoon)
 
   BUG FIXES
 
