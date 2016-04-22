@@ -133,6 +133,9 @@ public interface Constants {
   // If true, framework launches the number of tasks by user settings.
   public static final String FORCE_SET_BSP_TASKS = "hama.force.set.bsp.tasks";
   
+  // framework launches additional tasks to the number of input splits
+  public static final String ADDITIONAL_BSP_TASKS = "hama.additional.bsp.tasks";
+  
   // /////////////////////////////////////
   // Constants for ZooKeeper
   // /////////////////////////////////////
