@@ -189,6 +189,11 @@ public class BSPJob extends BSPJobContext {
     return info.progress();
   }
 
+  public Counters getCounters() throws IOException {
+    ensureState(JobState.RUNNING);
+    return info.getCounters();
+  }
+  
   public boolean isComplete() throws IOException {
     ensureState(JobState.RUNNING);
     return info.isComplete();
