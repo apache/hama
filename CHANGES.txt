@@ -4,6 +4,8 @@ Release 0.7.2 (unreleased changes)
 
   NEW FEATURES
 
+   HAMA-988: Allow to add additional no-input tasks (edwardyoon)
+
   BUG FIXES
 
     HAMA-986: There is a missing value when calculating hashcode of AsyncClient (JongYoon Lim via edwardyoon)
