@@ -219,6 +219,11 @@ public class BSPJobClient extends Configured implements Tool {
     public TaskCompletionEvent[] getTaskCompletionEvents(int startFrom) {
       return jobSubmitClient.getTaskCompletionEvents(getID(), startFrom, 10);
     }
+
+    @Override
+    public Counters getCounters() {
+      return status.getCounter();
+    }
   }
 
   public BSPJobClient(Configuration conf) throws IOException {
@@ -363,17 +368,22 @@ public class BSPJobClient extends Configured implements Tool {
         splits = job.getInputFormat().getSplits(job, maxTasks);
       }
 
-      if (maxTasks < splits.length) {
+      // the number of additional tasks to the number of input splits
+      int additionalTasks = job.getConfiguration().getInt(
+          Constants.ADDITIONAL_BSP_TASKS, 0);
+      if (maxTasks < splits.length + additionalTasks) {
         throw new IOException(
             "Job failed! The number of splits has exceeded the number of max tasks. The number of splits: "
-                + splits.length + ", The number of max tasks: " + maxTasks);
+                + splits.length
+                + ", The number of additional tasks: "
+                + +additionalTasks + ", The number of max tasks: " + maxTasks);
       }
 
       int numOfSplits = writeSplits(job, splits, submitSplitFile, maxTasks);
       if (numOfSplits > configured
           || !job.getConfiguration().getBoolean(Constants.FORCE_SET_BSP_TASKS,
               false)) {
-        job.setNumBspTask(numOfSplits);
+        job.setNumBspTask(numOfSplits + additionalTasks);
       }
 
       job.set("bsp.job.split.file", submitSplitFile.toString());
@@ -583,8 +593,9 @@ public class BSPJobClient extends Configured implements Tool {
         // set partitionID to rawSplit
         if (split.getClass().getName().equals(FileSplit.class.getName())
             && job.getBoolean("input.has.partitioned", false)) {
-          String[] extractPartitionID = ((FileSplit) split).getPath().getName().split("[-]");
-          if(extractPartitionID.length > 1)
+          String[] extractPartitionID = ((FileSplit) split).getPath().getName()
+              .split("[-]");
+          if (extractPartitionID.length > 1)
             rawSplit.setPartitionID(Integer.parseInt(extractPartitionID[1]));
         }
 

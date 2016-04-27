@@ -1,11 +1,28 @@
 Hama Change Log
 
-Release 0.7.1 (unreleased changes)
+Release 0.7.2 (unreleased changes)
 
   NEW FEATURES
+ 
+    HAMA-988: Allow to add additional no-input tasks (edwardyoon)
 
   BUG FIXES
 
+    HAMA-986: There is a missing value when calculating hashcode of AsyncClient (JongYoon Lim via edwardyoon)
+
+  IMPROVEMENTS
+
+    HAMA-978: Netty native transport (JongYoon Lim via edwardyoon)
+
+Release 0.7.1 - March 14, 2016
+
+  NEW FEATURES
+
+    HAMA-900: Added a new strategy to schedule tasks based on round robin scheme (Behroz Sikander via edwardyoon)
+
+  BUG FIXES
+
+    HAMA-982: Vertex.read/writeState() method throws NullPointerException (edwardyoon)
     HAMA-965: Infinite loop because of recursive function call (JongYoon Lim via edwardyoon)
     HAMA-966: NioServerListener doesn't throw any exceptions (JongYoon Lim via edwardyoon)
 

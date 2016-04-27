@@ -20,13 +20,13 @@
     <parent>
       <groupId>org.apache.hama</groupId>
       <artifactId>hama-parent</artifactId>
-      <version>0.7.1-SNAPSHOT</version>
+      <version>0.7.2-SNAPSHOT</version>
     </parent>
     
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.hama</groupId>
     <artifactId>hama-pipes</artifactId>
-    <version>0.7.1-SNAPSHOT</version>
+    <version>0.7.2-SNAPSHOT</version>
     <name>pipes</name>
     <description>Apache Hama Pipes</description>
     <packaging>pom</packaging>
