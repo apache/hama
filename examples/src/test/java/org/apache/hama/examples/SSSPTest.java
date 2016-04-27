@@ -31,7 +31,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
+import org.apache.hama.bsp.HashPartitioner;
+import org.apache.hama.bsp.NullOutputFormat;
+import org.apache.hama.bsp.TextInputFormat;
+import org.apache.hama.examples.CustomVertexReadWriteStateTest.TestVertex;
+import org.apache.hama.examples.SSSP.SSSPTextReader;
+import org.apache.hama.graph.GraphJob;
 import org.junit.Test;
 
 /**
@@ -61,18 +70,51 @@ public class SSSPTest extends TestCase {
   protected void setUp() throws Exception {
     super.setUp();
     fs = FileSystem.get(conf);
+    generateTestData();
+  }
+  
+  protected void tearDown() throws Exception {
+    deleteTempDirs();
+    fs.close();
   }
 
   @Test
   public void testShortestPaths() throws IOException, InterruptedException,
       ClassNotFoundException, InstantiationException, IllegalAccessException {
 
-    generateTestData();
-    try {
-      SSSP.main(new String[] { "0", INPUT, OUTPUT, "3" });
-      verifyResult();
-    } finally {
-      deleteTempDirs();
+    SSSP.main(new String[] { "0", INPUT, OUTPUT, "3" });
+    verifyResult();
+  }
+
+  @Test
+  public void testCustomReadWriteState() throws IOException,
+      InterruptedException, ClassNotFoundException, InstantiationException,
+      IllegalAccessException {
+
+    HamaConfiguration conf = new HamaConfiguration();
+    GraphJob job = new GraphJob(conf, CustomVertexReadWriteStateTest.class);
+    // Set the job name
+    job.setJobName("test custom read/write state");
+    job.setInputPath(new Path(INPUT));
+    job.setNumBspTask(1);
+    job.setVertexClass(TestVertex.class);
+    job.setInputFormat(TextInputFormat.class);
+    job.setInputKeyClass(LongWritable.class);
+    job.setInputValueClass(Text.class);
+
+    job.setPartitioner(HashPartitioner.class);
+    job.setOutputFormat(NullOutputFormat.class);
+    job.setVertexInputReaderClass(SSSPTextReader.class);
+    // Iterate until all the nodes have been reached.
+    job.setMaxIteration(6);
+    job.setVertexIDClass(Text.class);
+    job.setVertexValueClass(IntWritable.class);
+    job.setEdgeValueClass(IntWritable.class);
+
+    long startTime = System.currentTimeMillis();
+    if (job.waitForCompletion(true)) {
+      System.out.println("Job Finished in "
+          + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     }
   }
 

@@ -123,6 +123,12 @@ public class YARNBSPJobClient extends BSPJobClient {
     public String getJobFile() {
       return null;
     }
+
+    @Override
+    public Counters getCounters() {
+      // TODO Auto-generated method stub
+      return null;
+    }
   }
 
   public YARNBSPJobClient(HamaConfiguration conf) {

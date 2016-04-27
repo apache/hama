@@ -20,12 +20,12 @@ package org.apache.hama.ipc;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.*;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -48,7 +48,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.concurrent.Future;
 
 /**
  * An abstract IPC service using netty. IPC calls take a single {@link Writable}
@@ -82,8 +81,8 @@ public abstract class AsyncServer {
   private int port; // port we listen on
   private Class<? extends Writable> paramClass; // class of call parameters
   // Configure the server.(constructor is thread num)
-  private EventLoopGroup bossGroup = new NioEventLoopGroup(1);
-  private EventLoopGroup workerGroup = new NioEventLoopGroup();
+  private EventLoopGroup bossGroup = new EpollEventLoopGroup(1);
+  private EventLoopGroup workerGroup = new EpollEventLoopGroup();
   private static final Map<String, Class<?>> PROTOCOL_CACHE = new ConcurrentHashMap<String, Class<?>>();
   private ExceptionsHandler exceptionsHandler = new ExceptionsHandler();
 
@@ -192,7 +191,7 @@ public abstract class AsyncServer {
       // ServerBootstrap is a helper class that sets up a server
       ServerBootstrap b = new ServerBootstrap();
       b.group(bossGroup, workerGroup)
-          .channel(NioServerSocketChannel.class)
+          .channel(EpollServerSocketChannel.class)
           .option(ChannelOption.SO_BACKLOG, backlogLength)
           .childOption(ChannelOption.MAX_MESSAGES_PER_READ, NIO_BUFFER_LIMIT)
           .childOption(ChannelOption.TCP_NODELAY, tcpNoDelay)

@@ -20,24 +20,29 @@ package org.apache.hama.ipc;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.*;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.ReferenceCountUtil;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.security.SaslRpcServer.AuthMethod;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hama.util.BSPNetUtils;
 
+import javax.net.SocketFactory;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -50,20 +55,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.net.SocketFactory;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.hadoop.security.SaslRpcServer.AuthMethod;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hama.util.BSPNetUtils;
 
 /**
  * A client for an IPC service using netty. IPC calls take a single
@@ -186,7 +177,7 @@ public class AsyncClient {
      * @throws IOException
      */
     public Connection(ConnectionId remoteId) throws IOException {
-      group = new NioEventLoopGroup();
+      group = new EpollEventLoopGroup();
       bootstrap = new Bootstrap();
       this.remoteId = remoteId;
       this.serverAddress = remoteId.getAddress();
@@ -280,12 +271,12 @@ public class AsyncClient {
           }
 
           // Configure the client.
-          // NioEventLoopGroup is a multithreaded event loop that handles I/O
+          // EpollEventLoopGroup is a multithreaded event loop that handles I/O
           // operation
-          group = new NioEventLoopGroup();
+          group = new EpollEventLoopGroup();
           // Bootstrap is a helper class that sets up a client
           bootstrap = new Bootstrap();
-          bootstrap.group(group).channel(NioSocketChannel.class)
+          bootstrap.group(group).channel(EpollSocketChannel.class)
               .option(ChannelOption.TCP_NODELAY, this.tcpNoDelay)
               .option(ChannelOption.SO_KEEPALIVE, true)
               .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, pingInterval)
@@ -1127,7 +1118,7 @@ public class AsyncClient {
       result = PRIME * result + maxIdleTime;
       result = PRIME * result + pingInterval;
       result = PRIME * result + ((protocol == null) ? 0 : protocol.hashCode());
-      result = PRIME * rpcTimeout;
+      result = PRIME * result + rpcTimeout;
       result = PRIME * result
           + ((serverPrincipal == null) ? 0 : serverPrincipal.hashCode());
       result = PRIME * result + (tcpNoDelay ? 1231 : 1237);

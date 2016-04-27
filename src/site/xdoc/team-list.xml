@@ -65,6 +65,12 @@ xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd
           <td align="center">committer</td>
         </tr>
        <tr valign="top">
+          <td align="center">bsikander</td>
+          <td align="center">Behroz Sikander</td>
+          <td align="center">Technical University of Munich</td>
+          <td align="center">PMC member, committer</td>
+        </tr>
+       <tr valign="top">
           <td align="center">bsmin</td>
           <td align="center">Byungseok Min</td>
           <td align="center">LG CNS</td>
