@@ -24,6 +24,7 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -117,6 +118,11 @@ public class TestAsyncRPC extends TestCase {
   }
 
   public void testCalls() throws Exception {
+    if(!SystemUtils.IS_OS_LINUX) {
+      System.out.println("Skipping testcase because Async is only supported for LINUX!");
+      return;
+    }
+    
     AsyncServer server = AsyncRPC
         .getServer(new TestImpl(), ADDRESS, PORT, conf);
     server.start();

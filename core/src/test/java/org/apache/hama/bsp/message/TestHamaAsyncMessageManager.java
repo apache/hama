@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.lang.SystemUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -45,6 +46,11 @@ public class TestHamaAsyncMessageManager extends TestCase {
   public static volatile int increment = 1;
 
   public void testMemoryMessaging() throws Exception {
+    if(!SystemUtils.IS_OS_LINUX) {
+      System.out.println("Skipping testcase because Async is only supported for LINUX!");
+      return;
+    }
+      
     HamaConfiguration conf = new HamaConfiguration();
     conf.setClass(MessageManager.RECEIVE_QUEUE_TYPE_CLASS, MemoryQueue.class,
         MessageQueue.class);

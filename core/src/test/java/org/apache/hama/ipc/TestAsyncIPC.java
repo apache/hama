@@ -23,6 +23,7 @@ import java.util.Random;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -143,6 +144,11 @@ public class TestAsyncIPC extends TestCase {
   }
 
   public void testSerial() throws Exception {
+    if(!SystemUtils.IS_OS_LINUX) {
+      System.out.println("Skipping testcase because Async is only supported for LINUX!");
+      return;
+    }
+    
     testSerial(3, false, 2, 5, 100);
   }
 
@@ -173,6 +179,11 @@ public class TestAsyncIPC extends TestCase {
   }
 
   public void testParallel() throws Exception {
+    if(!SystemUtils.IS_OS_LINUX) {
+      System.out.println("Skipping testcase because Async is only supported for LINUX!");
+      return;
+    }
+    
     testParallel(10, false, 2, 4, 2, 4, 100);
   }
 
