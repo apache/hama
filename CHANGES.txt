@@ -8,7 +8,7 @@ Release 0.7.2 (unreleased changes)
 
   BUG FIXES
 
-    HAMA-989: Added condition to ignore Async based test cases for non-linux systems (Behroz Sikander via edwardyoon)
+    HAMA-989: Add condition to ignore Async based test cases for non-linux systems (Behroz Sikander via edwardyoon)
     HAMA-986: There is a missing value when calculating hashcode of AsyncClient (JongYoon Lim via edwardyoon)
 
   IMPROVEMENTS
