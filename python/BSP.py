@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -15,16 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
 
-# Start hama map reduce daemons.  Run this on master node.
+BSP Class that can be overridden to implement the computation logic.
 
-bin=`dirname "$0"`
-bin=`cd "$bin"; pwd`
+"""
+from BSPPeer import BSPPeer
 
-. "$bin"/hama-config.sh
+class BSP:
 
-# start bsp daemons
-# start zookeeper first to minimize connection errors at startup
-"$bin"/hama-daemons.sh --config "${HAMA_CONF_DIR}" start zookeeper
-"$bin"/hama-daemon.sh --config $HAMA_CONF_DIR start bspmaster
-"$bin"/hama-daemons.sh --config $HAMA_CONF_DIR start groom
+    def __init__(self):
+        pass
+
+    def setup(self, peer):
+        pass
+
+    def bsp(self, peer):
+        pass
+
+    def cleanup(self, peer):
+        pass

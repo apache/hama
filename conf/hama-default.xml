@@ -47,13 +47,13 @@
   </property>
   <property>
     <name>bsp.http.infoserver.port</name>
-    <value>40013</value>
+    <value>40015</value>
     <description>The port where the web-interface can be seen.
     </description>
   </property>
   <property>
     <name>bsp.http.groomserver.port</name>
-    <value>40015</value>
+    <value>40017</value>
     <description>The port where the web-interface can be seen.
     </description>
   </property>

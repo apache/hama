@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -15,16 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
 
-# Start hama map reduce daemons.  Run this on master node.
+A mimic configuration object contains a dictionary that maps keys to values to store information.
 
-bin=`dirname "$0"`
-bin=`cd "$bin"; pwd`
+"""
+class BspJobConfiguration:
+    def __init__(self):
+        self.conf = {}
 
-. "$bin"/hama-config.sh
+    def get(self, key):
+        return self.conf[key]
 
-# start bsp daemons
-# start zookeeper first to minimize connection errors at startup
-"$bin"/hama-daemons.sh --config "${HAMA_CONF_DIR}" start zookeeper
-"$bin"/hama-daemon.sh --config $HAMA_CONF_DIR start bspmaster
-"$bin"/hama-daemons.sh --config $HAMA_CONF_DIR start groom
+    def put(self, key, value):
+        self.conf[key] = value
