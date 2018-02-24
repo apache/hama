@@ -101,6 +101,7 @@
     <log4j.version>1.2.16</log4j.version>
     <zookeeper.version>3.4.5</zookeeper.version>
     <ant.version>1.7.1</ant.version>
+    <scala.version>2.12.4</scala.version>
   </properties>
 
   <repositories>
@@ -358,8 +359,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.3.2</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>
