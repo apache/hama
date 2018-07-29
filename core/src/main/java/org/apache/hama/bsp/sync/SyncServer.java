@@ -21,7 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 
 /**
  * Basic interface for a barrier synchronization services. This interface is not
- * used by HAMA, because every syncserver has to run as a seperate daemon. In
+ * used by HAMA, because every syncserver has to run as a separate daemon. In
  * YARN this is used to launch the sync server as part of the ApplicationMaster
  * in a separate thread.
  * 
