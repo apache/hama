@@ -22,36 +22,32 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValue
 import com.typesafe.config.ConfigValueFactory
 import scala.util.Try
+import cats.data.Reader
 
 trait Setting {
 
-  def set[T](key: String, value: T): DefaultSetting 
+  def set[T](key: String, value: T): Setting
 
   def get[T](key: String): Option[T] 
 
 }
-
 object Setting {
 
   val hama = "hama"
 
-  def create(name: String = hama): Setting = DefaultSetting (
-    ConfigFactory.load(name)
-  )
+  def typesafe = Typesafe(ConfigFactory.load(hama))
+
+  case class Typesafe(config: Config) extends Setting {
+
+    override def set[T](key: String, value: T): Setting =  
+      Typesafe(config.withValue(key, ConfigValueFactory.fromAnyRef(value)))
+
+    override def get[T](key: String): Option[T] = 
+      Try(config.getAnyRef(key).asInstanceOf[T]).toOption
+
+  }
 
   // TODO: hadoop configuration to  
   // def from(configuration: Configuration): Setting = ???
 
 }
-
-protected[conf] case class DefaultSetting(config: Config) extends Setting {
-
-  override def set[T](key: String, value: T): DefaultSetting = DefaultSetting (
-    config.withValue(key, ConfigValueFactory.fromAnyRef(value))
-  )
-
-  override def get[T](key: String): Option[T] = 
-    Try(config.getAnyRef(key).asInstanceOf[T]).toOption
-
-}
-

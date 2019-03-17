@@ -22,10 +22,10 @@ import org.scalatest._
 class SettingSpec extends FlatSpec with Matchers {
 
   "Setting" should "get/ set value" in {
-    val setting = Setting.create()
-    val newSetting = setting.set[String]("db.host", "host1").
-                             set[Int]("db.port", 1234).
-                             set[Double]("cpu.load", 1.2d)
+    val typesafe = Setting.typesafe
+    val newSetting = typesafe.set[String]("db.host", "host1").
+                              set[Int]("db.port", 1234).
+                              set[Double]("cpu.load", 1.2d)
     assert(Some("host1") == newSetting.get("db.host"))
     assert(Some(1234) == newSetting.get("db.port"))
     assert(Some(1.2d) == newSetting.get("cpu.load"))

@@ -17,8 +17,11 @@
  */
 name := "commons.v2"
 
+scalacOptions += "-Ypartial-unification"
+
 libraryDependencies ++= Seq (
   "com.typesafe" % "config" % "1.3.3",
   "org.slf4j" % "slf4j-api" % "1.7.25",
-  "org.slf4j" % "slf4j-simple" % "1.7.25"
+  "org.slf4j" % "slf4j-simple" % "1.7.25",
+  "org.typelevel" %% "cats-core" % "1.6.0"
 )
