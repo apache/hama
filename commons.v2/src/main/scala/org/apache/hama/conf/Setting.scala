@@ -22,13 +22,14 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValue
 import com.typesafe.config.ConfigValueFactory
 import scala.util.Try
-import cats.data.Reader
 
 trait Setting {
 
   def set[T](key: String, value: T): Setting
 
   def get[T](key: String): Option[T] 
+
+  def get[T](key: String, default: T): T 
 
 }
 object Setting {
@@ -44,6 +45,8 @@ object Setting {
 
     override def get[T](key: String): Option[T] = 
       Try(config.getAnyRef(key).asInstanceOf[T]).toOption
+
+    override def get[T](key: String, default: T): T = get(key).getOrElse(default)
 
   }
 

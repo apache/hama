@@ -21,7 +21,5 @@ libraryDependencies ++= Seq (
   "com.google.guava" % "guava" % "27.0-jre",
   "io.aeron" % "aeron-all" % "1.11.3",
   "org.apache.curator" % "curator-framework" % "4.0.1",
-  "org.scalaz" %% "scalaz-zio" % "0.3.1",
-  "org.typelevel" %% "cats-core" % "1.4.0",
   "org.apache.curator" % "curator-test" % "4.0.1" % Test
 )

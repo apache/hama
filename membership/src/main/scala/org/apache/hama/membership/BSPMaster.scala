@@ -17,7 +17,7 @@
  */
 package org.apache.hama.membership
 
-import cats.data.{ State => CatsState }
+import cats.data.{ State => CatsState, Reader }
 import cats.syntax._
 import cats.implicits._
 import com.google.common.hash.Hashing
@@ -48,8 +48,6 @@ object Identifier {
 final case class Identifier(value: String) 
 
 object BSPMaster {
-
-  lazy val defaultSetting = Setting.create()
 
   object Event {
 
@@ -172,20 +170,12 @@ object BSPMaster {
   }
   sealed trait State extends Product with Serializable
 
-  /**
-   * Builder to create BSPMaster.
-   */
-  case class Builder(host: String, port: Int) {
-
-    def withAddress(host: String, port: Int) = 
-      this.copy(host = host, port = port)
-
-    def build(): ValidatedResult[BSPMaster] = (
-      Address.create(host, port), 
-      Identifier.create(host, port),
-      Master.validNel
-    ).mapN(BSPMaster.apply)
-
+  def build = Reader{ (setting: Setting) => 
+    val host = setting.get("org.apache.hama.net.host", "localhost")
+    val port = setting.get("org.apache.hama.net.port", -1)
+    (Address.create(host, port),
+    Identifier.create(host, port),
+    Master.validNel).mapN(BSPMaster.apply)
   }
 
 }
