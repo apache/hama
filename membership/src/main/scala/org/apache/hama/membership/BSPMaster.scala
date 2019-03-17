@@ -23,6 +23,7 @@ import cats.implicits._
 import com.google.common.hash.Hashing
 import com.google.common.base.Charsets._
 import org.apache.hama.conf.Setting
+import org.apache.hama.fs.FileSystem
 import org.apache.hama.util.Utils._
 
 object Address {
@@ -175,8 +176,11 @@ object BSPMaster {
     val port = setting.get("org.apache.hama.net.port", -1)
     (Address.create(host, port),
     Identifier.create(host, port),
-    Master.validNel).mapN(BSPMaster.apply)
+    Master.validNel,
+    FileSystem.local.validNel).mapN(BSPMaster.apply)
   }
 
 }
-final case class BSPMaster (address: Address, id: Identifier, role: Role)
+final case class BSPMaster (
+  address: Address, id: Identifier, role: Role, fs: FileSystem
+)

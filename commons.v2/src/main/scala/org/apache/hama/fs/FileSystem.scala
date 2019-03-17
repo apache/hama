@@ -35,6 +35,8 @@ trait FileSystem {
 
   def exist(path: Path): Boolean 
 
+  def isLocal: Boolean
+
 }
 
 object FileSystem {
@@ -57,6 +59,8 @@ object FileSystem {
       Try(path.toFile.delete).map(_ => path).toEither
 
     override def exist(path: Path): Boolean = path.toFile.exists
+
+    override def isLocal: Boolean = true
 
   }
 
