@@ -50,7 +50,4 @@ object Setting {
 
   }
 
-  // TODO: hadoop configuration to  
-  // def from(configuration: Configuration): Setting = ???
-
 }

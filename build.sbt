@@ -22,7 +22,7 @@ lazy val common = Seq (
   scalacOptions := Seq ("-deprecation", "-Ypartial-unification"), 
   libraryDependencies ++= Seq (
     "org.typelevel" %% "cats-core" % "1.6.0",
-    "org.scalaz" %% "scalaz-zio" % "0.3.1",
+    "org.scalaz" %% "scalaz-zio" % "1.0-RC4",
     "org.scalatest" %% "scalatest" % "3.0.5" % "test"
   )
 )
