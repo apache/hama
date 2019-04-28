@@ -23,6 +23,4 @@ package object membership {
 
   type ValidatedResult[A] = ValidatedNel[Throwable, A]
 
-  val localhost = "localhost"
-
 }
