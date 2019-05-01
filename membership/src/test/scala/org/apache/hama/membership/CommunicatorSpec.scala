@@ -35,18 +35,15 @@ class CommunicatorSpec extends FlatSpec with Matchers {
     var hello = ""
     val barrier = new ShutdownSignalBarrier
     val dio = driver(barrier).delay(ZDuration.fromScala(0 seconds))
-    val sub = subscriber(aeron)
-    val subio = receive(sub, {
+    val subio = subscriber().receive {
       (buffer: DirectBuffer, offset: Int, length: Int, header: Header) =>
         val data = new Array[Byte](length)
         buffer.getBytes(offset, data)
         hello = new String(data)
         println("Received? "+hello)
         false
-    })
-    val pub = publisher(aeron)
-    val pubio = publish (
-      publisher = pub,
+    }
+    val pubio = publisher().publish (
       messageBytes = "hello".getBytes,
       countLimit = 1024,
       deadline = (System.nanoTime + 10.seconds.toNanos),
@@ -66,5 +63,6 @@ class CommunicatorSpec extends FlatSpec with Matchers {
 
     val runtime = new DefaultRuntime {}
     runtime.unsafeRun { handler.run }
+    assert("hello".equals(hello))
   }
 }
