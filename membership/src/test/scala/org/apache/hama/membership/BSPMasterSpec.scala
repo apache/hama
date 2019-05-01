@@ -18,9 +18,8 @@
 package org.apache.hama.membership
 
 import org.scalatest._
-import org.apache.hama.logging.Logging
 
-class BSPMasterSpec extends FlatSpec with Matchers with Logging {
+class BSPMasterSpec extends FlatSpec with Matchers {
 
   import BSPMaster._
   import BSPMaster.State._
@@ -31,28 +30,28 @@ class BSPMasterSpec extends FlatSpec with Matchers with Logging {
       s <- stopped2Starting
     } yield s
     val startingState = starting.run(Right(Stopped)).value._1
-    log.info(s"Actual BSPMaster state: $startingState")
+    println(s"Actual BSPMaster state: $startingState")
     assert(Right(Starting).equals(startingState))
 
     val running = for {
       r <- starting2Running(ready)
     } yield r
     val runningState = running.run(startingState).value._1
-    log.info(s"Actual BSPMaster state: $runningState")
+    println(s"Actual BSPMaster state: $runningState")
     assert(Right(Running).equals(runningState))
 
     val shuttingdown = for {
       sd <- running2ShuttingDown(Set(CommunicatorShuttingDown))
     } yield sd
     val shuttingDownState = shuttingdown.run(runningState).value._1
-    log.info(s"Actual BSPMaster state: $shuttingDownState")
+    println(s"Actual BSPMaster state: $shuttingDownState")
     assert(Right(ShuttingDown).equals(shuttingDownState))
 
     val _stopped_ = for {
       s <- shuttingDown2Stopped(stopped)
     } yield s
     val stoppedState = _stopped_.run(shuttingDownState).value._1
-    log.info(s"Actual BSPMaster state: $stoppedState")
+    println(s"Actual BSPMaster state: $stoppedState")
     assert(Right(Stopped).equals(stoppedState))
       
   }
