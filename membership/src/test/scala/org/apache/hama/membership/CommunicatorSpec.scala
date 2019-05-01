@@ -21,37 +21,48 @@ import io.aeron.logbuffer.Header
 import org.scalatest._
 import org.agrona.DirectBuffer
 import org.agrona.concurrent.ShutdownSignalBarrier
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationInt
 import scalaz.zio._
+import scalaz.zio.duration.{ Duration => ZDuration}
 
 class CommunicatorSpec extends FlatSpec with Matchers {
 
   import Communicator._
 
-  "Communicator" should "" in {
+  "Communicator" should "send and receive a message." in {
 
-
+    var hello = ""
     val barrier = new ShutdownSignalBarrier
-    val dio = driver(barrier)
-    val a = aeron
-    val subio = a.subscriber().receive { 
+    val dio = driver(barrier).delay(ZDuration.fromScala(0 seconds))
+    val sub = subscriber(aeron)
+    val subio = receive(sub, {
       (buffer: DirectBuffer, offset: Int, length: Int, header: Header) =>
         val data = new Array[Byte](length)
         buffer.getBytes(offset, data)
-        val hello = new String(data)
+        hello = new String(data)
+        println("Received? "+hello)
         false
-    }.flatMap(_.close)
-    val pubio = a.publisher().publish(messageBytes = "hello".getBytes).flatMap(_.close)
+    })
+    val pub = publisher(aeron)
+    val pubio = publish (
+      publisher = pub,
+      messageBytes = "hello".getBytes,
+      countLimit = 1024,
+      deadline = (System.nanoTime + 10.seconds.toNanos),
+      sleep = { () => Thread.sleep(1 * 1000) }
+    )
 
     val handler = for {
-      forked_d <- dio.fork
-      forked_sub <- subio.fork
-      forked_pub <- pubio.fork
-      forked_b <- ZIO.effect { barrier.signal; ZIO.unit }.fork
-      _ <- forked_b.join
-      p <- forked_pub.join
-      s <- forked_sub.join
-      d <- forked_d.join
-    } yield (p, s, d)
+      forked_driver <- dio.fork
+      forked_sub <- subio.delay(ZDuration.fromScala(3 seconds)).fork
+      forked_pub <- pubio.delay(ZDuration.fromScala(5 seconds)).fork
+      forked_barrier <- ZIO.effect { barrier.signal; ZIO.unit }.fork
+      _ <- forked_barrier.join
+      pub <- forked_pub.join
+      sub <- forked_sub.join
+      driver <- forked_driver.join
+    } yield (pub, sub, driver)
 
     val runtime = new DefaultRuntime {}
     runtime.unsafeRun { handler.run }

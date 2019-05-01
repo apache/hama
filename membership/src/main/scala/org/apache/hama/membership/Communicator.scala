@@ -41,11 +41,13 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Either
 
 import scalaz.zio._
+import scalaz.zio.duration.{ Duration => ZDuration }
 
-trait Communicator
 object Communicator {
 
-  val localhost = "localhost"
+  case class Channel(host: String = localhost, port: Int = 12345) {
+    override def toString(): String = s"aeron:udp?endpoint=$host:$port"
+  }
 
   final case object BackPressured extends RuntimeException (
     "Failure due to back pressure!"
@@ -71,79 +73,7 @@ object Communicator {
     "Failure due to unknown reason!"
   )
 
-  case class Channel(host: String = localhost, port: Int = 12345) {
-    override def toString(): String = s"aeron:udp?endpoint=$host:$port"
-  }
-
-  implicit class SubscriberOps(aeron: Task[Aeron]) {
-    def subscriber(channel: Channel = Channel(), streamId: Int = 10): 
-      Task[Subscription] = aeron.flatMap { a => 
-        Task.effect(a.addSubscription(channel.toString, streamId))
-      }
-  }
-
-  implicit class ReceiveOps(subscriber: Task[Subscription]) {
-    def receive(f: (DirectBuffer, Int, Int, Header) => Boolean) = ZIO.effect {
-      var continuous = true 
-      val handler = new FragmentAssembler({ 
-        (buffer: DirectBuffer, offset: Int, length: Int, header: Header) => 
-          val shouldContinuous = f(buffer, offset, length, header)
-          continuous = shouldContinuous
-      })
-      val idleStrategy = new BusySpinIdleStrategy()
-      while(continuous) subscriber.flatMap { s =>
-        val read = s.poll(handler, 10)
-        idleStrategy.idle(read)
-        ZIO.unit
-      }
-      this
-    }
-
-    def close() = subscriber.flatMap { sub => sub.close; ZIO.unit }
-    
-  }
-
-  implicit class PublisherOps(aeron: Task[Aeron]) {
-    def publisher(channel: Channel = Channel(), streamId: Int = 10): 
-      Task[Publication] = aeron.flatMap { a => 
-        Task.effect(a.addPublication(channel.toString, streamId)) 
-      }
-  }
-
-  implicit class PublishOps(publisher: Task[Publication]) {
-    def publish (
-      messageBytes: Array[Byte],
-      bufferCapacity: Int = 512,
-      boundaryAlighment: Int = CACHE_LINE_LENGTH,
-      deadline: Long = (System.nanoTime + 3.seconds.toNanos),
-      sleep: () => Unit = { () => Thread.sleep(1) }
-    ): ZIO[Any, Throwable, PublishOps] = publisher.flatMap { pub => 
-      while(!pub.isConnected) {
-        if(System.nanoTime >= deadline) return ZIO.fail(new RuntimeException (
-          s"Publication can't connect: ${pub.toString}"
-        ))
-        sleep()
-      }
-      val buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned (
-        bufferCapacity, boundaryAlighment
-      ))
-      buffer.putBytes(0, messageBytes)
-      val result = pub.offer(buffer, 0, messageBytes.length)
-      result match {
-        case res if res < 0L && BACK_PRESSURED == res => ZIO.fail(BackPressured)
-        case res if res < 0L && NOT_CONNECTED == res => ZIO.fail(NotConnected)
-        case res if res < 0L && ADMIN_ACTION == res => ZIO.fail(AdminAction)
-        case res if res < 0L && CLOSED == res => ZIO.fail(Closed)
-        case res if res < 0L && MAX_POSITION_EXCEEDED == res => ZIO.fail(
-          MaxPositionExceeded
-        )
-        case res if res < 0L => ZIO.fail(UnknownReason)
-        case _ => ZIO.succeed(this)
-      }
-    }
-
-    def close() = publisher.flatMap { pub => pub.close; ZIO.unit }
-  }
+  val localhost = "localhost"
 
   def driver(barrier: ShutdownSignalBarrier): Task[MediaDriver] = ZIO.effect {
     val context = new MediaDriver.Context().
@@ -156,9 +86,105 @@ object Communicator {
     driver
   }
 
-  def aeron: Task[Aeron] = ZIO.effect {
+  def aeron = ZIO.effect {
     val context = new Aeron.Context()    
     Aeron.connect(context) 
+  }
+
+  def subscriber(aeron: Task[Aeron]) = aeron.flatMap { a =>
+    ZIO.effect { a.addSubscription(Channel().toString, 10) }
+  }
+
+  def receive (
+    sub: Task[Subscription], 
+    f: (DirectBuffer, Int, Int, Header) => Boolean
+  ) = sub.flatMap { s =>
+    var continuous = true 
+    val handler = new FragmentAssembler({ 
+      (buffer: DirectBuffer, offset: Int, length: Int, header: Header) => 
+      val shouldContinuous = f(buffer, offset, length, header)
+      continuous = shouldContinuous
+    })
+    val idleStrategy = new BusySpinIdleStrategy()
+    while(continuous) {
+      val read = s.poll(handler, 10)
+      idleStrategy.idle(read)
+    }
+    sub 
+  }
+
+  def publisher(aeron: Task[Aeron]) = aeron.flatMap { a =>
+    ZIO.effect { a.addPublication(Channel().toString, 10) }
+  }
+
+  def publish(
+    publisher: Task[Publication],
+    messageBytes: Array[Byte],
+    bufferCapacity: Int = 512,
+    boundaryAlighment: Int = CACHE_LINE_LENGTH,
+    countLimit: Int = 3,
+    deadline: Long = (System.nanoTime + 3.seconds.toNanos),
+    sleep: () => Unit = { () => Thread.sleep(1) }
+  ) = {
+
+    def isConnected (publication: Publication)(
+      implicit _deadline: Long = (System.nanoTime + 3.seconds.toNanos),
+      _countLimit: Int = 3, 
+      _sleep: () => Unit = { () => Thread.sleep(1) }
+    ): Boolean = {
+      @tailrec
+      def _isConnected(pub: Publication, times: Int = 0): Boolean = {
+        val connected = pub.isConnected
+        if(_countLimit > times && (false == connected)) {
+          if(System.nanoTime >= _deadline) false else {
+            _sleep()
+            _isConnected(pub, times + 1)
+          }
+        } else connected
+      }
+      _isConnected(publication)
+    }
+
+    def _publish (
+      messageBytes: Array[Byte],
+      bufferCapacity: Int = 512,
+      boundaryAlighment: Int = CACHE_LINE_LENGTH,
+      countLimit: Int = 3,
+      deadline: Long = (System.nanoTime + 3.seconds.toNanos),
+      sleep: () => Unit = { () => Thread.sleep(1) }
+    ) = publisher.flatMap { p => 
+      implicit val _deadline = deadline 
+      implicit val _countLimit = countLimit
+      implicit val _sleep = sleep
+      isConnected(p) match {
+        case true =>
+          val buffer = new UnsafeBuffer(BufferUtil.allocateDirectAligned (
+            bufferCapacity, boundaryAlighment
+          ))
+          buffer.putBytes(0, messageBytes)
+          val result = p.offer(buffer, 0, messageBytes.length)
+          result match {
+            case res if res < 0L && BACK_PRESSURED == res => ZIO.fail(BackPressured)
+            case res if res < 0L && NOT_CONNECTED == res => ZIO.fail(NotConnected)
+            case res if res < 0L && ADMIN_ACTION == res => ZIO.fail(AdminAction)
+            case res if res < 0L && CLOSED == res => ZIO.fail(Closed)
+            case res if res < 0L && MAX_POSITION_EXCEEDED == res => ZIO.fail(
+              MaxPositionExceeded
+            )
+            case res if res < 0L => ZIO.fail(UnknownReason)
+            case _ => ZIO.succeed(this)
+          }
+        case false => ZIO.fail(new RuntimeException("Not Connected to Subscriber!"))
+      }
+    }
+    _publish (
+      messageBytes = messageBytes,
+      bufferCapacity = bufferCapacity,
+      boundaryAlighment = boundaryAlighment,
+      countLimit = countLimit,
+      deadline = deadline,
+      sleep = sleep
+    )
   }
 
 }

@@ -19,7 +19,7 @@ name := "membership"
 
 libraryDependencies ++= Seq (
   "com.google.guava" % "guava" % "27.0-jre",
-  "io.aeron" % "aeron-all" % "1.11.3",
+  "io.aeron" % "aeron-all" % "1.17.0",
   "org.apache.curator" % "curator-framework" % "4.0.1",
   "org.apache.curator" % "curator-test" % "4.0.1" % Test
 )
