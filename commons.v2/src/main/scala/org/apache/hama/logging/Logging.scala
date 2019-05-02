@@ -19,6 +19,8 @@ package org.apache.hama.logging
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 trait Logging[T] {
 
@@ -35,26 +37,25 @@ trait Logging[T] {
 
 object Logging {
 
-  def apply[T](implicit log: Logging[T]) = log
+  def slf4j[T: ClassTag: TypeTag](clazz: Class[T]): Logging[Logger] = 
+    new Logging[Logger] {
 
-  implicit def sl4fjLog: Logging[Logger] = new Logging[Logger] {
+      lazy val log = LoggerFactory.getLogger(clazz)
 
-    lazy val log = LoggerFactory.getLogger(getClass)
+      override def info(message: String) = if(log.isInfoEnabled)
+         log.info(message)
 
-    override def info(message: String) = if(log.isInfoEnabled)
-      log.info(message)
+      override def debug(message: String) = if(log.isDebugEnabled)
+        log.debug(message)
 
-    override def debug(message: String) = if(log.isDebugEnabled)
-      log.debug(message)
+      override def warn(message: String) = if(log.isWarnEnabled)
+        log.warn(message)
 
-    override def warn(message: String) = if(log.isWarnEnabled)
-      log.warn(message)
+      override def trace(message: String) = if(log.isTraceEnabled)
+        log.trace(message)
 
-    override def trace(message: String) = if(log.isTraceEnabled)
-      log.trace(message)
-
-    override def error(message: String) = if(log.isErrorEnabled)
-      log.error(message)
+      override def error(message: String) = if(log.isErrorEnabled)
+        log.error(message)
     
-  }
+    }
 }
