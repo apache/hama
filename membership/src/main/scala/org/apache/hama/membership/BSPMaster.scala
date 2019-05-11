@@ -20,33 +20,8 @@ package org.apache.hama.membership
 import cats.data.{ State => CatsState, Reader }
 import cats.syntax._
 import cats.implicits._
-import com.google.common.hash.Hashing
-import com.google.common.base.Charsets._
 import org.apache.hama.conf.Setting
 import org.apache.hama.fs.FileSystem
-import org.apache.hama.util.Utils._
-
-object Address {
-
-  def create(host: String, port: Int): ValidatedResult[Address] = 
-    if(!host.isBlank && port.isValid) Address(host, port).validNel else
-    new RuntimeException(s"Invalid Addrss($host, $port) value!").invalidNel
-
-}
-final case class Address(host: String, port: Int) 
-
-object Identifier {
-
-  def create(host: String, port: Int): ValidatedResult[Identifier] = 
-    if(!host.isBlank && port.isValid) Identifier(hash(host, port)).validNel 
-    else new RuntimeException(s"Invalid Identifier hash values!").invalidNel
-
-  def hash(host: String, port: Int): String = 
-    Hashing.sipHash24().newHasher().putString(host, UTF_8).
-      putInt(port).hash.toString
-
-}
-final case class Identifier(value: String) 
 
 object BSPMaster {
 

@@ -58,5 +58,20 @@ package object bsp {
 
   }
 
+  object State {
+
+    case object LocalComputation extends State
+
+    trait BarrierSynchronization extends State
+
+    case object Begin extends BarrierSynchronization 
+
+    case object End extends BarrierSynchronization 
+
+    case object Communication extends State
+
+  }
+  sealed trait State extends Product with Serializable
+
 }
 
